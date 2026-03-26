@@ -12,11 +12,20 @@ import Contact from "./pages/Contact";
 import ResultFind from "./pages/ResultFind";
 import StudentInfoPage from "./pages/StudentInfoPage";
 import AdmissionPage from "./pages/AdmissionPage";
+import DonationPage from "./pages/DonationPage";
+import FeePaymentPage from "./pages/FeePaymentPage";
 import Login from "./pages/Login";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminStaff from "./pages/admin/AdminStaff";
-import AdminPlaceholder from "./pages/admin/AdminPlaceholder";
+import AdminStaffForm from "./pages/admin/AdminStaffForm";
+import AdminDivisions from "./pages/admin/AdminDivisions";
+import AdminSubjects from "./pages/admin/AdminSubjects";
+import AdminResults from "./pages/admin/AdminResults";
+import AdminNotices from "./pages/admin/AdminNotices";
+import AdminFees from "./pages/admin/AdminFees";
+import AdminWebsite from "./pages/admin/AdminWebsite";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,17 +46,20 @@ const App = () => (
             <Route path="/result" element={<ResultFind />} />
             <Route path="/student-info" element={<StudentInfoPage />} />
             <Route path="/admission" element={<AdmissionPage />} />
+            <Route path="/donation" element={<DonationPage />} />
+            <Route path="/fee-payment" element={<FeePaymentPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Dashboard />} />
             <Route path="/admin/students" element={<AdminStudents />} />
             <Route path="/admin/staff" element={<AdminStaff />} />
-            <Route path="/admin/divisions" element={<AdminPlaceholder page="divisions" />} />
-            <Route path="/admin/subjects" element={<AdminPlaceholder page="subjects" />} />
-            <Route path="/admin/results" element={<AdminPlaceholder page="results" />} />
-            <Route path="/admin/notices" element={<AdminPlaceholder page="notices" />} />
-            <Route path="/admin/fees" element={<AdminPlaceholder page="fees" />} />
-            <Route path="/admin/website" element={<AdminPlaceholder page="website" />} />
-            <Route path="/admin/settings" element={<AdminPlaceholder page="settings" />} />
+            <Route path="/admin/staff/add" element={<AdminStaffForm />} />
+            <Route path="/admin/divisions" element={<AdminDivisions />} />
+            <Route path="/admin/subjects" element={<AdminSubjects />} />
+            <Route path="/admin/results" element={<AdminResults />} />
+            <Route path="/admin/notices" element={<AdminNotices />} />
+            <Route path="/admin/fees" element={<AdminFees />} />
+            <Route path="/admin/website" element={<AdminWebsite />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
