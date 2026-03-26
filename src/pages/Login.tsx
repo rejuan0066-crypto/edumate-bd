@@ -1,13 +1,46 @@
+import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Lock, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { GraduationCap, Lock, User, Loader2 } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
+import { toast } from 'sonner';
 
 const Login = () => {
   const { t, language } = useLanguage();
+  const { signIn, user, loading: authLoading } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error(language === 'bn' ? 'সব তথ্য পূরণ করুন' : 'Please fill all fields');
+      return;
+    }
+    setLoading(true);
+    const { error } = await signIn(email, password);
+    setLoading(false);
+    if (error) {
+      toast.error(language === 'bn' ? 'ইউজারনেম বা পাসওয়ার্ড ভুল' : 'Invalid credentials');
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: 'var(--gradient-hero)' }}>
@@ -26,26 +59,43 @@ const Login = () => {
           <p className="text-sm text-muted-foreground mt-1">{t('signIn')}</p>
         </div>
 
-        <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); window.location.href = '/admin'; }}>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           <div>
             <Label className="flex items-center gap-2 mb-1.5">
               <User className="w-4 h-4" /> {t('username')}
             </Label>
-            <Input placeholder={language === 'bn' ? 'ইউজারনেম বা ইমেইল' : 'Username or Email'} className="bg-background" />
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={language === 'bn' ? 'ইমেইল এড্রেস' : 'Email address'}
+              className="bg-background"
+              type="email"
+            />
           </div>
           <div>
             <Label className="flex items-center gap-2 mb-1.5">
               <Lock className="w-4 h-4" /> {t('password')}
             </Label>
-            <Input type="password" placeholder="••••••••" className="bg-background" />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="bg-background"
+            />
           </div>
           <div className="text-right">
             <a href="#" className="text-sm text-primary hover:underline">{t('forgotPassword')}</a>
           </div>
-          <Button type="submit" className="btn-primary-gradient w-full py-5 text-base">
+          <Button type="submit" className="btn-primary-gradient w-full py-5 text-base" disabled={loading}>
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {t('signIn')}
           </Button>
         </form>
+
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          {language === 'bn' ? 'ডিফল্ট: rejuanh@admin.com / bd@001122' : 'Default: rejuanh@admin.com / bd@001122'}
+        </p>
 
         <div className="mt-6 text-center">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
