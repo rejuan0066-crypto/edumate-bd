@@ -17,6 +17,8 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
     { path: '/result', label: t('result') },
     { path: '/student-info', label: t('studentInfo') },
     { path: '/notices', label: t('notice') },
+    { path: '/donation', label: t('donation') },
+    { path: '/fee-payment', label: t('feePayment') },
     { path: '/contact', label: t('contact') },
   ];
 
