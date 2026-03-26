@@ -11,6 +11,7 @@ import {
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { t } = useLanguage();
+  const { signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
