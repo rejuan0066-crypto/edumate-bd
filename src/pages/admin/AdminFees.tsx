@@ -4,50 +4,87 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
-import { CreditCard, Printer, Search, CheckCircle, Clock } from 'lucide-react';
+import { CreditCard, Printer, CheckCircle, Clock, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 type FeeTab = 'admission' | 'monthly' | 'exam';
 
-const students = [
-  { roll: '001', name: 'মুহাম্মদ আলী', class: 'মুতাওয়াসসিতাহ ১ম', session: '২০২৬' },
-  { roll: '002', name: 'আব্দুল করিম', class: 'এবতেদায়ী ২য়', session: '২০২৬' },
-  { roll: '003', name: 'হাফিজ রহমান', class: 'হিফয ১ম', session: '২০২৫' },
-  { roll: '004', name: 'ইউসুফ আহমেদ', class: 'নূরানী ১ম', session: '২০২৬' },
-  { roll: '005', name: 'তানভীর ইসলাম', class: 'মুতাওয়াসসিতাহ ২য়', session: '২০২৬' },
-];
-
 const AdminFees = () => {
   const { language } = useLanguage();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<FeeTab>('monthly');
-  const [session, setSession] = useState('');
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedRoll, setSelectedRoll] = useState('');
+  const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
+  const [paymentMonth, setPaymentMonth] = useState('');
   const [showList, setShowList] = useState(false);
   const [listType, setListType] = useState<'paid' | 'unpaid'>('paid');
+  const [selectedFeeType, setSelectedFeeType] = useState('');
 
-  const filteredStudents = students.filter(s => {
-    if (session && s.session !== session) return false;
-    if (selectedClass && s.class !== selectedClass) return false;
-    return true;
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const handleRollSelect = (roll: string) => {
-    setSelectedRoll(roll);
-    const st = students.find(s => s.roll === roll);
-    setSelectedStudent(st?.name || '');
-  };
+  const { data: students = [] } = useQuery({
+    queryKey: ['students-for-fees', selectedDivision],
+    queryFn: async () => {
+      let q = supabase.from('students').select('*').eq('status', 'active');
+      if (selectedDivision) q = q.eq('division_id', selectedDivision);
+      const { data, error } = await q.order('roll_number');
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const handlePayment = () => {
-    if (!selectedRoll || !paidAmount) {
-      toast.error(language === 'bn' ? 'সকল তথ্য পূরণ করুন' : 'Fill all fields');
-      return;
-    }
-    toast.success(language === 'bn' ? 'ফি সফলভাবে পরিশোধ হয়েছে এবং প্রোফাইলে সংরক্ষিত' : 'Fee paid successfully and saved to profile');
-    setPaidAmount(''); setSelectedRoll(''); setSelectedStudent('');
-  };
+  const { data: feeTypes = [] } = useQuery({
+    queryKey: ['fee_types', tab],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('fee_types').select('*').eq('fee_category', tab).eq('is_active', true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: payments = [] } = useQuery({
+    queryKey: ['fee_payments', selectedDivision, tab, paymentMonth],
+    queryFn: async () => {
+      let q = supabase.from('fee_payments').select('*, students(name_bn, roll_number, division_id, divisions(name_bn)), fee_types(name_bn, fee_category)');
+      if (paymentMonth) q = q.eq('month', paymentMonth);
+      const { data, error } = await q.order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedStudent || !paidAmount || !selectedFeeType) throw new Error('Fill all fields');
+      const { error } = await supabase.from('fee_payments').insert({
+        student_id: selectedStudent,
+        fee_type_id: selectedFeeType,
+        amount: parseFloat(paidAmount),
+        paid_amount: parseFloat(paidAmount),
+        month: paymentMonth || null,
+        year: new Date().getFullYear(),
+        status: 'paid',
+        paid_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      setPaidAmount(''); setSelectedStudent('');
+      toast.success(language === 'bn' ? 'ফি পরিশোধ সফল' : 'Fee paid successfully');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
 
   const tabs: { key: FeeTab; bn: string; en: string; }[] = [
     { key: 'monthly', bn: 'মাসিক ফি', en: 'Monthly Fee' },
@@ -55,23 +92,14 @@ const AdminFees = () => {
     { key: 'admission', bn: 'ভর্তি ফি', en: 'Admission Fee' },
   ];
 
-  // Mock paid/unpaid lists
-  const paidStudents = [
-    { roll: '001', name: 'মুহাম্মদ আলী', class: 'মুতাওয়াসসিতাহ ১ম', amount: '৳ 2,500', month: 'মার্চ ২০২৬' },
-    { roll: '002', name: 'আব্দুল করিম', class: 'এবতেদায়ী ২য়', amount: '৳ 2,000', month: 'মার্চ ২০২৬' },
-    { roll: '004', name: 'ইউসুফ আহমেদ', class: 'নূরানী ১ম', amount: '৳ 1,500', month: 'মার্চ ২০২৬' },
-  ];
-  const unpaidStudents = [
-    { roll: '003', name: 'হাফিজ রহমান', class: 'হিফয ১ম', month: 'মার্চ ২০২৬' },
-    { roll: '005', name: 'তানভীর ইসলাম', class: 'মুতাওয়াসসিতাহ ২য়', month: 'মার্চ ২০২৬' },
-  ];
+  const paidPayments = payments.filter((p: any) => p.status === 'paid');
+  const unpaidPayments = payments.filter((p: any) => p.status === 'unpaid');
 
   return (
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground">{language === 'bn' ? 'ফি ব্যবস্থাপনা' : 'Fee Management'}</h1>
 
-        {/* Tabs */}
         <div className="flex gap-2 flex-wrap">
           {tabs.map(t => (
             <button key={t.key} onClick={() => { setTab(t.key); setShowList(false); }}
@@ -81,7 +109,6 @@ const AdminFees = () => {
           ))}
         </div>
 
-        {/* Fee Input */}
         <div className="card-elevated p-5">
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-primary" />
@@ -89,79 +116,57 @@ const AdminFees = () => {
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ভর্তি সেশন' : 'Admission Session'}</label>
-              <Select value={session} onValueChange={setSession}>
+              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'বিভাগ' : 'Division'}</label>
+              <Select value={selectedDivision} onValueChange={setSelectedDivision}>
                 <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="২০২৬">২০২৬</SelectItem>
-                  <SelectItem value="২০২৫">২০২৫</SelectItem>
-                </SelectContent>
+                <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{language === 'bn' ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'শ্রেণী' : 'Class'}</label>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ছাত্র' : 'Student'}</label>
+              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                <SelectContent>
-                  {['হিফয ১ম', 'নূরানী ১ম', 'এবতেদায়ী ২য়', 'মুতাওয়াসসিতাহ ১ম', 'মুতাওয়াসসিতাহ ২য়'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{students.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.roll_number} - {s.name_bn}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'রোল' : 'Roll'}</label>
-              <Select value={selectedRoll} onValueChange={handleRollSelect}>
+              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ফি ধরন' : 'Fee Type'}</label>
+              <Select value={selectedFeeType} onValueChange={setSelectedFeeType}>
                 <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                <SelectContent>{filteredStudents.map(s => <SelectItem key={s.roll} value={s.roll}>{s.roll} - {s.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {feeTypes.map((f: any) => <SelectItem key={f.id} value={f.id}>{f.name_bn} (৳{f.amount})</SelectItem>)}
+                  {feeTypes.length === 0 && <SelectItem value="none" disabled>{language === 'bn' ? 'ফি ধরন যোগ করুন' : 'Add fee types first'}</SelectItem>}
+                </SelectContent>
               </Select>
             </div>
-            {selectedStudent && (
-              <div>
-                <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ছাত্রের নাম' : 'Student Name'}</label>
-                <Input className="bg-secondary/50 mt-1" value={selectedStudent} readOnly />
-              </div>
-            )}
             {tab === 'monthly' && (
               <div>
-                <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'মাস-বছর' : 'Month-Year'}</label>
-                <Input type="month" className="bg-background mt-1" />
-              </div>
-            )}
-            {tab === 'exam' && (
-              <div>
-                <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'পরীক্ষা সেশন' : 'Exam Session'}</label>
-                <Select>
-                  <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="annual">{language === 'bn' ? 'বার্ষিক' : 'Annual'}</SelectItem>
-                    <SelectItem value="half">{language === 'bn' ? 'অর্ধবার্ষিক' : 'Half Yearly'}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'মাস' : 'Month'}</label>
+                <Input type="month" className="bg-background mt-1" value={paymentMonth} onChange={(e) => setPaymentMonth(e.target.value)} />
               </div>
             )}
             <div>
-              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'পরিশোধ পরিমাণ' : 'Paid Amount'}</label>
+              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'পরিশোধ পরিমাণ' : 'Amount'}</label>
               <Input type="number" className="bg-background mt-1" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="৳" />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'পরিশোধের তারিখ' : 'Paid Date'}</label>
-              <Input type="date" className="bg-background mt-1" defaultValue={new Date().toISOString().split('T')[0]} />
-            </div>
           </div>
-          <Button onClick={handlePayment} className="btn-primary-gradient mt-4">{language === 'bn' ? 'পরিশোধ করুন (Unpaid → Paid)' : 'Pay (Unpaid → Paid)'}</Button>
+          <Button onClick={() => payMutation.mutate()} className="btn-primary-gradient mt-4" disabled={payMutation.isPending}>
+            {payMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            {language === 'bn' ? 'পরিশোধ করুন' : 'Pay'}
+          </Button>
         </div>
 
-        {/* Paid / Unpaid Lists */}
         <div className="card-elevated p-5">
           <div className="flex items-center gap-3 mb-4">
-            <h3 className="font-display font-bold text-foreground">{language === 'bn' ? 'ফি তালিকা' : 'Fee List'}</h3>
+            <h3 className="font-display font-bold text-foreground">{language === 'bn' ? 'পেমেন্ট তালিকা' : 'Payment List'}</h3>
             <div className="flex gap-2">
               <button onClick={() => { setListType('paid'); setShowList(true); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${listType === 'paid' && showList ? 'bg-success text-success-foreground' : 'bg-success/10 text-success'}`}>
-                <CheckCircle className="w-3 h-3 inline mr-1" /> {language === 'bn' ? 'পরিশোধিত' : 'Paid'}
+                <CheckCircle className="w-3 h-3 inline mr-1" /> {language === 'bn' ? 'পরিশোধিত' : 'Paid'} ({paidPayments.length})
               </button>
               <button onClick={() => { setListType('unpaid'); setShowList(true); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${listType === 'unpaid' && showList ? 'bg-destructive text-destructive-foreground' : 'bg-destructive/10 text-destructive'}`}>
-                <Clock className="w-3 h-3 inline mr-1" /> {language === 'bn' ? 'অপরিশোধিত' : 'Unpaid'}
+                <Clock className="w-3 h-3 inline mr-1" /> {language === 'bn' ? 'অপরিশোধিত' : 'Unpaid'} ({unpaidPayments.length})
               </button>
             </div>
             {showList && <Button variant="outline" size="sm" className="ml-auto" onClick={() => window.print()}><Printer className="w-4 h-4 mr-1" /> {language === 'bn' ? 'প্রিন্ট' : 'Print'}</Button>}
@@ -174,29 +179,28 @@ const AdminFees = () => {
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'নাম' : 'Name'}</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'রোল' : 'Roll'}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'শ্রেণী' : 'Class'}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'মাস/সেশন' : 'Month/Session'}</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{listType === 'paid' ? (language === 'bn' ? 'পরিশোধ' : 'Amount') : (language === 'bn' ? 'স্ট্যাটাস' : 'Status')}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'ফি ধরন' : 'Fee Type'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'পরিমাণ' : 'Amount'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{language === 'bn' ? 'স্ট্যাটাস' : 'Status'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {listType === 'paid' ? paidStudents.map(s => (
-                    <tr key={s.roll} className="hover:bg-secondary/30">
-                      <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.roll}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.class}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.month}</td>
-                      <td className="px-4 py-3 font-bold text-success">{s.amount}</td>
-                    </tr>
-                  )) : unpaidStudents.map(s => (
-                    <tr key={s.roll} className="hover:bg-secondary/30">
-                      <td className="px-4 py-3 font-medium text-foreground">{s.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.roll}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.class}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{s.month}</td>
-                      <td className="px-4 py-3"><span className="px-2 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-medium">{language === 'bn' ? 'অপরিশোধিত' : 'Unpaid'}</span></td>
+                  {(listType === 'paid' ? paidPayments : unpaidPayments).map((p: any) => (
+                    <tr key={p.id} className="hover:bg-secondary/30">
+                      <td className="px-4 py-3 font-medium text-foreground">{p.students?.name_bn || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{p.students?.roll_number || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{p.fee_types?.name_bn || '-'}</td>
+                      <td className="px-4 py-3 font-bold text-foreground">৳ {p.paid_amount || p.amount}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${p.status === 'paid' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                          {p.status === 'paid' ? (language === 'bn' ? 'পরিশোধিত' : 'Paid') : (language === 'bn' ? 'অপরিশোধিত' : 'Unpaid')}
+                        </span>
+                      </td>
                     </tr>
                   ))}
+                  {(listType === 'paid' ? paidPayments : unpaidPayments).length === 0 && (
+                    <tr><td colSpan={5} className="text-center py-8 text-sm text-muted-foreground">{language === 'bn' ? 'কোনো রেকর্ড নেই' : 'No records'}</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
