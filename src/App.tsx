@@ -48,6 +48,7 @@ import AdminPermissions from "./pages/admin/AdminPermissions";
 import AdminThemeCustomizer from "./pages/admin/AdminThemeCustomizer";
 import ThemeProvider from "./components/ThemeProvider";
 import AdminMenuManager from "./pages/admin/AdminMenuManager";
+import AdminWidgetBuilder from "./pages/admin/AdminWidgetBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
