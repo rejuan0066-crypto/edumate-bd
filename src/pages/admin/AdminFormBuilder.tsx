@@ -23,8 +23,10 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Plus, Edit2, Trash2, GripVertical, Eye, Copy,
   Type, Hash, ListOrdered, CheckSquare, CircleDot,
-  Upload, Calendar, ToggleLeft, FileText
+  Upload, Calendar, ToggleLeft, FileText, MapPin, Mail, Phone
 } from 'lucide-react';
+import AddressFields, { type AddressData } from '@/components/AddressFields';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const FORM_TYPES = [
   { value: 'custom', label: 'Custom Form', label_bn: 'কাস্টম ফর্ম' },
@@ -47,8 +49,12 @@ const FIELD_TYPES = [
   { value: 'file', label: 'Photo/File Upload', label_bn: 'ফটো/ফাইল আপলোড', icon: Upload },
   { value: 'date', label: 'Date Picker', label_bn: 'তারিখ', icon: Calendar },
   { value: 'switch', label: 'Toggle Switch', label_bn: 'টগল সুইচ', icon: ToggleLeft },
-  { value: 'email', label: 'Email', label_bn: 'ইমেইল', icon: Type },
-  { value: 'phone', label: 'Phone', label_bn: 'ফোন নম্বর', icon: Hash },
+  { value: 'email', label: 'Email', label_bn: 'ইমেইল', icon: Mail },
+  { value: 'phone', label: 'Phone', label_bn: 'ফোন নম্বর', icon: Phone },
+  { value: 'address_permanent', label: 'Permanent Address', label_bn: 'স্থায়ী ঠিকানা', icon: MapPin },
+  { value: 'address_present', label: 'Present Address', label_bn: 'বর্তমান ঠিকানা', icon: MapPin },
+  { value: 'post_office', label: 'Post Office', label_bn: 'পোস্ট অফিস', icon: Mail },
+  { value: 'village', label: 'Village', label_bn: 'গ্রাম', icon: MapPin },
 ];
 
 type FormData = {
@@ -131,6 +137,15 @@ const AdminFormBuilder = () => {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [optionInput, setOptionInput] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [permanentAddr, setPermanentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
+  const [presentAddr, setPresentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
+  const [sameAsPermanent, setSameAsPermanent] = useState(false);
+
+  // Sync present address when "same as permanent" is checked
+  const handleSameAsPermanent = (checked: boolean) => {
+    setSameAsPermanent(checked);
+    if (checked) setPresentAddr({ ...permanentAddr });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -611,6 +626,37 @@ const AdminFormBuilder = () => {
                     {field.field_type === 'date' && <Input type="date" />}
                     {field.field_type === 'file' && <Input type="file" />}
                     {field.field_type === 'switch' && <Switch />}
+                    {field.field_type === 'post_office' && <Input placeholder={bn ? 'পোস্ট অফিস লিখুন' : 'Enter post office'} />}
+                    {field.field_type === 'village' && <Input placeholder={bn ? 'গ্রাম লিখুন' : 'Enter village'} />}
+                    {field.field_type === 'address_permanent' && (
+                      <AddressFields
+                        label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}
+                        value={permanentAddr}
+                        onChange={(data) => {
+                          setPermanentAddr(data);
+                          if (sameAsPermanent) setPresentAddr(data);
+                        }}
+                      />
+                    )}
+                    {field.field_type === 'address_present' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={sameAsPermanent}
+                            onCheckedChange={(c) => handleSameAsPermanent(!!c)}
+                          />
+                          <Label className="text-sm font-normal cursor-pointer">
+                            {bn ? 'স্থায়ী ঠিকানার মতো একই' : 'Same as Permanent Address'}
+                          </Label>
+                        </div>
+                        <AddressFields
+                          label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'}
+                          value={presentAddr}
+                          onChange={setPresentAddr}
+                          disabled={sameAsPermanent}
+                        />
+                      </div>
+                    )}
                     {field.field_type === 'select' && (
                       <Select>
                         <SelectTrigger><SelectValue placeholder={field.placeholder || (bn ? 'নির্বাচন করুন' : 'Select...')} /></SelectTrigger>
