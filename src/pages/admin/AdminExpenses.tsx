@@ -320,8 +320,8 @@ const AdminExpenses = () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       // Reset form for new entry, keep dialog open with same project/category
-      const keepProjectId = selectedProjectId || '';
-      const keepCategoryId = selectedCategoryId || '';
+      const keepProjectId = expenseForm.project_id || '';
+      const keepCategoryId = expenseForm.category_id || '';
       setExpenseForm({ ...defaultExpenseForm, project_id: keepProjectId, category_id: keepCategoryId });
       setReceiptFile(null);
       setEditingExpenseId(null);
@@ -430,6 +430,8 @@ const AdminExpenses = () => {
   });
 
   const filteredCategories = categories.filter((c: any) => !expenseForm.project_id || c.project_id === expenseForm.project_id);
+  const selectedExpenseProject = projects.find((p: any) => p.id === expenseForm.project_id);
+  const selectedExpenseCategory = categories.find((c: any) => c.id === expenseForm.category_id);
 
   // Load summary defaults
   useEffect(() => {
@@ -799,110 +801,14 @@ const AdminExpenses = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h3 className="font-semibold">{bn ? 'খরচ তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
-                  <Dialog open={expenseDialog} onOpenChange={resetExpenseDialog}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" onClick={() => setExpenseForm(f => ({ ...f, project_id: selectedProjectId, category_id: selectedCategoryId }))}>
-                        <Plus className="w-4 h-4 mr-1" />{bn ? 'খরচ যোগ' : 'Add Expense'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                      <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'খরচ সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন খরচ' : 'New Expense')}</DialogTitle></DialogHeader>
-                      <div className="space-y-3">
-                        <div>
-                          <Label>{bn ? 'প্রকল্প' : 'Project'}</Label>
-                          <Input value={bn ? selectedProject?.name_bn : selectedProject?.name} disabled className="bg-muted" />
-                        </div>
-                        <div>
-                          <Label>{bn ? 'ক্যাটেগরি' : 'Category'}</Label>
-                          <Input value={bn ? selectedCategory?.name_bn : selectedCategory?.name} disabled className="bg-muted" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
-                            <Input type="date" value={expenseForm.expense_date} onChange={e => setExpenseForm(f => ({ ...f, expense_date: e.target.value }))} />
-                          </div>
-                          <div>
-                            <Label>{bn ? 'পরিমাণ' : 'Quantity'}</Label>
-                            <div className="flex gap-2">
-                              <Input 
-                                className="flex-1" 
-                                value={expenseForm.quantity} 
-                                onChange={e => setExpenseForm(f => ({ ...f, quantity: onlyNumbers(e.target.value) }))} 
-                                placeholder="১"
-                                inputMode="decimal"
-                              />
-                              <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
-                                <SelectTrigger className="w-24">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {QUANTITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
-                          <Textarea value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} />
-                        </div>
-                        <div>
-                          <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                          <Input 
-                            value={expenseForm.amount} 
-                            onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
-                            placeholder="০" 
-                            inputMode="decimal"
-                          />
-                        </div>
-                        <div>
-                          <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'} *</Label>
-                          <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          {expenseForm.expense_method === 'অন্যান্য' && (
-                            <Input 
-                              className="mt-2" 
-                              placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
-                              value={expenseForm.expense_method_other} 
-                              onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
-                          <div className="flex items-center gap-2">
-                            <Input 
-                              type="file" 
-                              accept="image/*,.pdf" 
-                              onChange={e => {
-                                const file = e.target.files?.[0] || null;
-                                setReceiptFile(file);
-                                if (file) setExpenseForm(f => ({ ...f, has_receipt: true }));
-                              }}
-                              className="flex-1"
-                            />
-                            {receiptFile && <Upload className="h-4 w-4 text-muted-foreground" />}
-                          </div>
-                          {expenseForm.receipt_url && !receiptFile && (
-                            <a href={expenseForm.receipt_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-1 inline-block">
-                              {bn ? 'বর্তমান রসিদ দেখুন' : 'View current receipt'}
-                            </a>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox checked={expenseForm.has_receipt} onCheckedChange={v => setExpenseForm(f => ({ ...f, has_receipt: !!v }))} />
-                          <Label>{bn ? 'রসিদ আছে' : 'Has Receipt'}</Label>
-                        </div>
-                        <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending || uploading}>
-                          {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button size="sm" onClick={() => {
+                    setReceiptFile(null);
+                    setEditingExpenseId(null);
+                    setExpenseForm({ ...defaultExpenseForm, project_id: selectedProjectId, category_id: selectedCategoryId });
+                    setExpenseDialog(true);
+                  }}>
+                    <Plus className="w-4 h-4 mr-1" />{bn ? 'খরচ যোগ' : 'Add Expense'}
+                  </Button>
                 </div>
 
                 <div className="border rounded-lg overflow-auto">
@@ -1401,6 +1307,126 @@ const AdminExpenses = () => {
       </div>
 
       {/* Receipt Preview Dialog */}
+      <Dialog open={expenseDialog} onOpenChange={resetExpenseDialog}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'খরচ সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন খরচ' : 'New Expense')}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>{bn ? 'প্রকল্প' : 'Project'} *</Label>
+              <Select
+                value={expenseForm.project_id || undefined}
+                onValueChange={value => setExpenseForm(f => ({ ...f, project_id: value, category_id: f.project_id === value ? f.category_id : '' }))}
+              >
+                <SelectTrigger><SelectValue placeholder={bn ? 'প্রকল্প নির্বাচন করুন' : 'Select project'} /></SelectTrigger>
+                <SelectContent>
+                  {projects.map((project: any) => <SelectItem key={project.id} value={project.id}>{bn ? project.name_bn : project.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{bn ? 'ক্যাটেগরি' : 'Category'} *</Label>
+              <Select
+                value={expenseForm.category_id || undefined}
+                onValueChange={value => setExpenseForm(f => ({ ...f, category_id: value }))}
+                disabled={!expenseForm.project_id}
+              >
+                <SelectTrigger><SelectValue placeholder={bn ? 'ক্যাটেগরি নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
+                <SelectContent>
+                  {filteredCategories.map((category: any) => <SelectItem key={category.id} value={category.id}>{bn ? category.name_bn : category.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {selectedExpenseProject && !selectedExpenseCategory && (
+                <p className="mt-1 text-xs text-muted-foreground">{bn ? 'এই প্রকল্পের জন্য একটি ক্যাটেগরি নির্বাচন করুন' : 'Select a category for this project'}</p>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
+                <Input type="date" value={expenseForm.expense_date} onChange={e => setExpenseForm(f => ({ ...f, expense_date: e.target.value }))} />
+              </div>
+              <div>
+                <Label>{bn ? 'পরিমাণ' : 'Quantity'}</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    className="flex-1" 
+                    value={expenseForm.quantity} 
+                    onChange={e => setExpenseForm(f => ({ ...f, quantity: onlyNumbers(e.target.value) }))} 
+                    placeholder="১"
+                    inputMode="decimal"
+                  />
+                  <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {QUANTITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
+              <Textarea value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div>
+              <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
+              <Input 
+                value={expenseForm.amount} 
+                onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
+                placeholder="০" 
+                inputMode="decimal"
+              />
+            </div>
+            <div>
+              <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'} *</Label>
+              <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {expenseForm.expense_method === 'অন্যান্য' && (
+                <Input 
+                  className="mt-2" 
+                  placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
+                  value={expenseForm.expense_method_other} 
+                  onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
+                />
+              )}
+            </div>
+            <div>
+              <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
+              <div className="flex items-center gap-2">
+                <Input 
+                  type="file" 
+                  accept="image/*,.pdf" 
+                  onChange={e => {
+                    const file = e.target.files?.[0] || null;
+                    setReceiptFile(file);
+                    if (file) setExpenseForm(f => ({ ...f, has_receipt: true }));
+                  }}
+                  className="flex-1"
+                />
+                {receiptFile && <Upload className="h-4 w-4 text-muted-foreground" />}
+              </div>
+              {expenseForm.receipt_url && !receiptFile && (
+                <a href={expenseForm.receipt_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-1 inline-block">
+                  {bn ? 'বর্তমান রসিদ দেখুন' : 'View current receipt'}
+                </a>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={expenseForm.has_receipt} onCheckedChange={v => setExpenseForm(f => ({ ...f, has_receipt: !!v }))} />
+              <Label>{bn ? 'রসিদ আছে' : 'Has Receipt'}</Label>
+            </div>
+            <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending || uploading}>
+              {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!receiptPreview} onOpenChange={() => setReceiptPreview(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh]">
           <DialogHeader>
