@@ -49,7 +49,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'menu-manager', path: '/admin/menu-manager', label_bn: 'মেনু ম্যানেজার', label_en: 'Menu Manager', icon: 'ListOrdered', visible: true, sort_order: 19 },
   { id: 'widget-builder', path: '/admin/widget-builder', label_bn: 'উইজেট বিল্ডার', label_en: 'Widget Builder', icon: 'LayoutGrid', visible: true, sort_order: 20 },
   { id: 'backup', path: '/admin/backup', label_bn: 'ব্যাকআপ', label_en: 'Backup', icon: 'HardDrive', visible: true, sort_order: 21 },
-  { id: 'settings', path: '/admin/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: 'Settings', visible: true, sort_order: 22 },
+  { id: 'guardian-notify', path: '/admin/guardian-notify', label_bn: 'অভিভাবক নোটিফিকেশন', label_en: 'Guardian Notify', icon: 'MessageSquare', visible: true, sort_order: 22 },
+  { id: 'settings', path: '/admin/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: 'Settings', visible: true, sort_order: 23 },
 ];
 
 const DEFAULT_PUBLIC: MenuItemConfig[] = [

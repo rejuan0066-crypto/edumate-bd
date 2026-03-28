@@ -50,6 +50,7 @@ import ThemeProvider from "./components/ThemeProvider";
 import AdminMenuManager from "./pages/admin/AdminMenuManager";
 import AdminWidgetBuilder from "./pages/admin/AdminWidgetBuilder";
 import AdminBackup from "./pages/admin/AdminBackup";
+import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,7 @@ const App = () => (
               <Route path="/admin/menu-manager" element={<ProtectedRoute><AdminMenuManager /></ProtectedRoute>} />
               <Route path="/admin/widget-builder" element={<ProtectedRoute><AdminWidgetBuilder /></ProtectedRoute>} />
               <Route path="/admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
+              <Route path="/admin/guardian-notify" element={<ProtectedRoute><AdminGuardianNotifications /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
