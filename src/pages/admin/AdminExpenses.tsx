@@ -17,10 +17,13 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download } from 'lucide-react';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
+const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
 
 const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+const onlyNumbers = (str: string) => bnToEnDigit(str).replace(/[^0-9.]/g, '');
 const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
-const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').trim() || '-';
+const getMethod = (desc: string) => desc?.match(/\[method:(.*?)\]/)?.[1] || 'ক্যাশ';
+const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').replace(/\[method:.*?\]/g, '').trim() || '-';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
