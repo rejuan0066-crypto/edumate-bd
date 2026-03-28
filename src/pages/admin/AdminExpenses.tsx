@@ -596,10 +596,10 @@ const AdminExpenses = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">{bn ? 'প্রকল্প' : 'Projects'}</CardTitle>
-                  <Dialog open={projectDialog} onOpenChange={setProjectDialog}>
+                  <Dialog open={projectDialog} onOpenChange={resetProjectDialog}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><FolderPlus className="w-4 h-4 mr-1" />{bn ? 'যোগ' : 'Add'}</Button></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>{bn ? 'নতুন প্রকল্প' : 'New Project'}</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{editingProjectId ? (bn ? 'প্রকল্প সম্পাদনা' : 'Edit Project') : (bn ? 'নতুন প্রকল্প' : 'New Project')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label><Input value={projectForm.name} onChange={e => setProjectForm(f => ({ ...f, name: e.target.value }))} /></div>
                         <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label><Input value={projectForm.name_bn} onChange={e => setProjectForm(f => ({ ...f, name_bn: e.target.value }))} /></div>
