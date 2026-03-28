@@ -1185,7 +1185,20 @@ const AdminExpenses = () => {
                 {/* Per-project download */}
                 {projects.length > 0 && (
                   <div className="border rounded-lg p-4 bg-muted/20">
-                    <h4 className="text-sm font-semibold mb-3 text-foreground">{bn ? 'প্রকল্প ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রকল্প ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
+                      {institutions.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs">{bn ? 'প্রতিষ্ঠান:' : 'Institution:'}</Label>
+                          <Select value={selectedInstitutionId} onValueChange={setSelectedInstitutionId}>
+                            <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {institutions.map((inst: any) => <SelectItem key={inst.id} value={inst.id}>{bn ? inst.name : (inst.name_en || inst.name)}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {projects.map((p: any) => {
                         const projExp = expenses.filter((e: any) => e.project_id === p.id);
