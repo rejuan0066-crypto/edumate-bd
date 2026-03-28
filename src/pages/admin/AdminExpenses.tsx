@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,6 +59,10 @@ const AdminExpenses = () => {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [printProjectId, setPrintProjectId] = useState<string | null>(null);
   const [editProjectEntriesId, setEditProjectEntriesId] = useState<string | null>(null);
+  const [entriesFilterCategoryId, setEntriesFilterCategoryId] = useState<string>('all');
+  const [entriesSearchText, setEntriesSearchText] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
 
   // Dialogs
@@ -882,7 +887,7 @@ const AdminExpenses = () => {
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
                             <Button variant="ghost" size="icon" onClick={() => openEditExpense(e)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(e.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -990,7 +995,7 @@ const AdminExpenses = () => {
                       <TableCell className="text-right font-medium">৳{formatNum(Number(d.amount))}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEditDeposit(d)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteDeposit.mutate(d.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(d.id); setDeleteConfirmType('deposit'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1503,7 +1508,7 @@ const AdminExpenses = () => {
       </Dialog>
 
       {/* Project Entries Edit Dialog */}
-      <Dialog open={!!editProjectEntriesId} onOpenChange={(open) => { if (!open) setEditProjectEntriesId(null); }}>
+      <Dialog open={!!editProjectEntriesId} onOpenChange={(open) => { if (!open) { setEditProjectEntriesId(null); setEntriesFilterCategoryId('all'); setEntriesSearchText(''); } }}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
@@ -1517,13 +1522,56 @@ const AdminExpenses = () => {
               </Button>
             </DialogTitle>
           </DialogHeader>
+
+          {/* Filter & Search */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <Select value={entriesFilterCategoryId} onValueChange={setEntriesFilterCategoryId}>
+              <SelectTrigger className="w-[200px] h-8 text-xs">
+                <SelectValue placeholder={bn ? 'ক্যাটেগরি ফিল্টার' : 'Filter Category'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব ক্যাটেগরি' : 'All Categories'}</SelectItem>
+                {categories.filter((c: any) => c.project_id === editProjectEntriesId).map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              className="h-8 text-xs flex-1 min-w-[150px]"
+              placeholder={bn ? 'বিবরণ, তারিখ দিয়ে খুঁজুন...' : 'Search by description, date...'}
+              value={entriesSearchText}
+              onChange={e => setEntriesSearchText(e.target.value)}
+            />
+          </div>
+
           {(() => {
-            const projExpenses = expenses.filter((e: any) => e.project_id === editProjectEntriesId);
+            let projExpenses = expenses.filter((e: any) => e.project_id === editProjectEntriesId);
             const projCategories = categories.filter((c: any) => c.project_id === editProjectEntriesId);
             if (projExpenses.length === 0) return <p className="text-sm text-muted-foreground">{bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}</p>;
+
+            // Apply category filter
+            if (entriesFilterCategoryId !== 'all') {
+              projExpenses = projExpenses.filter((e: any) => e.category_id === entriesFilterCategoryId);
+            }
+            // Apply search
+            if (entriesSearchText.trim()) {
+              const q = entriesSearchText.trim().toLowerCase();
+              projExpenses = projExpenses.filter((e: any) =>
+                (e.description || '').toLowerCase().includes(q) ||
+                (e.expense_date || '').includes(q) ||
+                String(e.amount).includes(q)
+              );
+            }
+
+            const filteredCategories = entriesFilterCategoryId === 'all'
+              ? projCategories
+              : projCategories.filter((c: any) => c.id === entriesFilterCategoryId);
+
+            if (projExpenses.length === 0) return <p className="text-sm text-muted-foreground text-center py-4">{bn ? 'কোনো ফলাফল পাওয়া যায়নি' : 'No results found'}</p>;
+
             return (
               <div className="space-y-4">
-                {projCategories.map((cat: any) => {
+                {filteredCategories.map((cat: any) => {
                   const catExpenses = projExpenses.filter((e: any) => e.category_id === cat.id);
                   if (catExpenses.length === 0) return null;
                   const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
@@ -1563,13 +1611,12 @@ const AdminExpenses = () => {
                               <TableCell>
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                                    const eid = editProjectEntriesId;
                                     setEditProjectEntriesId(null);
                                     setTimeout(() => { openEditExpense(e); }, 150);
                                   }}>
                                     <Edit2 className="w-3 h-3" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteExpense.mutate(e.id); }}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}>
                                     <Trash2 className="w-3 h-3 text-destructive" />
                                   </Button>
                                 </div>
@@ -1887,6 +1934,33 @@ const AdminExpenses = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{bn ? 'মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Deletion'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bn ? 'আপনি কি নিশ্চিত যে এই এন্ট্রিটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'Are you sure you want to delete this entry? This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (deleteConfirmId) {
+                if (deleteConfirmType === 'expense') {
+                  deleteExpense.mutate(deleteConfirmId);
+                } else {
+                  deleteDeposit.mutate(deleteConfirmId);
+                }
+                setDeleteConfirmId(null);
+              }
+            }}>
+              {bn ? 'মুছে ফেলুন' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
