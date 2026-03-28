@@ -66,7 +66,7 @@ const AdminExpenses = () => {
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
-  const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0' });
+  const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0', inst_name: '', inst_name_en: '', inst_address: '', inst_phone: '', inst_email: '', inst_other: '' });
 
   // Queries
   const { data: projects = [] } = useQuery({
