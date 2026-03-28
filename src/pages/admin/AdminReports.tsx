@@ -37,6 +37,108 @@ const AdminReports = () => {
   const bn = language === 'bn';
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [activeTab, setActiveTab] = useState('income-expense');
+
+  // === Export helpers ===
+  const getExportData = () => {
+    if (activeTab === 'income-expense') {
+      return {
+        title: bn ? `আয়-ব্যয় রিপোর্ট ${selectedYear}` : `Income vs Expense Report ${selectedYear}`,
+        headers: [bn ? 'মাস' : 'Month', bn ? 'আয়' : 'Income', bn ? 'ব্যয়' : 'Expense', bn ? 'ব্যালেন্স' : 'Balance'],
+        rows: incomeExpenseData.map(d => [d.month, d.income, d.expense, d.profit]),
+        summary: [
+          [bn ? 'মোট আয়' : 'Total Income', totalIncome],
+          [bn ? 'মোট ব্যয়' : 'Total Expense', totalExpense],
+          [bn ? 'নেট ব্যালেন্স' : 'Net Balance', totalIncome - totalExpense],
+          [bn ? 'মোট অনুদান' : 'Total Donations', totalDonation],
+        ],
+      };
+    }
+    if (activeTab === 'fee') {
+      const monthlyFee = MONTHS.map((m, i) => {
+        const paid = feePayments.filter(f => f.year === yearNum && f.month === m && f.status === 'paid')
+          .reduce((s, f) => s + Number(f.paid_amount || 0), 0);
+        return [bn ? MONTHS_BN[i] : m, paid];
+      });
+      return {
+        title: bn ? `ফি রিপোর্ট ${selectedYear}` : `Fee Report ${selectedYear}`,
+        headers: [bn ? 'মাস' : 'Month', bn ? 'আদায়কৃত' : 'Collected'],
+        rows: monthlyFee,
+        summary: [
+          [bn ? 'মোট ফি' : 'Total Fee', feeStats.total],
+          [bn ? 'আদায়কৃত' : 'Collected', feeStats.paid],
+          [bn ? 'বকেয়া' : 'Unpaid', feeStats.unpaid],
+          [bn ? 'মাসিক বেতন বিল' : 'Monthly Salary', totalSalary],
+        ],
+      };
+    }
+    if (activeTab === 'students') {
+      return {
+        title: bn ? 'ছাত্র বিশ্লেষণ রিপোর্ট' : 'Student Analysis Report',
+        headers: [bn ? 'ক্যাটাগরি' : 'Category', bn ? 'সংখ্যা' : 'Count'],
+        rows: studentCategoryData.map(d => [d.name, d.value]),
+        summary: [
+          [bn ? 'মোট ছাত্র' : 'Total', students.length],
+          [bn ? 'সক্রিয়' : 'Active', activeStudents],
+          ...genderData.map(g => [g.name, g.value]),
+        ],
+      };
+    }
+    // attendance
+    return {
+      title: bn ? 'অ্যাটেন্ডেন্স রিপোর্ট' : 'Attendance Report',
+      headers: [bn ? 'স্ট্যাটাস' : 'Status', bn ? 'সংখ্যা' : 'Count'],
+      rows: attendanceSummary.map(d => [d.name, d.value]),
+      summary: [
+        [bn ? 'মোট রেকর্ড' : 'Total Records', attendance.length],
+        [bn ? 'ছাত্র রেকর্ড' : 'Student', attendance.filter(a => a.entity_type === 'student').length],
+        [bn ? 'স্টাফ রেকর্ড' : 'Staff', attendance.filter(a => a.entity_type === 'staff').length],
+      ],
+    };
+  };
+
+  const handleDownloadCSV = () => {
+    const data = getExportData();
+    const lines = [
+      [data.title], [],
+      data.headers,
+      ...data.rows.map(r => r.map(c => typeof c === 'number' ? c : `"${c}"`)),
+      [], [bn ? '--- সারসংক্ষেপ ---' : '--- Summary ---'],
+      ...data.summary.map(r => r.map(c => typeof c === 'number' ? c : `"${c}"`)),
+    ];
+    const csv = '\uFEFF' + lines.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report_${activeTab}_${selectedYear}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handlePrint = () => {
+    const data = getExportData();
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<html><head><title>${data.title}</title><style>
+      body{font-family:Arial,sans-serif;padding:30px;color:#222}
+      table{width:100%;border-collapse:collapse;margin-top:15px}
+      th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:13px}
+      th{background:#f5f5f5;font-weight:bold}
+      h2{margin:0 0 5px;font-size:20px}
+      .summary{margin-top:20px;background:#f9f9f9;padding:15px;border-radius:8px}
+      .summary td{border:none;padding:5px 10px}
+      .summary td:last-child{font-weight:bold;text-align:right}
+      @media print{body{padding:10px}}
+    </style></head><body>
+    <h2>${data.title}</h2>
+    <table><thead><tr>${data.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${data.rows.map(r => `<tr>${r.map(c => `<td>${typeof c === 'number' ? '৳' + c.toLocaleString() : c}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <div class="summary"><table>${data.summary.map(r => `<tr><td>${r[0]}</td><td>৳${Number(r[1]).toLocaleString()}</td></tr>`).join('')}</table></div>
+    </body></html>`);
+    w.document.close();
+    w.print();
+  };
 
   // Fetch all data in parallel
   const { data: students = [] } = useQuery({
