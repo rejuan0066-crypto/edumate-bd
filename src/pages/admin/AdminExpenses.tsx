@@ -467,6 +467,13 @@ const AdminExpenses = () => {
   const handlePrint = () => window.print();
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
 
+  // Get selected month display name
+  const selectedMonthIndex = MONTHS.indexOf(selectedMonthYear.split('-')[0]);
+  const selectedYear = selectedMonthYear.split('-')[1];
+  const selectedMonthName = bn 
+    ? `${MONTHS_BN[selectedMonthIndex]} ${selectedYear}` 
+    : `${MONTHS[selectedMonthIndex]} ${selectedYear}`;
+
   const openEditExpense = (e: any) => {
     setEditingExpenseId(e.id);
     const method = getMethod(e.description);
@@ -651,7 +658,7 @@ const AdminExpenses = () => {
             </div>
             <div className="min-w-0">
               <p className="text-lg font-bold text-destructive leading-tight">৳{formatNum(monthlyTotalExpense)}</p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক খরচ' : 'Monthly Expense'}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? `${selectedMonthName} খরচ` : `${selectedMonthName} Expense`}</p>
             </div>
           </div>
           <div className="stat-card flex items-center gap-3">
@@ -660,7 +667,7 @@ const AdminExpenses = () => {
             </div>
             <div className="min-w-0">
               <p className="text-lg font-bold text-primary leading-tight">৳{formatNum(monthlyTotalDeposit)}</p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক জমা' : 'Monthly Deposit'}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? `${selectedMonthName} জমা` : `${selectedMonthName} Deposit`}</p>
             </div>
           </div>
           <div className="stat-card flex items-center gap-3">
@@ -669,7 +676,7 @@ const AdminExpenses = () => {
             </div>
             <div className="min-w-0">
               <p className={`text-lg font-bold leading-tight ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক ক্যাশ' : 'Monthly Cash'}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? `${selectedMonthName} ক্যাশ` : `${selectedMonthName} Cash`}</p>
             </div>
           </div>
           <div className="stat-card flex items-center gap-3">
@@ -716,7 +723,7 @@ const AdminExpenses = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{bn ? 'প্রকল্প' : 'Project'}</TableHead>
-                      <TableHead className="text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</TableHead>
+                      <TableHead className="text-right">{bn ? `${selectedMonthName} খরচ` : `${selectedMonthName}`}</TableHead>
                       <TableHead className="text-right">{bn ? 'মোট খরচ' : 'Total'}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -738,7 +745,7 @@ const AdminExpenses = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{bn ? 'ক্যাটেগরি' : 'Category'}</TableHead>
-                      <TableHead className="text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</TableHead>
+                      <TableHead className="text-right">{bn ? `${selectedMonthName} খরচ` : `${selectedMonthName}`}</TableHead>
                       <TableHead className="text-right">{bn ? 'মোট খরচ' : 'Total'}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -810,7 +817,7 @@ const AdminExpenses = () => {
                         <div className="min-w-0 flex-1">
                           <h4 className="font-semibold text-foreground text-sm leading-tight truncate">{bn ? p.name_bn : p.name}</h4>
                           <div className="flex gap-3 text-[11px] text-muted-foreground mt-0.5">
-                            <span>{bn ? 'মাসিক:' : 'Mo:'} <span className="text-destructive font-medium">৳{formatNum(getProjectMonthly(p.id))}</span></span>
+                            <span>{bn ? `${selectedMonthName}:` : `${selectedMonthName}:`} <span className="text-destructive font-medium">৳{formatNum(getProjectMonthly(p.id))}</span></span>
                             <span>{bn ? 'মোট:' : 'Tot:'} <span className="text-destructive font-medium">৳{formatNum(getProjectTotal(p.id))}</span></span>
                           </div>
                         </div>
@@ -837,7 +844,7 @@ const AdminExpenses = () => {
                         <div className="min-w-0 flex-1">
                           <h4 className="font-semibold text-foreground text-sm leading-tight truncate">{bn ? c.name_bn : c.name}</h4>
                           <div className="flex gap-3 text-[11px] text-muted-foreground mt-0.5">
-                            <span>{bn ? 'মাসিক:' : 'Mo:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryMonthly(c.id))}</span></span>
+                            <span>{bn ? `${selectedMonthName}:` : `${selectedMonthName}:`} <span className="text-destructive font-medium">৳{formatNum(getCategoryMonthly(c.id))}</span></span>
                             <span>{bn ? 'মোট:' : 'Tot:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryTotal(c.id))}</span></span>
                           </div>
                         </div>
@@ -1101,7 +1108,7 @@ const AdminExpenses = () => {
           <TabsContent value="summary" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{bn ? 'মাসিক সারাংশ' : 'Monthly Summary'} — {selectedMonthYear}</CardTitle>
+                <CardTitle>{bn ? `${selectedMonthName} সারাংশ` : `${selectedMonthName} Summary`}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
