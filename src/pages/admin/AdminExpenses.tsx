@@ -1093,11 +1093,43 @@ const AdminExpenses = () => {
                 <CardTitle>{bn ? 'মাসিক সারাংশ' : 'Monthly Summary'} — {selectedMonthYear}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'মোট খরচ' : 'Total Expense'}</p><p className="font-bold text-destructive">৳{formatNum(monthlyTotalExpense)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'মোট জমা' : 'Total Deposit'}</p><p className="font-bold text-primary">৳{formatNum(monthlyTotalDeposit)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p><p className={`font-bold ${totalArrears > 0 ? 'text-destructive' : ''}`}>৳{formatNum(totalArrears)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'ক্যাশ' : 'Cash'}</p><p className={`font-bold ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="stat-card flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                      <TrendingDown className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold text-destructive leading-tight">৳{formatNum(monthlyTotalExpense)}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট খরচ' : 'Total Expense'}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-lg font-bold text-primary leading-tight">৳{formatNum(monthlyTotalDeposit)}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট জমা' : 'Total Deposit'}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${totalArrears > 0 ? 'bg-destructive/10' : 'bg-muted/50'} flex items-center justify-center shrink-0`}>
+                      <DollarSign className={`w-5 h-5 ${totalArrears > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-lg font-bold leading-tight ${totalArrears > 0 ? 'text-destructive' : 'text-foreground'}`}>৳{formatNum(totalArrears)}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'বকেয়া' : 'Arrears'}</p>
+                    </div>
+                  </div>
+                  <div className="stat-card flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl ${monthlyCash >= 0 ? 'bg-primary/10' : 'bg-destructive/10'} flex items-center justify-center shrink-0`}>
+                      <Wallet className={`w-5 h-5 ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-lg font-bold leading-tight ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'ক্যাশ' : 'Cash'}</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Institution Management */}
