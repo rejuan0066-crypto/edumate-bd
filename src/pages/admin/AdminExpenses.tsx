@@ -1755,6 +1755,138 @@ const AdminExpenses = () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Deposit Print Preview Dialog */}
+      <Dialog open={depositPrintPreview} onOpenChange={(open) => { if (!open) { setDepositPrintPreview(false); setDepositPrintEditMode(false); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{bn ? 'জমা প্রিন্ট প্রিভিউ' : 'Deposit Print Preview'}</span>
+              <Button variant={depositPrintEditMode ? 'default' : 'outline'} size="sm" onClick={() => {
+                if (!depositPrintEditMode) {
+                  setDepositPrintEditData({
+                    instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
+                    reportTitle: bn ? 'জমা প্রতিবেদন' : 'Deposit Report',
+                    reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
+                  });
+                }
+                setDepositPrintEditMode(!depositPrintEditMode);
+              }}>
+                <Edit2 className="w-3 h-3 mr-1" />{depositPrintEditMode ? (bn ? 'প্রিভিউ দেখুন' : 'Preview') : (bn ? 'এডিট করুন' : 'Edit')}
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          {depositPrintEditMode ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Institution Name (BN)'}</Label>
+                  <Input value={depositPrintEditData.instName} onChange={e => setDepositPrintEditData(p => ({ ...p, instName: e.target.value }))} /></div>
+                <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (ইংরেজি)' : 'Institution Name (EN)'}</Label>
+                  <Input value={depositPrintEditData.instNameEn} onChange={e => setDepositPrintEditData(p => ({ ...p, instNameEn: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
+                <Input value={depositPrintEditData.instAddress} onChange={e => setDepositPrintEditData(p => ({ ...p, instAddress: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'ফোন' : 'Phone'}</Label>
+                  <Input value={depositPrintEditData.instPhone} onChange={e => setDepositPrintEditData(p => ({ ...p, instPhone: e.target.value }))} /></div>
+                <div><Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input value={depositPrintEditData.instEmail} onChange={e => setDepositPrintEditData(p => ({ ...p, instEmail: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'অতিরিক্ত তথ্য' : 'Other Info'}</Label>
+                <Input value={depositPrintEditData.instOther} onChange={e => setDepositPrintEditData(p => ({ ...p, instOther: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'রিপোর্ট শিরোনাম' : 'Report Title'}</Label>
+                  <Input value={depositPrintEditData.reportTitle} onChange={e => setDepositPrintEditData(p => ({ ...p, reportTitle: e.target.value }))} /></div>
+                <div><Label>{bn ? 'সাবটাইটেল' : 'Subtitle'}</Label>
+                  <Input value={depositPrintEditData.reportSubtitle} onChange={e => setDepositPrintEditData(p => ({ ...p, reportSubtitle: e.target.value }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'ক্যাশিয়ারের নাম' : 'Cashier Name'}</Label>
+                  <Input value={depositPrintEditData.casherName} onChange={e => setDepositPrintEditData(p => ({ ...p, casherName: e.target.value }))} /></div>
+                <div><Label>{bn ? 'প্রিন্সিপালের নাম' : 'Principal Name'}</Label>
+                  <Input value={depositPrintEditData.principalName} onChange={e => setDepositPrintEditData(p => ({ ...p, principalName: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'অতিরিক্ত নোট' : 'Extra Note'}</Label>
+                <Textarea value={depositPrintEditData.extraNote} onChange={e => setDepositPrintEditData(p => ({ ...p, extraNote: e.target.value }))} rows={2} /></div>
+            </div>
+          ) : (
+            <div id="deposit-print-preview-content">
+              <div className="text-center mb-4 border-b-2 border-foreground pb-3">
+                {(depositPrintEditData.instLogo || instLogo) && <img src={depositPrintEditData.instLogo || instLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
+                <h1 className="text-lg font-bold">{depositPrintEditData.instName || (bn ? instName : instNameEn)}</h1>
+                <p className="text-sm">{depositPrintEditData.instAddress || instAddress}</p>
+                <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {depositPrintEditData.instPhone || instPhone} | {bn ? 'ইমেইল' : 'Email'}: {depositPrintEditData.instEmail || instEmail}</p>
+                {(depositPrintEditData.instOther || instOther) && <p className="text-xs">{depositPrintEditData.instOther || instOther}</p>}
+                <p className="text-base font-semibold mt-2">{depositPrintEditData.reportTitle || (bn ? 'জমা প্রতিবেদন' : 'Deposit Report')}</p>
+                {depositPrintEditData.reportSubtitle && <p className="text-sm">{depositPrintEditData.reportSubtitle}</p>}
+                <p className="text-sm">{selectedMonthYear}</p>
+              </div>
+
+              {depositPrintEditData.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{depositPrintEditData.extraNote}</p>}
+
+              <table className="w-full border-collapse border text-sm">
+                <thead>
+                  <tr className="bg-muted">
+                    <th className="border p-1 text-left w-8">#</th>
+                    <th className="border p-1 text-left">{bn ? 'তারিখ' : 'Date'}</th>
+                    <th className="border p-1 text-left">{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</th>
+                    <th className="border p-1 text-left">{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</th>
+                    <th className="border p-1 text-left">{bn ? 'উৎস' : 'Source'}</th>
+                    <th className="border p-1 text-right">{bn ? 'টাকা' : 'Amount'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deposits.map((d: any, i: number) => (
+                    <tr key={d.id}>
+                      <td className="border p-1">{i + 1}</td>
+                      <td className="border p-1">{d.deposit_date}</td>
+                      <td className="border p-1">{d.bank_details || '-'}</td>
+                      <td className="border p-1">{d.other_details || '-'}</td>
+                      <td className="border p-1">{d.source || '-'}</td>
+                      <td className="border p-1 text-right">৳{formatNum(Number(d.amount))}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold bg-muted/50">
+                    <td colSpan={5} className="border p-1 text-right">{bn ? 'মোট জমা:' : 'Total:'}</td>
+                    <td className="border p-1 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="flex justify-between mt-12 pt-8">
+                <div className="text-center">
+                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                  <p className="text-sm font-medium">{depositPrintEditData.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier')}</p>
+                  <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+                </div>
+                <div className="text-center">
+                  <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
+                  <p className="text-sm font-medium">{depositPrintEditData.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal')}</p>
+                  <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => { setDepositPrintPreview(false); setDepositPrintEditMode(false); }}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
+            {!depositPrintEditMode && (
+              <Button onClick={() => {
+                const content = document.getElementById('deposit-print-preview-content');
+                if (!content) return;
+                const win = window.open('', '_blank');
+                if (!win) return;
+                win.document.write(`<html><head><title>${bn ? 'জমা প্রতিবেদন' : 'Deposit Report'}</title><style>body{font-family:'Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
+                win.document.close();
+                win.focus();
+                win.print();
+              }}>
+                <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
