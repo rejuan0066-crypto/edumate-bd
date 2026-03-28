@@ -401,6 +401,45 @@ export type Database = {
           },
         ]
       }
+      institutions: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          name_en: string | null
+          other_info: string | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          name_en?: string | null
+          other_info?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          name_en?: string | null
+          other_info?: string | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           attachment_url: string | null

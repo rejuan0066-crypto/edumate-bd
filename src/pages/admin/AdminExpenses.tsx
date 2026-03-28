@@ -57,12 +57,15 @@ const AdminExpenses = () => {
   const [uploading, setUploading] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [printProjectId, setPrintProjectId] = useState<string | null>(null);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
 
   // Dialogs
   const [projectDialog, setProjectDialog] = useState(false);
   const [categoryDialog, setCategoryDialog] = useState(false);
   const [expenseDialog, setExpenseDialog] = useState(false);
   const [depositDialog, setDepositDialog] = useState(false);
+  const [institutionDialog, setInstitutionDialog] = useState(false);
+  const [editingInstitutionId, setEditingInstitutionId] = useState<string | null>(null);
 
   // Edit IDs
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -77,7 +80,8 @@ const AdminExpenses = () => {
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
-  const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0', inst_name: '', inst_name_en: '', inst_address: '', inst_phone: '', inst_email: '', inst_other: '' });
+  const [institutionForm, setInstitutionForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '' });
+  const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0' });
 
   // Queries
   const { data: projects = [] } = useQuery({
@@ -156,16 +160,30 @@ const AdminExpenses = () => {
     }
   });
 
-  const getSetting = (key: string) => {
-    const s = websiteSettings.find((ws: any) => ws.key === key);
-    return s?.value as string || '';
-  };
+  const { data: institutions = [] } = useQuery({
+    queryKey: ['institutions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('institutions').select('*').order('created_at');
+      if (error) throw error;
+      return data as any[];
+    }
+  });
 
-  const madrasaName = getSetting('madrasa_name') || 'আল-আরাবিয়া সুভানিয়া হাফিজিয়া মাদ্রাসা';
-  const madrasaNameEn = getSetting('madrasa_name_en') || 'Al-Arabia Subhania Hafizia Madrasah';
-  const madrasaAddress = getSetting('madrasa_address') || 'খজান্চি রোড, এমএইচ সেন্টার, বিশ্বনাথ, সিলেট';
-  const madrasaPhone = getSetting('madrasa_phone') || '01749842401';
-  const madrasaEmail = getSetting('madrasa_email') || 'info@subhania.edu.bd';
+  // Auto-select default institution
+  useEffect(() => {
+    if (institutions.length > 0 && !selectedInstitutionId) {
+      const def = institutions.find((i: any) => i.is_default);
+      setSelectedInstitutionId(def?.id || institutions[0].id);
+    }
+  }, [institutions, selectedInstitutionId]);
+
+  const selectedInstitution = institutions.find((i: any) => i.id === selectedInstitutionId) || institutions[0];
+  const instName = selectedInstitution?.name || '';
+  const instNameEn = selectedInstitution?.name_en || '';
+  const instAddress = selectedInstitution?.address || '';
+  const instPhone = selectedInstitution?.phone || '';
+  const instEmail = selectedInstitution?.email || '';
+  const instOther = selectedInstitution?.other_info || '';
 
   // Stats
   const monthlyTotalExpense = useMemo(() => expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [expenses]);
@@ -366,22 +384,33 @@ const AdminExpenses = () => {
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error')
   });
 
+  const saveInstitution = useMutation({
+    mutationFn: async () => {
+      if (!institutionForm.name) { toast.error(bn ? 'প্রতিষ্ঠানের নাম দিন' : 'Enter institution name'); return; }
+      const payload = { name: institutionForm.name, name_en: institutionForm.name_en || null, address: institutionForm.address || null, phone: institutionForm.phone || null, email: institutionForm.email || null, other_info: institutionForm.other_info || null };
+      if (editingInstitutionId) {
+        const { error } = await supabase.from('institutions').update(payload).eq('id', editingInstitutionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('institutions').insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['institutions'] }); setInstitutionDialog(false); setInstitutionForm({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '' }); setEditingInstitutionId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
+    onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error')
+  });
+
   const filteredCategories = categories.filter((c: any) => !expenseForm.project_id || c.project_id === expenseForm.project_id);
 
-  // Load summary and institution defaults
+  // Load summary defaults
   useEffect(() => {
     setSummaryForm(f => ({
       ...f,
       principal_name: summaryData?.principal_name || f.principal_name || '',
       casher_name: summaryData?.casher_name || f.casher_name || '',
       previous_arrears: String(summaryData?.previous_arrears || f.previous_arrears || '0'),
-      inst_name: f.inst_name || madrasaName,
-      inst_name_en: f.inst_name_en || madrasaNameEn,
-      inst_address: f.inst_address || madrasaAddress,
-      inst_phone: f.inst_phone || madrasaPhone,
-      inst_email: f.inst_email || madrasaEmail,
     }));
-  }, [summaryData, madrasaName, madrasaNameEn, madrasaAddress, madrasaPhone, madrasaEmail]);
+  }, [summaryData]);
 
   // Drill-down state for expenses tab
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -422,11 +451,11 @@ const AdminExpenses = () => {
   const handleExcelDownload = () => {
     const rows: string[][] = [];
     // Header
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? summaryForm.inst_name : summaryForm.inst_name_en]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', summaryForm.inst_address]);
-    rows.push([bn ? 'ফোন' : 'Phone', summaryForm.inst_phone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', summaryForm.inst_email]);
-    if (summaryForm.inst_other) rows.push([bn ? 'অন্যান্য' : 'Other', summaryForm.inst_other]);
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
+    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
     rows.push([bn ? 'খরচ প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
     rows.push([]);
@@ -475,11 +504,11 @@ const AdminExpenses = () => {
     const projExpenses = expenses.filter((e: any) => e.project_id === projectId);
     const projTotal = projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
     const rows: string[][] = [];
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? summaryForm.inst_name : summaryForm.inst_name_en]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', summaryForm.inst_address]);
-    rows.push([bn ? 'ফোন' : 'Phone', summaryForm.inst_phone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', summaryForm.inst_email]);
-    if (summaryForm.inst_other) rows.push([bn ? 'অন্যান্য' : 'Other', summaryForm.inst_other]);
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
+    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
     rows.push([`${bn ? 'প্রকল্প' : 'Project'}: ${bn ? project.name_bn : project.name}`, selectedMonthYear]);
     rows.push([]);
@@ -1079,35 +1108,51 @@ const AdminExpenses = () => {
                   <div><p className="text-xs text-muted-foreground">{bn ? 'ক্যাশ' : 'Cash'}</p><p className={`font-bold ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p></div>
                 </div>
 
-                {/* Institution Info for Print/Excel */}
+                {/* Institution Management */}
                 <div className="border rounded-lg p-4 bg-muted/20">
-                  <h4 className="text-sm font-semibold mb-3 text-foreground">{bn ? 'প্রতিষ্ঠানের তথ্য (প্রিন্ট/এক্সেল)' : 'Institution Info (Print/Excel)'}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Institution Name (Bangla)'}</Label>
-                      <Input value={summaryForm.inst_name} onChange={e => setSummaryForm(f => ({ ...f, inst_name: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'প্রতিষ্ঠানের নাম (ইংরেজি)' : 'Institution Name (English)'}</Label>
-                      <Input value={summaryForm.inst_name_en} onChange={e => setSummaryForm(f => ({ ...f, inst_name_en: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
-                      <Input value={summaryForm.inst_address} onChange={e => setSummaryForm(f => ({ ...f, inst_address: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'ফোন' : 'Phone'}</Label>
-                      <Input value={summaryForm.inst_phone} onChange={e => setSummaryForm(f => ({ ...f, inst_phone: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                      <Input value={summaryForm.inst_email} onChange={e => setSummaryForm(f => ({ ...f, inst_email: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'অন্যান্য তথ্য' : 'Other Info'}</Label>
-                      <Input value={summaryForm.inst_other} onChange={e => setSummaryForm(f => ({ ...f, inst_other: e.target.value }))} placeholder={bn ? 'EIIN, MPO নং ইত্যাদি' : 'EIIN, MPO No. etc.'} />
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রতিষ্ঠানের তথ্য' : 'Institution Info'}</h4>
+                    <div className="flex gap-2">
+                      <Dialog open={institutionDialog} onOpenChange={(open) => { if (!open) { setEditingInstitutionId(null); setInstitutionForm({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '' }); } setInstitutionDialog(open); }}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline"><Plus className="w-4 h-4 mr-1" />{bn ? 'নতুন প্রতিষ্ঠান' : 'New Institution'}</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>{editingInstitutionId ? (bn ? 'প্রতিষ্ঠান সম্পাদনা' : 'Edit Institution') : (bn ? 'নতুন প্রতিষ্ঠান' : 'New Institution')}</DialogTitle></DialogHeader>
+                          <div className="space-y-3">
+                            <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label><Input value={institutionForm.name} onChange={e => setInstitutionForm(f => ({ ...f, name: e.target.value }))} /></div>
+                            <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label><Input value={institutionForm.name_en} onChange={e => setInstitutionForm(f => ({ ...f, name_en: e.target.value }))} /></div>
+                            <div><Label>{bn ? 'ঠিকানা' : 'Address'}</Label><Input value={institutionForm.address} onChange={e => setInstitutionForm(f => ({ ...f, address: e.target.value }))} /></div>
+                            <div><Label>{bn ? 'ফোন' : 'Phone'}</Label><Input value={institutionForm.phone} onChange={e => setInstitutionForm(f => ({ ...f, phone: e.target.value }))} /></div>
+                            <div><Label>{bn ? 'ইমেইল' : 'Email'}</Label><Input value={institutionForm.email} onChange={e => setInstitutionForm(f => ({ ...f, email: e.target.value }))} /></div>
+                            <div><Label>{bn ? 'অন্যান্য তথ্য' : 'Other Info'}</Label><Input value={institutionForm.other_info} onChange={e => setInstitutionForm(f => ({ ...f, other_info: e.target.value }))} placeholder={bn ? 'EIIN, MPO নং ইত্যাদি' : 'EIIN, MPO No.'} /></div>
+                            <Button className="w-full" onClick={() => saveInstitution.mutate()} disabled={saveInstitution.isPending}>{bn ? 'সংরক্ষণ' : 'Save'}</Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
+                  {institutions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{bn ? 'কোনো প্রতিষ্ঠান নেই' : 'No institutions'}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {institutions.map((inst: any) => (
+                        <div key={inst.id} className={`flex items-center justify-between p-3 rounded-lg border ${selectedInstitutionId === inst.id ? 'border-primary bg-primary/5' : 'bg-secondary/30'}`}>
+                          <div className="cursor-pointer flex-1" onClick={() => setSelectedInstitutionId(inst.id)}>
+                            <span className="text-sm font-medium">{bn ? inst.name : (inst.name_en || inst.name)}</span>
+                            {inst.address && <span className="text-xs text-muted-foreground ml-2">— {inst.address}</span>}
+                            {selectedInstitutionId === inst.id && <span className="text-xs text-primary ml-2">✓ {bn ? 'নির্বাচিত' : 'Selected'}</span>}
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => { setEditingInstitutionId(inst.id); setInstitutionForm({ name: inst.name, name_en: inst.name_en || '', address: inst.address || '', phone: inst.phone || '', email: inst.email || '', other_info: inst.other_info || '' }); setInstitutionDialog(true); }}>
+                            <Edit2 className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {selectedInstitution && (
+                    <p className="text-xs text-muted-foreground mt-2">{bn ? 'নির্বাচিত প্রতিষ্ঠানের তথ্য প্রিন্ট ও এক্সেল ফাইলে ব্যবহৃত হবে' : 'Selected institution info will be used in print & Excel files'}</p>
+                  )}
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-4">
@@ -1140,7 +1185,20 @@ const AdminExpenses = () => {
                 {/* Per-project download */}
                 {projects.length > 0 && (
                   <div className="border rounded-lg p-4 bg-muted/20">
-                    <h4 className="text-sm font-semibold mb-3 text-foreground">{bn ? 'প্রকল্প ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রকল্প ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
+                      {institutions.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs">{bn ? 'প্রতিষ্ঠান:' : 'Institution:'}</Label>
+                          <Select value={selectedInstitutionId} onValueChange={setSelectedInstitutionId}>
+                            <SelectTrigger className="w-[200px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {institutions.map((inst: any) => <SelectItem key={inst.id} value={inst.id}>{bn ? inst.name : (inst.name_en || inst.name)}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {projects.map((p: any) => {
                         const projExp = expenses.filter((e: any) => e.project_id === p.id);
@@ -1176,10 +1234,10 @@ const AdminExpenses = () => {
       <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
         {/* Institution Header */}
         <div className="text-center mb-4 border-b-2 border-black pb-3">
-          <h1 className="text-lg font-bold">{bn ? summaryForm.inst_name : summaryForm.inst_name_en}</h1>
-          <p className="text-sm">{summaryForm.inst_address}</p>
-          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {summaryForm.inst_phone} | {bn ? 'ইমেইল' : 'Email'}: {summaryForm.inst_email}</p>
-          {summaryForm.inst_other && <p className="text-xs">{summaryForm.inst_other}</p>}
+          <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
+          <p className="text-sm">{instAddress}</p>
+          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
+          {instOther && <p className="text-xs">{instOther}</p>}
           <p className="text-base font-semibold mt-2">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</p>
           <p className="text-sm">{selectedMonthYear}</p>
         </div>
@@ -1328,10 +1386,10 @@ const AdminExpenses = () => {
               <div id="project-print-content">
                 {/* Institution Header */}
                 <div className="text-center mb-4 border-b-2 border-foreground pb-3">
-                  <h1 className="text-lg font-bold">{bn ? summaryForm.inst_name : summaryForm.inst_name_en}</h1>
-                  <p className="text-sm">{summaryForm.inst_address}</p>
-                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {summaryForm.inst_phone} | {bn ? 'ইমেইল' : 'Email'}: {summaryForm.inst_email}</p>
-                  {summaryForm.inst_other && <p className="text-xs">{summaryForm.inst_other}</p>}
+                  <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
+                  <p className="text-sm">{instAddress}</p>
+                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
+                  {instOther && <p className="text-xs">{instOther}</p>}
                   <p className="text-base font-semibold mt-2">{bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report'}</p>
                   <p className="text-sm">{bn ? 'প্রকল্প' : 'Project'}: {bn ? project.name_bn : project.name} | {selectedMonthYear}</p>
                 </div>
