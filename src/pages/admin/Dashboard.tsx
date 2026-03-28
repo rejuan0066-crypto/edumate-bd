@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, UserCog, BookOpen, UserCheck, UserX, GraduationCap,
-  Layers, FileText, CreditCard, ClipboardList, History, Home, HomeIcon
+  Layers, FileText, CreditCard, ClipboardList, History, Home, HomeIcon, Heart
 } from 'lucide-react';
 import DashboardInstitutionCard from '@/components/dashboard/DashboardInstitutionCard';
 import DashboardSearch from '@/components/dashboard/DashboardSearch';
@@ -14,7 +14,7 @@ import DashboardStatsList from '@/components/dashboard/DashboardStatsList';
 
 const Dashboard = () => {
   const { language } = useLanguage();
-  const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff'; filters: Record<string, any> }>({
+  const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff' | 'donors'; filters: Record<string, any> }>({
     open: false, title: '', table: 'students', filters: {},
   });
 
@@ -68,6 +68,14 @@ const Dashboard = () => {
     },
   });
 
+  const { data: donors = [] } = useQuery({
+    queryKey: ['dashboard-donors'],
+    queryFn: async () => {
+      const { data } = await supabase.from('donors').select('id, name_bn, donation_amount, status');
+      return data || [];
+    },
+  });
+
   // Fee payments for non-orphan&poor amounts
   const { data: feePayments = [] } = useQuery({
     queryKey: ['dashboard-fee-payments-summary'],
@@ -115,7 +123,11 @@ const Dashboard = () => {
   const activeTeachers = teachers.filter(s => s.status === 'active');
   const resignedTeachers = teachers.filter(s => s.status !== 'active');
 
-  const openList = (title: string, table: 'students' | 'staff', filters: Record<string, any> = {}) => {
+  // Donor stats
+  const totalDonationAmount = donors.reduce((sum, d) => sum + Number(d.donation_amount || 0), 0);
+  const activeDonors = donors.filter(d => d.status === 'active');
+
+  const openList = (title: string, table: 'students' | 'staff' | 'donors', filters: Record<string, any> = {}) => {
     setListDialog({ open: true, title, table, filters });
   };
 
@@ -244,6 +256,30 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground">{s.label}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Donor Stats */}
+        <div className="card-elevated p-4">
+          <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-destructive" />
+            {language === 'bn' ? 'দাতা তালিকা' : 'Donor List'}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div onClick={() => openList(language === 'bn' ? 'মোট দাতা' : 'Total Donors', 'donors')}
+              className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
+              <p className="text-lg font-bold text-foreground">{donors.length}</p>
+              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'মোট দাতা' : 'Total Donors'}</p>
+            </div>
+            <div onClick={() => openList(language === 'bn' ? 'সক্রিয় দাতা' : 'Active Donors', 'donors', { status: 'active' })}
+              className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
+              <p className="text-lg font-bold text-foreground">{activeDonors.length}</p>
+              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'সক্রিয় দাতা' : 'Active Donors'}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/50 text-center">
+              <p className="text-lg font-bold text-foreground">৳{totalDonationAmount.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'মোট অনুদান' : 'Total Donations'}</p>
+            </div>
           </div>
         </div>
 

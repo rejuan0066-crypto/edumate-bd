@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      donors: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          donation_amount: number | null
+          donation_date: string | null
+          donation_type: string | null
+          email: string | null
+          id: string
+          name_bn: string
+          name_en: string | null
+          notes: string | null
+          phone: string | null
+          purpose: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          donation_amount?: number | null
+          donation_date?: string | null
+          donation_type?: string | null
+          email?: string | null
+          id?: string
+          name_bn: string
+          name_en?: string | null
+          notes?: string | null
+          phone?: string | null
+          purpose?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          donation_amount?: number | null
+          donation_date?: string | null
+          donation_type?: string | null
+          email?: string | null
+          id?: string
+          name_bn?: string
+          name_en?: string | null
+          notes?: string | null
+          phone?: string | null
+          purpose?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exams: {
         Row: {
           created_at: string | null
