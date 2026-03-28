@@ -1934,6 +1934,33 @@ const AdminExpenses = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{bn ? 'মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Deletion'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bn ? 'আপনি কি নিশ্চিত যে এই এন্ট্রিটি মুছে ফেলতে চান? এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'Are you sure you want to delete this entry? This action cannot be undone.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (deleteConfirmId) {
+                if (deleteConfirmType === 'expense') {
+                  deleteExpense.mutate(deleteConfirmId);
+                } else {
+                  deleteDeposit.mutate(deleteConfirmId);
+                }
+                setDeleteConfirmId(null);
+              }
+            }}>
+              {bn ? 'মুছে ফেলুন' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 };
