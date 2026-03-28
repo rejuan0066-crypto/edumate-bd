@@ -18,7 +18,7 @@ const DashboardStatsList = ({ open, onClose, title, table, filters = {} }: Stats
   const { data: items = [] } = useQuery({
     queryKey: ['stats-list', table, filters],
     queryFn: async () => {
-      let q = supabase.from(table).select(table === 'students' ? '*, divisions(name_bn)' : '*');
+      let q: any = supabase.from(table).select(table === 'students' ? '*, divisions(name_bn)' : '*');
       Object.entries(filters).forEach(([k, v]) => { q = q.eq(k, v); });
       const { data, error } = await q.order('created_at', { ascending: false });
       if (error) throw error;
