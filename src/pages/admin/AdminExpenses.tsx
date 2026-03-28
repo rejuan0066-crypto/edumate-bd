@@ -266,7 +266,8 @@ const AdminExpenses = () => {
       
       let descWithTags = (expenseForm.description || '').trim();
       if (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস') descWithTags += `[unit:${expenseForm.quantity_unit}]`;
-      if (expenseForm.expense_method && expenseForm.expense_method !== 'ক্যাশ') descWithTags += `[method:${expenseForm.expense_method}]`;
+      const finalMethod = expenseForm.expense_method === 'অন্যান্য' ? expenseForm.expense_method_other.trim() || 'অন্যান্য' : expenseForm.expense_method;
+      if (finalMethod && finalMethod !== 'ক্যাশ') descWithTags += `[method:${finalMethod}]`;
       
       const payload = {
         month_year: selectedMonthYear,
@@ -402,7 +403,9 @@ const AdminExpenses = () => {
 
   const openEditExpense = (e: any) => {
     setEditingExpenseId(e.id);
-    setExpenseForm({ project_id: e.project_id, category_id: e.category_id, expense_date: e.expense_date, description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description), quantity: String(e.quantity || 1), quantity_unit: getUnit(e.description), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount), expense_method: getMethod(e.description) });
+    const method = getMethod(e.description);
+    const isKnownMethod = EXPENSE_METHODS.includes(method);
+    setExpenseForm({ project_id: e.project_id, category_id: e.category_id, expense_date: e.expense_date, description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description), quantity: String(e.quantity || 1), quantity_unit: getUnit(e.description), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount), expense_method: isKnownMethod ? method : 'অন্যান্য', expense_method_other: isKnownMethod ? '' : method });
     setExpenseDialog(true);
   };
   const openEditDeposit = (d: any) => {
@@ -794,13 +797,21 @@ const AdminExpenses = () => {
                           />
                         </div>
                         <div>
-                          <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'}</Label>
-                          <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v }))}>
+                          <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'} *</Label>
+                          <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v, expense_method_other: v === 'অন্যান্য' ? f.expense_method_other : '' }))}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                             </SelectContent>
                           </Select>
+                          {expenseForm.expense_method === 'অন্যান্য' && (
+                            <Input 
+                              className="mt-2" 
+                              placeholder={bn ? 'মাধ্যমের নাম লিখুন...' : 'Enter method name...'} 
+                              value={expenseForm.expense_method_other} 
+                              onChange={e => setExpenseForm(f => ({ ...f, expense_method_other: e.target.value }))} 
+                            />
+                          )}
                         </div>
                         <div>
                           <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
