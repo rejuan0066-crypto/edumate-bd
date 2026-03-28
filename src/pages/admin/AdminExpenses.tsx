@@ -801,6 +801,7 @@ const AdminExpenses = () => {
                         <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                         <TableHead>{bn ? 'বিবরণ' : 'Description'}</TableHead>
                         <TableHead>{bn ? 'পরিমাণ' : 'Qty'}</TableHead>
+                        <TableHead>{bn ? 'মাধ্যম' : 'Method'}</TableHead>
                         <TableHead>{bn ? 'রসিদ' : 'Receipt'}</TableHead>
                         <TableHead className="text-right">{bn ? 'টাকা' : 'Amount'}</TableHead>
                         <TableHead></TableHead>
@@ -808,7 +809,7 @@ const AdminExpenses = () => {
                     </TableHeader>
                     <TableBody>
                       {categoryExpenses.length === 0 && (
-                        <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো খরচ নেই' : 'No expenses'}</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{bn ? 'কোনো খরচ নেই' : 'No expenses'}</TableCell></TableRow>
                       )}
                       {categoryExpenses.map((e: any, i: number) => (
                         <TableRow key={e.id}>
@@ -816,6 +817,7 @@ const AdminExpenses = () => {
                           <TableCell>{e.expense_date}</TableCell>
                           <TableCell className="max-w-[200px] truncate">{cleanDesc(e.description)}</TableCell>
                           <TableCell>{e.quantity} {getUnit(e.description)}</TableCell>
+                          <TableCell>{getMethod(e.description)}</TableCell>
                           <TableCell>{e.has_receipt ? '✅' : '❌'}</TableCell>
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
@@ -826,7 +828,7 @@ const AdminExpenses = () => {
                       ))}
                       {categoryExpenses.length > 0 && (
                         <TableRow className="bg-muted/50 font-bold">
-                          <TableCell colSpan={5} className="text-right">{bn ? 'মোট খরচ:' : 'Total:'}</TableCell>
+                          <TableCell colSpan={6} className="text-right">{bn ? 'মোট খরচ:' : 'Total:'}</TableCell>
                           <TableCell className="text-right">৳{formatNum(categoryExpenseTotal)}</TableCell>
                           <TableCell />
                         </TableRow>
