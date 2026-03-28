@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      custom_form_fields: {
+        Row: {
+          created_at: string | null
+          default_value: string | null
+          field_type: string
+          form_id: string
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          label: string
+          label_bn: string
+          options: Json | null
+          placeholder: string | null
+          sort_order: number | null
+          updated_at: string | null
+          validation: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: string | null
+          field_type?: string
+          form_id: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          label: string
+          label_bn: string
+          options?: Json | null
+          placeholder?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          validation?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: string | null
+          field_type?: string
+          form_id?: string
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          label?: string
+          label_bn?: string
+          options?: Json | null
+          placeholder?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          validation?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "custom_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_forms: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          form_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          form_type?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          form_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number
