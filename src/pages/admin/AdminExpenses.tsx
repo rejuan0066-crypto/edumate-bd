@@ -85,7 +85,9 @@ const AdminExpenses = () => {
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
   const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
   const [depositForm, setDepositForm] = useState(defaultDepositForm);
-  const [institutionForm, setInstitutionForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '' });
+  const [institutionForm, setInstitutionForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '', logo_url: '' });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
   const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0' });
 
   // Queries
