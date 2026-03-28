@@ -93,12 +93,14 @@ const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type:
 const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition } };
 
 // Sortable field item component
-const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField }: any) => {
+const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField, fields }: any) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : (!field.is_active ? 0.5 : 1) };
   const Icon = getFieldIcon(field.field_type);
   let opts: string[] = [];
   try { opts = typeof field.options === 'string' ? JSON.parse(field.options as string) : (Array.isArray(field.options) ? (field.options as string[]) : []); } catch { opts = []; }
+  let hasCondition = false;
+  try { const v = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {}); hasCondition = !!v.condition; } catch {}
 
   return (
     <Card ref={setNodeRef} style={style} className="transition-shadow">
