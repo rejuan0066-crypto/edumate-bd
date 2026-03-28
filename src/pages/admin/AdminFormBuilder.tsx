@@ -23,8 +23,10 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Plus, Edit2, Trash2, GripVertical, Eye, Copy,
   Type, Hash, ListOrdered, CheckSquare, CircleDot,
-  Upload, Calendar, ToggleLeft, FileText
+  Upload, Calendar, ToggleLeft, FileText, MapPin, Mail, Phone
 } from 'lucide-react';
+import AddressFields, { type AddressData } from '@/components/AddressFields';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const FORM_TYPES = [
   { value: 'custom', label: 'Custom Form', label_bn: 'কাস্টম ফর্ম' },
