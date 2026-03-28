@@ -49,8 +49,12 @@ const FIELD_TYPES = [
   { value: 'file', label: 'Photo/File Upload', label_bn: 'ফটো/ফাইল আপলোড', icon: Upload },
   { value: 'date', label: 'Date Picker', label_bn: 'তারিখ', icon: Calendar },
   { value: 'switch', label: 'Toggle Switch', label_bn: 'টগল সুইচ', icon: ToggleLeft },
-  { value: 'email', label: 'Email', label_bn: 'ইমেইল', icon: Type },
-  { value: 'phone', label: 'Phone', label_bn: 'ফোন নম্বর', icon: Hash },
+  { value: 'email', label: 'Email', label_bn: 'ইমেইল', icon: Mail },
+  { value: 'phone', label: 'Phone', label_bn: 'ফোন নম্বর', icon: Phone },
+  { value: 'address_permanent', label: 'Permanent Address', label_bn: 'স্থায়ী ঠিকানা', icon: MapPin },
+  { value: 'address_present', label: 'Present Address', label_bn: 'বর্তমান ঠিকানা', icon: MapPin },
+  { value: 'post_office', label: 'Post Office', label_bn: 'পোস্ট অফিস', icon: Mail },
+  { value: 'village', label: 'Village', label_bn: 'গ্রাম', icon: MapPin },
 ];
 
 type FormData = {
