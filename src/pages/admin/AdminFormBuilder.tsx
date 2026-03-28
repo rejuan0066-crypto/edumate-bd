@@ -137,6 +137,15 @@ const AdminFormBuilder = () => {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [optionInput, setOptionInput] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [permanentAddr, setPermanentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
+  const [presentAddr, setPresentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
+  const [sameAsPermanent, setSameAsPermanent] = useState(false);
+
+  // Sync present address when "same as permanent" is checked
+  const handleSameAsPermanent = (checked: boolean) => {
+    setSameAsPermanent(checked);
+    if (checked) setPresentAddr({ ...permanentAddr });
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
