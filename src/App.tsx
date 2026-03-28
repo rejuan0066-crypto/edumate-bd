@@ -41,6 +41,7 @@ import AdminFormBuilder from "./pages/admin/AdminFormBuilder";
 import AdminCustomFormPage from "./pages/admin/AdminCustomFormPage";
 import AdminModuleManager from "./pages/admin/AdminModuleManager";
 import AdminFormulaBuilder from "./pages/admin/AdminFormulaBuilder";
+import AdminAttendance from "./pages/admin/AdminAttendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/admin/custom/:slug" element={<ProtectedRoute><AdminCustomFormPage /></ProtectedRoute>} />
               <Route path="/admin/module-manager" element={<ProtectedRoute><AdminModuleManager /></ProtectedRoute>} />
               <Route path="/admin/formula-builder" element={<ProtectedRoute><AdminFormulaBuilder /></ProtectedRoute>} />
+              <Route path="/admin/attendance" element={<ProtectedRoute><AdminAttendance /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

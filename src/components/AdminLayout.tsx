@@ -10,7 +10,7 @@ import {
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
-  Blocks, FlaskConical
+  Blocks, FlaskConical, CalendarDays
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -75,6 +75,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       children: [
         { path: '/admin/module-manager', label: language === 'bn' ? 'মডিউল ম্যানেজার' : 'Module Manager', icon: Blocks },
         { path: '/admin/formula-builder', label: language === 'bn' ? 'ফর্মুলা বিল্ডার' : 'Formula Builder', icon: FlaskConical },
+        { path: '/admin/attendance', label: language === 'bn' ? 'অ্যাটেন্ডেন্স' : 'Attendance', icon: CalendarDays },
       ]
     },
     { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
