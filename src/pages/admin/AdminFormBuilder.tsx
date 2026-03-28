@@ -699,6 +699,7 @@ const AdminFormBuilder = () => {
             </DialogHeader>
             <div className="space-y-4 p-2">
               {fields.filter(f => f.is_active).map(field => {
+                if (!evaluateCondition(field)) return null;
                 let opts: string[] = [];
                 try { opts = typeof field.options === 'string' ? JSON.parse(field.options as string) : (Array.isArray(field.options) ? (field.options as string[]) : []); } catch { opts = []; }
                 return (
@@ -707,11 +708,11 @@ const AdminFormBuilder = () => {
                       {bn ? field.label_bn : field.label}
                       {field.is_required && <span className="text-destructive">*</span>}
                     </Label>
-                    {field.field_type === 'text' && <Input placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} />}
-                    {field.field_type === 'email' && <Input type="email" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'phone' && <Input type="tel" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} />}
+                    {field.field_type === 'text' && <Input placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'email' && <Input type="email" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'phone' && <Input type="tel" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
                     {field.field_type === 'date' && <Input type="date" />}
                     {field.field_type === 'file' && <Input type="file" />}
                     {field.field_type === 'switch' && <Switch />}
