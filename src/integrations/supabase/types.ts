@@ -801,6 +801,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          is_read: boolean
+          link: string | null
+          message: string | null
+          message_bn: string | null
+          title: string
+          title_bn: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string | null
+          message_bn?: string | null
+          title: string
+          title_bn?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string | null
+          message_bn?: string | null
+          title?: string
+          title_bn?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
