@@ -10,7 +10,7 @@ import {
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
-  Blocks, FlaskConical, CalendarDays, ShieldCheck
+  Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -77,6 +77,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         { path: '/admin/formula-builder', label: language === 'bn' ? 'ফর্মুলা বিল্ডার' : 'Formula Builder', icon: FlaskConical },
         { path: '/admin/attendance', label: language === 'bn' ? 'অ্যাটেন্ডেন্স' : 'Attendance', icon: CalendarDays },
         { path: '/admin/validation-manager', label: language === 'bn' ? 'ভ্যালিডেশন ম্যানেজার' : 'Validation Manager', icon: ShieldCheck },
+        { path: '/admin/reports', label: language === 'bn' ? 'রিপোর্ট ও অ্যানালিটিক্স' : 'Reports & Analytics', icon: BarChart3 },
       ]
     },
     { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
