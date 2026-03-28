@@ -57,12 +57,15 @@ const AdminExpenses = () => {
   const [uploading, setUploading] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [printProjectId, setPrintProjectId] = useState<string | null>(null);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
 
   // Dialogs
   const [projectDialog, setProjectDialog] = useState(false);
   const [categoryDialog, setCategoryDialog] = useState(false);
   const [expenseDialog, setExpenseDialog] = useState(false);
   const [depositDialog, setDepositDialog] = useState(false);
+  const [institutionDialog, setInstitutionDialog] = useState(false);
+  const [editingInstitutionId, setEditingInstitutionId] = useState<string | null>(null);
 
   // Edit IDs
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
