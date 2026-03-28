@@ -913,6 +913,129 @@ const AdminExpenses = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Print Section */}
+      <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
+        <h1 className="text-xl font-bold text-center mb-1">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</h1>
+        <p className="text-center text-sm mb-4">{selectedMonthYear}</p>
+
+        {/* Summary */}
+        <table className="w-full border-collapse border mb-4 text-sm">
+          <tbody>
+            <tr>
+              <td className="border p-2 font-medium">{bn ? 'মোট খরচ' : 'Total Expense'}</td>
+              <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
+              <td className="border p-2 font-medium">{bn ? 'মোট জমা' : 'Total Deposit'}</td>
+              <td className="border p-2 text-right">৳{formatNum(monthlyTotalDeposit)}</td>
+            </tr>
+            <tr>
+              <td className="border p-2 font-medium">{bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears'}</td>
+              <td className="border p-2 text-right">৳{formatNum(previousArrears)}</td>
+              <td className="border p-2 font-medium">{bn ? 'ক্যাশ' : 'Cash'}</td>
+              <td className="border p-2 text-right">৳{formatNum(monthlyCash)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Project Breakdown */}
+        {projectBreakdown.length > 0 && (
+          <>
+            <h2 className="text-base font-bold mb-2">{bn ? 'প্রকল্প ভিত্তিক খরচ' : 'Project-wise Expense'}</h2>
+            <table className="w-full border-collapse border mb-4 text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">#</th>
+                  <th className="border p-2 text-left">{bn ? 'প্রকল্প' : 'Project'}</th>
+                  <th className="border p-2 text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</th>
+                  <th className="border p-2 text-right">{bn ? 'মোট খরচ' : 'Total'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projectBreakdown.map((p, i) => (
+                  <tr key={i}>
+                    <td className="border p-2">{i + 1}</td>
+                    <td className="border p-2">{bn ? p.name_bn : p.name}</td>
+                    <td className="border p-2 text-right">৳{formatNum(p.monthly)}</td>
+                    <td className="border p-2 text-right">৳{formatNum(p.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* Category Breakdown */}
+        {categoryBreakdown.length > 0 && (
+          <>
+            <h2 className="text-base font-bold mb-2">{bn ? 'ক্যাটেগরি ভিত্তিক খরচ' : 'Category-wise Expense'}</h2>
+            <table className="w-full border-collapse border mb-4 text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2 text-left">#</th>
+                  <th className="border p-2 text-left">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
+                  <th className="border p-2 text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</th>
+                  <th className="border p-2 text-right">{bn ? 'মোট খরচ' : 'Total'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoryBreakdown.map((c, i) => (
+                  <tr key={i}>
+                    <td className="border p-2">{i + 1}</td>
+                    <td className="border p-2">{bn ? c.name_bn : c.name}</td>
+                    <td className="border p-2 text-right">৳{formatNum(c.monthly)}</td>
+                    <td className="border p-2 text-right">৳{formatNum(c.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {/* Expense Details */}
+        <h2 className="text-base font-bold mb-2">{bn ? 'খরচ বিবরণ' : 'Expense Details'}</h2>
+        <table className="w-full border-collapse border mb-6 text-sm">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border p-2 text-left">#</th>
+              <th className="border p-2 text-left">{bn ? 'তারিখ' : 'Date'}</th>
+              <th className="border p-2 text-left">{bn ? 'প্রকল্প' : 'Project'}</th>
+              <th className="border p-2 text-left">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
+              <th className="border p-2 text-left">{bn ? 'বিবরণ' : 'Description'}</th>
+              <th className="border p-2 text-right">{bn ? 'টাকা' : 'Amount'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {expenses.map((e: any, i: number) => (
+              <tr key={e.id}>
+                <td className="border p-2">{i + 1}</td>
+                <td className="border p-2">{e.expense_date}</td>
+                <td className="border p-2">{bn ? e.expense_projects?.name_bn : e.expense_projects?.name}</td>
+                <td className="border p-2">{bn ? e.expense_categories?.name_bn : e.expense_categories?.name}</td>
+                <td className="border p-2">{e.description || '-'}</td>
+                <td className="border p-2 text-right">৳{formatNum(Number(e.amount))}</td>
+              </tr>
+            ))}
+            <tr className="font-bold bg-gray-100">
+              <td colSpan={5} className="border p-2 text-right">{bn ? 'মোট:' : 'Total:'}</td>
+              <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Signatures */}
+        <div className="flex justify-between mt-12 pt-8">
+          <div className="text-center">
+            <div className="border-t border-black w-40 mx-auto mb-1"></div>
+            <p className="text-sm font-medium">{summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier')}</p>
+            <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
+          </div>
+          <div className="text-center">
+            <div className="border-t border-black w-40 mx-auto mb-1"></div>
+            <p className="text-sm font-medium">{summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal')}</p>
+            <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
+          </div>
+        </div>
+      </div>
     </AdminLayout>
   );
 };
