@@ -30,6 +30,14 @@ import AdminFees from "./pages/admin/AdminFees";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminExpenses from "./pages/admin/AdminExpenses";
+import AdminDonors from "./pages/admin/AdminDonors";
+import AdminProfile from "./pages/admin/AdminProfile";
+import AdminFeeReceipts from "./pages/admin/AdminFeeReceipts";
+import AdminResignLetters from "./pages/admin/AdminResignLetters";
+import AdminJoiningLetters from "./pages/admin/AdminJoiningLetters";
+import AdminAdmissionLetters from "./pages/admin/AdminAdmissionLetters";
+import AdminDesignations from "./pages/admin/AdminDesignations";
+import AdminFormBuilder from "./pages/admin/AdminFormBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +73,14 @@ const App = () => (
               <Route path="/admin/fees" element={<ProtectedRoute><AdminFees /></ProtectedRoute>} />
               <Route path="/admin/website" element={<ProtectedRoute><AdminWebsite /></ProtectedRoute>} />
               <Route path="/admin/expenses" element={<ProtectedRoute><AdminExpenses /></ProtectedRoute>} />
+              <Route path="/admin/donors" element={<ProtectedRoute><AdminDonors /></ProtectedRoute>} />
+              <Route path="/admin/profile" element={<ProtectedRoute><AdminProfile /></ProtectedRoute>} />
+              <Route path="/admin/fee-receipts" element={<ProtectedRoute><AdminFeeReceipts /></ProtectedRoute>} />
+              <Route path="/admin/resign-letters" element={<ProtectedRoute><AdminResignLetters /></ProtectedRoute>} />
+              <Route path="/admin/joining-letters" element={<ProtectedRoute><AdminJoiningLetters /></ProtectedRoute>} />
+              <Route path="/admin/admission-letters" element={<ProtectedRoute><AdminAdmissionLetters /></ProtectedRoute>} />
+              <Route path="/admin/designations" element={<ProtectedRoute><AdminDesignations /></ProtectedRoute>} />
+              <Route path="/admin/form-builder" element={<ProtectedRoute><AdminFormBuilder /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

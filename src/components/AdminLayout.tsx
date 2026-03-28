@@ -6,7 +6,8 @@ import LanguageToggle from './LanguageToggle';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
-  ChevronRight, Layers, Receipt
+  ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
+  FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -17,18 +18,43 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const menuItems = [
-    { path: '/admin', label: t('dashboard'), icon: LayoutDashboard },
-    { path: '/admin/students', label: t('students'), icon: Users },
-    { path: '/admin/staff', label: t('staff'), icon: UserCog },
-    { path: '/admin/divisions', label: t('division'), icon: Layers },
-    { path: '/admin/subjects', label: t('subjects'), icon: BookOpen },
-    { path: '/admin/results', label: t('results'), icon: FileText },
-    { path: '/admin/notices', label: t('notices'), icon: Bell },
-    { path: '/admin/fees', label: t('fees'), icon: CreditCard },
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (key: string) => {
+    setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  type MenuItem = {
+    path: string;
+    label: string;
+    icon: any;
+    children?: { path: string; label: string; icon: any }[];
+  };
+
+  const menuItems: MenuItem[] = [
+    {
+      path: '/admin', label: language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard', icon: LayoutDashboard,
+      children: [
+        { path: '/admin/profile', label: language === 'bn' ? 'প্রোফাইল' : 'Profile', icon: UserCircle },
+      ]
+    },
+    { path: '/admin/donors', label: language === 'bn' ? 'দাতা তালিকা' : 'Donor List', icon: Heart },
+    { path: '/admin/students', label: language === 'bn' ? 'ছাত্র ব্যবস্থাপনা' : 'Student Management', icon: Users },
+    { path: '/admin/staff', label: language === 'bn' ? 'স্টাফ/শিক্ষক ব্যবস্থাপনা' : 'Staff/Teacher Management', icon: UserCog },
+    { path: '/admin/divisions', label: language === 'bn' ? 'বিভাগ ও শ্রেণী' : 'Division & Class', icon: Layers },
+    { path: '/admin/fee-receipts', label: language === 'bn' ? 'ফি রসিদ' : 'Fee Receipts', icon: ReceiptText },
+    { path: '/admin/resign-letters', label: language === 'bn' ? 'পদত্যাগ পত্র' : 'Resign Letters', icon: FileSignature },
+    { path: '/admin/joining-letters', label: language === 'bn' ? 'যোগদান পত্র' : 'Joining Letters', icon: FilePlus },
+    { path: '/admin/admission-letters', label: language === 'bn' ? 'ভর্তি পত্র' : 'Admission Letters', icon: FileCheck },
+    { path: '/admin/results', label: language === 'bn' ? 'ফলাফল' : 'Results', icon: FileText },
+    { path: '/admin/notices', label: language === 'bn' ? 'নোটিশ (অনুমোদন)' : 'Notice (Approval)', icon: Bell },
+    { path: '/admin/fees', label: language === 'bn' ? 'ফি (অনুমোদন)' : 'Fees (Approval)', icon: CreditCard },
     { path: '/admin/expenses', label: language === 'bn' ? 'খরচ ব্যবস্থাপনা' : 'Expenses', icon: Receipt },
-    { path: '/admin/website', label: t('websiteControl'), icon: Globe },
-    { path: '/admin/settings', label: t('settings'), icon: Settings },
+    { path: '/admin/website', label: language === 'bn' ? 'ওয়েবসাইট নিয়ন্ত্রণ' : 'Website Control', icon: Globe },
+    { path: '/admin/designations', label: language === 'bn' ? 'পদবি তৈরি' : 'Designations', icon: Tag },
+    { path: '/admin/subjects', label: language === 'bn' ? 'বিষয়সমূহ' : 'Subjects', icon: BookOpen },
+    { path: '/admin/form-builder', label: language === 'bn' ? 'কাস্টম ফর্ম বিল্ডার' : 'Form Builder', icon: Wrench },
+    { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
   ];
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
@@ -54,21 +80,53 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const hasChildren = item.children && item.children.length > 0;
+            const isGroupOpen = openGroups[item.path] || item.children?.some(c => location.pathname === c.path);
+
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => mobile && setMobileSidebarOpen(false)}
-                className={`sidebar-item ${isActive ? 'active' : ''}`}
-                title={!sidebarOpen && !mobile ? item.label : undefined}
-              >
-                <item.icon className="w-5 h-5 shrink-0" />
-                {(sidebarOpen || mobile) && <span>{item.label}</span>}
-                {isActive && (sidebarOpen || mobile) && <ChevronRight className="w-4 h-4 ml-auto" />}
-              </Link>
+              <div key={item.path}>
+                <div className="flex items-center">
+                  <Link
+                    to={item.path}
+                    onClick={() => mobile && setMobileSidebarOpen(false)}
+                    className={`sidebar-item flex-1 ${isActive && !hasChildren ? 'active' : ''} ${isActive && hasChildren ? 'active' : ''}`}
+                    title={!sidebarOpen && !mobile ? item.label : undefined}
+                  >
+                    <item.icon className="w-5 h-5 shrink-0" />
+                    {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
+                    {isActive && !hasChildren && (sidebarOpen || mobile) && <ChevronRight className="w-4 h-4 ml-auto shrink-0" />}
+                  </Link>
+                  {hasChildren && (sidebarOpen || mobile) && (
+                    <button
+                      onClick={() => toggleGroup(item.path)}
+                      className="p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground/60"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isGroupOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </div>
+                {hasChildren && isGroupOpen && (sidebarOpen || mobile) && (
+                  <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
+                    {item.children!.map(child => {
+                      const childActive = location.pathname === child.path;
+                      return (
+                        <Link
+                          key={child.path}
+                          to={child.path}
+                          onClick={() => mobile && setMobileSidebarOpen(false)}
+                          className={`sidebar-item text-sm ${childActive ? 'active' : ''}`}
+                        >
+                          <child.icon className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{child.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
