@@ -38,6 +38,7 @@ import AdminJoiningLetters from "./pages/admin/AdminJoiningLetters";
 import AdminAdmissionLetters from "./pages/admin/AdminAdmissionLetters";
 import AdminDesignations from "./pages/admin/AdminDesignations";
 import AdminFormBuilder from "./pages/admin/AdminFormBuilder";
+import AdminCustomFormPage from "./pages/admin/AdminCustomFormPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
