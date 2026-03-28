@@ -396,105 +396,139 @@ const AdminFormBuilder = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">
-              {bn ? 'কাস্টম বিল্ডার' : 'Custom Builder'}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {bn ? 'ফর্ম তৈরি, সম্পাদনা এবং ফিল্ড যোগ করুন' : 'Create, edit forms and add fields'}
-            </p>
-          </div>
-          <Dialog open={formDialogOpen} onOpenChange={(o) => { setFormDialogOpen(o); if (!o) { setFormData(emptyForm); setEditingFormId(null); } }}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-1" /> {bn ? 'নতুন ফর্ম' : 'New Form'}</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{editingFormId ? (bn ? 'ফর্ম সম্পাদনা' : 'Edit Form') : (bn ? 'নতুন ফর্ম তৈরি' : 'Create New Form')}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>{bn ? 'ফর্মের নাম (ইংরেজি)' : 'Form Name (EN)'}</Label>
-                    <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Admission Form" />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'ফর্মের নাম (বাংলা)' : 'Form Name (BN)'}</Label>
-                    <Input value={formData.name_bn} onChange={e => setFormData(p => ({ ...p, name_bn: e.target.value }))} placeholder="যেমন: ভর্তি ফর্ম" />
-                  </div>
-                </div>
-                <div>
-                  <Label>{bn ? 'ফর্মের ধরন' : 'Form Type'}</Label>
-                  <Select value={formData.form_type} onValueChange={v => setFormData(p => ({ ...p, form_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {FORM_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{bn ? t.label_bn : t.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
-                  <Textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={2} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={formData.is_active} onCheckedChange={c => setFormData(p => ({ ...p, is_active: c }))} />
-                  <Label>{bn ? 'সক্রিয়' : 'Active'}</Label>
-                </div>
-                <Button className="w-full" onClick={() => saveForm.mutate(formData)} disabled={!formData.name || !formData.name_bn}>
-                  {editingFormId ? (bn ? 'আপডেট করুন' : 'Update') : (bn ? 'তৈরি করুন' : 'Create')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+         <div className="flex items-center justify-between">
+           <div>
+             <h1 className="text-2xl font-display font-bold text-foreground">
+               {bn ? 'কাস্টম বিল্ডার' : 'Custom Builder'}
+             </h1>
+             <p className="text-sm text-muted-foreground mt-1">
+               {bn ? 'মেনু/ক্যাটাগরি অনুযায়ী ফর্ম তৈরি ও পরিচালনা করুন' : 'Create and manage forms by menu/category'}
+             </p>
+           </div>
+           <div className="flex items-center gap-2">
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                 <Button><Plus className="h-4 w-4 mr-1" /> {bn ? 'নতুন ফর্ম' : 'New Form'} <ChevronDown className="h-4 w-4 ml-1" /></Button>
+               </DropdownMenuTrigger>
+               <DropdownMenuContent align="end" className="w-56">
+                 {FORM_TYPES.map(ft => (
+                   <DropdownMenuItem key={ft.value} onClick={() => {
+                     setFormData({ ...emptyForm, form_type: ft.value, name: ft.label, name_bn: ft.label_bn });
+                     setEditingFormId(null);
+                     setFormDialogOpen(true);
+                   }}>
+                     <FolderOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                     {bn ? ft.label_bn : ft.label}
+                     <Badge variant="outline" className="ml-auto text-[10px]">
+                       {forms.filter(f => f.form_type === ft.value).length}
+                     </Badge>
+                   </DropdownMenuItem>
+                 ))}
+               </DropdownMenuContent>
+             </DropdownMenu>
+           </div>
+         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Form List */}
-          <div className="lg:col-span-4 space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              {bn ? 'ফর্ম তালিকা' : 'Form List'} ({forms.length})
-            </h2>
-            {forms.length === 0 && (
-              <Card><CardContent className="p-6 text-center text-muted-foreground">{bn ? 'কোনো ফর্ম নেই' : 'No forms yet'}</CardContent></Card>
-            )}
-            {forms.map(form => {
-              const ft = FORM_TYPES.find(t => t.value === form.form_type);
-              return (
-                <Card
-                  key={form.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${selectedFormId === form.id ? 'ring-2 ring-primary border-primary' : ''}`}
-                  onClick={() => setSelectedFormId(form.id)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{bn ? form.name_bn : form.name}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-xs">
-                            {form.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {ft ? (bn ? ft.label_bn : ft.label) : form.form_type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="flex gap-1 ml-2">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ডুপ্লিকেট' : 'Duplicate'} onClick={e => { e.stopPropagation(); duplicateForm.mutate(form.id); }}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={e => { e.stopPropagation(); openEditForm(form); }}>
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={e => { e.stopPropagation(); if (confirm(bn ? 'ফর্মটি মুছে ফেলতে চান?' : 'Delete this form?')) deleteForm.mutate(form.id); }}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+         {/* Form Edit Dialog */}
+         <Dialog open={formDialogOpen} onOpenChange={(o) => { setFormDialogOpen(o); if (!o) { setFormData(emptyForm); setEditingFormId(null); } }}>
+           <DialogContent className="max-w-lg">
+             <DialogHeader>
+               <DialogTitle>{editingFormId ? (bn ? 'ফর্ম সম্পাদনা' : 'Edit Form') : (bn ? 'নতুন ফর্ম তৈরি' : 'Create New Form')}</DialogTitle>
+             </DialogHeader>
+             <div className="space-y-4">
+               <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <Label>{bn ? 'ফর্মের নাম (ইংরেজি)' : 'Form Name (EN)'}</Label>
+                   <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Admission Form" />
+                 </div>
+                 <div>
+                   <Label>{bn ? 'ফর্মের নাম (বাংলা)' : 'Form Name (BN)'}</Label>
+                   <Input value={formData.name_bn} onChange={e => setFormData(p => ({ ...p, name_bn: e.target.value }))} placeholder="যেমন: ভর্তি ফর্ম" />
+                 </div>
+               </div>
+               <div>
+                 <Label>{bn ? 'ফর্মের ধরন' : 'Form Type'}</Label>
+                 <Select value={formData.form_type} onValueChange={v => setFormData(p => ({ ...p, form_type: v }))}>
+                   <SelectTrigger><SelectValue /></SelectTrigger>
+                   <SelectContent>
+                     {FORM_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{bn ? t.label_bn : t.label}</SelectItem>)}
+                   </SelectContent>
+                 </Select>
+               </div>
+               <div>
+                 <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
+                 <Textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={2} />
+               </div>
+               <div className="flex items-center gap-2">
+                 <Switch checked={formData.is_active} onCheckedChange={c => setFormData(p => ({ ...p, is_active: c }))} />
+                 <Label>{bn ? 'সক্রিয়' : 'Active'}</Label>
+               </div>
+               <Button className="w-full" onClick={() => saveForm.mutate(formData)} disabled={!formData.name || !formData.name_bn}>
+                 {editingFormId ? (bn ? 'আপডেট করুন' : 'Update') : (bn ? 'তৈরি করুন' : 'Create')}
+               </Button>
+             </div>
+           </DialogContent>
+         </Dialog>
+
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+           {/* Form List grouped by category */}
+           <div className="lg:col-span-4 space-y-3">
+             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+               {bn ? 'ক্যাটাগরি অনুযায়ী ফর্ম' : 'Forms by Category'} ({forms.length})
+             </h2>
+             {FORM_TYPES.filter(ft => forms.some(f => f.form_type === ft.value)).map(ft => {
+               const categoryForms = forms.filter(f => f.form_type === ft.value);
+               return (
+                 <Collapsible key={ft.value} defaultOpen={categoryForms.some(f => f.id === selectedFormId)}>
+                   <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left">
+                     <div className="flex items-center gap-2">
+                       <FolderOpen className="h-4 w-4 text-primary" />
+                       <span className="font-semibold text-sm text-foreground">{bn ? ft.label_bn : ft.label}</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <Badge variant="secondary" className="text-[10px]">{categoryForms.length}</Badge>
+                       <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-180" />
+                     </div>
+                   </CollapsibleTrigger>
+                   <CollapsibleContent className="mt-1 space-y-1.5 pl-2">
+                     {categoryForms.map(form => (
+                       <Card
+                         key={form.id}
+                         className={`cursor-pointer transition-all hover:shadow-md ${selectedFormId === form.id ? 'ring-2 ring-primary border-primary' : ''}`}
+                         onClick={() => setSelectedFormId(form.id)}
+                       >
+                         <CardContent className="p-3">
+                           <div className="flex items-start justify-between">
+                             <div className="flex-1 min-w-0">
+                               <h3 className="font-medium text-sm text-foreground truncate">{bn ? form.name_bn : form.name}</h3>
+                               <Badge variant={form.is_active ? 'default' : 'secondary'} className="text-[10px] mt-1">
+                                 {form.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
+                               </Badge>
+                             </div>
+                             <div className="flex gap-1 ml-2">
+                               <Button size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ডুপ্লিকেট' : 'Duplicate'} onClick={e => { e.stopPropagation(); duplicateForm.mutate(form.id); }}>
+                                 <Copy className="h-3.5 w-3.5" />
+                               </Button>
+                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={e => { e.stopPropagation(); openEditForm(form); }}>
+                                 <Edit2 className="h-3.5 w-3.5" />
+                               </Button>
+                               <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={e => { e.stopPropagation(); if (confirm(bn ? 'ফর্মটি মুছে ফেলতে চান?' : 'Delete this form?')) deleteForm.mutate(form.id); }}>
+                                 <Trash2 className="h-3.5 w-3.5" />
+                               </Button>
+                             </div>
+                           </div>
+                         </CardContent>
+                       </Card>
+                     ))}
+                   </CollapsibleContent>
+                 </Collapsible>
+               );
+             })}
+             {forms.length === 0 && (
+               <Card><CardContent className="p-6 text-center text-muted-foreground">
+                 {bn ? 'কোনো ফর্ম নেই। উপরের ড্রপডাউন থেকে ক্যাটাগরি বেছে নতুন ফর্ম তৈরি করুন।' : 'No forms yet. Select a category from the dropdown above to create one.'}
+               </CardContent></Card>
+             )}
           </div>
 
           {/* Field Builder */}
