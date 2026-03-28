@@ -58,6 +58,10 @@ const AdminExpenses = () => {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [printProjectId, setPrintProjectId] = useState<string | null>(null);
   const [editProjectEntriesId, setEditProjectEntriesId] = useState<string | null>(null);
+  const [entriesFilterCategoryId, setEntriesFilterCategoryId] = useState<string>('all');
+  const [entriesSearchText, setEntriesSearchText] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmType, setDeleteConfirmType] = useState<'expense' | 'deposit'>('expense');
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<string>('');
 
   // Dialogs
