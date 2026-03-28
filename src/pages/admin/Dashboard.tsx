@@ -1,113 +1,194 @@
+import { useState } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Users, UserCog, BookOpen, CreditCard, Bell, GraduationCap, UserCheck, UserX } from 'lucide-react';
-
-const statCards = [
-  { key: 'totalStudents', value: '523', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-  { key: 'totalTeachers', value: '32', icon: BookOpen, color: 'text-info', bg: 'bg-info/10' },
-  { key: 'totalStaff', value: '18', icon: UserCog, color: 'text-accent', bg: 'bg-accent/10' },
-  { key: 'activeStudents', value: '498', icon: UserCheck, color: 'text-success', bg: 'bg-success/10' },
-];
-
-const quickStats = [
-  { labelBn: 'এতিম ছাত্র', labelEn: 'Orphan Students', value: '45' },
-  { labelBn: 'গরীব ছাত্র', labelEn: 'Poor Students', value: '78' },
-  { labelBn: 'আবাসিক ছাত্র', labelEn: 'Resident Students', value: '210' },
-  { labelBn: 'অনাবাসিক ছাত্র', labelEn: 'Non-Resident', value: '313' },
-  { labelBn: 'নতুন ছাত্র', labelEn: 'New Students', value: '85' },
-  { labelBn: 'পুরাতন ছাত্র', labelEn: 'Old Students', value: '438' },
-  { labelBn: 'নিষ্ক্রিয় ছাত্র', labelEn: 'Inactive Students', value: '25' },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Users, UserCog, BookOpen, UserCheck, UserX, GraduationCap,
+  Layers, FileText, CreditCard, ClipboardList, History
+} from 'lucide-react';
+import DashboardInstitutionCard from '@/components/dashboard/DashboardInstitutionCard';
+import DashboardSearch from '@/components/dashboard/DashboardSearch';
+import DashboardFeeSection from '@/components/dashboard/DashboardFeeSection';
+import DashboardStatsList from '@/components/dashboard/DashboardStatsList';
 
 const Dashboard = () => {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+  const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff'; filters: Record<string, any> }>({
+    open: false, title: '', table: 'students', filters: {},
+  });
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['dashboard-students'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: staff = [] } = useQuery({
+    queryKey: ['dashboard-staff'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('staff').select('id, status, department, designation, salary');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['dashboard-divisions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('divisions').select('id').eq('is_active', true);
+      return data || [];
+    },
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['dashboard-subjects'],
+    queryFn: async () => {
+      const { data } = await supabase.from('subjects').select('id').eq('is_active', true);
+      return data || [];
+    },
+  });
+
+  const { data: results = [] } = useQuery({
+    queryKey: ['dashboard-results'],
+    queryFn: async () => {
+      const { data } = await supabase.from('results').select('id');
+      return data || [];
+    },
+  });
+
+  const { data: exams = [] } = useQuery({
+    queryKey: ['dashboard-exams'],
+    queryFn: async () => {
+      const { data } = await supabase.from('exams').select('id');
+      return data || [];
+    },
+  });
+
+  // Student stats
+  const activeStudents = students.filter(s => s.status === 'active');
+  const inactiveStudents = students.filter(s => s.status === 'inactive');
+  const currentYear = new Date().getFullYear();
+  const newStudents = students.filter(s => s.admission_date && new Date(s.admission_date).getFullYear() === currentYear);
+  const oldStudents = students.filter(s => !s.admission_date || new Date(s.admission_date).getFullYear() < currentYear);
+
+  // Staff stats
+  const teachers = staff.filter(s => s.department === 'teaching' || s.designation?.includes('শিক্ষক') || s.designation?.includes('teacher') || s.designation?.toLowerCase()?.includes('teacher'));
+  const nonTeachingStaff = staff.filter(s => !teachers.includes(s));
+  const activeStaff = nonTeachingStaff.filter(s => s.status === 'active');
+  const resignedStaff = nonTeachingStaff.filter(s => s.status !== 'active');
+  const activeTeachers = teachers.filter(s => s.status === 'active');
+  const resignedTeachers = teachers.filter(s => s.status !== 'active');
+
+  const openList = (title: string, table: 'students' | 'staff', filters: Record<string, any> = {}) => {
+    setListDialog({ open: true, title, table, filters });
+  };
+
+  const statCards = [
+    { label: language === 'bn' ? 'মোট ছাত্র' : 'Total Students', value: students.length, icon: Users, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(language === 'bn' ? 'মোট ছাত্র' : 'Total Students', 'students') },
+    { label: language === 'bn' ? 'সক্রিয় ছাত্র' : 'Active Students', value: activeStudents.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(language === 'bn' ? 'সক্রিয় ছাত্র' : 'Active Students', 'students', { status: 'active' }) },
+    { label: language === 'bn' ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', value: inactiveStudents.length, icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(language === 'bn' ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', 'students', { status: 'inactive' }) },
+    { label: language === 'bn' ? 'মোট কর্মী' : 'Total Staff', value: nonTeachingStaff.length, icon: UserCog, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(language === 'bn' ? 'মোট কর্মী' : 'Total Staff', 'staff') },
+  ];
+
+  const staffTeacherStats = [
+    { label: language === 'bn' ? 'শিক্ষক (সক্রিয়)' : 'Teachers (Active)', value: activeTeachers.length, onClick: () => openList(language === 'bn' ? 'সক্রিয় শিক্ষক' : 'Active Teachers', 'staff', { status: 'active' }) },
+    { label: language === 'bn' ? 'শিক্ষক (পদত্যাগী)' : 'Teachers (Resigned)', value: resignedTeachers.length, onClick: () => openList(language === 'bn' ? 'পদত্যাগী শিক্ষক' : 'Resigned Teachers', 'staff') },
+    { label: language === 'bn' ? 'কর্মী (সক্রিয়)' : 'Staff (Active)', value: activeStaff.length, onClick: () => openList(language === 'bn' ? 'সক্রিয় কর্মী' : 'Active Staff', 'staff', { status: 'active' }) },
+    { label: language === 'bn' ? 'কর্মী (পদত্যাগী)' : 'Staff (Resigned)', value: resignedStaff.length, onClick: () => openList(language === 'bn' ? 'পদত্যাগী কর্মী' : 'Resigned Staff', 'staff') },
+    { label: language === 'bn' ? 'গত মাসের বেতন' : 'Last Month Salary', value: `৳ ${staff.filter(s => s.status === 'active').reduce((s, x) => s + (Number(x.salary) || 0), 0).toLocaleString()}`, onClick: () => openList(language === 'bn' ? 'সক্রিয় কর্মী ও শিক্ষক' : 'Active Staff & Teachers', 'staff', { status: 'active' }) },
+  ];
+
+  const studentDetailStats = [
+    { label: language === 'bn' ? 'নতুন ছাত্র' : 'New Students', value: newStudents.length, onClick: () => openList(language === 'bn' ? 'নতুন ছাত্র' : 'New Students', 'students') },
+    { label: language === 'bn' ? 'পুরাতন ছাত্র' : 'Old Students', value: oldStudents.length, onClick: () => openList(language === 'bn' ? 'পুরাতন ছাত্র' : 'Old Students', 'students') },
+    { label: language === 'bn' ? 'বিভাগ' : 'Divisions', value: divisions.length },
+    { label: language === 'bn' ? 'বিষয়' : 'Subjects', value: subjects.length },
+    { label: language === 'bn' ? 'পরীক্ষা' : 'Exams', value: exams.length },
+    { label: language === 'bn' ? 'ফলাফল' : 'Results', value: results.length },
+    { label: language === 'bn' ? 'ভর্তি ইতিহাস' : 'Admission History', value: students.length, onClick: () => openList(language === 'bn' ? 'ভর্তি ইতিহাস' : 'Admission History', 'students') },
+  ];
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Madrasa Info */}
-        <div className="card-elevated p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center shrink-0">
-            <GraduationCap className="w-9 h-9 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="text-xl font-display font-bold text-foreground">নূরুল ইসলাম মাদরাসা</h2>
-            <p className="text-sm text-muted-foreground">ঢাকা, বাংলাদেশ | +880 1XXX-XXXXXX | info@madrasa.edu.bd</p>
-          </div>
-        </div>
+      <div className="space-y-5">
+        {/* Institution Info */}
+        <DashboardInstitutionCard />
 
-        {/* Main Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Search */}
+        <DashboardSearch />
+
+        {/* Main Stat Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {statCards.map((s, i) => (
-            <div key={i} className="stat-card flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl ${s.bg} flex items-center justify-center`}>
-                <s.icon className={`w-6 h-6 ${s.color}`} />
+            <div key={i} onClick={s.onClick} className="stat-card flex items-center gap-3 cursor-pointer hover:shadow-md transition-shadow">
+              <div className={`w-11 h-11 rounded-xl ${s.bg} flex items-center justify-center`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{t(s.key)}</p>
+                <p className="text-xl font-bold text-foreground">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Quick Stats */}
-        <div className="card-elevated p-5">
-          <h3 className="font-display font-bold text-foreground mb-4">
-            {language === 'bn' ? 'পরিসংখ্যান' : 'Statistics'}
+        {/* Staff & Teacher Stats */}
+        <div className="card-elevated p-4">
+          <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+            <UserCog className="w-5 h-5 text-accent" />
+            {language === 'bn' ? 'কর্মী ও শিক্ষক পরিসংখ্যান' : 'Staff & Teacher Statistics'}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {quickStats.map((s, i) => (
-              <div key={i} className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {staffTeacherStats.map((s, i) => (
+              <div key={i} onClick={s.onClick}
+                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
                 <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{language === 'bn' ? s.labelBn : s.labelEn}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Fee Summary + Notices */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="card-elevated p-5">
-            <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-primary" />
-              {language === 'bn' ? 'ফি সারাংশ' : 'Fee Summary'}
-            </h3>
-            <div className="space-y-3">
-              {[
-                { label: language === 'bn' ? 'মাসিক ফি (মার্চ ২০২৬)' : 'Monthly Fee (Mar 2026)', amount: '৳ 1,25,000' },
-                { label: language === 'bn' ? 'পরীক্ষা ফি' : 'Exam Fee', amount: '৳ 45,000' },
-                { label: language === 'bn' ? 'ভর্তি ফি' : 'Admission Fee', amount: '৳ 85,000' },
-              ].map((f, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer">
-                  <span className="text-sm text-foreground">{f.label}</span>
-                  <span className="font-bold text-primary">{f.amount}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card-elevated p-5">
-            <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
-              <Bell className="w-5 h-5 text-accent" />
-              {language === 'bn' ? 'সাম্প্রতিক নোটিশ' : 'Recent Notices'}
-            </h3>
-            <div className="space-y-3">
-              {[
-                { title: 'বার্ষিক পরীক্ষার সময়সূচী', status: 'approved', statusBn: 'অনুমোদিত' },
-                { title: 'রমজান ক্লাস সময়সূচী', status: 'pending', statusBn: 'অপেক্ষমান' },
-                { title: 'নতুন ভর্তি বিজ্ঞপ্তি', status: 'approved', statusBn: 'অনুমোদিত' },
-              ].map((n, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <span className="text-sm text-foreground">{n.title}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${n.status === 'approved' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
-                    {language === 'bn' ? n.statusBn : n.status}
-                  </span>
-                </div>
-              ))}
-            </div>
+        {/* Student Detail Stats */}
+        <div className="card-elevated p-4">
+          <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary" />
+            {language === 'bn' ? 'ছাত্র বিস্তারিত পরিসংখ্যান' : 'Student Detailed Statistics'}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {studentDetailStats.map((s, i) => (
+              <div key={i} onClick={s.onClick}
+                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
+                <p className="text-lg font-bold text-foreground">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Fee Sections */}
+        <div className="space-y-3">
+          <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary" />
+            {language === 'bn' ? 'ফি পরিসংখ্যান' : 'Fee Statistics'}
+          </h3>
+          <DashboardFeeSection category="monthly" titleBn="মাসিক ফি" titleEn="Monthly Fees" />
+          <DashboardFeeSection category="exam" titleBn="পরীক্ষা ফি" titleEn="Exam Fees" />
+          <DashboardFeeSection category="admission" titleBn="ভর্তি ফি" titleEn="Admission Fees" />
+        </div>
+
+        {/* Stats List Dialog */}
+        <DashboardStatsList
+          open={listDialog.open}
+          onClose={() => setListDialog(d => ({ ...d, open: false }))}
+          title={listDialog.title}
+          table={listDialog.table}
+          filters={listDialog.filters}
+        />
       </div>
     </AdminLayout>
   );
