@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      deposits: {
+        Row: {
+          amount: number
+          bank_details: string | null
+          created_at: string | null
+          deposit_date: string
+          id: string
+          month_year: string
+          other_details: string | null
+          source: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          bank_details?: string | null
+          created_at?: string | null
+          deposit_date?: string
+          id?: string
+          month_year: string
+          other_details?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          bank_details?: string | null
+          created_at?: string | null
+          deposit_date?: string
+          id?: string
+          month_year?: string
+          other_details?: string | null
+          source?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       divisions: {
         Row: {
           created_at: string | null
@@ -90,6 +126,173 @@ export type Database = {
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "expense_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_monthly_summary: {
+        Row: {
+          cash_amount: number | null
+          casher_name: string | null
+          created_at: string | null
+          id: string
+          month_year: string
+          notes: string | null
+          previous_arrears: number | null
+          principal_name: string | null
+          total_deposit: number | null
+          total_expense: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          cash_amount?: number | null
+          casher_name?: string | null
+          created_at?: string | null
+          id?: string
+          month_year: string
+          notes?: string | null
+          previous_arrears?: number | null
+          principal_name?: string | null
+          total_deposit?: number | null
+          total_expense?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          cash_amount?: number | null
+          casher_name?: string | null
+          created_at?: string | null
+          id?: string
+          month_year?: string
+          notes?: string | null
+          previous_arrears?: number | null
+          principal_name?: string | null
+          total_deposit?: number | null
+          total_expense?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      expense_projects: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category_id: string
+          created_at: string | null
+          description: string | null
+          expense_date: string
+          has_receipt: boolean | null
+          id: string
+          month_year: string
+          project_id: string
+          quantity: number | null
+          receipt_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          category_id: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          has_receipt?: boolean | null
+          id?: string
+          month_year: string
+          project_id: string
+          quantity?: number | null
+          receipt_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          description?: string | null
+          expense_date?: string
+          has_receipt?: boolean | null
+          id?: string
+          month_year?: string
+          project_id?: string
+          quantity?: number | null
+          receipt_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "expense_projects"
             referencedColumns: ["id"]
           },
         ]
