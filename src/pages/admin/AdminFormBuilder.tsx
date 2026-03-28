@@ -67,7 +67,28 @@ type FormData = {
   description: string;
   form_type: string;
   is_active: boolean;
+  publish_to: string;
+  parent_menu: string;
+  menu_slug: string;
 };
+
+const ADMIN_MENUS = [
+  { value: '/admin', label: 'Dashboard', label_bn: 'ড্যাশবোর্ড' },
+  { value: '/admin/donors', label: 'Donor List', label_bn: 'দাতা তালিকা' },
+  { value: '/admin/students', label: 'Student Management', label_bn: 'ছাত্র ব্যবস্থাপনা' },
+  { value: '/admin/staff', label: 'Staff/Teacher Management', label_bn: 'স্টাফ/শিক্ষক ব্যবস্থাপনা' },
+  { value: '/admin/divisions', label: 'Division & Class', label_bn: 'বিভাগ ও শ্রেণী' },
+  { value: '/admin/fee-receipts', label: 'Fee Receipts', label_bn: 'ফি রসিদ' },
+  { value: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
+  { value: '/admin/notices', label: 'Notice', label_bn: 'নোটিশ' },
+  { value: '/admin/fees', label: 'Fees', label_bn: 'ফি' },
+  { value: '/admin/expenses', label: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
+  { value: '/admin/website', label: 'Website Control', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ' },
+  { value: '/admin/designations', label: 'Designations', label_bn: 'পদবি তৈরি' },
+  { value: '/admin/subjects', label: 'Subjects', label_bn: 'বিষয়সমূহ' },
+  { value: '/admin/form-builder', label: 'Custom Builder', label_bn: 'কাস্টম বিল্ডার' },
+  { value: '/admin/settings', label: 'Settings', label_bn: 'সেটিংস' },
+];
 
 type ConditionData = {
   enabled: boolean;
