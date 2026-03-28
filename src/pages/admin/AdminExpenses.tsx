@@ -66,6 +66,11 @@ const AdminExpenses = () => {
   const [depositDialog, setDepositDialog] = useState(false);
   const [institutionDialog, setInstitutionDialog] = useState(false);
   const [editingInstitutionId, setEditingInstitutionId] = useState<string | null>(null);
+  const [printEditMode, setPrintEditMode] = useState(false);
+  const [printEditData, setPrintEditData] = useState({
+    instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '',
+    reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+  });
 
   // Edit IDs
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -1371,28 +1376,94 @@ const AdminExpenses = () => {
       </Dialog>
 
       {/* Project Print Preview Dialog */}
-      <Dialog open={!!printProjectId} onOpenChange={() => setPrintProjectId(null)}>
+      <Dialog open={!!printProjectId} onOpenChange={(open) => {
+        if (!open) { setPrintProjectId(null); setPrintEditMode(false); }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>{bn ? 'প্রকল্প প্রিন্ট প্রিভিউ' : 'Project Print Preview'}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{bn ? 'প্রকল্প প্রিন্ট প্রিভিউ' : 'Project Print Preview'}</span>
+              <Button variant={printEditMode ? 'default' : 'outline'} size="sm" onClick={() => {
+                if (!printEditMode) {
+                  setPrintEditData({
+                    instName: instName, instNameEn: instNameEn, instAddress: instAddress,
+                    instPhone: instPhone, instEmail: instEmail, instOther: instOther,
+                    reportTitle: bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report',
+                    reportSubtitle: '',
+                    casherName: summaryData?.casher_name || '',
+                    principalName: summaryData?.principal_name || '',
+                    extraNote: ''
+                  });
+                }
+                setPrintEditMode(!printEditMode);
+              }}>
+                <Edit2 className="w-3 h-3 mr-1" />{printEditMode ? (bn ? 'প্রিভিউ দেখুন' : 'Preview') : (bn ? 'এডিট করুন' : 'Edit')}
+              </Button>
+            </DialogTitle>
           </DialogHeader>
-          {(() => {
+
+          {printEditMode ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Institution Name (BN)'}</Label>
+                  <Input value={printEditData.instName} onChange={e => setPrintEditData(p => ({ ...p, instName: e.target.value }))} /></div>
+                <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (ইংরেজি)' : 'Institution Name (EN)'}</Label>
+                  <Input value={printEditData.instNameEn} onChange={e => setPrintEditData(p => ({ ...p, instNameEn: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
+                <Input value={printEditData.instAddress} onChange={e => setPrintEditData(p => ({ ...p, instAddress: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'ফোন' : 'Phone'}</Label>
+                  <Input value={printEditData.instPhone} onChange={e => setPrintEditData(p => ({ ...p, instPhone: e.target.value }))} /></div>
+                <div><Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input value={printEditData.instEmail} onChange={e => setPrintEditData(p => ({ ...p, instEmail: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'অতিরিক্ত তথ্য' : 'Other Info'}</Label>
+                <Input value={printEditData.instOther} onChange={e => setPrintEditData(p => ({ ...p, instOther: e.target.value }))} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'রিপোর্ট শিরোনাম' : 'Report Title'}</Label>
+                  <Input value={printEditData.reportTitle} onChange={e => setPrintEditData(p => ({ ...p, reportTitle: e.target.value }))} /></div>
+                <div><Label>{bn ? 'অতিরিক্ত সাবটাইটেল' : 'Subtitle'}</Label>
+                  <Input value={printEditData.reportSubtitle} onChange={e => setPrintEditData(p => ({ ...p, reportSubtitle: e.target.value }))} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>{bn ? 'ক্যাশিয়ারের নাম' : 'Cashier Name'}</Label>
+                  <Input value={printEditData.casherName} onChange={e => setPrintEditData(p => ({ ...p, casherName: e.target.value }))} /></div>
+                <div><Label>{bn ? 'প্রিন্সিপালের নাম' : 'Principal Name'}</Label>
+                  <Input value={printEditData.principalName} onChange={e => setPrintEditData(p => ({ ...p, principalName: e.target.value }))} /></div>
+              </div>
+              <div><Label>{bn ? 'অতিরিক্ত নোট (প্রিন্টে দেখাবে)' : 'Extra Note (shown in print)'}</Label>
+                <Textarea value={printEditData.extraNote} onChange={e => setPrintEditData(p => ({ ...p, extraNote: e.target.value }))} rows={2} /></div>
+            </div>
+          ) : (
+          (() => {
             const project = projects.find((p: any) => p.id === printProjectId);
             if (!project) return null;
             const projExpenses = expenses.filter((e: any) => e.project_id === printProjectId);
             const projTotal = projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
             const projCategories = categories.filter((c: any) => c.project_id === printProjectId);
+            const ed = printEditData;
+            const dInstName = ed.instName || (bn ? instName : instNameEn);
+            const dInstAddress = ed.instAddress || instAddress;
+            const dInstPhone = ed.instPhone || instPhone;
+            const dInstEmail = ed.instEmail || instEmail;
+            const dInstOther = ed.instOther || instOther;
+            const dReportTitle = ed.reportTitle || (bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report');
+            const dCasher = ed.casherName || summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier');
+            const dPrincipal = ed.principalName || summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal');
             return (
               <div id="project-print-content">
-                {/* Institution Header */}
                 <div className="text-center mb-4 border-b-2 border-foreground pb-3">
-                  <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
-                  <p className="text-sm">{instAddress}</p>
-                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
-                  {instOther && <p className="text-xs">{instOther}</p>}
-                  <p className="text-base font-semibold mt-2">{bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report'}</p>
+                  <h1 className="text-lg font-bold">{dInstName}</h1>
+                  <p className="text-sm">{dInstAddress}</p>
+                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {dInstPhone} | {bn ? 'ইমেইল' : 'Email'}: {dInstEmail}</p>
+                  {dInstOther && <p className="text-xs">{dInstOther}</p>}
+                  <p className="text-base font-semibold mt-2">{dReportTitle}</p>
+                  {ed.reportSubtitle && <p className="text-sm">{ed.reportSubtitle}</p>}
                   <p className="text-sm">{bn ? 'প্রকল্প' : 'Project'}: {bn ? project.name_bn : project.name} | {selectedMonthYear}</p>
                 </div>
+
+                {ed.extraNote && <p className="text-xs mb-3 italic border-l-2 border-primary pl-2">{ed.extraNote}</p>}
 
                 {projCategories.map((cat: any) => {
                   const catExpenses = projExpenses.filter((e: any) => e.category_id === cat.id);
@@ -1433,36 +1504,38 @@ const AdminExpenses = () => {
                   {bn ? 'প্রকল্প মোট খরচ' : 'Project Total'}: ৳{formatNum(projTotal)}
                 </div>
 
-                {/* Signatures */}
                 <div className="flex justify-between mt-12 pt-8">
                   <div className="text-center">
                     <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    <p className="text-sm font-medium">{summaryData?.casher_name || (bn ? 'ক্যাশিয়ার' : 'Cashier')}</p>
+                    <p className="text-sm font-medium">{dCasher}</p>
                     <p className="text-xs">{bn ? 'ক্যাশিয়ার' : 'Cashier'}</p>
                   </div>
                   <div className="text-center">
                     <div className="border-t border-foreground w-40 mx-auto mb-1"></div>
-                    <p className="text-sm font-medium">{summaryData?.principal_name || (bn ? 'অধ্যক্ষ' : 'Principal')}</p>
+                    <p className="text-sm font-medium">{dPrincipal}</p>
                     <p className="text-xs">{bn ? 'অধ্যক্ষ' : 'Principal'}</p>
                   </div>
                 </div>
               </div>
             );
-          })()}
+          })()
+          )}
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setPrintProjectId(null)}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
-            <Button onClick={() => {
-              const content = document.getElementById('project-print-content');
-              if (!content) return;
-              const win = window.open('', '_blank');
-              if (!win) return;
-              win.document.write(`<html><head><title>${bn ? 'প্রকল্প প্রতিবেদন' : 'Project Report'}</title><style>body{font-family:'Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}h1{font-size:18px}h3{font-size:14px}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
-              win.document.close();
-              win.focus();
-              win.print();
-            }}>
-              <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
-            </Button>
+            <Button variant="outline" onClick={() => { setPrintProjectId(null); setPrintEditMode(false); }}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
+            {!printEditMode && (
+              <Button onClick={() => {
+                const content = document.getElementById('project-print-content');
+                if (!content) return;
+                const win = window.open('', '_blank');
+                if (!win) return;
+                win.document.write(`<html><head><title>${bn ? 'প্রকল্প প্রতিবেদন' : 'Project Report'}</title><style>body{font-family:'Noto Sans Bengali',sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:4px 8px}th{background:#f0f0f0;text-align:left}.text-right{text-align:right}.text-center{text-align:center}h1{font-size:18px}h3{font-size:14px}.italic{font-style:italic}@media print{body{padding:0}}</style></head><body>${content.innerHTML}</body></html>`);
+                win.document.close();
+                win.focus();
+                win.print();
+              }}>
+                <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট করুন' : 'Print'}
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
