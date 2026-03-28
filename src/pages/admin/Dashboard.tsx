@@ -325,6 +325,9 @@ const Dashboard = () => {
           <DashboardFeeSection category="admission" titleBn="ভর্তি ফি" titleEn="Admission Fees" />
         </div>
 
+        {/* Custom Widgets */}
+        <DashboardCustomWidgets />
+
         {/* Stats List Dialog */}
         <DashboardStatsList
           open={listDialog.open}
