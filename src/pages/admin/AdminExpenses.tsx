@@ -626,10 +626,10 @@ const AdminExpenses = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">{bn ? 'ক্যাটেগরি' : 'Categories'}</CardTitle>
-                  <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
+                  <Dialog open={categoryDialog} onOpenChange={resetCategoryDialog}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><TagIcon className="w-4 h-4 mr-1" />{bn ? 'যোগ' : 'Add'}</Button></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>{bn ? 'নতুন ক্যাটেগরি' : 'New Category'}</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ক্যাটেগরি সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন ক্যাটেগরি' : 'New Category')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div>
                           <Label>{bn ? 'প্রকল্প' : 'Project'} *</Label>
