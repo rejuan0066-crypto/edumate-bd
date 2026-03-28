@@ -121,8 +121,11 @@ export type Database = {
           form_type: string
           id: string
           is_active: boolean | null
+          menu_slug: string | null
           name: string
           name_bn: string
+          parent_menu: string | null
+          publish_to: string
           updated_at: string | null
         }
         Insert: {
@@ -131,8 +134,11 @@ export type Database = {
           form_type?: string
           id?: string
           is_active?: boolean | null
+          menu_slug?: string | null
           name: string
           name_bn: string
+          parent_menu?: string | null
+          publish_to?: string
           updated_at?: string | null
         }
         Update: {
@@ -141,8 +147,11 @@ export type Database = {
           form_type?: string
           id?: string
           is_active?: boolean | null
+          menu_slug?: string | null
           name?: string
           name_bn?: string
+          parent_menu?: string | null
+          publish_to?: string
           updated_at?: string | null
         }
         Relationships: []
