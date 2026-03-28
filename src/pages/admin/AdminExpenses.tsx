@@ -382,6 +382,55 @@ const AdminExpenses = () => {
     setProjectForm({ name: p.name, name_bn: p.name_bn });
     setProjectDialog(true);
   };
+  const handleExcelDownload = () => {
+    const rows: string[][] = [];
+    // Header
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? madrasaName : madrasaNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', madrasaAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', madrasaPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', madrasaEmail]);
+    rows.push([]);
+    rows.push([bn ? 'খরচ প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
+    rows.push([]);
+    // Summary
+    rows.push([bn ? 'মোট খরচ' : 'Total Expense', `৳${formatNum(monthlyTotalExpense)}`, bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
+    rows.push([bn ? 'পূর্ববর্তী বকেয়া' : 'Previous Arrears', `৳${formatNum(previousArrears)}`, bn ? 'ক্যাশ' : 'Cash', `৳${formatNum(monthlyCash)}`]);
+    rows.push([]);
+
+    projects.forEach((project: any) => {
+      const projExpenses = expenses.filter((e: any) => e.project_id === project.id);
+      if (projExpenses.length === 0) return;
+      const projTotal = projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      rows.push([`${bn ? 'প্রকল্প' : 'Project'}: ${bn ? project.name_bn : project.name}`, '', '', '', `৳${formatNum(projTotal)}`]);
+
+      const projCategories = categories.filter((c: any) => c.project_id === project.id);
+      projCategories.forEach((cat: any) => {
+        const catExpenses = projExpenses.filter((e: any) => e.category_id === cat.id);
+        if (catExpenses.length === 0) return;
+        const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+        rows.push([`  ${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', `৳${formatNum(catTotal)}`]);
+        rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
+        catExpenses.forEach((e: any, i: number) => {
+          rows.push([String(i + 1), e.expense_date, e.description || '-', String(e.quantity || 1), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
+        });
+        rows.push([]);
+      });
+    });
+
+    rows.push([bn ? 'সর্বমোট খরচ' : 'Grand Total Expense', `৳${formatNum(monthlyTotalExpense)}`]);
+
+    const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `expense_report_${selectedMonthYear}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(bn ? 'ডাউনলোড হয়েছে' : 'Downloaded');
+  };
+
   const openEditCategory = (c: any) => {
     setEditingCategoryId(c.id);
     setCategoryForm({ project_id: c.project_id, name: c.name, name_bn: c.name_bn });
