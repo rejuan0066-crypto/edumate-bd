@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_records: {
+        Row: {
+          attendance_date: string
+          created_at: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          recorded_by: string | null
+          remarks: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          attendance_date?: string
+          created_at?: string | null
+          entity_id: string
+          entity_type?: string
+          id?: string
+          recorded_by?: string | null
+          remarks?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          attendance_date?: string
+          created_at?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          recorded_by?: string | null
+          remarks?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      attendance_rules: {
+        Row: {
+          config: Json
+          created_at: string | null
+          entity_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          rule_type: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          entity_type?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          rule_type?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          entity_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          rule_type?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           created_at: string | null
