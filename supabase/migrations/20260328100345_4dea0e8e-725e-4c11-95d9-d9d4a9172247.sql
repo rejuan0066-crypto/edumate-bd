@@ -1,0 +1,1 @@
+ALTER TABLE public.results ADD CONSTRAINT results_exam_student_subject_unique UNIQUE (exam_id, student_id, subject_id);

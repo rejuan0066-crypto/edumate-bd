@@ -219,7 +219,7 @@ const AdminStudents = () => {
               <Textarea className="mt-1" rows={3} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder={language === 'bn' ? 'পূর্ণ ঠিকানা লিখুন...' : 'Enter full address...'} />
             </div>
 
-            <Button onClick={() => form.student_id.trim() && form.name_bn.trim() && addMutation.mutate()} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
+            <Button onClick={() => { if (!form.student_id.trim()) { toast.error(language === 'bn' ? 'ছাত্র আইডি আবশ্যক' : 'Student ID is required'); return; } if (!form.name_bn.trim()) { toast.error(language === 'bn' ? 'নাম (বাংলা) আবশ্যক' : 'Name (BN) is required'); return; } addMutation.mutate(); }} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               {language === 'bn' ? 'ছাত্র যোগ করুন' : 'Add Student'}
             </Button>

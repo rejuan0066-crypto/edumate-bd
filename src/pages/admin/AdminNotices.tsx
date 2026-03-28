@@ -88,7 +88,7 @@ const AdminNotices = () => {
             <Input placeholder={language === 'bn' ? 'নোটিশের শিরোনাম' : 'Notice Title'} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="bg-background" />
             <Textarea placeholder={language === 'bn' ? 'নোটিশের বিবরণ' : 'Notice Content'} value={newContent} onChange={(e) => setNewContent(e.target.value)} className="bg-background" rows={4} />
             <div className="flex gap-2">
-              <Button onClick={() => newTitle.trim() && addMutation.mutate()} className="btn-primary-gradient" disabled={addMutation.isPending}>
+              <Button onClick={() => { if (!newTitle.trim()) { toast.error(language === 'bn' ? 'শিরোনাম লিখুন' : 'Enter title'); return; } addMutation.mutate(); }} className="btn-primary-gradient" disabled={addMutation.isPending}>
                 {addMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
                 {language === 'bn' ? 'যোগ করুন' : 'Add'}
               </Button>

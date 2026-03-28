@@ -83,7 +83,7 @@ const AdminSubjects = () => {
               <SelectTrigger className="bg-background"><SelectValue placeholder={language === 'bn' ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
               <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{language === 'bn' ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
             </Select>
-            <Button onClick={() => newName.trim() && addMutation.mutate()} className="btn-primary-gradient shrink-0" disabled={addMutation.isPending}>
+            <Button onClick={() => { if (!newName.trim()) { toast.error(language === 'bn' ? 'বিষয়ের নাম লিখুন' : 'Enter subject name'); return; } addMutation.mutate(); }} className="btn-primary-gradient shrink-0" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
               {language === 'bn' ? 'যোগ' : 'Add'}
             </Button>

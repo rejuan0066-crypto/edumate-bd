@@ -212,7 +212,7 @@ const AdminStaff = () => {
               <Textarea className="mt-1" rows={3} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder={language === 'bn' ? 'পূর্ণ ঠিকানা লিখুন...' : 'Enter full address...'} />
             </div>
 
-            <Button onClick={() => form.name_bn.trim() && addMutation.mutate()} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
+            <Button onClick={() => { if (!form.name_bn.trim()) { toast.error(language === 'bn' ? 'নাম (বাংলা) আবশ্যক' : 'Name (BN) is required'); return; } if (!form.designation) { toast.error(language === 'bn' ? 'পদবী নির্বাচন করুন' : 'Select designation'); return; } addMutation.mutate(); }} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               {language === 'bn' ? 'কর্মী যোগ করুন' : 'Add Staff'}
             </Button>
