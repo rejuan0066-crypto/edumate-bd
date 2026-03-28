@@ -113,7 +113,7 @@ type FieldData = {
 };
 
 const emptyCondition: ConditionData = { enabled: false, source_field_id: '', operator: 'equals', value: '' };
-const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type: 'custom', is_active: true };
+const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type: 'custom', is_active: true, publish_to: 'none', parent_menu: '', menu_slug: '' };
 const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition } };
 
 // Sortable field item component
