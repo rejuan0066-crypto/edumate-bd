@@ -10,7 +10,7 @@ import {
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
-  Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound
+  Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
