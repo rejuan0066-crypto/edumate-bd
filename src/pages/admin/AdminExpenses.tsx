@@ -436,7 +436,7 @@ const AdminExpenses = () => {
         rows.push([`  ${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', `৳${formatNum(catTotal)}`]);
         rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
         catExpenses.forEach((e: any, i: number) => {
-          rows.push([String(i + 1), e.expense_date, e.description || '-', String(e.quantity || 1), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
+          rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
         });
         rows.push([]);
       });
@@ -791,8 +791,8 @@ const AdminExpenses = () => {
                         <TableRow key={e.id}>
                           <TableCell>{i + 1}</TableCell>
                           <TableCell>{e.expense_date}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{e.description || '-'}</TableCell>
-                          <TableCell>{e.quantity}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{cleanDesc(e.description)}</TableCell>
+                          <TableCell>{e.quantity} {getUnit(e.description)}</TableCell>
                           <TableCell>{e.has_receipt ? '✅' : '❌'}</TableCell>
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
@@ -1128,8 +1128,8 @@ const AdminExpenses = () => {
                           <tr key={e.id}>
                             <td className="border p-1">{i + 1}</td>
                             <td className="border p-1">{e.expense_date}</td>
-                            <td className="border p-1">{e.description || '-'}</td>
-                            <td className="border p-1 text-center">{e.quantity || 1}</td>
+                            <td className="border p-1">{cleanDesc(e.description)}</td>
+                            <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
                             <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
                             <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
                           </tr>
