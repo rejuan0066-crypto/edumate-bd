@@ -431,13 +431,14 @@ const AdminExpenses = () => {
           ))}
         </div>
 
-        {/* Project-wise Breakdown */}
-        {projectBreakdown.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{bn ? 'প্রকল্প ভিত্তিক খরচ' : 'Project-wise Expenses'}</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Project & Category Breakdown Tabs */}
+        {(projectBreakdown.length > 0 || categoryBreakdown.length > 0) && (
+          <Tabs defaultValue="project-breakdown">
+            <TabsList className="grid grid-cols-2 w-full max-w-md">
+              <TabsTrigger value="project-breakdown">{bn ? 'প্রকল্প ভিত্তিক খরচ' : 'Project-wise'}</TabsTrigger>
+              <TabsTrigger value="category-breakdown">{bn ? 'ক্যাটেগরি ভিত্তিক খরচ' : 'Category-wise'}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="project-breakdown">
               <div className="border rounded-lg overflow-auto">
                 <Table>
                   <TableHeader>
@@ -458,17 +459,8 @@ const AdminExpenses = () => {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Category-wise Breakdown */}
-        {categoryBreakdown.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{bn ? 'ক্যাটেগরি ভিত্তিক খরচ' : 'Category-wise Expenses'}</CardTitle>
-            </CardHeader>
-            <CardContent>
+            </TabsContent>
+            <TabsContent value="category-breakdown">
               <div className="border rounded-lg overflow-auto">
                 <Table>
                   <TableHeader>
@@ -489,8 +481,8 @@ const AdminExpenses = () => {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
-          </Card>
+            </TabsContent>
+          </Tabs>
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
