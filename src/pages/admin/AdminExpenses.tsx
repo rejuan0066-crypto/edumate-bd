@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye } from 'lucide-react';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
@@ -55,6 +55,7 @@ const AdminExpenses = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
 
   // Dialogs
   const [projectDialog, setProjectDialog] = useState(false);
@@ -859,7 +860,13 @@ const AdminExpenses = () => {
                           <TableCell className="max-w-[200px] truncate">{cleanDesc(e.description)}</TableCell>
                           <TableCell>{e.quantity} {getUnit(e.description)}</TableCell>
                           <TableCell>{getMethod(e.description)}</TableCell>
-                          <TableCell>{e.has_receipt ? '✅' : '❌'}</TableCell>
+                          <TableCell>
+                            {e.has_receipt && e.receipt_url ? (
+                              <Button variant="ghost" size="sm" className="text-primary p-0 h-auto" onClick={() => setReceiptPreview(e.receipt_url)}>
+                                <Eye className="w-4 h-4 mr-1" />{bn ? 'দেখুন' : 'View'}
+                              </Button>
+                            ) : e.has_receipt ? '✅' : '❌'}
+                          </TableCell>
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
                             <Button variant="ghost" size="icon" onClick={() => openEditExpense(e)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
@@ -1263,6 +1270,30 @@ const AdminExpenses = () => {
           </div>
         </div>
       </div>
+
+      {/* Receipt Preview Dialog */}
+      <Dialog open={!!receiptPreview} onOpenChange={() => setReceiptPreview(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'রসিদ প্রিভিউ' : 'Receipt Preview'}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 overflow-auto max-h-[70vh]">
+            {receiptPreview?.endsWith('.pdf') ? (
+              <iframe src={receiptPreview} className="w-full h-[60vh] border rounded" />
+            ) : (
+              <img src={receiptPreview || ''} alt="Receipt" className="max-w-full max-h-[60vh] object-contain rounded border" />
+            )}
+            <div className="flex gap-2">
+              <a href={receiptPreview || ''} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />{bn ? 'ডাউনলোড' : 'Download'}</Button>
+              </a>
+              <Button variant="outline" size="sm" onClick={() => { if (receiptPreview) window.print(); }}>
+                <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
