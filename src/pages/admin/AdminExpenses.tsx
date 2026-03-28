@@ -644,56 +644,61 @@ const AdminExpenses = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10"><TrendingDown className="w-5 h-5 text-destructive" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">{bn ? 'মাসিক খরচ' : 'Monthly Expense'}</p>
-                <p className="text-lg font-bold text-foreground">৳{formatNum(monthlyTotalExpense)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">{bn ? 'মাসিক জমা' : 'Monthly Deposit'}</p>
-                <p className="text-lg font-bold text-foreground">৳{formatNum(monthlyTotalDeposit)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-accent/40"><Wallet className="w-5 h-5 text-accent-foreground" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">{bn ? 'মাসিক ক্যাশ' : 'Monthly Cash'}</p>
-                <p className={`text-lg font-bold ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-secondary"><DollarSign className="w-5 h-5 text-secondary-foreground" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p>
-                <p className={`text-lg font-bold ${totalArrears > 0 ? 'text-destructive' : 'text-foreground'}`}>৳{formatNum(totalArrears)}</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="stat-card flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+              <TrendingDown className="w-5 h-5 text-destructive" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-destructive leading-tight">৳{formatNum(monthlyTotalExpense)}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক খরচ' : 'Monthly Expense'}</p>
+            </div>
+          </div>
+          <div className="stat-card flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-primary leading-tight">৳{formatNum(monthlyTotalDeposit)}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক জমা' : 'Monthly Deposit'}</p>
+            </div>
+          </div>
+          <div className="stat-card flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${monthlyCash >= 0 ? 'bg-primary/10' : 'bg-destructive/10'} flex items-center justify-center shrink-0`}>
+              <Wallet className={`w-5 h-5 ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`} />
+            </div>
+            <div className="min-w-0">
+              <p className={`text-lg font-bold leading-tight ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মাসিক ক্যাশ' : 'Monthly Cash'}</p>
+            </div>
+          </div>
+          <div className="stat-card flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl ${totalArrears > 0 ? 'bg-destructive/10' : 'bg-muted/50'} flex items-center justify-center shrink-0`}>
+              <DollarSign className={`w-5 h-5 ${totalArrears > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
+            </div>
+            <div className="min-w-0">
+              <p className={`text-lg font-bold leading-tight ${totalArrears > 0 ? 'text-destructive' : 'text-foreground'}`}>৳{formatNum(totalArrears)}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'বকেয়া' : 'Arrears'}</p>
+            </div>
+          </div>
         </div>
 
         {/* Overall Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: bn ? 'মোট খরচ' : 'Total Expense', val: totalExpenseAll, color: 'text-destructive' },
-            { label: bn ? 'মোট জমা' : 'Total Deposit', val: totalDepositAll, color: 'text-primary' },
-            { label: bn ? 'মোট ক্যাশ' : 'Total Cash', val: totalCashAll, color: totalCashAll >= 0 ? 'text-primary' : 'text-destructive' },
-            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: totalArrearsAll, color: totalArrearsAll > 0 ? 'text-destructive' : 'text-muted-foreground' },
+            { label: bn ? 'মোট খরচ' : 'Total Expense', val: totalExpenseAll, color: 'text-destructive', icon: TrendingDown, bg: 'bg-destructive/10' },
+            { label: bn ? 'মোট জমা' : 'Total Deposit', val: totalDepositAll, color: 'text-primary', icon: TrendingUp, bg: 'bg-primary/10' },
+            { label: bn ? 'মোট ক্যাশ' : 'Total Cash', val: totalCashAll, color: totalCashAll >= 0 ? 'text-primary' : 'text-destructive', icon: Wallet, bg: totalCashAll >= 0 ? 'bg-primary/10' : 'bg-destructive/10' },
+            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: totalArrearsAll, color: totalArrearsAll > 0 ? 'text-destructive' : 'text-muted-foreground', icon: DollarSign, bg: totalArrearsAll > 0 ? 'bg-destructive/10' : 'bg-muted/50' },
           ].map((s, i) => (
-            <div key={i} className="bg-card rounded-lg border p-3 text-center">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className={`text-base font-bold ${s.color}`}>৳{formatNum(s.val)}</p>
+            <div key={i} className="stat-card flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-lg font-bold leading-tight ${s.color}`}>৳{formatNum(s.val)}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{s.label}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -798,15 +803,18 @@ const AdminExpenses = () => {
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {projects.map((p: any) => (
-                      <Card key={p.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedProjectId(p.id)}>
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold text-foreground">{bn ? p.name_bn : p.name}</h4>
-                          <div className="mt-2 flex justify-between text-sm">
-                            <span className="text-muted-foreground">{bn ? 'মাসিক:' : 'Monthly:'} <span className="text-destructive font-medium">৳{formatNum(getProjectMonthly(p.id))}</span></span>
-                            <span className="text-muted-foreground">{bn ? 'মোট:' : 'Total:'} <span className="text-destructive font-medium">৳{formatNum(getProjectTotal(p.id))}</span></span>
+                      <div key={p.id} className="stat-card flex items-center gap-3 cursor-pointer" onClick={() => setSelectedProjectId(p.id)}>
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                          <FolderPlus className="w-5 h-5 text-accent" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-foreground text-sm leading-tight truncate">{bn ? p.name_bn : p.name}</h4>
+                          <div className="flex gap-3 text-[11px] text-muted-foreground mt-0.5">
+                            <span>{bn ? 'মাসিক:' : 'Mo:'} <span className="text-destructive font-medium">৳{formatNum(getProjectMonthly(p.id))}</span></span>
+                            <span>{bn ? 'মোট:' : 'Tot:'} <span className="text-destructive font-medium">৳{formatNum(getProjectTotal(p.id))}</span></span>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -822,15 +830,18 @@ const AdminExpenses = () => {
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {projectCategories.map((c: any) => (
-                      <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setSelectedCategoryId(c.id)}>
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold text-foreground">{bn ? c.name_bn : c.name}</h4>
-                          <div className="mt-2 flex justify-between text-sm">
-                            <span className="text-muted-foreground">{bn ? 'মাসিক:' : 'Monthly:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryMonthly(c.id))}</span></span>
-                            <span className="text-muted-foreground">{bn ? 'মোট:' : 'Total:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryTotal(c.id))}</span></span>
+                      <div key={c.id} className="stat-card flex items-center gap-3 cursor-pointer" onClick={() => setSelectedCategoryId(c.id)}>
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <TagIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-foreground text-sm leading-tight truncate">{bn ? c.name_bn : c.name}</h4>
+                          <div className="flex gap-3 text-[11px] text-muted-foreground mt-0.5">
+                            <span>{bn ? 'মাসিক:' : 'Mo:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryMonthly(c.id))}</span></span>
+                            <span>{bn ? 'মোট:' : 'Tot:'} <span className="text-destructive font-medium">৳{formatNum(getCategoryTotal(c.id))}</span></span>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1133,7 +1144,7 @@ const AdminExpenses = () => {
                 </div>
 
                 {/* Institution Management */}
-                <div className="border rounded-lg p-4 bg-muted/20">
+                <div className="card-elevated p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রতিষ্ঠানের তথ্য' : 'Institution Info'}</h4>
                     <div className="flex gap-2">
@@ -1174,7 +1185,7 @@ const AdminExpenses = () => {
                   ) : (
                     <div className="space-y-2">
                       {institutions.map((inst: any) => (
-                        <div key={inst.id} className={`flex items-center justify-between p-3 rounded-lg border ${selectedInstitutionId === inst.id ? 'border-primary bg-primary/5' : 'bg-secondary/30'}`}>
+                        <div key={inst.id} className={`stat-card flex items-center justify-between ${selectedInstitutionId === inst.id ? 'border-primary bg-primary/5' : ''}`}>
                           <div className="cursor-pointer flex-1 flex items-center gap-2" onClick={() => setSelectedInstitutionId(inst.id)}>
                             {inst.logo_url && <img src={inst.logo_url} alt="Logo" className="w-8 h-8 object-contain rounded" />}
                             <div>
@@ -1229,7 +1240,7 @@ const AdminExpenses = () => {
 
                 {/* Per-project download */}
                 {projects.length > 0 && (
-                  <div className="border rounded-lg p-4 bg-muted/20">
+                  <div className="card-elevated p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-semibold text-foreground">{bn ? 'প্রকল্প ভিত্তিক ডাউনলোড' : 'Per-Project Download'}</h4>
                       {institutions.length > 1 && (
@@ -1250,7 +1261,7 @@ const AdminExpenses = () => {
                         const projTotal = projExp.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
                         if (projExp.length === 0) return null;
                         return (
-                          <div key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
+                          <div key={p.id} className="stat-card flex items-center justify-between">
                             <div>
                               <span className="text-sm font-medium">{bn ? p.name_bn : p.name}</span>
                               <span className="text-xs text-muted-foreground ml-2">৳{formatNum(projTotal)}</span>
