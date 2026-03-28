@@ -16,6 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download } from 'lucide-react';
 
+const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
+
+const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -60,7 +64,7 @@ const AdminExpenses = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Form states
-  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: '' };
+  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', quantity_unit: 'পিস', has_receipt: false, receipt_url: '', amount: '' };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const [projectForm, setProjectForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
@@ -702,7 +706,22 @@ const AdminExpenses = () => {
                           </div>
                           <div>
                             <Label>{bn ? 'পরিমাণ' : 'Quantity'}</Label>
-                            <Input type="number" value={expenseForm.quantity} onChange={e => setExpenseForm(f => ({ ...f, quantity: e.target.value }))} />
+                            <div className="flex gap-2">
+                              <Input 
+                                className="flex-1" 
+                                value={expenseForm.quantity} 
+                                onChange={e => setExpenseForm(f => ({ ...f, quantity: bnToEnDigit(e.target.value) }))} 
+                                placeholder="১"
+                              />
+                              <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {QUANTITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                         <div>
@@ -711,7 +730,7 @@ const AdminExpenses = () => {
                         </div>
                         <div>
                           <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                          <Input type="number" value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))} />
+                          <Input value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: bnToEnDigit(e.target.value) }))} placeholder="০" />
                         </div>
                         <div>
                           <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
