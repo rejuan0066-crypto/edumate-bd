@@ -723,8 +723,9 @@ const AdminExpenses = () => {
                               <Input 
                                 className="flex-1" 
                                 value={expenseForm.quantity} 
-                                onChange={e => setExpenseForm(f => ({ ...f, quantity: bnToEnDigit(e.target.value) }))} 
+                                onChange={e => setExpenseForm(f => ({ ...f, quantity: onlyNumbers(e.target.value) }))} 
                                 placeholder="১"
+                                inputMode="decimal"
                               />
                               <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
                                 <SelectTrigger className="w-24">
@@ -743,7 +744,22 @@ const AdminExpenses = () => {
                         </div>
                         <div>
                           <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                          <Input value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: bnToEnDigit(e.target.value) }))} placeholder="০" />
+                          <Input 
+                            value={expenseForm.amount} 
+                            onChange={e => setExpenseForm(f => ({ ...f, amount: onlyNumbers(e.target.value) }))} 
+                            placeholder="০" 
+                            inputMode="decimal"
+                          />
+                        </div>
+                        <div>
+                          <Label>{bn ? 'খরচের মাধ্যম' : 'Expense Method'}</Label>
+                          <Select value={expenseForm.expense_method} onValueChange={v => setExpenseForm(f => ({ ...f, expense_method: v }))}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {EXPENSE_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
                         </div>
                         <div>
                           <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
