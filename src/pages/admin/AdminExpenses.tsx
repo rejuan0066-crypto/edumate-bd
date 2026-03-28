@@ -400,10 +400,11 @@ const AdminExpenses = () => {
   const handleExcelDownload = () => {
     const rows: string[][] = [];
     // Header
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? madrasaName : madrasaNameEn]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', madrasaAddress]);
-    rows.push([bn ? 'ফোন' : 'Phone', madrasaPhone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', madrasaEmail]);
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? summaryForm.inst_name : summaryForm.inst_name_en]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', summaryForm.inst_address]);
+    rows.push([bn ? 'ফোন' : 'Phone', summaryForm.inst_phone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', summaryForm.inst_email]);
+    if (summaryForm.inst_other) rows.push([bn ? 'অন্যান্য' : 'Other', summaryForm.inst_other]);
     rows.push([]);
     rows.push([bn ? 'খরচ প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
     rows.push([]);
@@ -1036,9 +1037,10 @@ const AdminExpenses = () => {
       <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
         {/* Institution Header */}
         <div className="text-center mb-4 border-b-2 border-black pb-3">
-          <h1 className="text-lg font-bold">{bn ? madrasaName : madrasaNameEn}</h1>
-          <p className="text-sm">{madrasaAddress}</p>
-          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {madrasaPhone} | {bn ? 'ইমেইল' : 'Email'}: {madrasaEmail}</p>
+          <h1 className="text-lg font-bold">{bn ? summaryForm.inst_name : summaryForm.inst_name_en}</h1>
+          <p className="text-sm">{summaryForm.inst_address}</p>
+          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {summaryForm.inst_phone} | {bn ? 'ইমেইল' : 'Email'}: {summaryForm.inst_email}</p>
+          {summaryForm.inst_other && <p className="text-xs">{summaryForm.inst_other}</p>}
           <p className="text-base font-semibold mt-2">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</p>
           <p className="text-sm">{selectedMonthYear}</p>
         </div>
