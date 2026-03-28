@@ -684,16 +684,21 @@ const AdminExpenses = () => {
         </div>
 
         {/* Overall Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: bn ? 'মোট খরচ' : 'Total Expense', val: totalExpenseAll, color: 'text-destructive' },
-            { label: bn ? 'মোট জমা' : 'Total Deposit', val: totalDepositAll, color: 'text-primary' },
-            { label: bn ? 'মোট ক্যাশ' : 'Total Cash', val: totalCashAll, color: totalCashAll >= 0 ? 'text-primary' : 'text-destructive' },
-            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: totalArrearsAll, color: totalArrearsAll > 0 ? 'text-destructive' : 'text-muted-foreground' },
+            { label: bn ? 'মোট খরচ' : 'Total Expense', val: totalExpenseAll, color: 'text-destructive', icon: TrendingDown, bg: 'bg-destructive/10' },
+            { label: bn ? 'মোট জমা' : 'Total Deposit', val: totalDepositAll, color: 'text-primary', icon: TrendingUp, bg: 'bg-primary/10' },
+            { label: bn ? 'মোট ক্যাশ' : 'Total Cash', val: totalCashAll, color: totalCashAll >= 0 ? 'text-primary' : 'text-destructive', icon: Wallet, bg: totalCashAll >= 0 ? 'bg-primary/10' : 'bg-destructive/10' },
+            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: totalArrearsAll, color: totalArrearsAll > 0 ? 'text-destructive' : 'text-muted-foreground', icon: DollarSign, bg: totalArrearsAll > 0 ? 'bg-destructive/10' : 'bg-muted/50' },
           ].map((s, i) => (
-            <div key={i} className="bg-card rounded-lg border p-3 text-center">
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-              <p className={`text-base font-bold ${s.color}`}>৳{formatNum(s.val)}</p>
+            <div key={i} className="stat-card flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className={`text-lg font-bold leading-tight ${s.color}`}>৳{formatNum(s.val)}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{s.label}</p>
+              </div>
             </div>
           ))}
         </div>
