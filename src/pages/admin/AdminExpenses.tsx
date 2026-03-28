@@ -1155,7 +1155,7 @@ const AdminExpenses = () => {
                             <Button variant="ghost" size="icon" onClick={() => { setEditingInstitutionId(inst.id); setInstitutionForm({ name: inst.name, name_en: inst.name_en || '', address: inst.address || '', phone: inst.phone || '', email: inst.email || '', other_info: inst.other_info || '', logo_url: inst.logo_url || '' }); setInstitutionDialog(true); }}>
                               <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(inst.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { if (confirm(bn ? 'এই প্রতিষ্ঠান মুছে ফেলতে চান?' : 'Delete this institution?')) { deleteInstitution.mutate(inst.id); if (selectedInstitutionId === inst.id) setSelectedInstitutionId(''); } }}>
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>
