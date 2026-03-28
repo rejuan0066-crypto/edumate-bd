@@ -976,6 +976,9 @@ const AdminExpenses = () => {
                   <Button variant="outline" onClick={handlePrint}>
                     <Printer className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
                   </Button>
+                  <Button variant="outline" onClick={handleExcelDownload}>
+                    <Download className="w-4 h-4 mr-1" />{bn ? 'এক্সেল ডাউনলোড' : 'Excel Download'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -985,8 +988,14 @@ const AdminExpenses = () => {
 
       {/* Print Section */}
       <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
-        <h1 className="text-xl font-bold text-center mb-1">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</h1>
-        <p className="text-center text-sm mb-4">{selectedMonthYear}</p>
+        {/* Institution Header */}
+        <div className="text-center mb-4 border-b-2 border-black pb-3">
+          <h1 className="text-lg font-bold">{bn ? madrasaName : madrasaNameEn}</h1>
+          <p className="text-sm">{madrasaAddress}</p>
+          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {madrasaPhone} | {bn ? 'ইমেইল' : 'Email'}: {madrasaEmail}</p>
+          <p className="text-base font-semibold mt-2">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</p>
+          <p className="text-sm">{selectedMonthYear}</p>
+        </div>
 
         {/* Summary */}
         <table className="w-full border-collapse border mb-4 text-sm">
