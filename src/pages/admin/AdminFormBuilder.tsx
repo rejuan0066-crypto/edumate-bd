@@ -66,6 +66,13 @@ type FormData = {
   is_active: boolean;
 };
 
+type ConditionData = {
+  enabled: boolean;
+  source_field_id: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_empty' | 'is_empty';
+  value: string;
+};
+
 type FieldData = {
   id?: string;
   form_id?: string;
@@ -78,18 +85,22 @@ type FieldData = {
   options: string[];
   default_value: string;
   is_active: boolean;
+  condition: ConditionData;
 };
 
+const emptyCondition: ConditionData = { enabled: false, source_field_id: '', operator: 'equals', value: '' };
 const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type: 'custom', is_active: true };
-const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true };
+const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition } };
 
 // Sortable field item component
-const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField }: any) => {
+const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField, fields }: any) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.5 : (!field.is_active ? 0.5 : 1) };
   const Icon = getFieldIcon(field.field_type);
   let opts: string[] = [];
   try { opts = typeof field.options === 'string' ? JSON.parse(field.options as string) : (Array.isArray(field.options) ? (field.options as string[]) : []); } catch { opts = []; }
+  let hasCondition = false;
+  try { const v = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {}); hasCondition = !!v.condition; } catch {}
 
   return (
     <Card ref={setNodeRef} style={style} className="transition-shadow">
@@ -108,6 +119,11 @@ const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditFie
           <div className="flex items-center gap-2 mt-0.5">
             <Badge variant="outline" className="text-[10px]">{getFieldLabel(field.field_type)}</Badge>
             {opts.length > 0 && <span className="text-[10px] text-muted-foreground">{opts.length} {bn ? 'টি অপশন' : 'options'}</span>}
+            {hasCondition && (
+              <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                {bn ? 'শর্তযুক্ত' : 'Conditional'}
+              </Badge>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1">
@@ -140,6 +156,7 @@ const AdminFormBuilder = () => {
   const [permanentAddr, setPermanentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
   const [presentAddr, setPresentAddr] = useState<AddressData>({ division: '', district: '', upazila: '', union: '', postOffice: '', village: '' });
   const [sameAsPermanent, setSameAsPermanent] = useState(false);
+  const [previewValues, setPreviewValues] = useState<Record<string, string>>({});
 
   // Sync present address when "same as permanent" is checked
   const handleSameAsPermanent = (checked: boolean) => {
@@ -255,6 +272,7 @@ const AdminFormBuilder = () => {
   // Field mutations
   const saveField = useMutation({
     mutationFn: async (data: FieldData) => {
+      const validationObj = data.condition.enabled ? { condition: { source_field_id: data.condition.source_field_id, operator: data.condition.operator, value: data.condition.value } } : {};
       const payload = {
         form_id: selectedFormId!,
         field_type: data.field_type,
@@ -266,6 +284,7 @@ const AdminFormBuilder = () => {
         options: JSON.stringify(data.options),
         default_value: data.default_value,
         is_active: data.is_active,
+        validation: JSON.stringify(validationObj),
       };
       if (editingFieldId) {
         const { error } = await supabase.from('custom_form_fields').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingFieldId);
@@ -324,7 +343,12 @@ const AdminFormBuilder = () => {
   const openEditField = (field: any) => {
     let opts: string[] = [];
     try { opts = typeof field.options === 'string' ? JSON.parse(field.options) : (Array.isArray(field.options) ? field.options : []); } catch { opts = []; }
-    setFieldData({ field_type: field.field_type, label: field.label, label_bn: field.label_bn, placeholder: field.placeholder || '', is_required: field.is_required, sort_order: field.sort_order, options: opts, default_value: field.default_value || '', is_active: field.is_active });
+    let cond: ConditionData = { ...emptyCondition };
+    try {
+      const v = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {});
+      if (v.condition) cond = { ...emptyCondition, ...v.condition, enabled: true };
+    } catch {}
+    setFieldData({ field_type: field.field_type, label: field.label, label_bn: field.label_bn, placeholder: field.placeholder || '', is_required: field.is_required, sort_order: field.sort_order, options: opts, default_value: field.default_value || '', is_active: field.is_active, condition: cond });
     setEditingFieldId(field.id);
     setFieldDialogOpen(true);
   };
@@ -344,6 +368,26 @@ const AdminFormBuilder = () => {
   const getFieldLabel = (type: string) => {
     const ft = FIELD_TYPES.find(f => f.value === type);
     return ft ? (bn ? ft.label_bn : ft.label) : type;
+  };
+
+  const evaluateCondition = (field: any): boolean => {
+    let validation: any = {};
+    try { validation = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {}); } catch {}
+    if (!validation.condition) return true;
+    const { source_field_id, operator, value } = validation.condition;
+    const sourceVal = previewValues[source_field_id] || '';
+    switch (operator) {
+      case 'equals': return sourceVal === value;
+      case 'not_equals': return sourceVal !== value;
+      case 'contains': return sourceVal.toLowerCase().includes((value || '').toLowerCase());
+      case 'not_empty': return sourceVal.trim() !== '';
+      case 'is_empty': return sourceVal.trim() === '';
+      default: return true;
+    }
+  };
+
+  const updatePreviewValue = (fieldId: string, val: string) => {
+    setPreviewValues(p => ({ ...p, [fieldId]: val }));
   };
 
   return (
@@ -549,6 +593,49 @@ const AdminFormBuilder = () => {
                             </div>
                           </div>
 
+                          {/* Conditional Logic */}
+                          <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                            <div className="flex items-center gap-2">
+                              <Switch checked={fieldData.condition.enabled} onCheckedChange={c => setFieldData(p => ({ ...p, condition: { ...p.condition, enabled: c } }))} />
+                              <Label className="font-semibold">{bn ? 'কন্ডিশনাল লজিক' : 'Conditional Logic'}</Label>
+                            </div>
+                            {fieldData.condition.enabled && (
+                              <div className="space-y-2 pl-1">
+                                <p className="text-xs text-muted-foreground">{bn ? 'এই ফিল্ডটি তখনই দেখাবে যখন:' : 'Show this field only when:'}</p>
+                                <div>
+                                  <Label className="text-xs">{bn ? 'উৎস ফিল্ড' : 'Source Field'}</Label>
+                                  <Select value={fieldData.condition.source_field_id} onValueChange={v => setFieldData(p => ({ ...p, condition: { ...p.condition, source_field_id: v } }))}>
+                                    <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'ফিল্ড নির্বাচন করুন' : 'Select field'} /></SelectTrigger>
+                                    <SelectContent>
+                                      {fields.filter(f => f.id !== editingFieldId).map(f => (
+                                        <SelectItem key={f.id} value={f.id}>{bn ? f.label_bn : f.label}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label className="text-xs">{bn ? 'শর্ত' : 'Operator'}</Label>
+                                  <Select value={fieldData.condition.operator} onValueChange={v => setFieldData(p => ({ ...p, condition: { ...p.condition, operator: v as ConditionData['operator'] } }))}>
+                                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="equals">{bn ? 'সমান' : 'Equals'}</SelectItem>
+                                      <SelectItem value="not_equals">{bn ? 'সমান নয়' : 'Not Equals'}</SelectItem>
+                                      <SelectItem value="contains">{bn ? 'ধারণ করে' : 'Contains'}</SelectItem>
+                                      <SelectItem value="not_empty">{bn ? 'খালি নয়' : 'Not Empty'}</SelectItem>
+                                      <SelectItem value="is_empty">{bn ? 'খালি' : 'Is Empty'}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {!['not_empty', 'is_empty'].includes(fieldData.condition.operator) && (
+                                  <div>
+                                    <Label className="text-xs">{bn ? 'মান' : 'Value'}</Label>
+                                    <Input className="mt-1" value={fieldData.condition.value} onChange={e => setFieldData(p => ({ ...p, condition: { ...p.condition, value: e.target.value } }))} placeholder={bn ? 'মান লিখুন' : 'Enter value'} />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                           <div>
                             <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
                             <Input type="number" value={fieldData.sort_order} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
@@ -584,6 +671,7 @@ const AdminFormBuilder = () => {
                             getFieldLabel={getFieldLabel}
                             openEditField={openEditField}
                             deleteField={(id: string) => deleteFieldMut.mutate(id)}
+                            fields={fields}
                           />
                         ))}
                       </div>
@@ -610,6 +698,7 @@ const AdminFormBuilder = () => {
             </DialogHeader>
             <div className="space-y-4 p-2">
               {fields.filter(f => f.is_active).map(field => {
+                if (!evaluateCondition(field)) return null;
                 let opts: string[] = [];
                 try { opts = typeof field.options === 'string' ? JSON.parse(field.options as string) : (Array.isArray(field.options) ? (field.options as string[]) : []); } catch { opts = []; }
                 return (
@@ -618,11 +707,11 @@ const AdminFormBuilder = () => {
                       {bn ? field.label_bn : field.label}
                       {field.is_required && <span className="text-destructive">*</span>}
                     </Label>
-                    {field.field_type === 'text' && <Input placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} />}
-                    {field.field_type === 'email' && <Input type="email" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'phone' && <Input type="tel" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} />}
-                    {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} />}
+                    {field.field_type === 'text' && <Input placeholder={field.placeholder || ''} defaultValue={field.default_value || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'email' && <Input type="email" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'phone' && <Input type="tel" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
+                    {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} onChange={e => updatePreviewValue(field.id, e.target.value)} />}
                     {field.field_type === 'date' && <Input type="date" />}
                     {field.field_type === 'file' && <Input type="file" />}
                     {field.field_type === 'switch' && <Switch />}
@@ -658,7 +747,7 @@ const AdminFormBuilder = () => {
                       </div>
                     )}
                     {field.field_type === 'select' && (
-                      <Select>
+                      <Select onValueChange={v => updatePreviewValue(field.id, v)}>
                         <SelectTrigger><SelectValue placeholder={field.placeholder || (bn ? 'নির্বাচন করুন' : 'Select...')} /></SelectTrigger>
                         <SelectContent>
                           {opts.map((opt, i) => <SelectItem key={i} value={opt}>{opt}</SelectItem>)}
@@ -669,7 +758,7 @@ const AdminFormBuilder = () => {
                       <div className="flex flex-wrap gap-3">
                         {opts.map((opt, i) => (
                           <label key={i} className="flex items-center gap-1.5 text-sm">
-                            <input type="radio" name={field.id} value={opt} className="accent-primary" />
+                            <input type="radio" name={field.id} value={opt} className="accent-primary" onChange={() => updatePreviewValue(field.id, opt)} />
                             {opt}
                           </label>
                         ))}
