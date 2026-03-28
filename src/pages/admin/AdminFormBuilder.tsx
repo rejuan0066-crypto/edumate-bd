@@ -759,7 +759,7 @@ const AdminFormBuilder = () => {
                       <div className="flex flex-wrap gap-3">
                         {opts.map((opt, i) => (
                           <label key={i} className="flex items-center gap-1.5 text-sm">
-                            <input type="radio" name={field.id} value={opt} className="accent-primary" />
+                            <input type="radio" name={field.id} value={opt} className="accent-primary" onChange={() => updatePreviewValue(field.id, opt)} />
                             {opt}
                           </label>
                         ))}
