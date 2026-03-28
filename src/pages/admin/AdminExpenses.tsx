@@ -183,7 +183,7 @@ const AdminExpenses = () => {
   const addExpense = useMutation({
     mutationFn: async () => {
       if (!expenseForm.project_id || !expenseForm.category_id || !expenseForm.amount) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill required fields'); return; }
-      const { error } = await supabase.from('expenses').insert({
+      const payload = {
         month_year: selectedMonthYear,
         project_id: expenseForm.project_id,
         category_id: expenseForm.category_id,
@@ -193,15 +193,22 @@ const AdminExpenses = () => {
         has_receipt: expenseForm.has_receipt,
         receipt_url: expenseForm.receipt_url || null,
         amount: Number(expenseForm.amount)
-      });
-      if (error) throw error;
+      };
+      if (editingExpenseId) {
+        const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expenses').insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       setExpenseDialog(false);
-      setExpenseForm({ project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: '' });
-      toast.success(bn ? 'খরচ যোগ হয়েছে' : 'Expense added');
+      setExpenseForm(defaultExpenseForm);
+      setEditingExpenseId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
