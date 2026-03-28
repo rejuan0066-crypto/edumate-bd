@@ -902,49 +902,65 @@ const AdminExpenses = () => {
 
           {/* Deposits Tab */}
           <TabsContent value="deposits" className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap justify-between items-center gap-2">
               <h3 className="font-semibold">{bn ? 'জমা তালিকা' : 'Deposit List'} ({selectedMonthYear})</h3>
-              <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'জমা যোগ' : 'Add Deposit'}</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'জমা সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন জমা' : 'New Deposit')}</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
-                      <Input type="date" value={depositForm.deposit_date} onChange={e => setDepositForm(f => ({ ...f, deposit_date: e.target.value }))} />
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" variant="outline" onClick={() => {
+                  setDepositPrintEditData({
+                    instName, instNameEn, instAddress, instPhone, instEmail, instOther, instLogo,
+                    reportTitle: bn ? 'জমা প্রতিবেদন' : 'Deposit Report',
+                    reportSubtitle: '', casherName: summaryData?.casher_name || '', principalName: summaryData?.principal_name || '', extraNote: ''
+                  });
+                  setDepositPrintEditMode(false);
+                  setDepositPrintPreview(true);
+                }}>
+                  <Eye className="w-4 h-4 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleDepositExcelDownload}>
+                  <Download className="w-4 h-4 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
+                </Button>
+                <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'জমা যোগ' : 'Add Deposit'}</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'জমা সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন জমা' : 'New Deposit')}</DialogTitle></DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
+                        <Input type="date" value={depositForm.deposit_date} onChange={e => setDepositForm(f => ({ ...f, deposit_date: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</Label>
+                        <Input value={depositForm.bank_details} onChange={e => setDepositForm(f => ({ ...f, bank_details: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</Label>
+                        <Input value={depositForm.other_details} onChange={e => setDepositForm(f => ({ ...f, other_details: e.target.value }))} />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'উৎস' : 'Source'}</Label>
+                        <Select value={depositForm.source} onValueChange={v => setDepositForm(f => ({ ...f, source: v }))}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="manual">{bn ? 'ম্যানুয়াল' : 'Manual'}</SelectItem>
+                            <SelectItem value="fees">{bn ? 'ফি' : 'Fees'}</SelectItem>
+                            <SelectItem value="donation">{bn ? 'অনুদান' : 'Donation'}</SelectItem>
+                            <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
+                        <Input type="number" value={depositForm.amount} onChange={e => setDepositForm(f => ({ ...f, amount: e.target.value }))} />
+                      </div>
+                      <Button className="w-full" onClick={() => addDeposit.mutate()} disabled={addDeposit.isPending}>
+                        {bn ? 'সংরক্ষণ করুন' : 'Save'}
+                      </Button>
                     </div>
-                    <div>
-                      <Label>{bn ? 'ব্যাংক বিবরণ' : 'Bank Details'}</Label>
-                      <Input value={depositForm.bank_details} onChange={e => setDepositForm(f => ({ ...f, bank_details: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'অন্যান্য বিবরণ' : 'Other Details'}</Label>
-                      <Input value={depositForm.other_details} onChange={e => setDepositForm(f => ({ ...f, other_details: e.target.value }))} />
-                    </div>
-                    <div>
-                      <Label>{bn ? 'উৎস' : 'Source'}</Label>
-                      <Select value={depositForm.source} onValueChange={v => setDepositForm(f => ({ ...f, source: v }))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="manual">{bn ? 'ম্যানুয়াল' : 'Manual'}</SelectItem>
-                          <SelectItem value="fees">{bn ? 'ফি' : 'Fees'}</SelectItem>
-                          <SelectItem value="donation">{bn ? 'অনুদান' : 'Donation'}</SelectItem>
-                          <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                      <Input type="number" value={depositForm.amount} onChange={e => setDepositForm(f => ({ ...f, amount: e.target.value }))} />
-                    </div>
-                    <Button className="w-full" onClick={() => addDeposit.mutate()} disabled={addDeposit.isPending}>
-                      {bn ? 'সংরক্ষণ করুন' : 'Save'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <div className="border rounded-lg overflow-auto">
@@ -974,7 +990,7 @@ const AdminExpenses = () => {
                       <TableCell className="text-right font-medium">৳{formatNum(Number(d.amount))}</TableCell>
                       <TableCell className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEditDeposit(d)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteDeposit.mutate(d.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteDeposit.mutate(d.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
