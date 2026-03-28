@@ -241,7 +241,11 @@ const AdminExpenses = () => {
 
   const addExpense = useMutation({
     mutationFn: async () => {
-      if (!expenseForm.project_id || !expenseForm.category_id || !expenseForm.amount) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill required fields'); return; }
+      if (!expenseForm.project_id || !expenseForm.category_id || !expenseForm.amount || !expenseForm.quantity) { toast.error(bn ? 'পরিমাণ ও টাকা অবশ্যই পূরণ করুন' : 'Quantity & Amount are required'); return; }
+      const parsedAmount = Number(onlyNumbers(expenseForm.amount));
+      const parsedQty = Number(onlyNumbers(expenseForm.quantity));
+      if (isNaN(parsedAmount) || parsedAmount <= 0) { toast.error(bn ? 'সঠিক টাকার পরিমাণ দিন' : 'Enter valid amount'); return; }
+      if (isNaN(parsedQty) || parsedQty <= 0) { toast.error(bn ? 'সঠিক পরিমাণ দিন' : 'Enter valid quantity'); return; }
       
       let receiptUrl = expenseForm.receipt_url || null;
       
@@ -259,19 +263,20 @@ const AdminExpenses = () => {
         receiptUrl = urlData.publicUrl;
       }
       
-      const descWithUnit = expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস'
-        ? `${expenseForm.description || ''}[unit:${expenseForm.quantity_unit}]`.trim()
-        : (expenseForm.description || '').replace(/\[unit:.*?\]/g, '').trim();
+      let descWithTags = (expenseForm.description || '').trim();
+      if (expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস') descWithTags += `[unit:${expenseForm.quantity_unit}]`;
+      if (expenseForm.expense_method && expenseForm.expense_method !== 'ক্যাশ') descWithTags += `[method:${expenseForm.expense_method}]`;
+      
       const payload = {
         month_year: selectedMonthYear,
         project_id: expenseForm.project_id,
         category_id: expenseForm.category_id,
         expense_date: expenseForm.expense_date,
-        description: descWithUnit,
-        quantity: Number(bnToEnDigit(expenseForm.quantity)) || 1,
+        description: descWithTags,
+        quantity: parsedQty,
         has_receipt: expenseForm.has_receipt,
         receipt_url: receiptUrl,
-        amount: Number(bnToEnDigit(expenseForm.amount))
+        amount: parsedAmount
       };
       if (editingExpenseId) {
         const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
