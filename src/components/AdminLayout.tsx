@@ -6,7 +6,7 @@ import LanguageToggle from './LanguageToggle';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
-  ChevronRight, Layers
+  ChevronRight, Layers, Receipt
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -26,6 +26,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     { path: '/admin/results', label: t('results'), icon: FileText },
     { path: '/admin/notices', label: t('notices'), icon: Bell },
     { path: '/admin/fees', label: t('fees'), icon: CreditCard },
+    { path: '/admin/expenses', label: language === 'bn' ? 'খরচ ব্যবস্থাপনা' : 'Expenses', icon: Receipt },
     { path: '/admin/website', label: t('websiteControl'), icon: Globe },
     { path: '/admin/settings', label: t('settings'), icon: Settings },
   ];

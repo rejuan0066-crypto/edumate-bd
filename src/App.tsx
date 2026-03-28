@@ -29,6 +29,7 @@ import AdminNotices from "./pages/admin/AdminNotices";
 import AdminFees from "./pages/admin/AdminFees";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminExpenses from "./pages/admin/AdminExpenses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/admin/notices" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
               <Route path="/admin/fees" element={<ProtectedRoute><AdminFees /></ProtectedRoute>} />
               <Route path="/admin/website" element={<ProtectedRoute><AdminWebsite /></ProtectedRoute>} />
+              <Route path="/admin/expenses" element={<ProtectedRoute><AdminExpenses /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
