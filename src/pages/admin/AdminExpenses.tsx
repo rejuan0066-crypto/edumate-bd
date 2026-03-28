@@ -937,89 +937,73 @@ const AdminExpenses = () => {
           </tbody>
         </table>
 
-        {/* Project Breakdown */}
-        {projectBreakdown.length > 0 && (
-          <>
-            <h2 className="text-base font-bold mb-2">{bn ? 'প্রকল্প ভিত্তিক খরচ' : 'Project-wise Expense'}</h2>
-            <table className="w-full border-collapse border mb-4 text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left">#</th>
-                  <th className="border p-2 text-left">{bn ? 'প্রকল্প' : 'Project'}</th>
-                  <th className="border p-2 text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</th>
-                  <th className="border p-2 text-right">{bn ? 'মোট খরচ' : 'Total'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projectBreakdown.map((p, i) => (
-                  <tr key={i}>
-                    <td className="border p-2">{i + 1}</td>
-                    <td className="border p-2">{bn ? p.name_bn : p.name}</td>
-                    <td className="border p-2 text-right">৳{formatNum(p.monthly)}</td>
-                    <td className="border p-2 text-right">৳{formatNum(p.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+        {/* Project & Category wise detailed breakdown */}
+        {projects.map((project: any) => {
+          const projExpenses = expenses.filter((e: any) => e.project_id === project.id);
+          if (projExpenses.length === 0) return null;
+          const projTotal = projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+          const projCategories = categories.filter((c: any) => c.project_id === project.id);
+          
+          return (
+            <div key={project.id} className="mb-6" style={{ pageBreakInside: 'avoid' }}>
+              <h2 className="text-base font-bold mb-1 border-b pb-1">
+                {bn ? 'প্রকল্প' : 'Project'}: {bn ? project.name_bn : project.name}
+                <span className="float-right">{bn ? 'মোট' : 'Total'}: ৳{formatNum(projTotal)}</span>
+              </h2>
+              
+              {projCategories.map((cat: any) => {
+                const catExpenses = projExpenses.filter((e: any) => e.category_id === cat.id);
+                if (catExpenses.length === 0) return null;
+                const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                
+                return (
+                  <div key={cat.id} className="mb-3 ml-2">
+                    <h3 className="text-sm font-semibold mb-1">
+                      {bn ? 'ক্যাটেগরি' : 'Category'}: {bn ? cat.name_bn : cat.name}
+                      <span className="float-right">৳{formatNum(catTotal)}</span>
+                    </h3>
+                    <table className="w-full border-collapse border text-sm">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border p-1 text-left w-8">#</th>
+                          <th className="border p-1 text-left">{bn ? 'তারিখ' : 'Date'}</th>
+                          <th className="border p-1 text-left">{bn ? 'বিবরণ' : 'Description'}</th>
+                          <th className="border p-1 text-center">{bn ? 'পরিমাণ' : 'Qty'}</th>
+                          <th className="border p-1 text-right">{bn ? 'টাকা' : 'Amount'}</th>
+                          <th className="border p-1 text-center">{bn ? 'রসিদ' : 'Receipt'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {catExpenses.map((e: any, i: number) => (
+                          <tr key={e.id}>
+                            <td className="border p-1">{i + 1}</td>
+                            <td className="border p-1">{e.expense_date}</td>
+                            <td className="border p-1">{e.description || '-'}</td>
+                            <td className="border p-1 text-center">{e.quantity || 1}</td>
+                            <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
+                            <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
+                          </tr>
+                        ))}
+                        <tr className="font-bold bg-gray-50">
+                          <td colSpan={4} className="border p-1 text-right">{bn ? 'উপমোট:' : 'Subtotal:'}</td>
+                          <td className="border p-1 text-right">৳{formatNum(catTotal)}</td>
+                          <td className="border p-1"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
 
-        {/* Category Breakdown */}
-        {categoryBreakdown.length > 0 && (
-          <>
-            <h2 className="text-base font-bold mb-2">{bn ? 'ক্যাটেগরি ভিত্তিক খরচ' : 'Category-wise Expense'}</h2>
-            <table className="w-full border-collapse border mb-4 text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2 text-left">#</th>
-                  <th className="border p-2 text-left">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
-                  <th className="border p-2 text-right">{bn ? 'মাসিক খরচ' : 'Monthly'}</th>
-                  <th className="border p-2 text-right">{bn ? 'মোট খরচ' : 'Total'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categoryBreakdown.map((c, i) => (
-                  <tr key={i}>
-                    <td className="border p-2">{i + 1}</td>
-                    <td className="border p-2">{bn ? c.name_bn : c.name}</td>
-                    <td className="border p-2 text-right">৳{formatNum(c.monthly)}</td>
-                    <td className="border p-2 text-right">৳{formatNum(c.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-
-        {/* Expense Details */}
-        <h2 className="text-base font-bold mb-2">{bn ? 'খরচ বিবরণ' : 'Expense Details'}</h2>
+        {/* Grand Total */}
         <table className="w-full border-collapse border mb-6 text-sm">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2 text-left">#</th>
-              <th className="border p-2 text-left">{bn ? 'তারিখ' : 'Date'}</th>
-              <th className="border p-2 text-left">{bn ? 'প্রকল্প' : 'Project'}</th>
-              <th className="border p-2 text-left">{bn ? 'ক্যাটেগরি' : 'Category'}</th>
-              <th className="border p-2 text-left">{bn ? 'বিবরণ' : 'Description'}</th>
-              <th className="border p-2 text-right">{bn ? 'টাকা' : 'Amount'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((e: any, i: number) => (
-              <tr key={e.id}>
-                <td className="border p-2">{i + 1}</td>
-                <td className="border p-2">{e.expense_date}</td>
-                <td className="border p-2">{bn ? e.expense_projects?.name_bn : e.expense_projects?.name}</td>
-                <td className="border p-2">{bn ? e.expense_categories?.name_bn : e.expense_categories?.name}</td>
-                <td className="border p-2">{e.description || '-'}</td>
-                <td className="border p-2 text-right">৳{formatNum(Number(e.amount))}</td>
-              </tr>
-            ))}
-            <tr className="font-bold bg-gray-100">
-              <td colSpan={5} className="border p-2 text-right">{bn ? 'মোট:' : 'Total:'}</td>
-              <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
-            </tr>
-          </tbody>
+          <tr className="font-bold bg-gray-200">
+            <td className="border p-2">{bn ? 'সর্বমোট খরচ' : 'Grand Total Expense'}</td>
+            <td className="border p-2 text-right">৳{formatNum(monthlyTotalExpense)}</td>
+          </tr>
         </table>
 
         {/* Signatures */}
