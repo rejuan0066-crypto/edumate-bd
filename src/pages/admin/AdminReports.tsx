@@ -11,9 +11,11 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
 } from 'recharts';
+import { Button } from '@/components/ui/button';
 import {
   BarChart3, PieChart as PieChartIcon, TrendingUp, Users, CreditCard,
-  CalendarDays, DollarSign, UserCheck, Wallet, ArrowUpRight, ArrowDownRight
+  CalendarDays, DollarSign, UserCheck, Wallet, ArrowUpRight, ArrowDownRight,
+  Printer, Download
 } from 'lucide-react';
 
 const COLORS = [
