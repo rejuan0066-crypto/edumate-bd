@@ -326,6 +326,22 @@ const AdminExpenses = () => {
 
   const filteredCategories = categories.filter((c: any) => !expenseForm.project_id || c.project_id === expenseForm.project_id);
 
+  // Drill-down state for expenses tab
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+
+  const selectedProject = projects.find((p: any) => p.id === selectedProjectId);
+  const projectCategories = categories.filter((c: any) => c.project_id === selectedProjectId);
+  const categoryExpenses = expenses.filter((e: any) => e.project_id === selectedProjectId && e.category_id === selectedCategoryId);
+  const categoryExpenseTotal = categoryExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const selectedCategory = categories.find((c: any) => c.id === selectedCategoryId);
+
+  // Project monthly/total for drill-down
+  const getProjectMonthly = (pid: string) => expenses.filter((e: any) => e.project_id === pid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getProjectTotal = (pid: string) => allExpenses.filter((e: any) => e.project_id === pid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryMonthly = (cid: string) => expenses.filter((e: any) => e.category_id === cid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+  const getCategoryTotal = (cid: string) => allExpenses.filter((e: any) => e.category_id === cid).reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+
   const handlePrint = () => window.print();
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
 
