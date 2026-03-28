@@ -216,22 +216,29 @@ const AdminExpenses = () => {
   const addDeposit = useMutation({
     mutationFn: async () => {
       if (!depositForm.amount) { toast.error(bn ? 'পরিমাণ দিন' : 'Enter amount'); return; }
-      const { error } = await supabase.from('deposits').insert({
+      const payload = {
         month_year: selectedMonthYear,
         deposit_date: depositForm.deposit_date,
         bank_details: depositForm.bank_details || null,
         other_details: depositForm.other_details || null,
         amount: Number(depositForm.amount),
         source: depositForm.source
-      });
-      if (error) throw error;
+      };
+      if (editingDepositId) {
+        const { error } = await supabase.from('deposits').update(payload).eq('id', editingDepositId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('deposits').insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['deposits'] });
       qc.invalidateQueries({ queryKey: ['all_deposits'] });
       setDepositDialog(false);
-      setDepositForm({ deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' });
-      toast.success(bn ? 'জমা যোগ হয়েছে' : 'Deposit added');
+      setDepositForm(defaultDepositForm);
+      setEditingDepositId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
