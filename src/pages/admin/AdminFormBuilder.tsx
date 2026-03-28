@@ -396,7 +396,7 @@ const AdminFormBuilder = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {bn ? 'কাস্টম ফর্ম বিল্ডার' : 'Custom Form Builder'}
+              {bn ? 'কাস্টম বিল্ডার' : 'Custom Builder'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {bn ? 'ফর্ম তৈরি, সম্পাদনা এবং ফিল্ড যোগ করুন' : 'Create, edit forms and add fields'}

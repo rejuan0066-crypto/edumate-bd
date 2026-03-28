@@ -53,7 +53,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     { path: '/admin/website', label: language === 'bn' ? 'ওয়েবসাইট নিয়ন্ত্রণ' : 'Website Control', icon: Globe },
     { path: '/admin/designations', label: language === 'bn' ? 'পদবি তৈরি' : 'Designations', icon: Tag },
     { path: '/admin/subjects', label: language === 'bn' ? 'বিষয়সমূহ' : 'Subjects', icon: BookOpen },
-    { path: '/admin/form-builder', label: language === 'bn' ? 'কাস্টম ফর্ম বিল্ডার' : 'Form Builder', icon: Wrench },
+    { path: '/admin/form-builder', label: language === 'bn' ? 'কাস্টম বিল্ডার' : 'Custom Builder', icon: Wrench },
     { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
   ];
 
