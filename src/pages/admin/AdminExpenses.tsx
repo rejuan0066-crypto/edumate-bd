@@ -56,6 +56,7 @@ const AdminExpenses = () => {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [printProjectId, setPrintProjectId] = useState<string | null>(null);
 
   // Dialogs
   const [projectDialog, setProjectDialog] = useState(false);
@@ -1151,9 +1152,14 @@ const AdminExpenses = () => {
                               <span className="text-sm font-medium">{bn ? p.name_bn : p.name}</span>
                               <span className="text-xs text-muted-foreground ml-2">৳{formatNum(projTotal)}</span>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => handleProjectExcelDownload(p.id)}>
-                              <Download className="w-3 h-3 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button variant="outline" size="sm" onClick={() => setPrintProjectId(p.id)}>
+                                <Printer className="w-3 h-3 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => handleProjectExcelDownload(p.id)}>
+                                <Download className="w-3 h-3 mr-1" />{bn ? 'এক্সেল' : 'Excel'}
+                              </Button>
+                            </div>
                           </div>
                         );
                       })}
