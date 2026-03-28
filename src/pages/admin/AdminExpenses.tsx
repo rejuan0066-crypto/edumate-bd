@@ -1424,7 +1424,75 @@ const AdminExpenses = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Project Print Preview Dialog */}
+      {/* Project Entries Edit Dialog */}
+      <Dialog open={!!editProjectEntriesId} onOpenChange={(open) => { if (!open) setEditProjectEntriesId(null); }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'প্রকল্পের এন্ট্রি সম্পাদনা' : 'Edit Project Entries'} — {(() => { const p = projects.find((p: any) => p.id === editProjectEntriesId); return p ? (bn ? p.name_bn : p.name) : ''; })()}</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const projExpenses = expenses.filter((e: any) => e.project_id === editProjectEntriesId);
+            const projCategories = categories.filter((c: any) => c.project_id === editProjectEntriesId);
+            if (projExpenses.length === 0) return <p className="text-sm text-muted-foreground">{bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}</p>;
+            return (
+              <div className="space-y-4">
+                {projCategories.map((cat: any) => {
+                  const catExpenses = projExpenses.filter((e: any) => e.category_id === cat.id);
+                  if (catExpenses.length === 0) return null;
+                  const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+                  return (
+                    <div key={cat.id}>
+                      <h3 className="text-sm font-semibold mb-2 flex items-center justify-between">
+                        <span>{bn ? cat.name_bn : cat.name}</span>
+                        <span className="text-xs text-muted-foreground">৳{formatNum(catTotal)}</span>
+                      </h3>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8">#</TableHead>
+                            <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
+                            <TableHead>{bn ? 'বিবরণ' : 'Description'}</TableHead>
+                            <TableHead>{bn ? 'পরিমাণ' : 'Qty'}</TableHead>
+                            <TableHead>{bn ? 'মাধ্যম' : 'Method'}</TableHead>
+                            <TableHead className="text-right">{bn ? 'টাকা' : 'Amount'}</TableHead>
+                            <TableHead className="w-20">{bn ? 'অ্যাকশন' : 'Action'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {catExpenses.map((e: any, i: number) => (
+                            <TableRow key={e.id}>
+                              <TableCell>{i + 1}</TableCell>
+                              <TableCell>{e.expense_date}</TableCell>
+                              <TableCell>{cleanDesc(e.description)}</TableCell>
+                              <TableCell>{e.quantity || 1} {getUnit(e.description)}</TableCell>
+                              <TableCell>{getMethod(e.description)}</TableCell>
+                              <TableCell className="text-right">৳{formatNum(Number(e.amount))}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { openEditExpense(e); setEditProjectEntriesId(null); }}>
+                                    <Edit2 className="w-3 h-3" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteExpense.mutate(e.id); }}>
+                                    <Trash2 className="w-3 h-3 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  );
+                })}
+                <div className="border-t pt-2 text-right font-bold text-sm">
+                  {bn ? 'মোট' : 'Total'}: ৳{formatNum(projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0))}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!printProjectId} onOpenChange={(open) => {
         if (!open) { setPrintProjectId(null); setPrintEditMode(false); }
       }}>
