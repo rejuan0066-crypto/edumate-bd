@@ -124,6 +124,7 @@ const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditFie
                 {bn ? 'শর্তযুক্ত' : 'Conditional'}
               </Badge>
             )}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditField(field)}>
