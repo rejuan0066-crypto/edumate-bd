@@ -194,29 +194,37 @@ const Dashboard = () => {
             <UserCog className="w-5 h-5 text-accent" />
             {language === 'bn' ? 'কর্মী ও শিক্ষক পরিসংখ্যান' : 'Staff & Teacher Statistics'}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {staffTeacherStats.map((s, i) => (
-              <div key={i} onClick={s.onClick}
-                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+              <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${s.onClick ? 'cursor-pointer' : ''}`}>
+                <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Student Category Stats (Orphan, Poor, Resident etc.) */}
+        {/* Student Category Stats */}
         <div className="card-elevated p-4">
           <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-primary" />
             {language === 'bn' ? 'ছাত্র ক্যাটাগরি পরিসংখ্যান' : 'Student Category Statistics'}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {studentCategoryStats.map((s, i) => (
-              <div key={i} onClick={s.onClick}
-                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+              <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${s.onClick ? 'cursor-pointer' : ''}`}>
+                <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -229,13 +237,18 @@ const Dashboard = () => {
               <History className="w-5 h-5 text-accent" />
               {language === 'bn' ? 'সেশন ভিত্তিক ছাত্র সংখ্যা' : 'Session-wise Student Count'}
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
               {sessionYears.map(year => (
                 <div key={year}
                   onClick={() => openList(`${language === 'bn' ? 'সেশন' : 'Session'} ${year}`, 'students')}
-                  className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
-                  <p className="text-lg font-bold text-foreground">{sessionWiseMap[Number(year)]}</p>
-                  <p className="text-xs text-muted-foreground">{year}</p>
+                  className="stat-card flex items-center gap-3 cursor-pointer">
+                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                    <GraduationCap className="w-5 h-5 text-accent" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-lg font-bold text-foreground leading-tight">{sessionWiseMap[Number(year)]}</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">{year}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -248,12 +261,16 @@ const Dashboard = () => {
             <Users className="w-5 h-5 text-primary" />
             {language === 'bn' ? 'ছাত্র বিস্তারিত পরিসংখ্যান' : 'Student Detailed Statistics'}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {studentDetailStats.map((s, i) => (
-              <div key={i} onClick={s.onClick}
-                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
-                <p className="text-lg font-bold text-foreground">{s.value}</p>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
+              <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${s.onClick ? 'cursor-pointer' : ''}`}>
+                <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -265,25 +282,38 @@ const Dashboard = () => {
             <Heart className="w-5 h-5 text-destructive" />
             {language === 'bn' ? 'দাতা তালিকা' : 'Donor List'}
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <div onClick={() => openList(language === 'bn' ? 'মোট দাতা' : 'Total Donors', 'donors')}
-              className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
-              <p className="text-lg font-bold text-foreground">{donors.length}</p>
-              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'মোট দাতা' : 'Total Donors'}</p>
+              className="stat-card flex items-center gap-3 cursor-pointer">
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                <Heart className="w-5 h-5 text-destructive" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-tight">{donors.length}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{language === 'bn' ? 'মোট দাতা' : 'Total Donors'}</p>
+              </div>
             </div>
             <div onClick={() => openList(language === 'bn' ? 'সক্রিয় দাতা' : 'Active Donors', 'donors', { status: 'active' })}
-              className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
-              <p className="text-lg font-bold text-foreground">{activeDonors.length}</p>
-              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'সক্রিয় দাতা' : 'Active Donors'}</p>
+              className="stat-card flex items-center gap-3 cursor-pointer">
+              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                <UserCheck className="w-5 h-5 text-success" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-tight">{activeDonors.length}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{language === 'bn' ? 'সক্রিয় দাতা' : 'Active Donors'}</p>
+              </div>
             </div>
-            <div className="p-3 rounded-lg bg-secondary/50 text-center">
-              <p className="text-lg font-bold text-foreground">৳{totalDonationAmount.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">{language === 'bn' ? 'মোট অনুদান' : 'Total Donations'}</p>
+            <div className="stat-card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-tight">৳{totalDonationAmount.toLocaleString()}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{language === 'bn' ? 'মোট অনুদান' : 'Total Donations'}</p>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Fee Sections */}
         <div className="space-y-3">
           <h3 className="font-display font-bold text-foreground flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-primary" />
