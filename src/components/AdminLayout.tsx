@@ -24,7 +24,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Receipt, ReceiptText, FileSignature, FilePlus, FileCheck, Tag,
   Wrench, Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3,
   KeyRound, Palette, ListOrdered, UserCircle, FileBox, Home,
-  Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid,
+  Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid, HardDrive,
 };
 
 const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
