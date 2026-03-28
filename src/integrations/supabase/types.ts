@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      classes: {
+        Row: {
+          created_at: string | null
+          division_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          division_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          division_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_fields: {
         Row: {
           created_at: string | null
