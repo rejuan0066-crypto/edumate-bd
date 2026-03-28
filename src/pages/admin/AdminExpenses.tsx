@@ -136,11 +136,16 @@ const AdminExpenses = () => {
   const monthlyTotalExpense = useMemo(() => expenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [expenses]);
   const monthlyTotalDeposit = useMemo(() => deposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [deposits]);
   const previousArrears = Number(summaryData?.previous_arrears || 0);
-  const monthlyCash = monthlyTotalDeposit - monthlyTotalExpense - previousArrears;
+  const rawCash = monthlyTotalDeposit - monthlyTotalExpense - previousArrears;
+  const monthlyCash = rawCash >= 0 ? rawCash : 0;
+  const currentArrears = rawCash < 0 ? Math.abs(rawCash) : 0;
+  const totalArrears = previousArrears + currentArrears;
 
   const totalExpenseAll = useMemo(() => allExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0), [allExpenses]);
   const totalDepositAll = useMemo(() => allDeposits.reduce((s: number, d: any) => s + Number(d.amount || 0), 0), [allDeposits]);
-  const totalCashAll = totalDepositAll - totalExpenseAll;
+  const rawCashAll = totalDepositAll - totalExpenseAll;
+  const totalCashAll = rawCashAll >= 0 ? rawCashAll : 0;
+  const totalArrearsAll = rawCashAll < 0 ? Math.abs(rawCashAll) : 0;
 
   // Mutations
   const addProject = useMutation({
@@ -308,7 +313,7 @@ const AdminExpenses = () => {
               <div className="p-2 rounded-lg bg-secondary"><DollarSign className="w-5 h-5 text-secondary-foreground" /></div>
               <div>
                 <p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p>
-                <p className="text-lg font-bold text-foreground">৳{formatNum(previousArrears)}</p>
+                <p className={`text-lg font-bold ${totalArrears > 0 ? 'text-destructive' : 'text-foreground'}`}>৳{formatNum(totalArrears)}</p>
               </div>
             </CardContent>
           </Card>
@@ -320,7 +325,7 @@ const AdminExpenses = () => {
             { label: bn ? 'মোট খরচ' : 'Total Expense', val: totalExpenseAll, color: 'text-destructive' },
             { label: bn ? 'মোট জমা' : 'Total Deposit', val: totalDepositAll, color: 'text-primary' },
             { label: bn ? 'মোট ক্যাশ' : 'Total Cash', val: totalCashAll, color: totalCashAll >= 0 ? 'text-primary' : 'text-destructive' },
-            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: previousArrears, color: 'text-muted-foreground' },
+            { label: bn ? 'মোট বকেয়া' : 'Total Arrears', val: totalArrearsAll, color: totalArrearsAll > 0 ? 'text-destructive' : 'text-muted-foreground' },
           ].map((s, i) => (
             <div key={i} className="bg-card rounded-lg border p-3 text-center">
               <p className="text-xs text-muted-foreground">{s.label}</p>
@@ -615,7 +620,7 @@ const AdminExpenses = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
                   <div><p className="text-xs text-muted-foreground">{bn ? 'মোট খরচ' : 'Total Expense'}</p><p className="font-bold text-destructive">৳{formatNum(monthlyTotalExpense)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{bn ? 'মোট জমা' : 'Total Deposit'}</p><p className="font-bold text-primary">৳{formatNum(monthlyTotalDeposit)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p><p className="font-bold">৳{formatNum(previousArrears)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p><p className={`font-bold ${totalArrears > 0 ? 'text-destructive' : ''}`}>৳{formatNum(totalArrears)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{bn ? 'ক্যাশ' : 'Cash'}</p><p className={`font-bold ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p></div>
                 </div>
 
