@@ -44,6 +44,7 @@ import AdminFormulaBuilder from "./pages/admin/AdminFormulaBuilder";
 import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminValidationManager from "./pages/admin/AdminValidationManager";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminPermissions from "./pages/admin/AdminPermissions";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -93,6 +94,7 @@ const App = () => (
               <Route path="/admin/attendance" element={<ProtectedRoute><AdminAttendance /></ProtectedRoute>} />
               <Route path="/admin/validation-manager" element={<ProtectedRoute><AdminValidationManager /></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
+              <Route path="/admin/permissions" element={<ProtectedRoute><AdminPermissions /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
