@@ -442,9 +442,9 @@ const AdminExpenses = () => {
         if (catExpenses.length === 0) return;
         const catTotal = catExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
         rows.push([`  ${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', `৳${formatNum(catTotal)}`]);
-        rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
+        rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'মাধ্যম' : 'Method', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
         catExpenses.forEach((e: any, i: number) => {
-          rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
+          rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, getMethod(e.description), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
         });
         rows.push([]);
       });
