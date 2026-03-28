@@ -626,6 +626,37 @@ const AdminFormBuilder = () => {
                     {field.field_type === 'date' && <Input type="date" />}
                     {field.field_type === 'file' && <Input type="file" />}
                     {field.field_type === 'switch' && <Switch />}
+                    {field.field_type === 'post_office' && <Input placeholder={bn ? 'পোস্ট অফিস লিখুন' : 'Enter post office'} />}
+                    {field.field_type === 'village' && <Input placeholder={bn ? 'গ্রাম লিখুন' : 'Enter village'} />}
+                    {field.field_type === 'address_permanent' && (
+                      <AddressFields
+                        label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}
+                        value={permanentAddr}
+                        onChange={(data) => {
+                          setPermanentAddr(data);
+                          if (sameAsPermanent) setPresentAddr(data);
+                        }}
+                      />
+                    )}
+                    {field.field_type === 'address_present' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={sameAsPermanent}
+                            onCheckedChange={(c) => handleSameAsPermanent(!!c)}
+                          />
+                          <Label className="text-sm font-normal cursor-pointer">
+                            {bn ? 'স্থায়ী ঠিকানার মতো একই' : 'Same as Permanent Address'}
+                          </Label>
+                        </div>
+                        <AddressFields
+                          label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'}
+                          value={presentAddr}
+                          onChange={setPresentAddr}
+                          disabled={sameAsPermanent}
+                        />
+                      </div>
+                    )}
                     {field.field_type === 'select' && (
                       <Select>
                         <SelectTrigger><SelectValue placeholder={field.placeholder || (bn ? 'নির্বাচন করুন' : 'Select...')} /></SelectTrigger>
