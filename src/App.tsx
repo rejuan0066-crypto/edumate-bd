@@ -39,6 +39,8 @@ import AdminAdmissionLetters from "./pages/admin/AdminAdmissionLetters";
 import AdminDesignations from "./pages/admin/AdminDesignations";
 import AdminFormBuilder from "./pages/admin/AdminFormBuilder";
 import AdminCustomFormPage from "./pages/admin/AdminCustomFormPage";
+import AdminModuleManager from "./pages/admin/AdminModuleManager";
+import AdminFormulaBuilder from "./pages/admin/AdminFormulaBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
