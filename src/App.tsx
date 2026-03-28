@@ -45,6 +45,8 @@ import AdminAttendance from "./pages/admin/AdminAttendance";
 import AdminValidationManager from "./pages/admin/AdminValidationManager";
 import AdminReports from "./pages/admin/AdminReports";
 import AdminPermissions from "./pages/admin/AdminPermissions";
+import AdminThemeCustomizer from "./pages/admin/AdminThemeCustomizer";
+import ThemeProvider from "./components/ThemeProvider";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +55,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <AuthProvider>
+        <ThemeProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -95,11 +98,13 @@ const App = () => (
               <Route path="/admin/validation-manager" element={<ProtectedRoute><AdminValidationManager /></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
               <Route path="/admin/permissions" element={<ProtectedRoute><AdminPermissions /></ProtectedRoute>} />
+              <Route path="/admin/theme" element={<ProtectedRoute><AdminThemeCustomizer /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </ThemeProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
