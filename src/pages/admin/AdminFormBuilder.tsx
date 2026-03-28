@@ -370,6 +370,27 @@ const AdminFormBuilder = () => {
     return ft ? (bn ? ft.label_bn : ft.label) : type;
   };
 
+  const evaluateCondition = (field: any): boolean => {
+    let validation: any = {};
+    try { validation = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {}); } catch {}
+    if (!validation.condition) return true;
+    const { source_field_id, operator, value } = validation.condition;
+    const sourceVal = previewValues[source_field_id] || '';
+    switch (operator) {
+      case 'equals': return sourceVal === value;
+      case 'not_equals': return sourceVal !== value;
+      case 'contains': return sourceVal.toLowerCase().includes((value || '').toLowerCase());
+      case 'not_empty': return sourceVal.trim() !== '';
+      case 'is_empty': return sourceVal.trim() === '';
+      default: return true;
+    }
+  };
+
+  const updatePreviewValue = (fieldId: string, val: string) => {
+    setPreviewValues(p => ({ ...p, [fieldId]: val }));
+  };
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-4">
