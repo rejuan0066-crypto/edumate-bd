@@ -168,10 +168,15 @@ const AdminExpenses = () => {
   const addCategory = useMutation({
     mutationFn: async () => {
       if (!categoryForm.project_id || !categoryForm.name || !categoryForm.name_bn) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill all fields'); return; }
-      const { error } = await supabase.from('expense_categories').insert(categoryForm);
-      if (error) throw error;
+      if (editingCategoryId) {
+        const { error } = await supabase.from('expense_categories').update(categoryForm).eq('id', editingCategoryId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expense_categories').insert(categoryForm);
+        if (error) throw error;
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_categories'] }); setCategoryDialog(false); setCategoryForm({ project_id: '', name: '', name_bn: '' }); toast.success(bn ? 'ক্যাটেগরি যোগ হয়েছে' : 'Category added'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_categories'] }); setCategoryDialog(false); setCategoryForm({ project_id: '', name: '', name_bn: '' }); setEditingCategoryId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
 
