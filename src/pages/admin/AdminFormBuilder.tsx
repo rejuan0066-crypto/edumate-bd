@@ -748,7 +748,7 @@ const AdminFormBuilder = () => {
                       </div>
                     )}
                     {field.field_type === 'select' && (
-                      <Select>
+                      <Select onValueChange={v => updatePreviewValue(field.id, v)}>
                         <SelectTrigger><SelectValue placeholder={field.placeholder || (bn ? 'নির্বাচন করুন' : 'Select...')} /></SelectTrigger>
                         <SelectContent>
                           {opts.map((opt, i) => <SelectItem key={i} value={opt}>{opt}</SelectItem>)}
