@@ -760,8 +760,6 @@ const AdminExpenses = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        </div>
-                        <div>
                           <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
                           <div className="flex items-center gap-2">
                             <Input 
