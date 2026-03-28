@@ -386,20 +386,15 @@ const AdminExpenses = () => {
 
   const filteredCategories = categories.filter((c: any) => !expenseForm.project_id || c.project_id === expenseForm.project_id);
 
-  // Load summary and institution defaults
+  // Load summary defaults
   useEffect(() => {
     setSummaryForm(f => ({
       ...f,
       principal_name: summaryData?.principal_name || f.principal_name || '',
       casher_name: summaryData?.casher_name || f.casher_name || '',
       previous_arrears: String(summaryData?.previous_arrears || f.previous_arrears || '0'),
-      inst_name: f.inst_name || madrasaName,
-      inst_name_en: f.inst_name_en || madrasaNameEn,
-      inst_address: f.inst_address || madrasaAddress,
-      inst_phone: f.inst_phone || madrasaPhone,
-      inst_email: f.inst_email || madrasaEmail,
     }));
-  }, [summaryData, madrasaName, madrasaNameEn, madrasaAddress, madrasaPhone, madrasaEmail]);
+  }, [summaryData]);
 
   // Drill-down state for expenses tab
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
