@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, UserCog, BookOpen, UserCheck, UserX, GraduationCap,
-  Layers, FileText, CreditCard, ClipboardList, History
+  Layers, FileText, CreditCard, ClipboardList, History, Home, HomeIcon
 } from 'lucide-react';
 import DashboardInstitutionCard from '@/components/dashboard/DashboardInstitutionCard';
 import DashboardSearch from '@/components/dashboard/DashboardSearch';
@@ -21,7 +21,7 @@ const Dashboard = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['dashboard-students'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date');
+      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id');
       if (error) throw error;
       return data || [];
     },
@@ -68,12 +68,44 @@ const Dashboard = () => {
     },
   });
 
+  // Fee payments for non-orphan&poor amounts
+  const { data: feePayments = [] } = useQuery({
+    queryKey: ['dashboard-fee-payments-summary'],
+    queryFn: async () => {
+      const { data } = await supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id');
+      return data || [];
+    },
+  });
+
   // Student stats
   const activeStudents = students.filter(s => s.status === 'active');
   const inactiveStudents = students.filter(s => s.status === 'inactive');
   const currentYear = new Date().getFullYear();
   const newStudents = students.filter(s => s.admission_date && new Date(s.admission_date).getFullYear() === currentYear);
   const oldStudents = students.filter(s => !s.admission_date || new Date(s.admission_date).getFullYear() < currentYear);
+
+  // Category stats
+  const orphanStudents = students.filter(s => (s as any).student_category === 'orphan');
+  const poorStudents = students.filter(s => (s as any).student_category === 'poor');
+  const generalStudents = students.filter(s => (s as any).student_category === 'general' || !(s as any).student_category);
+
+  // Non-orphan&poor total paid amounts
+  const generalStudentIds = new Set(generalStudents.map(s => s.id));
+  const generalPaidAmount = feePayments
+    .filter(fp => generalStudentIds.has(fp.student_id) && fp.status === 'paid')
+    .reduce((sum, fp) => sum + Number(fp.paid_amount || fp.amount || 0), 0);
+
+  // Residence stats
+  const residentStudents = students.filter(s => (s as any).residence_type === 'resident');
+  const nonResidentStudents = students.filter(s => (s as any).residence_type === 'non-resident' || !(s as any).residence_type);
+
+  // Session-wise (admission year) grouping
+  const sessionWiseMap: Record<number, number> = {};
+  students.forEach(s => {
+    const year = s.admission_date ? new Date(s.admission_date).getFullYear() : 0;
+    if (year) sessionWiseMap[year] = (sessionWiseMap[year] || 0) + 1;
+  });
+  const sessionYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
 
   // Staff stats
   const teachers = staff.filter(s => s.department === 'teaching' || s.designation?.includes('শিক্ষক') || s.designation?.includes('teacher') || s.designation?.toLowerCase()?.includes('teacher'));
@@ -100,6 +132,14 @@ const Dashboard = () => {
     { label: language === 'bn' ? 'কর্মী (সক্রিয়)' : 'Staff (Active)', value: activeStaff.length, onClick: () => openList(language === 'bn' ? 'সক্রিয় কর্মী' : 'Active Staff', 'staff', { status: 'active' }) },
     { label: language === 'bn' ? 'কর্মী (পদত্যাগী)' : 'Staff (Resigned)', value: resignedStaff.length, onClick: () => openList(language === 'bn' ? 'পদত্যাগী কর্মী' : 'Resigned Staff', 'staff') },
     { label: language === 'bn' ? 'গত মাসের বেতন' : 'Last Month Salary', value: `৳ ${staff.filter(s => s.status === 'active').reduce((s, x) => s + (Number(x.salary) || 0), 0).toLocaleString()}`, onClick: () => openList(language === 'bn' ? 'সক্রিয় কর্মী ও শিক্ষক' : 'Active Staff & Teachers', 'staff', { status: 'active' }) },
+  ];
+
+  const studentCategoryStats = [
+    { label: language === 'bn' ? 'এতিম ছাত্র' : 'Orphan Students', value: orphanStudents.length, onClick: () => openList(language === 'bn' ? 'এতিম ছাত্র' : 'Orphan Students', 'students', { student_category: 'orphan' }) },
+    { label: language === 'bn' ? 'গরীব ছাত্র' : 'Poor Students', value: poorStudents.length, onClick: () => openList(language === 'bn' ? 'গরীব ছাত্র' : 'Poor Students', 'students', { student_category: 'poor' }) },
+    { label: language === 'bn' ? 'সাধারণ ছাত্র ও পরিশোধিত' : 'Non-Orphan&Poor + Amounts', value: `${generalStudents.length} (৳${generalPaidAmount.toLocaleString()})` },
+    { label: language === 'bn' ? 'আবাসিক ছাত্র' : 'Resident Students', value: residentStudents.length, onClick: () => openList(language === 'bn' ? 'আবাসিক ছাত্র' : 'Resident Students', 'students', { residence_type: 'resident' }) },
+    { label: language === 'bn' ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', value: nonResidentStudents.length, onClick: () => openList(language === 'bn' ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', 'students', { residence_type: 'non-resident' }) },
   ];
 
   const studentDetailStats = [
@@ -152,6 +192,43 @@ const Dashboard = () => {
             ))}
           </div>
         </div>
+
+        {/* Student Category Stats (Orphan, Poor, Resident etc.) */}
+        <div className="card-elevated p-4">
+          <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-primary" />
+            {language === 'bn' ? 'ছাত্র ক্যাটাগরি পরিসংখ্যান' : 'Student Category Statistics'}
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            {studentCategoryStats.map((s, i) => (
+              <div key={i} onClick={s.onClick}
+                className={`p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors ${s.onClick ? 'cursor-pointer' : ''}`}>
+                <p className="text-lg font-bold text-foreground">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Session-wise Students */}
+        {sessionYears.length > 0 && (
+          <div className="card-elevated p-4">
+            <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
+              <History className="w-5 h-5 text-accent" />
+              {language === 'bn' ? 'সেশন ভিত্তিক ছাত্র সংখ্যা' : 'Session-wise Student Count'}
+            </h3>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+              {sessionYears.map(year => (
+                <div key={year}
+                  onClick={() => openList(`${language === 'bn' ? 'সেশন' : 'Session'} ${year}`, 'students')}
+                  className="p-3 rounded-lg bg-secondary/50 text-center hover:bg-secondary transition-colors cursor-pointer">
+                  <p className="text-lg font-bold text-foreground">{sessionWiseMap[Number(year)]}</p>
+                  <p className="text-xs text-muted-foreground">{year}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Student Detail Stats */}
         <div className="card-elevated p-4">
