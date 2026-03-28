@@ -620,7 +620,7 @@ const AdminExpenses = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
                   <div><p className="text-xs text-muted-foreground">{bn ? 'মোট খরচ' : 'Total Expense'}</p><p className="font-bold text-destructive">৳{formatNum(monthlyTotalExpense)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{bn ? 'মোট জমা' : 'Total Deposit'}</p><p className="font-bold text-primary">৳{formatNum(monthlyTotalDeposit)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p><p className="font-bold">৳{formatNum(previousArrears)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">{bn ? 'বকেয়া' : 'Arrears'}</p><p className={`font-bold ${totalArrears > 0 ? 'text-destructive' : ''}`}>৳{formatNum(totalArrears)}</p></div>
                   <div><p className="text-xs text-muted-foreground">{bn ? 'ক্যাশ' : 'Cash'}</p><p className={`font-bold ${monthlyCash >= 0 ? 'text-primary' : 'text-destructive'}`}>৳{formatNum(monthlyCash)}</p></div>
                 </div>
 
