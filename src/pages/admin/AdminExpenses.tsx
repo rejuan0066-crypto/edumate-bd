@@ -16,6 +16,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download } from 'lucide-react';
 
+const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
+
+const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
+const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').trim() || '-';
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -60,7 +66,7 @@ const AdminExpenses = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Form states
-  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: '' };
+  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', quantity_unit: 'পিস', has_receipt: false, receipt_url: '', amount: '' };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const [projectForm, setProjectForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
@@ -250,16 +256,19 @@ const AdminExpenses = () => {
         receiptUrl = urlData.publicUrl;
       }
       
+      const descWithUnit = expenseForm.quantity_unit && expenseForm.quantity_unit !== 'পিস'
+        ? `${expenseForm.description || ''}[unit:${expenseForm.quantity_unit}]`.trim()
+        : (expenseForm.description || '').replace(/\[unit:.*?\]/g, '').trim();
       const payload = {
         month_year: selectedMonthYear,
         project_id: expenseForm.project_id,
         category_id: expenseForm.category_id,
         expense_date: expenseForm.expense_date,
-        description: expenseForm.description,
-        quantity: Number(expenseForm.quantity) || 1,
+        description: descWithUnit,
+        quantity: Number(bnToEnDigit(expenseForm.quantity)) || 1,
         has_receipt: expenseForm.has_receipt,
         receipt_url: receiptUrl,
-        amount: Number(expenseForm.amount)
+        amount: Number(bnToEnDigit(expenseForm.amount))
       };
       if (editingExpenseId) {
         const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
@@ -384,7 +393,7 @@ const AdminExpenses = () => {
 
   const openEditExpense = (e: any) => {
     setEditingExpenseId(e.id);
-    setExpenseForm({ project_id: e.project_id, category_id: e.category_id, expense_date: e.expense_date, description: e.description || '', quantity: String(e.quantity || 1), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount) });
+    setExpenseForm({ project_id: e.project_id, category_id: e.category_id, expense_date: e.expense_date, description: cleanDesc(e.description) === '-' ? '' : cleanDesc(e.description), quantity: String(e.quantity || 1), quantity_unit: getUnit(e.description), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount) });
     setExpenseDialog(true);
   };
   const openEditDeposit = (d: any) => {
@@ -427,7 +436,7 @@ const AdminExpenses = () => {
         rows.push([`  ${bn ? 'ক্যাটেগরি' : 'Category'}: ${bn ? cat.name_bn : cat.name}`, '', '', '', `৳${formatNum(catTotal)}`]);
         rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'বিবরণ' : 'Description', bn ? 'পরিমাণ' : 'Qty', bn ? 'টাকা' : 'Amount', bn ? 'রসিদ' : 'Receipt']);
         catExpenses.forEach((e: any, i: number) => {
-          rows.push([String(i + 1), e.expense_date, e.description || '-', String(e.quantity || 1), `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
+          rows.push([String(i + 1), e.expense_date, cleanDesc(e.description), `${e.quantity || 1} ${getUnit(e.description)}`, `৳${formatNum(Number(e.amount))}`, e.has_receipt ? '✓' : '-']);
         });
         rows.push([]);
       });
@@ -702,7 +711,22 @@ const AdminExpenses = () => {
                           </div>
                           <div>
                             <Label>{bn ? 'পরিমাণ' : 'Quantity'}</Label>
-                            <Input type="number" value={expenseForm.quantity} onChange={e => setExpenseForm(f => ({ ...f, quantity: e.target.value }))} />
+                            <div className="flex gap-2">
+                              <Input 
+                                className="flex-1" 
+                                value={expenseForm.quantity} 
+                                onChange={e => setExpenseForm(f => ({ ...f, quantity: bnToEnDigit(e.target.value) }))} 
+                                placeholder="১"
+                              />
+                              <Select value={expenseForm.quantity_unit} onValueChange={v => setExpenseForm(f => ({ ...f, quantity_unit: v }))}>
+                                <SelectTrigger className="w-24">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {QUANTITY_UNITS.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         </div>
                         <div>
@@ -711,7 +735,7 @@ const AdminExpenses = () => {
                         </div>
                         <div>
                           <Label>{bn ? 'পরিমাণ (টাকা)' : 'Amount (BDT)'} *</Label>
-                          <Input type="number" value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))} />
+                          <Input value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: bnToEnDigit(e.target.value) }))} placeholder="০" />
                         </div>
                         <div>
                           <Label>{bn ? 'রসিদ সংযুক্ত করুন' : 'Attach Receipt'}</Label>
@@ -767,8 +791,8 @@ const AdminExpenses = () => {
                         <TableRow key={e.id}>
                           <TableCell>{i + 1}</TableCell>
                           <TableCell>{e.expense_date}</TableCell>
-                          <TableCell className="max-w-[200px] truncate">{e.description || '-'}</TableCell>
-                          <TableCell>{e.quantity}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{cleanDesc(e.description)}</TableCell>
+                          <TableCell>{e.quantity} {getUnit(e.description)}</TableCell>
                           <TableCell>{e.has_receipt ? '✅' : '❌'}</TableCell>
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
@@ -1104,8 +1128,8 @@ const AdminExpenses = () => {
                           <tr key={e.id}>
                             <td className="border p-1">{i + 1}</td>
                             <td className="border p-1">{e.expense_date}</td>
-                            <td className="border p-1">{e.description || '-'}</td>
-                            <td className="border p-1 text-center">{e.quantity || 1}</td>
+                            <td className="border p-1">{cleanDesc(e.description)}</td>
+                            <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
                             <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
                             <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
                           </tr>
