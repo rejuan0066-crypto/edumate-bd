@@ -1283,6 +1283,7 @@ const AdminExpenses = () => {
       <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
         {/* Institution Header */}
         <div className="text-center mb-4 border-b-2 border-black pb-3">
+          {instLogo && <img src={instLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
           <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
           <p className="text-sm">{instAddress}</p>
           <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
@@ -1498,6 +1499,7 @@ const AdminExpenses = () => {
             return (
               <div id="project-print-content">
                 <div className="text-center mb-4 border-b-2 border-foreground pb-3">
+                  {instLogo && <img src={instLogo} alt="Logo" className="w-16 h-16 object-contain mx-auto mb-1" />}
                   <h1 className="text-lg font-bold">{dInstName}</h1>
                   <p className="text-sm">{dInstAddress}</p>
                   <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {dInstPhone} | {bn ? 'ইমেইল' : 'Email'}: {dInstEmail}</p>
