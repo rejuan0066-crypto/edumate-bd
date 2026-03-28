@@ -81,6 +81,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       ]
     },
     { path: '/admin/permissions', label: language === 'bn' ? 'পারমিশন' : 'Permissions', icon: KeyRound },
+    { path: '/admin/theme', label: language === 'bn' ? 'থিম কাস্টমাইজার' : 'Theme Customizer', icon: Palette },
     { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
   ];
 
