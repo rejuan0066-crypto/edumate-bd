@@ -66,6 +66,13 @@ type FormData = {
   is_active: boolean;
 };
 
+type ConditionData = {
+  enabled: boolean;
+  source_field_id: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_empty' | 'is_empty';
+  value: string;
+};
+
 type FieldData = {
   id?: string;
   form_id?: string;
@@ -78,10 +85,12 @@ type FieldData = {
   options: string[];
   default_value: string;
   is_active: boolean;
+  condition: ConditionData;
 };
 
+const emptyCondition: ConditionData = { enabled: false, source_field_id: '', operator: 'equals', value: '' };
 const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type: 'custom', is_active: true };
-const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true };
+const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition } };
 
 // Sortable field item component
 const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField }: any) => {
