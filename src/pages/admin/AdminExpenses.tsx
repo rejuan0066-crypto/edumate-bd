@@ -440,11 +440,11 @@ const AdminExpenses = () => {
   const handleExcelDownload = () => {
     const rows: string[][] = [];
     // Header
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? summaryForm.inst_name : summaryForm.inst_name_en]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', summaryForm.inst_address]);
-    rows.push([bn ? 'ফোন' : 'Phone', summaryForm.inst_phone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', summaryForm.inst_email]);
-    if (summaryForm.inst_other) rows.push([bn ? 'অন্যান্য' : 'Other', summaryForm.inst_other]);
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
+    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
     rows.push([bn ? 'খরচ প্রতিবেদন' : 'Expense Report', selectedMonthYear]);
     rows.push([]);
@@ -493,11 +493,11 @@ const AdminExpenses = () => {
     const projExpenses = expenses.filter((e: any) => e.project_id === projectId);
     const projTotal = projExpenses.reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
     const rows: string[][] = [];
-    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? summaryForm.inst_name : summaryForm.inst_name_en]);
-    rows.push([bn ? 'ঠিকানা' : 'Address', summaryForm.inst_address]);
-    rows.push([bn ? 'ফোন' : 'Phone', summaryForm.inst_phone]);
-    rows.push([bn ? 'ইমেইল' : 'Email', summaryForm.inst_email]);
-    if (summaryForm.inst_other) rows.push([bn ? 'অন্যান্য' : 'Other', summaryForm.inst_other]);
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
+    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
     rows.push([]);
     rows.push([`${bn ? 'প্রকল্প' : 'Project'}: ${bn ? project.name_bn : project.name}`, selectedMonthYear]);
     rows.push([]);
@@ -1103,27 +1103,27 @@ const AdminExpenses = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <Label>{bn ? 'প্রতিষ্ঠানের নাম (বাংলা)' : 'Institution Name (Bangla)'}</Label>
-                      <Input value={summaryForm.inst_name} onChange={e => setSummaryForm(f => ({ ...f, inst_name: e.target.value }))} />
+                      <Input value={instName} onChange={e => setSummaryForm(f => ({ ...f, inst_name: e.target.value }))} />
                     </div>
                     <div>
                       <Label>{bn ? 'প্রতিষ্ঠানের নাম (ইংরেজি)' : 'Institution Name (English)'}</Label>
-                      <Input value={summaryForm.inst_name_en} onChange={e => setSummaryForm(f => ({ ...f, inst_name_en: e.target.value }))} />
+                      <Input value={instNameEn} onChange={e => setSummaryForm(f => ({ ...f, inst_name_en: e.target.value }))} />
                     </div>
                     <div>
                       <Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
-                      <Input value={summaryForm.inst_address} onChange={e => setSummaryForm(f => ({ ...f, inst_address: e.target.value }))} />
+                      <Input value={instAddress} onChange={e => setSummaryForm(f => ({ ...f, inst_address: e.target.value }))} />
                     </div>
                     <div>
                       <Label>{bn ? 'ফোন' : 'Phone'}</Label>
-                      <Input value={summaryForm.inst_phone} onChange={e => setSummaryForm(f => ({ ...f, inst_phone: e.target.value }))} />
+                      <Input value={instPhone} onChange={e => setSummaryForm(f => ({ ...f, inst_phone: e.target.value }))} />
                     </div>
                     <div>
                       <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                      <Input value={summaryForm.inst_email} onChange={e => setSummaryForm(f => ({ ...f, inst_email: e.target.value }))} />
+                      <Input value={instEmail} onChange={e => setSummaryForm(f => ({ ...f, inst_email: e.target.value }))} />
                     </div>
                     <div>
                       <Label>{bn ? 'অন্যান্য তথ্য' : 'Other Info'}</Label>
-                      <Input value={summaryForm.inst_other} onChange={e => setSummaryForm(f => ({ ...f, inst_other: e.target.value }))} placeholder={bn ? 'EIIN, MPO নং ইত্যাদি' : 'EIIN, MPO No. etc.'} />
+                      <Input value={instOther} onChange={e => setSummaryForm(f => ({ ...f, inst_other: e.target.value }))} placeholder={bn ? 'EIIN, MPO নং ইত্যাদি' : 'EIIN, MPO No. etc.'} />
                     </div>
                   </div>
                 </div>
@@ -1194,10 +1194,10 @@ const AdminExpenses = () => {
       <div className="print-section hidden print:block p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
         {/* Institution Header */}
         <div className="text-center mb-4 border-b-2 border-black pb-3">
-          <h1 className="text-lg font-bold">{bn ? summaryForm.inst_name : summaryForm.inst_name_en}</h1>
-          <p className="text-sm">{summaryForm.inst_address}</p>
-          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {summaryForm.inst_phone} | {bn ? 'ইমেইল' : 'Email'}: {summaryForm.inst_email}</p>
-          {summaryForm.inst_other && <p className="text-xs">{summaryForm.inst_other}</p>}
+          <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
+          <p className="text-sm">{instAddress}</p>
+          <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
+          {instOther && <p className="text-xs">{instOther}</p>}
           <p className="text-base font-semibold mt-2">{bn ? 'খরচ প্রতিবেদন' : 'Expense Report'}</p>
           <p className="text-sm">{selectedMonthYear}</p>
         </div>
@@ -1346,10 +1346,10 @@ const AdminExpenses = () => {
               <div id="project-print-content">
                 {/* Institution Header */}
                 <div className="text-center mb-4 border-b-2 border-foreground pb-3">
-                  <h1 className="text-lg font-bold">{bn ? summaryForm.inst_name : summaryForm.inst_name_en}</h1>
-                  <p className="text-sm">{summaryForm.inst_address}</p>
-                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {summaryForm.inst_phone} | {bn ? 'ইমেইল' : 'Email'}: {summaryForm.inst_email}</p>
-                  {summaryForm.inst_other && <p className="text-xs">{summaryForm.inst_other}</p>}
+                  <h1 className="text-lg font-bold">{bn ? instName : instNameEn}</h1>
+                  <p className="text-sm">{instAddress}</p>
+                  <p className="text-xs">{bn ? 'ফোন' : 'Phone'}: {instPhone} | {bn ? 'ইমেইল' : 'Email'}: {instEmail}</p>
+                  {instOther && <p className="text-xs">{instOther}</p>}
                   <p className="text-base font-semibold mt-2">{bn ? 'প্রকল্প খরচ প্রতিবেদন' : 'Project Expense Report'}</p>
                   <p className="text-sm">{bn ? 'প্রকল্প' : 'Project'}: {bn ? project.name_bn : project.name} | {selectedMonthYear}</p>
                 </div>
