@@ -529,6 +529,42 @@ const AdminExpenses = () => {
     toast.success(bn ? 'ডাউনলোড হয়েছে' : 'Downloaded');
   };
 
+  const [depositPrintPreview, setDepositPrintPreview] = useState(false);
+  const [depositPrintEditMode, setDepositPrintEditMode] = useState(false);
+  const [depositPrintEditData, setDepositPrintEditData] = useState({
+    instName: '', instNameEn: '', instAddress: '', instPhone: '', instEmail: '', instOther: '', instLogo: '',
+    reportTitle: '', reportSubtitle: '', casherName: '', principalName: '', extraNote: ''
+  });
+
+  const handleDepositExcelDownload = () => {
+    const rows: string[][] = [];
+    rows.push([bn ? 'প্রতিষ্ঠান' : 'Institution', bn ? instName : instNameEn]);
+    rows.push([bn ? 'ঠিকানা' : 'Address', instAddress]);
+    rows.push([bn ? 'ফোন' : 'Phone', instPhone]);
+    rows.push([bn ? 'ইমেইল' : 'Email', instEmail]);
+    if (instOther) rows.push([bn ? 'অন্যান্য' : 'Other', instOther]);
+    rows.push([]);
+    rows.push([bn ? 'জমা প্রতিবেদন' : 'Deposit Report', selectedMonthYear]);
+    rows.push([]);
+    rows.push(['#', bn ? 'তারিখ' : 'Date', bn ? 'ব্যাংক বিবরণ' : 'Bank Details', bn ? 'অন্যান্য বিবরণ' : 'Other Details', bn ? 'উৎস' : 'Source', bn ? 'টাকা' : 'Amount']);
+    deposits.forEach((d: any, i: number) => {
+      rows.push([String(i + 1), d.deposit_date, d.bank_details || '-', d.other_details || '-', d.source || '-', `৳${formatNum(Number(d.amount))}`]);
+    });
+    rows.push([]);
+    rows.push([bn ? 'মোট জমা' : 'Total Deposit', `৳${formatNum(monthlyTotalDeposit)}`]);
+
+    const csvContent = rows.map(r => r.map(c => `"${(c || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `deposit_report_${selectedMonthYear}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(bn ? 'ডাউনলোড হয়েছে' : 'Downloaded');
+  };
+
   const handleProjectExcelDownload = (projectId: string) => {
     const project = projects.find((p: any) => p.id === projectId);
     if (!project) return;
