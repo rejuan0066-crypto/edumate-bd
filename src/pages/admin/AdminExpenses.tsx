@@ -19,6 +19,8 @@ import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Prin
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 
 const bnToEnDigit = (str: string) => str.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+const getUnit = (desc: string) => desc?.match(/\[unit:(.*?)\]/)?.[1] || 'পিস';
+const cleanDesc = (desc: string) => (desc || '').replace(/\[unit:.*?\]/g, '').trim() || '-';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
