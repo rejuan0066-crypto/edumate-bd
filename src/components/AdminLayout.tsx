@@ -4,20 +4,35 @@ import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import LanguageToggle from './LanguageToggle';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
-  Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette
+  Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette,
+  ListOrdered, Home, Image, Mail, Phone, MapPin, Star, Award, Clock, Folder,
+  type LucideIcon
 } from 'lucide-react';
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
+  CreditCard, Settings, Globe, GraduationCap, Heart, Layers,
+  Receipt, ReceiptText, FileSignature, FilePlus, FileCheck, Tag,
+  Wrench, Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3,
+  KeyRound, Palette, ListOrdered, UserCircle, FileBox, Home,
+  Image, Mail, Phone, MapPin, Star, Award, Clock, Folder,
+};
+
+const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
   const { signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { menuConfig } = useMenuSettings();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -49,41 +64,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     children?: { path: string; label: string; icon: any }[];
   };
 
-  const baseMenuItems: MenuItem[] = [
-    {
-      path: '/admin', label: language === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard', icon: LayoutDashboard,
-      children: [
-        { path: '/admin/profile', label: language === 'bn' ? 'প্রোফাইল' : 'Profile', icon: UserCircle },
-      ]
-    },
-    { path: '/admin/donors', label: language === 'bn' ? 'দাতা তালিকা' : 'Donor List', icon: Heart },
-    { path: '/admin/students', label: language === 'bn' ? 'ছাত্র ব্যবস্থাপনা' : 'Student Management', icon: Users },
-    { path: '/admin/staff', label: language === 'bn' ? 'স্টাফ/শিক্ষক ব্যবস্থাপনা' : 'Staff/Teacher Management', icon: UserCog },
-    { path: '/admin/divisions', label: language === 'bn' ? 'বিভাগ ও শ্রেণী' : 'Division & Class', icon: Layers },
-    { path: '/admin/fee-receipts', label: language === 'bn' ? 'ফি রসিদ' : 'Fee Receipts', icon: ReceiptText },
-    { path: '/admin/resign-letters', label: language === 'bn' ? 'পদত্যাগ পত্র' : 'Resign Letters', icon: FileSignature },
-    { path: '/admin/joining-letters', label: language === 'bn' ? 'যোগদান পত্র' : 'Joining Letters', icon: FilePlus },
-    { path: '/admin/admission-letters', label: language === 'bn' ? 'ভর্তি পত্র' : 'Admission Letters', icon: FileCheck },
-    { path: '/admin/results', label: language === 'bn' ? 'ফলাফল' : 'Results', icon: FileText },
-    { path: '/admin/notices', label: language === 'bn' ? 'নোটিশ (অনুমোদন)' : 'Notice (Approval)', icon: Bell },
-    { path: '/admin/fees', label: language === 'bn' ? 'ফি (অনুমোদন)' : 'Fees (Approval)', icon: CreditCard },
-    { path: '/admin/expenses', label: language === 'bn' ? 'খরচ ব্যবস্থাপনা' : 'Expenses', icon: Receipt },
-    { path: '/admin/website', label: language === 'bn' ? 'ওয়েবসাইট নিয়ন্ত্রণ' : 'Website Control', icon: Globe },
-    { path: '/admin/designations', label: language === 'bn' ? 'পদবি তৈরি' : 'Designations', icon: Tag },
-    { path: '/admin/subjects', label: language === 'bn' ? 'বিষয়সমূহ' : 'Subjects', icon: BookOpen },
-    { path: '/admin/form-builder', label: language === 'bn' ? 'কাস্টম বিল্ডার' : 'Custom Builder', icon: Wrench,
-      children: [
-        { path: '/admin/module-manager', label: language === 'bn' ? 'মডিউল ম্যানেজার' : 'Module Manager', icon: Blocks },
-        { path: '/admin/formula-builder', label: language === 'bn' ? 'ফর্মুলা বিল্ডার' : 'Formula Builder', icon: FlaskConical },
-        { path: '/admin/attendance', label: language === 'bn' ? 'অ্যাটেন্ডেন্স' : 'Attendance', icon: CalendarDays },
-        { path: '/admin/validation-manager', label: language === 'bn' ? 'ভ্যালিডেশন ম্যানেজার' : 'Validation Manager', icon: ShieldCheck },
-        { path: '/admin/reports', label: language === 'bn' ? 'রিপোর্ট ও অ্যানালিটিক্স' : 'Reports & Analytics', icon: BarChart3 },
-      ]
-    },
-    { path: '/admin/permissions', label: language === 'bn' ? 'পারমিশন' : 'Permissions', icon: KeyRound },
-    { path: '/admin/theme', label: language === 'bn' ? 'থিম কাস্টমাইজার' : 'Theme Customizer', icon: Palette },
-    { path: '/admin/settings', label: language === 'bn' ? 'সেটিংস' : 'Settings', icon: Settings },
-  ];
+  // Convert MenuItemConfig to MenuItem using dynamic config
+  const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
+    path: cfg.path,
+    label: language === 'bn' ? cfg.label_bn : cfg.label_en,
+    icon: getIcon(cfg.icon),
+    children: cfg.children?.filter(c => c.visible).map(c => ({
+      path: c.path,
+      label: language === 'bn' ? c.label_bn : c.label_en,
+      icon: getIcon(c.icon),
+    })),
+  });
+
+  const baseMenuItems: MenuItem[] = menuConfig.sidebar
+    .filter(item => item.visible)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(configToMenuItem);
 
   // Build final menu items with published custom forms injected
   const menuItems: MenuItem[] = baseMenuItems.map(item => {

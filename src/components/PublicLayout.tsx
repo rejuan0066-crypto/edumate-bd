@@ -4,25 +4,22 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import LanguageToggle from './LanguageToggle';
 import { Menu, X, Phone, Mail, MapPin, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useMenuSettings } from '@/hooks/useMenuSettings';
 
 const PublicLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { settings } = useWebsiteSettings();
+  const { menuConfig } = useMenuSettings();
 
-  const navItems = [
-    { path: '/', label: t('home') },
-    { path: '/about', label: t('about') },
-    { path: '/gallery', label: t('gallery') },
-    { path: '/admission', label: t('admission') },
-    { path: '/result', label: t('result') },
-    { path: '/student-info', label: t('studentInfo') },
-    { path: '/notices', label: t('notice') },
-    { path: '/donation', label: t('donation') },
-    { path: '/fee-payment', label: t('feePayment') },
-    { path: '/contact', label: t('contact') },
-  ];
+  const navItems = menuConfig.public
+    .filter(item => item.visible)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(item => ({
+      path: item.path,
+      label: language === 'bn' ? item.label_bn : item.label_en,
+    }));
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
