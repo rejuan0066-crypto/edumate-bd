@@ -1139,11 +1139,12 @@ const AdminExpenses = () => {
                     </h3>
                     <table className="w-full border-collapse border text-sm">
                       <thead>
-                        <tr className="bg-gray-100">
+                        <tr className="bg-muted">
                           <th className="border p-1 text-left w-8">#</th>
                           <th className="border p-1 text-left">{bn ? 'তারিখ' : 'Date'}</th>
                           <th className="border p-1 text-left">{bn ? 'বিবরণ' : 'Description'}</th>
                           <th className="border p-1 text-center">{bn ? 'পরিমাণ' : 'Qty'}</th>
+                          <th className="border p-1 text-center">{bn ? 'মাধ্যম' : 'Method'}</th>
                           <th className="border p-1 text-right">{bn ? 'টাকা' : 'Amount'}</th>
                           <th className="border p-1 text-center">{bn ? 'রসিদ' : 'Receipt'}</th>
                         </tr>
@@ -1155,12 +1156,13 @@ const AdminExpenses = () => {
                             <td className="border p-1">{e.expense_date}</td>
                             <td className="border p-1">{cleanDesc(e.description)}</td>
                             <td className="border p-1 text-center">{e.quantity || 1} {getUnit(e.description)}</td>
+                            <td className="border p-1 text-center">{getMethod(e.description)}</td>
                             <td className="border p-1 text-right">৳{formatNum(Number(e.amount))}</td>
                             <td className="border p-1 text-center">{e.has_receipt ? '✓' : '-'}</td>
                           </tr>
                         ))}
-                        <tr className="font-bold bg-gray-50">
-                          <td colSpan={4} className="border p-1 text-right">{bn ? 'উপমোট:' : 'Subtotal:'}</td>
+                        <tr className="font-bold bg-muted/50">
+                          <td colSpan={5} className="border p-1 text-right">{bn ? 'উপমোট:' : 'Subtotal:'}</td>
                           <td className="border p-1 text-right">৳{formatNum(catTotal)}</td>
                           <td className="border p-1"></td>
                         </tr>
