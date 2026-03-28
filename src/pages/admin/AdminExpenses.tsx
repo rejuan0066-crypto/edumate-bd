@@ -463,8 +463,27 @@ const AdminExpenses = () => {
                       <Checkbox checked={expenseForm.has_receipt} onCheckedChange={v => setExpenseForm(f => ({ ...f, has_receipt: !!v }))} />
                       <Label>{bn ? 'রসিদ আছে' : 'Has Receipt'}</Label>
                     </div>
-                    <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending}>
-                      {bn ? 'সংরক্ষণ করুন' : 'Save'}
+                    {expenseForm.has_receipt && (
+                      <div>
+                        <Label>{bn ? 'রসিদ আপলোড' : 'Upload Receipt'}</Label>
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="file" 
+                            accept="image/*,.pdf" 
+                            onChange={e => setReceiptFile(e.target.files?.[0] || null)}
+                            className="flex-1"
+                          />
+                          {receiptFile && <Upload className="h-4 w-4 text-muted-foreground" />}
+                        </div>
+                        {expenseForm.receipt_url && !receiptFile && (
+                          <a href={expenseForm.receipt_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary underline mt-1 inline-block">
+                            {bn ? 'বর্তমান রসিদ দেখুন' : 'View current receipt'}
+                          </a>
+                        )}
+                      </div>
+                    )}
+                    <Button className="w-full" onClick={() => addExpense.mutate()} disabled={addExpense.isPending || uploading}>
+                      {uploading ? (bn ? 'আপলোড হচ্ছে...' : 'Uploading...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
                     </Button>
                   </div>
                 </DialogContent>
