@@ -9,7 +9,8 @@ import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
   ChevronRight, Layers, Receipt, Heart, ReceiptText, FileSignature,
-  FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox
+  FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
+  Blocks, FlaskConical
 } from 'lucide-react';
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
