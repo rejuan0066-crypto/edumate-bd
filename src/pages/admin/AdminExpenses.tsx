@@ -51,17 +51,19 @@ const AdminExpenses = () => {
   const [expenseDialog, setExpenseDialog] = useState(false);
   const [depositDialog, setDepositDialog] = useState(false);
 
+  // Edit IDs
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editingDepositId, setEditingDepositId] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
   // Form states
+  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: '' };
+  const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const [projectForm, setProjectForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
-  const [expenseForm, setExpenseForm] = useState({
-    project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0],
-    description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: ''
-  });
-  const [depositForm, setDepositForm] = useState({
-    deposit_date: new Date().toISOString().split('T')[0],
-    bank_details: '', other_details: '', amount: '', source: 'manual'
-  });
+  const [expenseForm, setExpenseForm] = useState(defaultExpenseForm);
+  const [depositForm, setDepositForm] = useState(defaultDepositForm);
   const [summaryForm, setSummaryForm] = useState({ principal_name: '', casher_name: '', previous_arrears: '0' });
 
   // Queries
@@ -151,27 +153,37 @@ const AdminExpenses = () => {
   const addProject = useMutation({
     mutationFn: async () => {
       if (!projectForm.name || !projectForm.name_bn) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill all fields'); return; }
-      const { error } = await supabase.from('expense_projects').insert(projectForm);
-      if (error) throw error;
+      if (editingProjectId) {
+        const { error } = await supabase.from('expense_projects').update(projectForm).eq('id', editingProjectId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expense_projects').insert(projectForm);
+        if (error) throw error;
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_projects'] }); setProjectDialog(false); setProjectForm({ name: '', name_bn: '' }); toast.success(bn ? 'প্রকল্প যোগ হয়েছে' : 'Project added'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_projects'] }); setProjectDialog(false); setProjectForm({ name: '', name_bn: '' }); setEditingProjectId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
 
   const addCategory = useMutation({
     mutationFn: async () => {
       if (!categoryForm.project_id || !categoryForm.name || !categoryForm.name_bn) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill all fields'); return; }
-      const { error } = await supabase.from('expense_categories').insert(categoryForm);
-      if (error) throw error;
+      if (editingCategoryId) {
+        const { error } = await supabase.from('expense_categories').update(categoryForm).eq('id', editingCategoryId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expense_categories').insert(categoryForm);
+        if (error) throw error;
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_categories'] }); setCategoryDialog(false); setCategoryForm({ project_id: '', name: '', name_bn: '' }); toast.success(bn ? 'ক্যাটেগরি যোগ হয়েছে' : 'Category added'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['expense_categories'] }); setCategoryDialog(false); setCategoryForm({ project_id: '', name: '', name_bn: '' }); setEditingCategoryId(null); toast.success(bn ? 'সংরক্ষিত' : 'Saved'); },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
 
   const addExpense = useMutation({
     mutationFn: async () => {
       if (!expenseForm.project_id || !expenseForm.category_id || !expenseForm.amount) { toast.error(bn ? 'সব তথ্য পূরণ করুন' : 'Fill required fields'); return; }
-      const { error } = await supabase.from('expenses').insert({
+      const payload = {
         month_year: selectedMonthYear,
         project_id: expenseForm.project_id,
         category_id: expenseForm.category_id,
@@ -181,15 +193,22 @@ const AdminExpenses = () => {
         has_receipt: expenseForm.has_receipt,
         receipt_url: expenseForm.receipt_url || null,
         amount: Number(expenseForm.amount)
-      });
-      if (error) throw error;
+      };
+      if (editingExpenseId) {
+        const { error } = await supabase.from('expenses').update(payload).eq('id', editingExpenseId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('expenses').insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['all_expenses'] });
       setExpenseDialog(false);
-      setExpenseForm({ project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', has_receipt: false, receipt_url: '', amount: '' });
-      toast.success(bn ? 'খরচ যোগ হয়েছে' : 'Expense added');
+      setExpenseForm(defaultExpenseForm);
+      setEditingExpenseId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
@@ -197,22 +216,29 @@ const AdminExpenses = () => {
   const addDeposit = useMutation({
     mutationFn: async () => {
       if (!depositForm.amount) { toast.error(bn ? 'পরিমাণ দিন' : 'Enter amount'); return; }
-      const { error } = await supabase.from('deposits').insert({
+      const payload = {
         month_year: selectedMonthYear,
         deposit_date: depositForm.deposit_date,
         bank_details: depositForm.bank_details || null,
         other_details: depositForm.other_details || null,
         amount: Number(depositForm.amount),
         source: depositForm.source
-      });
-      if (error) throw error;
+      };
+      if (editingDepositId) {
+        const { error } = await supabase.from('deposits').update(payload).eq('id', editingDepositId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('deposits').insert(payload);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['deposits'] });
       qc.invalidateQueries({ queryKey: ['all_deposits'] });
       setDepositDialog(false);
-      setDepositForm({ deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' });
-      toast.success(bn ? 'জমা যোগ হয়েছে' : 'Deposit added');
+      setDepositForm(defaultDepositForm);
+      setEditingDepositId(null);
+      toast.success(bn ? 'সংরক্ষিত' : 'Saved');
     },
     onError: () => toast.error(bn ? 'ত্রুটি হয়েছে' : 'Error occurred')
   });
@@ -254,8 +280,32 @@ const AdminExpenses = () => {
   const filteredCategories = categories.filter((c: any) => !expenseForm.project_id || c.project_id === expenseForm.project_id);
 
   const handlePrint = () => window.print();
-
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
+
+  const openEditExpense = (e: any) => {
+    setEditingExpenseId(e.id);
+    setExpenseForm({ project_id: e.project_id, category_id: e.category_id, expense_date: e.expense_date, description: e.description || '', quantity: String(e.quantity || 1), has_receipt: !!e.has_receipt, receipt_url: e.receipt_url || '', amount: String(e.amount) });
+    setExpenseDialog(true);
+  };
+  const openEditDeposit = (d: any) => {
+    setEditingDepositId(d.id);
+    setDepositForm({ deposit_date: d.deposit_date, bank_details: d.bank_details || '', other_details: d.other_details || '', amount: String(d.amount), source: d.source || 'manual' });
+    setDepositDialog(true);
+  };
+  const openEditProject = (p: any) => {
+    setEditingProjectId(p.id);
+    setProjectForm({ name: p.name, name_bn: p.name_bn });
+    setProjectDialog(true);
+  };
+  const openEditCategory = (c: any) => {
+    setEditingCategoryId(c.id);
+    setCategoryForm({ project_id: c.project_id, name: c.name, name_bn: c.name_bn });
+    setCategoryDialog(true);
+  };
+  const resetExpenseDialog = (open: boolean) => { if (!open) { setEditingExpenseId(null); setExpenseForm(defaultExpenseForm); } setExpenseDialog(open); };
+  const resetDepositDialog = (open: boolean) => { if (!open) { setEditingDepositId(null); setDepositForm(defaultDepositForm); } setDepositDialog(open); };
+  const resetProjectDialog = (open: boolean) => { if (!open) { setEditingProjectId(null); setProjectForm({ name: '', name_bn: '' }); } setProjectDialog(open); };
+  const resetCategoryDialog = (open: boolean) => { if (!open) { setEditingCategoryId(null); setCategoryForm({ project_id: '', name: '', name_bn: '' }); } setCategoryDialog(open); };
 
   return (
     <AdminLayout>
@@ -347,12 +397,12 @@ const AdminExpenses = () => {
           <TabsContent value="dashboard" className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold">{bn ? 'খরচ তালিকা' : 'Expense List'} ({selectedMonthYear})</h3>
-              <Dialog open={expenseDialog} onOpenChange={setExpenseDialog}>
+              <Dialog open={expenseDialog} onOpenChange={resetExpenseDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'খরচ যোগ' : 'Add Expense'}</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader><DialogTitle>{bn ? 'নতুন খরচ' : 'New Expense'}</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingExpenseId ? (bn ? 'খরচ সম্পাদনা' : 'Edit Expense') : (bn ? 'নতুন খরচ' : 'New Expense')}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div>
                       <Label>{bn ? 'প্রকল্প' : 'Project'} *</Label>
@@ -431,7 +481,8 @@ const AdminExpenses = () => {
                       <TableCell>{e.quantity}</TableCell>
                       <TableCell>{e.has_receipt ? '✅' : '❌'}</TableCell>
                       <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditExpense(e)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(e.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
@@ -452,12 +503,12 @@ const AdminExpenses = () => {
           <TabsContent value="deposits" className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold">{bn ? 'জমা তালিকা' : 'Deposit List'} ({selectedMonthYear})</h3>
-              <Dialog open={depositDialog} onOpenChange={setDepositDialog}>
+              <Dialog open={depositDialog} onOpenChange={resetDepositDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="w-4 h-4 mr-1" />{bn ? 'জমা যোগ' : 'Add Deposit'}</Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader><DialogTitle>{bn ? 'নতুন জমা' : 'New Deposit'}</DialogTitle></DialogHeader>
+                  <DialogHeader><DialogTitle>{editingDepositId ? (bn ? 'জমা সম্পাদনা' : 'Edit Deposit') : (bn ? 'নতুন জমা' : 'New Deposit')}</DialogTitle></DialogHeader>
                   <div className="space-y-3">
                     <div>
                       <Label>{bn ? 'তারিখ' : 'Date'} *</Label>
@@ -520,7 +571,8 @@ const AdminExpenses = () => {
                       <TableCell>{d.other_details || '-'}</TableCell>
                       <TableCell>{d.source}</TableCell>
                       <TableCell className="text-right font-medium">৳{formatNum(Number(d.amount))}</TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDeposit(d)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteDeposit.mutate(d.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                       </TableCell>
                     </TableRow>
@@ -544,10 +596,10 @@ const AdminExpenses = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">{bn ? 'প্রকল্প' : 'Projects'}</CardTitle>
-                  <Dialog open={projectDialog} onOpenChange={setProjectDialog}>
+                  <Dialog open={projectDialog} onOpenChange={resetProjectDialog}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><FolderPlus className="w-4 h-4 mr-1" />{bn ? 'যোগ' : 'Add'}</Button></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>{bn ? 'নতুন প্রকল্প' : 'New Project'}</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{editingProjectId ? (bn ? 'প্রকল্প সম্পাদনা' : 'Edit Project') : (bn ? 'নতুন প্রকল্প' : 'New Project')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label><Input value={projectForm.name} onChange={e => setProjectForm(f => ({ ...f, name: e.target.value }))} /></div>
                         <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label><Input value={projectForm.name_bn} onChange={e => setProjectForm(f => ({ ...f, name_bn: e.target.value }))} /></div>
@@ -562,6 +614,7 @@ const AdminExpenses = () => {
                       {projects.map((p: any) => (
                         <li key={p.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
                           <span className="text-sm font-medium">{bn ? p.name_bn : p.name}</span>
+                          <Button variant="ghost" size="icon" onClick={() => openEditProject(p)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         </li>
                       ))}
                     </ul>
@@ -573,10 +626,10 @@ const AdminExpenses = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">{bn ? 'ক্যাটেগরি' : 'Categories'}</CardTitle>
-                  <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
+                  <Dialog open={categoryDialog} onOpenChange={resetCategoryDialog}>
                     <DialogTrigger asChild><Button size="sm" variant="outline"><TagIcon className="w-4 h-4 mr-1" />{bn ? 'যোগ' : 'Add'}</Button></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>{bn ? 'নতুন ক্যাটেগরি' : 'New Category'}</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{editingCategoryId ? (bn ? 'ক্যাটেগরি সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন ক্যাটেগরি' : 'New Category')}</DialogTitle></DialogHeader>
                       <div className="space-y-3">
                         <div>
                           <Label>{bn ? 'প্রকল্প' : 'Project'} *</Label>
@@ -601,6 +654,7 @@ const AdminExpenses = () => {
                             <span className="text-sm font-medium">{bn ? c.name_bn : c.name}</span>
                             <span className="text-xs text-muted-foreground ml-2">({bn ? (c as any).expense_projects?.name_bn : (c as any).expense_projects?.name})</span>
                           </div>
+                          <Button variant="ghost" size="icon" onClick={() => openEditCategory(c)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
                         </li>
                       ))}
                     </ul>
