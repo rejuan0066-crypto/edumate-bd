@@ -70,7 +70,7 @@ const AdminExpenses = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
   // Form states
-  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', quantity_unit: 'পিস', has_receipt: false, receipt_url: '', amount: '', expense_method: 'ক্যাশ' };
+  const defaultExpenseForm = { project_id: '', category_id: '', expense_date: new Date().toISOString().split('T')[0], description: '', quantity: '1', quantity_unit: 'পিস', has_receipt: false, receipt_url: '', amount: '', expense_method: 'ক্যাশ', expense_method_other: '' };
   const defaultDepositForm = { deposit_date: new Date().toISOString().split('T')[0], bank_details: '', other_details: '', amount: '', source: 'manual' };
   const [projectForm, setProjectForm] = useState({ name: '', name_bn: '' });
   const [categoryForm, setCategoryForm] = useState({ project_id: '', name: '', name_bn: '' });
