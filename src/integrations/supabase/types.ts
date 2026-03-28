@@ -1141,6 +1141,60 @@ export type Database = {
         }
         Relationships: []
       }
+      validation_rules: {
+        Row: {
+          config: Json
+          created_at: string | null
+          description: string | null
+          error_message: string | null
+          error_message_bn: string | null
+          field_name: string | null
+          id: string
+          is_active: boolean | null
+          module: string
+          name: string
+          name_bn: string
+          rule_level: string
+          rule_type: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          description?: string | null
+          error_message?: string | null
+          error_message_bn?: string | null
+          field_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          module?: string
+          name: string
+          name_bn: string
+          rule_level?: string
+          rule_type?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          description?: string | null
+          error_message?: string | null
+          error_message_bn?: string | null
+          field_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          module?: string
+          name?: string
+          name_bn?: string
+          rule_level?: string
+          rule_type?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       website_settings: {
         Row: {
           id: string
