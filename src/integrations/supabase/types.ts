@@ -594,6 +594,51 @@ export type Database = {
           },
         ]
       }
+      formulas: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          expression: Json
+          formula_type: string
+          id: string
+          is_active: boolean | null
+          module: string
+          name: string
+          name_bn: string
+          sort_order: number | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          expression?: Json
+          formula_type?: string
+          id?: string
+          is_active?: boolean | null
+          module: string
+          name: string
+          name_bn: string
+          sort_order?: number | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          expression?: Json
+          formula_type?: string
+          id?: string
+          is_active?: boolean | null
+          module?: string
+          name?: string
+          name_bn?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       institutions: {
         Row: {
           address: string | null
@@ -937,6 +982,68 @@ export type Database = {
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      system_modules: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_bn: string | null
+          icon: string | null
+          id: string
+          is_enabled: boolean | null
+          is_system: boolean | null
+          menu_path: string | null
+          name: string
+          name_bn: string
+          parent_module_id: string | null
+          settings: Json | null
+          sort_order: number | null
+          updated_at: string | null
+          visible_to_roles: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          icon?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_system?: boolean | null
+          menu_path?: string | null
+          name: string
+          name_bn: string
+          parent_module_id?: string | null
+          settings?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          visible_to_roles?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          icon?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          is_system?: boolean | null
+          menu_path?: string | null
+          name?: string
+          name_bn?: string
+          parent_module_id?: string | null
+          settings?: Json | null
+          sort_order?: number | null
+          updated_at?: string | null
+          visible_to_roles?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_modules_parent_module_id_fkey"
+            columns: ["parent_module_id"]
+            isOneToOne: false
+            referencedRelation: "system_modules"
             referencedColumns: ["id"]
           },
         ]
