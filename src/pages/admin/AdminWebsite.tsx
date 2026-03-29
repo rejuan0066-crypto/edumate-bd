@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWebsiteSettings, WebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Json } from '@/integrations/supabase/types';
@@ -281,6 +281,9 @@ const AdminWebsite = () => {
             </TabsTrigger>
             <TabsTrigger value="social" className="text-xs py-2 px-2.5">
               <Share2 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সোশ্যাল' : 'Social'}
+            </TabsTrigger>
+            <TabsTrigger value="sync" className="text-xs py-2 px-2.5">
+              <Database className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সিঙ্ক স্ট্যাটাস' : 'Sync Status'}
             </TabsTrigger>
           </TabsList>
 
@@ -906,6 +909,178 @@ const AdminWebsite = () => {
               <Button className="btn-primary-gradient" onClick={() => saveSection(['social_links'])} disabled={saving}>
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
               </Button>
+            </div>
+          </TabsContent>
+
+          {/* Sync Status Tab */}
+          <TabsContent value="sync">
+            <div className="card-elevated p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                  <Database className="w-5 h-5 text-primary" />
+                  {language === 'bn' ? 'ব্যাকএন্ড-ফ্রন্টএন্ড সিঙ্ক স্ট্যাটাস' : 'Backend-Frontend Sync Status'}
+                </h3>
+                <Button className="btn-primary-gradient" size="sm" onClick={saveAll} disabled={saving}>
+                  <RefreshCw className={`w-4 h-4 mr-1 ${saving ? 'animate-spin' : ''}`} />
+                  {language === 'bn' ? 'সব আপডেট করুন' : 'Update All'}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {language === 'bn'
+                  ? 'এখানে ব্যাকএন্ড ডাটাবেসের সাথে ফ্রন্টএন্ডের সকল কানেক্টেড সেটিংস দেখানো হচ্ছে। "আপডেট করুন" ক্লিক করলে সাথে সাথে পাবলিক সাইটে পরিবর্তন দেখা যাবে।'
+                  : 'All settings connected between backend database and frontend are shown here. Click "Update" to instantly reflect changes on the public site.'}
+              </p>
+
+              <div className="space-y-2">
+                {(() => {
+                  const syncSections: Array<{
+                    category_bn: string;
+                    category_en: string;
+                    icon: React.ReactNode;
+                    keys: (keyof WebsiteSettings)[];
+                    labels_bn: string[];
+                    labels_en: string[];
+                  }> = [
+                    {
+                      category_bn: 'প্রতিষ্ঠান তথ্য',
+                      category_en: 'Institution Info',
+                      icon: <Globe className="w-4 h-4" />,
+                      keys: ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url'],
+                      labels_bn: ['বাংলা নাম', 'ইংরেজি নাম', 'ঠিকানা', 'ফোন', 'ইমেইল', 'লোগো'],
+                      labels_en: ['Bangla Name', 'English Name', 'Address', 'Phone', 'Email', 'Logo'],
+                    },
+                    {
+                      category_bn: 'হিরো ব্যানার',
+                      category_en: 'Hero Banner',
+                      icon: <Image className="w-4 h-4" />,
+                      keys: ['hero_title_bn', 'hero_title_en', 'hero_subtitle_bn', 'hero_subtitle_en', 'hero_bg_image_url'],
+                      labels_bn: ['ব্যানার টাইটেল (বাংলা)', 'ব্যানার টাইটেল (ইংরেজি)', 'সাবটাইটেল (বাংলা)', 'সাবটাইটেল (ইংরেজি)', 'ব্যাকগ্রাউন্ড ইমেজ'],
+                      labels_en: ['Banner Title (BN)', 'Banner Title (EN)', 'Subtitle (BN)', 'Subtitle (EN)', 'Background Image'],
+                    },
+                    {
+                      category_bn: 'অধ্যক্ষ ও কন্টেন্ট',
+                      category_en: 'Principal & Content',
+                      icon: <Type className="w-4 h-4" />,
+                      keys: ['principal_name', 'principal_message_bn', 'principal_photo_url', 'about_content_bn', 'about_mission_bn', 'about_vision_bn'],
+                      labels_bn: ['অধ্যক্ষের নাম', 'অধ্যক্ষের বাণী', 'অধ্যক্ষের ছবি', 'সম্পর্কে কন্টেন্ট', 'মিশন', 'ভিশন'],
+                      labels_en: ['Principal Name', 'Principal Message', 'Principal Photo', 'About Content', 'Mission', 'Vision'],
+                    },
+                    {
+                      category_bn: 'পরিসংখ্যান',
+                      category_en: 'Statistics',
+                      icon: <BarChart3 className="w-4 h-4" />,
+                      keys: ['stat_students', 'stat_teachers', 'stat_years'],
+                      labels_bn: ['মোট ছাত্র', 'মোট শিক্ষক', 'প্রতিষ্ঠার বছর'],
+                      labels_en: ['Total Students', 'Total Teachers', 'Years'],
+                    },
+                    {
+                      category_bn: 'হেডার স্টাইল',
+                      category_en: 'Header Style',
+                      icon: <PanelTop className="w-4 h-4" />,
+                      keys: ['header_style'],
+                      labels_bn: ['হেডার কনফিগারেশন'],
+                      labels_en: ['Header Configuration'],
+                    },
+                    {
+                      category_bn: 'নেভিগেশন স্টাইল',
+                      category_en: 'Navigation Style',
+                      icon: <Navigation className="w-4 h-4" />,
+                      keys: ['nav_style'],
+                      labels_bn: ['নেভিগেশন কনফিগারেশন'],
+                      labels_en: ['Navigation Configuration'],
+                    },
+                    {
+                      category_bn: 'ফুটার',
+                      category_en: 'Footer',
+                      icon: <PanelBottom className="w-4 h-4" />,
+                      keys: ['footer_style', 'footer_links', 'footer_description_bn', 'footer_description_en'],
+                      labels_bn: ['ফুটার কনফিগারেশন', 'ফুটার লিংক', 'ফুটার বর্ণনা (বাংলা)', 'ফুটার বর্ণনা (ইংরেজি)'],
+                      labels_en: ['Footer Configuration', 'Footer Links', 'Footer Description (BN)', 'Footer Description (EN)'],
+                    },
+                    {
+                      category_bn: 'গ্যালারি ও সোশ্যাল',
+                      category_en: 'Gallery & Social',
+                      icon: <ImageIcon className="w-4 h-4" />,
+                      keys: ['gallery_items', 'social_links'],
+                      labels_bn: ['গ্যালারি আইটেম', 'সোশ্যাল লিংক'],
+                      labels_en: ['Gallery Items', 'Social Links'],
+                    },
+                    {
+                      category_bn: 'সেকশন ও বিভাগ',
+                      category_en: 'Sections & Divisions',
+                      icon: <Layout className="w-4 h-4" />,
+                      keys: ['sections', 'divisions', 'contact_map_embed'],
+                      labels_bn: ['সেকশন টগল', 'বিভাগ তালিকা', 'ম্যাপ এমবেড'],
+                      labels_en: ['Section Toggles', 'Division List', 'Map Embed'],
+                    },
+                  ];
+
+                  return syncSections.map((section, sIdx) => (
+                    <div key={sIdx} className="border rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between p-3 bg-secondary/30">
+                        <div className="flex items-center gap-2 font-semibold text-sm text-foreground">
+                          {section.icon}
+                          {language === 'bn' ? section.category_bn : section.category_en}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-7"
+                          disabled={saving}
+                          onClick={async () => {
+                            setSaving(true);
+                            try {
+                              const updates = section.keys.map(key => ({ key, value: form[key] as Json }));
+                              await updateMultiple.mutateAsync(updates);
+                              toast.success(language === 'bn' ? `${section.category_bn} আপডেট হয়েছে!` : `${section.category_en} updated!`);
+                            } catch {
+                              toast.error(language === 'bn' ? 'আপডেট ব্যর্থ' : 'Update failed');
+                            }
+                            setSaving(false);
+                          }}
+                        >
+                          <RefreshCw className={`w-3 h-3 mr-1 ${saving ? 'animate-spin' : ''}`} />
+                          {language === 'bn' ? 'আপডেট করুন' : 'Update'}
+                        </Button>
+                      </div>
+                      <div className="divide-y">
+                        {section.keys.map((key, kIdx) => {
+                          const val = form[key];
+                          const hasValue = val !== undefined && val !== null && val !== '' && 
+                            !(typeof val === 'object' && Object.keys(val).length === 0);
+                          const displayValue = (() => {
+                            if (typeof val === 'string') {
+                              if (val.startsWith('http')) return language === 'bn' ? '🔗 লিংক সেট আছে' : '🔗 Link set';
+                              return val.length > 60 ? val.substring(0, 60) + '...' : val;
+                            }
+                            if (Array.isArray(val)) return `${val.length} ${language === 'bn' ? 'টি আইটেম' : 'items'}`;
+                            if (typeof val === 'object') return language === 'bn' ? '✅ কনফিগ সেট আছে' : '✅ Config set';
+                            return String(val);
+                          })();
+
+                          return (
+                            <div key={kIdx} className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center gap-2">
+                                {hasValue ? (
+                                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                                ) : (
+                                  <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                                )}
+                                <span className="font-medium text-foreground">
+                                  {language === 'bn' ? section.labels_bn[kIdx] : section.labels_en[kIdx]}
+                                </span>
+                              </div>
+                              <span className={`text-xs max-w-[200px] truncate ${hasValue ? 'text-muted-foreground' : 'text-amber-500'}`}>
+                                {hasValue ? displayValue : (language === 'bn' ? 'সেট করা হয়নি' : 'Not set')}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
