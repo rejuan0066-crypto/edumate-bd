@@ -183,17 +183,25 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               <div key={item.path}>
                 <div className="flex items-center">
                   {hasChildren ? (
-                    <button
-                      onClick={() => toggleGroup(item.path)}
-                      className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}
-                      title={!sidebarOpen && !mobile ? item.label : undefined}
-                    >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
+                    <div className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}>
+                      <Link
+                        to={item.path}
+                        onClick={() => mobile && setMobileSidebarOpen(false)}
+                        className="flex items-center gap-2 flex-1 min-w-0"
+                        title={!sidebarOpen && !mobile ? item.label : undefined}
+                      >
+                        <item.icon className="w-5 h-5 shrink-0" />
+                        {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
+                      </Link>
                       {(sidebarOpen || mobile) && (
-                        <ChevronDown className={`w-4 h-4 ml-auto shrink-0 transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`} />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleGroup(item.path); }}
+                          className="p-1 rounded hover:bg-sidebar-accent shrink-0 ml-auto"
+                        >
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`} />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   ) : (
                     <Link
                       to={item.path}
