@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calendar, Clock, Star, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
@@ -10,6 +10,8 @@ const BANGLA_DAYS = ['রবিবার', 'সোমবার', 'মঙ্গ�
 const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const EN_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const BN_MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+const SHORT_DAYS_EN = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const SHORT_DAYS_BN = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র', 'শনি'];
 
 function getBanglaDate(date: Date) {
   const banglaYearOffset = date.getMonth() < 3 || (date.getMonth() === 3 && date.getDate() < 14) ? -594 : -593;
@@ -29,7 +31,7 @@ function getBanglaDate(date: Date) {
 }
 
 interface Holiday {
-  date: string; // MM-DD
+  date: string;
   nameBn: string;
   nameEn: string;
   type: 'islamic' | 'government' | 'festival' | 'other';
@@ -59,20 +61,18 @@ const HOLIDAYS_2026: Holiday[] = [
   { date: '12-25', nameBn: 'বড়দিন', nameEn: 'Christmas', type: 'festival' },
 ];
 
-const TYPE_STYLES: Record<string, { bg: string; text: string; dot: string; label: string; labelBn: string }> = {
-  islamic: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500', label: 'Islamic', labelBn: 'ইসলামিক' },
-  government: { bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500', label: 'Government', labelBn: 'সরকারি' },
-  festival: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-500', label: 'Festival', labelBn: 'উৎসব' },
-  other: { bg: 'bg-purple-50 dark:bg-purple-900/20', text: 'text-purple-700 dark:text-purple-400', dot: 'bg-purple-500', label: 'Other', labelBn: 'অন্যান্য' },
+const TYPE_COLORS: Record<string, { dot: string; ring: string; label: string; labelBn: string }> = {
+  islamic: { dot: 'bg-emerald-500', ring: 'ring-emerald-400', label: 'Islamic', labelBn: 'ইসলামিক' },
+  government: { dot: 'bg-blue-500', ring: 'ring-blue-400', label: 'Government', labelBn: 'সরকারি' },
+  festival: { dot: 'bg-amber-500', ring: 'ring-amber-400', label: 'Festival', labelBn: 'উৎসব' },
+  other: { dot: 'bg-purple-500', ring: 'ring-purple-400', label: 'Other', labelBn: 'অন্যান্য' },
 };
 
-// Group holidays by month index (0-11)
-function groupByMonth(holidays: Holiday[]): Map<number, Holiday[]> {
-  const map = new Map<number, Holiday[]>();
+function getHolidayMap(holidays: Holiday[]): Map<string, Holiday[]> {
+  const map = new Map<string, Holiday[]>();
   holidays.forEach(h => {
-    const monthIdx = parseInt(h.date.split('-')[0]) - 1;
-    if (!map.has(monthIdx)) map.set(monthIdx, []);
-    map.get(monthIdx)!.push(h);
+    if (!map.has(h.date)) map.set(h.date, []);
+    map.get(h.date)!.push(h);
   });
   return map;
 }
@@ -81,23 +81,18 @@ const IslamicCalendarWidget = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const [now, setNow] = useState(new Date());
-  const [selectedYear] = useState(2026);
-  const [expandedMonth, setExpandedMonth] = useState<number | null>(null);
+  const [viewYear, setViewYear] = useState(2026);
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-expand current month
-  useEffect(() => {
-    setExpandedMonth(now.getMonth());
-  }, []);
-
   const banglaDate = getBanglaDate(now);
   const todayStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const todayHoliday = HOLIDAYS_2026.find(h => h.date === todayStr);
-  const grouped = groupByMonth(HOLIDAYS_2026);
+  const holidayMap = useMemo(() => getHolidayMap(HOLIDAYS_2026), []);
 
   const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   const dayName = bn ? BANGLA_DAYS[now.getDay()] : EN_DAYS[now.getDay()];
@@ -105,9 +100,28 @@ const IslamicCalendarWidget = () => {
     ? `${toBanglaNum(String(now.getDate()))} ${EN_MONTHS[now.getMonth()]} ${toBanglaNum(String(now.getFullYear()))}`
     : `${now.getDate()} ${EN_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
-  const toggleMonth = (idx: number) => {
-    setExpandedMonth(prev => prev === idx ? null : idx);
+  // Calendar grid
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) calendarDays.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+    else setViewMonth(m => m - 1);
   };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+    else setViewMonth(m => m + 1);
+  };
+  const goToday = () => { setViewMonth(now.getMonth()); setViewYear(now.getFullYear()); };
+
+  // Holidays in current view month
+  const monthHolidays = HOLIDAYS_2026.filter(h => {
+    const m = parseInt(h.date.split('-')[0]) - 1;
+    return m === viewMonth;
+  });
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden">
@@ -159,154 +173,125 @@ const IslamicCalendarWidget = () => {
 
       {/* Today's Holiday */}
       {todayHoliday && (
-        <div className={`mx-3 mt-2 p-2 rounded-lg ${TYPE_STYLES[todayHoliday.type].bg} border border-current/10`}>
+        <div className="mx-3 mt-2 p-2 rounded-lg bg-primary/10 border border-primary/20">
           <div className="flex items-center gap-1.5">
-            <Star className={`w-3 h-3 ${TYPE_STYLES[todayHoliday.type].text}`} />
-            <span className={`text-[10px] font-bold ${TYPE_STYLES[todayHoliday.type].text}`}>
+            <Star className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-bold text-primary">
               {bn ? 'আজকের বিশেষ দিন' : "Today's Special"}
             </span>
           </div>
-          <p className={`text-xs font-semibold mt-0.5 ${TYPE_STYLES[todayHoliday.type].text}`}>
+          <p className="text-xs font-semibold mt-0.5 text-primary">
             {bn ? todayHoliday.nameBn : todayHoliday.nameEn}
           </p>
         </div>
       )}
 
-      {/* Year & Month Calendar */}
+      {/* Full Calendar */}
       <div className="p-3">
+        {/* Month Navigation */}
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3 h-3 text-muted-foreground" />
-            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              {bn ? 'ছুটির ক্যালেন্ডার' : 'Holiday Calendar'}
-            </h4>
-          </div>
-          <span className="text-xs font-bold text-primary">
-            {bn ? toBanglaNum(String(selectedYear)) : selectedYear}
-          </span>
+          <button onClick={prevMonth} className="p-1 rounded hover:bg-muted/50 transition-colors">
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <button onClick={goToday} className="text-center">
+            <span className="text-xs font-bold text-foreground">
+              {bn ? BN_MONTHS[viewMonth] : EN_MONTHS[viewMonth]}
+            </span>
+            <span className="text-[10px] text-muted-foreground ml-1">
+              {bn ? toBanglaNum(String(viewYear)) : viewYear}
+            </span>
+          </button>
+          <button onClick={nextMonth} className="p-1 rounded hover:bg-muted/50 transition-colors">
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-2 mb-2">
-          {['islamic', 'government', 'festival'].map(type => (
-            <div key={type} className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${TYPE_STYLES[type].dot}`} />
-              <span className="text-[9px] text-muted-foreground">{bn ? TYPE_STYLES[type].labelBn : TYPE_STYLES[type].label}</span>
+        {/* Day Headers */}
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
+          {(bn ? SHORT_DAYS_BN : SHORT_DAYS_EN).map((d, i) => (
+            <div key={i} className={`text-center text-[9px] font-semibold py-0.5 ${i === 5 ? 'text-primary' : 'text-muted-foreground'}`}>
+              {d}
             </div>
           ))}
         </div>
 
-        <ScrollArea className="h-[220px]">
-          <div className="space-y-1 pr-2">
-            {Array.from({ length: 12 }, (_, monthIdx) => {
-              const holidays = grouped.get(monthIdx) || [];
-              const isCurrentMonth = now.getMonth() === monthIdx && now.getFullYear() === selectedYear;
-              const isExpanded = expandedMonth === monthIdx;
-              const monthName = bn ? BN_MONTHS[monthIdx] : EN_MONTHS[monthIdx];
+        {/* Calendar Grid */}
+        <div className="grid grid-cols-7 gap-0.5">
+          {calendarDays.map((day, i) => {
+            if (day === null) return <div key={`empty-${i}`} />;
+            const dateKey = `${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayHolidays = holidayMap.get(dateKey) || [];
+            const isToday = day === now.getDate() && viewMonth === now.getMonth() && viewYear === now.getFullYear();
+            const isFriday = new Date(viewYear, viewMonth, day).getDay() === 5;
 
-              return (
-                <div key={monthIdx}>
-                  {/* Month Header */}
-                  <button
-                    onClick={() => toggleMonth(monthIdx)}
-                    className={`w-full flex items-center justify-between p-1.5 rounded-md text-left transition-colors ${
-                      isCurrentMonth
-                        ? 'bg-primary/10 border border-primary/20'
-                        : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      {isExpanded
-                        ? <ChevronDown className="w-3 h-3 text-muted-foreground" />
-                        : <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                      }
-                      <span className={`text-[11px] font-semibold ${isCurrentMonth ? 'text-primary' : 'text-foreground'}`}>
-                        {monthName}
+            return (
+              <div
+                key={day}
+                className={`relative flex flex-col items-center justify-center p-0.5 rounded-md min-h-[28px] transition-colors ${
+                  isToday
+                    ? 'bg-primary text-primary-foreground font-bold'
+                    : dayHolidays.length > 0
+                      ? 'bg-muted/60'
+                      : ''
+                } ${isFriday && !isToday ? 'text-primary' : ''}`}
+                title={dayHolidays.map(h => bn ? h.nameBn : h.nameEn).join(', ')}
+              >
+                <span className={`text-[11px] leading-none ${isToday ? '' : 'text-foreground'}`}>
+                  {bn ? toBanglaNum(String(day)) : day}
+                </span>
+                {/* Holiday dots */}
+                {dayHolidays.length > 0 && (
+                  <div className="flex gap-0.5 mt-0.5">
+                    {dayHolidays.map((h, idx) => (
+                      <span
+                        key={idx}
+                        className={`w-1.5 h-1.5 rounded-full ${isToday ? 'bg-primary-foreground' : TYPE_COLORS[h.type].dot}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-2 mt-2 mb-1">
+          {['islamic', 'government', 'festival'].map(type => (
+            <div key={type} className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${TYPE_COLORS[type].dot}`} />
+              <span className="text-[9px] text-muted-foreground">{bn ? TYPE_COLORS[type].labelBn : TYPE_COLORS[type].label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Month's Holiday List */}
+        {monthHolidays.length > 0 && (
+          <ScrollArea className="h-[100px] mt-1">
+            <div className="space-y-0.5 pr-2">
+              {monthHolidays.map((h, i) => {
+                const day = parseInt(h.date.split('-')[1]);
+                const style = TYPE_COLORS[h.type];
+                return (
+                  <div key={i} className="flex items-center gap-1.5 p-1 rounded-md bg-muted/40">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
+                    <span className="text-[10px] font-mono text-muted-foreground w-5 flex-shrink-0">
+                      {bn ? toBanglaNum(String(day)) : day}
+                    </span>
+                    <span className="text-[10px] text-foreground truncate flex-1">
+                      {bn ? h.nameBn : h.nameEn}
+                    </span>
+                    {h.approximate && (
+                      <span className="text-[8px] text-muted-foreground flex-shrink-0">
+                        {bn ? 'সম্ভাব্য' : '~approx'}
                       </span>
-                      {isCurrentMonth && (
-                        <span className="text-[8px] bg-primary text-primary-foreground px-1 py-0.5 rounded-full leading-none">
-                          {bn ? 'চলমান' : 'Now'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-0.5">
-                      {holidays.length > 0 && (
-                        <span className="text-[9px] text-muted-foreground">
-                          {bn ? toBanglaNum(String(holidays.length)) : holidays.length}
-                        </span>
-                      )}
-                      {/* Show type dots */}
-                      {[...new Set(holidays.map(h => h.type))].map(type => (
-                        <span key={type} className={`w-1.5 h-1.5 rounded-full ${TYPE_STYLES[type].dot}`} />
-                      ))}
-                    </div>
-                  </button>
-
-                  {/* Expanded holidays */}
-                  {isExpanded && (
-                    <div className="ml-4 mt-1 mb-1 space-y-0.5">
-                      {holidays.length > 0 ? (
-                        // Group by type within month
-                        (['islamic', 'government', 'festival', 'other'] as const).map(type => {
-                          const typeHolidays = holidays.filter(h => h.type === type);
-                          if (typeHolidays.length === 0) return null;
-                          const style = TYPE_STYLES[type];
-                          return (
-                            <div key={type} className="space-y-0.5">
-                              <p className={`text-[9px] font-bold ${style.text} uppercase tracking-wider mt-1`}>
-                                {bn ? style.labelBn : style.label}
-                              </p>
-                              {typeHolidays.map((h, i) => {
-                                const day = parseInt(h.date.split('-')[1]);
-                                const hDate = new Date(selectedYear, monthIdx, day);
-                                const isPast = hDate.getTime() < now.getTime();
-                                const isToday = h.date === todayStr;
-                                return (
-                                  <div
-                                    key={i}
-                                    className={`flex items-center justify-between p-1.5 rounded-md ${
-                                      isToday ? `${style.bg} ring-1 ring-current/20` : isPast ? 'opacity-50' : style.bg
-                                    }`}
-                                  >
-                                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${style.dot}`} />
-                                      <span className={`text-[11px] font-medium ${style.text} truncate`}>
-                                        {bn ? h.nameBn : h.nameEn}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-                                      <span className={`text-[10px] font-mono ${style.text}`}>
-                                        {bn ? toBanglaNum(String(day)) : day}
-                                        {h.approximate && (
-                                          <span className="text-[8px] opacity-60 ml-0.5">
-                                            {bn ? '~' : '~'}
-                                          </span>
-                                        )}
-                                      </span>
-                                      {isToday && (
-                                        <span className="text-[8px] bg-primary text-primary-foreground px-1 py-0.5 rounded-full leading-none">
-                                          {bn ? 'আজ' : 'Today'}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-[10px] text-muted-foreground py-1 italic">
-                          {bn ? 'এই মাসে কোনো ছুটি নেই' : 'No holidays this month'}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        )}
       </div>
     </div>
   );
