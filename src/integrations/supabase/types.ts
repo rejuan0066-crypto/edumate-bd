@@ -806,6 +806,48 @@ export type Database = {
         }
         Relationships: []
       }
+      holidays: {
+        Row: {
+          approximate: boolean | null
+          created_at: string | null
+          date: string
+          id: string
+          is_active: boolean | null
+          name_bn: string
+          name_en: string
+          sort_order: number | null
+          type: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          approximate?: boolean | null
+          created_at?: string | null
+          date: string
+          id?: string
+          is_active?: boolean | null
+          name_bn: string
+          name_en: string
+          sort_order?: number | null
+          type?: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          approximate?: boolean | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_active?: boolean | null
+          name_bn?: string
+          name_en?: string
+          sort_order?: number | null
+          type?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       institutions: {
         Row: {
           address: string | null
