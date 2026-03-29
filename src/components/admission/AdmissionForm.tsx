@@ -1,0 +1,823 @@
+import { useState, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useValidationRules } from '@/hooks/useValidationRules';
+import { useAdmissionFormConfig, SECTION_INFO, type AdmissionFieldConfig } from '@/hooks/useAdmissionFormConfig';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import PhotoUpload from '@/components/PhotoUpload';
+import AddressFields, { type AddressData } from '@/components/AddressFields';
+import PhoneInput from '@/components/PhoneInput';
+import { Plus, Search, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
+
+const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
+
+const formatAddress = (addr: AddressData) =>
+  [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
+
+interface AdmissionFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+const AdmissionForm = ({ open, onOpenChange }: AdmissionFormProps) => {
+  const { language } = useLanguage();
+  const bn = language === 'bn';
+  const queryClient = useQueryClient();
+  const { validate, validateAll } = useValidationRules('student');
+  const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
+
+  // Form state
+  const [form, setForm] = useState<Record<string, any>>({
+    student_type: 'new', residence_type: 'non-resident',
+    admission_session: '', roll_number: '', registration_no: '',
+    admission_date: new Date().toISOString().split('T')[0],
+    session_year: new Date().getFullYear().toString(),
+    admission_class: '', first_name: '', last_name: '',
+    gender: 'male', religion: 'islam', date_of_birth: '',
+    birth_reg_no: '', previous_class: '', previous_institute: '',
+    is_orphan: false, is_poor: false, photo_url: '',
+    father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
+    mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
+    guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+  });
+
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [permanentAddr, setPermanentAddr] = useState<AddressData>(emptyAddress);
+  const [presentAddr, setPresentAddr] = useState<AddressData>(emptyAddress);
+  const [sameAddress, setSameAddress] = useState(false);
+  const [parentPermanentAddr, setParentPermanentAddr] = useState<AddressData>(emptyAddress);
+  const [parentPresentAddr, setParentPresentAddr] = useState<AddressData>(emptyAddress);
+  const [parentAddrSameAsStudent, setParentAddrSameAsStudent] = useState(false);
+  const [parentSamePresAddr, setParentSamePresAddr] = useState(false);
+  const [guardianPermAddr, setGuardianPermAddr] = useState<AddressData>(emptyAddress);
+  const [guardianPresAddr, setGuardianPresAddr] = useState<AddressData>(emptyAddress);
+  const [guardianSameAddr, setGuardianSameAddr] = useState(false);
+
+  // Old student search
+  const [oldRoll, setOldRoll] = useState('');
+  const [oldSession, setOldSession] = useState('');
+  const [oldClass, setOldClass] = useState('');
+
+  // Inline errors
+  const [fatherNidError, setFatherNidError] = useState('');
+  const [motherNidError, setMotherNidError] = useState('');
+  const [guardianNidError, setGuardianNidError] = useState('');
+  const [birthRegError, setBirthRegError] = useState('');
+
+  // Custom field values (for admin-added fields)
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const calculateAge = useCallback((dateStr: string) => {
+    if (!dateStr) return '';
+    const birth = new Date(dateStr);
+    const today = new Date();
+    let years = today.getFullYear() - birth.getFullYear();
+    let months = today.getMonth() - birth.getMonth();
+    const days = today.getDate() - birth.getDate();
+    if (days < 0) months--;
+    if (months < 0) { years--; months += 12; }
+    return `${years} ${bn ? 'বছর' : 'years'} ${months} ${bn ? 'মাস' : 'months'}`;
+  }, [bn]);
+
+  const validateNid = (val: string, key: string, errorSetter: (v: string) => void) => {
+    const cleaned = val.replace(/\D/g, '');
+    setForm(prev => ({ ...prev, [key]: cleaned }));
+    if (cleaned.length > 0 && cleaned.length !== 10 && cleaned.length !== 17) {
+      errorSetter(bn ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits');
+    } else {
+      errorSetter('');
+    }
+  };
+
+  const validateBirthReg = (val: string) => {
+    const cleaned = val.replace(/\D/g, '');
+    setForm(prev => ({ ...prev, birth_reg_no: cleaned }));
+    if (cleaned.length > 0 && cleaned.length !== 17) {
+      setBirthRegError(bn ? 'জন্ম নিবন্ধন নম্বর অবশ্যই ১৭ ডিজিট হতে হবে' : 'Birth Reg must be exactly 17 digits');
+    } else {
+      setBirthRegError('');
+      if (cleaned.length === 17) checkDuplicateBirthReg(cleaned);
+    }
+  };
+
+  const checkDuplicateBirthReg = async (regNo: string) => {
+    const { data } = await supabase.from('students').select('roll_number, registration_no, admission_session, student_id').eq('birth_reg_no', regNo).limit(1);
+    if (data && data.length > 0) {
+      const s = data[0];
+      toast.info(
+        bn ? `এই জন্ম নিবন্ধন নম্বরে ইতিমধ্যে ভর্তি আছে! রোল: ${s.roll_number || 'N/A'}, রেজি: ${s.registration_no || s.student_id}, সেশন: ${s.admission_session || 'N/A'}`
+          : `Already admitted! Roll: ${s.roll_number || 'N/A'}, Reg: ${s.registration_no || s.student_id}, Session: ${s.admission_session || 'N/A'}`,
+        { duration: 8000 }
+      );
+    }
+  };
+
+  const handleOldStudentSearch = async () => {
+    if (!oldRoll && !oldSession) { toast.error(bn ? 'রোল বা সেশন দিন' : 'Enter roll or session'); return; }
+    let query = supabase.from('students').select('*');
+    if (oldRoll) query = query.eq('roll_number', oldRoll);
+    if (oldSession) query = query.eq('admission_session', oldSession);
+    const { data } = await query.limit(1);
+    if (data && data.length > 0) {
+      const s = data[0] as any;
+      setForm(prev => ({
+        ...prev,
+        first_name: s.name_bn || '', last_name: s.name_en || '', roll_number: s.roll_number || '',
+        gender: s.gender || 'male', date_of_birth: s.date_of_birth || '', birth_reg_no: s.birth_reg_no || '',
+        father_name: s.father_name || '', mother_name: s.mother_name || '',
+        father_nid: s.father_nid || '', mother_nid: s.mother_nid || '',
+        photo_url: s.photo_url || '', religion: s.religion || 'islam',
+        admission_session: s.admission_session || '', registration_no: s.registration_no || '',
+      }));
+      const admData = s.admission_data || {};
+      if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
+      if (admData.presentAddr) setPresentAddr(admData.presentAddr);
+      toast.success(bn ? 'ছাত্রের তথ্য পাওয়া গেছে' : 'Student data found');
+    } else {
+      toast.error(bn ? 'কোনো তথ্য পাওয়া যায়নি' : 'No data found');
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      student_type: 'new', residence_type: 'non-resident',
+      admission_session: '', roll_number: '', registration_no: '',
+      admission_date: new Date().toISOString().split('T')[0],
+      session_year: new Date().getFullYear().toString(),
+      admission_class: '', first_name: '', last_name: '',
+      gender: 'male', religion: 'islam', date_of_birth: '',
+      birth_reg_no: '', previous_class: '', previous_institute: '',
+      is_orphan: false, is_poor: false, photo_url: '',
+      father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
+      mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
+      guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+    });
+    setFieldErrors({});
+    setCustomFieldValues({});
+    setPermanentAddr(emptyAddress); setPresentAddr(emptyAddress);
+    setParentPermanentAddr(emptyAddress); setParentPresentAddr(emptyAddress);
+    setGuardianPermAddr(emptyAddress); setGuardianPresAddr(emptyAddress);
+    setSameAddress(false); setParentAddrSameAsStudent(false);
+    setParentSamePresAddr(false); setGuardianSameAddr(false);
+    setFatherNidError(''); setMotherNidError('');
+    setGuardianNidError(''); setBirthRegError('');
+    setOldRoll(''); setOldSession(''); setOldClass('');
+  };
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      const admissionData: Record<string, any> = {
+        permanentAddr,
+        presentAddr: sameAddress ? permanentAddr : presentAddr,
+        parentPermanentAddr: parentAddrSameAsStudent ? permanentAddr : parentPermanentAddr,
+        parentPresentAddr: parentAddrSameAsStudent ? (sameAddress ? permanentAddr : presentAddr) : (parentSamePresAddr ? parentPermanentAddr : parentPresentAddr),
+        guardianPermAddr: form.guardian_type === 'other' ? guardianPermAddr : undefined,
+        guardianPresAddr: form.guardian_type === 'other' ? (guardianSameAddr ? guardianPermAddr : guardianPresAddr) : undefined,
+        guardian_type: form.guardian_type,
+        guardian_name: form.guardian_name,
+        guardian_relation: form.guardian_relation,
+        guardian_phone: form.guardian_phone,
+        guardian_phone_code: form.guardian_phone_code,
+        guardian_nid: form.guardian_nid,
+        father_phone_code: form.father_phone_code,
+        mother_phone_code: form.mother_phone_code,
+        previous_class: form.previous_class,
+        previous_institute: form.previous_institute,
+        custom_fields: customFieldValues,
+      };
+
+      const studentId = form.registration_no || `STU-${Date.now().toString().slice(-8)}`;
+
+      const { error } = await supabase.from('students').insert({
+        student_id: studentId,
+        name_bn: form.first_name.trim(),
+        name_en: form.last_name.trim() || null,
+        roll_number: form.roll_number.trim() || null,
+        father_name: form.father_name.trim() || null,
+        mother_name: form.mother_name.trim() || null,
+        phone: form.father_phone || null,
+        guardian_phone: form.guardian_type === 'other' ? form.guardian_phone : (form.guardian_type === 'mother' ? form.mother_phone : form.father_phone) || null,
+        address: formatAddress(permanentAddr) || null,
+        division_id: form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null,
+        gender: form.gender,
+        date_of_birth: form.date_of_birth || null,
+        photo_url: form.photo_url || null,
+        student_category: form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general',
+        residence_type: form.residence_type,
+        admission_date: form.admission_date || null,
+        birth_reg_no: form.birth_reg_no || null,
+        religion: form.religion,
+        admission_session: form.admission_session || null,
+        registration_no: form.registration_no || null,
+        session_year: form.session_year || null,
+        previous_class: form.previous_class || null,
+        previous_institute: form.previous_institute || null,
+        father_occupation: form.father_occupation || null,
+        father_nid: form.father_nid || null,
+        father_phone: form.father_phone || null,
+        mother_occupation: form.mother_occupation || null,
+        mother_nid: form.mother_nid || null,
+        mother_phone: form.mother_phone || null,
+        is_orphan: form.is_orphan,
+        is_poor: form.is_poor,
+        approval_status: 'pending',
+        admission_data: admissionData,
+      } as any);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      resetForm();
+      onOpenChange(false);
+      toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const handleSubmit = () => {
+    const errors: Record<string, string> = {};
+
+    // Check required based on config
+    configFields.forEach(f => {
+      const key = f.default_value;
+      if (!key || !f.is_active || !f.is_required) return;
+      const val = form[key];
+      if (key === 'address_permanent' || key === 'address_present') return; // address handled separately
+      if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
+        if (form.guardian_type !== 'other') return; // only required for "other" guardian
+      }
+      if (!val || (typeof val === 'string' && !val.trim())) {
+        errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+      }
+    });
+
+    // Special validations
+    if (isFieldActive('birth_reg_no') && form.birth_reg_no && form.birth_reg_no.length !== 17) {
+      errors['birth_reg_no'] = bn ? 'জন্ম নিবন্ধন ১৭ ডিজিট হতে হবে' : 'Birth Reg must be 17 digits';
+    }
+    if (isFieldActive('father_nid') && isFieldActive('mother_nid')) {
+      if (!form.father_nid && !form.mother_nid) {
+        errors['father_nid'] = bn ? 'কমপক্ষে একটি NID প্রয়োজন' : 'At least one NID required';
+      }
+    }
+    if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
+      errors['father_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+    }
+    if (isFieldActive('mother_nid') && form.mother_nid && form.mother_nid.length !== 10 && form.mother_nid.length !== 17) {
+      errors['mother_nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট' : 'NID must be 10 or 17 digits';
+    }
+    if (isFieldActive('father_phone') && isFieldActive('mother_phone')) {
+      if (!form.father_phone && !form.mother_phone) {
+        errors['father_phone'] = bn ? 'কমপক্ষে একটি মোবাইল নম্বর প্রয়োজন' : 'At least one mobile required';
+      }
+    }
+    if (isFieldActive('guardian_type') && !form.guardian_type) {
+      errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
+    }
+    if (form.guardian_type === 'other' && isFieldActive('guardian_nid')) {
+      if (form.guardian_nid && form.guardian_nid.length !== 10 && form.guardian_nid.length !== 17) {
+        errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট' : 'NID 10/17 digits required';
+      }
+    }
+
+    // Validation manager rules
+    const vmErrors = validateAll(form);
+    Object.assign(errors, vmErrors);
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error(bn ? 'ফর্মে ত্রুটি রয়েছে' : 'Form has errors');
+      return;
+    }
+    setFieldErrors({});
+    addMutation.mutate();
+  };
+
+  const FieldError = ({ field }: { field: string }) => {
+    if (!fieldErrors[field]) return null;
+    return <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fieldErrors[field]}</p>;
+  };
+
+  // ===== RENDER A SYSTEM FIELD BY field_key =====
+  const renderSystemField = (fieldKey: string, config: AdmissionFieldConfig) => {
+    const label = bn ? config.label_bn : config.label;
+    const required = config.is_required;
+    const reqStar = required ? <span className="text-destructive">*</span> : null;
+    const hasError = !!fieldErrors[fieldKey];
+
+    switch (fieldKey) {
+      case 'photo_url':
+        return <PhotoUpload value={form.photo_url || null} onChange={(url) => setForm(prev => ({ ...prev, photo_url: url || '' }))} folder="students" />;
+
+      case 'student_type':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <div className="flex gap-3 mt-1">
+              {(['new', 'old'] as const).map(type => (
+                <button key={type} type="button" onClick={() => setForm(prev => ({ ...prev, student_type: type }))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.student_type === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
+                  {type === 'new' ? (bn ? 'নতুন ছাত্র' : 'New Student') : (bn ? 'পুরাতন ছাত্র' : 'Old Student')}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'residence_type':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <div className="flex gap-3 mt-1">
+              {[{ v: 'resident', l: bn ? 'আবাসিক' : 'Resident' }, { v: 'non-resident', l: bn ? 'অনাবাসিক' : 'Non-Resident' }].map(r => (
+                <button key={r.v} type="button" onClick={() => setForm(prev => ({ ...prev, residence_type: r.v }))}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.residence_type === r.v ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
+                  {r.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'admission_class':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'gender':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Select value={form.gender} onValueChange={v => setForm(prev => ({ ...prev, gender: v }))}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
+                <SelectItem value="female">{bn ? 'মহিলা' : 'Female'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'religion':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Select value={form.religion} onValueChange={v => setForm(prev => ({ ...prev, religion: v }))}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="islam">{bn ? 'ইসলাম' : 'Islam'}</SelectItem>
+                <SelectItem value="hinduism">{bn ? 'হিন্দু' : 'Hinduism'}</SelectItem>
+                <SelectItem value="christianity">{bn ? 'খ্রিস্টান' : 'Christianity'}</SelectItem>
+                <SelectItem value="buddhism">{bn ? 'বৌদ্ধ' : 'Buddhism'}</SelectItem>
+                <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        );
+
+      case 'date_of_birth':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Input type="date" className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+              value={form.date_of_birth} onChange={e => setForm(prev => ({ ...prev, date_of_birth: e.target.value }))} />
+            {form.date_of_birth && <p className="text-xs text-primary mt-1 font-medium">{bn ? 'বয়স: ' : 'Age: '}{calculateAge(form.date_of_birth)}</p>}
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'birth_reg_no':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${hasError || birthRegError ? 'border-destructive' : ''}`}
+              maxLength={17} value={form.birth_reg_no} onChange={e => validateBirthReg(e.target.value)} />
+            {birthRegError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {birthRegError}</p>}
+            {form.birth_reg_no.length === 17 && !birthRegError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'is_orphan':
+      case 'is_poor':
+        return null; // Rendered together in special block
+
+      case 'father_nid':
+        return (
+          <div>
+            <Label>{label}</Label>
+            <Input className={`bg-background mt-1 ${hasError || fatherNidError ? 'border-destructive' : ''}`}
+              maxLength={17} value={form.father_nid}
+              onChange={e => validateNid(e.target.value, 'father_nid', setFatherNidError)} />
+            {fatherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fatherNidError}</p>}
+            {(form.father_nid.length === 10 || form.father_nid.length === 17) && !fatherNidError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'mother_nid':
+        return (
+          <div>
+            <Label>{label}</Label>
+            <Input className={`bg-background mt-1 ${hasError || motherNidError ? 'border-destructive' : ''}`}
+              maxLength={17} value={form.mother_nid}
+              onChange={e => validateNid(e.target.value, 'mother_nid', setMotherNidError)} />
+            {motherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {motherNidError}</p>}
+            {(form.mother_nid.length === 10 || form.mother_nid.length === 17) && !motherNidError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'guardian_nid':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${hasError || guardianNidError ? 'border-destructive' : ''}`}
+              maxLength={17} value={form.guardian_nid}
+              onChange={e => validateNid(e.target.value, 'guardian_nid', setGuardianNidError)} />
+            {guardianNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {guardianNidError}</p>}
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'father_phone':
+        return <PhoneInput label={label} value={form.father_phone} countryCode={form.father_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, father_phone: phone, father_phone_code: code }))} required={required} />;
+
+      case 'mother_phone':
+        return <PhoneInput label={label} value={form.mother_phone} countryCode={form.mother_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, mother_phone: phone, mother_phone_code: code }))} required={required} />;
+
+      case 'guardian_phone':
+        return <PhoneInput label={label} value={form.guardian_phone} countryCode={form.guardian_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, guardian_phone: phone, guardian_phone_code: code }))} required={required} />;
+
+      case 'guardian_type':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Select value={form.guardian_type} onValueChange={v => setForm(prev => ({ ...prev, guardian_type: v }))}>
+              <SelectTrigger className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="father">{bn ? 'পিতা' : 'Father'}</SelectItem>
+                <SelectItem value="mother">{bn ? 'মাতা' : 'Mother'}</SelectItem>
+                <SelectItem value="other">{bn ? 'অন্যান্য' : 'Others'}</SelectItem>
+              </SelectContent>
+            </Select>
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'address_permanent':
+        return <AddressFields label={label} value={permanentAddr} onChange={setPermanentAddr} />;
+
+      case 'address_present':
+        return (
+          <>
+            <div className="flex items-center gap-2 mt-4">
+              <Checkbox id="sameAddr" checked={sameAddress} onCheckedChange={v => { setSameAddress(!!v); if (v) setPresentAddr({ ...permanentAddr }); }} />
+              <Label htmlFor="sameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present address same as permanent'}</Label>
+            </div>
+            {!sameAddress && <AddressFields label={label} value={presentAddr} onChange={setPresentAddr} />}
+          </>
+        );
+
+      case 'admission_date':
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Input type="date" className="bg-background mt-1" value={form.admission_date}
+              onChange={e => setForm(prev => ({ ...prev, admission_date: e.target.value }))} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      default:
+        return (
+          <div>
+            <Label>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+              value={form[fieldKey] || ''} onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+              placeholder={config.placeholder || ''} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
+    }
+  };
+
+  // ===== RENDER GENERIC CUSTOM FIELD =====
+  const renderCustomField = (config: AdmissionFieldConfig) => {
+    const label = bn ? config.label_bn : config.label;
+    const required = config.is_required;
+    const val = customFieldValues[config.id] || '';
+    let opts: string[] = [];
+    try { opts = Array.isArray(config.options) ? (config.options as string[]) : []; } catch { opts = []; }
+
+    const update = (v: any) => setCustomFieldValues(prev => ({ ...prev, [config.id]: v }));
+
+    return (
+      <div key={config.id}>
+        <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
+        {config.field_type === 'text' && <Input className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} placeholder={config.placeholder || ''} />}
+        {config.field_type === 'number' && <Input type="number" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'textarea' && <Textarea className="bg-background mt-1" rows={3} value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'date' && <Input type="date" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'email' && <Input type="email" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'switch' && <Switch checked={!!val} onCheckedChange={c => update(c)} />}
+        {config.field_type === 'select' && (
+          <Select value={val} onValueChange={update}>
+            <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+            <SelectContent>{opts.map((o, i) => <SelectItem key={i} value={o}>{o}</SelectItem>)}</SelectContent>
+          </Select>
+        )}
+        {config.field_type === 'radio' && (
+          <div className="flex flex-wrap gap-3 mt-1">{opts.map((o, i) => (
+            <label key={i} className="flex items-center gap-1.5 text-sm">
+              <input type="radio" name={config.id} value={o} checked={val === o} onChange={() => update(o)} className="accent-primary" />{o}
+            </label>
+          ))}</div>
+        )}
+        {config.field_type === 'checkbox' && (
+          <div className="flex flex-wrap gap-3 mt-1">{opts.map((o, i) => {
+            const checked = Array.isArray(val) ? val.includes(o) : false;
+            return (
+              <label key={i} className="flex items-center gap-1.5 text-sm">
+                <input type="checkbox" value={o} checked={checked} onChange={e => {
+                  const arr = Array.isArray(val) ? [...val] : [];
+                  if (e.target.checked) arr.push(o); else { const idx = arr.indexOf(o); if (idx > -1) arr.splice(idx, 1); }
+                  update(arr);
+                }} className="accent-primary" />{o}
+              </label>
+            );
+          })}</div>
+        )}
+      </div>
+    );
+  };
+
+  // Known system field keys
+  const SYSTEM_KEYS = [
+    'photo_url', 'student_type', 'residence_type', 'admission_session', 'roll_number',
+    'registration_no', 'admission_date', 'session_year', 'admission_class',
+    'first_name', 'last_name', 'gender', 'religion', 'date_of_birth', 'birth_reg_no',
+    'previous_class', 'previous_institute', 'is_orphan', 'is_poor',
+    'address_permanent', 'address_present',
+    'father_name', 'father_occupation', 'father_nid', 'father_phone',
+    'mother_name', 'mother_occupation', 'mother_nid', 'mother_phone',
+    'guardian_type', 'guardian_name', 'guardian_relation', 'guardian_phone', 'guardian_nid',
+  ];
+
+  // Render a section
+  const renderSection = (sectionKey: string) => {
+    const sectionInfo = SECTION_INFO[sectionKey as keyof typeof SECTION_INFO];
+    if (!sectionInfo) return null;
+
+    const sectionFields = configFields.filter(f => {
+      const val = f.validation as any;
+      return val?.section === sectionKey && f.is_active;
+    }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+    if (sectionFields.length === 0) return null;
+
+    const title = bn ? sectionInfo.bn : sectionInfo.en;
+
+    // Student details section: special layout with photo + type selectors
+    if (sectionKey === 'student_details') {
+      const photoField = sectionFields.find(f => f.default_value === 'photo_url');
+      const typeField = sectionFields.find(f => f.default_value === 'student_type');
+      const resField = sectionFields.find(f => f.default_value === 'residence_type');
+      const orphanField = sectionFields.find(f => f.default_value === 'is_orphan');
+      const poorField = sectionFields.find(f => f.default_value === 'is_poor');
+      const otherFields = sectionFields.filter(f =>
+        !['photo_url', 'student_type', 'residence_type', 'is_orphan', 'is_poor'].includes(f.default_value || '')
+      );
+
+      return (
+        <div key={sectionKey} className="border rounded-lg p-4 space-y-4">
+          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">{title}</h3>
+
+          {/* Photo + type selectors */}
+          <div className="flex flex-col sm:flex-row gap-6">
+            {photoField && renderSystemField('photo_url', photoField)}
+            <div className="flex-1 space-y-4">
+              {typeField && renderSystemField('student_type', typeField)}
+              {resField && renderSystemField('residence_type', resField)}
+            </div>
+          </div>
+
+          {/* Old student search */}
+          {isFieldActive('student_type') && form.student_type === 'old' && (
+            <div className="p-4 rounded-lg bg-secondary/50 border space-y-3">
+              <p className="text-sm font-medium">{bn ? 'পুরাতন ছাত্রের তথ্য অনুসন্ধান' : 'Search Old Student'}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Input placeholder={bn ? 'রোল' : 'Roll'} value={oldRoll} onChange={e => setOldRoll(e.target.value)} className="bg-background" />
+                <Input placeholder={bn ? 'ভর্তি সেশন' : 'Session'} value={oldSession} onChange={e => setOldSession(e.target.value)} className="bg-background" />
+                <Select value={oldClass} onValueChange={setOldClass}>
+                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} /></SelectTrigger>
+                  <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Button type="button" variant="outline" onClick={handleOldStudentSearch} className="flex items-center gap-2">
+                <Search className="w-4 h-4" /> {bn ? 'অনুসন্ধান' : 'Search'}
+              </Button>
+            </div>
+          )}
+
+          {/* Other fields in grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {otherFields.map(f => {
+              const key = f.default_value;
+              if (!key) return renderCustomField(f);
+              if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
+              return <div key={f.id}>{renderCustomField(f)}</div>;
+            })}
+          </div>
+
+          {/* Orphan/Poor status */}
+          {(orphanField || poorField) && (
+            <div className="flex flex-wrap gap-6">
+              {orphanField && (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="isOrphan" checked={form.is_orphan} onCheckedChange={v => setForm(prev => ({ ...prev, is_orphan: !!v, is_poor: false }))} />
+                  <Label htmlFor="isOrphan">{bn ? orphanField.label_bn : orphanField.label}</Label>
+                </div>
+              )}
+              {poorField && (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="isPoor" checked={form.is_poor} onCheckedChange={v => setForm(prev => ({ ...prev, is_poor: !!v, is_orphan: false }))} />
+                  <Label htmlFor="isPoor">{bn ? poorField.label_bn : poorField.label}</Label>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Checkbox id="isNormal" checked={!form.is_orphan && !form.is_poor} onCheckedChange={() => setForm(prev => ({ ...prev, is_orphan: false, is_poor: false }))} />
+                <Label htmlFor="isNormal">{bn ? 'সাধারণ' : 'General'}</Label>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Parents section: special NID/phone note
+    if (sectionKey === 'parents') {
+      return (
+        <div key={sectionKey} className="border rounded-lg p-4 space-y-4">
+          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">{title}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {sectionFields.map(f => {
+              const key = f.default_value;
+              if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
+              if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
+              return <div key={f.id}>{renderCustomField(f)}</div>;
+            })}
+          </div>
+          <p className="text-xs text-destructive flex items-center gap-1 mt-2">
+            <AlertCircle className="w-3 h-3" />
+            {bn ? 'কমপক্ষে একটি NID এবং একটি মোবাইল নম্বর প্রয়োজন' : 'At least one NID and one mobile number required'}
+          </p>
+          {/* Parent address */}
+          <div className="flex items-center gap-2 mt-4">
+            <Checkbox id="parentAddrSame" checked={parentAddrSameAsStudent} onCheckedChange={v => {
+              setParentAddrSameAsStudent(!!v);
+              if (v) { setParentPermanentAddr({ ...permanentAddr }); setParentPresentAddr(sameAddress ? { ...permanentAddr } : { ...presentAddr }); }
+            }} />
+            <Label htmlFor="parentAddrSame">{bn ? 'ছাত্রের ঠিকানার মতো' : 'Same as student address'}</Label>
+          </div>
+          {!parentAddrSameAsStudent && (
+            <>
+              <AddressFields label={bn ? 'অভিভাবক স্থায়ী ঠিকানা' : 'Parent Permanent Address'} value={parentPermanentAddr} onChange={setParentPermanentAddr} />
+              <div className="flex items-center gap-2 mt-2">
+                <Checkbox id="parentSamePres" checked={parentSamePresAddr} onCheckedChange={v => { setParentSamePresAddr(!!v); if (v) setParentPresentAddr({ ...parentPermanentAddr }); }} />
+                <Label htmlFor="parentSamePres">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+              </div>
+              {!parentSamePresAddr && <AddressFields label={bn ? 'অভিভাবক বর্তমান ঠিকানা' : 'Parent Present Address'} value={parentPresentAddr} onChange={setParentPresentAddr} />}
+            </>
+          )}
+        </div>
+      );
+    }
+
+    // Guardian section: auto-fill logic + conditional fields
+    if (sectionKey === 'guardian') {
+      const guardianTypeField = sectionFields.find(f => f.default_value === 'guardian_type');
+      const otherGuardianFields = sectionFields.filter(f => f.default_value !== 'guardian_type');
+
+      return (
+        <div key={sectionKey} className="border rounded-lg p-4 space-y-4">
+          <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">{title}</h3>
+          {guardianTypeField && renderSystemField('guardian_type', guardianTypeField)}
+
+          {(form.guardian_type === 'father' || form.guardian_type === 'mother') && (
+            <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+              <p className="text-sm text-success flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                {bn ? `${form.guardian_type === 'father' ? 'পিতার' : 'মাতার'} তথ্য থেকে স্বয়ংক্রিয়ভাবে পূরণ হবে` : `Will auto-fill from ${form.guardian_type === 'father' ? "father's" : "mother's"} information`}
+              </p>
+            </div>
+          )}
+
+          {form.guardian_type === 'other' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {otherGuardianFields.map(f => {
+                  const key = f.default_value;
+                  if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
+                  if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
+                  return <div key={f.id}>{renderCustomField(f)}</div>;
+                })}
+              </div>
+              <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={guardianPermAddr} onChange={setGuardianPermAddr} />
+              <div className="flex items-center gap-2">
+                <Checkbox id="guardianSameAddr" checked={guardianSameAddr} onCheckedChange={v => { setGuardianSameAddr(!!v); if (v) setGuardianPresAddr({ ...guardianPermAddr }); }} />
+                <Label htmlFor="guardianSameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+              </div>
+              {!guardianSameAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={guardianPresAddr} onChange={setGuardianPresAddr} />}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Generic section (address etc.)
+    return (
+      <div key={sectionKey} className="border rounded-lg p-4 space-y-4">
+        <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">{title}</h3>
+        {sectionFields.map(f => {
+          const key = f.default_value;
+          if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
+          if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
+          return <div key={f.id}>{renderCustomField(f)}</div>;
+        })}
+      </div>
+    );
+  };
+
+  // Get unique sections from fields
+  const activeSections = Array.from(new Set(
+    configFields.map(f => (f.validation as any)?.section).filter(Boolean)
+  )).sort((a, b) => {
+    const orderA = SECTION_INFO[a as keyof typeof SECTION_INFO]?.order || 99;
+    const orderB = SECTION_INFO[b as keyof typeof SECTION_INFO]?.order || 99;
+    return orderA - orderB;
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={o => { onOpenChange(o); if (!o) resetForm(); }}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{bn ? 'ভর্তি আবেদন ফর্ম' : 'Admission Application Form'}</DialogTitle></DialogHeader>
+
+        {!isLoaded ? (
+          <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : (
+          <div className="space-y-6 py-4">
+            {activeSections.map(section => renderSection(section))}
+
+            {/* Signature note */}
+            <div className="border rounded-lg p-4 bg-secondary/30">
+              <p className="text-sm text-muted-foreground italic">
+                {bn ? '* প্রিন্ট/ডাউনলোড ফাইলে প্রিন্সিপাল ও শিক্ষকের নাম, পদবী ও স্বাক্ষরের স্থান থাকবে'
+                  : '* Print/Download file will include Principal & Teacher name, designation and signature fields'}
+              </p>
+            </div>
+
+            {/* Submit */}
+            <Button onClick={handleSubmit} className="btn-primary-gradient w-full text-lg py-5" disabled={addMutation.isPending}>
+              {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+              {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AdmissionForm;
