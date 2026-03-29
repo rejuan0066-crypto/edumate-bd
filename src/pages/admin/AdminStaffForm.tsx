@@ -124,6 +124,7 @@ const AdminStaffForm = () => {
         address: addr || null,
         salary: salary ? parseFloat(salary) : null,
         joining_date: new Date().toISOString().split('T')[0],
+        photo_url: photoUrl || null,
       });
       if (error) throw error;
     },
