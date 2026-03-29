@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -27,6 +27,11 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid, HardDrive, MessageSquare, Wallet,
 };
 
+const MENU_SCROLL_STORAGE_KEYS = {
+  desktop: 'admin-layout-menu-scroll-desktop',
+  mobile: 'admin-layout-menu-scroll-mobile',
+} as const;
+
 const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -39,9 +44,29 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
 
   const toggleGroup = (key: string) => {
     setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const persistMenuScroll = (mobile: boolean, scrollTop: number) => {
+    const storageKey = mobile ? MENU_SCROLL_STORAGE_KEYS.mobile : MENU_SCROLL_STORAGE_KEYS.desktop;
+    menuScrollPositionsRef.current[mobile ? 'mobile' : 'desktop'] = scrollTop;
+    window.sessionStorage.setItem(storageKey, String(scrollTop));
+  };
+
+  const restoreMenuScroll = (element: HTMLElement | null, mobile: boolean) => {
+    if (!element) return;
+
+    const storageKey = mobile ? MENU_SCROLL_STORAGE_KEYS.mobile : MENU_SCROLL_STORAGE_KEYS.desktop;
+    const savedScrollTop = window.sessionStorage.getItem(storageKey);
+    const fallbackScrollTop = menuScrollPositionsRef.current[mobile ? 'mobile' : 'desktop'];
+    const scrollTop = savedScrollTop ? Number(savedScrollTop) : fallbackScrollTop;
+
+    requestAnimationFrame(() => {
+      element.scrollTop = Number.isFinite(scrollTop) ? scrollTop : 0;
+    });
   };
 
   // Fetch published custom forms for dynamic menu
@@ -139,7 +164,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+        <nav
+          ref={(element) => restoreMenuScroll(element, mobile)}
+          onScroll={(event) => persistMenuScroll(mobile, event.currentTarget.scrollTop)}
+          className="flex-1 p-3 space-y-0.5 overflow-y-auto"
+        >
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             const hasChildren = item.children && item.children.length > 0;
