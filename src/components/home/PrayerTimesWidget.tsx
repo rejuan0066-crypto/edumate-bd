@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, MapPin } from 'lucide-react';
+import { MapPin, Timer } from 'lucide-react';
 
 const COUNTRIES = [
   { en: 'Bangladesh', bn: 'বাংলাদেশ', code: 'BD' },
@@ -34,7 +33,9 @@ const BD_DIVISIONS: Record<string, { en: string; bn: string; cities: { en: strin
   mymensingh: { en: 'Mymensingh', bn: 'ময়মনসিংহ', cities: [{ en: 'Mymensingh', bn: 'ময়মনসিংহ' }, { en: 'Jamalpur', bn: 'জামালপুর' }, { en: 'Netrokona', bn: 'নেত্রকোণা' }, { en: 'Sherpur', bn: 'শেরপুর' }] },
 };
 
-const PRAYER_NAMES = {
+const PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
+
+const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
   Fajr: { en: 'Fajr', bn: 'ফজর', icon: '🌅' },
   Sunrise: { en: 'Sunrise', bn: 'সূর্যোদয়', icon: '☀️' },
   Dhuhr: { en: 'Dhuhr', bn: 'যোহর', icon: '🌤️' },
@@ -45,6 +46,25 @@ const PRAYER_NAMES = {
 
 const toBanglaNum = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
+const parseTime = (timeStr: string): Date => {
+  const clean = timeStr.replace(/\s*\(.*\)/, '');
+  const [h, m] = clean.split(':').map(Number);
+  const now = new Date();
+  now.setHours(h, m, 0, 0);
+  return now;
+};
+
+const formatCountdown = (ms: number, isBn: boolean): string => {
+  if (ms <= 0) return isBn ? '০ মিনিট' : '0 min';
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (isBn) {
+    return h > 0 ? `${toBanglaNum(String(h))} ঘণ্টা ${toBanglaNum(String(m))} মিনিট` : `${toBanglaNum(String(m))} মিনিট`;
+  }
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
 const PrayerTimesWidget = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -52,6 +72,12 @@ const PrayerTimesWidget = () => {
   const [country, setCountry] = useState('BD');
   const [division, setDivision] = useState('sylhet');
   const [city, setCity] = useState('Sylhet');
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const selectedCity = country === 'BD' ? city : COUNTRIES.find(c => c.code === country)?.en || 'Dhaka';
   const selectedCountry = COUNTRIES.find(c => c.code === country)?.en || 'Bangladesh';
@@ -75,11 +101,34 @@ const PrayerTimesWidget = () => {
   const timings = prayerData?.timings;
   const hijriDate = prayerData?.date?.hijri;
 
+  // Calculate current/next prayer and remaining time
+  const getActiveInfo = () => {
+    if (!timings) return { activeIndex: -1, remainingMs: 0 };
+    const times = PRAYER_ORDER.map(k => parseTime(timings[k] || '00:00'));
+    
+    for (let i = PRAYER_ORDER.length - 1; i >= 0; i--) {
+      if (now >= times[i]) {
+        // Current waqt is i, next is i+1
+        const nextIdx = i + 1;
+        if (nextIdx < PRAYER_ORDER.length) {
+          return { activeIndex: i, remainingMs: times[nextIdx].getTime() - now.getTime() };
+        }
+        // After Isha — remaining until midnight (next Fajr tomorrow)
+        return { activeIndex: i, remainingMs: 0 };
+      }
+    }
+    // Before Fajr
+    return { activeIndex: -1, remainingMs: times[0].getTime() - now.getTime() };
+  };
+
+  const { activeIndex, remainingMs } = getActiveInfo();
+  const nextPrayerIndex = activeIndex === -1 ? 0 : (activeIndex + 1 < PRAYER_ORDER.length ? activeIndex + 1 : -1);
+
   return (
     <div className="card-elevated rounded-xl overflow-hidden">
       {/* Header */}
       <div className="bg-primary p-3 text-primary-foreground">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">🕌</span>
           <h3 className="font-display font-bold text-sm">
             {bn ? 'নামাজের সময়সূচী' : 'Prayer Times'}
@@ -91,6 +140,22 @@ const PrayerTimesWidget = () => {
           </p>
         )}
       </div>
+
+      {/* Countdown Banner */}
+      {timings && nextPrayerIndex >= 0 && remainingMs > 0 && (
+        <div className="bg-accent/15 border-b border-border px-3 py-2 flex items-center gap-2">
+          <Timer className="w-4 h-4 text-accent animate-pulse" />
+          <div className="text-xs">
+            <span className="text-muted-foreground">{bn ? 'পরবর্তী ওয়াক্ত' : 'Next'}:</span>{' '}
+            <span className="font-bold text-foreground">
+              {bn ? PRAYER_NAMES[PRAYER_ORDER[nextPrayerIndex]].bn : PRAYER_NAMES[PRAYER_ORDER[nextPrayerIndex]].en}
+            </span>{' '}
+            <span className="font-mono font-semibold text-primary">
+              — {formatCountdown(remainingMs, bn)} {bn ? 'বাকি' : 'left'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Location Selector */}
       <div className="p-3 space-y-2 bg-muted/30 border-b border-border">
@@ -108,13 +173,10 @@ const PrayerTimesWidget = () => {
             ))}
           </SelectContent>
         </Select>
-
         {country === 'BD' && (
           <div className="grid grid-cols-2 gap-2">
             <Select value={division} onValueChange={(v) => { setDivision(v); setCity(BD_DIVISIONS[v].cities[0].en); }}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
-              </SelectTrigger>
+              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} /></SelectTrigger>
               <SelectContent>
                 {Object.entries(BD_DIVISIONS).map(([k, v]) => (
                   <SelectItem key={k} value={k} className="text-xs">{bn ? v.bn : v.en}</SelectItem>
@@ -122,9 +184,7 @@ const PrayerTimesWidget = () => {
               </SelectContent>
             </Select>
             <Select value={city} onValueChange={setCity}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder={bn ? 'জেলা' : 'District'} />
-              </SelectTrigger>
+              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'জেলা' : 'District'} /></SelectTrigger>
               <SelectContent>
                 {division && BD_DIVISIONS[division]?.cities.map(c => (
                   <SelectItem key={c.en} value={c.en} className="text-xs">{bn ? c.bn : c.en}</SelectItem>
@@ -135,27 +195,58 @@ const PrayerTimesWidget = () => {
         )}
       </div>
 
-      {/* Prayer Times List */}
+      {/* Prayer Times Table */}
       <div className="p-2">
         {isLoading ? (
           <div className="text-center py-6 text-xs text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
         ) : timings ? (
-          <div className="space-y-0.5">
-            {Object.entries(PRAYER_NAMES).map(([key, val]) => {
-              const time = timings[key]?.replace(/\s*\(.*\)/, '') || '';
-              return (
-                <div key={key} className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{val.icon}</span>
-                    <span className="text-xs font-medium text-foreground">{bn ? val.bn : val.en}</span>
+          <>
+            {/* Table Header */}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-1 px-2 pb-1 mb-1 border-b border-border text-[10px] text-muted-foreground font-medium">
+              <span>{bn ? 'ওয়াক্ত' : 'Prayer'}</span>
+              <span className="text-center w-14">{bn ? 'শুরু' : 'Start'}</span>
+              <span className="text-center w-14">{bn ? 'শেষ' : 'End'}</span>
+            </div>
+            <div className="space-y-0.5">
+              {PRAYER_ORDER.map((key, idx) => {
+                const startTime = timings[key]?.replace(/\s*\(.*\)/, '') || '';
+                // End time = start of next prayer
+                const nextKey = PRAYER_ORDER[idx + 1];
+                const endTime = nextKey ? (timings[nextKey]?.replace(/\s*\(.*\)/, '') || '') : '';
+                const isActive = idx === activeIndex;
+                const val = PRAYER_NAMES[key];
+
+                return (
+                  <div
+                    key={key}
+                    className={`grid grid-cols-[1fr_auto_auto] gap-1 items-center px-2 py-1.5 rounded-md transition-colors ${
+                      isActive
+                        ? 'bg-primary/10 ring-1 ring-primary/30'
+                        : 'hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{val.icon}</span>
+                      <span className={`text-xs font-medium ${isActive ? 'text-primary font-bold' : 'text-foreground'}`}>
+                        {bn ? val.bn : val.en}
+                        {isActive && (
+                          <span className="ml-1 text-[9px] text-primary/80">
+                            ({bn ? 'চলমান' : 'Now'})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-mono text-center w-14 ${isActive ? 'font-bold text-primary' : 'text-foreground'}`}>
+                      {bn ? toBanglaNum(startTime) : startTime}
+                    </span>
+                    <span className="text-xs font-mono text-center w-14 text-muted-foreground">
+                      {endTime ? (bn ? toBanglaNum(endTime) : endTime) : '—'}
+                    </span>
                   </div>
-                  <span className="text-xs font-mono font-semibold text-primary">
-                    {bn ? toBanglaNum(time) : time}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         ) : (
           <div className="text-center py-4 text-xs text-muted-foreground">{bn ? 'তথ্য পাওয়া যায়নি' : 'No data available'}</div>
         )}
