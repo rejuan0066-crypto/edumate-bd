@@ -153,7 +153,7 @@ const AdminStudents = () => {
       </div>
 
       {/* Dynamic Admission Form */}
-      <AdmissionForm open={showAdd} onOpenChange={setShowAdd} />
+      <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
 
       {/* Detail View Dialog */}
       <Dialog open={!!showDetail} onOpenChange={o => { if (!o) setShowDetail(null); }}>
@@ -188,6 +188,9 @@ const AdminStudents = () => {
                 <div><span className="text-muted-foreground">{bn ? 'আবাসিক: ' : 'Residence: '}</span>{showDetail.residence_type || '-'}</div>
               </div>
               <div className="flex gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => { setEditStudent(showDetail); setShowDetail(null); setShowAdd(true); }} className="flex-1">
+                  <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
+                </Button>
                 {(showDetail as any).approval_status !== 'approved' && (
                   <Button onClick={() => { statusMutation.mutate({ id: showDetail.id, status: 'approved' }); setShowDetail(null); }} className="flex-1 bg-success hover:bg-success/90 text-success-foreground">
                     <CheckCircle className="w-4 h-4 mr-2" /> {bn ? 'অনুমোদন' : 'Approve'}
