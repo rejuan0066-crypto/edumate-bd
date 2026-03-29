@@ -143,31 +143,36 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   const Sidebar = ({ mobile = false }: { mobile?: boolean }) => (
     <aside className={`${mobile ? 'fixed inset-0 z-50' : 'hidden lg:flex'} flex`}>
-      {mobile && <div className="flex-1 bg-foreground/40" onClick={() => setMobileSidebarOpen(false)} />}
-      <div className={`${mobile ? 'w-72' : sidebarOpen ? 'w-64' : 'w-16'} bg-sidebar flex flex-col transition-all duration-300 ${mobile ? 'order-first' : ''}`}>
+      {mobile && (
+        <div
+          className="flex-1 bg-foreground/40 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+      <div className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? 'w-64' : 'w-16'} bg-sidebar flex flex-col h-full transition-all duration-300 ${mobile ? 'order-first shadow-2xl' : ''}`}>
         {/* Logo */}
-        <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
+        <div className="p-4 flex items-center gap-3 border-b border-sidebar-border shrink-0">
           <div className="w-10 h-10 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
             <GraduationCap className="w-6 h-6 text-sidebar-primary-foreground" />
           </div>
           {(sidebarOpen || mobile) && (
-            <div className="overflow-hidden">
+            <div className="overflow-hidden flex-1 min-w-0">
               <h2 className="text-sm font-bold text-sidebar-foreground truncate">মাদরাসা ম্যানেজমেন্ট</h2>
               <p className="text-xs text-sidebar-foreground/60">Admin Panel</p>
             </div>
           )}
           {mobile && (
-            <button onClick={() => setMobileSidebarOpen(false)} className="ml-auto text-sidebar-foreground">
+            <button onClick={() => setMobileSidebarOpen(false)} className="ml-auto p-1.5 rounded-md hover:bg-sidebar-accent text-sidebar-foreground shrink-0">
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
 
-        {/* Menu */}
+        {/* Menu - scrollable area */}
         <nav
           ref={(element) => restoreMenuScroll(element, mobile)}
           onScroll={(event) => persistMenuScroll(mobile, event.currentTarget.scrollTop)}
-          className="flex-1 p-3 space-y-0.5 overflow-y-auto"
+          className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto overscroll-contain scrollbar-thin"
         >
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
@@ -186,7 +191,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                       <item.icon className="w-5 h-5 shrink-0" />
                       {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
                       {(sidebarOpen || mobile) && (
-                        <ChevronDown className={`w-4 h-4 ml-auto shrink-0 transition-transform ${isGroupOpen ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 ml-auto shrink-0 transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`} />
                       )}
                     </button>
                   ) : (
@@ -225,12 +230,12 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           })}
         </nav>
 
-        {/* Bottom */}
+        {/* Bottom - fixed logout */}
         {(sidebarOpen || mobile) && (
-          <div className="p-3 border-t border-sidebar-border">
+          <div className="p-2 border-t border-sidebar-border shrink-0">
             <button
               onClick={async () => { await signOut(); navigate('/login'); }}
-              className="sidebar-item w-full text-destructive/80 hover:text-destructive"
+              className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
             >
               <LogOut className="w-5 h-5" />
               <span>লগআউট</span>
