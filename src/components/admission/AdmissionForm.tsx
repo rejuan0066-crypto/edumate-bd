@@ -237,64 +237,73 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     setOldRoll(''); setOldSession(''); setOldClass('');
   };
 
+  const buildAdmissionData = (): Record<string, any> => ({
+    permanentAddr,
+    presentAddr: sameAddress ? permanentAddr : presentAddr,
+    parentPermanentAddr: parentAddrSameAsStudent ? permanentAddr : parentPermanentAddr,
+    parentPresentAddr: parentAddrSameAsStudent ? (sameAddress ? permanentAddr : presentAddr) : (parentSamePresAddr ? parentPermanentAddr : parentPresentAddr),
+    guardianPermAddr: form.guardian_type === 'other' ? guardianPermAddr : undefined,
+    guardianPresAddr: form.guardian_type === 'other' ? (guardianSameAddr ? guardianPermAddr : guardianPresAddr) : undefined,
+    guardian_type: form.guardian_type,
+    guardian_name: form.guardian_name,
+    guardian_relation: form.guardian_relation,
+    guardian_phone: form.guardian_phone,
+    guardian_phone_code: form.guardian_phone_code,
+    guardian_nid: form.guardian_nid,
+    father_phone_code: form.father_phone_code,
+    mother_phone_code: form.mother_phone_code,
+    previous_class: form.previous_class,
+    previous_institute: form.previous_institute,
+    admission_class: form.admission_class,
+    student_type: form.student_type,
+    custom_fields: customFieldValues,
+  });
+
+  const buildStudentPayload = () => {
+    const admissionData = buildAdmissionData();
+    return {
+      name_bn: form.first_name.trim(),
+      name_en: form.last_name.trim() || null,
+      roll_number: form.roll_number.trim() || null,
+      father_name: form.father_name.trim() || null,
+      mother_name: form.mother_name.trim() || null,
+      phone: form.father_phone || null,
+      guardian_phone: form.guardian_type === 'other' ? form.guardian_phone : (form.guardian_type === 'mother' ? form.mother_phone : form.father_phone) || null,
+      address: formatAddress(permanentAddr) || null,
+      division_id: form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null,
+      gender: form.gender,
+      date_of_birth: form.date_of_birth || null,
+      photo_url: form.photo_url || null,
+      student_category: form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general',
+      residence_type: form.residence_type,
+      admission_date: form.admission_date || null,
+      birth_reg_no: form.birth_reg_no || null,
+      religion: form.religion,
+      admission_session: form.admission_session || null,
+      registration_no: form.registration_no || null,
+      session_year: form.session_year || null,
+      previous_class: form.previous_class || null,
+      previous_institute: form.previous_institute || null,
+      father_occupation: form.father_occupation || null,
+      father_nid: form.father_nid || null,
+      father_phone: form.father_phone || null,
+      mother_occupation: form.mother_occupation || null,
+      mother_nid: form.mother_nid || null,
+      mother_phone: form.mother_phone || null,
+      is_orphan: form.is_orphan,
+      is_poor: form.is_poor,
+      admission_data: admissionData,
+    };
+  };
+
   const addMutation = useMutation({
     mutationFn: async () => {
-      const admissionData: Record<string, any> = {
-        permanentAddr,
-        presentAddr: sameAddress ? permanentAddr : presentAddr,
-        parentPermanentAddr: parentAddrSameAsStudent ? permanentAddr : parentPermanentAddr,
-        parentPresentAddr: parentAddrSameAsStudent ? (sameAddress ? permanentAddr : presentAddr) : (parentSamePresAddr ? parentPermanentAddr : parentPresentAddr),
-        guardianPermAddr: form.guardian_type === 'other' ? guardianPermAddr : undefined,
-        guardianPresAddr: form.guardian_type === 'other' ? (guardianSameAddr ? guardianPermAddr : guardianPresAddr) : undefined,
-        guardian_type: form.guardian_type,
-        guardian_name: form.guardian_name,
-        guardian_relation: form.guardian_relation,
-        guardian_phone: form.guardian_phone,
-        guardian_phone_code: form.guardian_phone_code,
-        guardian_nid: form.guardian_nid,
-        father_phone_code: form.father_phone_code,
-        mother_phone_code: form.mother_phone_code,
-        previous_class: form.previous_class,
-        previous_institute: form.previous_institute,
-        custom_fields: customFieldValues,
-      };
-
+      const payload = buildStudentPayload();
       const studentId = form.registration_no || `STU-${Date.now().toString().slice(-8)}`;
-
       const { error } = await supabase.from('students').insert({
+        ...payload,
         student_id: studentId,
-        name_bn: form.first_name.trim(),
-        name_en: form.last_name.trim() || null,
-        roll_number: form.roll_number.trim() || null,
-        father_name: form.father_name.trim() || null,
-        mother_name: form.mother_name.trim() || null,
-        phone: form.father_phone || null,
-        guardian_phone: form.guardian_type === 'other' ? form.guardian_phone : (form.guardian_type === 'mother' ? form.mother_phone : form.father_phone) || null,
-        address: formatAddress(permanentAddr) || null,
-        division_id: form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null,
-        gender: form.gender,
-        date_of_birth: form.date_of_birth || null,
-        photo_url: form.photo_url || null,
-        student_category: form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general',
-        residence_type: form.residence_type,
-        admission_date: form.admission_date || null,
-        birth_reg_no: form.birth_reg_no || null,
-        religion: form.religion,
-        admission_session: form.admission_session || null,
-        registration_no: form.registration_no || null,
-        session_year: form.session_year || null,
-        previous_class: form.previous_class || null,
-        previous_institute: form.previous_institute || null,
-        father_occupation: form.father_occupation || null,
-        father_nid: form.father_nid || null,
-        father_phone: form.father_phone || null,
-        mother_occupation: form.mother_occupation || null,
-        mother_nid: form.mother_nid || null,
-        mother_phone: form.mother_phone || null,
-        is_orphan: form.is_orphan,
-        is_poor: form.is_poor,
         approval_status: 'pending',
-        admission_data: admissionData,
       } as any);
       if (error) throw error;
     },
@@ -303,6 +312,21 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       resetForm();
       onOpenChange(false);
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const payload = buildStudentPayload();
+      const { error } = await supabase.from('students').update(payload as any).eq('id', editStudent.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      resetForm();
+      onOpenChange(false);
+      toast.success(bn ? 'ছাত্রের তথ্য সফলভাবে আপডেট হয়েছে!' : 'Student updated successfully!');
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
