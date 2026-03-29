@@ -144,12 +144,19 @@ const AdminStaffForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim()) {
-      toast.error(language === 'bn' ? 'প্রথম নাম আবশ্যক' : 'First name is required');
-      return;
-    }
-    if (!designation) {
-      toast.error(language === 'bn' ? 'পদবী নির্বাচন করুন' : 'Select designation');
+    // Run DB validation rules
+    const allValues: Record<string, any> = {
+      first_name: firstName, last_name: lastName, mobile, designation,
+      email, salary, nid, dob, education, experience,
+    };
+    const dbErrors = validateAll(allValues);
+    
+    if (!firstName.trim()) dbErrors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name is required';
+    if (!designation) dbErrors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
+    
+    if (Object.keys(dbErrors).length > 0) {
+      setFieldErrors(dbErrors);
+      toast.error(Object.values(dbErrors)[0]);
       return;
     }
     addMutation.mutate();
