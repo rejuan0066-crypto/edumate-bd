@@ -15,6 +15,49 @@ export interface SocialLink {
   icon: string;
 }
 
+export interface HeaderStyle {
+  topbar_visible: boolean;
+  topbar_bg_color: string;
+  topbar_text_color: string;
+  topbar_announcement_bn: string;
+  topbar_announcement_en: string;
+  header_bg_color: string;
+  header_text_color: string;
+  header_border: boolean;
+  header_shadow: boolean;
+  header_sticky: boolean;
+  logo_size: 'small' | 'medium' | 'large';
+  show_institution_name: boolean;
+  show_institution_name_en: boolean;
+}
+
+export interface NavStyle {
+  nav_bg_color: string;
+  nav_text_color: string;
+  nav_active_bg: string;
+  nav_active_text: string;
+  nav_hover_bg: string;
+  nav_style: 'pills' | 'underline' | 'flat' | 'rounded';
+  nav_font_size: 'small' | 'medium' | 'large';
+}
+
+export interface FooterStyle {
+  footer_bg_color: string;
+  footer_text_color: string;
+  show_quick_links: boolean;
+  show_contact_info: boolean;
+  show_social_links: boolean;
+  copyright_text_bn: string;
+  copyright_text_en: string;
+  footer_columns: number;
+}
+
+export interface FooterLink {
+  label_bn: string;
+  label_en: string;
+  url: string;
+}
+
 export interface WebsiteSettings {
   institution_name: string;
   institution_name_en: string;
@@ -48,6 +91,10 @@ export interface WebsiteSettings {
   stat_years: string;
   social_links: SocialLink[];
   gallery_items: GalleryItem[];
+  header_style: HeaderStyle;
+  nav_style: NavStyle;
+  footer_style: FooterStyle;
+  footer_links: FooterLink[];
   sections: {
     banner: boolean;
     principalMessage: boolean;
@@ -104,6 +151,46 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     { title_bn: 'বার্ষিক সভা', title_en: 'Annual Meeting', image_url: '', sort_order: 2 },
     { title_bn: 'ক্লাসরুম', title_en: 'Classroom', image_url: '', sort_order: 3 },
     { title_bn: 'লাইব্রেরি', title_en: 'Library', image_url: '', sort_order: 4 },
+  ],
+  header_style: {
+    topbar_visible: true,
+    topbar_bg_color: '',
+    topbar_text_color: '',
+    topbar_announcement_bn: '',
+    topbar_announcement_en: '',
+    header_bg_color: '',
+    header_text_color: '',
+    header_border: true,
+    header_shadow: true,
+    header_sticky: true,
+    logo_size: 'medium',
+    show_institution_name: true,
+    show_institution_name_en: true,
+  },
+  nav_style: {
+    nav_bg_color: '',
+    nav_text_color: '',
+    nav_active_bg: '',
+    nav_active_text: '',
+    nav_hover_bg: '',
+    nav_style: 'pills',
+    nav_font_size: 'medium',
+  },
+  footer_style: {
+    footer_bg_color: '',
+    footer_text_color: '',
+    show_quick_links: true,
+    show_contact_info: true,
+    show_social_links: true,
+    copyright_text_bn: '© {year} {name}। সর্বস্বত্ব সংরক্ষিত।',
+    copyright_text_en: '© {year} {name}. All rights reserved.',
+    footer_columns: 3,
+  },
+  footer_links: [
+    { label_bn: 'আমাদের সম্পর্কে', label_en: 'About Us', url: '/about' },
+    { label_bn: 'ভর্তি', label_en: 'Admission', url: '/admission' },
+    { label_bn: 'ফলাফল', label_en: 'Result', url: '/result' },
+    { label_bn: 'নোটিশ', label_en: 'Notices', url: '/notices' },
   ],
   sections: {
     banner: true,

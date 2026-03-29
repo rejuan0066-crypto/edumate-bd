@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, FileText, MapPin } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWebsiteSettings, WebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Json } from '@/integrations/supabase/types';
@@ -39,6 +40,27 @@ const AdminWebsite = () => {
 
   const updateField = (key: keyof WebsiteSettings, value: any) => {
     setForm(prev => prev ? { ...prev, [key]: value } : prev);
+  };
+
+  const updateHeaderStyle = (key: string, value: any) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, header_style: { ...prev.header_style, [key]: value } };
+    });
+  };
+
+  const updateNavStyle = (key: string, value: any) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, nav_style: { ...prev.nav_style, [key]: value } };
+    });
+  };
+
+  const updateFooterStyle = (key: string, value: any) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, footer_style: { ...prev.footer_style, [key]: value } };
+    });
   };
 
   const toggleSection = (key: keyof WebsiteSettings['sections']) => {
@@ -121,6 +143,29 @@ const AdminWebsite = () => {
     });
   };
 
+  const updateFooterLink = (index: number, field: string, value: string) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      const links = [...(prev.footer_links || [])];
+      links[index] = { ...links[index], [field]: value };
+      return { ...prev, footer_links: links };
+    });
+  };
+
+  const addFooterLink = () => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, footer_links: [...(prev.footer_links || []), { label_bn: '', label_en: '', url: '' }] };
+    });
+  };
+
+  const removeFooterLink = (index: number) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, footer_links: (prev.footer_links || []).filter((_, i) => i !== index) };
+    });
+  };
+
   const saveAll = async () => {
     setSaving(true);
     try {
@@ -162,6 +207,31 @@ const AdminWebsite = () => {
     { key: 'feePayment', bn: 'ফি পেমেন্ট', en: 'Fee Payment' },
   ];
 
+  const colorInput = (label: string, value: string, onChange: (v: string) => void) => (
+    <div>
+      <Label>{label}</Label>
+      <div className="flex items-center gap-2 mt-1">
+        <Input
+          type="color"
+          value={value || '#1a5e1f'}
+          onChange={e => onChange(e.target.value)}
+          className="w-12 h-10 p-1 cursor-pointer"
+        />
+        <Input
+          className="bg-background flex-1"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={language === 'bn' ? 'ডিফল্ট ব্যবহার হবে' : 'Default will be used'}
+        />
+        {value && (
+          <Button variant="ghost" size="sm" onClick={() => onChange('')} className="text-xs">
+            {language === 'bn' ? 'রিসেট' : 'Reset'}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-5xl">
@@ -182,25 +252,34 @@ const AdminWebsite = () => {
 
         <Tabs defaultValue="institution" className="w-full">
           <TabsList className="w-full flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="institution" className="text-xs py-2 px-3">
+            <TabsTrigger value="institution" className="text-xs py-2 px-2.5">
               <Globe className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'প্রতিষ্ঠান' : 'Institution'}
             </TabsTrigger>
-            <TabsTrigger value="hero" className="text-xs py-2 px-3">
-              <Image className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'হিরো/ব্যানার' : 'Hero'}
+            <TabsTrigger value="header" className="text-xs py-2 px-2.5">
+              <PanelTop className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'হেডার' : 'Header'}
             </TabsTrigger>
-            <TabsTrigger value="content" className="text-xs py-2 px-3">
+            <TabsTrigger value="navigation" className="text-xs py-2 px-2.5">
+              <Navigation className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'নেভিগেশন' : 'Navigation'}
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="text-xs py-2 px-2.5">
+              <Image className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ব্যানার' : 'Banner'}
+            </TabsTrigger>
+            <TabsTrigger value="content" className="text-xs py-2 px-2.5">
               <Type className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'কন্টেন্ট' : 'Content'}
             </TabsTrigger>
-            <TabsTrigger value="gallery" className="text-xs py-2 px-3">
+            <TabsTrigger value="gallery" className="text-xs py-2 px-2.5">
               <ImageIcon className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
             </TabsTrigger>
-            <TabsTrigger value="sections" className="text-xs py-2 px-3">
+            <TabsTrigger value="footer" className="text-xs py-2 px-2.5">
+              <PanelBottom className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফুটার' : 'Footer'}
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="text-xs py-2 px-2.5">
               <Layout className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সেকশন' : 'Sections'}
             </TabsTrigger>
-            <TabsTrigger value="divisions" className="text-xs py-2 px-3">
+            <TabsTrigger value="divisions" className="text-xs py-2 px-2.5">
               <BarChart3 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'বিভাগ' : 'Divisions'}
             </TabsTrigger>
-            <TabsTrigger value="social" className="text-xs py-2 px-3">
+            <TabsTrigger value="social" className="text-xs py-2 px-2.5">
               <Share2 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সোশ্যাল' : 'Social'}
             </TabsTrigger>
           </TabsList>
@@ -249,11 +328,171 @@ const AdminWebsite = () => {
             </div>
           </TabsContent>
 
-          {/* Hero Tab */}
+          {/* Header Tab */}
+          <TabsContent value="header">
+            <div className="space-y-6">
+              {/* Topbar */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'টপবার সেটিংস' : 'Topbar Settings'}
+                </h3>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <span className="text-sm font-medium">{language === 'bn' ? 'টপবার দেখান' : 'Show Topbar'}</span>
+                  <Switch checked={form.header_style.topbar_visible} onCheckedChange={v => updateHeaderStyle('topbar_visible', v)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {colorInput(language === 'bn' ? 'টপবার ব্যাকগ্রাউন্ড' : 'Topbar Background', form.header_style.topbar_bg_color, v => updateHeaderStyle('topbar_bg_color', v))}
+                  {colorInput(language === 'bn' ? 'টপবার টেক্সট রঙ' : 'Topbar Text Color', form.header_style.topbar_text_color, v => updateHeaderStyle('topbar_text_color', v))}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'ঘোষণা (বাংলা)' : 'Announcement (Bangla)'}</Label>
+                    <Input className="bg-background mt-1" value={form.header_style.topbar_announcement_bn} onChange={e => updateHeaderStyle('topbar_announcement_bn', e.target.value)} placeholder={language === 'bn' ? 'মার্কি টেক্সট...' : 'Marquee text...'} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'ঘোষণা (ইংরেজি)' : 'Announcement (English)'}</Label>
+                    <Input className="bg-background mt-1" value={form.header_style.topbar_announcement_en} onChange={e => updateHeaderStyle('topbar_announcement_en', e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Header */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'হেডার স্টাইল' : 'Header Style'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {colorInput(language === 'bn' ? 'হেডার ব্যাকগ্রাউন্ড' : 'Header Background', form.header_style.header_bg_color, v => updateHeaderStyle('header_bg_color', v))}
+                  {colorInput(language === 'bn' ? 'হেডার টেক্সট রঙ' : 'Header Text Color', form.header_style.header_text_color, v => updateHeaderStyle('header_text_color', v))}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'বর্ডার' : 'Border'}</span>
+                    <Switch checked={form.header_style.header_border} onCheckedChange={v => updateHeaderStyle('header_border', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'শ্যাডো' : 'Shadow'}</span>
+                    <Switch checked={form.header_style.header_shadow} onCheckedChange={v => updateHeaderStyle('header_shadow', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'স্টিকি' : 'Sticky'}</span>
+                    <Switch checked={form.header_style.header_sticky} onCheckedChange={v => updateHeaderStyle('header_sticky', v)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{language === 'bn' ? 'লোগো সাইজ' : 'Logo Size'}</Label>
+                    <Select value={form.header_style.logo_size} onValueChange={v => updateHeaderStyle('logo_size', v)}>
+                      <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">{language === 'bn' ? 'ছোট' : 'Small'}</SelectItem>
+                        <SelectItem value="medium">{language === 'bn' ? 'মাঝারি' : 'Medium'}</SelectItem>
+                        <SelectItem value="large">{language === 'bn' ? 'বড়' : 'Large'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'বাংলা নাম দেখান' : 'Show Bangla Name'}</span>
+                    <Switch checked={form.header_style.show_institution_name} onCheckedChange={v => updateHeaderStyle('show_institution_name', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'ইংরেজি নাম দেখান' : 'Show English Name'}</span>
+                    <Switch checked={form.header_style.show_institution_name_en} onCheckedChange={v => updateHeaderStyle('show_institution_name_en', v)} />
+                  </div>
+                </div>
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={() => saveSection(['header_style'])} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'হেডার সংরক্ষণ' : 'Save Header'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Navigation Tab */}
+          <TabsContent value="navigation">
+            <div className="card-elevated p-5 space-y-4">
+              <h3 className="font-display font-bold text-foreground">
+                {language === 'bn' ? 'নেভিগেশন স্টাইল' : 'Navigation Style'}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {language === 'bn' ? 'নেভিগেশন বারের রঙ এবং স্টাইল কাস্টমাইজ করুন। মেনু আইটেম যোগ/সরানোর জন্য "মেনু ম্যানেজার" ব্যবহার করুন।' : 'Customize navigation bar colors and style. Use "Menu Manager" to add/remove menu items.'}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {colorInput(language === 'bn' ? 'নেভ ব্যাকগ্রাউন্ড' : 'Nav Background', form.nav_style.nav_bg_color, v => updateNavStyle('nav_bg_color', v))}
+                {colorInput(language === 'bn' ? 'নেভ টেক্সট রঙ' : 'Nav Text Color', form.nav_style.nav_text_color, v => updateNavStyle('nav_text_color', v))}
+                {colorInput(language === 'bn' ? 'অ্যাক্টিভ ব্যাকগ্রাউন্ড' : 'Active Background', form.nav_style.nav_active_bg, v => updateNavStyle('nav_active_bg', v))}
+                {colorInput(language === 'bn' ? 'অ্যাক্টিভ টেক্সট রঙ' : 'Active Text Color', form.nav_style.nav_active_text, v => updateNavStyle('nav_active_text', v))}
+                {colorInput(language === 'bn' ? 'হোভার ব্যাকগ্রাউন্ড' : 'Hover Background', form.nav_style.nav_hover_bg, v => updateNavStyle('nav_hover_bg', v))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{language === 'bn' ? 'নেভ স্টাইল' : 'Nav Style'}</Label>
+                  <Select value={form.nav_style.nav_style} onValueChange={v => updateNavStyle('nav_style', v)}>
+                    <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pills">{language === 'bn' ? 'পিলস (গোলাকার)' : 'Pills (Rounded)'}</SelectItem>
+                      <SelectItem value="underline">{language === 'bn' ? 'আন্ডারলাইন' : 'Underline'}</SelectItem>
+                      <SelectItem value="flat">{language === 'bn' ? 'ফ্ল্যাট' : 'Flat'}</SelectItem>
+                      <SelectItem value="rounded">{language === 'bn' ? 'রাউন্ডেড' : 'Rounded'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'ফন্ট সাইজ' : 'Font Size'}</Label>
+                  <Select value={form.nav_style.nav_font_size} onValueChange={v => updateNavStyle('nav_font_size', v)}>
+                    <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">{language === 'bn' ? 'ছোট' : 'Small'}</SelectItem>
+                      <SelectItem value="medium">{language === 'bn' ? 'মাঝারি' : 'Medium'}</SelectItem>
+                      <SelectItem value="large">{language === 'bn' ? 'বড়' : 'Large'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Nav Preview */}
+              <div className="mt-4">
+                <Label className="mb-2 block">{language === 'bn' ? 'প্রিভিউ' : 'Preview'}</Label>
+                <div className="p-4 rounded-lg border bg-secondary/30">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {['হোম', 'আমাদের সম্পর্কে', 'ভর্তি', 'যোগাযোগ'].map((item, i) => {
+                      const isActive = i === 0;
+                      const style = form.nav_style;
+                      const baseClass = 'px-3 py-2 text-sm font-medium transition-colors';
+                      const navStyleClass =
+                        style.nav_style === 'pills' ? 'rounded-lg' :
+                        style.nav_style === 'underline' ? 'border-b-2' :
+                        style.nav_style === 'rounded' ? 'rounded-full' : '';
+
+                      return (
+                        <span
+                          key={i}
+                          className={`${baseClass} ${navStyleClass}`}
+                          style={{
+                            backgroundColor: isActive ? (style.nav_active_bg || 'hsl(var(--primary))') : 'transparent',
+                            color: isActive ? (style.nav_active_text || 'hsl(var(--primary-foreground))') : (style.nav_text_color || 'hsl(var(--foreground))'),
+                            borderColor: style.nav_style === 'underline' && isActive ? (style.nav_active_bg || 'hsl(var(--primary))') : 'transparent',
+                          }}
+                        >
+                          {item}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={() => saveSection(['nav_style'])} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নেভিগেশন সংরক্ষণ' : 'Save Navigation'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Hero/Banner Tab */}
           <TabsContent value="hero">
             <div className="card-elevated p-5 space-y-4">
               <h3 className="font-display font-bold text-foreground">
-                {language === 'bn' ? 'হিরো সেকশন' : 'Hero Section'}
+                {language === 'bn' ? 'হিরো/ব্যানার সেকশন' : 'Hero/Banner Section'}
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -396,28 +635,6 @@ const AdminWebsite = () => {
                   <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
                 </Button>
               </div>
-
-              {/* Footer */}
-              <div className="card-elevated p-5 space-y-4">
-                <h3 className="font-display font-bold text-foreground">
-                  {language === 'bn' ? 'ফুটার বিবরণ' : 'Footer Description'}
-                </h3>
-                <div>
-                  <Label>{language === 'bn' ? 'বাংলা' : 'Bangla'}</Label>
-                  <Textarea className="bg-background mt-1" value={form.footer_description_bn} onChange={e => updateField('footer_description_bn', e.target.value)} />
-                </div>
-                <div>
-                  <Label>{language === 'bn' ? 'ইংরেজি' : 'English'}</Label>
-                  <Textarea className="bg-background mt-1" value={form.footer_description_en} onChange={e => updateField('footer_description_en', e.target.value)} />
-                </div>
-                <div>
-                  <Label>{language === 'bn' ? 'গুগল ম্যাপ এম্বেড কোড' : 'Google Map Embed Code'}</Label>
-                  <Textarea className="bg-background mt-1 min-h-[80px]" value={form.contact_map_embed} onChange={e => updateField('contact_map_embed', e.target.value)} placeholder='<iframe src="https://www.google.com/maps/embed?..." ...' />
-                </div>
-                <Button className="btn-primary-gradient" onClick={() => saveSection(['footer_description_bn', 'footer_description_en', 'contact_map_embed'])} disabled={saving}>
-                  <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
-                </Button>
-              </div>
             </div>
           </TabsContent>
 
@@ -432,9 +649,6 @@ const AdminWebsite = () => {
                   <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন ছবি' : 'Add Image'}
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'bn' ? 'গ্যালারি পেইজ এবং হোমপেজে প্রদর্শিত ছবিগুলো এখানে ম্যানেজ করুন' : 'Manage images shown on gallery page and homepage'}
-              </p>
               <div className="space-y-4">
                 {(form.gallery_items || []).map((item, i) => (
                   <div key={i} className="p-4 rounded-lg bg-secondary/50 space-y-3">
@@ -473,11 +687,128 @@ const AdminWebsite = () => {
             </div>
           </TabsContent>
 
+          {/* Footer Tab */}
+          <TabsContent value="footer">
+            <div className="space-y-6">
+              {/* Footer Style */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'ফুটার স্টাইল' : 'Footer Style'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {colorInput(language === 'bn' ? 'ফুটার ব্যাকগ্রাউন্ড' : 'Footer Background', form.footer_style.footer_bg_color, v => updateFooterStyle('footer_bg_color', v))}
+                  {colorInput(language === 'bn' ? 'ফুটার টেক্সট রঙ' : 'Footer Text Color', form.footer_style.footer_text_color, v => updateFooterStyle('footer_text_color', v))}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'কুইক লিংক' : 'Quick Links'}</span>
+                    <Switch checked={form.footer_style.show_quick_links} onCheckedChange={v => updateFooterStyle('show_quick_links', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'যোগাযোগ তথ্য' : 'Contact Info'}</span>
+                    <Switch checked={form.footer_style.show_contact_info} onCheckedChange={v => updateFooterStyle('show_contact_info', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <span className="text-xs font-medium">{language === 'bn' ? 'সোশ্যাল লিংক' : 'Social Links'}</span>
+                    <Switch checked={form.footer_style.show_social_links} onCheckedChange={v => updateFooterStyle('show_social_links', v)} />
+                  </div>
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'ফুটার কলাম সংখ্যা' : 'Footer Columns'}</Label>
+                  <Select value={String(form.footer_style.footer_columns)} onValueChange={v => updateFooterStyle('footer_columns', Number(v))}>
+                    <SelectTrigger className="mt-1 bg-background w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Footer Description */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'ফুটার বিবরণ' : 'Footer Description'}
+                </h3>
+                <div>
+                  <Label>{language === 'bn' ? 'বাংলা' : 'Bangla'}</Label>
+                  <Textarea className="bg-background mt-1" value={form.footer_description_bn} onChange={e => updateField('footer_description_bn', e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'ইংরেজি' : 'English'}</Label>
+                  <Textarea className="bg-background mt-1" value={form.footer_description_en} onChange={e => updateField('footer_description_en', e.target.value)} />
+                </div>
+              </div>
+
+              {/* Copyright */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'কপিরাইট টেক্সট' : 'Copyright Text'}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {language === 'bn' ? '{year} = বর্তমান সাল, {name} = প্রতিষ্ঠানের নাম' : '{year} = current year, {name} = institution name'}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'বাংলা' : 'Bangla'}</Label>
+                    <Input className="bg-background mt-1" value={form.footer_style.copyright_text_bn} onChange={e => updateFooterStyle('copyright_text_bn', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'ইংরেজি' : 'English'}</Label>
+                    <Input className="bg-background mt-1" value={form.footer_style.copyright_text_en} onChange={e => updateFooterStyle('copyright_text_en', e.target.value)} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Quick Links */}
+              <div className="card-elevated p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-bold text-foreground">
+                    {language === 'bn' ? 'কুইক লিংকসমূহ' : 'Quick Links'}
+                  </h3>
+                  <Button variant="outline" size="sm" onClick={addFooterLink}>
+                    <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন' : 'Add'}
+                  </Button>
+                </div>
+                <div className="space-y-3">
+                  {(form.footer_links || []).map((link, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-secondary/50 flex items-center gap-3">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <Input className="bg-background" value={link.label_bn} onChange={e => updateFooterLink(i, 'label_bn', e.target.value)} placeholder={language === 'bn' ? 'বাংলা লেবেল' : 'Bangla Label'} />
+                        <Input className="bg-background" value={link.label_en} onChange={e => updateFooterLink(i, 'label_en', e.target.value)} placeholder={language === 'bn' ? 'ইংরেজি লেবেল' : 'English Label'} />
+                        <Input className="bg-background" value={link.url} onChange={e => updateFooterLink(i, 'url', e.target.value)} placeholder="/path" />
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeFooterLink(i)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Map */}
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'গুগল ম্যাপ' : 'Google Map'}
+                </h3>
+                <div>
+                  <Label>{language === 'bn' ? 'গুগল ম্যাপ এম্বেড কোড' : 'Google Map Embed Code'}</Label>
+                  <Textarea className="bg-background mt-1 min-h-[80px]" value={form.contact_map_embed} onChange={e => updateField('contact_map_embed', e.target.value)} placeholder='<iframe src="https://www.google.com/maps/embed?..." ...' />
+                </div>
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={() => saveSection(['footer_style', 'footer_links', 'footer_description_bn', 'footer_description_en', 'contact_map_embed'])} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'ফুটার সংরক্ষণ' : 'Save Footer'}
+              </Button>
+            </div>
+          </TabsContent>
+
           {/* Sections Tab */}
           <TabsContent value="sections">
             <div className="card-elevated p-5 space-y-4">
               <h3 className="font-display font-bold text-foreground">
-                {language === 'bn' ? 'সেকশন দেখানো/লুকানো' : 'Section Show/Hide'}
+                {language === 'bn' ? 'হোমপেজ সেকশন দেখানো/লুকানো' : 'Homepage Section Show/Hide'}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {language === 'bn' ? 'হোমপেজে কোন সেকশনগুলো দেখাবে তা নিয়ন্ত্রণ করুন' : 'Control which sections appear on the homepage'}
@@ -550,9 +881,6 @@ const AdminWebsite = () => {
                   <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন' : 'Add'}
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {language === 'bn' ? 'কন্ট্যাক্ট পেইজ এবং ফুটারে প্রদর্শিত হবে' : 'Will be shown on contact page and footer'}
-              </p>
               <div className="space-y-4">
                 {(form.social_links || []).map((link, i) => (
                   <div key={i} className="p-4 rounded-lg bg-secondary/50 space-y-3">
