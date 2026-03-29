@@ -1271,22 +1271,39 @@ export type Database = {
       students: {
         Row: {
           address: string | null
+          admission_data: Json | null
           admission_date: string | null
+          admission_session: string | null
+          approval_status: string | null
+          birth_reg_no: string | null
           created_at: string | null
           date_of_birth: string | null
           division_id: string | null
           email: string | null
           father_name: string | null
+          father_nid: string | null
+          father_occupation: string | null
+          father_phone: string | null
           gender: string | null
           guardian_phone: string | null
           id: string
+          is_orphan: boolean | null
+          is_poor: boolean | null
           mother_name: string | null
+          mother_nid: string | null
+          mother_occupation: string | null
+          mother_phone: string | null
           name_bn: string
           name_en: string | null
           phone: string | null
           photo_url: string | null
+          previous_class: string | null
+          previous_institute: string | null
+          registration_no: string | null
+          religion: string | null
           residence_type: string | null
           roll_number: string | null
+          session_year: string | null
           status: string | null
           student_category: string | null
           student_id: string
@@ -1294,22 +1311,39 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admission_data?: Json | null
           admission_date?: string | null
+          admission_session?: string | null
+          approval_status?: string | null
+          birth_reg_no?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           division_id?: string | null
           email?: string | null
           father_name?: string | null
+          father_nid?: string | null
+          father_occupation?: string | null
+          father_phone?: string | null
           gender?: string | null
           guardian_phone?: string | null
           id?: string
+          is_orphan?: boolean | null
+          is_poor?: boolean | null
           mother_name?: string | null
+          mother_nid?: string | null
+          mother_occupation?: string | null
+          mother_phone?: string | null
           name_bn: string
           name_en?: string | null
           phone?: string | null
           photo_url?: string | null
+          previous_class?: string | null
+          previous_institute?: string | null
+          registration_no?: string | null
+          religion?: string | null
           residence_type?: string | null
           roll_number?: string | null
+          session_year?: string | null
           status?: string | null
           student_category?: string | null
           student_id: string
@@ -1317,22 +1351,39 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admission_data?: Json | null
           admission_date?: string | null
+          admission_session?: string | null
+          approval_status?: string | null
+          birth_reg_no?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           division_id?: string | null
           email?: string | null
           father_name?: string | null
+          father_nid?: string | null
+          father_occupation?: string | null
+          father_phone?: string | null
           gender?: string | null
           guardian_phone?: string | null
           id?: string
+          is_orphan?: boolean | null
+          is_poor?: boolean | null
           mother_name?: string | null
+          mother_nid?: string | null
+          mother_occupation?: string | null
+          mother_phone?: string | null
           name_bn?: string
           name_en?: string | null
           phone?: string | null
           photo_url?: string | null
+          previous_class?: string | null
+          previous_institute?: string | null
+          registration_no?: string | null
+          religion?: string | null
           residence_type?: string | null
           roll_number?: string | null
+          session_year?: string | null
           status?: string | null
           student_category?: string | null
           student_id?: string
