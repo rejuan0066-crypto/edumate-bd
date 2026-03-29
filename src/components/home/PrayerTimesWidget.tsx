@@ -55,12 +55,12 @@ const parseTime = (timeStr: string): Date => {
 };
 
 const formatCountdown = (ms: number, isBn: boolean): string => {
-  if (ms <= 0) return '00:00:00';
+  if (ms <= 0) return isBn ? '০h ০m ০s' : '0h 0m 0s';
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  const str = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  const str = `${h}h ${m}m ${s}s`;
   return isBn ? toBanglaNum(str) : str;
 };
 
@@ -221,9 +221,8 @@ const PrayerTimesWidget = () => {
                       <span className={`text-xs font-medium ${isActive ? 'text-primary font-bold' : 'text-foreground'}`}>
                         {bn ? val.bn : val.en}
                         {isActive && activeRemainingMs > 0 && (
-                          <span className="ml-1.5 inline-flex items-center gap-1 text-[10px] font-mono font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
-                            <Timer className="w-3 h-3 animate-pulse" />
-                            {formatCountdown(activeRemainingMs, bn)}
+                          <span className="ml-2 text-[10px] font-medium text-primary">
+                            {bn ? 'শেষ হবে' : 'ends in'} {formatCountdown(activeRemainingMs, bn)}
                           </span>
                         )}
                       </span>
