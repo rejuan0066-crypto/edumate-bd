@@ -229,7 +229,14 @@ export const useWebsiteSettings = () => {
       data?.forEach((row) => {
         const key = row.key as keyof WebsiteSettings;
         if (key in result) {
-          (result as any)[key] = row.value;
+          const defaultVal = DEFAULT_SETTINGS[key];
+          const dbVal = row.value;
+          // Deep merge object-type settings so new fields get defaults
+          if (defaultVal && typeof defaultVal === 'object' && !Array.isArray(defaultVal) && dbVal && typeof dbVal === 'object' && !Array.isArray(dbVal)) {
+            (result as any)[key] = { ...defaultVal, ...(dbVal as any) };
+          } else {
+            (result as any)[key] = dbVal;
+          }
         }
       });
       return result;
