@@ -55,14 +55,13 @@ const parseTime = (timeStr: string): Date => {
 };
 
 const formatCountdown = (ms: number, isBn: boolean): string => {
-  if (ms <= 0) return isBn ? '০ মিনিট' : '0 min';
-  const totalMin = Math.floor(ms / 60000);
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  if (isBn) {
-    return h > 0 ? `${toBanglaNum(String(h))} ঘণ্টা ${toBanglaNum(String(m))} মিনিট` : `${toBanglaNum(String(m))} মিনিট`;
-  }
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  if (ms <= 0) return '00:00:00';
+  const totalSec = Math.floor(ms / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const str = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return isBn ? toBanglaNum(str) : str;
 };
 
 const PrayerTimesWidget = () => {
@@ -103,22 +102,20 @@ const PrayerTimesWidget = () => {
 
   // Calculate current/next prayer and remaining time
   const getActiveInfo = () => {
-    if (!timings) return { activeIndex: -1, remainingMs: 0 };
+    if (!timings) return { activeIndex: -1, remainingMs: 0, activeRemainingMs: 0 };
     const times = PRAYER_ORDER.map(k => parseTime(timings[k] || '00:00'));
     
     for (let i = PRAYER_ORDER.length - 1; i >= 0; i--) {
       if (now >= times[i]) {
-        // Current waqt is i, next is i+1
         const nextIdx = i + 1;
         if (nextIdx < PRAYER_ORDER.length) {
-          return { activeIndex: i, remainingMs: times[nextIdx].getTime() - now.getTime() };
+          const activeRemaining = times[nextIdx].getTime() - now.getTime();
+          return { activeIndex: i, remainingMs: activeRemaining, activeRemainingMs: activeRemaining };
         }
-        // After Isha — remaining until midnight (next Fajr tomorrow)
-        return { activeIndex: i, remainingMs: 0 };
+        return { activeIndex: i, remainingMs: 0, activeRemainingMs: 0 };
       }
     }
-    // Before Fajr
-    return { activeIndex: -1, remainingMs: times[0].getTime() - now.getTime() };
+    return { activeIndex: -1, remainingMs: times[0].getTime() - now.getTime(), activeRemainingMs: 0 };
   };
 
   const { activeIndex, remainingMs } = getActiveInfo();
