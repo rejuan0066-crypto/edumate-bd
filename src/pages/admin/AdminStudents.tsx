@@ -214,7 +214,13 @@ const AdminStudents = () => {
           <DialogHeader><DialogTitle>{bn ? 'নতুন ছাত্র যোগ' : 'Add New Student'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">{bn ? 'মৌলিক তথ্য' : 'Basic Information'}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col sm:flex-row gap-6">
+              <PhotoUpload
+                value={form.photo_url || null}
+                onChange={(url) => handleFieldChange('photo_url', url || '')}
+                folder="students"
+              />
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>{bn ? 'ছাত্র আইডি' : 'Student ID'} <span className="text-destructive">*</span></Label>
                 <Input className={`mt-1 ${fieldErrors['student_id'] ? 'border-destructive' : ''}`} value={form.student_id} onChange={e => handleFieldChange('student_id', e.target.value)} />
@@ -256,6 +262,7 @@ const AdminStudents = () => {
                   <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
+            </div>
             </div>
 
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{bn ? 'পারিবারিক তথ্য' : 'Family Information'}</h3>
