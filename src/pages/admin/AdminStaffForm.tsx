@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useValidationRules } from '@/hooks/useValidationRules';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -22,8 +23,11 @@ const formatAddress = (addr: AddressData) => {
 
 const AdminStaffForm = () => {
   const { language } = useLanguage();
+  const bn = language === 'bn';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { validate, validateAll } = useValidationRules('staff');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [photo, setPhoto] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const [sameAddress, setSameAddress] = useState(false);
@@ -74,11 +78,34 @@ const AdminStaffForm = () => {
   const validateNid = (val: string) => {
     const cleaned = val.replace(/\D/g, '');
     setNid(cleaned);
-    if (cleaned.length > 0 && cleaned.length !== 10 && cleaned.length !== 17) {
-      setNidError(language === 'bn' ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits');
+    // Check DB validation rules first
+    const dbError = validate('nid', cleaned);
+    if (dbError) {
+      setNidError(dbError);
+    } else if (cleaned.length > 0 && cleaned.length !== 10 && cleaned.length !== 17) {
+      setNidError(bn ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits');
     } else {
       setNidError('');
     }
+  };
+
+  const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
+    setter(value);
+    const error = validate(field, value);
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      if (error) next[field] = error; else delete next[field];
+      return next;
+    });
+  };
+
+  const FieldError = ({ field }: { field: string }) => {
+    if (!fieldErrors[field]) return null;
+    return (
+      <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" /> {fieldErrors[field]}
+      </p>
+    );
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,12 +144,19 @@ const AdminStaffForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim()) {
-      toast.error(language === 'bn' ? 'প্রথম নাম আবশ্যক' : 'First name is required');
-      return;
-    }
-    if (!designation) {
-      toast.error(language === 'bn' ? 'পদবী নির্বাচন করুন' : 'Select designation');
+    // Run DB validation rules
+    const allValues: Record<string, any> = {
+      first_name: firstName, last_name: lastName, mobile, designation,
+      email, salary, nid, dob, education, experience,
+    };
+    const dbErrors = validateAll(allValues);
+    
+    if (!firstName.trim()) dbErrors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name is required';
+    if (!designation) dbErrors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
+    
+    if (Object.keys(dbErrors).length > 0) {
+      setFieldErrors(dbErrors);
+      toast.error(Object.values(dbErrors)[0]);
       return;
     }
     addMutation.mutate();
@@ -155,12 +189,14 @@ const AdminStaffForm = () => {
               </div>
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>{language === 'bn' ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
-                  <Input className="bg-background mt-1" required value={firstName} onChange={e => setFirstName(e.target.value)} />
+                  <Label>{bn ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} required value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
+                  <FieldError field="first_name" />
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'শেষ নাম' : 'Last Name'} <span className="text-destructive">*</span></Label>
-                  <Input className="bg-background mt-1" required value={lastName} onChange={e => setLastName(e.target.value)} />
+                  <Label>{bn ? 'শেষ নাম' : 'Last Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} required value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
+                  <FieldError field="last_name" />
                 </div>
                 <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} required />
                 <div>
@@ -186,12 +222,14 @@ const AdminStaffForm = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'ইমেইল' : 'Email'}</Label>
-                  <Input type="email" className="bg-background mt-1" value={email} onChange={e => setEmail(e.target.value)} />
+                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input type="email" className={`bg-background mt-1 ${fieldErrors['email'] ? 'border-destructive' : ''}`} value={email} onChange={e => handleFieldChange('email', e.target.value, setEmail)} />
+                  <FieldError field="email" />
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'বেতন (টাকা)' : 'Salary (BDT)'}</Label>
-                  <Input type="number" className="bg-background mt-1" value={salary} onChange={e => setSalary(e.target.value)} placeholder="৳" />
+                  <Label>{bn ? 'বেতন (টাকা)' : 'Salary (BDT)'}</Label>
+                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
+                  <FieldError field="salary" />
                 </div>
               </div>
             </div>
