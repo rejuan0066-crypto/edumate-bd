@@ -26,9 +26,10 @@ const formatAddress = (addr: AddressData) =>
 interface AdmissionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editStudent?: any; // pass existing student record for edit mode
 }
 
-const AdmissionForm = ({ open, onOpenChange }: AdmissionFormProps) => {
+const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
