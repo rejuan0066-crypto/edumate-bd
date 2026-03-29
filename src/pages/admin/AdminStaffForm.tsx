@@ -29,8 +29,7 @@ const AdminStaffForm = () => {
   const navigate = useNavigate();
   const { validate, validateAll } = useValidationRules('staff');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [photo, setPhoto] = useState<string | null>(null);
-  const photoRef = useRef<HTMLInputElement>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [sameAddress, setSameAddress] = useState(false);
   const [parentSameAddr, setParentSameAddr] = useState(false);
   const [guardianType, setGuardianType] = useState('');
