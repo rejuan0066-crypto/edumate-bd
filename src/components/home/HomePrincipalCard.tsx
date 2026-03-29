@@ -74,6 +74,7 @@ const HomePrincipalCard = ({ settings, language, t }: Props) => {
         </div>
       </div>
     </div>
+    </ScrollArea>
   );
 };
 
