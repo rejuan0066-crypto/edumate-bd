@@ -104,7 +104,7 @@ const Home = () => {
       {/* Main 3-Column Layout */}
       <section className="py-8 sm:py-10">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:h-[600px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left - Principal Card */}
             {settings.sections.principalMessage && (
               <aside className="lg:col-span-3 lg:overflow-hidden">
