@@ -54,6 +54,7 @@ import AdminBackup from "./pages/admin/AdminBackup";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import AdminSalary from "./pages/admin/AdminSalary";
 import AdminPosts from "./pages/admin/AdminPosts";
+import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
 import PostsPage from "./pages/PostsPage";
 import NotFound from "./pages/NotFound";
 
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="/admin/guardian-notify" element={<ProtectedRoute><AdminGuardianNotifications /></ProtectedRoute>} />
               <Route path="/admin/salary" element={<ProtectedRoute><ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
+              <Route path="/admin/prayer-calendar" element={<ProtectedRoute><AdminPrayerCalendar /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
