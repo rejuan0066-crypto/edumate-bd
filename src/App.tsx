@@ -79,19 +79,19 @@ const App = () => (
               <Route path="/fee-payment" element={<FeePaymentPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin/students" element={<ProtectedRoute><AdminStudents /></ProtectedRoute>} />
-              <Route path="/admin/staff" element={<ProtectedRoute><AdminStaff /></ProtectedRoute>} />
-              <Route path="/admin/staff/add" element={<ProtectedRoute><AdminStaffForm /></ProtectedRoute>} />
-              <Route path="/admin/divisions" element={<ProtectedRoute><AdminDivisions /></ProtectedRoute>} />
-              <Route path="/admin/subjects" element={<ProtectedRoute><AdminSubjects /></ProtectedRoute>} />
-              <Route path="/admin/results" element={<ProtectedRoute><AdminResults /></ProtectedRoute>} />
-              <Route path="/admin/notices" element={<ProtectedRoute><AdminNotices /></ProtectedRoute>} />
-              <Route path="/admin/fees" element={<ProtectedRoute><AdminFees /></ProtectedRoute>} />
+              <Route path="/admin/students" element={<ProtectedRoute><ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/staff" element={<ProtectedRoute><ModuleGuard menuPath="/admin/staff"><AdminStaff /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/staff/add" element={<ProtectedRoute><ModuleGuard menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/divisions" element={<ProtectedRoute><ModuleGuard menuPath="/admin/divisions"><AdminDivisions /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/subjects" element={<ProtectedRoute><ModuleGuard menuPath="/admin/subjects"><AdminSubjects /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/results" element={<ProtectedRoute><ModuleGuard menuPath="/admin/results"><AdminResults /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/notices" element={<ProtectedRoute><ModuleGuard menuPath="/admin/notices"><AdminNotices /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/fees" element={<ProtectedRoute><ModuleGuard menuPath="/admin/fees"><AdminFees /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/website" element={<ProtectedRoute><AdminWebsite /></ProtectedRoute>} />
-              <Route path="/admin/expenses" element={<ProtectedRoute><AdminExpenses /></ProtectedRoute>} />
-              <Route path="/admin/donors" element={<ProtectedRoute><AdminDonors /></ProtectedRoute>} />
+              <Route path="/admin/expenses" element={<ProtectedRoute><ModuleGuard menuPath="/admin/expenses"><AdminExpenses /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/donors" element={<ProtectedRoute><ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/profile" element={<ProtectedRoute><AdminProfile /></ProtectedRoute>} />
-              <Route path="/admin/fee-receipts" element={<ProtectedRoute><AdminFeeReceipts /></ProtectedRoute>} />
+              <Route path="/admin/fee-receipts" element={<ProtectedRoute><ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/resign-letters" element={<ProtectedRoute><AdminResignLetters /></ProtectedRoute>} />
               <Route path="/admin/joining-letters" element={<ProtectedRoute><AdminJoiningLetters /></ProtectedRoute>} />
               <Route path="/admin/admission-letters" element={<ProtectedRoute><AdminAdmissionLetters /></ProtectedRoute>} />
@@ -100,7 +100,7 @@ const App = () => (
               <Route path="/admin/custom/:slug" element={<ProtectedRoute><AdminCustomFormPage /></ProtectedRoute>} />
               <Route path="/admin/module-manager" element={<ProtectedRoute><AdminModuleManager /></ProtectedRoute>} />
               <Route path="/admin/formula-builder" element={<ProtectedRoute><AdminFormulaBuilder /></ProtectedRoute>} />
-              <Route path="/admin/attendance" element={<ProtectedRoute><AdminAttendance /></ProtectedRoute>} />
+              <Route path="/admin/attendance" element={<ProtectedRoute><ModuleGuard menuPath="/admin/attendance"><AdminAttendance /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/validation-manager" element={<ProtectedRoute><AdminValidationManager /></ProtectedRoute>} />
               <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
               <Route path="/admin/permissions" element={<ProtectedRoute><AdminPermissions /></ProtectedRoute>} />
@@ -109,7 +109,7 @@ const App = () => (
               <Route path="/admin/widget-builder" element={<ProtectedRoute><AdminWidgetBuilder /></ProtectedRoute>} />
               <Route path="/admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
               <Route path="/admin/guardian-notify" element={<ProtectedRoute><AdminGuardianNotifications /></ProtectedRoute>} />
-              <Route path="/admin/salary" element={<ProtectedRoute><AdminSalary /></ProtectedRoute>} />
+              <Route path="/admin/salary" element={<ProtectedRoute><ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
