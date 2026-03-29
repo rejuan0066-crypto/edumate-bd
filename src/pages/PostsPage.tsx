@@ -183,6 +183,8 @@ const PostsPage = () => {
                       ))}
                     </div>
                   )}
+
+                  <PostInteractions postId={post.id} />
                 </article>
               );
             })}
