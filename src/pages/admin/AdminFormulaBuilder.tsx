@@ -30,7 +30,33 @@ const FORMULA_TYPES = [
   { value: 'calculation', label: 'Calculation', label_bn: 'হিসাব' },
   { value: 'grade_rule', label: 'Grade Rule', label_bn: 'গ্রেড রুল' },
   { value: 'deduction', label: 'Deduction', label_bn: 'কর্তন' },
+  { value: 'bonus', label: 'Bonus', label_bn: 'বোনাস' },
   { value: 'condition', label: 'Condition', label_bn: 'শর্ত' },
+];
+
+const SALARY_PRESETS = [
+  { name: 'Net Salary', name_bn: 'নিট বেতন', formula: 'base_salary + bonus + overtime + other_allowance - late_deduction - absence_deduction - advance_deduction - other_deduction', result_field: 'net_salary', type: 'calculation',
+    vars: [
+      { key: 'base_salary', label: 'মূল বেতন', label_en: 'Base Salary' },
+      { key: 'bonus', label: 'বোনাস', label_en: 'Bonus' },
+      { key: 'overtime', label: 'ওভারটাইম', label_en: 'Overtime' },
+      { key: 'other_allowance', label: 'অন্যান্য ভাতা', label_en: 'Other Allowance' },
+      { key: 'late_deduction', label: 'বিলম্ব কর্তন', label_en: 'Late Deduction' },
+      { key: 'absence_deduction', label: 'অনুপস্থিতি কর্তন', label_en: 'Absence Deduction' },
+      { key: 'advance_deduction', label: 'অগ্রিম কর্তন', label_en: 'Advance Deduction' },
+      { key: 'other_deduction', label: 'অন্যান্য কর্তন', label_en: 'Other Deduction' },
+    ]},
+  { name: 'Absence Deduction', name_bn: 'অনুপস্থিতি কর্তন', formula: '(base_salary / working_days) * absent_days', result_field: 'absence_deduction', type: 'deduction',
+    vars: [
+      { key: 'base_salary', label: 'মূল বেতন', label_en: 'Base Salary' },
+      { key: 'working_days', label: 'কর্মদিবস', label_en: 'Working Days' },
+      { key: 'absent_days', label: 'অনুপস্থিত দিন', label_en: 'Absent Days' },
+    ]},
+  { name: 'Eid Bonus', name_bn: 'ঈদ বোনাস', formula: 'base_salary * (percentage / 100)', result_field: 'eid_bonus', type: 'bonus',
+    vars: [
+      { key: 'base_salary', label: 'মূল বেতন', label_en: 'Base Salary' },
+      { key: 'percentage', label: 'শতাংশ', label_en: 'Percentage' },
+    ]},
 ];
 
 type VariableItem = { key: string; label: string; label_en: string };
@@ -235,7 +261,7 @@ const AdminFormulaBuilder = () => {
                         {FORMULA_TYPES.find(t => t.value === f.formula_type)?.[bn ? 'label_bn' : 'label'] || f.formula_type}
                       </Badge>
                     </div>
-                    {f.formula_type === 'calculation' && expr.formula && (
+                    {(f.formula_type === 'calculation' || f.formula_type === 'deduction' || f.formula_type === 'bonus') && expr.formula && (
                       <code className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded mt-1 inline-block font-mono">
                         {expr.result_field} = {expr.formula}
                       </code>
@@ -323,6 +349,29 @@ const AdminFormulaBuilder = () => {
                 <Label>{bn ? 'বিবরণ' : 'Description'}</Label>
                 <Textarea value={formulaData.description} onChange={e => setFormulaData(p => ({ ...p, description: e.target.value }))} rows={2} />
               </div>
+
+              {/* Salary Preset Templates */}
+              {formulaData.module === 'salary' && !editingId && (
+                <div className="border rounded-lg p-3 bg-accent/10 space-y-2">
+                  <Label className="font-semibold text-xs">{bn ? '⚡ বেতন টেমপ্লেট থেকে তৈরি করুন' : '⚡ Quick Start from Salary Template'}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SALARY_PRESETS.map((preset, i) => (
+                      <Button key={i} size="sm" variant="outline" className="text-xs" onClick={() => {
+                        setFormulaData(p => ({
+                          ...p,
+                          name: preset.name,
+                          name_bn: preset.name_bn,
+                          formula_type: preset.type,
+                          expression: { formula: preset.formula, result_field: preset.result_field },
+                          variables: preset.vars,
+                        }));
+                      }}>
+                        <Wallet className="h-3 w-3 mr-1" /> {bn ? preset.name_bn : preset.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Expression Editor */}
               {isGrade ? (
