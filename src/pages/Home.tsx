@@ -1,13 +1,30 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import PublicLayout from '@/components/PublicLayout';
 import { motion } from 'framer-motion';
-import { BookOpen, Users, Award, ArrowRight, Bell } from 'lucide-react';
+import { BookOpen, Users, Award, ArrowRight, Bell, ImageIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 const Home = () => {
   const { t, language } = useLanguage();
   const { settings, isLoading } = useWebsiteSettings();
+
+  const { data: notices = [] } = useQuery({
+    queryKey: ['home-notices'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('notices')
+        .select('id, title, title_bn, published_at')
+        .eq('is_published', true)
+        .order('published_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const stats = [
     { value: settings.stat_students, labelBn: 'মোট ছাত্র', labelEn: 'Total Students', icon: Users },
@@ -15,18 +32,19 @@ const Home = () => {
     { value: settings.stat_years, labelBn: 'বছরের অভিজ্ঞতা', labelEn: 'Years Experience', icon: Award },
   ];
 
-  const notices = [
-    { title: 'বার্ষিক পরীক্ষার সময়সূচী প্রকাশিত হয়েছে', date: '২০২৬-০৩-২০' },
-    { title: 'রমজান মাসের বিশেষ ক্লাসের সময়সূচী', date: '২০২৬-০৩-১৫' },
-    { title: 'নতুন শিক্ষাবর্ষের ভর্তি চলছে', date: '২০২৬-০৩-১০' },
-  ];
-
   return (
     <PublicLayout>
       {/* Hero */}
       {settings.sections.banner && (
-        <section className="relative overflow-hidden" style={{ background: 'var(--gradient-hero)' }}>
-          <div className="islamic-pattern absolute inset-0" />
+        <section
+          className="relative overflow-hidden"
+          style={{
+            background: settings.hero_bg_image_url
+              ? `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(${settings.hero_bg_image_url}) center/cover no-repeat`
+              : 'var(--gradient-hero)',
+          }}
+        >
+          {!settings.hero_bg_image_url && <div className="islamic-pattern absolute inset-0" />}
           <div className="container mx-auto px-4 py-16 sm:py-24 relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -88,9 +106,9 @@ const Home = () => {
                 <div className="lg:col-span-2 card-elevated p-6 sm:p-8">
                   <h2 className="text-2xl font-display font-bold text-foreground mb-4">{t('principalMessage')}</h2>
                   <div className="flex flex-col sm:flex-row gap-6">
-                    <div className="w-32 h-32 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-4xl">
+                    <div className="w-32 h-32 rounded-xl bg-secondary shrink-0 flex items-center justify-center text-4xl overflow-hidden">
                       {settings.principal_photo_url ? (
-                        <img src={settings.principal_photo_url} alt="Principal" className="w-full h-full rounded-xl object-cover" />
+                        <img src={settings.principal_photo_url} alt="Principal" className="w-full h-full object-cover" />
                       ) : '👤'}
                     </div>
                     <div>
@@ -115,15 +133,53 @@ const Home = () => {
                     <Link to="/notices" className="text-xs text-primary hover:underline">{t('viewAll')}</Link>
                   </div>
                   <div className="space-y-3">
-                    {notices.map((n, i) => (
-                      <div key={i} className="p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer">
-                        <p className="text-sm font-medium text-foreground">{n.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{n.date}</p>
-                      </div>
-                    ))}
+                    {notices.length > 0 ? notices.map((n) => (
+                      <Link key={n.id} to="/notices" className="block p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                        <p className="text-sm font-medium text-foreground">
+                          {language === 'bn' ? (n.title_bn || n.title) : n.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {n.published_at ? format(new Date(n.published_at), 'dd/MM/yyyy') : ''}
+                        </p>
+                      </Link>
+                    )) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        {language === 'bn' ? 'কোনো নোটিশ নেই' : 'No notices'}
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Gallery Section on Home */}
+      {settings.sections.gallery && settings.gallery_items?.filter(g => g.image_url).length > 0 && (
+        <section className="py-16 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+                {language === 'bn' ? 'গ্যালারি' : 'Gallery'}
+              </h2>
+              <Link to="/gallery" className="text-sm text-primary hover:underline flex items-center gap-1">
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {settings.gallery_items.filter(g => g.image_url).slice(0, 8).map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  viewport={{ once: true }}
+                  className="aspect-square rounded-xl overflow-hidden group"
+                >
+                  <img src={item.image_url} alt={language === 'bn' ? item.title_bn : item.title_en} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
