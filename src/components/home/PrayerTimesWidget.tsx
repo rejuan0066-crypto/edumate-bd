@@ -55,13 +55,29 @@ const parseTime = (timeStr: string): Date => {
 };
 
 const formatCountdown = (ms: number, isBn: boolean): string => {
-  if (ms <= 0) return isBn ? '০h ০m ০s' : '0h 0m 0s';
+  if (ms <= 0) return isBn ? '০০h ০০m ০০s' : '00h 00m 00s';
   const totalSec = Math.floor(ms / 1000);
-  const h = Math.floor(totalSec / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  const str = `${h}h ${m}m ${s}s`;
+  const h = Math.floor(totalSec / 3600).toString().padStart(2, '0');
+  const m = Math.floor((totalSec % 3600) / 60).toString().padStart(2, '0');
+  const s = (totalSec % 60).toString().padStart(2, '0');
+  const str = `${h}:${m}:${s}`;
   return isBn ? toBanglaNum(str) : str;
+};
+
+const formatDisplayTime = (timeStr: string, isBn: boolean, timeFormat: '24h' | '12h'): string => {
+  if (!timeStr) return '';
+
+  const clean = timeStr.replace(/\s*\(.*\)/, '');
+  if (timeFormat === '24h') {
+    return isBn ? toBanglaNum(clean) : clean;
+  }
+
+  const [rawHour, rawMinute] = clean.split(':').map(Number);
+  const period = rawHour >= 12 ? (isBn ? 'PM' : 'PM') : (isBn ? 'AM' : 'AM');
+  const hour12 = rawHour % 12 || 12;
+  const formatted = `${hour12.toString().padStart(2, '0')}:${rawMinute.toString().padStart(2, '0')} ${period}`;
+
+  return isBn ? `${toBanglaNum(formatted.slice(0, 5))} ${period}` : formatted;
 };
 
 const PrayerTimesWidget = () => {
@@ -71,6 +87,7 @@ const PrayerTimesWidget = () => {
   const [country, setCountry] = useState('BD');
   const [division, setDivision] = useState('sylhet');
   const [city, setCity] = useState('Sylhet');
+  const [timeFormat, setTimeFormat] = useState<'24h' | '12h'>('24h');
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -107,9 +124,9 @@ const PrayerTimesWidget = () => {
       const raw = timings[k] || '00:00';
       return parseTime(raw);
     });
-    
+
     const nowMs = now.getTime();
-    
+
     for (let i = PRAYER_ORDER.length - 1; i >= 0; i--) {
       if (nowMs >= times[i].getTime()) {
         const nextIdx = i + 1;
@@ -117,22 +134,20 @@ const PrayerTimesWidget = () => {
           const remaining = times[nextIdx].getTime() - nowMs;
           return { activeIndex: i, nextIndex: nextIdx, activeRemainingMs: remaining > 0 ? remaining : 0 };
         }
-        // After Isha - countdown to next Fajr (add 24h to Fajr time)
         const nextFajr = times[0].getTime() + 24 * 60 * 60 * 1000;
         const remaining = nextFajr - nowMs;
         return { activeIndex: i, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
       }
     }
-    // Before Fajr - Isha is still active, countdown to Fajr
+
     const remaining = times[0].getTime() - nowMs;
     return { activeIndex: PRAYER_ORDER.length - 1, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
   };
 
-  const { activeIndex, nextIndex, activeRemainingMs } = getActiveInfo();
+  const { activeIndex, activeRemainingMs } = getActiveInfo();
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden">
-      {/* Header */}
       <div className="bg-primary p-3 text-primary-foreground">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-lg">🕌</span>
@@ -147,8 +162,6 @@ const PrayerTimesWidget = () => {
         )}
       </div>
 
-
-      {/* Location Selector */}
       <div className="p-3 space-y-2 bg-muted/30 border-b border-border">
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-1">
           <MapPin className="w-3 h-3" />
@@ -184,26 +197,34 @@ const PrayerTimesWidget = () => {
             </Select>
           </div>
         )}
+        <Select value={timeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
+          <SelectTrigger className="h-7 text-xs">
+            <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
+            <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Prayer Times Table */}
       <div className="p-2">
         {isLoading ? (
           <div className="text-center py-6 text-xs text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
         ) : timings ? (
           <>
-            {/* Table Header */}
             <div className="grid grid-cols-[1fr_auto_auto] gap-1 px-2 pb-1 mb-1 border-b border-border text-[10px] text-muted-foreground font-medium">
               <span>{bn ? 'ওয়াক্ত' : 'Prayer'}</span>
-              <span className="text-center w-14">{bn ? 'শুরু' : 'Start'}</span>
-              <span className="text-center w-14">{bn ? 'শেষ' : 'End'}</span>
+              <span className="text-center w-20">{bn ? 'শুরু' : 'Start'}</span>
+              <span className="text-center w-20">{bn ? 'শেষ' : 'End'}</span>
             </div>
             <div className="space-y-0.5">
               {PRAYER_ORDER.map((key, idx) => {
                 const startTime = timings[key]?.replace(/\s*\(.*\)/, '') || '';
-                // End time = start of next prayer
                 const nextKey = PRAYER_ORDER[idx + 1];
-                const endTime = nextKey ? (timings[nextKey]?.replace(/\s*\(.*\)/, '') || '') : '';
+                const endTime = nextKey
+                  ? (timings[nextKey]?.replace(/\s*\(.*\)/, '') || '')
+                  : (timings[PRAYER_ORDER[0]]?.replace(/\s*\(.*\)/, '') || '');
                 const isActive = idx === activeIndex;
                 const val = PRAYER_NAMES[key];
 
@@ -216,22 +237,22 @@ const PrayerTimesWidget = () => {
                         : 'hover:bg-muted/50'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">{val.icon}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm shrink-0">{val.icon}</span>
                       <span className={`text-xs font-medium ${isActive ? 'text-primary font-bold' : 'text-foreground'}`}>
                         {bn ? val.bn : val.en}
                         {isActive && activeRemainingMs > 0 && (
                           <span className="ml-2 text-[10px] font-medium text-primary">
-                            {bn ? 'শেষ হবে' : 'ends in'} {formatCountdown(activeRemainingMs, bn)}
+                            {bn ? 'ends in' : 'ends in'} {formatCountdown(activeRemainingMs, bn)}
                           </span>
                         )}
                       </span>
                     </div>
-                    <span className={`text-xs font-mono text-center w-14 ${isActive ? 'font-bold text-primary' : 'text-foreground'}`}>
-                      {bn ? toBanglaNum(startTime) : startTime}
+                    <span className={`text-[11px] font-mono text-center w-20 ${isActive ? 'font-bold text-primary' : 'text-foreground'}`}>
+                      {formatDisplayTime(startTime, bn, timeFormat)}
                     </span>
-                    <span className="text-xs font-mono text-center w-14 text-muted-foreground">
-                      {endTime ? (bn ? toBanglaNum(endTime) : endTime) : '—'}
+                    <span className="text-[11px] font-mono text-center w-20 text-muted-foreground">
+                      {endTime ? formatDisplayTime(endTime, bn, timeFormat) : '—'}
                     </span>
                   </div>
                 );
