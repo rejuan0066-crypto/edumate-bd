@@ -126,8 +126,7 @@ const PrayerTimesWidget = () => {
     return { activeIndex: -1, activeRemainingMs: remaining > 0 ? remaining : 0 };
   };
 
-  const { activeIndex, remainingMs, activeRemainingMs } = getActiveInfo();
-  const nextPrayerIndex = activeIndex === -1 ? 0 : (activeIndex + 1 < PRAYER_ORDER.length ? activeIndex + 1 : -1);
+  const { activeIndex, activeRemainingMs } = getActiveInfo();
 
   return (
     <div className="card-elevated rounded-xl overflow-hidden">
