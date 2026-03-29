@@ -251,8 +251,25 @@ const AdminSalary = () => {
   // Update single salary record
   const updateMutation = useMutation({
     mutationFn: async (record: any) => {
-      const netSalary = (record.base_salary || 0) + (record.bonus || 0) + (record.overtime || 0) + (record.other_allowance || 0)
-        - (record.late_deduction || 0) - (record.absence_deduction || 0) - (record.advance_deduction || 0) - (record.other_deduction || 0);
+      const ctx: Record<string, number> = {
+        base_salary: Number(record.base_salary || 0),
+        bonus: Number(record.bonus || 0),
+        overtime: Number(record.overtime || 0),
+        other_allowance: Number(record.other_allowance || 0),
+        late_deduction: Number(record.late_deduction || 0),
+        absence_deduction: Number(record.absence_deduction || 0),
+        advance_deduction: Number(record.advance_deduction || 0),
+        other_deduction: Number(record.other_deduction || 0),
+      };
+      const netFormula = getFormula('net_salary');
+      let netSalary: number;
+      if (netFormula) {
+        const expr = (netFormula.expression as any)?.formula;
+        netSalary = Math.max(0, evaluateFormula(expr, ctx));
+      } else {
+        netSalary = ctx.base_salary + ctx.bonus + ctx.overtime + ctx.other_allowance
+          - ctx.late_deduction - ctx.absence_deduction - ctx.advance_deduction - ctx.other_deduction;
+      }
       const { error } = await supabase.from('salary_records')
         .update({ ...record, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
         .eq('id', record.id);
