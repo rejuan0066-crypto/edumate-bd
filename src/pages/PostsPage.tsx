@@ -8,6 +8,7 @@ import { FileText, Image, Video, File, Loader2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import PostInteractions from '@/components/posts/PostInteractions';
 
 const CATEGORIES = [
   { value: 'all', label: 'All', labelBn: 'সব' },
