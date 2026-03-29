@@ -1063,6 +1063,119 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_records: {
+        Row: {
+          absence_deduction: number | null
+          absent_days: number | null
+          advance_deduction: number | null
+          base_salary: number
+          bonus: number | null
+          created_at: string | null
+          id: string
+          late_days: number | null
+          late_deduction: number | null
+          month_year: string
+          net_salary: number
+          other_allowance: number | null
+          other_deduction: number | null
+          overtime: number | null
+          paid_at: string | null
+          present_days: number | null
+          remarks: string | null
+          staff_id: string
+          status: string | null
+          updated_at: string | null
+          working_days: number | null
+        }
+        Insert: {
+          absence_deduction?: number | null
+          absent_days?: number | null
+          advance_deduction?: number | null
+          base_salary?: number
+          bonus?: number | null
+          created_at?: string | null
+          id?: string
+          late_days?: number | null
+          late_deduction?: number | null
+          month_year: string
+          net_salary?: number
+          other_allowance?: number | null
+          other_deduction?: number | null
+          overtime?: number | null
+          paid_at?: string | null
+          present_days?: number | null
+          remarks?: string | null
+          staff_id: string
+          status?: string | null
+          updated_at?: string | null
+          working_days?: number | null
+        }
+        Update: {
+          absence_deduction?: number | null
+          absent_days?: number | null
+          advance_deduction?: number | null
+          base_salary?: number
+          bonus?: number | null
+          created_at?: string | null
+          id?: string
+          late_days?: number | null
+          late_deduction?: number | null
+          month_year?: string
+          net_salary?: number
+          other_allowance?: number | null
+          other_deduction?: number | null
+          overtime?: number | null
+          paid_at?: string | null
+          present_days?: number | null
+          remarks?: string | null
+          staff_id?: string
+          status?: string | null
+          updated_at?: string | null
+          working_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_records_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          description_bn: string | null
+          id: string
+          is_active: boolean | null
+          setting_key: string
+          setting_value: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key: string
+          setting_value?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          id?: string
+          is_active?: boolean | null
+          setting_key?: string
+          setting_value?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       staff: {
         Row: {
           address: string | null
