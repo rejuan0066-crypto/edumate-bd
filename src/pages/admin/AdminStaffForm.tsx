@@ -189,12 +189,14 @@ const AdminStaffForm = () => {
               </div>
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label>{language === 'bn' ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
-                  <Input className="bg-background mt-1" required value={firstName} onChange={e => setFirstName(e.target.value)} />
+                  <Label>{bn ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} required value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
+                  <FieldError field="first_name" />
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'শেষ নাম' : 'Last Name'} <span className="text-destructive">*</span></Label>
-                  <Input className="bg-background mt-1" required value={lastName} onChange={e => setLastName(e.target.value)} />
+                  <Label>{bn ? 'শেষ নাম' : 'Last Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} required value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
+                  <FieldError field="last_name" />
                 </div>
                 <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} required />
                 <div>
