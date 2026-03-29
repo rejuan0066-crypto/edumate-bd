@@ -17,7 +17,6 @@ import {
   HardDrive, MessageSquare, Wallet,
   type LucideIcon
 } from 'lucide-react';
-} from 'lucide-react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
