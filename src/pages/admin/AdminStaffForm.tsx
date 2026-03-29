@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
-import { useState, useRef } from 'react';
-import { Camera, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import PhotoUpload from '@/components/PhotoUpload';
+import { useState } from 'react';
+import { Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
