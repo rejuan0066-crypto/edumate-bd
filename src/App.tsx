@@ -53,6 +53,8 @@ import AdminWidgetBuilder from "./pages/admin/AdminWidgetBuilder";
 import AdminBackup from "./pages/admin/AdminBackup";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import AdminSalary from "./pages/admin/AdminSalary";
+import AdminPosts from "./pages/admin/AdminPosts";
+import PostsPage from "./pages/PostsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
