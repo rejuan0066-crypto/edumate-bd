@@ -222,12 +222,14 @@ const AdminStaffForm = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'ইমেইল' : 'Email'}</Label>
-                  <Input type="email" className="bg-background mt-1" value={email} onChange={e => setEmail(e.target.value)} />
+                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input type="email" className={`bg-background mt-1 ${fieldErrors['email'] ? 'border-destructive' : ''}`} value={email} onChange={e => handleFieldChange('email', e.target.value, setEmail)} />
+                  <FieldError field="email" />
                 </div>
                 <div>
-                  <Label>{language === 'bn' ? 'বেতন (টাকা)' : 'Salary (BDT)'}</Label>
-                  <Input type="number" className="bg-background mt-1" value={salary} onChange={e => setSalary(e.target.value)} placeholder="৳" />
+                  <Label>{bn ? 'বেতন (টাকা)' : 'Salary (BDT)'}</Label>
+                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
+                  <FieldError field="salary" />
                 </div>
               </div>
             </div>
