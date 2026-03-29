@@ -12,6 +12,8 @@ import HomePostsSection from '@/components/home/HomePostsSection';
 import HomeNoticesSection from '@/components/home/HomeNoticesSection';
 import HomePrincipalCard from '@/components/home/HomePrincipalCard';
 import HomeMoreNews from '@/components/home/HomeMoreNews';
+import PrayerTimesWidget from '@/components/home/PrayerTimesWidget';
+import IslamicCalendarWidget from '@/components/home/IslamicCalendarWidget';
 
 const Home = () => {
   const { t, language } = useLanguage();
