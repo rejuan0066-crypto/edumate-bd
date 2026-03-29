@@ -123,9 +123,9 @@ const PrayerTimesWidget = () => {
         return { activeIndex: i, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
       }
     }
-    // Before Fajr - countdown to Fajr
+    // Before Fajr - Isha is still active, countdown to Fajr
     const remaining = times[0].getTime() - nowMs;
-    return { activeIndex: -1, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
+    return { activeIndex: PRAYER_ORDER.length - 1, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
   };
 
   const { activeIndex, nextIndex, activeRemainingMs } = getActiveInfo();
