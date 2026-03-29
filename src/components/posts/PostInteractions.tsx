@@ -21,9 +21,10 @@ const getVisitorId = () => {
 
 interface Props {
   postId: string;
+  title: string;
 }
 
-const PostInteractions = ({ postId }: Props) => {
+const PostInteractions = ({ postId, title }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
