@@ -113,6 +113,7 @@ const App = () => (
               <Route path="/admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
               <Route path="/admin/guardian-notify" element={<ProtectedRoute><AdminGuardianNotifications /></ProtectedRoute>} />
               <Route path="/admin/salary" element={<ProtectedRoute><ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
