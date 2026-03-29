@@ -53,6 +53,8 @@ import AdminWidgetBuilder from "./pages/admin/AdminWidgetBuilder";
 import AdminBackup from "./pages/admin/AdminBackup";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import AdminSalary from "./pages/admin/AdminSalary";
+import AdminPosts from "./pages/admin/AdminPosts";
+import PostsPage from "./pages/PostsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +79,7 @@ const App = () => (
               <Route path="/admission" element={<AdmissionPage />} />
               <Route path="/donation" element={<DonationPage />} />
               <Route path="/fee-payment" element={<FeePaymentPage />} />
+              <Route path="/posts" element={<PostsPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/admin/students" element={<ProtectedRoute><ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard></ProtectedRoute>} />
@@ -110,6 +113,7 @@ const App = () => (
               <Route path="/admin/backup" element={<ProtectedRoute><AdminBackup /></ProtectedRoute>} />
               <Route path="/admin/guardian-notify" element={<ProtectedRoute><AdminGuardianNotifications /></ProtectedRoute>} />
               <Route path="/admin/salary" element={<ProtectedRoute><ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

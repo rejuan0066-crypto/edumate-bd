@@ -980,6 +980,51 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          attachments: Json | null
+          category: string
+          content: string | null
+          content_bn: string | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_published: boolean | null
+          published_at: string | null
+          title: string
+          title_bn: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          category?: string
+          content?: string | null
+          content_bn?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          published_at?: string | null
+          title: string
+          title_bn?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          category?: string
+          content?: string | null
+          content_bn?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_published?: boolean | null
+          published_at?: string | null
+          title?: string
+          title_bn?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
