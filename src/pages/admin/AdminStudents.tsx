@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Plus, Trash2, UserCheck, UserX, Loader2, Edit } from 'lucide-react';
+import { Search, Plus, Trash2, UserCheck, UserX, Loader2, Edit, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useValidationRules } from '@/hooks/useValidationRules';
 
 const initialForm = {
   name_bn: '', name_en: '', student_id: '', roll_number: '',
@@ -22,9 +23,12 @@ const initialForm = {
 const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const { validate, validateAll } = useValidationRules('student');
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions'],
@@ -67,8 +71,9 @@ const AdminStudents = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       setForm(initialForm);
+      setFieldErrors({});
       setShowAdd(false);
-      toast.success(language === 'bn' ? 'ছাত্র যোগ হয়েছে' : 'Student added');
+      toast.success(bn ? 'ছাত্র যোগ হয়েছে' : 'Student added');
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
@@ -80,10 +85,46 @@ const AdminStudents = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success(language === 'bn' ? 'ছাত্র মুছে ফেলা হয়েছে' : 'Student deleted');
+      toast.success(bn ? 'ছাত্র মুছে ফেলা হয়েছে' : 'Student deleted');
     },
     onError: () => toast.error('Error'),
   });
+
+  const handleFieldChange = (field: string, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+    // Real-time validation
+    const error = validate(field, value, form);
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      if (error) next[field] = error; else delete next[field];
+      return next;
+    });
+  };
+
+  const handleSubmit = () => {
+    // Run all validations
+    const errors = validateAll(form);
+    // Also check hardcoded required fields
+    if (!form.student_id.trim()) errors['student_id'] = bn ? 'ছাত্র আইডি আবশ্যক' : 'Student ID is required';
+    if (!form.name_bn.trim()) errors['name_bn'] = bn ? 'নাম (বাংলা) আবশ্যক' : 'Name (BN) is required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError);
+      return;
+    }
+    addMutation.mutate();
+  };
+
+  const FieldError = ({ field }: { field: string }) => {
+    if (!fieldErrors[field]) return null;
+    return (
+      <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" /> {fieldErrors[field]}
+      </p>
+    );
+  };
 
   const filtered = students.filter((s: any) => {
     if (!search) return true;
@@ -97,7 +138,7 @@ const AdminStudents = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">{t('students')}</h1>
-            <p className="text-sm text-muted-foreground">{language === 'bn' ? `মোট ${students.length} জন ছাত্র` : `Total ${students.length} students`}</p>
+            <p className="text-sm text-muted-foreground">{bn ? `মোট ${students.length} জন ছাত্র` : `Total ${students.length} students`}</p>
           </div>
           <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient flex items-center gap-2">
             <Plus className="w-4 h-4" /> {t('addNew')}
@@ -107,7 +148,7 @@ const AdminStudents = () => {
         <div className="card-elevated p-4">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder={language === 'bn' ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
 
@@ -119,13 +160,13 @@ const AdminStudents = () => {
               <table className="w-full">
                 <thead className="bg-secondary/50">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'নাম' : 'Name'}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'আইডি' : 'ID'}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'রোল' : 'Roll'}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'বিভাগ' : 'Division'}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'ফোন' : 'Phone'}</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'স্ট্যাটাস' : 'Status'}</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{language === 'bn' ? 'অ্যাকশন' : 'Action'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নাম' : 'Name'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'আইডি' : 'ID'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'রোল' : 'Roll'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'বিভাগ' : 'Division'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ফোন' : 'Phone'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                    <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -144,12 +185,12 @@ const AdminStudents = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{s.student_id}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{s.roll_number || '-'}</td>
-                      <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{language === 'bn' ? s.divisions?.name_bn : s.divisions?.name || '-'}</span></td>
+                      <td className="px-4 py-3 text-sm"><span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</span></td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{s.phone || s.guardian_phone || '-'}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${s.status === 'active' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                           {s.status === 'active' ? <UserCheck className="w-3 h-3" /> : <UserX className="w-3 h-3" />}
-                          {s.status === 'active' ? (language === 'bn' ? 'সক্রিয়' : 'Active') : (language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive')}
+                          {s.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -158,7 +199,7 @@ const AdminStudents = () => {
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{language === 'bn' ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
+                    <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -167,61 +208,96 @@ const AdminStudents = () => {
         </div>
       </div>
 
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
+      <Dialog open={showAdd} onOpenChange={o => { setShowAdd(o); if (!o) setFieldErrors({}); }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{language === 'bn' ? 'নতুন ছাত্র যোগ' : 'Add New Student'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{bn ? 'নতুন ছাত্র যোগ' : 'Add New Student'}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            {/* Basic Info */}
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">{language === 'bn' ? 'মৌলিক তথ্য' : 'Basic Information'}</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2">{bn ? 'মৌলিক তথ্য' : 'Basic Information'}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>{language === 'bn' ? 'ছাত্র আইডি' : 'Student ID'} <span className="text-destructive">*</span></Label><Input className="mt-1" value={form.student_id} onChange={e => setForm({ ...form, student_id: e.target.value })} /></div>
-              <div><Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Name (BN)'} <span className="text-destructive">*</span></Label><Input className="mt-1" value={form.name_bn} onChange={e => setForm({ ...form, name_bn: e.target.value })} /></div>
-              <div><Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (EN)'}</Label><Input className="mt-1" value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} /></div>
-              <div><Label>{language === 'bn' ? 'রোল নম্বর' : 'Roll Number'}</Label><Input className="mt-1" value={form.roll_number} onChange={e => setForm({ ...form, roll_number: e.target.value })} /></div>
               <div>
-                <Label>{language === 'bn' ? 'লিঙ্গ' : 'Gender'}</Label>
-                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+                <Label>{bn ? 'ছাত্র আইডি' : 'Student ID'} <span className="text-destructive">*</span></Label>
+                <Input className={`mt-1 ${fieldErrors['student_id'] ? 'border-destructive' : ''}`} value={form.student_id} onChange={e => handleFieldChange('student_id', e.target.value)} />
+                <FieldError field="student_id" />
+              </div>
+              <div>
+                <Label>{bn ? 'নাম (বাংলা)' : 'Name (BN)'} <span className="text-destructive">*</span></Label>
+                <Input className={`mt-1 ${fieldErrors['name_bn'] ? 'border-destructive' : ''}`} value={form.name_bn} onChange={e => handleFieldChange('name_bn', e.target.value)} />
+                <FieldError field="name_bn" />
+              </div>
+              <div>
+                <Label>{bn ? 'নাম (ইংরেজি)' : 'Name (EN)'}</Label>
+                <Input className="mt-1" value={form.name_en} onChange={e => handleFieldChange('name_en', e.target.value)} />
+                <FieldError field="name_en" />
+              </div>
+              <div>
+                <Label>{bn ? 'রোল নম্বর' : 'Roll Number'}</Label>
+                <Input className="mt-1" value={form.roll_number} onChange={e => handleFieldChange('roll_number', e.target.value)} />
+                <FieldError field="roll_number" />
+              </div>
+              <div>
+                <Label>{bn ? 'লিঙ্গ' : 'Gender'}</Label>
+                <Select value={form.gender} onValueChange={v => handleFieldChange('gender', v)}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">{language === 'bn' ? 'পুরুষ' : 'Male'}</SelectItem>
-                    <SelectItem value="female">{language === 'bn' ? 'মহিলা' : 'Female'}</SelectItem>
+                    <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
+                    <SelectItem value="female">{bn ? 'মহিলা' : 'Female'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{language === 'bn' ? 'জন্ম তারিখ' : 'Date of Birth'}</Label><Input type="date" className="mt-1" value={form.date_of_birth} onChange={e => setForm({ ...form, date_of_birth: e.target.value })} /></div>
               <div>
-                <Label>{language === 'bn' ? 'বিভাগ' : 'Division'}</Label>
-                <Select value={form.division_id} onValueChange={v => setForm({ ...form, division_id: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                  <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{language === 'bn' ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
+                <Label>{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
+                <Input type="date" className="mt-1" value={form.date_of_birth} onChange={e => handleFieldChange('date_of_birth', e.target.value)} />
+              </div>
+              <div>
+                <Label>{bn ? 'বিভাগ' : 'Division'}</Label>
+                <Select value={form.division_id} onValueChange={v => handleFieldChange('division_id', v)}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                  <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Family Info */}
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{language === 'bn' ? 'পারিবারিক তথ্য' : 'Family Information'}</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{bn ? 'পারিবারিক তথ্য' : 'Family Information'}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>{language === 'bn' ? 'পিতার নাম' : 'Father Name'}</Label><Input className="mt-1" value={form.father_name} onChange={e => setForm({ ...form, father_name: e.target.value })} /></div>
-              <div><Label>{language === 'bn' ? 'মাতার নাম' : 'Mother Name'}</Label><Input className="mt-1" value={form.mother_name} onChange={e => setForm({ ...form, mother_name: e.target.value })} /></div>
+              <div>
+                <Label>{bn ? 'পিতার নাম' : 'Father Name'}</Label>
+                <Input className="mt-1" value={form.father_name} onChange={e => handleFieldChange('father_name', e.target.value)} />
+                <FieldError field="father_name" />
+              </div>
+              <div>
+                <Label>{bn ? 'মাতার নাম' : 'Mother Name'}</Label>
+                <Input className="mt-1" value={form.mother_name} onChange={e => handleFieldChange('mother_name', e.target.value)} />
+                <FieldError field="mother_name" />
+              </div>
             </div>
 
-            {/* Contact Info */}
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{language === 'bn' ? 'যোগাযোগ তথ্য' : 'Contact Information'}</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{bn ? 'যোগাযোগ তথ্য' : 'Contact Information'}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>{language === 'bn' ? 'ছাত্রের ফোন' : 'Student Phone'}</Label><Input className="mt-1" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="01XXXXXXXXX" /></div>
-              <div><Label>{language === 'bn' ? 'অভিভাবকের ফোন' : 'Guardian Phone'}</Label><Input className="mt-1" value={form.guardian_phone} onChange={e => setForm({ ...form, guardian_phone: e.target.value })} placeholder="01XXXXXXXXX" /></div>
-              <div><Label>{language === 'bn' ? 'ইমেইল' : 'Email'}</Label><Input type="email" className="mt-1" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+              <div>
+                <Label>{bn ? 'ছাত্রের ফোন' : 'Student Phone'}</Label>
+                <Input className={`mt-1 ${fieldErrors['phone'] ? 'border-destructive' : ''}`} value={form.phone} onChange={e => handleFieldChange('phone', e.target.value)} placeholder="01XXXXXXXXX" />
+                <FieldError field="phone" />
+              </div>
+              <div>
+                <Label>{bn ? 'অভিভাবকের ফোন' : 'Guardian Phone'}</Label>
+                <Input className={`mt-1 ${fieldErrors['guardian_phone'] ? 'border-destructive' : ''}`} value={form.guardian_phone} onChange={e => handleFieldChange('guardian_phone', e.target.value)} placeholder="01XXXXXXXXX" />
+                <FieldError field="guardian_phone" />
+              </div>
+              <div>
+                <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+                <Input type="email" className={`mt-1 ${fieldErrors['email'] ? 'border-destructive' : ''}`} value={form.email} onChange={e => handleFieldChange('email', e.target.value)} />
+                <FieldError field="email" />
+              </div>
             </div>
 
-            {/* Address */}
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{language === 'bn' ? 'ঠিকানা' : 'Address'}</h3>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide border-b pb-2 mt-2">{bn ? 'ঠিকানা' : 'Address'}</h3>
             <div>
-              <Textarea className="mt-1" rows={3} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder={language === 'bn' ? 'পূর্ণ ঠিকানা লিখুন...' : 'Enter full address...'} />
+              <Textarea className="mt-1" rows={3} value={form.address} onChange={e => handleFieldChange('address', e.target.value)} placeholder={bn ? 'পূর্ণ ঠিকানা লিখুন...' : 'Enter full address...'} />
             </div>
 
-            <Button onClick={() => { if (!form.student_id.trim()) { toast.error(language === 'bn' ? 'ছাত্র আইডি আবশ্যক' : 'Student ID is required'); return; } if (!form.name_bn.trim()) { toast.error(language === 'bn' ? 'নাম (বাংলা) আবশ্যক' : 'Name (BN) is required'); return; } addMutation.mutate(); }} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
+            <Button onClick={handleSubmit} className="btn-primary-gradient mt-2" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-              {language === 'bn' ? 'ছাত্র যোগ করুন' : 'Add Student'}
+              {bn ? 'ছাত্র যোগ করুন' : 'Add Student'}
             </Button>
           </div>
         </DialogContent>
