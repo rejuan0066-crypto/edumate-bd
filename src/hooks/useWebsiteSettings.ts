@@ -15,6 +15,49 @@ export interface SocialLink {
   icon: string;
 }
 
+export interface HeaderStyle {
+  topbar_visible: boolean;
+  topbar_bg_color: string;
+  topbar_text_color: string;
+  topbar_announcement_bn: string;
+  topbar_announcement_en: string;
+  header_bg_color: string;
+  header_text_color: string;
+  header_border: boolean;
+  header_shadow: boolean;
+  header_sticky: boolean;
+  logo_size: 'small' | 'medium' | 'large';
+  show_institution_name: boolean;
+  show_institution_name_en: boolean;
+}
+
+export interface NavStyle {
+  nav_bg_color: string;
+  nav_text_color: string;
+  nav_active_bg: string;
+  nav_active_text: string;
+  nav_hover_bg: string;
+  nav_style: 'pills' | 'underline' | 'flat' | 'rounded';
+  nav_font_size: 'small' | 'medium' | 'large';
+}
+
+export interface FooterStyle {
+  footer_bg_color: string;
+  footer_text_color: string;
+  show_quick_links: boolean;
+  show_contact_info: boolean;
+  show_social_links: boolean;
+  copyright_text_bn: string;
+  copyright_text_en: string;
+  footer_columns: number;
+}
+
+export interface FooterLink {
+  label_bn: string;
+  label_en: string;
+  url: string;
+}
+
 export interface WebsiteSettings {
   institution_name: string;
   institution_name_en: string;
@@ -48,6 +91,10 @@ export interface WebsiteSettings {
   stat_years: string;
   social_links: SocialLink[];
   gallery_items: GalleryItem[];
+  header_style: HeaderStyle;
+  nav_style: NavStyle;
+  footer_style: FooterStyle;
+  footer_links: FooterLink[];
   sections: {
     banner: boolean;
     principalMessage: boolean;
