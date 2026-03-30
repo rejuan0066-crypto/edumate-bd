@@ -680,10 +680,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     const sectionInfo = SECTION_INFO[sectionKey as keyof typeof SECTION_INFO];
     if (!sectionInfo) return null;
 
-    const sectionFields = configFields.filter(f => {
-      const val = f.validation as any;
-      return val?.section === sectionKey && f.is_active;
-    }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const sectionFields = getFieldsBySection(sectionKey as any);
 
     if (sectionFields.length === 0) return null;
 
