@@ -75,12 +75,71 @@ export type HomeSectionKey =
   | 'teachersList'
   | 'studentInfo';
 
+export interface SectionStyleConfig {
+  columns: number;
+  columnsTablet: number;
+  columnsMobile: number;
+  gap: number;
+  padding: number;
+  margin: number;
+  width: 'full' | 'boxed';
+  borderRadius: number;
+  bgColor: string;
+  textColor: string;
+  headingFontSize: number;
+  bodyFontSize: number;
+  headingFontSizeMobile: number;
+  bodyFontSizeMobile: number;
+  headingBold: boolean;
+  headingItalic: boolean;
+  textAlign: 'left' | 'center' | 'right';
+  fixedHeight: boolean;
+  height: number;
+  overflow: 'auto' | 'scroll' | 'hidden';
+  scrollbarTrackColor: string;
+  scrollbarThumbColor: string;
+  autoScroll: boolean;
+  scrollDirection: 'ltr' | 'rtl' | 'ttb' | 'btt';
+  scrollSpeed: number;
+  pauseOnHover: boolean;
+}
+
+export const DEFAULT_SECTION_STYLE: SectionStyleConfig = {
+  columns: 1,
+  columnsTablet: 1,
+  columnsMobile: 1,
+  gap: 16,
+  padding: 24,
+  margin: 0,
+  width: 'boxed',
+  borderRadius: 0,
+  bgColor: '',
+  textColor: '',
+  headingFontSize: 20,
+  bodyFontSize: 14,
+  headingFontSizeMobile: 16,
+  bodyFontSizeMobile: 13,
+  headingBold: true,
+  headingItalic: false,
+  textAlign: 'left',
+  fixedHeight: false,
+  height: 400,
+  overflow: 'auto',
+  scrollbarTrackColor: '',
+  scrollbarThumbColor: '',
+  autoScroll: false,
+  scrollDirection: 'rtl',
+  scrollSpeed: 5,
+  pauseOnHover: true,
+};
+
 export interface HomeSectionConfig {
   key: HomeSectionKey;
   visible: boolean;
   label_bn: string;
   label_en: string;
   icon: string;
+  styles?: SectionStyleConfig;
 }
 
 export const ALL_SECTION_CONFIGS: HomeSectionConfig[] = [

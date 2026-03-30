@@ -2,7 +2,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import PublicLayout from '@/components/PublicLayout';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Award } from 'lucide-react';
-import { useWebsiteSettings, HomeSectionKey } from '@/hooks/useWebsiteSettings';
+import { useWebsiteSettings, HomeSectionKey, SectionStyleConfig, DEFAULT_SECTION_STYLE } from '@/hooks/useWebsiteSettings';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import HomePrincipalCard from '@/components/home/HomePrincipalCard';
@@ -20,6 +21,36 @@ const Home = () => {
   const { t, language } = useLanguage();
   const bn = language === 'bn';
   const { settings } = useWebsiteSettings();
+  const isMobile = useIsMobile();
+
+  // Helper to get dynamic inline styles for a section
+  const getSectionStyle = (key: HomeSectionKey): React.CSSProperties => {
+    const section = (settings.section_order || []).find(s => s.key === key);
+    const st = section?.styles || DEFAULT_SECTION_STYLE;
+    const style: React.CSSProperties = {};
+    if (st.bgColor) style.backgroundColor = st.bgColor;
+    if (st.textColor) style.color = st.textColor;
+    if (st.padding) style.padding = `${st.padding}px`;
+    if (st.margin) style.marginTop = `${st.margin}px`;
+    if (st.borderRadius) style.borderRadius = `${st.borderRadius}px`;
+    if (st.fixedHeight) {
+      style.height = `${st.height}px`;
+      style.overflow = st.overflow;
+    }
+    if (st.textAlign && st.textAlign !== 'left') style.textAlign = st.textAlign;
+    return style;
+  };
+
+  const getSectionGridStyle = (key: HomeSectionKey): React.CSSProperties => {
+    const section = (settings.section_order || []).find(s => s.key === key);
+    const st = section?.styles || DEFAULT_SECTION_STYLE;
+    const cols = isMobile ? st.columnsMobile : st.columns;
+    return {
+      display: cols > 1 ? 'grid' : undefined,
+      gridTemplateColumns: cols > 1 ? `repeat(${cols}, 1fr)` : undefined,
+      gap: `${st.gap}px`,
+    };
+  };
 
   const { data: notices = [] } = useQuery({
     queryKey: ['home-notices'],
