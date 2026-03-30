@@ -881,8 +881,82 @@ const AdminStaffForm = () => {
       {/* Hidden printable content */}
       <div className="hidden">
         <div ref={printRef}>
-          <div className="print-header">
-            <h2>{bn ? 'কর্মী/শিক্ষক তথ্য ফরম' : 'Staff/Teacher Information Form'}</h2>
+          <PrintableForm />
+        </div>
+      </div>
+
+      {/* Print Preview Dialog */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{bn ? 'ফরম প্রিভিউ' : 'Form Preview'}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-1" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="border border-border rounded-lg bg-white text-black p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif", fontSize: '11pt' }}>
+            <style dangerouslySetInnerHTML={{ __html: `
+              .preview-form .form-header { text-align: center; border-bottom: 3px double #1a5c2e; padding-bottom: 10px; margin-bottom: 12px; position: relative; }
+              .preview-form .form-header h1 { font-size: 16pt; font-weight: 700; margin: 4px 0 2px; color: #1a5c2e; }
+              .preview-form .form-header h2 { font-size: 12pt; font-weight: 600; color: #333; margin: 2px 0; }
+              .preview-form .form-header p { font-size: 9pt; color: #555; }
+              .preview-form .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 6px; font-size: 13pt; font-weight: 700; margin: 10px 0; border-radius: 2px; }
+              .preview-form .photo-area { position: absolute; top: 0; right: 0; width: 90px; height: 110px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+              .preview-form .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+              .preview-form .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 5px; }
+              .preview-form .section { margin: 10px 0; }
+              .preview-form .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
+              .preview-form .form-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+              .preview-form .form-table td { border: 1px solid #ccc; padding: 4px 8px; font-size: 10pt; vertical-align: top; }
+              .preview-form .form-table .label { background: #f5f5f5; font-weight: 600; width: 28%; color: #333; white-space: nowrap; }
+              .preview-form .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+              .preview-form .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; font-weight: 600; text-align: left; }
+              .preview-form .doc-table td { border: 1px solid #ccc; padding: 3px 8px; font-size: 9pt; }
+              .preview-form .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 10px; }
+              .preview-form .sig-box { text-align: center; min-width: 180px; }
+              .preview-form .sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 35px; }
+              .preview-form .sig-name { font-weight: 600; font-size: 10pt; }
+              .preview-form .sig-position { font-size: 9pt; color: #555; }
+              .preview-form .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
+            `}} />
+            <div className="preview-form">
+              <PrintableForm />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>{previewDoc?.type} - {previewDoc?.name}</DialogTitle></DialogHeader>
+          <div className="flex justify-center p-4">
+            {previewDoc?.name?.toLowerCase().endsWith('.pdf') ? (
+              <embed
+                src={previewDoc.url + '#toolbar=1&navpanes=0'}
+                type="application/pdf"
+                className="w-full h-[500px] border border-border rounded"
+              />
+            ) : (
+              <img src={previewDoc?.url} alt={previewDoc?.name} className="max-w-full max-h-[500px] object-contain rounded" />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            {previewDoc?.name?.toLowerCase().endsWith('.pdf') && (
+              <Button variant="outline" asChild>
+                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(previewDoc?.url || '')}&embedded=true`} target="_blank" rel="noopener noreferrer" className="gap-2"><Eye className="w-4 h-4" /> {bn ? 'Google এ দেখুন' : 'View in Google'}</a>
+              </Button>
+            )}
+            <Button variant="outline" asChild>
+              <a href={previewDoc?.url} download={previewDoc?.name} className="gap-2"><Download className="w-4 h-4" /> {bn ? 'ডাউনলোড' : 'Download'}</a>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
           </div>
           <div style={{ position: 'relative' }}>
             {photoUrl && (
