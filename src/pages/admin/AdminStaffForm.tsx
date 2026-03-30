@@ -8,19 +8,44 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
-import { useState } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
 const formatAddress = (addr: AddressData) => {
   return [addr.village, addr.postOffice, addr.union, addr.upazila, addr.district, addr.division].filter(Boolean).join(', ');
 };
+
+interface DocFile {
+  id: string;
+  type: string;
+  name: string;
+  url: string;
+  file?: File;
+}
+
+const RELIGIONS = [
+  { value: 'islam', bn: 'ইসলাম', en: 'Islam' },
+  { value: 'hinduism', bn: 'হিন্দু', en: 'Hinduism' },
+  { value: 'christianity', bn: 'খ্রিস্টান', en: 'Christianity' },
+  { value: 'buddhism', bn: 'বৌদ্ধ', en: 'Buddhism' },
+  { value: 'other', bn: 'অন্যান্য', en: 'Other' },
+];
+
+const DOC_TYPES = [
+  { value: 'nid', bn: 'জাতীয় পরিচয়পত্র', en: 'NID' },
+  { value: 'birth_certificate', bn: 'জন্ম সনদ', en: 'Birth Certificate' },
+  { value: 'education_certificate', bn: 'শিক্ষা সনদ', en: 'Education Certificate' },
+  { value: 'citizenship_certificate', bn: 'নাগরিকত্ব সনদ', en: 'Citizenship Certificate' },
+  { value: 'other', bn: 'অন্যান্য', en: 'Other' },
+];
 
 const AdminStaffForm = () => {
   const { language } = useLanguage();
@@ -29,63 +54,104 @@ const AdminStaffForm = () => {
   const navigate = useNavigate();
   const { validate, validateAll } = useValidationRules('staff');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [sameAddress, setSameAddress] = useState(false);
-  const [parentSameAddr, setParentSameAddr] = useState(false);
-  const [guardianType, setGuardianType] = useState('');
-  const [permanentAddr, setPermanentAddr] = useState<AddressData>(emptyAddress);
-  const [presentAddr, setPresentAddr] = useState<AddressData>(emptyAddress);
-  const [parentPermAddr, setParentPermAddr] = useState<AddressData>(emptyAddress);
-  const [parentPresAddr, setParentPresAddr] = useState<AddressData>(emptyAddress);
-  const [guardianAddr, setGuardianAddr] = useState<AddressData>(emptyAddress);
-  const [identifierAddr, setIdentifierAddr] = useState<AddressData>(emptyAddress);
-  const [nid, setNid] = useState('');
-  const [nidError, setNidError] = useState('');
-  const [hasExperience, setHasExperience] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
-  // Form fields
+  // Section 1: Employee
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [salary, setSalary] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [mobileCode, setMobileCode] = useState('+880');
+  const [employmentType, setEmploymentType] = useState('');
   const [designation, setDesignation] = useState('');
+  const [residenceType, setResidenceType] = useState('');
   const [dob, setDob] = useState('');
   const [religion, setReligion] = useState('');
+  const [customReligion, setCustomReligion] = useState('');
+  const [nid, setNid] = useState('');
+  const [nidError, setNidError] = useState('');
   const [education, setEducation] = useState('');
   const [experience, setExperience] = useState('');
   const [prevInstitute, setPrevInstitute] = useState('');
-  const [email, setEmail] = useState('');
-  const [salary, setSalary] = useState('');
+  const [permanentAddr, setPermanentAddr] = useState<AddressData>(emptyAddress);
+  const [presentAddr, setPresentAddr] = useState<AddressData>(emptyAddress);
+  const [sameAddress, setSameAddress] = useState(false);
+
+  // Section 2: Parents
   const [fatherName, setFatherName] = useState('');
+  const [fatherMobile, setFatherMobile] = useState('');
+  const [fatherMobileCode, setFatherMobileCode] = useState('+880');
+  const [fatherNid, setFatherNid] = useState('');
+  const [fatherOccupation, setFatherOccupation] = useState('');
   const [motherName, setMotherName] = useState('');
+  const [motherMobile, setMotherMobile] = useState('');
+  const [motherMobileCode, setMotherMobileCode] = useState('+880');
+  const [motherNid, setMotherNid] = useState('');
+  const [motherOccupation, setMotherOccupation] = useState('');
+  const [parentPermAddr, setParentPermAddr] = useState<AddressData>(emptyAddress);
+  const [parentPresAddr, setParentPresAddr] = useState<AddressData>(emptyAddress);
+  const [parentSameAsStaff, setParentSameAsStaff] = useState(false);
+  const [parentPresSameAsPerm, setParentPresSameAsPerm] = useState(false);
 
-  const designationMap: Record<string, string> = {
-    head_teacher: 'প্রধান শিক্ষক',
-    asst_head_teacher: 'সহকারী প্রধান শিক্ষক',
-    asst_teacher: 'সহকারী শিক্ষক',
-    arabic_teacher: 'আরবি শিক্ষক',
-    hifz_teacher: 'হিফয শিক্ষক',
-    quran_teacher: 'কোরআন শিক্ষক',
-    bangla_teacher: 'বাংলা শিক্ষক',
-    english_teacher: 'ইংরেজি শিক্ষক',
-    math_teacher: 'গণিত শিক্ষক',
-    office_asst: 'অফিস সহকারী',
-    peon: 'পিয়ন',
-    cook: 'রান্না বিভাগ',
-    guard: 'নিরাপত্তা প্রহরী',
-    other: 'অন্যান্য',
-  };
+  // Section 3: Guardian
+  const [guardianType, setGuardianType] = useState('');
+  const [guardianName, setGuardianName] = useState('');
+  const [guardianRelation, setGuardianRelation] = useState('');
+  const [guardianMobile, setGuardianMobile] = useState('');
+  const [guardianMobileCode, setGuardianMobileCode] = useState('+880');
+  const [guardianNid, setGuardianNid] = useState('');
+  const [guardianPermAddr, setGuardianPermAddr] = useState<AddressData>(emptyAddress);
+  const [guardianPresAddr, setGuardianPresAddr] = useState<AddressData>(emptyAddress);
+  const [guardianSameAddr, setGuardianSameAddr] = useState(false);
 
-  const validateNid = (val: string) => {
+  // Section 4: Identifier
+  const [identifierName, setIdentifierName] = useState('');
+  const [identifierRelation, setIdentifierRelation] = useState('');
+  const [identifierMobile, setIdentifierMobile] = useState('');
+  const [identifierMobileCode, setIdentifierMobileCode] = useState('+880');
+  const [identifierNid, setIdentifierNid] = useState('');
+  const [identifierAddr, setIdentifierAddr] = useState<AddressData>(emptyAddress);
+
+  // Section 5: Documents
+  const [documents, setDocuments] = useState<DocFile[]>([]);
+  const [docType, setDocType] = useState('');
+  const [customDocType, setCustomDocType] = useState('');
+  const [previewDoc, setPreviewDoc] = useState<DocFile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Print signatures
+  const [principalName, setPrincipalName] = useState('');
+  const [principalPosition, setPrincipalPosition] = useState(bn ? 'অধ্যক্ষ' : 'Principal');
+  const [otherSignName, setOtherSignName] = useState('');
+  const [otherSignPosition, setOtherSignPosition] = useState('');
+
+  const designations = [
+    { value: 'head_teacher', bn: 'প্রধান শিক্ষক', en: 'Head Teacher' },
+    { value: 'asst_head_teacher', bn: 'সহকারী প্রধান শিক্ষক', en: 'Asst. Head Teacher' },
+    { value: 'asst_teacher', bn: 'সহকারী শিক্ষক', en: 'Asst. Teacher' },
+    { value: 'arabic_teacher', bn: 'আরবি শিক্ষক', en: 'Arabic Teacher' },
+    { value: 'hifz_teacher', bn: 'হিফয শিক্ষক', en: 'Hifz Teacher' },
+    { value: 'quran_teacher', bn: 'কোরআন শিক্ষক', en: 'Quran Teacher' },
+    { value: 'bangla_teacher', bn: 'বাংলা শিক্ষক', en: 'Bengali Teacher' },
+    { value: 'english_teacher', bn: 'ইংরেজি শিক্ষক', en: 'English Teacher' },
+    { value: 'math_teacher', bn: 'গণিত শিক্ষক', en: 'Math Teacher' },
+    { value: 'office_asst', bn: 'অফিস সহকারী', en: 'Office Assistant' },
+    { value: 'peon', bn: 'পিয়ন', en: 'Peon' },
+    { value: 'cook', bn: 'রান্না বিভাগ', en: 'Cook' },
+    { value: 'guard', bn: 'নিরাপত্তা প্রহরী', en: 'Security Guard' },
+    { value: 'other', bn: 'অন্যান্য', en: 'Other' },
+  ];
+
+  const validateNid = (val: string, setter: (v: string) => void, errorSetter?: (v: string) => void) => {
     const cleaned = val.replace(/\D/g, '');
-    setNid(cleaned);
-    // Check DB validation rules first
-    const dbError = validate('nid', cleaned);
-    if (dbError) {
-      setNidError(dbError);
-    } else if (cleaned.length > 0 && cleaned.length !== 10 && cleaned.length !== 17) {
-      setNidError(bn ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits');
-    } else {
-      setNidError('');
+    setter(cleaned);
+    if (errorSetter) {
+      if (cleaned.length > 0 && cleaned.length !== 10 && cleaned.length !== 17) {
+        errorSetter(bn ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits');
+      } else {
+        errorSetter('');
+      }
     }
   };
 
@@ -108,29 +174,116 @@ const AdminStaffForm = () => {
     );
   };
 
-  // Photo upload handled by PhotoUpload component
+  // Document upload
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(bn ? 'ফাইল সাইজ ৫MB এর বেশি হতে পারবে না' : 'File size must be under 5MB');
+      return;
+    }
+    const selectedType = docType === 'other' ? customDocType : (DOC_TYPES.find(d => d.value === docType)?.[bn ? 'bn' : 'en'] || docType);
+    if (!selectedType) {
+      toast.error(bn ? 'ডকুমেন্টের ধরন নির্বাচন করুন' : 'Select document type');
+      return;
+    }
 
+    const ext = file.name.split('.').pop();
+    const path = `staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from('photos').upload(path, file);
+    if (error) { toast.error(error.message); return; }
+    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+
+    setDocuments(prev => [...prev, {
+      id: crypto.randomUUID(),
+      type: selectedType,
+      name: file.name,
+      url: urlData.publicUrl,
+    }]);
+    setDocType('');
+    setCustomDocType('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast.success(bn ? 'ডকুমেন্ট আপলোড হয়েছে' : 'Document uploaded');
+  };
+
+  const removeDoc = (id: string) => {
+    setDocuments(prev => prev.filter(d => d.id !== id));
+  };
+
+  // Submit
   const addMutation = useMutation({
     mutationFn: async () => {
       const fullName = `${firstName} ${lastName}`.trim();
-      const addr = formatAddress(permanentAddr);
+      const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || designation;
+
+      const staffData = {
+        first_name: firstName,
+        last_name: lastName,
+        mobile_code: mobileCode,
+        employment_type: employmentType,
+        residence_type: residenceType,
+        religion: religion === 'other' ? customReligion : religion,
+        education,
+        experience,
+        previous_institute: prevInstitute,
+        permanent_address: permanentAddr,
+        present_address: sameAddress ? permanentAddr : presentAddr,
+        parents: {
+          father: { name: fatherName, mobile: fatherMobile, mobile_code: fatherMobileCode, nid: fatherNid, occupation: fatherOccupation },
+          mother: { name: motherName, mobile: motherMobile, mobile_code: motherMobileCode, nid: motherNid, occupation: motherOccupation },
+          permanent_address: parentSameAsStaff ? permanentAddr : parentPermAddr,
+          present_address: parentSameAsStaff ? (sameAddress ? permanentAddr : presentAddr) : (parentPresSameAsPerm ? (parentSameAsStaff ? permanentAddr : parentPermAddr) : parentPresAddr),
+        },
+        guardian: {
+          type: guardianType,
+          name: guardianType === 'other' ? guardianName : (guardianType === 'father' ? fatherName : motherName),
+          relation: guardianType === 'other' ? guardianRelation : (guardianType === 'father' ? (bn ? 'পিতা' : 'Father') : (bn ? 'মাতা' : 'Mother')),
+          mobile: guardianType === 'other' ? guardianMobile : (guardianType === 'father' ? fatherMobile : motherMobile),
+          mobile_code: guardianType === 'other' ? guardianMobileCode : (guardianType === 'father' ? fatherMobileCode : motherMobileCode),
+          nid: guardianType === 'other' ? guardianNid : (guardianType === 'father' ? fatherNid : motherNid),
+          permanent_address: guardianSameAddr ? permanentAddr : guardianPermAddr,
+          present_address: guardianSameAddr ? (sameAddress ? permanentAddr : presentAddr) : guardianPresAddr,
+        },
+        identifier: {
+          name: identifierName,
+          relation: identifierRelation,
+          mobile: identifierMobile,
+          mobile_code: identifierMobileCode,
+          nid: identifierNid,
+          address: identifierAddr,
+        },
+        documents: documents.map(d => ({ type: d.type, name: d.name, url: d.url })),
+        signatures: {
+          principal: { name: principalName, position: principalPosition },
+          other: { name: otherSignName, position: otherSignPosition },
+        },
+      };
+
       const { error } = await supabase.from('staff').insert({
         name_bn: fullName,
         name_en: fullName,
-        designation: designationMap[designation] || designation,
-        phone: mobile || null,
-        email: email || null,
+        designation: desigLabel,
+        phone: mobile ? `${mobileCode}${mobile}` : null,
         department: designation?.includes('teacher') ? 'শিক্ষা বিভাগ' : 'প্রশাসন',
-        address: addr || null,
+        address: formatAddress(permanentAddr) || null,
         salary: salary ? parseFloat(salary) : null,
         joining_date: new Date().toISOString().split('T')[0],
         photo_url: photoUrl || null,
+        date_of_birth: dob || null,
+        religion: religion === 'other' ? customReligion : religion || null,
+        nid: nid || null,
+        education: education || null,
+        employment_type: employmentType || null,
+        residence_type: residenceType || null,
+        experience: experience || null,
+        previous_institute: prevInstitute || null,
+        staff_data: staffData as any,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast.success(language === 'bn' ? 'কর্মী/শিক্ষক সফলভাবে যোগ হয়েছে' : 'Staff/Teacher added successfully');
+      toast.success(bn ? 'কর্মী/শিক্ষক সফলভাবে যোগ হয়েছে' : 'Staff/Teacher added successfully');
       navigate('/admin/staff');
     },
     onError: (e: any) => toast.error(e.message || 'Error saving staff'),
@@ -138,22 +291,76 @@ const AdminStaffForm = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Run DB validation rules
-    const allValues: Record<string, any> = {
-      first_name: firstName, last_name: lastName, mobile, designation,
-      email, salary, nid, dob, education, experience,
-    };
-    const dbErrors = validateAll(allValues);
-    
-    if (!firstName.trim()) dbErrors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name is required';
-    if (!designation) dbErrors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
-    
-    if (Object.keys(dbErrors).length > 0) {
-      setFieldErrors(dbErrors);
-      toast.error(Object.values(dbErrors)[0]);
+    const errors: Record<string, string> = {};
+
+    if (!firstName.trim()) errors['first_name'] = bn ? 'প্রথম নাম আবশ্যক' : 'First name required';
+    if (!lastName.trim()) errors['last_name'] = bn ? 'শেষ নাম আবশ্যক' : 'Last name required';
+    if (!mobile.trim()) errors['mobile'] = bn ? 'মোবাইল নম্বর আবশ্যক' : 'Mobile required';
+    if (!employmentType) errors['employment_type'] = bn ? 'চাকরির ধরন নির্বাচন করুন' : 'Select employment type';
+    if (!designation) errors['designation'] = bn ? 'পদবী নির্বাচন করুন' : 'Select designation';
+    if (!residenceType) errors['residence_type'] = bn ? 'আবাসিক ধরন নির্বাচন করুন' : 'Select residence type';
+    if (!dob) errors['dob'] = bn ? 'জন্ম তারিখ আবশ্যক' : 'Date of birth required';
+    if (!religion) errors['religion'] = bn ? 'ধর্ম নির্বাচন করুন' : 'Select religion';
+    if (!nid || (nid.length !== 10 && nid.length !== 17)) errors['nid'] = bn ? 'NID ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits';
+    if (!education.trim()) errors['education'] = bn ? 'শিক্ষাগত যোগ্যতা আবশ্যক' : 'Education required';
+    if (experience && !prevInstitute.trim()) errors['prev_institute'] = bn ? 'পূর্ববর্তী কর্মস্থল আবশ্যক' : 'Previous institute required';
+    if (!salary) errors['salary'] = bn ? 'বেতন আবশ্যক' : 'Salary required';
+
+    // Parents validation
+    if (!fatherName.trim()) errors['father_name'] = bn ? 'পিতার নাম আবশ্যক' : 'Father name required';
+    if (!fatherNid && !motherNid) errors['parent_nid'] = bn ? 'অন্তত একটি NID আবশ্যক' : 'At least one parent NID required';
+    if (!fatherMobile && !motherMobile) errors['parent_mobile'] = bn ? 'অন্তত একটি মোবাইল নম্বর আবশ্যক' : 'At least one parent mobile required';
+    if (!fatherOccupation.trim()) errors['father_occupation'] = bn ? 'পিতার পেশা আবশ্যক' : 'Father occupation required';
+
+    // Guardian validation
+    if (!guardianType) errors['guardian_type'] = bn ? 'অভিভাবক নির্বাচন করুন' : 'Select guardian';
+    if (guardianType === 'other') {
+      if (!guardianName.trim()) errors['guardian_name'] = bn ? 'অভিভাবকের নাম আবশ্যক' : 'Guardian name required';
+      if (!guardianRelation.trim()) errors['guardian_relation'] = bn ? 'সম্পর্ক আবশ্যক' : 'Relation required';
+      if (!guardianMobile.trim()) errors['guardian_mobile'] = bn ? 'মোবাইল আবশ্যক' : 'Mobile required';
+      if (!guardianNid || (guardianNid.length !== 10 && guardianNid.length !== 17)) errors['guardian_nid'] = bn ? 'NID ১০/১৭ ডিজিট হতে হবে' : 'NID 10/17 digits required';
+    }
+
+    // Identifier validation
+    if (!identifierName.trim()) errors['identifier_name'] = bn ? 'পরিচয়দাতার নাম আবশ্যক' : 'Identifier name required';
+    if (!identifierRelation.trim()) errors['identifier_relation'] = bn ? 'সম্পর্ক আবশ্যক' : 'Relation required';
+    if (!identifierMobile.trim()) errors['identifier_mobile'] = bn ? 'মোবাইল আবশ্যক' : 'Mobile required';
+    if (!identifierNid || (identifierNid.length !== 10 && identifierNid.length !== 17)) errors['identifier_nid'] = bn ? 'NID ১০/১৭ ডিজিট হতে হবে' : 'NID 10/17 digits required';
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error(Object.values(errors)[0]);
       return;
     }
     addMutation.mutate();
+  };
+
+  const handlePrint = () => {
+    const content = printRef.current;
+    if (!content) return;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<html><head><title>Staff Form</title><style>
+      body { font-family: 'SolaimanLipi', Arial, sans-serif; padding: 20px; font-size: 14px; color: #000; }
+      .print-header { text-align: center; margin-bottom: 20px; }
+      .photo-box { width: 100px; height: 120px; border: 1px solid #000; float: right; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+      .section { margin: 15px 0; border-top: 2px solid #333; padding-top: 10px; }
+      .section h3 { font-size: 16px; margin-bottom: 8px; }
+      .field-row { display: flex; gap: 20px; margin: 4px 0; flex-wrap: wrap; }
+      .field { flex: 1; min-width: 200px; }
+      .field label { font-weight: bold; }
+      .signatures { margin-top: 60px; display: flex; justify-content: space-between; }
+      .sig-box { text-align: center; min-width: 200px; }
+      .sig-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; }
+      table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+      td, th { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+      @media print { body { margin: 0; } }
+    </style></head><body>`);
+    win.document.write(content.innerHTML);
+    win.document.write('</body></html>');
+    win.document.close();
+    setTimeout(() => win.print(), 500);
   };
 
   return (
@@ -161,201 +368,493 @@ const AdminStaffForm = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-display font-bold text-foreground">
-            {language === 'bn' ? 'নতুন কর্মী/শিক্ষক যোগ করুন' : 'Add New Staff/Teacher'}
+            {bn ? 'নতুন কর্মী/শিক্ষক যোগ করুন' : 'Add New Staff/Teacher'}
           </h1>
+          <Button variant="outline" onClick={() => navigate('/admin/staff')}>{bn ? 'ফিরে যান' : 'Back'}</Button>
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          {/* Employee Details */}
+          {/* ========== SECTION 1: Employee Details ========== */}
           <div className="card-elevated p-6">
-            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b">
-              {language === 'bn' ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? '১. ব্যক্তিগত তথ্য (Employee Details)' : '1. Employee Details'}
             </h2>
             <div className="flex flex-col sm:flex-row gap-6 mb-6">
-              <PhotoUpload
-                value={photoUrl}
-                onChange={setPhotoUrl}
-                folder="staff"
-              />
+              <PhotoUpload value={photoUrl} onChange={setPhotoUrl} folder="staff" />
               <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
+                  <Label>{bn ? 'বেতন (টাকা)' : 'Salary (BDT)'} <span className="text-destructive">*</span></Label>
+                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
+                  <FieldError field="salary" />
+                </div>
+                <div>
                   <Label>{bn ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} required value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
+                  <Input className={`bg-background mt-1 ${fieldErrors['first_name'] ? 'border-destructive' : ''}`} value={firstName} onChange={e => handleFieldChange('first_name', e.target.value, setFirstName)} />
                   <FieldError field="first_name" />
                 </div>
                 <div>
                   <Label>{bn ? 'শেষ নাম' : 'Last Name'} <span className="text-destructive">*</span></Label>
-                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} required value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
+                  <Input className={`bg-background mt-1 ${fieldErrors['last_name'] ? 'border-destructive' : ''}`} value={lastName} onChange={e => handleFieldChange('last_name', e.target.value, setLastName)} />
                   <FieldError field="last_name" />
                 </div>
-                <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} required />
+                <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={mobile} countryCode={mobileCode} onChange={(p, c) => { setMobile(p); setMobileCode(c); }} />
                 <div>
-                  <Label>{language === 'bn' ? 'পদবী' : 'Designation'} <span className="text-destructive">*</span></Label>
-                  <Select value={designation} onValueChange={setDesignation}>
-                    <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                  <Label>{bn ? 'চাকরির ধরন' : 'Employment Type'} <span className="text-destructive">*</span></Label>
+                  <Select value={employmentType} onValueChange={setEmploymentType}>
+                    <SelectTrigger className={`bg-background mt-1 ${fieldErrors['employment_type'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="head_teacher">{language === 'bn' ? 'প্রধান শিক্ষক' : 'Head Teacher'}</SelectItem>
-                      <SelectItem value="asst_head_teacher">{language === 'bn' ? 'সহকারী প্রধান শিক্ষক' : 'Asst. Head Teacher'}</SelectItem>
-                      <SelectItem value="asst_teacher">{language === 'bn' ? 'সহকারী শিক্ষক' : 'Asst. Teacher'}</SelectItem>
-                      <SelectItem value="arabic_teacher">{language === 'bn' ? 'আরবি শিক্ষক' : 'Arabic Teacher'}</SelectItem>
-                      <SelectItem value="hifz_teacher">{language === 'bn' ? 'হিফয শিক্ষক' : 'Hifz Teacher'}</SelectItem>
-                      <SelectItem value="quran_teacher">{language === 'bn' ? 'কোরআন শিক্ষক' : 'Quran Teacher'}</SelectItem>
-                      <SelectItem value="bangla_teacher">{language === 'bn' ? 'বাংলা শিক্ষক' : 'Bengali Teacher'}</SelectItem>
-                      <SelectItem value="english_teacher">{language === 'bn' ? 'ইংরেজি শিক্ষক' : 'English Teacher'}</SelectItem>
-                      <SelectItem value="math_teacher">{language === 'bn' ? 'গণিত শিক্ষক' : 'Math Teacher'}</SelectItem>
-                      <SelectItem value="office_asst">{language === 'bn' ? 'অফিস সহকারী' : 'Office Assistant'}</SelectItem>
-                      <SelectItem value="peon">{language === 'bn' ? 'পিয়ন' : 'Peon'}</SelectItem>
-                      <SelectItem value="cook">{language === 'bn' ? 'রান্না বিভাগ' : 'Cook'}</SelectItem>
-                      <SelectItem value="guard">{language === 'bn' ? 'নিরাপত্তা প্রহরী' : 'Security Guard'}</SelectItem>
-                      <SelectItem value="other">{language === 'bn' ? 'অন্যান্য' : 'Other'}</SelectItem>
+                      <SelectItem value="full_time">{bn ? 'পূর্ণকালীন' : 'Full Time'}</SelectItem>
+                      <SelectItem value="part_time">{bn ? 'খণ্ডকালীন' : 'Part Time'}</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FieldError field="employment_type" />
                 </div>
                 <div>
-                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                  <Input type="email" className={`bg-background mt-1 ${fieldErrors['email'] ? 'border-destructive' : ''}`} value={email} onChange={e => handleFieldChange('email', e.target.value, setEmail)} />
-                  <FieldError field="email" />
+                  <Label>{bn ? 'পদবী' : 'Designation'} <span className="text-destructive">*</span></Label>
+                  <Select value={designation} onValueChange={setDesignation}>
+                    <SelectTrigger className={`bg-background mt-1 ${fieldErrors['designation'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {designations.map(d => (
+                        <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldError field="designation" />
                 </div>
                 <div>
-                  <Label>{bn ? 'বেতন (টাকা)' : 'Salary (BDT)'}</Label>
-                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
-                  <FieldError field="salary" />
+                  <Label>{bn ? 'আবাসিক ধরন' : 'Residential Status'} <span className="text-destructive">*</span></Label>
+                  <Select value={residenceType} onValueChange={setResidenceType}>
+                    <SelectTrigger className={`bg-background mt-1 ${fieldErrors['residence_type'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="residential">{bn ? 'আবাসিক' : 'Residential'}</SelectItem>
+                      <SelectItem value="non_residential">{bn ? 'অনাবাসিক' : 'Non-Residential'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FieldError field="residence_type" />
+                </div>
+                <div>
+                  <Label>{bn ? 'জন্ম তারিখ' : 'Date of Birth'} <span className="text-destructive">*</span></Label>
+                  <Input type="date" className={`bg-background mt-1 ${fieldErrors['dob'] ? 'border-destructive' : ''}`} value={dob} onChange={e => { setDob(e.target.value); setFieldErrors(p => { const n = {...p}; delete n['dob']; return n; }); }} />
+                  <FieldError field="dob" />
+                </div>
+                <div>
+                  <Label>{bn ? 'ধর্ম' : 'Religion'} <span className="text-destructive">*</span></Label>
+                  <Select value={religion} onValueChange={setReligion}>
+                    <SelectTrigger className={`bg-background mt-1 ${fieldErrors['religion'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {RELIGIONS.map(r => <SelectItem key={r.value} value={r.value}>{bn ? r.bn : r.en}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {religion === 'other' && <Input className="bg-background mt-2" placeholder={bn ? 'ধর্মের নাম লিখুন' : 'Type religion'} value={customReligion} onChange={e => setCustomReligion(e.target.value)} />}
+                  <FieldError field="religion" />
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox id="staffResident" />
-                  <Label htmlFor="staffResident">{language === 'bn' ? 'আবাসিক' : 'Residential'}</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox id="staffNonResident" />
-                  <Label htmlFor="staffNonResident">{language === 'bn' ? 'অনাবাসিক' : 'Non-Residential'}</Label>
-                </div>
-              </div>
-              <div>
-                <Label>{language === 'bn' ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
-                <Input type="date" className="bg-background mt-1" value={dob} onChange={e => setDob(e.target.value)} />
-              </div>
-              <div>
-                <Label>{language === 'bn' ? 'ধর্ম' : 'Religion'}</Label>
-                <Input className="bg-background mt-1" value={religion} onChange={e => setReligion(e.target.value)} />
-              </div>
-              <div>
-                <Label>{language === 'bn' ? 'NID (১০/১৭ ডিজিট) বা জন্ম নিবন্ধন (১৭ ডিজিট)' : 'NID (10/17) or Birth Reg (17)'} <span className="text-destructive">*</span></Label>
-                <Input className="bg-background mt-1" maxLength={17} value={nid} onChange={(e) => validateNid(e.target.value)} required />
-                {nidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {nidError}</p>}
-              </div>
-              <div>
-                <Label>{language === 'bn' ? 'শিক্ষাগত যোগ্যতা' : 'Education Qualification'}</Label>
-                <Input className="bg-background mt-1" value={education} onChange={e => setEducation(e.target.value)} />
-              </div>
-              <div>
-                <Label>{language === 'bn' ? 'অভিজ্ঞতা' : 'Experience'}</Label>
-                <Input className="bg-background mt-1" value={experience} onChange={(e) => { setExperience(e.target.value); setHasExperience(e.target.value.length > 0); }} />
-              </div>
-              {hasExperience && (
-                <div className="sm:col-span-2">
-                  <Label>{language === 'bn' ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Job Institute'} <span className="text-destructive">*</span></Label>
-                  <Input className="bg-background mt-1" required value={prevInstitute} onChange={e => setPrevInstitute(e.target.value)} />
-                </div>
-              )}
             </div>
 
-            <div className="mt-6">
-              <AddressFields label={language === 'bn' ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />
+            <div className="border-t border-border pt-4 mb-4">
+              <h3 className="text-md font-semibold text-foreground mb-3">{bn ? 'পরিচিতি (Identity)' : 'Identity'}</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{bn ? 'NID (১০/১৭ ডিজিট) বা জন্ম নিবন্ধন (১৭ ডিজিট)' : 'NID (10/17) or Birth Reg (17)'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['nid'] || nidError ? 'border-destructive' : ''}`} maxLength={17} value={nid} onChange={e => validateNid(e.target.value, setNid, setNidError)} />
+                  {nidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {nidError}</p>}
+                  <FieldError field="nid" />
+                </div>
+                <div>
+                  <Label>{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education Qualification'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['education'] ? 'border-destructive' : ''}`} value={education} onChange={e => handleFieldChange('education', e.target.value, setEducation)} />
+                  <FieldError field="education" />
+                </div>
+                <div>
+                  <Label>{bn ? 'অভিজ্ঞতা' : 'Experience'}</Label>
+                  <Input className="bg-background mt-1" value={experience} onChange={e => setExperience(e.target.value)} />
+                </div>
+                {experience && (
+                  <div>
+                    <Label>{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Job Institute'} <span className="text-destructive">*</span></Label>
+                    <Input className={`bg-background mt-1 ${fieldErrors['prev_institute'] ? 'border-destructive' : ''}`} value={prevInstitute} onChange={e => handleFieldChange('prev_institute', e.target.value, setPrevInstitute)} />
+                    <FieldError field="prev_institute" />
+                  </div>
+                )}
+              </div>
             </div>
+
+            <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={setPermanentAddr} />
             <div className="mt-4 flex items-center gap-2">
-              <Checkbox id="staffSameAddr" checked={sameAddress} onCheckedChange={(v) => { setSameAddress(!!v); if (v) setPresentAddr({ ...permanentAddr }); }} />
-              <Label htmlFor="staffSameAddr">{language === 'bn' ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
+              <Checkbox id="sameAddr" checked={sameAddress} onCheckedChange={(v) => { setSameAddress(!!v); if (v) setPresentAddr({ ...permanentAddr }); }} />
+              <Label htmlFor="sameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ী ঠিকানার মতো' : 'Present same as permanent'}</Label>
             </div>
             {!sameAddress && (
               <div className="mt-4">
-                <AddressFields label={language === 'bn' ? 'বর্তমান ঠিকানা' : 'Present Address'} value={presentAddr} onChange={setPresentAddr} />
+                <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={presentAddr} onChange={setPresentAddr} />
               </div>
             )}
           </div>
 
-          {/* Parents */}
+          {/* ========== SECTION 2: Parents Details ========== */}
           <div className="card-elevated p-6">
-            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b">
-              {language === 'bn' ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? '২. পিতা-মাতার তথ্য (Parents Details)' : '2. Parents Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>{language === 'bn' ? 'পিতার নাম' : 'Father Name'}</Label><Input className="bg-background mt-1" value={fatherName} onChange={e => setFatherName(e.target.value)} /></div>
-              <PhoneInput label={language === 'bn' ? 'পিতার মোবাইল' : 'Father Mobile'} />
-              <div><Label>{language === 'bn' ? 'পিতার NID' : 'Father NID'}</Label><Input className="bg-background mt-1" maxLength={17} /></div>
-              <div><Label>{language === 'bn' ? 'পিতার পেশা' : 'Father Occupation'}</Label><Input className="bg-background mt-1" /></div>
-              <div><Label>{language === 'bn' ? 'মাতার নাম' : 'Mother Name'}</Label><Input className="bg-background mt-1" value={motherName} onChange={e => setMotherName(e.target.value)} /></div>
-              <PhoneInput label={language === 'bn' ? 'মাতার মোবাইল' : 'Mother Mobile'} />
-              <div><Label>{language === 'bn' ? 'মাতার NID' : 'Mother NID'}</Label><Input className="bg-background mt-1" maxLength={17} /></div>
-              <div><Label>{language === 'bn' ? 'মাতার পেশা' : 'Mother Occupation'}</Label><Input className="bg-background mt-1" /></div>
+              <div>
+                <Label>{bn ? 'পিতার নাম' : 'Father Name'} <span className="text-destructive">*</span></Label>
+                <Input className={`bg-background mt-1 ${fieldErrors['father_name'] ? 'border-destructive' : ''}`} value={fatherName} onChange={e => handleFieldChange('father_name', e.target.value, setFatherName)} />
+                <FieldError field="father_name" />
+              </div>
+              <PhoneInput label={bn ? 'পিতার মোবাইল' : 'Father Mobile'} required value={fatherMobile} countryCode={fatherMobileCode} onChange={(p, c) => { setFatherMobile(p); setFatherMobileCode(c); }} />
+              <div>
+                <Label>{bn ? 'পিতার NID' : 'Father NID'} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" maxLength={17} value={fatherNid} onChange={e => validateNid(e.target.value, setFatherNid)} />
+              </div>
+              <div>
+                <Label>{bn ? 'পিতার পেশা' : 'Father Occupation'} <span className="text-destructive">*</span></Label>
+                <Input className={`bg-background mt-1 ${fieldErrors['father_occupation'] ? 'border-destructive' : ''}`} value={fatherOccupation} onChange={e => handleFieldChange('father_occupation', e.target.value, setFatherOccupation)} />
+                <FieldError field="father_occupation" />
+              </div>
+              <div>
+                <Label>{bn ? 'মাতার নাম' : 'Mother Name'} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" value={motherName} onChange={e => setMotherName(e.target.value)} />
+              </div>
+              <PhoneInput label={bn ? 'মাতার মোবাইল' : 'Mother Mobile'} value={motherMobile} countryCode={motherMobileCode} onChange={(p, c) => { setMotherMobile(p); setMotherMobileCode(c); }} />
+              <div>
+                <Label>{bn ? 'মাতার NID' : 'Mother NID'}</Label>
+                <Input className="bg-background mt-1" maxLength={17} value={motherNid} onChange={e => validateNid(e.target.value, setMotherNid)} />
+              </div>
+              <div>
+                <Label>{bn ? 'মাতার পেশা' : 'Mother Occupation'}</Label>
+                <Input className="bg-background mt-1" value={motherOccupation} onChange={e => setMotherOccupation(e.target.value)} />
+              </div>
             </div>
-            <div className="mt-4 flex items-center gap-2">
-              <Checkbox id="parentSameAddr2" checked={parentSameAddr} onCheckedChange={(v) => { setParentSameAddr(!!v); if (v) { setParentPermAddr({ ...permanentAddr }); setParentPresAddr(sameAddress ? { ...permanentAddr } : { ...presentAddr }); }}} />
-              <Label htmlFor="parentSameAddr2">{language === 'bn' ? 'কর্মীর ঠিকানার মতো' : 'Same as employee address'}</Label>
+            {fieldErrors['parent_nid'] && <p className="text-xs text-destructive mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fieldErrors['parent_nid']}</p>}
+            {fieldErrors['parent_mobile'] && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fieldErrors['parent_mobile']}</p>}
+
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox id="parentSameStaff" checked={parentSameAsStaff} onCheckedChange={(v) => { setParentSameAsStaff(!!v); if (v) { setParentPermAddr({...permanentAddr}); setParentPresAddr(sameAddress ? {...permanentAddr} : {...presentAddr}); }}} />
+                <Label htmlFor="parentSameStaff">{bn ? 'কর্মীর ঠিকানার মতো (উভয়)' : 'Same as staff address (both)'}</Label>
+              </div>
             </div>
-            {!parentSameAddr && (
+            {!parentSameAsStaff && (
               <div className="mt-4 space-y-4">
-                <AddressFields label={language === 'bn' ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={parentPermAddr} onChange={setParentPermAddr} />
-                <AddressFields label={language === 'bn' ? 'বর্তমান ঠিকানা' : 'Present Address'} value={parentPresAddr} onChange={setParentPresAddr} />
+                <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={parentPermAddr} onChange={setParentPermAddr} />
+                <div className="flex items-center gap-2">
+                  <Checkbox id="parentPresSame" checked={parentPresSameAsPerm} onCheckedChange={(v) => { setParentPresSameAsPerm(!!v); if (v) setParentPresAddr({...parentPermAddr}); }} />
+                  <Label htmlFor="parentPresSame">{bn ? 'বর্তমান ঠিকানা স্থায়ীর মতো' : 'Present same as permanent'}</Label>
+                </div>
+                {!parentPresSameAsPerm && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={parentPresAddr} onChange={setParentPresAddr} />}
               </div>
             )}
           </div>
 
-          {/* Guardian */}
+          {/* ========== SECTION 3: Guardian Details ========== */}
           <div className="card-elevated p-6">
-            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b">
-              {language === 'bn' ? '৩. অভিভাবক তথ্য' : '3. Guardian Details'}
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? '৩. অভিভাবক তথ্য (Guardian Details)' : '3. Guardian Details'}
             </h2>
-            <Select value={guardianType} onValueChange={setGuardianType}>
-              <SelectTrigger className="bg-background"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="father">{language === 'bn' ? 'পিতা' : 'Father'}</SelectItem>
-                <SelectItem value="mother">{language === 'bn' ? 'মাতা' : 'Mother'}</SelectItem>
-                <SelectItem value="other">{language === 'bn' ? 'অন্যান্য' : 'Others'}</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label>{bn ? 'অভিভাবক' : 'Guardian'} <span className="text-destructive">*</span></Label>
+              <Select value={guardianType} onValueChange={setGuardianType}>
+                <SelectTrigger className={`bg-background mt-1 ${fieldErrors['guardian_type'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="father">{bn ? 'পিতা' : 'Father'}</SelectItem>
+                  <SelectItem value="mother">{bn ? 'মাতা' : 'Mother'}</SelectItem>
+                  <SelectItem value="other">{bn ? 'অন্যান্য' : 'Others'}</SelectItem>
+                </SelectContent>
+              </Select>
+              <FieldError field="guardian_type" />
+            </div>
             {(guardianType === 'father' || guardianType === 'mother') && (
-              <p className="mt-3 text-sm text-success flex items-center gap-2"><CheckCircle className="w-4 h-4" /> {language === 'bn' ? 'স্বয়ংক্রিয়ভাবে পূরণ হবে' : 'Will auto-fill'}</p>
+              <p className="mt-3 text-sm text-primary flex items-center gap-2 bg-primary/10 p-3 rounded-lg">
+                <CheckCircle className="w-4 h-4" /> {bn ? 'পিতা/মাতার তথ্য থেকে স্বয়ংক্রিয়ভাবে পূরণ হবে' : 'Will auto-fill from parent info'}
+              </p>
             )}
             {guardianType === 'other' && (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><Label>{language === 'bn' ? 'পূর্ণ নাম' : 'Full Name'}</Label><Input className="bg-background mt-1" /></div>
-                <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} />
-                <div><Label>{language === 'bn' ? 'সম্পর্ক' : 'Relation'}</Label><Input className="bg-background mt-1" /></div>
-                <div><Label>{language === 'bn' ? 'NID (১০/১৭)' : 'NID (10/17)'}</Label><Input className="bg-background mt-1" maxLength={17} /></div>
+                <div>
+                  <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['guardian_name'] ? 'border-destructive' : ''}`} value={guardianName} onChange={e => handleFieldChange('guardian_name', e.target.value, setGuardianName)} />
+                  <FieldError field="guardian_name" />
+                </div>
+                <div>
+                  <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['guardian_relation'] ? 'border-destructive' : ''}`} value={guardianRelation} onChange={e => handleFieldChange('guardian_relation', e.target.value, setGuardianRelation)} />
+                  <FieldError field="guardian_relation" />
+                </div>
+                <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={guardianMobile} countryCode={guardianMobileCode} onChange={(p, c) => { setGuardianMobile(p); setGuardianMobileCode(c); }} />
+                <div>
+                  <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
+                  <Input className={`bg-background mt-1 ${fieldErrors['guardian_nid'] ? 'border-destructive' : ''}`} maxLength={17} value={guardianNid} onChange={e => validateNid(e.target.value, setGuardianNid)} />
+                  <FieldError field="guardian_nid" />
+                </div>
                 <div className="sm:col-span-2">
-                  <AddressFields label={language === 'bn' ? 'ঠিকানা' : 'Address'} value={guardianAddr} onChange={setGuardianAddr} />
+                  <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={guardianPermAddr} onChange={setGuardianPermAddr} />
+                </div>
+                <div className="sm:col-span-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Checkbox id="guardSameAddr" checked={guardianSameAddr} onCheckedChange={(v) => { setGuardianSameAddr(!!v); if (v) setGuardianPresAddr({...guardianPermAddr}); }} />
+                    <Label htmlFor="guardSameAddr">{bn ? 'বর্তমান ঠিকানা স্থায়ীর মতো' : 'Present same as permanent'}</Label>
+                  </div>
+                  {!guardianSameAddr && <AddressFields label={bn ? 'বর্তমান ঠিকানা' : 'Present Address'} value={guardianPresAddr} onChange={setGuardianPresAddr} />}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Identifier */}
+          {/* ========== SECTION 4: Identifier Details ========== */}
           <div className="card-elevated p-6">
-            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b">
-              {language === 'bn' ? '৪. পরিচয়দাতার তথ্য' : '4. Identifier Details'}
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? '৪. পরিচয়দাতার তথ্য (Identifier Details)' : '4. Identifier Details'}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><Label>{language === 'bn' ? 'পূর্ণ নাম' : 'Full Name'}</Label><Input className="bg-background mt-1" /></div>
-              <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} />
-              <div><Label>{language === 'bn' ? 'সম্পর্ক' : 'Relation'}</Label><Input className="bg-background mt-1" /></div>
-              <div><Label>{language === 'bn' ? 'NID (১০/১৭)' : 'NID (10/17)'}</Label><Input className="bg-background mt-1" maxLength={17} /></div>
-              <div><Label>{language === 'bn' ? 'পেশা' : 'Occupation'}</Label><Input className="bg-background mt-1" /></div>
+              <div>
+                <Label>{bn ? 'পূর্ণ নাম' : 'Full Name'} <span className="text-destructive">*</span></Label>
+                <Input className={`bg-background mt-1 ${fieldErrors['identifier_name'] ? 'border-destructive' : ''}`} value={identifierName} onChange={e => handleFieldChange('identifier_name', e.target.value, setIdentifierName)} />
+                <FieldError field="identifier_name" />
+              </div>
+              <div>
+                <Label>{bn ? 'সম্পর্ক' : 'Relation'} <span className="text-destructive">*</span></Label>
+                <Input className={`bg-background mt-1 ${fieldErrors['identifier_relation'] ? 'border-destructive' : ''}`} value={identifierRelation} onChange={e => handleFieldChange('identifier_relation', e.target.value, setIdentifierRelation)} />
+                <FieldError field="identifier_relation" />
+              </div>
+              <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={identifierMobile} countryCode={identifierMobileCode} onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }} />
+              <div>
+                <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
+                <Input className={`bg-background mt-1 ${fieldErrors['identifier_nid'] ? 'border-destructive' : ''}`} maxLength={17} value={identifierNid} onChange={e => validateNid(e.target.value, setIdentifierNid)} />
+                <FieldError field="identifier_nid" />
+              </div>
               <div className="sm:col-span-2">
-                <AddressFields label={language === 'bn' ? 'ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
+                <AddressFields label={bn ? 'পূর্ণ ঠিকানা' : 'Full Address'} value={identifierAddr} onChange={setIdentifierAddr} />
               </div>
             </div>
           </div>
 
-          <Button type="submit" className="btn-primary-gradient w-full text-lg py-6" disabled={addMutation.isPending}>
-            {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-            {language === 'bn' ? 'কর্মী/শিক্ষক যোগ করুন' : 'Add Staff/Teacher'}
-          </Button>
+          {/* ========== SECTION 5: Document Upload ========== */}
+          <div className="card-elevated p-6">
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? '৫. ডকুমেন্ট আপলোড (Document Upload)' : '5. Document Upload'}
+            </h2>
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              <Select value={docType} onValueChange={setDocType}>
+                <SelectTrigger className="bg-background w-full sm:w-48"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
+                <SelectContent>
+                  {DOC_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {docType === 'other' && (
+                <Input className="bg-background sm:w-48" placeholder={bn ? 'ধরনের নাম লিখুন' : 'Type name'} value={customDocType} onChange={e => setCustomDocType(e.target.value)} />
+              )}
+              <input ref={fileInputRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleDocUpload} />
+              <Button type="button" variant="outline" onClick={() => { if (!docType) { toast.error(bn ? 'ধরন নির্বাচন করুন' : 'Select type first'); return; } fileInputRef.current?.click(); }} className="gap-2">
+                <Upload className="w-4 h-4" /> {bn ? 'আপলোড' : 'Upload'}
+              </Button>
+            </div>
+
+            {documents.length > 0 && (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-secondary/50">
+                    <tr>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground">#</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground">{bn ? 'ধরন' : 'Type'}</th>
+                      <th className="text-left px-4 py-2 text-xs font-semibold text-muted-foreground">{bn ? 'ফাইল নাম' : 'File Name'}</th>
+                      <th className="text-right px-4 py-2 text-xs font-semibold text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {documents.map((doc, i) => (
+                      <tr key={doc.id} className="hover:bg-secondary/20">
+                        <td className="px-4 py-2 text-sm">{i + 1}</td>
+                        <td className="px-4 py-2 text-sm font-medium">{doc.type}</td>
+                        <td className="px-4 py-2 text-sm text-muted-foreground">{doc.name}</td>
+                        <td className="px-4 py-2 text-right">
+                          <div className="flex gap-1 justify-end">
+                            <button type="button" onClick={() => setPreviewDoc(doc)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-foreground"><Eye className="w-4 h-4" /></button>
+                            <button type="button" onClick={() => removeDoc(doc.id)} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {documents.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">{bn ? 'কোনো ডকুমেন্ট আপলোড করা হয়নি' : 'No documents uploaded'}</p>
+            )}
+          </div>
+
+          {/* ========== Signature for Print ========== */}
+          <div className="card-elevated p-6">
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? 'স্বাক্ষর (প্রিন্ট/ডাউনলোডে দেখাবে)' : 'Signatures (shown in print/download)'}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>{bn ? 'অধ্যক্ষের নাম' : 'Principal Name'}</Label>
+                <Input className="bg-background mt-1" value={principalName} onChange={e => setPrincipalName(e.target.value)} />
+              </div>
+              <div>
+                <Label>{bn ? 'অধ্যক্ষের পদবী' : 'Principal Position'}</Label>
+                <Input className="bg-background mt-1" value={principalPosition} onChange={e => setPrincipalPosition(e.target.value)} />
+              </div>
+              <div>
+                <Label>{bn ? 'অন্য স্বাক্ষরকারীর নাম' : 'Other Signatory Name'}</Label>
+                <Input className="bg-background mt-1" value={otherSignName} onChange={e => setOtherSignName(e.target.value)} />
+              </div>
+              <div>
+                <Label>{bn ? 'অন্য স্বাক্ষরকারীর পদবী' : 'Other Signatory Position'}</Label>
+                <Input className="bg-background mt-1" value={otherSignPosition} onChange={e => setOtherSignPosition(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
+              {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
+              {bn ? 'কর্মী/শিক্ষক যোগ করুন' : 'Add Staff/Teacher'}
+            </Button>
+            <Button type="button" variant="outline" className="py-6 gap-2" onClick={handlePrint}>
+              <Printer className="w-5 h-5" /> {bn ? 'প্রিন্ট' : 'Print'}
+            </Button>
+          </div>
         </form>
       </div>
+
+      {/* Hidden printable content */}
+      <div className="hidden">
+        <div ref={printRef}>
+          <div className="print-header">
+            <h2>{bn ? 'কর্মী/শিক্ষক তথ্য ফরম' : 'Staff/Teacher Information Form'}</h2>
+          </div>
+          <div style={{ position: 'relative' }}>
+            {photoUrl && (
+              <div className="photo-box" style={{ position: 'absolute', top: 0, right: 0 }}>
+                <img src={photoUrl} alt="Photo" />
+              </div>
+            )}
+            <div className="section">
+              <h3>{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</h3>
+              <div className="field-row"><div className="field"><label>{bn ? 'নাম' : 'Name'}:</label> {firstName} {lastName}</div></div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'বেতন' : 'Salary'}:</label> ৳{salary}</div>
+                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {mobileCode}{mobile}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'চাকরির ধরন' : 'Type'}:</label> {employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</div>
+                <div className="field"><label>{bn ? 'পদবী' : 'Designation'}:</label> {designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || ''}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'আবাসিক' : 'Residential'}:</label> {residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</div>
+                <div className="field"><label>{bn ? 'জন্ম তারিখ' : 'DOB'}:</label> {dob}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'ধর্ম' : 'Religion'}:</label> {religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || ''}</div>
+                <div className="field"><label>NID:</label> {nid}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'শিক্ষা' : 'Education'}:</label> {education}</div>
+                <div className="field"><label>{bn ? 'অভিজ্ঞতা' : 'Experience'}:</label> {experience || '-'}</div>
+              </div>
+              {prevInstitute && <div className="field-row"><div className="field"><label>{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Institute'}:</label> {prevInstitute}</div></div>}
+              <div className="field-row"><div className="field"><label>{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}:</label> {formatAddress(permanentAddr)}</div></div>
+              <div className="field-row"><div className="field"><label>{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}:</label> {formatAddress(sameAddress ? permanentAddr : presentAddr)}</div></div>
+            </div>
+
+            <div className="section">
+              <h3>{bn ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}</h3>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'পিতার নাম' : 'Father'}:</label> {fatherName}</div>
+                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {fatherMobileCode}{fatherMobile}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>NID:</label> {fatherNid}</div>
+                <div className="field"><label>{bn ? 'পেশা' : 'Occupation'}:</label> {fatherOccupation}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'মাতার নাম' : 'Mother'}:</label> {motherName}</div>
+                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {motherMobileCode}{motherMobile}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>NID:</label> {motherNid}</div>
+                <div className="field"><label>{bn ? 'পেশা' : 'Occupation'}:</label> {motherOccupation}</div>
+              </div>
+            </div>
+
+            <div className="section">
+              <h3>{bn ? '৩. অভিভাবক তথ্য' : '3. Guardian Details'}</h3>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'অভিভাবক' : 'Guardian'}:</label> {guardianType === 'father' ? fatherName : guardianType === 'mother' ? motherName : guardianName} ({guardianType === 'other' ? guardianRelation : guardianType === 'father' ? (bn ? 'পিতা' : 'Father') : (bn ? 'মাতা' : 'Mother')})</div>
+              </div>
+            </div>
+
+            <div className="section">
+              <h3>{bn ? '৪. পরিচয়দাতার তথ্য' : '4. Identifier Details'}</h3>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'নাম' : 'Name'}:</label> {identifierName}</div>
+                <div className="field"><label>{bn ? 'সম্পর্ক' : 'Relation'}:</label> {identifierRelation}</div>
+              </div>
+              <div className="field-row">
+                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {identifierMobileCode}{identifierMobile}</div>
+                <div className="field"><label>NID:</label> {identifierNid}</div>
+              </div>
+              <div className="field-row"><div className="field"><label>{bn ? 'ঠিকানা' : 'Address'}:</label> {formatAddress(identifierAddr)}</div></div>
+            </div>
+
+            {documents.length > 0 && (
+              <div className="section">
+                <h3>{bn ? '৫. সংযুক্ত ডকুমেন্টসমূহ' : '5. Attached Documents'}</h3>
+                <table>
+                  <thead><tr><th>#</th><th>{bn ? 'ধরন' : 'Type'}</th><th>{bn ? 'ফাইল' : 'File'}</th></tr></thead>
+                  <tbody>
+                    {documents.map((d, i) => (
+                      <tr key={d.id}><td>{i+1}</td><td>{d.type}</td><td>{d.name}</td></tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="signatures">
+              {otherSignName && (
+                <div className="sig-box">
+                  <div className="sig-line">
+                    <div>{otherSignName}</div>
+                    <div style={{fontSize: '12px'}}>{otherSignPosition}</div>
+                  </div>
+                </div>
+              )}
+              {principalName && (
+                <div className="sig-box">
+                  <div className="sig-line">
+                    <div>{principalName}</div>
+                    <div style={{fontSize: '12px'}}>{principalPosition}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Document Preview Dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>{previewDoc?.type} - {previewDoc?.name}</DialogTitle></DialogHeader>
+          <div className="flex justify-center p-4">
+            {previewDoc?.url.endsWith('.pdf') ? (
+              <iframe src={previewDoc.url} className="w-full h-[500px] border border-border rounded" />
+            ) : (
+              <img src={previewDoc?.url} alt={previewDoc?.name} className="max-w-full max-h-[500px] object-contain rounded" />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" asChild>
+              <a href={previewDoc?.url} target="_blank" rel="noopener noreferrer" className="gap-2"><Download className="w-4 h-4" /> {bn ? 'ডাউনলোড' : 'Download'}</a>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

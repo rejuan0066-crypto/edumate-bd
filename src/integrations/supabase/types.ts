@@ -1369,16 +1369,25 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string | null
+          date_of_birth: string | null
           department: string | null
           designation: string | null
+          education: string | null
           email: string | null
+          employment_type: string | null
+          experience: string | null
           id: string
           joining_date: string | null
           name_bn: string
           name_en: string | null
+          nid: string | null
           phone: string | null
           photo_url: string | null
+          previous_institute: string | null
+          religion: string | null
+          residence_type: string | null
           salary: number | null
+          staff_data: Json | null
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -1386,16 +1395,25 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           designation?: string | null
+          education?: string | null
           email?: string | null
+          employment_type?: string | null
+          experience?: string | null
           id?: string
           joining_date?: string | null
           name_bn: string
           name_en?: string | null
+          nid?: string | null
           phone?: string | null
           photo_url?: string | null
+          previous_institute?: string | null
+          religion?: string | null
+          residence_type?: string | null
           salary?: number | null
+          staff_data?: Json | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1403,16 +1421,25 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           designation?: string | null
+          education?: string | null
           email?: string | null
+          employment_type?: string | null
+          experience?: string | null
           id?: string
           joining_date?: string | null
           name_bn?: string
           name_en?: string | null
+          nid?: string | null
           phone?: string | null
           photo_url?: string | null
+          previous_institute?: string | null
+          religion?: string | null
+          residence_type?: string | null
           salary?: number | null
+          staff_data?: Json | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
