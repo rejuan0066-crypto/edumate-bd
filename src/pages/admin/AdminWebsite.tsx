@@ -182,6 +182,7 @@ const AdminWebsite = () => {
         value: value as Json,
       }));
       await updateMultiple.mutateAsync(updates);
+      await saveMenuConfig.mutateAsync({ sidebar: menuConfig.sidebar, public: publicMenu });
       toast.success(language === 'bn' ? 'সকল পরিবর্তন সংরক্ষিত!' : 'All changes saved!');
     } catch {
       toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Error saving');
@@ -197,6 +198,18 @@ const AdminWebsite = () => {
       toast.success(language === 'bn' ? 'সংরক্ষিত!' : 'Saved!');
     } catch {
       toast.error(language === 'bn' ? 'ত্রুটি হয়েছে' : 'Error occurred');
+    }
+    setSaving(false);
+  };
+
+  const saveNavigation = async () => {
+    setSaving(true);
+    try {
+      await saveMenuConfig.mutateAsync({ sidebar: menuConfig.sidebar, public: publicMenu });
+      await updateMultiple.mutateAsync([{ key: 'nav_style', value: form.nav_style as Json }]);
+      toast.success(language === 'bn' ? 'নেভিগেশন সংরক্ষিত!' : 'Navigation saved!');
+    } catch {
+      toast.error(language === 'bn' ? 'নেভিগেশন সংরক্ষণে ত্রুটি' : 'Error saving navigation');
     }
     setSaving(false);
   };
