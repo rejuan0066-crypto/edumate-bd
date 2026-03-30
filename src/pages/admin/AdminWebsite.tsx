@@ -436,79 +436,115 @@ const AdminWebsite = () => {
 
           {/* Navigation Tab */}
           <TabsContent value="navigation">
-            <div className="card-elevated p-5 space-y-4">
-              <h3 className="font-display font-bold text-foreground">
-                {language === 'bn' ? 'নেভিগেশন স্টাইল' : 'Navigation Style'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {language === 'bn' ? 'নেভিগেশন বারের রঙ এবং স্টাইল কাস্টমাইজ করুন। মেনু আইটেম যোগ/সরানোর জন্য "মেনু ম্যানেজার" ব্যবহার করুন।' : 'Customize navigation bar colors and style. Use "Menu Manager" to add/remove menu items.'}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {colorInput(language === 'bn' ? 'নেভ ব্যাকগ্রাউন্ড' : 'Nav Background', form.nav_style.nav_bg_color, v => updateNavStyle('nav_bg_color', v))}
-                {colorInput(language === 'bn' ? 'নেভ টেক্সট রঙ' : 'Nav Text Color', form.nav_style.nav_text_color, v => updateNavStyle('nav_text_color', v))}
-                {colorInput(language === 'bn' ? 'অ্যাক্টিভ ব্যাকগ্রাউন্ড' : 'Active Background', form.nav_style.nav_active_bg, v => updateNavStyle('nav_active_bg', v))}
-                {colorInput(language === 'bn' ? 'অ্যাক্টিভ টেক্সট রঙ' : 'Active Text Color', form.nav_style.nav_active_text, v => updateNavStyle('nav_active_text', v))}
-                {colorInput(language === 'bn' ? 'হোভার ব্যাকগ্রাউন্ড' : 'Hover Background', form.nav_style.nav_hover_bg, v => updateNavStyle('nav_hover_bg', v))}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>{language === 'bn' ? 'নেভ স্টাইল' : 'Nav Style'}</Label>
-                  <Select value={form.nav_style.nav_style} onValueChange={v => updateNavStyle('nav_style', v)}>
-                    <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pills">{language === 'bn' ? 'পিলস (গোলাকার)' : 'Pills (Rounded)'}</SelectItem>
-                      <SelectItem value="underline">{language === 'bn' ? 'আন্ডারলাইন' : 'Underline'}</SelectItem>
-                      <SelectItem value="flat">{language === 'bn' ? 'ফ্ল্যাট' : 'Flat'}</SelectItem>
-                      <SelectItem value="rounded">{language === 'bn' ? 'রাউন্ডেড' : 'Rounded'}</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <div className="space-y-6">
+              <div className="card-elevated p-5 space-y-4">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'নেভিগেশন স্টাইল' : 'Navigation Style'}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {colorInput(language === 'bn' ? 'নেভ ব্যাকগ্রাউন্ড' : 'Nav Background', form.nav_style.nav_bg_color, v => updateNavStyle('nav_bg_color', v))}
+                  {colorInput(language === 'bn' ? 'নেভ টেক্সট রঙ' : 'Nav Text Color', form.nav_style.nav_text_color, v => updateNavStyle('nav_text_color', v))}
+                  {colorInput(language === 'bn' ? 'অ্যাক্টিভ ব্যাকগ্রাউন্ড' : 'Active Background', form.nav_style.nav_active_bg, v => updateNavStyle('nav_active_bg', v))}
+                  {colorInput(language === 'bn' ? 'অ্যাক্টিভ টেক্সট রঙ' : 'Active Text Color', form.nav_style.nav_active_text, v => updateNavStyle('nav_active_text', v))}
+                  {colorInput(language === 'bn' ? 'হোভার ব্যাকগ্রাউন্ড' : 'Hover Background', form.nav_style.nav_hover_bg, v => updateNavStyle('nav_hover_bg', v))}
                 </div>
-                <div>
-                  <Label>{language === 'bn' ? 'ফন্ট সাইজ' : 'Font Size'}</Label>
-                  <Select value={form.nav_style.nav_font_size} onValueChange={v => updateNavStyle('nav_font_size', v)}>
-                    <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small">{language === 'bn' ? 'ছোট' : 'Small'}</SelectItem>
-                      <SelectItem value="medium">{language === 'bn' ? 'মাঝারি' : 'Medium'}</SelectItem>
-                      <SelectItem value="large">{language === 'bn' ? 'বড়' : 'Large'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Nav Preview */}
-              <div className="mt-4">
-                <Label className="mb-2 block">{language === 'bn' ? 'প্রিভিউ' : 'Preview'}</Label>
-                <div className="p-4 rounded-lg border bg-secondary/30">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {['হোম', 'আমাদের সম্পর্কে', 'ভর্তি', 'যোগাযোগ'].map((item, i) => {
-                      const isActive = i === 0;
-                      const style = form.nav_style;
-                      const baseClass = 'px-3 py-2 text-sm font-medium transition-colors';
-                      const navStyleClass =
-                        style.nav_style === 'pills' ? 'rounded-lg' :
-                        style.nav_style === 'underline' ? 'border-b-2' :
-                        style.nav_style === 'rounded' ? 'rounded-full' : '';
-
-                      return (
-                        <span
-                          key={i}
-                          className={`${baseClass} ${navStyleClass}`}
-                          style={{
-                            backgroundColor: isActive ? (style.nav_active_bg || 'hsl(var(--primary))') : 'transparent',
-                            color: isActive ? (style.nav_active_text || 'hsl(var(--primary-foreground))') : (style.nav_text_color || 'hsl(var(--foreground))'),
-                            borderColor: style.nav_style === 'underline' && isActive ? (style.nav_active_bg || 'hsl(var(--primary))') : 'transparent',
-                          }}
-                        >
-                          {item}
-                        </span>
-                      );
-                    })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'নেভ স্টাইল' : 'Nav Style'}</Label>
+                    <Select value={form.nav_style.nav_style} onValueChange={v => updateNavStyle('nav_style', v)}>
+                      <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pills">{language === 'bn' ? 'পিলস (গোলাকার)' : 'Pills (Rounded)'}</SelectItem>
+                        <SelectItem value="underline">{language === 'bn' ? 'আন্ডারলাইন' : 'Underline'}</SelectItem>
+                        <SelectItem value="flat">{language === 'bn' ? 'ফ্ল্যাট' : 'Flat'}</SelectItem>
+                        <SelectItem value="rounded">{language === 'bn' ? 'রাউন্ডেড' : 'Rounded'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'ফন্ট সাইজ' : 'Font Size'}</Label>
+                    <Select value={form.nav_style.nav_font_size} onValueChange={v => updateNavStyle('nav_font_size', v)}>
+                      <SelectTrigger className="mt-1 bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="small">{language === 'bn' ? 'ছোট' : 'Small'}</SelectItem>
+                        <SelectItem value="medium">{language === 'bn' ? 'মাঝারি' : 'Medium'}</SelectItem>
+                        <SelectItem value="large">{language === 'bn' ? 'বড়' : 'Large'}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
 
-              <Button className="btn-primary-gradient" onClick={() => saveSection(['nav_style'])} disabled={saving}>
+              <div className="card-elevated p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-display font-bold text-foreground">
+                    {language === 'bn' ? 'পাবলিক নেভিগেশন মেনু' : 'Public Navigation Menu'}
+                  </h3>
+                  <Button variant="outline" size="sm" onClick={() => setPublicMenu(prev => [...prev, {
+                    id: `custom-${Date.now()}`,
+                    path: '/',
+                    label_bn: '',
+                    label_en: '',
+                    icon: '',
+                    visible: true,
+                    sort_order: prev.length,
+                  }])}>
+                    <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন মেনু' : 'Add Menu'}
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {publicMenu.map((item, index) => (
+                    <div key={item.id} className={`p-4 rounded-lg border bg-card space-y-3 ${!item.visible ? 'opacity-50' : ''}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-sm font-semibold text-foreground">{language === 'bn' ? item.label_bn || `মেনু ${index + 1}` : item.label_en || `Menu ${index + 1}`}</div>
+                          <div className="text-xs text-muted-foreground">{item.path}</div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, visible: !m.visible } : m))}>
+                            {item.visible ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === 0} onClick={() => setPublicMenu(prev => {
+                            const arr = [...prev];
+                            [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+                            return arr.map((m, i) => ({ ...m, sort_order: i }));
+                          })}>
+                            <ChevronUp className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === publicMenu.length - 1} onClick={() => setPublicMenu(prev => {
+                            const arr = [...prev];
+                            [arr[index + 1], arr[index]] = [arr[index], arr[index + 1]];
+                            return arr.map((m, i) => ({ ...m, sort_order: i }));
+                          })}>
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => setPublicMenu(prev => prev.filter((_, i) => i !== index))}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Label (BN)'}</Label>
+                          <Input className="bg-background mt-1" value={item.label_bn} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_bn: e.target.value } : m))} />
+                        </div>
+                        <div>
+                          <Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Label (EN)'}</Label>
+                          <Input className="bg-background mt-1" value={item.label_en} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_en: e.target.value } : m))} />
+                        </div>
+                        <div>
+                          <Label>{language === 'bn' ? 'লিংক/পাথ' : 'Path'}</Label>
+                          <Input className="bg-background mt-1" value={item.path} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, path: e.target.value } : m))} placeholder="/about" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={saveNavigation} disabled={saving}>
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নেভিগেশন সংরক্ষণ' : 'Save Navigation'}
               </Button>
             </div>
