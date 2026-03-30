@@ -409,6 +409,115 @@ const AdminStaffForm = () => {
   const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || '';
   const religionLabel = religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || '';
   const todayDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
+
+  const PrintableForm = () => (
+    <div>
+      <div className="form-header" style={{ position: 'relative' }}>
+        {institution?.logo_url && <img src={institution.logo_url} alt="" className="logo" style={{ position: 'absolute', left: 0, top: 0, width: 60, height: 60 }} />}
+        <h1>{institution?.name || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h1>
+        {institution?.name_en && <h2>{institution.name_en}</h2>}
+        {institution?.address && <p>{institution.address}</p>}
+        {(institution?.phone || institution?.email) && <p>{[institution?.phone, institution?.email].filter(Boolean).join(' | ')}</p>}
+        <div className="photo-area">
+          {photoUrl ? <img src={photoUrl} alt="Photo" /> : <div className="placeholder">{bn ? 'ছবি' : 'Photo'}<br/>Passport Size</div>}
+        </div>
+      </div>
+
+      <div className="form-title">{bn ? 'কর্মী/শিক্ষক তথ্য ফরম' : 'Staff/Teacher Information Form'}</div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'নাম' : 'Full Name'}</td><td className="value" colSpan={3}>{firstName} {lastName}</td></tr>
+            <tr><td className="label">{bn ? 'বেতন' : 'Salary'}</td><td className="value">৳{salary}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{mobileCode}{mobile}</td></tr>
+            <tr><td className="label">{bn ? 'চাকরির ধরন' : 'Employment'}</td><td className="value">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</td><td className="label">{bn ? 'পদবী' : 'Designation'}</td><td className="value">{desigLabel}</td></tr>
+            <tr><td className="label">{bn ? 'আবাসিক/অনাবাসিক' : 'Residential'}</td><td className="value">{residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</td><td className="label">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</td><td className="value">{dob}</td></tr>
+            <tr><td className="label">{bn ? 'ধর্ম' : 'Religion'}</td><td className="value">{religionLabel}</td><td className="label">{bn ? 'জাতীয় পরিচয়পত্র' : 'NID'}</td><td className="value">{nid}</td></tr>
+            <tr><td className="label">{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'}</td><td className="value" colSpan={3}>{education}</td></tr>
+            <tr><td className="label">{bn ? 'অভিজ্ঞতা' : 'Experience'}</td><td className="value">{experience || '-'}</td><td className="label">{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Institute'}</td><td className="value">{prevInstitute || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}</td><td className="value" colSpan={3}>{formatAddress(permanentAddr)}</td></tr>
+            <tr><td className="label">{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}</td><td className="value" colSpan={3}>{formatAddress(sameAddress ? permanentAddr : presentAddr)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'পিতার নাম' : "Father's Name"}</td><td className="value">{fatherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{fatherMobileCode}{fatherMobile}</td></tr>
+            <tr><td className="label">{bn ? 'পিতার NID' : "Father's NID"}</td><td className="value">{fatherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{fatherOccupation}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার নাম' : "Mother's Name"}</td><td className="value">{motherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{motherMobileCode}{motherMobile}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার NID' : "Mother's NID"}</td><td className="value">{motherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{motherOccupation}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '৩. অভিভাবক তথ্য' : '3. Guardian Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'অভিভাবকের নাম' : 'Guardian Name'}</td><td className="value">{guardianInfo.name}</td><td className="label">{bn ? 'সম্পর্ক' : 'Relation'}</td><td className="value">{guardianInfo.relation}</td></tr>
+            <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{guardianInfo.mobile}</td><td className="label">NID</td><td className="value">{guardianInfo.nid}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '৪. পরিচয়দাতার তথ্য' : '4. Identifier Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{identifierName}</td><td className="label">{bn ? 'সম্পর্ক' : 'Relation'}</td><td className="value">{identifierRelation}</td></tr>
+            <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{identifierMobileCode}{identifierMobile}</td><td className="label">NID</td><td className="value">{identifierNid}</td></tr>
+            <tr><td className="label">{bn ? 'ঠিকানা' : 'Address'}</td><td className="value" colSpan={3}>{formatAddress(identifierAddr)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {documents.length > 0 && (
+        <div className="section">
+          <div className="section-title">{bn ? '৫. সংযুক্ত ডকুমেন্টসমূহ' : '5. Attached Documents'}</div>
+          <table className="doc-table">
+            <thead><tr><th>{bn ? 'ক্রমিক' : '#'}</th><th>{bn ? 'ডকুমেন্টের ধরন' : 'Document Type'}</th><th>{bn ? 'ফাইলের নাম' : 'File Name'}</th></tr></thead>
+            <tbody>
+              {documents.map((d, i) => (
+                <tr key={d.id}><td>{i + 1}</td><td>{d.type}</td><td>{d.name}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="signatures">
+        <div className="sig-box">
+          <div className="sig-line">
+            <div className="sig-name">{bn ? 'আবেদনকারীর স্বাক্ষর' : "Applicant's Signature"}</div>
+          </div>
+        </div>
+        {otherSignName && (
+          <div className="sig-box">
+            <div className="sig-line">
+              <div className="sig-name">{otherSignName}</div>
+              <div className="sig-position">{otherSignPosition}</div>
+            </div>
+          </div>
+        )}
+        {principalName && (
+          <div className="sig-box">
+            <div className="sig-line">
+              <div className="sig-name">{principalName}</div>
+              <div className="sig-position">{principalPosition}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="form-date">{bn ? 'তারিখ' : 'Date'}: {todayDate}</div>
+    </div>
+  );
+
+  return (
     <AdminLayout>
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
