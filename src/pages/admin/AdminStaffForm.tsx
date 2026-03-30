@@ -52,10 +52,13 @@ const AdminStaffForm = () => {
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { id: editId } = useParams<{ id: string }>();
+  const isEditMode = !!editId;
   const { validate, validateAll } = useValidationRules('staff');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const printRef = useRef<HTMLDivElement>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const { data: institution } = useQuery({
     queryKey: ['institution'],
