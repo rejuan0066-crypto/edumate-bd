@@ -370,6 +370,7 @@ const AdminStaffForm = () => {
     toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
   };
 
+  const handlePrint = () => {
     const content = printRef.current;
     if (!content) return;
     const printWindow = window.open('', '_blank', 'width=800,height=900');
