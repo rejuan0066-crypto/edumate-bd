@@ -338,29 +338,23 @@ const AdminStaffForm = () => {
   const handlePrint = () => {
     const content = printRef.current;
     if (!content) return;
-    const win = window.open('', '_blank');
-    if (!win) return;
-    win.document.write(`<html><head><title>Staff Form</title><style>
-      body { font-family: 'SolaimanLipi', Arial, sans-serif; padding: 20px; font-size: 14px; color: #000; }
-      .print-header { text-align: center; margin-bottom: 20px; }
-      .photo-box { width: 100px; height: 120px; border: 1px solid #000; float: right; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-      .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-      .section { margin: 15px 0; border-top: 2px solid #333; padding-top: 10px; }
-      .section h3 { font-size: 16px; margin-bottom: 8px; }
-      .field-row { display: flex; gap: 20px; margin: 4px 0; flex-wrap: wrap; }
-      .field { flex: 1; min-width: 200px; }
-      .field label { font-weight: bold; }
-      .signatures { margin-top: 60px; display: flex; justify-content: space-between; }
-      .sig-box { text-align: center; min-width: 200px; }
-      .sig-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; }
-      table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-      td, th { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
-      @media print { body { margin: 0; } }
-    </style></head><body>`);
-    win.document.write(content.innerHTML);
-    win.document.write('</body></html>');
-    win.document.close();
-    setTimeout(() => win.print(), 500);
+    const printStyles = document.createElement('style');
+    printStyles.id = 'staff-print-styles';
+    printStyles.textContent = `
+      @media print {
+        body > *:not(.staff-print-area) { display: none !important; }
+        .staff-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
+        .staff-print-area * { visibility: visible; }
+        .no-print { display: none !important; }
+      }
+    `;
+    document.head.appendChild(printStyles);
+    content.classList.add('staff-print-area');
+    window.print();
+    setTimeout(() => {
+      content.classList.remove('staff-print-area');
+      printStyles.remove();
+    }, 1000);
   };
 
   return (
