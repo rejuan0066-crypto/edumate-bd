@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       restored_at: new Date().toISOString(),
-      restored_by: user.email,
+      restored_by: (claimsData.claims.email as string) || userId,
       mode,
       results,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
