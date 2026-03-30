@@ -21,6 +21,36 @@ const Home = () => {
   const { t, language } = useLanguage();
   const bn = language === 'bn';
   const { settings } = useWebsiteSettings();
+  const isMobile = useIsMobile();
+
+  // Helper to get dynamic inline styles for a section
+  const getSectionStyle = (key: HomeSectionKey): React.CSSProperties => {
+    const section = (settings.section_order || []).find(s => s.key === key);
+    const st = section?.styles || DEFAULT_SECTION_STYLE;
+    const style: React.CSSProperties = {};
+    if (st.bgColor) style.backgroundColor = st.bgColor;
+    if (st.textColor) style.color = st.textColor;
+    if (st.padding) style.padding = `${st.padding}px`;
+    if (st.margin) style.marginTop = `${st.margin}px`;
+    if (st.borderRadius) style.borderRadius = `${st.borderRadius}px`;
+    if (st.fixedHeight) {
+      style.height = `${st.height}px`;
+      style.overflow = st.overflow;
+    }
+    if (st.textAlign && st.textAlign !== 'left') style.textAlign = st.textAlign;
+    return style;
+  };
+
+  const getSectionGridStyle = (key: HomeSectionKey): React.CSSProperties => {
+    const section = (settings.section_order || []).find(s => s.key === key);
+    const st = section?.styles || DEFAULT_SECTION_STYLE;
+    const cols = isMobile ? st.columnsMobile : st.columns;
+    return {
+      display: cols > 1 ? 'grid' : undefined,
+      gridTemplateColumns: cols > 1 ? `repeat(${cols}, 1fr)` : undefined,
+      gap: `${st.gap}px`,
+    };
+  };
 
   const { data: notices = [] } = useQuery({
     queryKey: ['home-notices'],
