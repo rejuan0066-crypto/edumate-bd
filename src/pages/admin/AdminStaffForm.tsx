@@ -9,7 +9,7 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
 import { useState, useRef } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -134,6 +134,13 @@ const AdminStaffForm = () => {
   const [principalPosition, setPrincipalPosition] = useState(bn ? 'অধ্যক্ষ' : 'Principal');
   const [otherSignName, setOtherSignName] = useState('');
   const [otherSignPosition, setOtherSignPosition] = useState('');
+
+  // Approver fields
+  const [approverName, setApproverName] = useState('');
+  const [approverPosition, setApproverPosition] = useState('');
+  const [approverSignatureUrl, setApproverSignatureUrl] = useState('');
+  const [approverDate, setApproverDate] = useState('');
+  const approverSigRef = useRef<HTMLInputElement>(null);
 
   const designations = [
     { value: 'head_teacher', bn: 'প্রধান শিক্ষক', en: 'Head Teacher' },
@@ -266,6 +273,12 @@ const AdminStaffForm = () => {
           principal: { name: principalName, position: principalPosition },
           other: { name: otherSignName, position: otherSignPosition },
         },
+        approver: {
+          name: approverName,
+          position: approverPosition,
+          signature_url: approverSignatureUrl,
+          date: approverDate,
+        },
       };
 
       const { error } = await supabase.from('staff').insert({
@@ -344,7 +357,19 @@ const AdminStaffForm = () => {
     addMutation.mutate();
   };
 
-  const handlePrint = () => {
+  const handleApproverSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 300 * 1024) { toast.error(bn ? 'ফাইল সাইজ ৩০০KB এর বেশি' : 'File size exceeds 300KB'); return; }
+    const ext = file.name.split('.').pop();
+    const path = `approver-signatures/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('photos').upload(path, file);
+    if (error) { toast.error(bn ? 'আপলোড ব্যর্থ' : 'Upload failed'); return; }
+    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+    setApproverSignatureUrl(urlData.publicUrl);
+    toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
+  };
+
     const content = printRef.current;
     if (!content) return;
     const printWindow = window.open('', '_blank', 'width=800,height=900');
@@ -391,6 +416,8 @@ const AdminStaffForm = () => {
     .sig-name { font-weight: 600; font-size: 10pt; }
     .sig-position { font-size: 9pt; color: #555; }
     .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
+    .approver-section { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+    .approver-section .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
     @media print { body { padding: 10mm; } @page { size: A4; margin: 0; } }
   `;
 
@@ -551,6 +578,32 @@ const AdminStaffForm = () => {
           </div>
         )}
       </div>
+
+      {/* Approver Section */}
+      {approverName && (
+        <div className="approver-section">
+          <div className="section-title">{bn ? 'অনুমোদনকারী' : 'Approved By'}</div>
+          <table className="form-table">
+            <tbody>
+              <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{approverName}</td><td className="label">{bn ? 'পদবী' : 'Position'}</td><td className="value">{approverPosition}</td></tr>
+              <tr>
+                <td className="label">{bn ? 'স্বাক্ষর' : 'Signature'}</td>
+                <td className="value">
+                  {approverSignatureUrl ? (
+                    <img src={approverSignatureUrl} alt="Signature" style={{ height: '40px', objectFit: 'contain' }} />
+                  ) : (
+                    <div style={{ height: '40px', border: '1px dashed #999', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8pt', color: '#999' }}>
+                      {bn ? 'স্বাক্ষর' : 'Signature'}
+                    </div>
+                  )}
+                </td>
+                <td className="label">{bn ? 'তারিখ' : 'Date'}</td>
+                <td className="value">{approverDate || todayDate}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="form-date">{bn ? 'তারিখ' : 'Date'}: {todayDate}</div>
     </div>
@@ -902,6 +955,43 @@ const AdminStaffForm = () => {
             </div>
           </div>
 
+          {/* ========== Approver Section ========== */}
+          <div className="card-elevated p-6">
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? 'এপ্রোভকারীর তথ্য' : 'Approver Details'}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" value={approverName} onChange={e => setApproverName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+              </div>
+              <div>
+                <Label>{bn ? 'পদবী' : 'Position'} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" value={approverPosition} onChange={e => setApproverPosition(e.target.value)} placeholder={bn ? 'পদবী লিখুন' : 'Enter position'} />
+              </div>
+              <div>
+                <Label>{bn ? 'স্বাক্ষর (আপলোড বা প্রিন্টে বক্স দেখাবে)' : 'Signature (upload or box shown in print)'}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input ref={approverSigRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp" onChange={handleApproverSignatureUpload} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => approverSigRef.current?.click()} className="gap-1">
+                    <Upload className="w-3.5 h-3.5" /> {bn ? 'আপলোড' : 'Upload'}
+                  </Button>
+                  {approverSignatureUrl && (
+                    <div className="flex items-center gap-2">
+                      <img src={approverSignatureUrl} alt="Signature" className="h-8 border border-border rounded" />
+                      <button type="button" onClick={() => setApproverSignatureUrl('')} className="text-destructive hover:text-destructive/80"><X className="w-4 h-4" /></button>
+                    </div>
+                  )}
+                  {!approverSignatureUrl && <span className="text-xs text-muted-foreground">{bn ? 'প্রিন্টে স্বাক্ষরের বক্স দেখাবে' : 'Signature box will show in print'}</span>}
+                </div>
+              </div>
+              <div>
+                <Label>{bn ? 'তারিখ' : 'Date'}</Label>
+                <Input type="date" className="bg-background mt-1" value={approverDate} onChange={e => setApproverDate(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
@@ -1010,6 +1100,8 @@ const AdminStaffForm = () => {
               .preview-form .sig-name { font-weight: 600; font-size: 10pt; }
               .preview-form .sig-position { font-size: 9pt; color: #555; }
               .preview-form .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
+              .preview-form .approver-section { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px; }
+              .preview-form .approver-section .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
             `}} />
             <div className="preview-form">
               <PrintableForm />
