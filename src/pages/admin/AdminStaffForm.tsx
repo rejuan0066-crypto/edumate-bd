@@ -450,7 +450,7 @@ const AdminStaffForm = () => {
       toast.error(Object.values(errors)[0]);
       return;
     }
-    addMutation.mutate();
+    saveMutation.mutate();
   };
 
   const handleApproverSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
