@@ -34,11 +34,17 @@ const HomeGallery = ({ galleryItems, language }: Props) => {
                 className="group"
               >
                 <div className="aspect-square rounded-lg overflow-hidden border bg-secondary">
-                  <img
-                    src={item.image_url}
-                    alt={bn ? item.title_bn : item.title_en}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={bn ? item.title_bn : item.title_en}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                      <span className="text-4xl opacity-30">📷</span>
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-center text-muted-foreground mt-2 font-medium line-clamp-2">
                   {bn ? item.title_bn : item.title_en}
