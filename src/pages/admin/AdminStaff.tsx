@@ -105,7 +105,7 @@ const AdminStaff = () => {
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
                         <button onClick={() => navigate(`/admin/staff/edit/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={language === 'bn' ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => deleteMutation.mutate(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={language === 'bn' ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={language === 'bn' ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -117,6 +117,26 @@ const AdminStaff = () => {
             </div>
           )}
         </div>
+
+        <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{language === 'bn' ? 'আপনি কি নিশ্চিত?' : 'Are you sure?'}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'bn' ? 'এই কর্মী/শিক্ষকের তথ্য স্থায়ীভাবে মুছে ফেলা হবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।' : 'This staff record will be permanently deleted. This action cannot be undone.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{language === 'bn' ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
+              >
+                {language === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
