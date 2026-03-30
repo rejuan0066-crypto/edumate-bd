@@ -957,10 +957,11 @@ const AdminStaffForm = () => {
           </div>
         </DialogContent>
       </Dialog>
-              </div>
-            )}
-            <div className="section">
-              <h3>{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</h3>
+    </AdminLayout>
+  );
+};
+
+export default AdminStaffForm;
               <div className="field-row"><div className="field"><label>{bn ? 'নাম' : 'Name'}:</label> {firstName} {lastName}</div></div>
               <div className="field-row">
                 <div className="field"><label>{bn ? 'বেতন' : 'Salary'}:</label> ৳{salary}</div>
