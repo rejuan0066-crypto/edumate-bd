@@ -1090,9 +1090,9 @@ const AdminStaffForm = () => {
           </div>
 
           <div className="flex gap-3">
-            <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
-              {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
-              {bn ? 'কর্মী/শিক্ষক যোগ করুন' : 'Add Staff/Teacher'}
+            <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
+              {bn ? (isEditMode ? 'আপডেট করুন' : 'কর্মী/শিক্ষক যোগ করুন') : (isEditMode ? 'Update' : 'Add Staff/Teacher')}
             </Button>
             <Button type="button" variant="outline" className="py-6 gap-2" onClick={openPrintPreview}>
               <Eye className="w-5 h-5" /> {bn ? 'প্রিভিউ' : 'Preview'}
