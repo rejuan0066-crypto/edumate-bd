@@ -810,26 +810,16 @@ const AdminWebsite = () => {
             </div>
           </TabsContent>
 
-          {/* Sections Tab */}
+          {/* Sections / Page Builder Tab */}
           <TabsContent value="sections">
-            <div className="card-elevated p-5 space-y-4">
-              <h3 className="font-display font-bold text-foreground">
-                {language === 'bn' ? 'হোমপেজ সেকশন দেখানো/লুকানো' : 'Homepage Section Show/Hide'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {language === 'bn' ? 'হোমপেজে কোন সেকশনগুলো দেখাবে তা নিয়ন্ত্রণ করুন' : 'Control which sections appear on the homepage'}
-              </p>
-              <div className="space-y-3">
-                {sectionLabels.map(s => (
-                  <div key={s.key} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                    <span className="text-sm font-medium text-foreground">{language === 'bn' ? s.bn : s.en}</span>
-                    <Switch checked={form.sections[s.key]} onCheckedChange={() => toggleSection(s.key)} />
-                  </div>
-                ))}
-              </div>
-              <Button className="btn-primary-gradient" onClick={() => saveSection(['sections'])} disabled={saving}>
-                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
-              </Button>
+            <div className="card-elevated p-5">
+              <WebsitePageBuilder
+                form={form}
+                setForm={setForm}
+                language={language}
+                saving={saving}
+                onSave={saveSection}
+              />
             </div>
           </TabsContent>
 
