@@ -717,6 +717,9 @@ const AdminStaffForm = () => {
               {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
               {bn ? 'কর্মী/শিক্ষক যোগ করুন' : 'Add Staff/Teacher'}
             </Button>
+            <Button type="button" variant="outline" className="py-6 gap-2" onClick={() => setShowPrintPreview(true)}>
+              <Eye className="w-5 h-5" /> {bn ? 'প্রিভিউ' : 'Preview'}
+            </Button>
             <Button type="button" variant="outline" className="py-6 gap-2" onClick={handlePrint}>
               <Printer className="w-5 h-5" /> {bn ? 'প্রিন্ট' : 'Print'}
             </Button>
