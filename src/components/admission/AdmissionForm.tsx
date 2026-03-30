@@ -257,6 +257,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     admission_class: form.admission_class,
     student_type: form.student_type,
     custom_fields: customFieldValues,
+    approver_name: form.approver_name,
+    approver_designation: form.approver_designation,
+    approver_date: form.approver_date,
+    approver_signature: form.approver_signature,
   });
 
   const buildStudentPayload = () => {
