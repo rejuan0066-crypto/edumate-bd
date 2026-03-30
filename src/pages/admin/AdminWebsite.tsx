@@ -862,15 +862,13 @@ const AdminWebsite = () => {
 
           {/* Sections / Page Builder Tab */}
           <TabsContent value="sections">
-            <div className="card-elevated p-5">
-              <WebsitePageBuilder
-                form={form}
-                setForm={setForm}
-                language={language}
-                saving={saving}
-                onSave={saveSection}
-              />
-            </div>
+            <WebsitePageBuilder
+              form={form}
+              setForm={setForm}
+              language={language}
+              saving={saving}
+              onSave={saveSection}
+            />
           </TabsContent>
 
           {/* Divisions Tab */}
