@@ -58,6 +58,49 @@ export interface FooterLink {
   url: string;
 }
 
+export type HomeSectionKey =
+  | 'principalMessage'
+  | 'banner'
+  | 'adminMessage'
+  | 'infoLinks'
+  | 'latestNotice'
+  | 'admissionButtons'
+  | 'latestPosts'
+  | 'gallery'
+  | 'prayerCalendar'
+  | 'stats'
+  | 'donation'
+  | 'feePayment'
+  | 'classInfo'
+  | 'teachersList'
+  | 'studentInfo';
+
+export interface HomeSectionConfig {
+  key: HomeSectionKey;
+  visible: boolean;
+  label_bn: string;
+  label_en: string;
+  icon: string;
+}
+
+export const ALL_SECTION_CONFIGS: HomeSectionConfig[] = [
+  { key: 'principalMessage', visible: true, label_bn: 'অধ্যক্ষের বাণী', label_en: "Principal's Message", icon: '👤' },
+  { key: 'banner', visible: true, label_bn: 'হিরো ব্যানার', label_en: 'Hero Banner', icon: '🖼️' },
+  { key: 'adminMessage', visible: true, label_bn: 'এডমিনের বাণী', label_en: "Admin's Message", icon: '👨‍💼' },
+  { key: 'infoLinks', visible: true, label_bn: 'প্রতিষ্ঠানের লিংক', label_en: 'Institution Links', icon: '🔗' },
+  { key: 'latestNotice', visible: true, label_bn: 'নোটিশ বোর্ড', label_en: 'Notice Board', icon: '📋' },
+  { key: 'admissionButtons', visible: true, label_bn: 'অনলাইন ভর্তি', label_en: 'Online Admission', icon: '🎓' },
+  { key: 'latestPosts', visible: true, label_bn: 'সর্বশেষ সংবাদ', label_en: 'Latest News', icon: '📰' },
+  { key: 'gallery', visible: true, label_bn: 'গ্যালারি', label_en: 'Gallery', icon: '📷' },
+  { key: 'prayerCalendar', visible: true, label_bn: 'নামাজ ও ক্যালেন্ডার', label_en: 'Prayer & Calendar', icon: '🕌' },
+  { key: 'stats', visible: true, label_bn: 'পরিসংখ্যান', label_en: 'Statistics', icon: '📊' },
+  { key: 'donation', visible: false, label_bn: 'দান সেকশন', label_en: 'Donation', icon: '💝' },
+  { key: 'feePayment', visible: false, label_bn: 'ফি পেমেন্ট', label_en: 'Fee Payment', icon: '💳' },
+  { key: 'classInfo', visible: false, label_bn: 'শ্রেণী তথ্য', label_en: 'Class Info', icon: '📚' },
+  { key: 'teachersList', visible: false, label_bn: 'শিক্ষক তালিকা', label_en: 'Teachers List', icon: '👨‍🏫' },
+  { key: 'studentInfo', visible: false, label_bn: 'ছাত্র তথ্য', label_en: 'Student Info', icon: '🧑‍🎓' },
+];
+
 export interface WebsiteSettings {
   institution_name: string;
   institution_name_en: string;
@@ -76,6 +119,14 @@ export interface WebsiteSettings {
   principal_message_bn: string;
   principal_message_en: string;
   principal_photo_url: string;
+  admin_name: string;
+  admin_title_bn: string;
+  admin_title_en: string;
+  admin_message_bn: string;
+  admin_message_en: string;
+  admin_photo_url: string;
+  admin_email: string;
+  admin_phone: string;
   about_content_bn: string;
   about_content_en: string;
   about_mission_bn: string;
@@ -95,6 +146,7 @@ export interface WebsiteSettings {
   nav_style: NavStyle;
   footer_style: FooterStyle;
   footer_links: FooterLink[];
+  section_order: HomeSectionConfig[];
   sections: {
     banner: boolean;
     principalMessage: boolean;
@@ -109,6 +161,8 @@ export interface WebsiteSettings {
     feePayment: boolean;
     stats: boolean;
     prayerCalendar: boolean;
+    adminMessage: boolean;
+    infoLinks: boolean;
   };
   divisions: Array<{ name: string; nameEn: string; icon: string }>;
 }
@@ -128,15 +182,23 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   principal_name: 'মুফতি আব্দুল্লাহ',
   principal_title_bn: 'অধ্যক্ষ',
   principal_title_en: 'Principal',
-  principal_message_bn: 'আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। আমাদের মাদরাসায় আপনাকে স্বাগতম। আমরা বিশ্বাস করি যে, ইসলামিক শিক্ষা ও আধুনিক জ্ঞানের সমন্বয়ে একটি আদর্শ প্রজন্ম গড়ে তোলা সম্ভব।',
-  principal_message_en: 'Assalamu Alaikum Wa Rahmatullah. Welcome to our Madrasa. We believe in building an ideal generation through the combination of Islamic education and modern knowledge.',
+  principal_message_bn: 'আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। আমাদের মাদরাসায় আপনাকে স্বাগতম।',
+  principal_message_en: 'Assalamu Alaikum Wa Rahmatullah. Welcome to our Madrasa.',
   principal_photo_url: '',
+  admin_name: '',
+  admin_title_bn: 'এডমিন',
+  admin_title_en: 'Admin',
+  admin_message_bn: '',
+  admin_message_en: '',
+  admin_photo_url: '',
+  admin_email: '',
+  admin_phone: '',
   about_content_bn: 'ইসলামিক শিক্ষা ও আধুনিক জ্ঞানের সমন্বয়ে একটি আদর্শ শিক্ষা প্রতিষ্ঠান।',
   about_content_en: 'An ideal educational institution combining Islamic education and modern knowledge.',
-  about_mission_bn: 'কুরআন ও সুন্নাহর আলোকে আদর্শ মানুষ গড়ে তোলা এবং সমাজে ইসলামিক মূল্যবোধ প্রতিষ্ঠা করা।',
-  about_mission_en: 'To build ideal human beings in the light of the Quran and Sunnah and to establish Islamic values in society.',
+  about_mission_bn: 'কুরআন ও সুন্নাহর আলোকে আদর্শ মানুষ গড়ে তোলা।',
+  about_mission_en: 'To build ideal human beings in the light of the Quran and Sunnah.',
   about_vision_bn: 'একটি আলোকিত সমাজ গঠনে নৈতিক ও জ্ঞানভিত্তিক শিক্ষার কেন্দ্রবিন্দু হওয়া।',
-  about_vision_en: 'To be the center of moral and knowledge-based education in building an enlightened society.',
+  about_vision_en: 'To be the center of moral and knowledge-based education.',
   about_image_url: '',
   footer_description_bn: 'ইসলামিক শিক্ষা ও আধুনিক জ্ঞানের সমন্বয়ে একটি আদর্শ শিক্ষা প্রতিষ্ঠান।',
   footer_description_en: 'An ideal educational institution combining Islamic education and modern knowledge.',
@@ -194,6 +256,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     { label_bn: 'ফলাফল', label_en: 'Result', url: '/result' },
     { label_bn: 'নোটিশ', label_en: 'Notices', url: '/notices' },
   ],
+  section_order: ALL_SECTION_CONFIGS,
   sections: {
     banner: true,
     principalMessage: true,
@@ -208,6 +271,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     feePayment: false,
     stats: true,
     prayerCalendar: true,
+    adminMessage: true,
+    infoLinks: true,
   },
   divisions: [
     { name: 'হিফয বিভাগ', nameEn: 'Hifz Division', icon: '📖' },
@@ -235,7 +300,6 @@ export const useWebsiteSettings = () => {
         if (key in result) {
           const defaultVal = DEFAULT_SETTINGS[key];
           const dbVal = row.value;
-          // Deep merge object-type settings so new fields get defaults
           if (defaultVal && typeof defaultVal === 'object' && !Array.isArray(defaultVal) && dbVal && typeof dbVal === 'object' && !Array.isArray(dbVal)) {
             (result as any)[key] = { ...defaultVal, ...(dbVal as any) };
           } else {
@@ -243,6 +307,15 @@ export const useWebsiteSettings = () => {
           }
         }
       });
+      // Ensure section_order has all keys
+      if (result.section_order) {
+        const existingKeys = new Set(result.section_order.map((s: any) => s.key));
+        ALL_SECTION_CONFIGS.forEach(cfg => {
+          if (!existingKeys.has(cfg.key)) {
+            result.section_order.push(cfg);
+          }
+        });
+      }
       return result;
     },
   });
