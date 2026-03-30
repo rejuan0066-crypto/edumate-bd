@@ -224,6 +224,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
       mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
       guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+      approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
     });
     setFieldErrors({});
     setCustomFieldValues({});
