@@ -237,11 +237,11 @@ const IslamicCalendarWidget = () => {
           )}
           {/* Hijri */}
           {config.show_hijri_date && (
-            <div className="text-center p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30" dir="rtl">
+            <div className="text-center p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
               <p className="text-[8px] text-muted-foreground mb-0.5" dir="ltr">{bn ? 'হিজরি' : 'Hijri'}</p>
-              <p className="text-sm font-bold text-foreground">{toArabicNum(String(hijriToday.day))}</p>
-              <p className="text-[9px] text-muted-foreground">{HIJRI_MONTHS_AR[hijriToday.month]}</p>
-              <p className="text-[8px] text-muted-foreground">{toArabicNum(String(hijriToday.year))}</p>
+              <p className="text-sm font-bold text-foreground">{bn ? toBanglaNum(String(hijriToday.day)) : hijriToday.day}</p>
+              <p className="text-[9px] text-muted-foreground">{bn ? HIJRI_MONTHS_BN[hijriToday.month] : HIJRI_MONTHS_EN[hijriToday.month]}</p>
+              <p className="text-[8px] text-muted-foreground">{bn ? toBanglaNum(String(hijriToday.year)) : hijriToday.year}</p>
             </div>
           )}
         </div>
