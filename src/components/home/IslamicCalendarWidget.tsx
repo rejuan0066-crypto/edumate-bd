@@ -86,9 +86,22 @@ const IslamicCalendarWidget = () => {
   const [now, setNow] = useState(new Date());
   const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
+  const [lastDate, setLastDate] = useState(new Date().getDate());
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
+    const timer = setInterval(() => {
+      const n = new Date();
+      setNow(n);
+      // Auto-navigate calendar when date changes (midnight)
+      setLastDate(prev => {
+        if (prev !== n.getDate()) {
+          setViewMonth(n.getMonth());
+          setViewYear(n.getFullYear());
+          return n.getDate();
+        }
+        return prev;
+      });
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
