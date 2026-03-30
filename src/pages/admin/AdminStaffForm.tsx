@@ -577,6 +577,32 @@ const AdminStaffForm = () => {
         )}
       </div>
 
+      {/* Approver Section */}
+      {approverName && (
+        <div className="approver-section">
+          <div className="section-title">{bn ? 'অনুমোদনকারী' : 'Approved By'}</div>
+          <table className="form-table">
+            <tbody>
+              <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{approverName}</td><td className="label">{bn ? 'পদবী' : 'Position'}</td><td className="value">{approverPosition}</td></tr>
+              <tr>
+                <td className="label">{bn ? 'স্বাক্ষর' : 'Signature'}</td>
+                <td className="value">
+                  {approverSignatureUrl ? (
+                    <img src={approverSignatureUrl} alt="Signature" style={{ height: '40px', objectFit: 'contain' }} />
+                  ) : (
+                    <div style={{ height: '40px', border: '1px dashed #999', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8pt', color: '#999' }}>
+                      {bn ? 'স্বাক্ষর' : 'Signature'}
+                    </div>
+                  )}
+                </td>
+                <td className="label">{bn ? 'তারিখ' : 'Date'}</td>
+                <td className="value">{approverDate || todayDate}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <div className="form-date">{bn ? 'তারিখ' : 'Date'}: {todayDate}</div>
     </div>
   );
