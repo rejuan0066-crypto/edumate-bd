@@ -49,6 +49,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
     mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
     guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+    approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -120,6 +121,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         guardian_phone: admData.guardian_phone || '',
         guardian_phone_code: admData.guardian_phone_code || '+880',
         guardian_nid: admData.guardian_nid || '',
+        approver_name: admData.approver_name || '',
+        approver_designation: admData.approver_designation || '',
+        approver_date: admData.approver_date || '',
+        approver_signature: admData.approver_signature || '',
       });
       if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
       if (admData.presentAddr) setPresentAddr(admData.presentAddr);
@@ -224,6 +229,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
       mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
       guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+      approver_name: '', approver_designation: '', approver_date: '', approver_signature: '',
     });
     setFieldErrors({});
     setCustomFieldValues({});
@@ -257,6 +263,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     admission_class: form.admission_class,
     student_type: form.student_type,
     custom_fields: customFieldValues,
+    approver_name: form.approver_name,
+    approver_designation: form.approver_designation,
+    approver_date: form.approver_date,
+    approver_signature: form.approver_signature,
   });
 
   const buildStudentPayload = () => {
@@ -871,12 +881,51 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           <div className="space-y-6 py-4">
             {activeSections.map(section => renderSection(section))}
 
-            {/* Signature note */}
-            <div className="border rounded-lg p-4 bg-secondary/30">
-              <p className="text-sm text-muted-foreground italic">
-                {bn ? '* প্রিন্ট/ডাউনলোড ফাইলে প্রিন্সিপাল ও শিক্ষকের নাম, পদবী ও স্বাক্ষরের স্থান থাকবে'
-                  : '* Print/Download file will include Principal & Teacher name, designation and signature fields'}
-              </p>
+            {/* Approver Section */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">
+                {bn ? '৪. অনুমোদনকারীর তথ্য' : '4. Approver Information'}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>{bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}</Label>
+                  <Input className="bg-background mt-1" value={form.approver_name || ''}
+                    onChange={e => setForm(prev => ({ ...prev, approver_name: e.target.value }))}
+                    placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                </div>
+                <div>
+                  <Label>{bn ? 'পদবী' : 'Designation'}</Label>
+                  <Select value={form.approver_designation || ''} onValueChange={v => setForm(prev => ({ ...prev, approver_designation: v }))}>
+                    <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="principal">{bn ? 'প্রিন্সিপাল' : 'Principal'}</SelectItem>
+                      <SelectItem value="vice_principal">{bn ? 'ভাইস প্রিন্সিপাল' : 'Vice Principal'}</SelectItem>
+                      <SelectItem value="head_teacher">{bn ? 'প্রধান শিক্ষক' : 'Head Teacher'}</SelectItem>
+                      <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                      <SelectItem value="office_staff">{bn ? 'অফিস স্টাফ' : 'Office Staff'}</SelectItem>
+                      <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}</Label>
+                  <Input type="date" className="bg-background mt-1" value={form.approver_date || ''}
+                    onChange={e => setForm(prev => ({ ...prev, approver_date: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>{bn ? 'স্বাক্ষর' : 'Signature'}</Label>
+                  <div className="mt-1">
+                    <PhotoUpload
+                      value={form.approver_signature || null}
+                      onChange={(url) => setForm(prev => ({ ...prev, approver_signature: url || '' }))}
+                      folder="students"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      {bn ? 'স্বাক্ষর আপলোড করুন অথবা প্রিন্টের পর বক্সে স্বাক্ষর করুন' : 'Upload signature or sign in box after print'}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Submit */}
