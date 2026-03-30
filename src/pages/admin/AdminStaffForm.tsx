@@ -927,6 +927,43 @@ const AdminStaffForm = () => {
             </div>
           </div>
 
+          {/* ========== Approver Section ========== */}
+          <div className="card-elevated p-6">
+            <h2 className="text-lg font-display font-bold text-foreground mb-4 pb-2 border-b border-border">
+              {bn ? 'এপ্রোভকারীর তথ্য' : 'Approver Details'}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>{bn ? 'এপ্রোভকারীর নাম' : "Approver's Name"} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" value={approverName} onChange={e => setApproverName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+              </div>
+              <div>
+                <Label>{bn ? 'পদবী' : 'Position'} <span className="text-destructive">*</span></Label>
+                <Input className="bg-background mt-1" value={approverPosition} onChange={e => setApproverPosition(e.target.value)} placeholder={bn ? 'পদবী লিখুন' : 'Enter position'} />
+              </div>
+              <div>
+                <Label>{bn ? 'স্বাক্ষর (আপলোড বা প্রিন্টে বক্স দেখাবে)' : 'Signature (upload or box shown in print)'}</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <input ref={approverSigRef} type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp" onChange={handleApproverSignatureUpload} />
+                  <Button type="button" variant="outline" size="sm" onClick={() => approverSigRef.current?.click()} className="gap-1">
+                    <Upload className="w-3.5 h-3.5" /> {bn ? 'আপলোড' : 'Upload'}
+                  </Button>
+                  {approverSignatureUrl && (
+                    <div className="flex items-center gap-2">
+                      <img src={approverSignatureUrl} alt="Signature" className="h-8 border border-border rounded" />
+                      <button type="button" onClick={() => setApproverSignatureUrl('')} className="text-destructive hover:text-destructive/80"><X className="w-4 h-4" /></button>
+                    </div>
+                  )}
+                  {!approverSignatureUrl && <span className="text-xs text-muted-foreground">{bn ? 'প্রিন্টে স্বাক্ষরের বক্স দেখাবে' : 'Signature box will show in print'}</span>}
+                </div>
+              </div>
+              <div>
+                <Label>{bn ? 'তারিখ' : 'Date'}</Label>
+                <Input type="date" className="bg-background mt-1" value={approverDate} onChange={e => setApproverDate(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <Button type="submit" className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
               {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
