@@ -1064,6 +1064,114 @@ const AdminWebsite = () => {
             </div>
           </TabsContent>
 
+          {/* Info Links Tab */}
+          <TabsContent value="info-links">
+            <div className="card-elevated p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'মাদ্রাসা সম্পর্কিত তথ্য লিংক' : 'Institution Info Links'}
+                </h3>
+                <Button variant="outline" size="sm" onClick={addInfoLink}>
+                  <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন লিংক' : 'Add Link'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'bn'
+                  ? 'হোমপেজের "মাদ্রাসা সম্পর্কিত তথ্য" সেকশনে প্রদর্শিত লিংকগুলো এখানে ম্যানেজ করুন।'
+                  : 'Manage the links shown in the "Institution Info" section on the homepage.'}
+              </p>
+
+              {/* Live Preview */}
+              <div className="p-3 rounded-lg border bg-secondary/30">
+                <Label className="text-xs text-muted-foreground mb-2 block">{language === 'bn' ? 'লাইভ প্রিভিউ' : 'Live Preview'}</Label>
+                <div className="bg-card rounded-lg overflow-hidden border max-w-xs">
+                  <div className="bg-primary px-3 py-2 text-center">
+                    <span className="text-xs font-bold text-primary-foreground">{language === 'bn' ? '✦ মাদ্রাসা সম্পর্কিত তথ্য' : '✦ Institution Info'}</span>
+                  </div>
+                  <div className="p-2 space-y-0.5">
+                    {(form.info_links || []).filter(l => l.visible).sort((a, b) => a.sort_order - b.sort_order).map(link => (
+                      <div key={link.id} className="flex items-center gap-2 px-2 py-1.5 text-xs text-foreground rounded hover:bg-primary/5">
+                        <span className="text-primary text-[10px]">●</span>
+                        <span>{language === 'bn' ? link.label_bn : link.label_en}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {(form.info_links || []).map((link, index) => (
+                  <div key={link.id} className={`p-4 rounded-lg border bg-card space-y-3 ${!link.visible ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Menu className="w-4 h-4 text-muted-foreground cursor-grab" />
+                        <span className="text-sm font-semibold text-foreground">
+                          {language === 'bn' ? link.label_bn || `লিংক ${index + 1}` : link.label_en || `Link ${index + 1}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateInfoLink(index, 'visible', !link.visible)}>
+                          {link.visible ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === 0} onClick={() => moveInfoLink(index, 'up')}>
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === (form.info_links || []).length - 1} onClick={() => moveInfoLink(index, 'down')}>
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => removeInfoLink(index)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'নাম (বাংলা)' : 'Label (BN)'}</Label>
+                        <Input className="bg-background mt-1 h-9" value={link.label_bn} onChange={e => updateInfoLink(index, 'label_bn', e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Label (EN)'}</Label>
+                        <Input className="bg-background mt-1 h-9" value={link.label_en} onChange={e => updateInfoLink(index, 'label_en', e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'পেইজ লিংক' : 'Page Link'}</Label>
+                        <Select value={AVAILABLE_PAGES.find(p => p.path === link.path) ? link.path : 'custom'} onValueChange={v => {
+                          if (v !== 'custom') updateInfoLink(index, 'path', v);
+                        }}>
+                          <SelectTrigger className="mt-1 bg-background h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_PAGES.map(page => (
+                              <SelectItem key={page.path} value={page.path}>
+                                {language === 'bn' ? page.label_bn : page.label_en}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="custom">{language === 'bn' ? 'কাস্টম' : 'Custom'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'আইকন' : 'Icon'}</Label>
+                        <Select value={link.icon} onValueChange={v => updateInfoLink(index, 'icon', v)}>
+                          <SelectTrigger className="mt-1 bg-background h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {INFO_LINK_ICONS.map(icon => (
+                              <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={() => saveSection(['info_links'])} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'তথ্য লিংক সংরক্ষণ' : 'Save Info Links'}
+              </Button>
+            </div>
+          </TabsContent>
+
           {/* Social Tab */}
           <TabsContent value="social">
             <div className="card-elevated p-5 space-y-4">
