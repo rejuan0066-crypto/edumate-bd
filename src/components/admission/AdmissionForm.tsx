@@ -121,6 +121,10 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         guardian_phone: admData.guardian_phone || '',
         guardian_phone_code: admData.guardian_phone_code || '+880',
         guardian_nid: admData.guardian_nid || '',
+        approver_name: admData.approver_name || '',
+        approver_designation: admData.approver_designation || '',
+        approver_date: admData.approver_date || '',
+        approver_signature: admData.approver_signature || '',
       });
       if (admData.permanentAddr) setPermanentAddr(admData.permanentAddr);
       if (admData.presentAddr) setPresentAddr(admData.presentAddr);
