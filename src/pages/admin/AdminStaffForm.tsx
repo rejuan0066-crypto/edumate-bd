@@ -173,6 +173,78 @@ const AdminStaffForm = () => {
     { value: 'guard', bn: 'নিরাপত্তা প্রহরী', en: 'Security Guard' },
     { value: 'other', bn: 'অন্যান্য', en: 'Other' },
   ];
+  // Populate form fields when editing
+  useEffect(() => {
+    if (!isEditMode || !existingStaff || dataLoaded) return;
+    const sd = (existingStaff.staff_data as any) || {};
+    setFirstName(sd.first_name || existingStaff.name_bn?.split(' ')[0] || '');
+    setLastName(sd.last_name || existingStaff.name_bn?.split(' ').slice(1).join(' ') || '');
+    setMobile(existingStaff.phone?.replace(/^\+\d{1,3}/, '') || '');
+    setMobileCode(sd.mobile_code || '+880');
+    setEmploymentType(existingStaff.employment_type || '');
+    const desigMatch = designations.find(d => d.bn === existingStaff.designation || d.en === existingStaff.designation);
+    setDesignation(desigMatch?.value || existingStaff.designation || '');
+    setResidenceType(existingStaff.residence_type || '');
+    setDob(existingStaff.date_of_birth || '');
+    setReligion(existingStaff.religion || '');
+    setNid(existingStaff.nid || '');
+    setEducation(existingStaff.education || '');
+    setExperience(existingStaff.experience || '');
+    setPrevInstitute(existingStaff.previous_institute || '');
+    setSalary(existingStaff.salary?.toString() || '');
+    setPhotoUrl(existingStaff.photo_url || null);
+    if (sd.permanent_address) setPermanentAddr(sd.permanent_address);
+    if (sd.present_address) setPresentAddr(sd.present_address);
+    if (sd.parents) {
+      const p = sd.parents;
+      setFatherName(p.father?.name || '');
+      setFatherMobile(p.father?.mobile || '');
+      setFatherMobileCode(p.father?.mobile_code || '+880');
+      setFatherNid(p.father?.nid || '');
+      setFatherOccupation(p.father?.occupation || '');
+      setMotherName(p.mother?.name || '');
+      setMotherMobile(p.mother?.mobile || '');
+      setMotherMobileCode(p.mother?.mobile_code || '+880');
+      setMotherNid(p.mother?.nid || '');
+      setMotherOccupation(p.mother?.occupation || '');
+      if (p.permanent_address) setParentPermAddr(p.permanent_address);
+      if (p.present_address) setParentPresAddr(p.present_address);
+    }
+    if (sd.guardian) {
+      const g = sd.guardian;
+      setGuardianType(g.type || '');
+      setGuardianName(g.name || '');
+      setGuardianRelation(g.relation || '');
+      setGuardianMobile(g.mobile || '');
+      setGuardianMobileCode(g.mobile_code || '+880');
+      setGuardianNid(g.nid || '');
+      if (g.permanent_address) setGuardianPermAddr(g.permanent_address);
+      if (g.present_address) setGuardianPresAddr(g.present_address);
+    }
+    if (sd.identifier) {
+      const ii = sd.identifier;
+      setIdentifierName(ii.name || '');
+      setIdentifierRelation(ii.relation || '');
+      setIdentifierMobile(ii.mobile || '');
+      setIdentifierMobileCode(ii.mobile_code || '+880');
+      setIdentifierNid(ii.nid || '');
+      if (ii.address) setIdentifierAddr(ii.address);
+    }
+    if (sd.documents) setDocuments(sd.documents.map((d: any) => ({ ...d, id: d.id || crypto.randomUUID() })));
+    if (sd.signatures) {
+      setPrincipalName(sd.signatures.principal?.name || '');
+      setPrincipalPosition(sd.signatures.principal?.position || (bn ? 'অধ্যক্ষ' : 'Principal'));
+      setOtherSignName(sd.signatures.other?.name || '');
+      setOtherSignPosition(sd.signatures.other?.position || '');
+    }
+    if (sd.approver) {
+      setApproverName(sd.approver.name || '');
+      setApproverPosition(sd.approver.position || '');
+      setApproverSignatureUrl(sd.approver.signature_url || '');
+      setApproverDate(sd.approver.date || '');
+    }
+    setDataLoaded(true);
+  }, [isEditMode, existingStaff, dataLoaded]);
 
   const validateNid = (val: string, setter: (v: string) => void, errorSetter?: (v: string) => void) => {
     const cleaned = val.replace(/\D/g, '');
