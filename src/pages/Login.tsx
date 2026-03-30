@@ -93,9 +93,6 @@ const Login = () => {
           </Button>
         </form>
 
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          {language === 'bn' ? 'ডিফল্ট: rejuanh@admin.com / bd@001122' : 'Default: rejuanh@admin.com / bd@001122'}
-        </p>
 
         <div className="mt-6 text-center">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
