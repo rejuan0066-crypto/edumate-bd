@@ -33,6 +33,13 @@ const WebsitePageBuilder = ({ form, setForm, language, saving, onSave }: Props) 
   const bn = language === 'bn';
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [deviceView, setDeviceView] = useState<DeviceView>('desktop');
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [editLabelBn, setEditLabelBn] = useState('');
+  const [editLabelEn, setEditLabelEn] = useState('');
+  const [showAddSection, setShowAddSection] = useState(false);
+  const [newSectionBn, setNewSectionBn] = useState('');
+  const [newSectionEn, setNewSectionEn] = useState('');
+  const [newSectionIcon, setNewSectionIcon] = useState('📄');
 
   const sectionOrder = form.section_order || ALL_SECTION_CONFIGS;
 
