@@ -58,6 +58,16 @@ export interface FooterLink {
   url: string;
 }
 
+export interface InfoLink {
+  id: string;
+  label_bn: string;
+  label_en: string;
+  path: string;
+  icon: string;
+  visible: boolean;
+  sort_order: number;
+}
+
 export type HomeSectionKey =
   | 'principalMessage'
   | 'banner'
