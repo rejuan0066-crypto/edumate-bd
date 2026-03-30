@@ -957,9 +957,6 @@ const AdminStaffForm = () => {
           </div>
         </DialogContent>
       </Dialog>
-          </div>
-          <div style={{ position: 'relative' }}>
-            {photoUrl && (
               <div className="photo-box" style={{ position: 'absolute', top: 0, right: 0 }}>
                 <img src={photoUrl} alt="Photo" />
               </div>
