@@ -12,7 +12,8 @@ import {
   Layout, Paintbrush, ArrowUpDown, Smartphone, Tablet, Monitor,
   AlignLeft, AlignCenter, AlignRight, Bold, Italic, RotateCcw,
   MoveVertical, Play, X, PanelTop, PanelBottom, GraduationCap,
-  Bell, ArrowRight, Calendar, MapPin, Users, BookOpen, Award, Phone, Mail, Image
+  Bell, ArrowRight, Calendar, MapPin, Users, BookOpen, Award, Phone, Mail, Image,
+  Pencil, Plus, Trash2, Check
 } from 'lucide-react';
 import { HomeSectionConfig, WebsiteSettings, ALL_SECTION_CONFIGS, SectionStyleConfig, DEFAULT_SECTION_STYLE, HomeSectionKey } from '@/hooks/useWebsiteSettings';
 import { Json } from '@/integrations/supabase/types';
