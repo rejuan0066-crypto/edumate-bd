@@ -20,14 +20,20 @@ import ImageUpload from '@/components/ImageUpload';
 const AdminWebsite = () => {
   const { language } = useLanguage();
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
+  const { menuConfig, saveMenuConfig } = useMenuSettings();
   const [form, setForm] = useState<WebsiteSettings | null>(null);
+  const [publicMenu, setPublicMenu] = useState<MenuItemConfig[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (settings && !form) {
       setForm({ ...settings });
     }
-  }, [settings]);
+  }, [settings, form]);
+
+  useEffect(() => {
+    setPublicMenu(menuConfig.public || []);
+  }, [menuConfig]);
 
   if (isLoading || !form) {
     return (
