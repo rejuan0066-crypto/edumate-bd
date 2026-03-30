@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     const backup: Record<string, any> = {
       metadata: {
         exported_at: new Date().toISOString(),
-        exported_by: user.email,
+        exported_by: (claimsData.claims.email as string) || userId,
         tables: tablesToExport,
         format,
       },
