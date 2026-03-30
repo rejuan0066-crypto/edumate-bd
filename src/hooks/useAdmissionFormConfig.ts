@@ -142,7 +142,11 @@ export const useAdmissionFormConfig = () => {
   const getFieldsBySection = (section: SectionKey): AdmissionFieldConfig[] => {
     return activeFields.filter(f => {
       const val = f.validation as any;
-      return val?.section === section;
+      if (val?.section) return val.section === section;
+      // Fallback: match by default_value against DEFAULT_FIELDS
+      const defaultDef = DEFAULT_FIELDS.find(d => d.default_value === f.default_value);
+      if (defaultDef) return defaultDef.section === section;
+      return false;
     }).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
   };
 
