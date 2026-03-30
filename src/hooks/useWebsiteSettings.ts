@@ -234,6 +234,7 @@ export interface WebsiteSettings {
     infoLinks: boolean;
   };
   divisions: Array<{ name: string; nameEn: string; icon: string }>;
+  info_links: InfoLink[];
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
