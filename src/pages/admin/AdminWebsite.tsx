@@ -8,14 +8,33 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List } from 'lucide-react';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
 import { toast } from 'sonner';
-import { useWebsiteSettings, WebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useWebsiteSettings, WebsiteSettings, InfoLink } from '@/hooks/useWebsiteSettings';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import { Json } from '@/integrations/supabase/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
+
+const AVAILABLE_PAGES = [
+  { path: '/', label_bn: 'হোম', label_en: 'Home' },
+  { path: '/about', label_bn: 'আমাদের সম্পর্কে', label_en: 'About' },
+  { path: '/gallery', label_bn: 'গ্যালারি', label_en: 'Gallery' },
+  { path: '/admission', label_bn: 'ভর্তি', label_en: 'Admission' },
+  { path: '/result', label_bn: 'ফলাফল', label_en: 'Result' },
+  { path: '/student-info', label_bn: 'শিক্ষার্থী তথ্য', label_en: 'Student Info' },
+  { path: '/notices', label_bn: 'নোটিশ', label_en: 'Notices' },
+  { path: '/donation', label_bn: 'দান', label_en: 'Donation' },
+  { path: '/fee-payment', label_bn: 'ফি প্রদান', label_en: 'Fee Payment' },
+  { path: '/contact', label_bn: 'যোগাযোগ', label_en: 'Contact' },
+  { path: '/posts', label_bn: 'পোস্ট/সংবাদ', label_en: 'Posts/News' },
+];
+
+const INFO_LINK_ICONS = [
+  'Users', 'UserCheck', 'BookOpen', 'GraduationCap', 'FileText', 'List', 'Award',
+  'Globe', 'Heart', 'Star', 'Shield', 'Clock', 'MapPin', 'Phone', 'Mail', 'Settings', 'Bookmark', 'Layers', 'Tag',
+];
 
 const AdminWebsite = () => {
   const { language } = useLanguage();
@@ -75,6 +94,40 @@ const AdminWebsite = () => {
     setForm(prev => {
       if (!prev) return prev;
       return { ...prev, sections: { ...prev.sections, [key]: !prev.sections[key] } };
+    });
+  };
+
+  // Info Links CRUD
+  const addInfoLink = () => {
+    setForm(prev => {
+      if (!prev) return prev;
+      const links = [...(prev.info_links || [])];
+      links.push({ id: `info-${Date.now()}`, label_bn: '', label_en: '', path: '/', icon: 'Globe', visible: true, sort_order: links.length });
+      return { ...prev, info_links: links };
+    });
+  };
+  const removeInfoLink = (index: number) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      return { ...prev, info_links: (prev.info_links || []).filter((_, i) => i !== index) };
+    });
+  };
+  const updateInfoLink = (index: number, field: string, value: any) => {
+    setForm(prev => {
+      if (!prev) return prev;
+      const links = [...(prev.info_links || [])];
+      links[index] = { ...links[index], [field]: value };
+      return { ...prev, info_links: links };
+    });
+  };
+  const moveInfoLink = (index: number, dir: 'up' | 'down') => {
+    setForm(prev => {
+      if (!prev) return prev;
+      const links = [...(prev.info_links || [])];
+      const swapIdx = dir === 'up' ? index - 1 : index + 1;
+      if (swapIdx < 0 || swapIdx >= links.length) return prev;
+      [links[index], links[swapIdx]] = [links[swapIdx], links[index]];
+      return { ...prev, info_links: links.map((l, i) => ({ ...l, sort_order: i })) };
     });
   };
 
@@ -302,6 +355,9 @@ const AdminWebsite = () => {
             <TabsTrigger value="divisions" className="text-xs py-2 px-2.5">
               <BarChart3 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'বিভাগ' : 'Divisions'}
             </TabsTrigger>
+            <TabsTrigger value="info-links" className="text-xs py-2 px-2.5">
+              <Link2 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'তথ্য লিংক' : 'Info Links'}
+            </TabsTrigger>
             <TabsTrigger value="social" className="text-xs py-2 px-2.5">
               <Share2 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সোশ্যাল' : 'Social'}
             </TabsTrigger>
@@ -483,23 +539,38 @@ const AdminWebsite = () => {
                   <Button variant="outline" size="sm" onClick={() => setPublicMenu(prev => [...prev, {
                     id: `custom-${Date.now()}`,
                     path: '/',
-                    label_bn: '',
-                    label_en: '',
+                    label_bn: 'নতুন মেনু',
+                    label_en: 'New Menu',
                     icon: '',
                     visible: true,
                     sort_order: prev.length,
                   }])}>
-                    <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন মেনু' : 'Add Menu'}
+                    <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন মেনু যোগ' : 'Add Menu Item'}
                   </Button>
+                </div>
+
+                {/* Live Menu Preview */}
+                <div className="p-3 rounded-lg border bg-secondary/30">
+                  <Label className="text-xs text-muted-foreground mb-2 block">{language === 'bn' ? 'লাইভ মেনু প্রিভিউ' : 'Live Menu Preview'}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {publicMenu.filter(m => m.visible).map(item => (
+                      <span key={item.id} className="px-3 py-1.5 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                        {language === 'bn' ? item.label_bn : item.label_en}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-3">
                   {publicMenu.map((item, index) => (
                     <div key={item.id} className={`p-4 rounded-lg border bg-card space-y-3 ${!item.visible ? 'opacity-50' : ''}`}>
                       <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <div className="text-sm font-semibold text-foreground">{language === 'bn' ? item.label_bn || `মেনু ${index + 1}` : item.label_en || `Menu ${index + 1}`}</div>
-                          <div className="text-xs text-muted-foreground">{item.path}</div>
+                        <div className="flex items-center gap-2">
+                          <Menu className="w-4 h-4 text-muted-foreground cursor-grab" />
+                          <div>
+                            <div className="text-sm font-semibold text-foreground">{language === 'bn' ? item.label_bn || `মেনু ${index + 1}` : item.label_en || `Menu ${index + 1}`}</div>
+                            <div className="text-xs text-muted-foreground">{item.path}</div>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, visible: !m.visible } : m))}>
@@ -525,18 +596,41 @@ const AdminWebsite = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
-                          <Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Label (BN)'}</Label>
-                          <Input className="bg-background mt-1" value={item.label_bn} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_bn: e.target.value } : m))} />
+                          <Label className="text-xs">{language === 'bn' ? 'নাম (বাংলা)' : 'Label (BN)'}</Label>
+                          <Input className="bg-background mt-1 h-9" value={item.label_bn} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_bn: e.target.value } : m))} />
                         </div>
                         <div>
-                          <Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Label (EN)'}</Label>
-                          <Input className="bg-background mt-1" value={item.label_en} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_en: e.target.value } : m))} />
+                          <Label className="text-xs">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Label (EN)'}</Label>
+                          <Input className="bg-background mt-1 h-9" value={item.label_en} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, label_en: e.target.value } : m))} />
                         </div>
                         <div>
-                          <Label>{language === 'bn' ? 'লিংক/পাথ' : 'Path'}</Label>
-                          <Input className="bg-background mt-1" value={item.path} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, path: e.target.value } : m))} placeholder="/about" />
+                          <Label className="text-xs">{language === 'bn' ? 'পেইজ লিংক পিকার' : 'Link Picker'}</Label>
+                          <Select value={AVAILABLE_PAGES.find(p => p.path === item.path) ? item.path : 'custom'} onValueChange={v => {
+                            if (v === 'custom') return;
+                            const page = AVAILABLE_PAGES.find(p => p.path === v);
+                            setPublicMenu(prev => prev.map((m, i) => i === index ? {
+                              ...m,
+                              path: v,
+                              label_bn: m.label_bn || page?.label_bn || '',
+                              label_en: m.label_en || page?.label_en || '',
+                            } : m));
+                          }}>
+                            <SelectTrigger className="mt-1 bg-background h-9"><SelectValue placeholder={language === 'bn' ? 'পেইজ নির্বাচন' : 'Select page'} /></SelectTrigger>
+                            <SelectContent>
+                              {AVAILABLE_PAGES.map(page => (
+                                <SelectItem key={page.path} value={page.path}>
+                                  {language === 'bn' ? page.label_bn : page.label_en} ({page.path})
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="custom">{language === 'bn' ? 'কাস্টম লিংক' : 'Custom Link'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">{language === 'bn' ? 'কাস্টম পাথ' : 'Custom Path'}</Label>
+                          <Input className="bg-background mt-1 h-9" value={item.path} onChange={e => setPublicMenu(prev => prev.map((m, i) => i === index ? { ...m, path: e.target.value } : m))} placeholder="/custom-page" />
                         </div>
                       </div>
                     </div>
@@ -966,6 +1060,114 @@ const AdminWebsite = () => {
               </div>
               <Button className="btn-primary-gradient" onClick={() => saveSection(['divisions'])} disabled={saving}>
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Info Links Tab */}
+          <TabsContent value="info-links">
+            <div className="card-elevated p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-display font-bold text-foreground">
+                  {language === 'bn' ? 'মাদ্রাসা সম্পর্কিত তথ্য লিংক' : 'Institution Info Links'}
+                </h3>
+                <Button variant="outline" size="sm" onClick={addInfoLink}>
+                  <Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন লিংক' : 'Add Link'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {language === 'bn'
+                  ? 'হোমপেজের "মাদ্রাসা সম্পর্কিত তথ্য" সেকশনে প্রদর্শিত লিংকগুলো এখানে ম্যানেজ করুন।'
+                  : 'Manage the links shown in the "Institution Info" section on the homepage.'}
+              </p>
+
+              {/* Live Preview */}
+              <div className="p-3 rounded-lg border bg-secondary/30">
+                <Label className="text-xs text-muted-foreground mb-2 block">{language === 'bn' ? 'লাইভ প্রিভিউ' : 'Live Preview'}</Label>
+                <div className="bg-card rounded-lg overflow-hidden border max-w-xs">
+                  <div className="bg-primary px-3 py-2 text-center">
+                    <span className="text-xs font-bold text-primary-foreground">{language === 'bn' ? '✦ মাদ্রাসা সম্পর্কিত তথ্য' : '✦ Institution Info'}</span>
+                  </div>
+                  <div className="p-2 space-y-0.5">
+                    {(form.info_links || []).filter(l => l.visible).sort((a, b) => a.sort_order - b.sort_order).map(link => (
+                      <div key={link.id} className="flex items-center gap-2 px-2 py-1.5 text-xs text-foreground rounded hover:bg-primary/5">
+                        <span className="text-primary text-[10px]">●</span>
+                        <span>{language === 'bn' ? link.label_bn : link.label_en}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {(form.info_links || []).map((link, index) => (
+                  <div key={link.id} className={`p-4 rounded-lg border bg-card space-y-3 ${!link.visible ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Menu className="w-4 h-4 text-muted-foreground cursor-grab" />
+                        <span className="text-sm font-semibold text-foreground">
+                          {language === 'bn' ? link.label_bn || `লিংক ${index + 1}` : link.label_en || `Link ${index + 1}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => updateInfoLink(index, 'visible', !link.visible)}>
+                          {link.visible ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === 0} onClick={() => moveInfoLink(index, 'up')}>
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={index === (form.info_links || []).length - 1} onClick={() => moveInfoLink(index, 'down')}>
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => removeInfoLink(index)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'নাম (বাংলা)' : 'Label (BN)'}</Label>
+                        <Input className="bg-background mt-1 h-9" value={link.label_bn} onChange={e => updateInfoLink(index, 'label_bn', e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Label (EN)'}</Label>
+                        <Input className="bg-background mt-1 h-9" value={link.label_en} onChange={e => updateInfoLink(index, 'label_en', e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'পেইজ লিংক' : 'Page Link'}</Label>
+                        <Select value={AVAILABLE_PAGES.find(p => p.path === link.path) ? link.path : 'custom'} onValueChange={v => {
+                          if (v !== 'custom') updateInfoLink(index, 'path', v);
+                        }}>
+                          <SelectTrigger className="mt-1 bg-background h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {AVAILABLE_PAGES.map(page => (
+                              <SelectItem key={page.path} value={page.path}>
+                                {language === 'bn' ? page.label_bn : page.label_en}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="custom">{language === 'bn' ? 'কাস্টম' : 'Custom'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{language === 'bn' ? 'আইকন' : 'Icon'}</Label>
+                        <Select value={link.icon} onValueChange={v => updateInfoLink(index, 'icon', v)}>
+                          <SelectTrigger className="mt-1 bg-background h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {INFO_LINK_ICONS.map(icon => (
+                              <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button className="btn-primary-gradient" onClick={() => saveSection(['info_links'])} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'তথ্য লিংক সংরক্ষণ' : 'Save Info Links'}
               </Button>
             </div>
           </TabsContent>

@@ -197,7 +197,7 @@ const Home = () => {
               {isVisible('infoLinks') && (
                 <div className="lg:col-span-3">
                   <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4 }} className="h-full">
-                    <HomeInfoLinks language={language} />
+                    <HomeInfoLinks language={language} infoLinks={settings.info_links} />
                   </motion.div>
                 </div>
               )}

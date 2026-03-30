@@ -58,6 +58,16 @@ export interface FooterLink {
   url: string;
 }
 
+export interface InfoLink {
+  id: string;
+  label_bn: string;
+  label_en: string;
+  path: string;
+  icon: string;
+  visible: boolean;
+  sort_order: number;
+}
+
 export type HomeSectionKey =
   | 'principalMessage'
   | 'banner'
@@ -224,6 +234,7 @@ export interface WebsiteSettings {
     infoLinks: boolean;
   };
   divisions: Array<{ name: string; nameEn: string; icon: string }>;
+  info_links: InfoLink[];
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -338,6 +349,15 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     { name: 'নূরানী বিভাগ', nameEn: 'Nurani Division', icon: '🌟' },
     { name: 'এবতেদায়ী বিভাগ', nameEn: 'Ebtedayee Division', icon: '📚' },
     { name: 'মুতাওয়াসসিতাহ বিভাগ', nameEn: 'Mutawassitah Division', icon: '🎓' },
+  ],
+  info_links: [
+    { id: 'officials', label_bn: 'কর্মকর্তাবৃন্দ', label_en: 'Officials', path: '/about', icon: 'Users', visible: true, sort_order: 0 },
+    { id: 'staff3', label_bn: '৩য় শ্রেণির কর্মচারীবৃন্দ', label_en: 'Class 3 Staff', path: '/about', icon: 'UserCheck', visible: true, sort_order: 1 },
+    { id: 'classes', label_bn: 'শ্রেণী', label_en: 'Classes', path: '/about', icon: 'BookOpen', visible: true, sort_order: 2 },
+    { id: 'student-info', label_bn: 'শিক্ষার্থীদের তথ্য', label_en: 'Student Info', path: '/student-info', icon: 'GraduationCap', visible: true, sort_order: 3 },
+    { id: 'syllabus', label_bn: 'সিলেবাস', label_en: 'Syllabus', path: '/about', icon: 'FileText', visible: true, sort_order: 4 },
+    { id: 'routines', label_bn: 'রুটিনসমূহ', label_en: 'Routines', path: '/about', icon: 'List', visible: true, sort_order: 5 },
+    { id: 'results', label_bn: 'পরীক্ষাসমূহের ফলাফল', label_en: 'Exam Results', path: '/result', icon: 'Award', visible: true, sort_order: 6 },
   ],
 };
 
