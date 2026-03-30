@@ -277,7 +277,7 @@ const AdminWebsite = () => {
               <PanelBottom className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফুটার' : 'Footer'}
             </TabsTrigger>
             <TabsTrigger value="sections" className="text-xs py-2 px-2.5">
-              <Layout className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সেকশন' : 'Sections'}
+              <Layout className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'পেইজ বিল্ডার' : 'Page Builder'}
             </TabsTrigger>
             <TabsTrigger value="divisions" className="text-xs py-2 px-2.5">
               <BarChart3 className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'বিভাগ' : 'Divisions'}
