@@ -314,7 +314,7 @@ const AdminStaffForm = () => {
   };
 
   // Submit
-  const addMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async () => {
       const fullName = `${firstName} ${lastName}`.trim();
       const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || designation;
@@ -368,7 +368,7 @@ const AdminStaffForm = () => {
         },
       };
 
-      const { error } = await supabase.from('staff').insert({
+      const record = {
         name_bn: fullName,
         name_en: fullName,
         designation: desigLabel,
@@ -376,7 +376,6 @@ const AdminStaffForm = () => {
         department: designation?.includes('teacher') ? 'শিক্ষা বিভাগ' : 'প্রশাসন',
         address: formatAddress(permanentAddr) || null,
         salary: salary ? parseFloat(salary) : null,
-        joining_date: new Date().toISOString().split('T')[0],
         photo_url: photoUrl || null,
         date_of_birth: dob || null,
         religion: religion === 'other' ? customReligion : religion || null,
@@ -387,12 +386,22 @@ const AdminStaffForm = () => {
         experience: experience || null,
         previous_institute: prevInstitute || null,
         staff_data: staffData as any,
-      });
-      if (error) throw error;
+      };
+
+      if (isEditMode && editId) {
+        const { error } = await supabase.from('staff').update(record).eq('id', editId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('staff').insert({
+          ...record,
+          joining_date: new Date().toISOString().split('T')[0],
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast.success(bn ? 'কর্মী/শিক্ষক সফলভাবে যোগ হয়েছে' : 'Staff/Teacher added successfully');
+      toast.success(bn ? (isEditMode ? 'কর্মী/শিক্ষক সফলভাবে আপডেট হয়েছে' : 'কর্মী/শিক্ষক সফলভাবে যোগ হয়েছে') : (isEditMode ? 'Staff/Teacher updated successfully' : 'Staff/Teacher added successfully'));
       navigate('/admin/staff');
     },
     onError: (e: any) => toast.error(e.message || 'Error saving staff'),
