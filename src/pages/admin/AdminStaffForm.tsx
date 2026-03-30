@@ -9,10 +9,10 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import PhotoUpload from '@/components/PhotoUpload';
 import { useState, useRef } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -55,6 +55,15 @@ const AdminStaffForm = () => {
   const { validate, validateAll } = useValidationRules('staff');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const printRef = useRef<HTMLDivElement>(null);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+
+  const { data: institution } = useQuery({
+    queryKey: ['institution'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+  });
 
   // Section 1: Employee
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -338,24 +347,175 @@ const AdminStaffForm = () => {
   const handlePrint = () => {
     const content = printRef.current;
     if (!content) return;
-    const printStyles = document.createElement('style');
-    printStyles.id = 'staff-print-styles';
-    printStyles.textContent = `
-      @media print {
-        body > *:not(.staff-print-area) { display: none !important; }
-        .staff-print-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; }
-        .staff-print-area * { visibility: visible; }
-        .no-print { display: none !important; }
-      }
-    `;
-    document.head.appendChild(printStyles);
-    content.classList.add('staff-print-area');
-    window.print();
-    setTimeout(() => {
-      content.classList.remove('staff-print-area');
-      printStyles.remove();
-    }, 1000);
+    const printWindow = document.createElement('iframe');
+    printWindow.style.position = 'fixed';
+    printWindow.style.top = '-9999px';
+    printWindow.style.left = '-9999px';
+    printWindow.style.width = '210mm';
+    printWindow.style.height = '297mm';
+    document.body.appendChild(printWindow);
+    const doc = printWindow.contentDocument || printWindow.contentWindow?.document;
+    if (!doc) return;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Staff Form</title>
+      <style>${getPrintStyles()}</style></head><body>${content.innerHTML}</body></html>`);
+    doc.close();
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.contentWindow?.print();
+        setTimeout(() => document.body.removeChild(printWindow), 2000);
+      }, 300);
+    };
   };
+
+  const getPrintStyles = () => `
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans Bengali', sans-serif; font-size: 11pt; color: #000; padding: 15mm 15mm 10mm 15mm; }
+    .form-header { text-align: center; border-bottom: 3px double #1a5c2e; padding-bottom: 10px; margin-bottom: 12px; position: relative; }
+    .form-header .logo { width: 60px; height: 60px; object-fit: contain; }
+    .form-header h1 { font-size: 16pt; font-weight: 700; margin: 4px 0 2px; color: #1a5c2e; }
+    .form-header h2 { font-size: 12pt; font-weight: 600; color: #333; margin: 2px 0; }
+    .form-header p { font-size: 9pt; color: #555; }
+    .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 6px; font-size: 13pt; font-weight: 700; margin: 10px 0; border-radius: 2px; }
+    .photo-area { position: absolute; top: 0; right: 0; width: 90px; height: 110px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+    .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+    .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 5px; }
+    .section { margin: 10px 0; }
+    .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
+    .form-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    .form-table td { border: 1px solid #ccc; padding: 4px 8px; font-size: 10pt; vertical-align: top; }
+    .form-table .label { background: #f5f5f5; font-weight: 600; width: 28%; color: #333; white-space: nowrap; }
+    .form-table .value { color: #000; }
+    .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; font-weight: 600; text-align: left; }
+    .doc-table td { border: 1px solid #ccc; padding: 3px 8px; font-size: 9pt; }
+    .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 10px; }
+    .sig-box { text-align: center; min-width: 180px; }
+    .sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 35px; }
+    .sig-name { font-weight: 600; font-size: 10pt; }
+    .sig-position { font-size: 9pt; color: #555; }
+    .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
+    @media print { body { padding: 10mm; } @page { size: A4; margin: 0; } }
+  `;
+
+  const getGuardianInfo = () => {
+    if (guardianType === 'father') return { name: fatherName, relation: bn ? 'পিতা' : 'Father', mobile: fatherMobileCode + fatherMobile, nid: fatherNid };
+    if (guardianType === 'mother') return { name: motherName, relation: bn ? 'মাতা' : 'Mother', mobile: motherMobileCode + motherMobile, nid: motherNid };
+    return { name: guardianName, relation: guardianRelation, mobile: guardianMobileCode + guardianMobile, nid: guardianNid };
+  };
+
+  const guardianInfo = getGuardianInfo();
+  const desigLabel = designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || '';
+  const religionLabel = religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || '';
+  const todayDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
+
+  const PrintableForm = () => (
+    <div>
+      <div className="form-header" style={{ position: 'relative' }}>
+        {institution?.logo_url && <img src={institution.logo_url} alt="" className="logo" style={{ position: 'absolute', left: 0, top: 0, width: 60, height: 60 }} />}
+        <h1>{institution?.name || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h1>
+        {institution?.name_en && <h2>{institution.name_en}</h2>}
+        {institution?.address && <p>{institution.address}</p>}
+        {(institution?.phone || institution?.email) && <p>{[institution?.phone, institution?.email].filter(Boolean).join(' | ')}</p>}
+        <div className="photo-area">
+          {photoUrl ? <img src={photoUrl} alt="Photo" /> : <div className="placeholder">{bn ? 'ছবি' : 'Photo'}<br/>Passport Size</div>}
+        </div>
+      </div>
+
+      <div className="form-title">{bn ? 'কর্মী/শিক্ষক তথ্য ফরম' : 'Staff/Teacher Information Form'}</div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'নাম' : 'Full Name'}</td><td className="value" colSpan={3}>{firstName} {lastName}</td></tr>
+            <tr><td className="label">{bn ? 'বেতন' : 'Salary'}</td><td className="value">৳{salary}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{mobileCode}{mobile}</td></tr>
+            <tr><td className="label">{bn ? 'চাকরির ধরন' : 'Employment'}</td><td className="value">{employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</td><td className="label">{bn ? 'পদবী' : 'Designation'}</td><td className="value">{desigLabel}</td></tr>
+            <tr><td className="label">{bn ? 'আবাসিক/অনাবাসিক' : 'Residential'}</td><td className="value">{residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</td><td className="label">{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</td><td className="value">{dob}</td></tr>
+            <tr><td className="label">{bn ? 'ধর্ম' : 'Religion'}</td><td className="value">{religionLabel}</td><td className="label">{bn ? 'জাতীয় পরিচয়পত্র' : 'NID'}</td><td className="value">{nid}</td></tr>
+            <tr><td className="label">{bn ? 'শিক্ষাগত যোগ্যতা' : 'Education'}</td><td className="value" colSpan={3}>{education}</td></tr>
+            <tr><td className="label">{bn ? 'অভিজ্ঞতা' : 'Experience'}</td><td className="value">{experience || '-'}</td><td className="label">{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Institute'}</td><td className="value">{prevInstitute || '-'}</td></tr>
+            <tr><td className="label">{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}</td><td className="value" colSpan={3}>{formatAddress(permanentAddr)}</td></tr>
+            <tr><td className="label">{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}</td><td className="value" colSpan={3}>{formatAddress(sameAddress ? permanentAddr : presentAddr)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'পিতার নাম' : "Father's Name"}</td><td className="value">{fatherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{fatherMobileCode}{fatherMobile}</td></tr>
+            <tr><td className="label">{bn ? 'পিতার NID' : "Father's NID"}</td><td className="value">{fatherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{fatherOccupation}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার নাম' : "Mother's Name"}</td><td className="value">{motherName}</td><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{motherMobileCode}{motherMobile}</td></tr>
+            <tr><td className="label">{bn ? 'মাতার NID' : "Mother's NID"}</td><td className="value">{motherNid}</td><td className="label">{bn ? 'পেশা' : 'Occupation'}</td><td className="value">{motherOccupation}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '৩. অভিভাবক তথ্য' : '3. Guardian Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'অভিভাবকের নাম' : 'Guardian Name'}</td><td className="value">{guardianInfo.name}</td><td className="label">{bn ? 'সম্পর্ক' : 'Relation'}</td><td className="value">{guardianInfo.relation}</td></tr>
+            <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{guardianInfo.mobile}</td><td className="label">NID</td><td className="value">{guardianInfo.nid}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="section">
+        <div className="section-title">{bn ? '৪. পরিচয়দাতার তথ্য' : '4. Identifier Details'}</div>
+        <table className="form-table">
+          <tbody>
+            <tr><td className="label">{bn ? 'নাম' : 'Name'}</td><td className="value">{identifierName}</td><td className="label">{bn ? 'সম্পর্ক' : 'Relation'}</td><td className="value">{identifierRelation}</td></tr>
+            <tr><td className="label">{bn ? 'মোবাইল' : 'Mobile'}</td><td className="value">{identifierMobileCode}{identifierMobile}</td><td className="label">NID</td><td className="value">{identifierNid}</td></tr>
+            <tr><td className="label">{bn ? 'ঠিকানা' : 'Address'}</td><td className="value" colSpan={3}>{formatAddress(identifierAddr)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      {documents.length > 0 && (
+        <div className="section">
+          <div className="section-title">{bn ? '৫. সংযুক্ত ডকুমেন্টসমূহ' : '5. Attached Documents'}</div>
+          <table className="doc-table">
+            <thead><tr><th>{bn ? 'ক্রমিক' : '#'}</th><th>{bn ? 'ডকুমেন্টের ধরন' : 'Document Type'}</th><th>{bn ? 'ফাইলের নাম' : 'File Name'}</th></tr></thead>
+            <tbody>
+              {documents.map((d, i) => (
+                <tr key={d.id}><td>{i + 1}</td><td>{d.type}</td><td>{d.name}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="signatures">
+        <div className="sig-box">
+          <div className="sig-line">
+            <div className="sig-name">{bn ? 'আবেদনকারীর স্বাক্ষর' : "Applicant's Signature"}</div>
+          </div>
+        </div>
+        {otherSignName && (
+          <div className="sig-box">
+            <div className="sig-line">
+              <div className="sig-name">{otherSignName}</div>
+              <div className="sig-position">{otherSignPosition}</div>
+            </div>
+          </div>
+        )}
+        {principalName && (
+          <div className="sig-box">
+            <div className="sig-line">
+              <div className="sig-name">{principalName}</div>
+              <div className="sig-position">{principalPosition}</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="form-date">{bn ? 'তারিখ' : 'Date'}: {todayDate}</div>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -708,6 +868,9 @@ const AdminStaffForm = () => {
               {addMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Plus className="w-5 h-5 mr-2" />}
               {bn ? 'কর্মী/শিক্ষক যোগ করুন' : 'Add Staff/Teacher'}
             </Button>
+            <Button type="button" variant="outline" className="py-6 gap-2" onClick={() => setShowPrintPreview(true)}>
+              <Eye className="w-5 h-5" /> {bn ? 'প্রিভিউ' : 'Preview'}
+            </Button>
             <Button type="button" variant="outline" className="py-6 gap-2" onClick={handlePrint}>
               <Printer className="w-5 h-5" /> {bn ? 'প্রিন্ট' : 'Print'}
             </Button>
@@ -718,118 +881,54 @@ const AdminStaffForm = () => {
       {/* Hidden printable content */}
       <div className="hidden">
         <div ref={printRef}>
-          <div className="print-header">
-            <h2>{bn ? 'কর্মী/শিক্ষক তথ্য ফরম' : 'Staff/Teacher Information Form'}</h2>
-          </div>
-          <div style={{ position: 'relative' }}>
-            {photoUrl && (
-              <div className="photo-box" style={{ position: 'absolute', top: 0, right: 0 }}>
-                <img src={photoUrl} alt="Photo" />
-              </div>
-            )}
-            <div className="section">
-              <h3>{bn ? '১. ব্যক্তিগত তথ্য' : '1. Employee Details'}</h3>
-              <div className="field-row"><div className="field"><label>{bn ? 'নাম' : 'Name'}:</label> {firstName} {lastName}</div></div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'বেতন' : 'Salary'}:</label> ৳{salary}</div>
-                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {mobileCode}{mobile}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'চাকরির ধরন' : 'Type'}:</label> {employmentType === 'full_time' ? (bn ? 'পূর্ণকালীন' : 'Full Time') : (bn ? 'খণ্ডকালীন' : 'Part Time')}</div>
-                <div className="field"><label>{bn ? 'পদবী' : 'Designation'}:</label> {designations.find(d => d.value === designation)?.[bn ? 'bn' : 'en'] || ''}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'আবাসিক' : 'Residential'}:</label> {residenceType === 'residential' ? (bn ? 'আবাসিক' : 'Residential') : (bn ? 'অনাবাসিক' : 'Non-Residential')}</div>
-                <div className="field"><label>{bn ? 'জন্ম তারিখ' : 'DOB'}:</label> {dob}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'ধর্ম' : 'Religion'}:</label> {religion === 'other' ? customReligion : RELIGIONS.find(r => r.value === religion)?.[bn ? 'bn' : 'en'] || ''}</div>
-                <div className="field"><label>NID:</label> {nid}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'শিক্ষা' : 'Education'}:</label> {education}</div>
-                <div className="field"><label>{bn ? 'অভিজ্ঞতা' : 'Experience'}:</label> {experience || '-'}</div>
-              </div>
-              {prevInstitute && <div className="field-row"><div className="field"><label>{bn ? 'পূর্ববর্তী কর্মস্থল' : 'Previous Institute'}:</label> {prevInstitute}</div></div>}
-              <div className="field-row"><div className="field"><label>{bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}:</label> {formatAddress(permanentAddr)}</div></div>
-              <div className="field-row"><div className="field"><label>{bn ? 'বর্তমান ঠিকানা' : 'Present Address'}:</label> {formatAddress(sameAddress ? permanentAddr : presentAddr)}</div></div>
-            </div>
-
-            <div className="section">
-              <h3>{bn ? '২. পিতা-মাতার তথ্য' : '2. Parents Details'}</h3>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'পিতার নাম' : 'Father'}:</label> {fatherName}</div>
-                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {fatherMobileCode}{fatherMobile}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>NID:</label> {fatherNid}</div>
-                <div className="field"><label>{bn ? 'পেশা' : 'Occupation'}:</label> {fatherOccupation}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'মাতার নাম' : 'Mother'}:</label> {motherName}</div>
-                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {motherMobileCode}{motherMobile}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>NID:</label> {motherNid}</div>
-                <div className="field"><label>{bn ? 'পেশা' : 'Occupation'}:</label> {motherOccupation}</div>
-              </div>
-            </div>
-
-            <div className="section">
-              <h3>{bn ? '৩. অভিভাবক তথ্য' : '3. Guardian Details'}</h3>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'অভিভাবক' : 'Guardian'}:</label> {guardianType === 'father' ? fatherName : guardianType === 'mother' ? motherName : guardianName} ({guardianType === 'other' ? guardianRelation : guardianType === 'father' ? (bn ? 'পিতা' : 'Father') : (bn ? 'মাতা' : 'Mother')})</div>
-              </div>
-            </div>
-
-            <div className="section">
-              <h3>{bn ? '৪. পরিচয়দাতার তথ্য' : '4. Identifier Details'}</h3>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'নাম' : 'Name'}:</label> {identifierName}</div>
-                <div className="field"><label>{bn ? 'সম্পর্ক' : 'Relation'}:</label> {identifierRelation}</div>
-              </div>
-              <div className="field-row">
-                <div className="field"><label>{bn ? 'মোবাইল' : 'Mobile'}:</label> {identifierMobileCode}{identifierMobile}</div>
-                <div className="field"><label>NID:</label> {identifierNid}</div>
-              </div>
-              <div className="field-row"><div className="field"><label>{bn ? 'ঠিকানা' : 'Address'}:</label> {formatAddress(identifierAddr)}</div></div>
-            </div>
-
-            {documents.length > 0 && (
-              <div className="section">
-                <h3>{bn ? '৫. সংযুক্ত ডকুমেন্টসমূহ' : '5. Attached Documents'}</h3>
-                <table>
-                  <thead><tr><th>#</th><th>{bn ? 'ধরন' : 'Type'}</th><th>{bn ? 'ফাইল' : 'File'}</th></tr></thead>
-                  <tbody>
-                    {documents.map((d, i) => (
-                      <tr key={d.id}><td>{i+1}</td><td>{d.type}</td><td>{d.name}</td></tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div className="signatures">
-              {otherSignName && (
-                <div className="sig-box">
-                  <div className="sig-line">
-                    <div>{otherSignName}</div>
-                    <div style={{fontSize: '12px'}}>{otherSignPosition}</div>
-                  </div>
-                </div>
-              )}
-              {principalName && (
-                <div className="sig-box">
-                  <div className="sig-line">
-                    <div>{principalName}</div>
-                    <div style={{fontSize: '12px'}}>{principalPosition}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <PrintableForm />
         </div>
       </div>
+
+      {/* Print Preview Dialog */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>{bn ? 'ফরম প্রিভিউ' : 'Form Preview'}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-1" onClick={handlePrint}>
+                  <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="border border-border rounded-lg bg-white text-black p-8" style={{ fontFamily: "'Noto Sans Bengali', sans-serif", fontSize: '11pt' }}>
+            <style dangerouslySetInnerHTML={{ __html: `
+              .preview-form .form-header { text-align: center; border-bottom: 3px double #1a5c2e; padding-bottom: 10px; margin-bottom: 12px; position: relative; }
+              .preview-form .form-header h1 { font-size: 16pt; font-weight: 700; margin: 4px 0 2px; color: #1a5c2e; }
+              .preview-form .form-header h2 { font-size: 12pt; font-weight: 600; color: #333; margin: 2px 0; }
+              .preview-form .form-header p { font-size: 9pt; color: #555; }
+              .preview-form .form-title { background: #1a5c2e; color: #fff; text-align: center; padding: 6px; font-size: 13pt; font-weight: 700; margin: 10px 0; border-radius: 2px; }
+              .preview-form .photo-area { position: absolute; top: 0; right: 0; width: 90px; height: 110px; border: 2px solid #1a5c2e; overflow: hidden; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
+              .preview-form .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+              .preview-form .photo-area .placeholder { font-size: 8pt; color: #999; text-align: center; padding: 5px; }
+              .preview-form .section { margin: 10px 0; }
+              .preview-form .section-title { background: #e8f5e9; padding: 5px 10px; font-size: 11pt; font-weight: 700; color: #1a5c2e; border-left: 4px solid #1a5c2e; margin-bottom: 6px; }
+              .preview-form .form-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+              .preview-form .form-table td { border: 1px solid #ccc; padding: 4px 8px; font-size: 10pt; vertical-align: top; }
+              .preview-form .form-table .label { background: #f5f5f5; font-weight: 600; width: 28%; color: #333; white-space: nowrap; }
+              .preview-form .doc-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+              .preview-form .doc-table th { background: #e8f5e9; border: 1px solid #ccc; padding: 4px 8px; font-size: 9pt; font-weight: 600; text-align: left; }
+              .preview-form .doc-table td { border: 1px solid #ccc; padding: 3px 8px; font-size: 9pt; }
+              .preview-form .signatures { display: flex; justify-content: space-between; margin-top: 50px; padding-top: 10px; }
+              .preview-form .sig-box { text-align: center; min-width: 180px; }
+              .preview-form .sig-line { border-top: 1px solid #000; padding-top: 5px; margin-top: 35px; }
+              .preview-form .sig-name { font-weight: 600; font-size: 10pt; }
+              .preview-form .sig-position { font-size: 9pt; color: #555; }
+              .preview-form .form-date { text-align: right; font-size: 9pt; color: #555; margin-top: 8px; }
+            `}} />
+            <div className="preview-form">
+              <PrintableForm />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Document Preview Dialog */}
       <Dialog open={!!previewDoc} onOpenChange={() => setPreviewDoc(null)}>
