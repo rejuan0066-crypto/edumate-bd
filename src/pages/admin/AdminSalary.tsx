@@ -55,6 +55,8 @@ const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { timeFormat } = useTimeFormat();
+  const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));

@@ -37,6 +37,8 @@ const AdminAttendance = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { timeFormat, setTimeFormat } = useTimeFormat();
+  const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
 
   const [entityType, setEntityType] = useState<'student' | 'staff'>('student');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
