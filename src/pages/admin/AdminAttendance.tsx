@@ -61,6 +61,10 @@ const AdminAttendance = () => {
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
+  const [dutyTimes, setDutyTimes] = useState({
+    morning_start: '06:00', morning_end: '08:00',
+    evening_start: '17:00', evening_end: '19:00',
+  });
 
   // Fetch divisions
   const { data: divisions = [] } = useQuery({
@@ -170,6 +174,41 @@ const AdminAttendance = () => {
       const { data, error } = await supabase.from('attendance_rules').select('*').order('entity_type').order('sort_order');
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Fetch residential duty times
+  const { data: savedDutyTimes } = useQuery({
+    queryKey: ['residential-duty-times'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'residential_duty_times').maybeSingle();
+      return data?.value as any;
+    },
+  });
+
+  // Sync loaded duty times to state
+  useMemo(() => {
+    if (savedDutyTimes) {
+      setDutyTimes({
+        morning_start: savedDutyTimes.morning_start || '06:00',
+        morning_end: savedDutyTimes.morning_end || '08:00',
+        evening_start: savedDutyTimes.evening_start || '17:00',
+        evening_end: savedDutyTimes.evening_end || '19:00',
+      });
+    }
+  }, [savedDutyTimes]);
+
+  const saveDutyTimesMutation = useMutation({
+    mutationFn: async (times: typeof dutyTimes) => {
+      const { error } = await supabase.from('website_settings').upsert(
+        { key: 'residential_duty_times', value: times, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['residential-duty-times'] });
+      toast.success(bn ? 'ডিউটি টাইম সেভ হয়েছে' : 'Duty times saved');
     },
   });
 
@@ -565,6 +604,44 @@ const AdminAttendance = () => {
                   <span className="text-xs text-muted-foreground">24h</span>
                 </div>
               </div>
+
+              {/* Residential Duty Times */}
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <Label className="font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  {bn ? 'আবাসিক ডিউটি টাইম সেটিংস' : 'Residential Duty Time Settings'}
+                </Label>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সকাল ডিউটি' : 'Morning Duty'}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                      <Input type="time" className="h-8 text-sm" value={dutyTimes.morning_start} onChange={e => setDutyTimes(p => ({ ...p, morning_start: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                      <Input type="time" className="h-8 text-sm" value={dutyTimes.morning_end} onChange={e => setDutyTimes(p => ({ ...p, morning_end: e.target.value }))} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                      <Input type="time" className="h-8 text-sm" value={dutyTimes.evening_start} onChange={e => setDutyTimes(p => ({ ...p, evening_start: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                      <Input type="time" className="h-8 text-sm" value={dutyTimes.evening_end} onChange={e => setDutyTimes(p => ({ ...p, evening_end: e.target.value }))} />
+                    </div>
+                  </div>
+                </div>
+                <Button size="sm" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
+                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি টাইম সেভ করুন' : 'Save Duty Times'}
+                </Button>
+              </div>
+
               {/* Existing Rules */}
               <div className="space-y-2">
                 {rules.map((rule: any) => {
