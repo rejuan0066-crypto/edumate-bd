@@ -59,6 +59,7 @@ const FIELD_TYPES = [
   { value: 'post_office', label: 'Post Office', label_bn: 'পোস্ট অফিস', icon: Mail },
   { value: 'village', label: 'Village', label_bn: 'গ্রাম', icon: MapPin },
   { value: 'nid', label: 'NID', label_bn: 'এনআইডি (NID)', icon: CreditCard },
+  { value: 'identity_card', label: 'Identity Card (Dropdown+Input)', label_bn: 'পরিচয়পত্র (ড্রপডাউন+ইনপুট)', icon: CreditCard },
 ];
 
 type FormData = {
