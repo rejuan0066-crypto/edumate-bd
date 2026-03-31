@@ -630,7 +630,7 @@ const AdminSalary = () => {
           <th>${bn ? 'কর্মদিবস' : 'Working Days'}</th><td>${record.working_days}</td></tr>
       <tr><th>${bn ? 'উপস্থিত' : 'Present'}</th><td>${record.present_days}</td>
           <th>${bn ? 'অনুপস্থিত' : 'Absent'}</th><td>${record.absent_days}</td></tr>
-      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${formatTime12h(staffMember.duty_start_time || '08:00')} - ${formatTime12h(staffMember.duty_end_time || '17:00')}</td>
+      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${fmt(staffMember.duty_start_time || '08:00')} - ${fmt(staffMember.duty_end_time || '17:00')}</td>
           <th>${bn ? 'বিলম্ব উপস্থিত দিন' : 'Late Present Days'}</th><td>${record.late_days || 0}</td></tr>
     </table>
     <table>
