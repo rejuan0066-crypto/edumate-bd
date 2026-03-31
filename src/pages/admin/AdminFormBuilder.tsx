@@ -381,11 +381,13 @@ const AdminFormBuilder = () => {
     let opts: string[] = [];
     try { opts = typeof field.options === 'string' ? JSON.parse(field.options) : (Array.isArray(field.options) ? field.options : []); } catch { opts = []; }
     let cond: ConditionData = { ...emptyCondition };
+    let val: ValidationData = { ...emptyValidation };
     try {
       const v = typeof field.validation === 'string' ? JSON.parse(field.validation) : (field.validation || {});
       if (v.condition) cond = { ...emptyCondition, ...v.condition, enabled: true };
+      if (v.rules) val = { ...emptyValidation, ...v.rules };
     } catch {}
-    setFieldData({ field_type: field.field_type, label: field.label, label_bn: field.label_bn, placeholder: field.placeholder || '', is_required: field.is_required, sort_order: field.sort_order, options: opts, default_value: field.default_value || '', is_active: field.is_active, condition: cond });
+    setFieldData({ field_type: field.field_type, label: field.label, label_bn: field.label_bn, placeholder: field.placeholder || '', is_required: field.is_required, sort_order: field.sort_order, options: opts, default_value: field.default_value || '', is_active: field.is_active, condition: cond, validation: val });
     setEditingFieldId(field.id);
     setFieldDialogOpen(true);
   };
