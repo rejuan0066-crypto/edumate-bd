@@ -99,6 +99,13 @@ type ConditionData = {
   value: string;
 };
 
+type CardRuleData = {
+  label: string;
+  digits: string; // e.g. "10,17" or "7-9"
+  error_message: string;
+  error_message_bn: string;
+};
+
 type ValidationData = {
   min_length: string;
   max_length: string;
@@ -107,6 +114,7 @@ type ValidationData = {
   pattern: string;
   error_message: string;
   error_message_bn: string;
+  card_rules?: Record<string, CardRuleData>;
 };
 
 type FieldData = {
