@@ -816,6 +816,60 @@ const AdminFormBuilder = () => {
                             </div>
                           )}
 
+                          {/* Identity Card Type Validation Rules */}
+                          {fieldData.field_type === 'identity_card' && (
+                            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                              <Label className="font-semibold">{bn ? 'কার্ড টাইপ ভ্যালিডেশন সেটিংস' : 'Card Type Validation Settings'}</Label>
+                              <p className="text-xs text-muted-foreground">{bn ? 'প্রতিটি কার্ড টাইপের ডিজিট সীমা ও এরর মেসেজ কাস্টমাইজ করুন' : 'Customize digit limits and error messages for each card type'}</p>
+                              {[
+                                { key: 'nid', defaultLabel: bn ? 'এনআইডি (NID)' : 'NID', defaultDigits: '10,17', defaultMsg: 'NID must be 10 or 17 digits', defaultMsgBn: 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' },
+                                { key: 'birth_cert', defaultLabel: bn ? 'জন্ম নিবন্ধন' : 'Birth Certificate', defaultDigits: '17', defaultMsg: 'Birth certificate must be 17 digits', defaultMsgBn: 'জন্ম নিবন্ধন অবশ্যই ১৭ ডিজিট হতে হবে' },
+                                { key: 'passport', defaultLabel: bn ? 'পাসপোর্ট' : 'Passport', defaultDigits: '7-9', defaultMsg: 'Passport must be 7-9 digits', defaultMsgBn: 'পাসপোর্ট ৭-৯ ডিজিট হতে হবে' },
+                                { key: 'driving', defaultLabel: bn ? 'ড্রাইভিং লাইসেন্স' : 'Driving License', defaultDigits: '10-15', defaultMsg: 'Driving license must be 10-15 digits', defaultMsgBn: 'ড্রাইভিং লাইসেন্স ১০-১৫ ডিজিট হতে হবে' },
+                              ].map(ct => {
+                                const rule = fieldData.validation.card_rules?.[ct.key] || { label: ct.defaultLabel, digits: ct.defaultDigits, error_message: ct.defaultMsg, error_message_bn: ct.defaultMsgBn };
+                                const updateCardRule = (patch: Partial<CardRuleData>) => {
+                                  setFieldData(p => ({
+                                    ...p,
+                                    validation: {
+                                      ...p.validation,
+                                      card_rules: {
+                                        ...p.validation.card_rules,
+                                        [ct.key]: { ...rule, ...patch },
+                                      },
+                                    },
+                                  }));
+                                };
+                                return (
+                                  <div key={ct.key} className="border rounded-md p-2.5 space-y-2 bg-background">
+                                    <p className="text-xs font-semibold text-foreground">{ct.defaultLabel}</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label className="text-xs">{bn ? 'ডিজিট নিয়ম' : 'Digits Rule'}</Label>
+                                        <Input className="mt-0.5 text-xs" value={rule.digits} onChange={e => updateCardRule({ digits: e.target.value })} placeholder="10,17 or 7-9" />
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">{bn ? 'কমা = নির্দিষ্ট, হাইফেন = রেঞ্জ' : 'comma=exact, hyphen=range'}</p>
+                                      </div>
+                                      <div>
+                                        <Label className="text-xs">{bn ? 'লেবেল' : 'Label'}</Label>
+                                        <Input className="mt-0.5 text-xs" value={rule.label} onChange={e => updateCardRule({ label: e.target.value })} />
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <Label className="text-xs">{bn ? 'এরর (EN)' : 'Error (EN)'}</Label>
+                                        <Input className="mt-0.5 text-xs" value={rule.error_message} onChange={e => updateCardRule({ error_message: e.target.value })} />
+                                      </div>
+                                      <div>
+                                        <Label className="text-xs">{bn ? 'এরর (বাংলা)' : 'Error (BN)'}</Label>
+                                        <Input className="mt-0.5 text-xs" value={rule.error_message_bn} onChange={e => updateCardRule({ error_message_bn: e.target.value })} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
                           <div>
                             <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
                             <Input type="number" value={fieldData.sort_order} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
