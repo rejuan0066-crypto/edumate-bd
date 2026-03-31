@@ -1,0 +1,1 @@
+UPDATE attendance_rules SET config = '{"color":"green","counts_as":"present","icon":"check"}' WHERE id = 'acfc14c6-1938-41ed-a099-ab03048c679b';
