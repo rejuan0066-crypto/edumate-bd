@@ -31,7 +31,7 @@ interface FieldStyle {
 }
 interface LayoutField {
   id: string; label: string; label_bn: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
+  type: 'text' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
   required: boolean; options?: string[]; show: boolean; width: 'full' | 'half';
   style?: FieldStyle;
 }
@@ -352,10 +352,14 @@ const DocumentLayoutBuilder = () => {
                       fontWeight: fs.bold ? 'bold' : 'normal',
                       fontStyle: fs.italic ? 'italic' : 'normal',
                     }}>{bn ? f.label_bn : f.label}{f.required && <span className="text-red-500">*</span>}: </span>
-                    {f.type === 'photo' ? <div className="inline-block w-16 h-16 border border-dashed border-gray-400 text-center text-[8px] leading-[60px]">Photo</div> :
+                     {f.type === 'photo' ? <div className="inline-block w-16 h-16 border border-dashed border-gray-400 text-center text-[8px] leading-[60px]">Photo</div> :
                      f.type === 'select' && f.options?.length ? (
-                       <span className="text-[9px] text-gray-500">[{f.options.join(' / ')}]</span>
-                     ) : <span className="border-b border-dotted border-gray-400 inline-block min-w-[80px]">&nbsp;</span>}
+                        <span className="text-[9px] text-gray-500">[{f.options.join(' / ')}]</span>
+                      ) : f.type === 'radio' && f.options?.length ? (
+                        <span className="text-[9px] text-gray-500">{f.options.map(o => `○ ${o}`).join('  ')}</span>
+                      ) : f.type === 'checkbox' && f.options?.length ? (
+                        <span className="text-[9px] text-gray-500">{f.options.map(o => `☐ ${o}`).join('  ')}</span>
+                      ) : <span className="border-b border-dotted border-gray-400 inline-block min-w-[80px]">&nbsp;</span>}
                   </div>
                 );
               })}
@@ -701,7 +705,7 @@ const DocumentLayoutBuilder = () => {
                                             <Button size="icon" variant={f.style?.bold ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'bold', !f.style?.bold)}><Bold className="w-3 h-3" /></Button>
                                             <Button size="icon" variant={f.style?.italic ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'italic', !f.style?.italic)}><Italic className="w-3 h-3" /></Button>
                                           </div>
-                                          {(f.type === 'select') && (
+                                          {(['select', 'radio', 'checkbox'].includes(f.type)) && (
                                             <div className="space-y-1.5 pt-1 border-t">
                                               <Label className="text-[10px]">{bn ? 'অপশনসমূহ' : 'Options'}</Label>
                                               {(f.options || []).map((opt, oi) => (
