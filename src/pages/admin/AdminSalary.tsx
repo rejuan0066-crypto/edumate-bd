@@ -808,8 +808,14 @@ const AdminSalary = () => {
                   {filtered.map((s: any, idx: number) => {
                     const rec = getRecord(s.id);
                     const attStats = getAttendanceStats(s);
-                    const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                      Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
+                    const autoCalc = calculateSalary(s);
+                    const totalDed = rec
+                      ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                        Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                      : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                        Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
+                    const displayOvertime = rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
+                    const displayNet = rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0);
 
                     return (
                       <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
@@ -838,13 +844,13 @@ const AdminSalary = () => {
                           </button>
                         </td>
                         <td className="px-3 py-2 text-right text-red-500">
-                          {rec ? `৳${totalDed.toLocaleString()}` : '-'}
+                          ৳{totalDed.toLocaleString()}{!rec && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                         </td>
                         <td className="px-3 py-2 text-right text-blue-600">
-                          {rec ? `৳${Number(rec.overtime || 0).toLocaleString()}` : '-'}
+                          ৳{displayOvertime.toLocaleString()}{!rec && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                         </td>
                         <td className="px-3 py-2 text-right font-bold text-emerald-700 dark:text-emerald-400">
-                          {rec ? `৳${Number(rec.net_salary).toLocaleString()}` : '-'}
+                          ৳{displayNet.toLocaleString()}{!rec ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                         </td>
                         <td className="px-3 py-2 text-center">
                           {rec ? (
