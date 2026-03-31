@@ -305,14 +305,19 @@ const DocumentLayoutBuilder = () => {
     e.dataTransfer.setData('text/plain', 'section');
   };
   const handleSectionDragOver = (e: DragEvent, index: number) => {
-    // Only handle section drags, not field drags
-    if (dragFieldRef.current) return;
+    if (dragFieldRef.current) {
+      // Allow field drops by preventing default, but don't set section drag state
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      handleDragAutoScroll(e.clientY);
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverSection(index);
   };
   const handleSectionDrop = (e: DragEvent, targetIndex: number) => {
-    // Only handle section drags, not field drags
+    // If field drag, let the field drop zones handle it
     if (dragFieldRef.current) return;
     e.preventDefault();
     setDragOverSection(null);
