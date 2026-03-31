@@ -241,11 +241,42 @@ const AdminSalary = () => {
     };
 
     // Calculate deductions based on mode
-    if (calcMode === 'per_minute') {
+    if (calcMode === 'attendance_based') {
+      // Attendance-based: net salary = (present_days / working_days) * base_salary
+      const effectivePresentDays = attStats.present + (attStats.halfDay * 0.5);
+      ctx.absence_deduction = 0;
+      ctx.late_deduction = Math.round(attStats.totalMissedMinutes * perMinuteRate);
+      ctx.overtime = Math.round(attStats.totalOvertimeMinutes * perMinuteRate);
+      ctx.other_deduction = 0;
+
+      // Net = proportional salary based on attendance
+      const netFormula = getFormula('net_salary');
+      if (netFormula) {
+        const expr = (netFormula.expression as any)?.formula;
+        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
+      } else {
+        const proportionalSalary = workingDays > 0 ? Math.round((effectivePresentDays / workingDays) * baseSalary) : 0;
+        ctx.net_salary = Math.max(0, proportionalSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
+          - ctx.late_deduction - ctx.advance_deduction);
+      }
+    } else if (calcMode === 'per_minute') {
       // Per-minute: absence = full day, late/early = per minute
       ctx.absence_deduction = Math.round(attStats.absent * dailyRate);
       ctx.late_deduction = Math.round(attStats.totalMissedMinutes * perMinuteRate);
       ctx.overtime = Math.round(attStats.totalOvertimeMinutes * perMinuteRate);
+
+      // Half day deduction
+      ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
+
+      // Apply net salary formula
+      const netFormula = getFormula('net_salary');
+      if (netFormula) {
+        const expr = (netFormula.expression as any)?.formula;
+        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
+      } else {
+        ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
+          - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
+      }
     } else {
       // Legacy fixed-rate mode
       const absFormula = getFormula('absence_deduction');
@@ -263,19 +294,19 @@ const AdminSalary = () => {
       } else {
         ctx.late_deduction = attStats.late * defaultLateRate;
       }
-    }
 
-    // Half day deduction
-    ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
+      // Half day deduction
+      ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
 
-    // Apply net salary formula
-    const netFormula = getFormula('net_salary');
-    if (netFormula) {
-      const expr = (netFormula.expression as any)?.formula;
-      ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
-    } else {
-      ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
-        - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
+      // Apply net salary formula
+      const netFormula = getFormula('net_salary');
+      if (netFormula) {
+        const expr = (netFormula.expression as any)?.formula;
+        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
+      } else {
+        ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
+          - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
+      }
     }
 
     return {
