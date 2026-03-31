@@ -1237,7 +1237,7 @@ const AdminSalary = () => {
                                   </td>
                                   <td className="px-2 py-1.5 text-center text-[10px]">
                                     {d.status === 'absent' ? '-' : (
-                                      <>{d.checkIn ? formatTime12h(d.checkIn) : '-'} / {d.checkOut ? formatTime12h(d.checkOut) : '-'}</>
+                                      <>{d.checkIn ? fmt(d.checkIn) : '-'} / {d.checkOut ? fmt(d.checkOut) : '-'}</>
                                     )}
                                   </td>
                                   <td className="px-2 py-1.5 text-center text-[10px]">
