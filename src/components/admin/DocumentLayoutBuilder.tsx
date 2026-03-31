@@ -18,8 +18,9 @@ import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit, Copy, FileText, Receipt, Eye, Printer,
   ChevronDown, ChevronUp, X, Type, Calendar, List, Image, Hash,
-  ToggleLeft, Mail, Phone, Pen
+  ToggleLeft, Mail, Phone, Pen, FolderOpen
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // ─── Types ───
 interface LayoutField {
@@ -73,6 +74,14 @@ const CATEGORIES = [
   { value: 'donation', label: 'General Donation Receipt', label_bn: 'সাধারণ দান রসিদ' },
 ];
 
+const FIELD_TYPE_MAP: Record<string, LayoutField['type']> = {
+  text: 'text', number: 'number', textarea: 'textarea', select: 'select',
+  radio: 'select', checkbox: 'select', file: 'photo', date: 'date',
+  switch: 'toggle', email: 'email', phone: 'phone',
+  address_permanent: 'text', address_present: 'text', post_office: 'text',
+  village: 'text', nid: 'text', identity_card: 'text',
+};
+
 const DocumentLayoutBuilder = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -87,6 +96,7 @@ const DocumentLayoutBuilder = () => {
   const [formCategory, setFormCategory] = useState('student');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('sections');
+  const [importingForm, setImportingForm] = useState(false);
 
   const { data: layouts = [], isLoading } = useQuery({
     queryKey: ['document_layouts'],
@@ -96,6 +106,56 @@ const DocumentLayoutBuilder = () => {
       return (data || []).map((d: any) => ({ ...d, config: d.config as LayoutConfig })) as DocumentLayout[];
     },
   });
+
+  // Fetch custom forms for import
+  const { data: customForms = [] } = useQuery({
+    queryKey: ['custom-forms-for-import'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custom_forms').select('*').eq('is_active', true).order('name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const importFromFormBuilder = async (formId: string) => {
+    setImportingForm(true);
+    try {
+      const form = customForms.find(f => f.id === formId);
+      if (!form) return;
+      const { data: fields, error } = await supabase.from('custom_form_fields').select('*').eq('form_id', formId).eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      if (!fields || fields.length === 0) { toast.error(bn ? 'এই ফর্মে কোনো ফিল্ড নেই' : 'No fields in this form'); return; }
+
+      // Convert fields to layout sections - group all into one section
+      const layoutFields: LayoutField[] = fields.map(f => ({
+        id: uid(),
+        label: f.label,
+        label_bn: f.label_bn,
+        type: FIELD_TYPE_MAP[f.field_type] || 'text',
+        required: f.is_required || false,
+        show: true,
+        width: ['textarea', 'address_permanent', 'address_present'].includes(f.field_type) ? 'full' as const : 'half' as const,
+        ...(f.field_type === 'select' || f.field_type === 'radio' ? { options: (() => { try { return typeof f.options === 'string' ? JSON.parse(f.options) : (Array.isArray(f.options) ? f.options : []); } catch { return []; } })() } : {}),
+      }));
+
+      const newSection: LayoutSection = {
+        id: uid(),
+        name: form.name,
+        name_bn: form.name_bn,
+        fields: layoutFields,
+        collapsed: false,
+      };
+
+      setConfig(c => ({ ...c, sections: [...c.sections, newSection] }));
+      if (!formName) setFormName(form.name);
+      if (!formNameBn) setFormNameBn(form.name_bn);
+      toast.success(bn ? `${fields.length}টি ফিল্ড ইমপোর্ট হয়েছে` : `${fields.length} fields imported`);
+    } catch (err: any) {
+      toast.error(err.message || 'Import failed');
+    } finally {
+      setImportingForm(false);
+    }
+  };
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -370,7 +430,26 @@ const DocumentLayoutBuilder = () => {
                         )}
                       </CardContent></Card>
                     ))}
-                    <Button variant="outline" onClick={addSection}><Plus className="w-4 h-4 mr-1" />{bn ? 'সেকশন যোগ' : 'Add Section'}</Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button variant="outline" onClick={addSection}><Plus className="w-4 h-4 mr-1" />{bn ? 'সেকশন যোগ' : 'Add Section'}</Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="secondary" disabled={importingForm || customForms.length === 0}>
+                            <FolderOpen className="w-4 h-4 mr-1" />{importingForm ? (bn ? 'ইমপোর্ট হচ্ছে...' : 'Importing...') : (bn ? 'ফর্ম বিল্ডার থেকে ইমপোর্ট' : 'Import from Form Builder')}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {customForms.map(f => (
+                            <DropdownMenuItem key={f.id} onClick={() => importFromFormBuilder(f.id)}>
+                              {bn ? f.name_bn : f.name}
+                            </DropdownMenuItem>
+                          ))}
+                          {customForms.length === 0 && (
+                            <DropdownMenuItem disabled>{bn ? 'কোনো ফর্ম নেই' : 'No forms available'}</DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TabsContent>
 
                   {/* Receipt */}
