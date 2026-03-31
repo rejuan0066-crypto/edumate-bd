@@ -64,6 +64,8 @@ const AdminAttendance = () => {
   const [dutyTimes, setDutyTimes] = useState({
     morning_start: '06:00', morning_end: '08:00',
     evening_start: '17:00', evening_end: '19:00',
+    extra_duty_enabled: false,
+    extra_duty_rate: 0,
   });
 
   // Fetch divisions
