@@ -59,6 +59,7 @@ const FIELD_TYPES = [
   { value: 'post_office', label: 'Post Office', label_bn: 'পোস্ট অফিস', icon: Mail },
   { value: 'village', label: 'Village', label_bn: 'গ্রাম', icon: MapPin },
   { value: 'nid', label: 'NID', label_bn: 'এনআইডি (NID)', icon: CreditCard },
+  { value: 'identity_card', label: 'Identity Card (Dropdown+Input)', label_bn: 'পরিচয়পত্র (ড্রপডাউন+ইনপুট)', icon: CreditCard },
 ];
 
 type FormData = {
@@ -761,11 +762,11 @@ const AdminFormBuilder = () => {
                           </div>
 
                           {/* Validation Rules */}
-                          {['text', 'number', 'textarea', 'email', 'phone', 'nid'].includes(fieldData.field_type) && (
+                          {['text', 'number', 'textarea', 'email', 'phone', 'nid', 'identity_card'].includes(fieldData.field_type) && (
                             <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
                               <Label className="font-semibold">{bn ? 'ভ্যালিডেশন নিয়ম' : 'Validation Rules'}</Label>
                               <div className="grid grid-cols-2 gap-3">
-                                {['text', 'textarea', 'email', 'phone', 'nid'].includes(fieldData.field_type) && (
+                                {['text', 'textarea', 'email', 'phone', 'nid', 'identity_card'].includes(fieldData.field_type) && (
                                   <>
                                     <div>
                                       <Label className="text-xs">{bn ? 'সর্বনিম্ন অক্ষর' : 'Min Length'}</Label>
@@ -889,6 +890,20 @@ const AdminFormBuilder = () => {
                     {field.field_type === 'post_office' && <Input placeholder={bn ? 'পোস্ট অফিস লিখুন' : 'Enter post office'} />}
                     {field.field_type === 'village' && <Input placeholder={bn ? 'গ্রাম লিখুন' : 'Enter village'} />}
                     {field.field_type === 'nid' && <Input placeholder={bn ? '১০ বা ১৭ ডিজিট NID' : '10 or 17 digit NID'} maxLength={17} onChange={e => { const cleaned = e.target.value.replace(/\D/g, ''); e.target.value = cleaned; updatePreviewValue(field.id, cleaned); }} />}
+                    {field.field_type === 'identity_card' && (
+                      <div className="flex gap-2">
+                        <Select onValueChange={v => updatePreviewValue(field.id + '_type', v)}>
+                          <SelectTrigger className="w-[180px]"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="nid">{bn ? 'এনআইডি' : 'NID'}</SelectItem>
+                            <SelectItem value="birth_cert">{bn ? 'জন্ম নিবন্ধন' : 'Birth Certificate'}</SelectItem>
+                            <SelectItem value="passport">{bn ? 'পাসপোর্ট' : 'Passport'}</SelectItem>
+                            <SelectItem value="driving">{bn ? 'ড্রাইভিং লাইসেন্স' : 'Driving License'}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input className="flex-1" placeholder={bn ? 'নম্বর লিখুন' : 'Enter number'} onChange={e => updatePreviewValue(field.id, e.target.value)} />
+                      </div>
+                    )}
                     {field.field_type === 'address_permanent' && (
                       <AddressFields
                         label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}

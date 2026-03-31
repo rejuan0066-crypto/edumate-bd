@@ -248,6 +248,47 @@ const AdminCustomFormPage = () => {
                           </div>
                         );
                       })()}
+                      {field.field_type === 'identity_card' && (() => {
+                        const cardType = formValues[field.id + '_type'] || '';
+                        const cardVal = String(value || '').replace(/\D/g, '');
+                        let cardErr = '';
+                        if (cardVal.length > 0) {
+                          if (cardType === 'nid' && cardVal.length !== 10 && cardVal.length !== 17) {
+                            cardErr = bn ? 'NID অবশ্যই ১০ বা ১৭ ডিজিট হতে হবে' : 'NID must be 10 or 17 digits';
+                          } else if (cardType === 'birth_cert' && cardVal.length !== 17) {
+                            cardErr = bn ? 'জন্ম নিবন্ধন অবশ্যই ১৭ ডিজিট হতে হবে' : 'Birth certificate must be 17 digits';
+                          } else if (cardType === 'passport' && (cardVal.length < 7 || cardVal.length > 9)) {
+                            cardErr = bn ? 'পাসপোর্ট ৭-৯ ডিজিট হতে হবে' : 'Passport must be 7-9 digits';
+                          } else if (cardType === 'driving' && (cardVal.length < 10 || cardVal.length > 15)) {
+                            cardErr = bn ? 'ড্রাইভিং লাইসেন্স ১০-১৫ ডিজিট হতে হবে' : 'Driving license must be 10-15 digits';
+                          }
+                        }
+                        if (!cardType && cardVal.length > 0) {
+                          cardErr = bn ? 'প্রথমে ধরন নির্বাচন করুন' : 'Please select type first';
+                        }
+                        return (
+                          <div className="space-y-1.5">
+                            <div className="flex gap-2">
+                              <Select value={cardType} onValueChange={v => setFormValues(prev => ({ ...prev, [field.id + '_type']: v }))}>
+                                <SelectTrigger className="w-[180px]"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="nid">{bn ? 'এনআইডি' : 'NID'}</SelectItem>
+                                  <SelectItem value="birth_cert">{bn ? 'জন্ম নিবন্ধন' : 'Birth Certificate'}</SelectItem>
+                                  <SelectItem value="passport">{bn ? 'পাসপোর্ট' : 'Passport'}</SelectItem>
+                                  <SelectItem value="driving">{bn ? 'ড্রাইভিং লাইসেন্স' : 'Driving License'}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                className={`flex-1 ${cardErr ? 'border-destructive' : ''}`}
+                                placeholder={bn ? 'নম্বর লিখুন' : 'Enter number'}
+                                value={cardVal}
+                                onChange={e => { const cleaned = e.target.value.replace(/\D/g, ''); updateValue(field.id, cleaned); }}
+                              />
+                            </div>
+                            {cardErr && <p className="text-xs text-destructive">{cardErr}</p>}
+                          </div>
+                        );
+                      })()}
                       {field.field_type === 'address_permanent' && (
                         <AddressFields label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'} value={permanentAddr} onChange={(data) => { setPermanentAddr(data); if (sameAsPermanent) setPresentAddr(data); }} />
                       )}
