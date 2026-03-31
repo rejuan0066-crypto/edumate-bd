@@ -25,6 +25,7 @@ export type Database = {
           id: string
           recorded_by: string | null
           remarks: string | null
+          shift: string
           status: string
           updated_at: string | null
         }
@@ -38,6 +39,7 @@ export type Database = {
           id?: string
           recorded_by?: string | null
           remarks?: string | null
+          shift?: string
           status?: string
           updated_at?: string | null
         }
@@ -51,6 +53,7 @@ export type Database = {
           id?: string
           recorded_by?: string | null
           remarks?: string | null
+          shift?: string
           status?: string
           updated_at?: string | null
         }

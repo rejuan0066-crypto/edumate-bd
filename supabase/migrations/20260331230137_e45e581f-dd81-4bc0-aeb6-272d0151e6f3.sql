@@ -1,0 +1,1 @@
+ALTER TABLE public.attendance_records ADD COLUMN shift text NOT NULL DEFAULT 'full_day';
