@@ -402,7 +402,7 @@ const AdminAttendance = () => {
                       <Users className="h-3 w-3 mr-1" /> {bn ? 'ফুল টাইম হাজিরা' : 'Full Time'}
                     </TabsTrigger>
                     <TabsTrigger value="duty" className="text-xs h-7 px-3">
-                      <Clock className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি হাজিরা' : 'Duty'}
+                      <Clock className="h-3 w-3 mr-1" /> {bn ? 'আবাসিক ডিউটি' : 'Residential Duty'}
                     </TabsTrigger>
                     <TabsTrigger value="meal" className="text-xs h-7 px-3">
                       <Utensils className="h-3 w-3 mr-1" /> {bn ? 'খাওয়া হাজিরা' : 'Meal'}
