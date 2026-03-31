@@ -429,7 +429,26 @@ const DocumentLayoutBuilder = () => {
                         )}
                       </CardContent></Card>
                     ))}
-                    <Button variant="outline" onClick={addSection}><Plus className="w-4 h-4 mr-1" />{bn ? 'সেকশন যোগ' : 'Add Section'}</Button>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button variant="outline" onClick={addSection}><Plus className="w-4 h-4 mr-1" />{bn ? 'সেকশন যোগ' : 'Add Section'}</Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="secondary" disabled={importingForm || customForms.length === 0}>
+                            <FolderOpen className="w-4 h-4 mr-1" />{importingForm ? (bn ? 'ইমপোর্ট হচ্ছে...' : 'Importing...') : (bn ? 'ফর্ম বিল্ডার থেকে ইমপোর্ট' : 'Import from Form Builder')}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          {customForms.map(f => (
+                            <DropdownMenuItem key={f.id} onClick={() => importFromFormBuilder(f.id)}>
+                              {bn ? f.name_bn : f.name}
+                            </DropdownMenuItem>
+                          ))}
+                          {customForms.length === 0 && (
+                            <DropdownMenuItem disabled>{bn ? 'কোনো ফর্ম নেই' : 'No forms available'}</DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TabsContent>
 
                   {/* Receipt */}
