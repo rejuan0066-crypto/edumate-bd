@@ -463,13 +463,14 @@ const AdminSalary = () => {
 
       if (!res.ok) throw new Error('PDF generation failed');
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `salary_sheet_${monthYear}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const html = await res.text();
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        // Wait for fonts to load then trigger print
+        setTimeout(() => printWindow.print(), 1000);
+      }
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {
       console.error(err);
