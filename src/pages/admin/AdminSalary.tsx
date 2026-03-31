@@ -496,6 +496,20 @@ const AdminSalary = () => {
     },
   });
 
+  // Mark as unpaid (reverse paid status)
+  const markUnpaidMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('salary_records')
+        .update({ status: 'pending', paid_at: null, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      toast.success(bn ? 'অপরিশোধিত হিসেবে চিহ্নিত হয়েছে' : 'Marked as unpaid');
+    },
+  });
+
   // Update duty time for a staff member
   const updateDutyMutation = useMutation({
     mutationFn: async ({ staffId, dutyStart, dutyEnd }: { staffId: string; dutyStart: string; dutyEnd: string }) => {
