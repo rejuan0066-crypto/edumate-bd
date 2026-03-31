@@ -659,7 +659,7 @@ const AdminSalary = () => {
                           <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: s.duty_start_time || '08:00', duty_end_time: s.duty_end_time || '17:00' })}
                             className="text-[10px] text-primary hover:underline">
                             <Timer className="h-3 w-3 inline mr-0.5" />
-                            {s.duty_start_time || '08:00'}-{s.duty_end_time || '17:00'}
+                            {formatTime12h(s.duty_start_time || '08:00')}-{formatTime12h(s.duty_end_time || '17:00')}
                           </button>
                         </td>
                         <td className="px-3 py-2 text-right">৳{Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
