@@ -52,7 +52,7 @@ const AdminAttendance = () => {
 
   const [entityType, setEntityType] = useState<'student' | 'staff'>('student');
   const [studentSubTab, setStudentSubTab] = useState<'all' | 'residential'>('all');
-  const [staffSubTab, setStaffSubTab] = useState<'duty' | 'meal'>('duty');
+  const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>('fulltime');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
