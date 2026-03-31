@@ -949,6 +949,18 @@ const AdminSalary = () => {
                   <Input type="number" defaultValue={getSetting('late_deduction_per_day')?.amount || 50}
                     onBlur={e => saveSettingMutation.mutate({ key: 'late_deduction_per_day', value: { amount: Number(e.target.value) } })} />
                 </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'উপস্থিতি বাধ্যতামূলক' : 'Require Attendance'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn ? 'উপস্থিতি না দিলে বেতন জেনারেট হবে না' : 'Salary won\'t generate without attendance records'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('require_attendance')?.enabled !== false}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_attendance', value: { enabled: v } })}
+                  />
+                </div>
               </TabsContent>
 
               {/* Expense Link Settings */}
