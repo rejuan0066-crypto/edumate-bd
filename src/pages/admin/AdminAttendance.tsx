@@ -341,6 +341,18 @@ const AdminAttendance = () => {
                   </TabsList>
                 </Tabs>
 
+                {/* Session Year (both tabs) */}
+                <Select value={selectedSessionYear} onValueChange={setSelectedSessionYear}>
+                  <SelectTrigger className="w-36 h-8 text-xs">
+                    <SelectValue placeholder={bn ? 'সেশন ইয়ার' : 'Session Year'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sessionYears.map((sy: any) => (
+                      <SelectItem key={sy} value={sy}>{sy}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {/* Division/Class filter (for 'all' sub-tab) */}
                 {studentSubTab === 'all' && (
                   <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
