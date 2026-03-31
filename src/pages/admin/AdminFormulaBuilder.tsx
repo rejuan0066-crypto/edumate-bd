@@ -41,7 +41,7 @@ const SALARY_PRESETS = [
       { key: 'bonus', label: 'বোনাস', label_en: 'Bonus' },
       { key: 'overtime', label: 'ওভারটাইম', label_en: 'Overtime' },
       { key: 'other_allowance', label: 'অন্যান্য ভাতা', label_en: 'Other Allowance' },
-      { key: 'late_deduction', label: 'বিলম্ব কর্তন', label_en: 'Late Deduction' },
+      { key: 'late_deduction', label: 'বিলম্ব উপস্থিত কর্তন', label_en: 'Late Present Deduction' },
       { key: 'absence_deduction', label: 'অনুপস্থিতি কর্তন', label_en: 'Absence Deduction' },
       { key: 'advance_deduction', label: 'অগ্রিম কর্তন', label_en: 'Advance Deduction' },
       { key: 'other_deduction', label: 'অন্যান্য কর্তন', label_en: 'Other Deduction' },

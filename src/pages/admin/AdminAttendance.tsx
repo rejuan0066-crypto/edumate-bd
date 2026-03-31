@@ -200,7 +200,7 @@ const AdminAttendance = () => {
             { label: bn ? 'মোট' : 'Total', value: stats.total, color: 'bg-primary/10 text-primary' },
             { label: bn ? 'উপস্থিত' : 'Present', value: stats.present, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
             { label: bn ? 'অনুপস্থিত' : 'Absent', value: stats.absent, color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-            { label: bn ? 'বিলম্ব' : 'Late', value: stats.late, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+            { label: bn ? 'বিলম্ব উপস্থিত' : 'Late Present', value: stats.late, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
             { label: bn ? 'বাকি' : 'Unmarked', value: stats.unmarked, color: 'bg-muted text-muted-foreground' },
           ].map((s, i) => (
             <Card key={i}>
@@ -416,7 +416,7 @@ const AdminAttendance = () => {
                       <SelectContent>
                         <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
                         <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
-                        <SelectItem value="late">{bn ? 'বিলম্ব' : 'Late'}</SelectItem>
+                        <SelectItem value="late">{bn ? 'বিলম্ব উপস্থিত' : 'Late Present'}</SelectItem>
                         <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
                         <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
                       </SelectContent>

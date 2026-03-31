@@ -636,13 +636,13 @@ const AdminSalary = () => {
       <tr><th>${bn ? 'উপস্থিত' : 'Present'}</th><td>${record.present_days}</td>
           <th>${bn ? 'অনুপস্থিত' : 'Absent'}</th><td>${record.absent_days}</td></tr>
       <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${formatTime12h(staffMember.duty_start_time || '08:00')} - ${formatTime12h(staffMember.duty_end_time || '17:00')}</td>
-          <th>${bn ? 'বিলম্ব দিন' : 'Late Days'}</th><td>${record.late_days || 0}</td></tr>
+          <th>${bn ? 'বিলম্ব উপস্থিত দিন' : 'Late Present Days'}</th><td>${record.late_days || 0}</td></tr>
     </table>
     <table>
       <tr><th colspan="2" style="text-align:center">${bn ? 'আয়' : 'Earnings'}</th>
           <th colspan="2" style="text-align:center">${bn ? 'কর্তন' : 'Deductions'}</th></tr>
       <tr><td>${bn ? 'মূল বেতন' : 'Base Salary'}</td><td>৳${Number(record.base_salary).toLocaleString()}</td>
-          <td>${bn ? 'বিলম্ব কর্তন' : 'Late/Time Ded.'}</td><td>৳${Number(record.late_deduction || 0).toLocaleString()}</td></tr>
+          <td>${bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</td><td>৳${Number(record.late_deduction || 0).toLocaleString()}</td></tr>
       <tr><td>${bn ? 'বোনাস' : 'Bonus'}</td><td>৳${Number(record.bonus || 0).toLocaleString()}</td>
           <td>${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</td><td>৳${Number(record.absence_deduction || 0).toLocaleString()}</td></tr>
       <tr><td>${bn ? 'ওভারটাইম' : 'Overtime'}</td><td>৳${Number(record.overtime || 0).toLocaleString()}</td>
@@ -935,7 +935,7 @@ const AdminSalary = () => {
                   <Label className="text-xs font-semibold text-red-500">{bn ? 'কর্তনসমূহ' : 'Deductions'}</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
-                      <Label className="text-xs">{bn ? 'বিলম্ব/সময় কর্তন' : 'Late/Time Ded.'}</Label>
+                      <Label className="text-xs">{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</Label>
                       <Input type="number" value={editDialog.late_deduction || 0} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
@@ -1007,7 +1007,7 @@ const AdminSalary = () => {
                   </p>
                 </div>
                 <div>
-                  <Label>{bn ? 'প্রতি বিলম্বের দিনে কর্তন (৳) - Fixed মোডে' : 'Late Deduction Per Day (৳) - Fixed mode'}</Label>
+                  <Label>{bn ? 'প্রতি বিলম্ব উপস্থিত দিনে কর্তন (৳) - Fixed মোডে' : 'Late Present Deduction Per Day (৳) - Fixed mode'}</Label>
                   <Input type="number" defaultValue={getSetting('late_deduction_per_day')?.amount || 50}
                     onBlur={e => saveSettingMutation.mutate({ key: 'late_deduction_per_day', value: { amount: Number(e.target.value) } })} />
                 </div>
@@ -1101,7 +1101,7 @@ const AdminSalary = () => {
                     <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ ৩০' : 'Monthly Salary ÷ 30'}</p>
                     <p>• <strong>{bn ? 'প্রতি মিনিট হার' : 'Per-Minute Rate'}</strong> = {bn ? 'দৈনিক হার ÷ ডিউটি মিনিট' : 'Daily Rate ÷ Duty Minutes'}</p>
                     <p>• <strong>{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</strong> = {bn ? 'অনুপস্থিত দিন × দৈনিক হার' : 'Absent Days × Daily Rate'}</p>
-                    <p>• <strong>{bn ? 'বিলম্ব কর্তন' : 'Late/Time Ded.'}</strong> = {bn ? 'মিসড মিনিট × প্রতি মিনিট হার' : 'Missed Minutes × Per-Minute Rate'}</p>
+                    <p>• <strong>{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</strong> = {bn ? 'মিসড মিনিট × প্রতি মিনিট হার' : 'Missed Minutes × Per-Minute Rate'}</p>
                     <p>• <strong>{bn ? 'ওভারটাইম' : 'Overtime'}</strong> = {bn ? 'অতিরিক্ত মিনিট × প্রতি মিনিট হার' : 'Extra Minutes × Per-Minute Rate'}</p>
                     <p>• <strong>{bn ? 'নিট বেতন' : 'Net Salary'}</strong> = {bn ? 'মূল + ওভারটাইম + বোনাস - সকল কর্তন' : 'Base + OT + Bonus - All Deductions'}</p>
                   </div>
@@ -1140,7 +1140,7 @@ const AdminSalary = () => {
               const STATUS_LABEL: Record<string, { bn: string; en: string; color: string }> = {
                 present: { bn: 'উপস্থিত', en: 'Present', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
                 absent: { bn: 'অনুপস্থিত', en: 'Absent', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-                late: { bn: 'বিলম্ব', en: 'Late', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+                late: { bn: 'বিলম্ব উপস্থিত', en: 'Late Present', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
                 half_day: { bn: 'অর্ধদিন', en: 'Half Day', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
                 leave: { bn: 'ছুটি', en: 'Leave', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
               };
@@ -1152,7 +1152,7 @@ const AdminSalary = () => {
                     {[
                       { label: bn ? 'উপস্থিত' : 'Present', value: stats.present, color: 'text-emerald-600' },
                       { label: bn ? 'অনুপস্থিত' : 'Absent', value: stats.absent, color: 'text-red-500' },
-                      { label: bn ? 'বিলম্ব' : 'Late', value: stats.late, color: 'text-yellow-600' },
+                      { label: bn ? 'বিলম্ব উপস্থিত' : 'Late Present', value: stats.late, color: 'text-yellow-600' },
                       { label: bn ? 'অর্ধদিন' : 'Half Day', value: stats.halfDay, color: 'text-orange-600' },
                       { label: bn ? 'ছুটি' : 'Leave', value: stats.leave || 0, color: 'text-blue-600' },
                     ].map((s, i) => (
