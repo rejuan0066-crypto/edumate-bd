@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
-  Calculator, Plus, Trash2, DollarSign, FileText, Timer
+  Calculator, Plus, Trash2, DollarSign, FileText, Timer, FolderOpen
 } from 'lucide-react';
 
 const MONTHS = [
