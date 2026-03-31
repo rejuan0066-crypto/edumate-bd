@@ -390,28 +390,33 @@ const AdminAttendance = () => {
             {/* Staff Shift Selector */}
             {entityType === 'staff' && (
               <div className="flex flex-wrap gap-3 items-center">
-                {/* Staff Sub-tabs: Duty / Meal */}
-                <Tabs value={staffSubTab} onValueChange={(v) => { setStaffSubTab(v as any); setSelectedShift(v === 'duty' ? 'morning' : 'meal_breakfast'); }} className="shrink-0">
+                {/* Staff Sub-tabs: Full-time / Duty / Meal */}
+                <Tabs value={staffSubTab} onValueChange={(v) => { setStaffSubTab(v as any); setSelectedShift(v === 'fulltime' ? 'full_day' : v === 'duty' ? 'morning' : 'meal_breakfast'); }} className="shrink-0">
                   <TabsList className="h-8">
+                    <TabsTrigger value="fulltime" className="text-xs h-7 px-3">
+                      <Users className="h-3 w-3 mr-1" /> {bn ? 'ফুল টাইম হাজিরা' : 'Full Time'}
+                    </TabsTrigger>
                     <TabsTrigger value="duty" className="text-xs h-7 px-3">
-                      <Clock className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি হাজিরা' : 'Duty Attendance'}
+                      <Clock className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি হাজিরা' : 'Duty'}
                     </TabsTrigger>
                     <TabsTrigger value="meal" className="text-xs h-7 px-3">
-                      <Utensils className="h-3 w-3 mr-1" /> {bn ? 'খাওয়া হাজিরা' : 'Meal Attendance'}
+                      <Utensils className="h-3 w-3 mr-1" /> {bn ? 'খাওয়া হাজিরা' : 'Meal'}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
 
-                {/* Shift selector based on sub-tab */}
-                <Tabs value={selectedShift} onValueChange={setSelectedShift} className="shrink-0">
-                  <TabsList className="h-8">
-                    {(staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS).map(sh => (
-                      <TabsTrigger key={sh.value} value={sh.value} className="text-xs h-7 px-3">
-                        <sh.icon className="h-3 w-3 mr-1" /> {bn ? sh.labelBn : sh.labelEn}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
+                {/* Shift selector (only for duty/meal sub-tabs) */}
+                {staffSubTab !== 'fulltime' && (
+                  <Tabs value={selectedShift} onValueChange={setSelectedShift} className="shrink-0">
+                    <TabsList className="h-8">
+                      {(staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS).map(sh => (
+                        <TabsTrigger key={sh.value} value={sh.value} className="text-xs h-7 px-3">
+                          <sh.icon className="h-3 w-3 mr-1" /> {bn ? sh.labelBn : sh.labelEn}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </Tabs>
+                )}
 
                 {/* Search */}
                 <div className="relative flex-1 min-w-[150px]">
