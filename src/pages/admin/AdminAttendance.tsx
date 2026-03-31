@@ -106,8 +106,13 @@ const AdminAttendance = () => {
 
   // Filter students based on sub-tab and filters
   const entities = useMemo(() => {
-    if (entityType === 'staff') return allStaff;
-
+    if (entityType === 'staff') {
+      // Meal tab: only residential staff
+      if (staffSubTab === 'meal') {
+        return allStaff.filter((s: any) => s.residence_type === 'residential' || s.residence_type === 'resident');
+      }
+      return allStaff;
+    }
     let filtered = allStudents;
 
     // Residential sub-tab: only residential students with session year filter
