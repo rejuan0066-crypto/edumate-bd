@@ -322,8 +322,12 @@ const DocumentLayoutBuilder = () => {
           {config.showFields.date && <span><strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ________</span>}
         </div>
       )}
-      {formType === 'form' && config.sections.map(sec => {
+    {formType === 'form' && config.sections.map(sec => {
         const style = sec.style || {};
+        const visibleFields = sec.fields.filter(f => f.show);
+        // Photo field separate (render at top-right of section)
+        const photoField = visibleFields.find(f => f.type === 'photo');
+        const normalFields = visibleFields.filter(f => f.type !== 'photo');
         return (
           <div key={sec.id} style={{ marginBottom: style.margin ? `${style.margin}px` : '12px' }}>
             <h4 className="text-xs font-bold px-2 py-1" style={{
@@ -335,34 +339,75 @@ const DocumentLayoutBuilder = () => {
               borderWidth: style.borderStyle === 'none' ? 0 : '1px',
               borderColor: style.borderColor || '#d1d5db',
             }}>{bn ? sec.name_bn : sec.name}</h4>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1" style={{
+            <div style={{
               padding: style.padding ? `${style.padding}px` : '8px',
               borderStyle: style.borderStyle === 'none' ? 'none' : (style.borderStyle || 'solid'),
               borderWidth: style.borderStyle === 'none' ? 0 : '1px',
               borderTop: 'none',
               borderColor: style.borderColor || '#d1d5db',
+              position: 'relative',
             }}>
-              {sec.fields.filter(f => f.show).map(f => {
-                const fs = f.style || {};
-                return (
-                  <div key={f.id} className={f.width === 'full' ? 'col-span-2' : ''}>
-                    <span style={{
-                      fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px',
-                      color: fs.color || undefined,
-                      fontWeight: fs.bold ? 'bold' : 'normal',
-                      fontStyle: fs.italic ? 'italic' : 'normal',
-                    }}>{bn ? f.label_bn : f.label}{f.required && <span className="text-red-500">*</span>}: </span>
-                     {f.type === 'photo' ? <div className="inline-block w-16 h-16 border border-dashed border-gray-400 text-center text-[8px] leading-[60px]">Photo</div> :
-                     f.type === 'select' && f.options?.length ? (
-                        <span className="text-[9px] text-gray-500">[{f.options.join(' / ')}]</span>
-                      ) : f.type === 'radio' && f.options?.length ? (
-                        <span className="text-[9px] text-gray-500">{f.options.map(o => `○ ${o}`).join('  ')}</span>
-                      ) : f.type === 'checkbox' && f.options?.length ? (
-                        <span className="text-[9px] text-gray-500">{f.options.map(o => `☐ ${o}`).join('  ')}</span>
-                      ) : <span className="border-b border-dotted border-gray-400 inline-block min-w-[80px]">&nbsp;</span>}
-                  </div>
-                );
-              })}
+              {photoField && (
+                <div style={{ position: 'absolute', top: '8px', right: '8px', width: '64px', height: '76px', border: '1px dashed #9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>
+                  {bn ? 'ছবি' : 'Photo'}
+                </div>
+              )}
+              <table style={{ width: photoField ? 'calc(100% - 80px)' : '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+                <tbody>
+                  {(() => {
+                    const rows: Array<typeof normalFields> = [];
+                    let currentRow: typeof normalFields = [];
+                    normalFields.forEach(f => {
+                      if (f.width === 'full') {
+                        if (currentRow.length > 0) { rows.push(currentRow); currentRow = []; }
+                        rows.push([f]);
+                      } else {
+                        currentRow.push(f);
+                        if (currentRow.length === 2) { rows.push(currentRow); currentRow = []; }
+                      }
+                    });
+                    if (currentRow.length > 0) rows.push(currentRow);
+                    return rows.map((row, ri) => (
+                      <tr key={ri}>
+                        {row.map((f, fi) => {
+                          const fs = f.style || {};
+                          const labelStyle: React.CSSProperties = {
+                            fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px',
+                            color: fs.color || '#000',
+                            fontWeight: fs.bold ? 'bold' : 'normal',
+                            fontStyle: fs.italic ? 'italic' : 'normal',
+                            padding: '2px 4px',
+                            whiteSpace: 'nowrap',
+                            borderBottom: '1px solid #e5e7eb',
+                            width: f.width === 'full' ? '25%' : '25%',
+                          };
+                          const valueStyle: React.CSSProperties = {
+                            padding: '2px 4px',
+                            borderBottom: '1px solid #e5e7eb',
+                          };
+                          const colSpan = f.width === 'full' ? 3 : 1;
+                          const renderValue = () => {
+                            if (f.type === 'select' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>[{f.options.join(' / ')}]</span>;
+                            if (f.type === 'radio' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `○ ${o}`).join('  ')}</span>;
+                            if (f.type === 'checkbox' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `☐ ${o}`).join('  ')}</span>;
+                            if (f.type === 'textarea') return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', width: '100%', minHeight: '14px' }}>&nbsp;</span>;
+                            if (f.type === 'date') return <span style={{ fontSize: '9px', color: '#9ca3af' }}>____ / ____ / ________</span>;
+                            if (f.type === 'toggle') return <span style={{ fontSize: '9px', color: '#6b7280' }}>☐ {bn ? 'হ্যাঁ' : 'Yes'} / ☐ {bn ? 'না' : 'No'}</span>;
+                            return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '80px' }}>&nbsp;</span>;
+                          };
+                          return (
+                            <React.Fragment key={f.id}>
+                              <td style={labelStyle}>{bn ? f.label_bn : f.label}{f.required && <span style={{ color: '#ef4444' }}>*</span>}:</td>
+                              <td style={valueStyle} colSpan={colSpan}>{renderValue()}</td>
+                            </React.Fragment>
+                          );
+                        })}
+                        {row.length === 1 && row[0].width !== 'full' && <td style={{ padding: '2px 4px', borderBottom: '1px solid #e5e7eb' }} colSpan={2}>&nbsp;</td>}
+                      </tr>
+                    ));
+                  })()}
+                </tbody>
+              </table>
             </div>
           </div>
         );
