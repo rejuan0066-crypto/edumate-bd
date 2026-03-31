@@ -98,6 +98,16 @@ type ConditionData = {
   value: string;
 };
 
+type ValidationData = {
+  min_length: string;
+  max_length: string;
+  min_value: string;
+  max_value: string;
+  pattern: string;
+  error_message: string;
+  error_message_bn: string;
+};
+
 type FieldData = {
   id?: string;
   form_id?: string;
@@ -111,11 +121,13 @@ type FieldData = {
   default_value: string;
   is_active: boolean;
   condition: ConditionData;
+  validation: ValidationData;
 };
 
+const emptyValidation: ValidationData = { min_length: '', max_length: '', min_value: '', max_value: '', pattern: '', error_message: '', error_message_bn: '' };
 const emptyCondition: ConditionData = { enabled: false, source_field_id: '', operator: 'equals', value: '' };
 const emptyForm: FormData = { name: '', name_bn: '', description: '', form_type: 'custom', is_active: true, publish_to: 'none', parent_menu: '', menu_slug: '' };
-const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition } };
+const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', placeholder: '', is_required: false, sort_order: 0, options: [], default_value: '', is_active: true, condition: { ...emptyCondition }, validation: { ...emptyValidation } };
 
 // Sortable field item component
 const SortableFieldItem = ({ field, bn, getFieldIcon, getFieldLabel, openEditField, deleteField, fields }: any) => {
