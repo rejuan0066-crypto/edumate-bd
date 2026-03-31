@@ -106,6 +106,56 @@ const DocumentLayoutBuilder = () => {
     },
   });
 
+  // Fetch custom forms for import
+  const { data: customForms = [] } = useQuery({
+    queryKey: ['custom-forms-for-import'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custom_forms').select('*').eq('is_active', true).order('name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const importFromFormBuilder = async (formId: string) => {
+    setImportingForm(true);
+    try {
+      const form = customForms.find(f => f.id === formId);
+      if (!form) return;
+      const { data: fields, error } = await supabase.from('custom_form_fields').select('*').eq('form_id', formId).eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      if (!fields || fields.length === 0) { toast.error(bn ? 'এই ফর্মে কোনো ফিল্ড নেই' : 'No fields in this form'); return; }
+
+      // Convert fields to layout sections - group all into one section
+      const layoutFields: LayoutField[] = fields.map(f => ({
+        id: uid(),
+        label: f.label,
+        label_bn: f.label_bn,
+        type: FIELD_TYPE_MAP[f.field_type] || 'text',
+        required: f.is_required || false,
+        show: true,
+        width: ['textarea', 'address_permanent', 'address_present'].includes(f.field_type) ? 'full' as const : 'half' as const,
+        ...(f.field_type === 'select' || f.field_type === 'radio' ? { options: (() => { try { return typeof f.options === 'string' ? JSON.parse(f.options) : (Array.isArray(f.options) ? f.options : []); } catch { return []; } })() } : {}),
+      }));
+
+      const newSection: LayoutSection = {
+        id: uid(),
+        name: form.name,
+        name_bn: form.name_bn,
+        fields: layoutFields,
+        collapsed: false,
+      };
+
+      setConfig(c => ({ ...c, sections: [...c.sections, newSection] }));
+      if (!formName) setFormName(form.name);
+      if (!formNameBn) setFormNameBn(form.name_bn);
+      toast.success(bn ? `${fields.length}টি ফিল্ড ইমপোর্ট হয়েছে` : `${fields.length} fields imported`);
+    } catch (err: any) {
+      toast.error(err.message || 'Import failed');
+    } finally {
+      setImportingForm(false);
+    }
+  };
+
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
