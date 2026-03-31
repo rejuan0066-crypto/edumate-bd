@@ -64,6 +64,8 @@ const AdminAttendance = () => {
   const [dutyTimes, setDutyTimes] = useState({
     morning_start: '06:00', morning_end: '08:00',
     evening_start: '17:00', evening_end: '19:00',
+    extra_duty_enabled: false,
+    extra_duty_rate: 0,
   });
 
   // Fetch divisions
@@ -194,6 +196,8 @@ const AdminAttendance = () => {
         morning_end: savedDutyTimes.morning_end || '08:00',
         evening_start: savedDutyTimes.evening_start || '17:00',
         evening_end: savedDutyTimes.evening_end || '19:00',
+        extra_duty_enabled: savedDutyTimes.extra_duty_enabled || false,
+        extra_duty_rate: savedDutyTimes.extra_duty_rate || 0,
       });
     }
   }, [savedDutyTimes]);
@@ -640,6 +644,33 @@ const AdminAttendance = () => {
                 <Button size="sm" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি টাইম সেভ করুন' : 'Save Duty Times'}
                 </Button>
+
+                {/* Extra Duty Option */}
+                <div className="border-t pt-3 mt-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{bn ? 'অতিরিক্ত ডিউটি হিসেবে যোগ করুন' : 'Count as Extra Duty'}</p>
+                      <p className="text-[10px] text-muted-foreground">{bn ? 'চালু করলে আবাসিক ডিউটি অতিরিক্ত বেতন হিসেবে যোগ হবে' : 'If enabled, residential duty will be added as extra pay'}</p>
+                    </div>
+                    <Switch
+                      checked={dutyTimes.extra_duty_enabled}
+                      onCheckedChange={c => setDutyTimes(p => ({ ...p, extra_duty_enabled: c }))}
+                    />
+                  </div>
+                  {dutyTimes.extra_duty_enabled && (
+                    <div>
+                      <Label className="text-xs">{bn ? 'প্রতি ডিউটির নির্ধারিত বেতন (৳)' : 'Pay per duty shift (৳)'}</Label>
+                      <Input
+                        type="number"
+                        className="h-8 text-sm mt-1"
+                        placeholder="0"
+                        value={dutyTimes.extra_duty_rate || ''}
+                        onChange={e => setDutyTimes(p => ({ ...p, extra_duty_rate: Number(e.target.value) }))}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">{bn ? 'প্রতিটি সকাল/সন্ধ্যা ডিউটিতে উপস্থিত থাকলে এই পরিমাণ অতিরিক্ত বেতন যোগ হবে' : 'This amount will be added as extra pay for each morning/evening duty attended'}</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Existing Rules */}
