@@ -282,6 +282,22 @@ const AdminAttendance = () => {
                     </p>
                   </div>
 
+                  {/* Late Minutes Display */}
+                  {entityType === 'staff' && att?.check_in_time && (() => {
+                    const dutyStart = (entity.duty_start_time || '08:00').split(':').map(Number);
+                    const checkIn = att.check_in_time.split(':').map(Number);
+                    const dutyEnd = (entity.duty_end_time || '17:00').split(':').map(Number);
+                    const checkOut = att.check_out_time ? att.check_out_time.split(':').map(Number) : dutyEnd;
+                    const lateMin = Math.max(0, (checkIn[0] * 60 + checkIn[1]) - (dutyStart[0] * 60 + dutyStart[1]));
+                    const earlyMin = Math.max(0, (dutyEnd[0] * 60 + dutyEnd[1]) - (checkOut[0] * 60 + checkOut[1]));
+                    return (lateMin > 0 || earlyMin > 0) ? (
+                      <div className="flex gap-1 shrink-0">
+                        {lateMin > 0 && <Badge className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 text-[9px]">{bn ? `${lateMin} মি. বিলম্ব` : `${lateMin}m late`}</Badge>}
+                        {earlyMin > 0 && <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-[9px]">{bn ? `${earlyMin} মি. আগে` : `${earlyMin}m early`}</Badge>}
+                      </div>
+                    ) : null;
+                  })()}
+
                   {/* Time Inputs for Staff */}
                   {entityType === 'staff' && (
                     <div className="flex gap-1 items-center shrink-0">

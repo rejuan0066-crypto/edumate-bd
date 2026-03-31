@@ -796,6 +796,9 @@ const AdminSalary = () => {
                             <span className="text-emerald-600">{attStats.present}</span>/
                             <span className="text-red-500">{attStats.absent}</span>/
                             <span className="text-yellow-600">{attStats.late}</span>
+                            {attStats.totalLateArrivalMinutes > 0 && (
+                              <span className="text-[9px] text-yellow-600 ml-1">({attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
+                            )}
                           </button>
                         </td>
                         <td className="px-3 py-2 text-right text-red-500">
