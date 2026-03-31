@@ -775,9 +775,15 @@ const AdminSalary = () => {
                         </td>
                         <td className="px-3 py-2 text-right">৳{Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
                         <td className="px-3 py-2 text-center">
-                          <span className="text-emerald-600">{attStats.present}</span>/
-                          <span className="text-red-500">{attStats.absent}</span>/
-                          <span className="text-yellow-600">{attStats.late}</span>
+                          <button
+                            onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
+                            className="hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
+                            title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                          >
+                            <span className="text-emerald-600">{attStats.present}</span>/
+                            <span className="text-red-500">{attStats.absent}</span>/
+                            <span className="text-yellow-600">{attStats.late}</span>
+                          </button>
                         </td>
                         <td className="px-3 py-2 text-right text-red-500">
                           {rec ? `৳${totalDed.toLocaleString()}` : '-'}
