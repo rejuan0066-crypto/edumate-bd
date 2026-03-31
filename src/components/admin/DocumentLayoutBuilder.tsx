@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, DragEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,9 +18,11 @@ import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit, Copy, FileText, Receipt, Eye, Printer,
   ChevronDown, ChevronUp, X, Type, Calendar, List, Image, Hash,
-  ToggleLeft, Mail, Phone, Pen, FolderOpen
+  ToggleLeft, Mail, Phone, Pen, FolderOpen, GripVertical, AlignLeft, AlignCenter, AlignRight, Palette
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
 
 // ─── Types ───
 interface LayoutField {
@@ -28,11 +30,22 @@ interface LayoutField {
   type: 'text' | 'number' | 'date' | 'select' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
   required: boolean; options?: string[]; show: boolean; width: 'full' | 'half';
 }
-interface LayoutSection { id: string; name: string; name_bn: string; fields: LayoutField[]; collapsed: boolean; }
+interface SectionStyle {
+  fontSize?: number; color?: string; textAlign?: 'left' | 'center' | 'right';
+  bgColor?: string;
+}
+interface LayoutSection { id: string; name: string; name_bn: string; fields: LayoutField[]; collapsed: boolean; style?: SectionStyle; }
 interface SignatureLine { id: string; title: string; title_bn: string; }
 interface ReceiptRow { id: string; label: string; label_bn: string; type: 'fee' | 'amount' | 'info'; show: boolean; }
+interface HeaderConfig {
+  showLogo: boolean; showName: boolean; showAddress: boolean; showContact: boolean;
+  customTitle: string; customTitle_bn: string; customSubtitle: string; customSubtitle_bn: string;
+  institutionName?: string; institutionName_bn?: string;
+  institutionAddress?: string; institutionPhone?: string; institutionEmail?: string;
+  logoUrl?: string;
+}
 interface LayoutConfig {
-  header: { showLogo: boolean; showName: boolean; showAddress: boolean; showContact: boolean; customTitle: string; customTitle_bn: string; customSubtitle: string; customSubtitle_bn: string; };
+  header: HeaderConfig;
   footer: { signatures: SignatureLine[]; termsText: string; termsText_bn: string; copyrightText: string; };
   sections: LayoutSection[]; receiptRows: ReceiptRow[];
   showFields: { studentId: boolean; date: boolean; amountInWords: boolean; receiptNo: boolean; };
@@ -82,6 +95,12 @@ const FIELD_TYPE_MAP: Record<string, LayoutField['type']> = {
   village: 'text', nid: 'text', identity_card: 'text',
 };
 
+const PRESET_COLORS = [
+  '#000000', '#1a1a2e', '#16213e', '#0f3460', '#533483',
+  '#e94560', '#1b5e20', '#2e7d32', '#4a148c', '#b71c1c',
+  '#004d40', '#01579b', '#e65100', '#33691e', '#880e4f',
+];
+
 const DocumentLayoutBuilder = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -98,6 +117,12 @@ const DocumentLayoutBuilder = () => {
   const [activeTab, setActiveTab] = useState('sections');
   const [importingForm, setImportingForm] = useState(false);
 
+  // Drag state
+  const dragFieldRef = useRef<{ sectionId: string; fieldIndex: number } | null>(null);
+  const dragSectionRef = useRef<number | null>(null);
+  const [dragOverField, setDragOverField] = useState<{ sectionId: string; fieldIndex: number } | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<number | null>(null);
+
   const { data: layouts = [], isLoading } = useQuery({
     queryKey: ['document_layouts'],
     queryFn: async () => {
@@ -107,7 +132,6 @@ const DocumentLayoutBuilder = () => {
     },
   });
 
-  // Fetch custom forms for import
   const { data: customForms = [] } = useQuery({
     queryKey: ['custom-forms-for-import'],
     queryFn: async () => {
@@ -125,27 +149,14 @@ const DocumentLayoutBuilder = () => {
       const { data: fields, error } = await supabase.from('custom_form_fields').select('*').eq('form_id', formId).eq('is_active', true).order('sort_order');
       if (error) throw error;
       if (!fields || fields.length === 0) { toast.error(bn ? 'এই ফর্মে কোনো ফিল্ড নেই' : 'No fields in this form'); return; }
-
-      // Convert fields to layout sections - group all into one section
       const layoutFields: LayoutField[] = fields.map(f => ({
-        id: uid(),
-        label: f.label,
-        label_bn: f.label_bn,
+        id: uid(), label: f.label, label_bn: f.label_bn,
         type: FIELD_TYPE_MAP[f.field_type] || 'text',
-        required: f.is_required || false,
-        show: true,
+        required: f.is_required || false, show: true,
         width: ['textarea', 'address_permanent', 'address_present'].includes(f.field_type) ? 'full' as const : 'half' as const,
         ...(f.field_type === 'select' || f.field_type === 'radio' ? { options: (() => { try { return typeof f.options === 'string' ? JSON.parse(f.options) : (Array.isArray(f.options) ? f.options : []); } catch { return []; } })() } : {}),
       }));
-
-      const newSection: LayoutSection = {
-        id: uid(),
-        name: form.name,
-        name_bn: form.name_bn,
-        fields: layoutFields,
-        collapsed: false,
-      };
-
+      const newSection: LayoutSection = { id: uid(), name: form.name, name_bn: form.name_bn, fields: layoutFields, collapsed: false };
       setConfig(c => ({ ...c, sections: [...c.sections, newSection] }));
       if (!formName) setFormName(form.name);
       if (!formNameBn) setFormNameBn(form.name_bn);
@@ -189,25 +200,85 @@ const DocumentLayoutBuilder = () => {
   const duplicate = (l: DocumentLayout) => { setCurrent(null); setFormName(l.name + ' (Copy)'); setFormNameBn(l.name_bn + ' (কপি)'); setFormType(l.layout_type as any); setFormCategory(l.category); setConfig(JSON.parse(JSON.stringify(l.config))); setActiveTab(l.layout_type === 'receipt' ? 'receipt' : 'sections'); setEditorOpen(true); };
   const handleSave = () => { if (!formName.trim() || !formNameBn.trim()) { toast.error(bn ? 'নাম দিন' : 'Enter name'); return; } saveMutation.mutate({ id: current?.id, name: formName, name_bn: formNameBn, layout_type: formType, category: formCategory, config }); };
 
-  // Helpers
-  const addSection = () => setConfig(c => ({ ...c, sections: [...c.sections, { id: uid(), name: 'New Section', name_bn: 'নতুন সেকশন', fields: [], collapsed: false }] }));
+  // Section helpers
+  const addSection = () => setConfig(c => ({ ...c, sections: [...c.sections, { id: uid(), name: 'New Section', name_bn: 'নতুন সেকশন', fields: [], collapsed: false, style: { fontSize: 13, color: '#000000', textAlign: 'left', bgColor: '#f3f4f6' } }] }));
   const removeSection = (sid: string) => setConfig(c => ({ ...c, sections: c.sections.filter(s => s.id !== sid) }));
   const updateSection = (sid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, [key]: val } : s) }));
-  const moveSection = (idx: number, dir: -1 | 1) => { setConfig(c => { const arr = [...c.sections]; const ni = idx + dir; if (ni < 0 || ni >= arr.length) return c; [arr[idx], arr[ni]] = [arr[ni], arr[idx]]; return { ...c, sections: arr }; }); };
+  const updateSectionStyle = (sid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, style: { ...s.style, [key]: val } } : s) }));
 
+  // Field helpers
   const addField = (sid: string) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: [...s.fields, { id: uid(), label: 'New Field', label_bn: 'নতুন ফিল্ড', type: 'text', required: false, show: true, width: 'half' }] } : s) }));
   const removeField = (sid: string, fid: string) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.filter(f => f.id !== fid) } : s) }));
   const updateField = (sid: string, fid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.map(f => f.id === fid ? { ...f, [key]: val } : f) } : s) }));
-  const moveField = (sid: string, idx: number, dir: -1 | 1) => { setConfig(c => ({ ...c, sections: c.sections.map(s => { if (s.id !== sid) return s; const arr = [...s.fields]; const ni = idx + dir; if (ni < 0 || ni >= arr.length) return s; [arr[idx], arr[ni]] = [arr[ni], arr[idx]]; return { ...s, fields: arr }; }) })); };
 
+  // Drag & Drop - Fields
+  const handleFieldDragStart = (e: DragEvent, sectionId: string, fieldIndex: number) => {
+    dragFieldRef.current = { sectionId, fieldIndex };
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'field');
+  };
+  const handleFieldDragOver = (e: DragEvent, sectionId: string, fieldIndex: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverField({ sectionId, fieldIndex });
+  };
+  const handleFieldDrop = (e: DragEvent, targetSectionId: string, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverField(null);
+    const src = dragFieldRef.current;
+    if (!src) return;
+    if (src.sectionId === targetSectionId && src.fieldIndex === targetIndex) return;
+
+    setConfig(c => {
+      const newSections = c.sections.map(s => ({ ...s, fields: [...s.fields] }));
+      const srcSection = newSections.find(s => s.id === src.sectionId);
+      const tgtSection = newSections.find(s => s.id === targetSectionId);
+      if (!srcSection || !tgtSection) return c;
+
+      const [movedField] = srcSection.fields.splice(src.fieldIndex, 1);
+      const adjustedIndex = src.sectionId === targetSectionId && src.fieldIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      tgtSection.fields.splice(adjustedIndex, 0, movedField);
+      return { ...c, sections: newSections };
+    });
+    dragFieldRef.current = null;
+  };
+
+  // Drag & Drop - Sections
+  const handleSectionDragStart = (e: DragEvent, index: number) => {
+    dragSectionRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', 'section');
+  };
+  const handleSectionDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSection(index);
+  };
+  const handleSectionDrop = (e: DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverSection(null);
+    const srcIndex = dragSectionRef.current;
+    if (srcIndex === null || srcIndex === targetIndex) return;
+    setConfig(c => {
+      const arr = [...c.sections];
+      const [moved] = arr.splice(srcIndex, 1);
+      arr.splice(targetIndex, 0, moved);
+      return { ...c, sections: arr };
+    });
+    dragSectionRef.current = null;
+  };
+
+  // Signature, Receipt helpers
   const addSignature = () => setConfig(c => ({ ...c, footer: { ...c.footer, signatures: [...c.footer.signatures, { id: uid(), title: 'Signature', title_bn: 'স্বাক্ষর' }] } }));
   const removeSignature = (sid: string) => setConfig(c => ({ ...c, footer: { ...c.footer, signatures: c.footer.signatures.filter(s => s.id !== sid) } }));
   const updateSignature = (sid: string, key: string, val: string) => setConfig(c => ({ ...c, footer: { ...c.footer, signatures: c.footer.signatures.map(s => s.id === sid ? { ...s, [key]: val } : s) } }));
-
   const addReceiptRow = () => setConfig(c => ({ ...c, receiptRows: [...c.receiptRows, { id: uid(), label: 'Item', label_bn: 'আইটেম', type: 'fee', show: true }] }));
   const removeReceiptRow = (rid: string) => setConfig(c => ({ ...c, receiptRows: c.receiptRows.filter(r => r.id !== rid) }));
   const updateReceiptRow = (rid: string, key: string, val: any) => setConfig(c => ({ ...c, receiptRows: c.receiptRows.map(r => r.id === rid ? { ...r, [key]: val } : r) }));
   const moveReceiptRow = (idx: number, dir: -1 | 1) => { setConfig(c => { const arr = [...c.receiptRows]; const ni = idx + dir; if (ni < 0 || ni >= arr.length) return c; [arr[idx], arr[ni]] = [arr[ni], arr[idx]]; return { ...c, receiptRows: arr }; }); };
+
+  // Header helpers
+  const updateHeader = (key: string, val: any) => setConfig(c => ({ ...c, header: { ...c.header, [key]: val } }));
 
   const handlePrint = () => {
     const el = document.getElementById('layout-preview-area');
@@ -219,29 +290,40 @@ const DocumentLayoutBuilder = () => {
     setTimeout(() => w.print(), 500);
   };
 
-  const renderPreview = () => {
-    const inst = institution;
-    return (
-      <div id="layout-preview-area" className="bg-white text-black p-6 text-xs min-h-[400px] border border-border rounded-lg">
-        <div className="text-center mb-4">
-          {config.header.showLogo && inst?.logo_url && <img src={inst.logo_url} alt="Logo" className="mx-auto h-12 mb-2" />}
-          {config.header.showName && <h2 className="text-lg font-bold">{inst?.name || 'প্রতিষ্ঠানের নাম'}</h2>}
-          {config.header.showAddress && inst?.address && <p className="text-[10px]">{inst.address}</p>}
-          {config.header.showContact && (inst?.phone || inst?.email) && <p className="text-[10px]">{inst.phone} {inst.email && `| ${inst.email}`}</p>}
-          {config.header.customTitle && <h3 className="text-sm font-semibold mt-2">{bn ? config.header.customTitle_bn || config.header.customTitle : config.header.customTitle}</h3>}
-          {config.header.customSubtitle && <p className="text-[10px]">{bn ? config.header.customSubtitle_bn || config.header.customSubtitle : config.header.customSubtitle}</p>}
-          <div className="border-b-2 border-black mt-2" />
+  const getHeaderName = () => config.header.institutionName_bn || config.header.institutionName || institution?.name || 'প্রতিষ্ঠানের নাম';
+  const getHeaderAddress = () => config.header.institutionAddress || institution?.address || '';
+  const getHeaderPhone = () => config.header.institutionPhone || institution?.phone || '';
+  const getHeaderEmail = () => config.header.institutionEmail || institution?.email || '';
+  const getHeaderLogo = () => config.header.logoUrl || institution?.logo_url || '';
+
+  const renderPreview = () => (
+    <div id="layout-preview-area" className="bg-white text-black p-6 text-xs min-h-[400px] border border-border rounded-lg">
+      <div className="text-center mb-4">
+        {config.header.showLogo && getHeaderLogo() && <img src={getHeaderLogo()} alt="Logo" className="mx-auto h-12 mb-2" />}
+        {config.header.showName && <h2 className="text-lg font-bold">{getHeaderName()}</h2>}
+        {config.header.showAddress && getHeaderAddress() && <p className="text-[10px]">{getHeaderAddress()}</p>}
+        {config.header.showContact && (getHeaderPhone() || getHeaderEmail()) && <p className="text-[10px]">{getHeaderPhone()} {getHeaderEmail() && `| ${getHeaderEmail()}`}</p>}
+        {config.header.customTitle && <h3 className="text-sm font-semibold mt-2">{bn ? config.header.customTitle_bn || config.header.customTitle : config.header.customTitle}</h3>}
+        {config.header.customSubtitle && <p className="text-[10px]">{bn ? config.header.customSubtitle_bn || config.header.customSubtitle : config.header.customSubtitle}</p>}
+        <div className="border-b-2 border-black mt-2" />
+      </div>
+      {formType === 'receipt' && (
+        <div className="flex justify-between mb-3 text-[10px]">
+          {config.showFields.receiptNo && <span><strong>{bn ? 'রসিদ নং:' : 'Receipt No:'}</strong> ________</span>}
+          {config.showFields.studentId && <span><strong>{bn ? 'আইডি:' : 'ID:'}</strong> ________</span>}
+          {config.showFields.date && <span><strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ________</span>}
         </div>
-        {formType === 'receipt' && (
-          <div className="flex justify-between mb-3 text-[10px]">
-            {config.showFields.receiptNo && <span><strong>{bn ? 'রসিদ নং:' : 'Receipt No:'}</strong> ________</span>}
-            {config.showFields.studentId && <span><strong>{bn ? 'আইডি:' : 'ID:'}</strong> ________</span>}
-            {config.showFields.date && <span><strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ________</span>}
-          </div>
-        )}
-        {formType === 'form' && config.sections.map(sec => (
+      )}
+      {formType === 'form' && config.sections.map(sec => {
+        const style = sec.style || {};
+        return (
           <div key={sec.id} className="mb-3">
-            <h4 className="text-xs font-bold bg-gray-100 px-2 py-1 border border-gray-300">{bn ? sec.name_bn : sec.name}</h4>
+            <h4 className="text-xs font-bold px-2 py-1 border border-gray-300" style={{
+              fontSize: style.fontSize ? `${style.fontSize}px` : '13px',
+              color: style.color || '#000',
+              textAlign: style.textAlign || 'left',
+              backgroundColor: style.bgColor || '#f3f4f6',
+            }}>{bn ? sec.name_bn : sec.name}</h4>
             <div className="grid grid-cols-2 gap-x-4 gap-y-1 p-2 border border-t-0 border-gray-300">
               {sec.fields.filter(f => f.show).map(f => (
                 <div key={f.id} className={f.width === 'full' ? 'col-span-2' : ''}>
@@ -251,23 +333,23 @@ const DocumentLayoutBuilder = () => {
               ))}
             </div>
           </div>
-        ))}
-        {formType === 'receipt' && config.receiptRows.length > 0 && (
-          <table className="w-full text-[10px] mb-3"><thead><tr><th className="border border-gray-400 bg-gray-100 px-2 py-1">{bn ? 'বিবরণ' : 'Description'}</th><th className="border border-gray-400 bg-gray-100 px-2 py-1 w-24">{bn ? 'পরিমাণ' : 'Amount'}</th></tr></thead>
-            <tbody>{config.receiptRows.filter(r => r.show).map(r => (<tr key={r.id}><td className="border border-gray-400 px-2 py-1">{bn ? r.label_bn : r.label}</td><td className="border border-gray-400 px-2 py-1 text-right">{r.type === 'amount' ? <strong>৳ _____</strong> : '৳ _____'}</td></tr>))}</tbody>
-          </table>
-        )}
-        {formType === 'receipt' && config.showFields.amountInWords && <p className="text-[10px] mb-3"><strong>{bn ? 'কথায়:' : 'In Words:'}</strong> ________________________________</p>}
-        <div className="mt-6">
-          {config.footer.termsText && <p className="text-[8px] text-gray-500 mb-4">{bn ? config.footer.termsText_bn || config.footer.termsText : config.footer.termsText}</p>}
-          <div className="flex justify-between mt-8 pt-2">
-            {config.footer.signatures.map(sig => (<div key={sig.id} className="text-center"><div className="border-t border-black w-28 mx-auto mb-1" /><span className="text-[10px]">{bn ? sig.title_bn : sig.title}</span></div>))}
-          </div>
-          {config.footer.copyrightText && <p className="text-[8px] text-center text-gray-400 mt-4">{config.footer.copyrightText}</p>}
+        );
+      })}
+      {formType === 'receipt' && config.receiptRows.length > 0 && (
+        <table className="w-full text-[10px] mb-3"><thead><tr><th className="border border-gray-400 bg-gray-100 px-2 py-1">{bn ? 'বিবরণ' : 'Description'}</th><th className="border border-gray-400 bg-gray-100 px-2 py-1 w-24">{bn ? 'পরিমাণ' : 'Amount'}</th></tr></thead>
+          <tbody>{config.receiptRows.filter(r => r.show).map(r => (<tr key={r.id}><td className="border border-gray-400 px-2 py-1">{bn ? r.label_bn : r.label}</td><td className="border border-gray-400 px-2 py-1 text-right">{r.type === 'amount' ? <strong>৳ _____</strong> : '৳ _____'}</td></tr>))}</tbody>
+        </table>
+      )}
+      {formType === 'receipt' && config.showFields.amountInWords && <p className="text-[10px] mb-3"><strong>{bn ? 'কথায়:' : 'In Words:'}</strong> ________________________________</p>}
+      <div className="mt-6">
+        {config.footer.termsText && <p className="text-[8px] text-gray-500 mb-4">{bn ? config.footer.termsText_bn || config.footer.termsText : config.footer.termsText}</p>}
+        <div className="flex justify-between mt-8 pt-2">
+          {config.footer.signatures.map(sig => (<div key={sig.id} className="text-center"><div className="border-t border-black w-28 mx-auto mb-1" /><span className="text-[10px]">{bn ? sig.title_bn : sig.title}</span></div>))}
         </div>
+        {config.footer.copyrightText && <p className="text-[8px] text-center text-gray-400 mt-4">{config.footer.copyrightText}</p>}
       </div>
-    );
-  };
+    </div>
+  );
 
   const formLayouts = layouts.filter(l => l.layout_type === 'form');
   const receiptLayouts = layouts.filter(l => l.layout_type === 'receipt');
@@ -365,70 +447,172 @@ const DocumentLayoutBuilder = () => {
                     <TabsTrigger value="preview"><Eye className="w-3 h-3 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}</TabsTrigger>
                   </TabsList>
 
-                  {/* Header */}
+                  {/* Header Tab */}
                   <TabsContent value="header" className="space-y-3 mt-3">
                     <Card><CardContent className="p-3 space-y-3">
-                      <h4 className="font-semibold text-sm">{bn ? 'হেডার সেটিংস' : 'Header Settings'}</h4>
+                      <h4 className="font-semibold text-sm">{bn ? 'দেখান/লুকান' : 'Show/Hide'}</h4>
                       <div className="grid grid-cols-2 gap-3">
                         {[{ k: 'showLogo', l: 'Show Logo', l_bn: 'লোগো দেখান' }, { k: 'showName', l: 'Show Name', l_bn: 'নাম দেখান' }, { k: 'showAddress', l: 'Show Address', l_bn: 'ঠিকানা দেখান' }, { k: 'showContact', l: 'Show Contact', l_bn: 'যোগাযোগ দেখান' }].map(i => (
-                          <div key={i.k} className="flex items-center gap-2"><Switch checked={(config.header as any)[i.k]} onCheckedChange={v => setConfig(c => ({ ...c, header: { ...c.header, [i.k]: v } }))} /><Label>{bn ? i.l_bn : i.l}</Label></div>
+                          <div key={i.k} className="flex items-center gap-2"><Switch checked={(config.header as any)[i.k]} onCheckedChange={v => updateHeader(i.k, v)} /><Label>{bn ? i.l_bn : i.l}</Label></div>
                         ))}
                       </div>
-                      <Separator />
+                    </CardContent></Card>
+
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm">{bn ? 'প্রতিষ্ঠানের তথ্য (ওভাররাইড)' : 'Institution Info (Override)'}</h4>
+                      <p className="text-[11px] text-muted-foreground">{bn ? 'খালি রাখলে ডিফল্ট প্রতিষ্ঠানের তথ্য ব্যবহার হবে' : 'Leave empty to use default institution data'}</p>
                       <div className="grid grid-cols-2 gap-3">
-                        <div><Label>{bn ? 'কাস্টম শিরোনাম (EN)' : 'Custom Title (EN)'}</Label><Input value={config.header.customTitle} onChange={e => setConfig(c => ({ ...c, header: { ...c.header, customTitle: e.target.value } }))} /></div>
-                        <div><Label>{bn ? 'কাস্টম শিরোনাম (BN)' : 'Custom Title (BN)'}</Label><Input value={config.header.customTitle_bn} onChange={e => setConfig(c => ({ ...c, header: { ...c.header, customTitle_bn: e.target.value } }))} /></div>
-                        <div><Label>{bn ? 'সাবটাইটেল (EN)' : 'Subtitle (EN)'}</Label><Input value={config.header.customSubtitle} onChange={e => setConfig(c => ({ ...c, header: { ...c.header, customSubtitle: e.target.value } }))} /></div>
-                        <div><Label>{bn ? 'সাবটাইটেল (BN)' : 'Subtitle (BN)'}</Label><Input value={config.header.customSubtitle_bn} onChange={e => setConfig(c => ({ ...c, header: { ...c.header, customSubtitle_bn: e.target.value } }))} /></div>
+                        <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (EN)' : 'Institution Name (EN)'}</Label><Input value={config.header.institutionName || ''} onChange={e => updateHeader('institutionName', e.target.value)} placeholder={institution?.name_en || 'Default'} /></div>
+                        <div><Label>{bn ? 'প্রতিষ্ঠানের নাম (BN)' : 'Institution Name (BN)'}</Label><Input value={config.header.institutionName_bn || ''} onChange={e => updateHeader('institutionName_bn', e.target.value)} placeholder={institution?.name || 'Default'} /></div>
+                        <div className="col-span-2"><Label>{bn ? 'ঠিকানা' : 'Address'}</Label><Input value={config.header.institutionAddress || ''} onChange={e => updateHeader('institutionAddress', e.target.value)} placeholder={institution?.address || 'Default'} /></div>
+                        <div><Label>{bn ? 'ফোন' : 'Phone'}</Label><Input value={config.header.institutionPhone || ''} onChange={e => updateHeader('institutionPhone', e.target.value)} placeholder={institution?.phone || 'Default'} /></div>
+                        <div><Label>{bn ? 'ইমেইল' : 'Email'}</Label><Input value={config.header.institutionEmail || ''} onChange={e => updateHeader('institutionEmail', e.target.value)} placeholder={institution?.email || 'Default'} /></div>
+                        <div className="col-span-2"><Label>{bn ? 'লোগো URL' : 'Logo URL'}</Label><Input value={config.header.logoUrl || ''} onChange={e => updateHeader('logoUrl', e.target.value)} placeholder={bn ? 'ডিফল্ট লোগো ব্যবহার হবে' : 'Uses default logo'} /></div>
+                      </div>
+                    </CardContent></Card>
+
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm">{bn ? 'কাস্টম টাইটেল' : 'Custom Titles'}</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><Label>{bn ? 'শিরোনাম (EN)' : 'Title (EN)'}</Label><Input value={config.header.customTitle} onChange={e => updateHeader('customTitle', e.target.value)} /></div>
+                        <div><Label>{bn ? 'শিরোনাম (BN)' : 'Title (BN)'}</Label><Input value={config.header.customTitle_bn} onChange={e => updateHeader('customTitle_bn', e.target.value)} /></div>
+                        <div><Label>{bn ? 'সাবটাইটেল (EN)' : 'Subtitle (EN)'}</Label><Input value={config.header.customSubtitle} onChange={e => updateHeader('customSubtitle', e.target.value)} /></div>
+                        <div><Label>{bn ? 'সাবটাইটেল (BN)' : 'Subtitle (BN)'}</Label><Input value={config.header.customSubtitle_bn} onChange={e => updateHeader('customSubtitle_bn', e.target.value)} /></div>
                       </div>
                     </CardContent></Card>
                   </TabsContent>
 
-                  {/* Sections */}
+                  {/* Sections Tab */}
                   <TabsContent value="sections" className="space-y-3 mt-3">
                     {config.sections.map((sec, si) => (
-                      <Card key={sec.id}><CardContent className="p-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col gap-0.5">
-                            <button onClick={() => moveSection(si, -1)} disabled={si === 0} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
-                            <button onClick={() => moveSection(si, 1)} disabled={si === config.sections.length - 1} className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
+                      <Card
+                        key={sec.id}
+                        draggable
+                        onDragStart={e => handleSectionDragStart(e, si)}
+                        onDragOver={e => handleSectionDragOver(e, si)}
+                        onDrop={e => handleSectionDrop(e, si)}
+                        onDragEnd={() => setDragOverSection(null)}
+                        className={`transition-all ${dragOverSection === si ? 'ring-2 ring-primary border-primary' : ''}`}
+                      >
+                        <CardContent className="p-3 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab shrink-0" />
+                            <Input value={sec.name} onChange={e => updateSection(sec.id, 'name', e.target.value)} className="flex-1 h-8 text-sm" placeholder="Section Name (EN)" />
+                            <Input value={sec.name_bn} onChange={e => updateSection(sec.id, 'name_bn', e.target.value)} className="flex-1 h-8 text-sm" placeholder="সেকশনের নাম (BN)" />
+                            <Button size="icon" variant="ghost" onClick={() => updateSection(sec.id, 'collapsed', !sec.collapsed)}>{sec.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}</Button>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => removeSection(sec.id)}><Trash2 className="w-4 h-4" /></Button>
                           </div>
-                          <Input value={sec.name} onChange={e => updateSection(sec.id, 'name', e.target.value)} className="flex-1 h-8 text-sm" placeholder="Section Name (EN)" />
-                          <Input value={sec.name_bn} onChange={e => updateSection(sec.id, 'name_bn', e.target.value)} className="flex-1 h-8 text-sm" placeholder="সেকশনের নাম (BN)" />
-                          <Button size="icon" variant="ghost" onClick={() => updateSection(sec.id, 'collapsed', !sec.collapsed)}>{sec.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}</Button>
-                          <Button size="icon" variant="ghost" className="text-destructive" onClick={() => removeSection(sec.id)}><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                        {!sec.collapsed && (
-                          <div className="space-y-1.5 pl-6">
-                            {sec.fields.map((f, fi) => {
-                              const FIcon = FIELD_TYPE_ICONS[f.type] || Type;
-                              return (
-                                <div key={f.id} className="flex items-center gap-1.5 bg-secondary/30 rounded p-1.5">
-                                  <div className="flex flex-col gap-0.5">
-                                    <button onClick={() => moveField(sec.id, fi, -1)} disabled={fi === 0} className="p-0.5 disabled:opacity-30"><ChevronUp className="w-3 h-3" /></button>
-                                    <button onClick={() => moveField(sec.id, fi, 1)} disabled={fi === sec.fields.length - 1} className="p-0.5 disabled:opacity-30"><ChevronDown className="w-3 h-3" /></button>
-                                  </div>
-                                  <FIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                  <Input value={f.label} onChange={e => updateField(sec.id, f.id, 'label', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
-                                  <Input value={f.label_bn} onChange={e => updateField(sec.id, f.id, 'label_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
-                                  <Select value={f.type} onValueChange={v => updateField(sec.id, f.id, 'type', v)}>
-                                    <SelectTrigger className="h-7 text-xs w-20"><SelectValue /></SelectTrigger>
-                                    <SelectContent>{Object.keys(FIELD_TYPE_ICONS).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                                  </Select>
-                                  <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
-                                    <SelectTrigger className="h-7 text-xs w-16"><SelectValue /></SelectTrigger>
-                                    <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
-                                  </Select>
-                                  <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
-                                  <div className="flex items-center gap-1"><Switch checked={f.show} onCheckedChange={v => updateField(sec.id, f.id, 'show', v)} /><span className="text-[10px]">Show</span></div>
-                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeField(sec.id, f.id)}><X className="w-3 h-3" /></Button>
+
+                          {/* Section Style Controls */}
+                          {!sec.collapsed && (
+                            <div className="flex items-center gap-2 pl-6 flex-wrap">
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px] whitespace-nowrap">{bn ? 'সাইজ' : 'Size'}</Label>
+                                <div className="w-20">
+                                  <Slider
+                                    value={[sec.style?.fontSize || 13]}
+                                    min={10} max={24} step={1}
+                                    onValueChange={([v]) => updateSectionStyle(sec.id, 'fontSize', v)}
+                                  />
                                 </div>
-                              );
-                            })}
-                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addField(sec.id)}><Plus className="w-3 h-3 mr-1" />{bn ? 'ফিল্ড যোগ' : 'Add Field'}</Button>
-                          </div>
-                        )}
-                      </CardContent></Card>
+                                <span className="text-[10px] text-muted-foreground w-6">{sec.style?.fontSize || 13}px</span>
+                              </div>
+
+                              <Separator orientation="vertical" className="h-5" />
+
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">{bn ? 'রং' : 'Color'}</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="w-5 h-5 rounded border border-border" style={{ backgroundColor: sec.style?.color || '#000000' }} />
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2" align="start">
+                                    <div className="grid grid-cols-5 gap-1 mb-2">
+                                      {PRESET_COLORS.map(c => (
+                                        <button key={c} className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform" style={{ backgroundColor: c }}
+                                          onClick={() => updateSectionStyle(sec.id, 'color', c)} />
+                                      ))}
+                                    </div>
+                                    <Input type="color" value={sec.style?.color || '#000000'} onChange={e => updateSectionStyle(sec.id, 'color', e.target.value)} className="h-7 w-full p-0 border-0" />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+
+                              <Separator orientation="vertical" className="h-5" />
+
+                              <div className="flex items-center gap-1">
+                                <Label className="text-[10px]">{bn ? 'ব্যাকগ্রাউন্ড' : 'BG'}</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="w-5 h-5 rounded border border-border" style={{ backgroundColor: sec.style?.bgColor || '#f3f4f6' }} />
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2" align="start">
+                                    <div className="grid grid-cols-5 gap-1 mb-2">
+                                      {['#f3f4f6','#e5e7eb','#d1d5db','#fef3c7','#dbeafe','#d1fae5','#fce7f3','#ede9fe','#ffffff','#000000'].map(c => (
+                                        <button key={c} className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform" style={{ backgroundColor: c }}
+                                          onClick={() => updateSectionStyle(sec.id, 'bgColor', c)} />
+                                      ))}
+                                    </div>
+                                    <Input type="color" value={sec.style?.bgColor || '#f3f4f6'} onChange={e => updateSectionStyle(sec.id, 'bgColor', e.target.value)} className="h-7 w-full p-0 border-0" />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+
+                              <Separator orientation="vertical" className="h-5" />
+
+                              <div className="flex items-center gap-0.5">
+                                {(['left', 'center', 'right'] as const).map(align => (
+                                  <Button key={align} size="icon" variant={(sec.style?.textAlign || 'left') === align ? 'default' : 'ghost'}
+                                    className="h-6 w-6" onClick={() => updateSectionStyle(sec.id, 'textAlign', align)}>
+                                    {align === 'left' && <AlignLeft className="w-3 h-3" />}
+                                    {align === 'center' && <AlignCenter className="w-3 h-3" />}
+                                    {align === 'right' && <AlignRight className="w-3 h-3" />}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Fields with drag & drop */}
+                          {!sec.collapsed && (
+                            <div className="space-y-1.5 pl-6">
+                              {sec.fields.map((f, fi) => {
+                                const FIcon = FIELD_TYPE_ICONS[f.type] || Type;
+                                return (
+                                  <div
+                                    key={f.id}
+                                    draggable
+                                    onDragStart={e => { e.stopPropagation(); handleFieldDragStart(e, sec.id, fi); }}
+                                    onDragOver={e => { e.stopPropagation(); handleFieldDragOver(e, sec.id, fi); }}
+                                    onDrop={e => { e.stopPropagation(); handleFieldDrop(e, sec.id, fi); }}
+                                    onDragEnd={() => setDragOverField(null)}
+                                    className={`flex items-center gap-1.5 bg-secondary/30 rounded p-1.5 transition-all cursor-move ${
+                                      dragOverField?.sectionId === sec.id && dragOverField?.fieldIndex === fi ? 'ring-2 ring-primary bg-primary/10' : ''
+                                    }`}
+                                  >
+                                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground cursor-grab shrink-0" />
+                                    <FIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    <Input value={f.label} onChange={e => updateField(sec.id, f.id, 'label', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
+                                    <Input value={f.label_bn} onChange={e => updateField(sec.id, f.id, 'label_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
+                                    <Select value={f.type} onValueChange={v => updateField(sec.id, f.id, 'type', v)}>
+                                      <SelectTrigger className="h-7 text-xs w-20"><SelectValue /></SelectTrigger>
+                                      <SelectContent>{Object.keys(FIELD_TYPE_ICONS).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
+                                      <SelectTrigger className="h-7 text-xs w-16"><SelectValue /></SelectTrigger>
+                                      <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
+                                    </Select>
+                                    <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
+                                    <div className="flex items-center gap-1"><Switch checked={f.show} onCheckedChange={v => updateField(sec.id, f.id, 'show', v)} /><span className="text-[10px]">Show</span></div>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeField(sec.id, f.id)}><X className="w-3 h-3" /></Button>
+                                  </div>
+                                );
+                              })}
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addField(sec.id)}><Plus className="w-3 h-3 mr-1" />{bn ? 'ফিল্ড যোগ' : 'Add Field'}</Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     ))}
                     <div className="flex gap-2 flex-wrap">
                       <Button variant="outline" onClick={addSection}><Plus className="w-4 h-4 mr-1" />{bn ? 'সেকশন যোগ' : 'Add Section'}</Button>
@@ -452,7 +636,7 @@ const DocumentLayoutBuilder = () => {
                     </div>
                   </TabsContent>
 
-                  {/* Receipt */}
+                  {/* Receipt Tab */}
                   <TabsContent value="receipt" className="space-y-3 mt-3">
                     <Card><CardContent className="p-3 space-y-2">
                       <h4 className="font-semibold text-sm">{bn ? 'ডেটা ফিল্ড দেখান/লুকান' : 'Show/Hide Data Fields'}</h4>
@@ -484,7 +668,7 @@ const DocumentLayoutBuilder = () => {
                     </CardContent></Card>
                   </TabsContent>
 
-                  {/* Footer */}
+                  {/* Footer Tab */}
                   <TabsContent value="footer" className="space-y-3 mt-3">
                     <Card><CardContent className="p-3 space-y-3">
                       <h4 className="font-semibold text-sm">{bn ? 'স্বাক্ষর লাইন' : 'Signature Lines'}</h4>
