@@ -1007,7 +1007,7 @@ const AdminSalary = () => {
                   </p>
                 </div>
                 <div>
-                  <Label>{bn ? 'প্রতি বিলম্বের দিনে কর্তন (৳) - Fixed মোডে' : 'Late Deduction Per Day (৳) - Fixed mode'}</Label>
+                  <Label>{bn ? 'প্রতি বিলম্ব উপস্থিত দিনে কর্তন (৳) - Fixed মোডে' : 'Late Present Deduction Per Day (৳) - Fixed mode'}</Label>
                   <Input type="number" defaultValue={getSetting('late_deduction_per_day')?.amount || 50}
                     onBlur={e => saveSettingMutation.mutate({ key: 'late_deduction_per_day', value: { amount: Number(e.target.value) } })} />
                 </div>
