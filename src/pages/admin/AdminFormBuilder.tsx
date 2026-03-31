@@ -1044,6 +1044,13 @@ const AdminFormBuilder = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+            </TabsContent>
+
+            <TabsContent value="layouts" className="mt-4">
+              <DocumentLayoutBuilder />
+            </TabsContent>
+          </Tabs>
       </div>
     </AdminLayout>
   );
