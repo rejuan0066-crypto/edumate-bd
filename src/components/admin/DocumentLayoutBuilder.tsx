@@ -18,7 +18,8 @@ import { toast } from 'sonner';
 import {
   Plus, Trash2, Edit, Copy, FileText, Receipt, Eye, Printer,
   ChevronDown, ChevronUp, X, Type, Calendar, List, Image, Hash,
-  ToggleLeft, Mail, Phone, Pen, FolderOpen, GripVertical, AlignLeft, AlignCenter, AlignRight, Palette
+  ToggleLeft, Mail, Phone, Pen, FolderOpen, GripVertical, AlignLeft, AlignCenter, AlignRight, Palette,
+  Bold, Italic, Settings2
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
