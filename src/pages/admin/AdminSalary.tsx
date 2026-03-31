@@ -867,9 +867,13 @@ const AdminSalary = () => {
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => printSlip(s, rec)}>
                                   <Printer className="h-3 w-3" />
                                 </Button>
-                                {rec.status !== 'paid' && (
-                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" onClick={() => markPaidMutation.mutate(rec.id)}>
+                                {rec.status !== 'paid' ? (
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => markPaidMutation.mutate(rec.id)}>
                                     <CheckCircle2 className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => { if (confirm(bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?')) markUnpaidMutation.mutate(rec.id); }}>
+                                    <AlertCircle className="h-3 w-3" />
                                   </Button>
                                 )}
                               </>
