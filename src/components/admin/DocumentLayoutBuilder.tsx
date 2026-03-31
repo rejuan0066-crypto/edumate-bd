@@ -359,7 +359,7 @@ const DocumentLayoutBuilder = () => {
     else if (type === 'attachment_list') { defaults.label = 'Required Documents'; defaults.label_bn = 'প্রয়োজনীয় কাগজপত্র'; defaults.attachments = [bn ? 'জন্ম নিবন্ধন সনদের কপি' : 'Birth Certificate Copy', bn ? 'পাসপোর্ট সাইজ ছবি (২ কপি)' : 'Passport Photos (2 copies)']; }
     else if (type === 'photo') { defaults.photoSize = 'passport'; }
     else if (type === 'qr_code') { defaults.label = 'QR Code'; defaults.label_bn = 'কিউআর কোড'; }
-    setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: [...s.fields, { id: uid(), label: defaults.label || 'New Field', label_bn: defaults.label_bn || 'নতুন ফিল্ড', required: false, show: true, options: [], ...defaults }] } : s) }));
+    setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: [...s.fields, { id: uid(), label: defaults.label || 'New Field', label_bn: defaults.label_bn || 'নতুন ফিল্ড', type, required: false, show: true, width: defaults.width || 'half', options: [], ...defaults } as LayoutField] } : s) }));
   };
   const removeField = (sid: string, fid: string) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.filter(f => f.id !== fid) } : s) }));
   const updateField = (sid: string, fid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.map(f => f.id === fid ? { ...f, [key]: val } : f) } : s) }));
