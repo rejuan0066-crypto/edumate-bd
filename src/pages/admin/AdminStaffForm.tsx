@@ -970,7 +970,8 @@ const AdminStaffForm = () => {
               <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={identifierMobile} countryCode={identifierMobileCode} onChange={(p, c) => { setIdentifierMobile(p); setIdentifierMobileCode(c); }} />
               <div>
                 <Label>{bn ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
-                <Input className={`bg-background mt-1 ${fieldErrors['identifier_nid'] ? 'border-destructive' : ''}`} maxLength={17} value={identifierNid} onChange={e => validateNid(e.target.value, setIdentifierNid)} />
+                <Input className={`bg-background mt-1 ${fieldErrors['identifier_nid'] || identifierNidError ? 'border-destructive' : ''}`} maxLength={17} value={identifierNid} onChange={e => validateNid(e.target.value, setIdentifierNid, setIdentifierNidError)} />
+                {identifierNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {identifierNidError}</p>}
                 <FieldError field="identifier_nid" />
               </div>
               <div className="sm:col-span-2">
