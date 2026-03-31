@@ -43,7 +43,6 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'attendance', path: '/admin/attendance', label_bn: 'অ্যাটেন্ডেন্স', label_en: 'Attendance', icon: 'CalendarDays', visible: true, sort_order: 2 },
     { id: 'validation-manager', path: '/admin/validation-manager', label_bn: 'ভ্যালিডেশন ম্যানেজার', label_en: 'Validation Manager', icon: 'ShieldCheck', visible: true, sort_order: 3 },
     { id: 'reports', path: '/admin/reports', label_bn: 'রিপোর্ট ও অ্যানালিটিক্স', label_en: 'Reports & Analytics', icon: 'BarChart3', visible: true, sort_order: 4 },
-    { id: 'document-layouts', path: '/admin/document-layouts', label_bn: 'ডকুমেন্ট লেআউট', label_en: 'Document Layouts', icon: 'FileBox', visible: true, sort_order: 5 },
   ]},
   { id: 'permissions', path: '/admin/permissions', label_bn: 'পারমিশন', label_en: 'Permissions', icon: 'KeyRound', visible: true, sort_order: 17 },
   { id: 'theme', path: '/admin/theme', label_bn: 'থিম কাস্টমাইজার', label_en: 'Theme Customizer', icon: 'Palette', visible: true, sort_order: 18 },

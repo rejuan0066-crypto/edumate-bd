@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DocumentLayoutBuilder from '@/components/admin/DocumentLayoutBuilder';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -448,17 +450,27 @@ const AdminFormBuilder = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
-         <div className="flex items-center justify-between">
-           <div>
-             <h1 className="text-2xl font-display font-bold text-foreground">
-               {bn ? 'কাস্টম বিল্ডার' : 'Custom Builder'}
-             </h1>
-             <p className="text-sm text-muted-foreground mt-1">
-               {bn ? 'মেনু/ক্যাটাগরি অনুযায়ী ফর্ম তৈরি ও পরিচালনা করুন' : 'Create and manage forms by menu/category'}
-             </p>
-           </div>
-           <div className="flex items-center gap-2">
-             <DropdownMenu>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-display font-bold text-foreground">
+                {bn ? 'কাস্টম বিল্ডার' : 'Custom Builder'}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {bn ? 'ফর্ম, ডকুমেন্ট ও রসিদ লেআউট তৈরি ও পরিচালনা করুন' : 'Create and manage forms, documents & receipt layouts'}
+              </p>
+            </div>
+          </div>
+
+          <Tabs defaultValue="forms" className="w-full">
+            <TabsList>
+              <TabsTrigger value="forms">{bn ? '📝 ফর্ম বিল্ডার' : '📝 Form Builder'}</TabsTrigger>
+              <TabsTrigger value="layouts">{bn ? '📄 ডকুমেন্ট লেআউট' : '📄 Document Layouts'}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="forms" className="mt-4">
+          <div className="flex items-center justify-end">
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
                <DropdownMenuTrigger asChild>
                  <Button><Plus className="h-4 w-4 mr-1" /> {bn ? 'নতুন ফর্ম' : 'New Form'} <ChevronDown className="h-4 w-4 ml-1" /></Button>
                </DropdownMenuTrigger>
@@ -1032,6 +1044,13 @@ const AdminFormBuilder = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+            </TabsContent>
+
+            <TabsContent value="layouts" className="mt-4">
+              <DocumentLayoutBuilder />
+            </TabsContent>
+          </Tabs>
       </div>
     </AdminLayout>
   );
