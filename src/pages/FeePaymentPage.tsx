@@ -174,7 +174,7 @@ const FeePaymentPage = () => {
   };
 
   return (
-    <PublicLayout>
+    <AdminLayout>
       <div className="container mx-auto px-4 py-12 max-w-4xl space-y-6">
         {/* Header */}
         <div className="text-center mb-2">
