@@ -19,7 +19,7 @@ import {
   Plus, Trash2, Edit, Copy, FileText, Receipt, Eye, Printer,
   ChevronDown, ChevronUp, X, Type, Calendar, List, Image, Hash,
   ToggleLeft, Mail, Phone, Pen, FolderOpen, GripVertical, AlignLeft, AlignCenter, AlignRight, Palette,
-  Bold, Italic, Settings2
+  Bold, Italic, Settings2, Minus, FileCheck, StickyNote, Paperclip, QrCode, Stamp, Shield
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,18 +31,44 @@ interface FieldStyle {
 }
 interface LayoutField {
   id: string; label: string; label_bn: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
+  type: 'text' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone' | 'separator' | 'static_text' | 'attachment_list' | 'qr_code';
   required: boolean; options?: string[]; show: boolean; width: 'full' | 'half';
   style?: FieldStyle;
+  photoSize?: 'passport' | 'stamp' | 'custom';
+  photoWidth?: number; photoHeight?: number;
+  staticContent?: string; staticContent_bn?: string;
+  attachments?: string[];
 }
 interface SectionStyle {
   fontSize?: number; color?: string; textAlign?: 'left' | 'center' | 'right';
   bgColor?: string; borderStyle?: 'solid' | 'dashed' | 'dotted' | 'none'; borderColor?: string;
   padding?: number; margin?: number;
+  columns?: 1 | 2 | 3;
 }
 interface LayoutSection { id: string; name: string; name_bn: string; fields: LayoutField[]; collapsed: boolean; style?: SectionStyle; }
 interface SignatureLine { id: string; title: string; title_bn: string; }
 interface ReceiptRow { id: string; label: string; label_bn: string; type: 'fee' | 'amount' | 'info'; show: boolean; }
+interface PageSettings {
+  paperSize: 'a4' | 'letter' | 'legal' | 'a5';
+  orientation: 'portrait' | 'landscape';
+  marginTop: number; marginBottom: number; marginLeft: number; marginRight: number;
+  watermarkText: string; watermarkOpacity: number;
+  formNumberPrefix: string; formNumberPrefix_bn: string;
+  showFormNumber: boolean;
+  showQrCode: boolean;
+}
+interface DeclarationConfig {
+  show: boolean;
+  text: string; text_bn: string;
+  showSignature: boolean;
+  signatureLabel: string; signatureLabel_bn: string;
+  showDate: boolean;
+}
+interface OfficialUseConfig {
+  show: boolean;
+  title: string; title_bn: string;
+  fields: { id: string; label: string; label_bn: string; }[];
+}
 interface HeaderConfig {
   showLogo: boolean; showName: boolean; showAddress: boolean; showContact: boolean;
   customTitle: string; customTitle_bn: string; customSubtitle: string; customSubtitle_bn: string;
@@ -55,10 +81,41 @@ interface LayoutConfig {
   footer: { signatures: SignatureLine[]; termsText: string; termsText_bn: string; copyrightText: string; customNote: string; customNote_bn: string; showAddress: boolean; showPageNumber: boolean; addressText: string; contactText: string; };
   sections: LayoutSection[]; receiptRows: ReceiptRow[];
   showFields: { studentId: boolean; date: boolean; amountInWords: boolean; receiptNo: boolean; };
+  pageSettings?: PageSettings;
+  declaration?: DeclarationConfig;
+  officialUse?: OfficialUseConfig;
 }
 interface DocumentLayout { id: string; name: string; name_bn: string; layout_type: string; category: string; config: LayoutConfig; is_active: boolean; created_at: string; updated_at: string; }
 
 const uid = () => crypto.randomUUID().slice(0, 8);
+
+const DEFAULT_PAGE_SETTINGS: PageSettings = {
+  paperSize: 'a4', orientation: 'portrait',
+  marginTop: 20, marginBottom: 20, marginLeft: 15, marginRight: 15,
+  watermarkText: '', watermarkOpacity: 8,
+  formNumberPrefix: 'Form No:', formNumberPrefix_bn: 'ফর্ম নং:',
+  showFormNumber: false, showQrCode: false,
+};
+
+const DEFAULT_DECLARATION: DeclarationConfig = {
+  show: false,
+  text: 'I hereby declare that all information provided above is true and correct to the best of my knowledge.',
+  text_bn: 'আমি এতদ্বারা ঘোষণা করছি যে, উপরে প্রদত্ত সকল তথ্য আমার জ্ঞান ও বিশ্বাস অনুযায়ী সত্য ও সঠিক।',
+  showSignature: true, signatureLabel: "Applicant's Signature", signatureLabel_bn: 'আবেদনকারীর স্বাক্ষর',
+  showDate: true,
+};
+
+const DEFAULT_OFFICIAL_USE: OfficialUseConfig = {
+  show: false,
+  title: 'For Official Use Only', title_bn: 'অফিস ব্যবহারের জন্য',
+  fields: [
+    { id: uid(), label: 'Received by', label_bn: 'গ্রহণকারী' },
+    { id: uid(), label: 'Verified by', label_bn: 'যাচাইকারী' },
+    { id: uid(), label: 'Approved by', label_bn: 'অনুমোদনকারী' },
+    { id: uid(), label: 'Date', label_bn: 'তারিখ' },
+    { id: uid(), label: 'Remarks', label_bn: 'মন্তব্য' },
+  ],
+};
 
 const DEFAULT_CONFIG: LayoutConfig = {
   header: { showLogo: true, showName: true, showAddress: true, showContact: true, customTitle: '', customTitle_bn: '', customSubtitle: '', customSubtitle_bn: '' },
@@ -66,10 +123,13 @@ const DEFAULT_CONFIG: LayoutConfig = {
   sections: [{ id: uid(), name: 'Personal Information', name_bn: 'ব্যক্তিগত তথ্য', fields: [
     { id: uid(), label: 'Full Name', label_bn: 'পূর্ণ নাম', type: 'text', required: true, show: true, width: 'half' },
     { id: uid(), label: 'Date of Birth', label_bn: 'জন্ম তারিখ', type: 'date', required: true, show: true, width: 'half' },
-    { id: uid(), label: 'Photo', label_bn: 'ছবি', type: 'photo', required: false, show: true, width: 'half' },
+    { id: uid(), label: 'Photo', label_bn: 'ছবি', type: 'photo', required: false, show: true, width: 'half', photoSize: 'passport' },
   ], collapsed: false }],
   receiptRows: [],
   showFields: { studentId: true, date: true, amountInWords: true, receiptNo: true },
+  pageSettings: { ...DEFAULT_PAGE_SETTINGS },
+  declaration: { ...DEFAULT_DECLARATION },
+  officialUse: { ...DEFAULT_OFFICIAL_USE },
 };
 
 const RECEIPT_CONFIG: LayoutConfig = {
@@ -82,7 +142,30 @@ const RECEIPT_CONFIG: LayoutConfig = {
   footer: { ...DEFAULT_CONFIG.footer, signatures: [{ id: uid(), title: 'Cashier', title_bn: 'ক্যাশিয়ার' }, { id: uid(), title: 'Principal', title_bn: 'অধ্যক্ষ' }] },
 };
 
-const FIELD_TYPE_ICONS: Record<string, any> = { text: Type, number: Hash, date: Calendar, select: List, photo: Image, textarea: FileText, toggle: ToggleLeft, email: Mail, phone: Phone };
+const FIELD_TYPE_ICONS: Record<string, any> = {
+  text: Type, number: Hash, date: Calendar, select: List, photo: Image,
+  textarea: FileText, toggle: ToggleLeft, email: Mail, phone: Phone,
+  radio: List, checkbox: List,
+  separator: Minus, static_text: StickyNote, attachment_list: Paperclip, qr_code: QrCode,
+};
+
+const FIELD_TYPE_LABELS: Record<string, { en: string; bn: string }> = {
+  text: { en: 'Text', bn: 'টেক্সট' },
+  number: { en: 'Number', bn: 'নম্বর' },
+  date: { en: 'Date', bn: 'তারিখ' },
+  select: { en: 'Select', bn: 'সিলেক্ট' },
+  radio: { en: 'Radio', bn: 'রেডিও' },
+  checkbox: { en: 'Checkbox', bn: 'চেকবক্স' },
+  photo: { en: 'Photo', bn: 'ছবি' },
+  textarea: { en: 'Textarea', bn: 'টেক্সটএরিয়া' },
+  toggle: { en: 'Toggle', bn: 'টগল' },
+  email: { en: 'Email', bn: 'ইমেইল' },
+  phone: { en: 'Phone', bn: 'ফোন' },
+  separator: { en: 'Divider', bn: 'ডিভাইডার' },
+  static_text: { en: 'Note/Text', bn: 'নোট/টেক্সট' },
+  attachment_list: { en: 'Attach List', bn: 'সংযুক্তি' },
+  qr_code: { en: 'QR Code', bn: 'কিউআর কোড' },
+};
 
 const CATEGORIES = [
   { value: 'student', label: 'Student Admission', label_bn: 'ছাত্র ভর্তি' },
@@ -106,6 +189,13 @@ const PRESET_COLORS = [
   '#e94560', '#1b5e20', '#2e7d32', '#4a148c', '#b71c1c',
   '#004d40', '#01579b', '#e65100', '#33691e', '#880e4f',
 ];
+
+const PAPER_SIZES: Record<string, { en: string; bn: string }> = {
+  a4: { en: 'A4 (210×297mm)', bn: 'এ৪ (২১০×২৯৭মিমি)' },
+  letter: { en: 'Letter (8.5×11in)', bn: 'লেটার (৮.৫×১১ ইঞ্চি)' },
+  legal: { en: 'Legal (8.5×14in)', bn: 'লিগ্যাল (৮.৫×১৪ ইঞ্চি)' },
+  a5: { en: 'A5 (148×210mm)', bn: 'এ৫ (১৪৮×২১০মিমি)' },
+};
 
 const DocumentLayoutBuilder = () => {
   const { language } = useLanguage();
@@ -134,12 +224,10 @@ const DocumentLayoutBuilder = () => {
     if (!scrollAreaRef.current) return;
     const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
     if (!viewport) return;
-
     const rect = viewport.getBoundingClientRect();
     const edgeSize = 88;
     const maxSpeed = 20;
     let delta = 0;
-
     if (clientY < rect.top + edgeSize) {
       const intensity = Math.min(1, (rect.top + edgeSize - clientY) / edgeSize);
       delta = -Math.max(8, Math.round(maxSpeed * intensity));
@@ -147,10 +235,7 @@ const DocumentLayoutBuilder = () => {
       const intensity = Math.min(1, (clientY - (rect.bottom - edgeSize)) / edgeSize);
       delta = Math.max(8, Math.round(maxSpeed * intensity));
     }
-
-    if (delta !== 0) {
-      viewport.scrollTop += delta;
-    }
+    if (delta !== 0) viewport.scrollTop += delta;
   };
 
   useEffect(() => {
@@ -158,21 +243,11 @@ const DocumentLayoutBuilder = () => {
       if (!dragFieldRef.current) return;
       handleDragAutoScroll(event.clientY);
     };
-
-    const resetFieldDrag = () => {
-      dragFieldRef.current = null;
-      setDragOverField(null);
-    };
-
+    const resetFieldDrag = () => { dragFieldRef.current = null; setDragOverField(null); };
     window.addEventListener('dragover', onWindowDragOver);
     window.addEventListener('drop', resetFieldDrag);
     window.addEventListener('dragend', resetFieldDrag);
-
-    return () => {
-      window.removeEventListener('dragover', onWindowDragOver);
-      window.removeEventListener('drop', resetFieldDrag);
-      window.removeEventListener('dragend', resetFieldDrag);
-    };
+    return () => { window.removeEventListener('dragover', onWindowDragOver); window.removeEventListener('drop', resetFieldDrag); window.removeEventListener('dragend', resetFieldDrag); };
   }, []);
 
   const { data: layouts = [], isLoading } = useQuery({
@@ -206,6 +281,7 @@ const DocumentLayoutBuilder = () => {
         type: FIELD_TYPE_MAP[f.field_type] || 'text',
         required: f.is_required || false, show: true,
         width: ['textarea', 'address_permanent', 'address_present'].includes(f.field_type) ? 'full' as const : 'half' as const,
+        ...(f.field_type === 'file' ? { photoSize: 'passport' as const } : {}),
         ...(f.field_type === 'select' || f.field_type === 'radio' ? { options: (() => { try { return typeof f.options === 'string' ? JSON.parse(f.options) : (Array.isArray(f.options) ? f.options : []); } catch { return []; } })() } : {}),
       }));
       const newSection: LayoutSection = { id: uid(), name: form.name, name_bn: form.name_bn, fields: layoutFields, collapsed: false };
@@ -248,18 +324,43 @@ const DocumentLayoutBuilder = () => {
   });
 
   const openNew = () => { setCurrent(null); setFormName(''); setFormNameBn(''); setFormType('form'); setFormCategory('student'); setConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG))); setActiveTab('sections'); setEditorOpen(true); };
-  const openEdit = (l: DocumentLayout) => { setCurrent(l); setFormName(l.name); setFormNameBn(l.name_bn); setFormType(l.layout_type as any); setFormCategory(l.category); setConfig(JSON.parse(JSON.stringify(l.config))); setActiveTab(l.layout_type === 'receipt' ? 'receipt' : 'sections'); setEditorOpen(true); };
-  const duplicate = (l: DocumentLayout) => { setCurrent(null); setFormName(l.name + ' (Copy)'); setFormNameBn(l.name_bn + ' (কপি)'); setFormType(l.layout_type as any); setFormCategory(l.category); setConfig(JSON.parse(JSON.stringify(l.config))); setActiveTab(l.layout_type === 'receipt' ? 'receipt' : 'sections'); setEditorOpen(true); };
+  const openEdit = (l: DocumentLayout) => {
+    setCurrent(l); setFormName(l.name); setFormNameBn(l.name_bn); setFormType(l.layout_type as any); setFormCategory(l.category);
+    const c = JSON.parse(JSON.stringify(l.config));
+    // Ensure new config fields exist
+    if (!c.pageSettings) c.pageSettings = { ...DEFAULT_PAGE_SETTINGS };
+    if (!c.declaration) c.declaration = { ...DEFAULT_DECLARATION };
+    if (!c.officialUse) c.officialUse = { ...DEFAULT_OFFICIAL_USE };
+    setConfig(c);
+    setActiveTab(l.layout_type === 'receipt' ? 'receipt' : 'sections'); setEditorOpen(true);
+  };
+  const duplicate = (l: DocumentLayout) => { setCurrent(null); setFormName(l.name + ' (Copy)'); setFormNameBn(l.name_bn + ' (কপি)'); setFormType(l.layout_type as any); setFormCategory(l.category); const c = JSON.parse(JSON.stringify(l.config)); if (!c.pageSettings) c.pageSettings = { ...DEFAULT_PAGE_SETTINGS }; if (!c.declaration) c.declaration = { ...DEFAULT_DECLARATION }; if (!c.officialUse) c.officialUse = { ...DEFAULT_OFFICIAL_USE }; setConfig(c); setActiveTab(l.layout_type === 'receipt' ? 'receipt' : 'sections'); setEditorOpen(true); };
   const handleSave = () => { if (!formName.trim() || !formNameBn.trim()) { toast.error(bn ? 'নাম দিন' : 'Enter name'); return; } saveMutation.mutate({ id: current?.id, name: formName, name_bn: formNameBn, layout_type: formType, category: formCategory, config }); };
 
+  // Config helpers
+  const ps = config.pageSettings || DEFAULT_PAGE_SETTINGS;
+  const decl = config.declaration || DEFAULT_DECLARATION;
+  const offUse = config.officialUse || DEFAULT_OFFICIAL_USE;
+  const updatePageSettings = (key: string, val: any) => setConfig(c => ({ ...c, pageSettings: { ...(c.pageSettings || DEFAULT_PAGE_SETTINGS), [key]: val } }));
+  const updateDeclaration = (key: string, val: any) => setConfig(c => ({ ...c, declaration: { ...(c.declaration || DEFAULT_DECLARATION), [key]: val } }));
+  const updateOfficialUse = (key: string, val: any) => setConfig(c => ({ ...c, officialUse: { ...(c.officialUse || DEFAULT_OFFICIAL_USE), [key]: val } }));
+
   // Section helpers
-  const addSection = () => setConfig(c => ({ ...c, sections: [...c.sections, { id: uid(), name: 'New Section', name_bn: 'নতুন সেকশন', fields: [], collapsed: false, style: { fontSize: 13, color: '#000000', textAlign: 'left', bgColor: '#f3f4f6' } }] }));
+  const addSection = () => setConfig(c => ({ ...c, sections: [...c.sections, { id: uid(), name: 'New Section', name_bn: 'নতুন সেকশন', fields: [], collapsed: false, style: { fontSize: 13, color: '#000000', textAlign: 'left', bgColor: '#f3f4f6', columns: 2 } }] }));
   const removeSection = (sid: string) => setConfig(c => ({ ...c, sections: c.sections.filter(s => s.id !== sid) }));
   const updateSection = (sid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, [key]: val } : s) }));
   const updateSectionStyle = (sid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, style: { ...s.style, [key]: val } } : s) }));
 
   // Field helpers
-  const addField = (sid: string) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: [...s.fields, { id: uid(), label: 'New Field', label_bn: 'নতুন ফিল্ড', type: 'text', required: false, show: true, width: 'half' }] } : s) }));
+  const addField = (sid: string, type: LayoutField['type'] = 'text') => {
+    const defaults: Partial<LayoutField> = { type, width: type === 'separator' || type === 'static_text' || type === 'attachment_list' ? 'full' : 'half' };
+    if (type === 'separator') { defaults.label = '---'; defaults.label_bn = '---'; }
+    else if (type === 'static_text') { defaults.label = 'Note'; defaults.label_bn = 'নোট'; defaults.staticContent = ''; defaults.staticContent_bn = ''; }
+    else if (type === 'attachment_list') { defaults.label = 'Required Documents'; defaults.label_bn = 'প্রয়োজনীয় কাগজপত্র'; defaults.attachments = [bn ? 'জন্ম নিবন্ধন সনদের কপি' : 'Birth Certificate Copy', bn ? 'পাসপোর্ট সাইজ ছবি (২ কপি)' : 'Passport Photos (2 copies)']; }
+    else if (type === 'photo') { defaults.photoSize = 'passport'; }
+    else if (type === 'qr_code') { defaults.label = 'QR Code'; defaults.label_bn = 'কিউআর কোড'; }
+    setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: [...s.fields, { id: uid(), label: defaults.label || 'New Field', label_bn: defaults.label_bn || 'নতুন ফিল্ড', required: false, show: true, options: [], ...defaults }] } : s) }));
+  };
   const removeField = (sid: string, fid: string) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.filter(f => f.id !== fid) } : s) }));
   const updateField = (sid: string, fid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.map(f => f.id === fid ? { ...f, [key]: val } : f) } : s) }));
   const updateFieldStyle = (sid: string, fid: string, key: string, val: any) => setConfig(c => ({ ...c, sections: c.sections.map(s => s.id === sid ? { ...s, fields: s.fields.map(f => f.id === fid ? { ...f, style: { ...f.style, [key]: val } } : f) } : s) }));
@@ -283,13 +384,11 @@ const DocumentLayoutBuilder = () => {
     const src = dragFieldRef.current;
     if (!src) return;
     if (src.sectionId === targetSectionId && src.fieldIndex === targetIndex) return;
-
     setConfig(c => {
       const newSections = c.sections.map(s => ({ ...s, fields: [...s.fields] }));
       const srcSection = newSections.find(s => s.id === src.sectionId);
       const tgtSection = newSections.find(s => s.id === targetSectionId);
       if (!srcSection || !tgtSection) return c;
-
       const [movedField] = srcSection.fields.splice(src.fieldIndex, 1);
       const adjustedIndex = src.sectionId === targetSectionId && src.fieldIndex < targetIndex ? targetIndex - 1 : targetIndex;
       tgtSection.fields.splice(adjustedIndex, 0, movedField);
@@ -306,29 +405,18 @@ const DocumentLayoutBuilder = () => {
   };
   const handleSectionDragOver = (e: DragEvent, index: number) => {
     if (dragFieldRef.current) {
-      // Allow field drops by preventing default, but don't set section drag state
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      handleDragAutoScroll(e.clientY);
-      return;
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      handleDragAutoScroll(e.clientY); return;
     }
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
     setDragOverSection(index);
   };
   const handleSectionDrop = (e: DragEvent, targetIndex: number) => {
-    // If field drag, let the field drop zones handle it
     if (dragFieldRef.current) return;
-    e.preventDefault();
-    setDragOverSection(null);
+    e.preventDefault(); setDragOverSection(null);
     const srcIndex = dragSectionRef.current;
     if (srcIndex === null || srcIndex === targetIndex) return;
-    setConfig(c => {
-      const arr = [...c.sections];
-      const [moved] = arr.splice(srcIndex, 1);
-      arr.splice(targetIndex, 0, moved);
-      return { ...c, sections: arr };
-    });
+    setConfig(c => { const arr = [...c.sections]; const [moved] = arr.splice(srcIndex, 1); arr.splice(targetIndex, 0, moved); return { ...c, sections: arr }; });
     dragSectionRef.current = null;
   };
 
@@ -341,15 +429,20 @@ const DocumentLayoutBuilder = () => {
   const updateReceiptRow = (rid: string, key: string, val: any) => setConfig(c => ({ ...c, receiptRows: c.receiptRows.map(r => r.id === rid ? { ...r, [key]: val } : r) }));
   const moveReceiptRow = (idx: number, dir: -1 | 1) => { setConfig(c => { const arr = [...c.receiptRows]; const ni = idx + dir; if (ni < 0 || ni >= arr.length) return c; [arr[idx], arr[ni]] = [arr[ni], arr[idx]]; return { ...c, receiptRows: arr }; }); };
 
-  // Header helpers
   const updateHeader = (key: string, val: any) => setConfig(c => ({ ...c, header: { ...c.header, [key]: val } }));
+
+  // Official Use field helpers
+  const addOfficialField = () => updateOfficialUse('fields', [...offUse.fields, { id: uid(), label: 'Field', label_bn: 'ফিল্ড' }]);
+  const removeOfficialField = (fid: string) => updateOfficialUse('fields', offUse.fields.filter(f => f.id !== fid));
+  const updateOfficialField = (fid: string, key: string, val: string) => updateOfficialUse('fields', offUse.fields.map(f => f.id === fid ? { ...f, [key]: val } : f));
 
   const handlePrint = () => {
     const el = document.getElementById('layout-preview-area');
     if (!el) return;
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head><title>${formName}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans Bengali',sans-serif;padding:20mm;font-size:12px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #333;padding:6px 8px;text-align:left}.footer-area{margin-top:32px;display:flex;justify-content:space-between}@media print{@page{margin:15mm}}</style></head><body>${el.innerHTML}</body></html>`);
+    const paperCss = ps.orientation === 'landscape' ? '@page{size:landscape}' : '';
+    w.document.write(`<!DOCTYPE html><html><head><title>${formName}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet"><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Noto Sans Bengali',sans-serif;padding:${ps.marginTop}mm ${ps.marginRight}mm ${ps.marginBottom}mm ${ps.marginLeft}mm;font-size:12px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #333;padding:6px 8px;text-align:left}.footer-area{margin-top:32px;display:flex;justify-content:space-between}${paperCss}@media print{@page{margin:${ps.marginTop}mm ${ps.marginRight}mm ${ps.marginBottom}mm ${ps.marginLeft}mm}}</style></head><body>${el.innerHTML}</body></html>`);
     w.document.close();
     setTimeout(() => w.print(), 500);
   };
@@ -360,155 +453,254 @@ const DocumentLayoutBuilder = () => {
   const getHeaderEmail = () => config.header.institutionEmail || institution?.email || '';
   const getHeaderLogo = () => config.header.logoUrl || institution?.logo_url || '';
 
+  const getPhotoSize = (f: LayoutField) => {
+    if (f.photoSize === 'stamp') return { w: 40, h: 48 };
+    if (f.photoSize === 'custom') return { w: f.photoWidth || 64, h: f.photoHeight || 76 };
+    return { w: 64, h: 76 }; // passport default
+  };
+
   const renderPreview = () => (
-    <div id="layout-preview-area" className="bg-white text-black p-6 text-xs min-h-[400px] border border-border rounded-lg">
-      <div className="text-center mb-4">
-        {config.header.showLogo && getHeaderLogo() && <img src={getHeaderLogo()} alt="Logo" className="mx-auto h-12 mb-2" />}
-        {config.header.showName && <h2 className="text-lg font-bold">{getHeaderName()}</h2>}
-        {config.header.showAddress && getHeaderAddress() && <p className="text-[10px]">{getHeaderAddress()}</p>}
-        {config.header.showContact && (getHeaderPhone() || getHeaderEmail()) && <p className="text-[10px]">{getHeaderPhone()} {getHeaderEmail() && `| ${getHeaderEmail()}`}</p>}
-        {config.header.customTitle && <h3 className="text-sm font-semibold mt-2">{bn ? config.header.customTitle_bn || config.header.customTitle : config.header.customTitle}</h3>}
-        {config.header.customSubtitle && <p className="text-[10px]">{bn ? config.header.customSubtitle_bn || config.header.customSubtitle : config.header.customSubtitle}</p>}
-        <div className="border-b-2 border-black mt-2" />
-      </div>
-      {formType === 'receipt' && (
-        <div className="flex justify-between mb-3 text-[10px]">
-          {config.showFields.receiptNo && <span><strong>{bn ? 'রসিদ নং:' : 'Receipt No:'}</strong> ________</span>}
-          {config.showFields.studentId && <span><strong>{bn ? 'আইডি:' : 'ID:'}</strong> ________</span>}
-          {config.showFields.date && <span><strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ________</span>}
+    <div id="layout-preview-area" className="bg-white text-black p-6 text-xs min-h-[400px] border border-border rounded-lg" style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Watermark */}
+      {ps.watermarkText && (
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-35deg)', fontSize: '48px', fontWeight: 'bold', color: `rgba(0,0,0,${(ps.watermarkOpacity || 8) / 100})`, whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 0, letterSpacing: '4px' }}>
+          {ps.watermarkText}
         </div>
       )}
-    {formType === 'form' && config.sections.map(sec => {
-        const style = sec.style || {};
-        const visibleFields = sec.fields.filter(f => f.show);
-        const photoField = visibleFields.find(f => f.type === 'photo');
-        const normalFields = visibleFields.filter(f => f.type !== 'photo');
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Form Number */}
+        {ps.showFormNumber && (
+          <div style={{ textAlign: 'right', fontSize: '10px', marginBottom: '4px' }}>
+            <strong>{bn ? ps.formNumberPrefix_bn : ps.formNumberPrefix}</strong> ______________
+          </div>
+        )}
+        {/* Header */}
+        <div className="text-center mb-4">
+          {config.header.showLogo && getHeaderLogo() && <img src={getHeaderLogo()} alt="Logo" className="mx-auto h-12 mb-2" />}
+          {config.header.showName && <h2 className="text-lg font-bold">{getHeaderName()}</h2>}
+          {config.header.showAddress && getHeaderAddress() && <p className="text-[10px]">{getHeaderAddress()}</p>}
+          {config.header.showContact && (getHeaderPhone() || getHeaderEmail()) && <p className="text-[10px]">{getHeaderPhone()} {getHeaderEmail() && `| ${getHeaderEmail()}`}</p>}
+          {config.header.customTitle && <h3 className="text-sm font-semibold mt-2">{bn ? config.header.customTitle_bn || config.header.customTitle : config.header.customTitle}</h3>}
+          {config.header.customSubtitle && <p className="text-[10px]">{bn ? config.header.customSubtitle_bn || config.header.customSubtitle : config.header.customSubtitle}</p>}
+          <div className="border-b-2 border-black mt-2" />
+        </div>
 
-        // Build rows: pair half-width fields, full-width gets own row
-        const rows: Array<LayoutField[]> = [];
-        let currentRow: LayoutField[] = [];
-        normalFields.forEach(f => {
-          if (f.width === 'full') {
-            if (currentRow.length > 0) { rows.push([...currentRow]); currentRow = []; }
-            rows.push([f]);
-          } else {
-            currentRow.push(f);
-            if (currentRow.length === 2) { rows.push([...currentRow]); currentRow = []; }
-          }
-        });
-        if (currentRow.length > 0) rows.push([...currentRow]);
+        {/* Receipt header fields */}
+        {formType === 'receipt' && (
+          <div className="flex justify-between mb-3 text-[10px]">
+            {config.showFields.receiptNo && <span><strong>{bn ? 'রসিদ নং:' : 'Receipt No:'}</strong> ________</span>}
+            {config.showFields.studentId && <span><strong>{bn ? 'আইডি:' : 'ID:'}</strong> ________</span>}
+            {config.showFields.date && <span><strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ________</span>}
+          </div>
+        )}
 
-        const renderFieldValue = (f: LayoutField) => {
-          if (f.type === 'select' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>[{f.options.join(' / ')}]</span>;
-          if (f.type === 'radio' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `○ ${o}`).join('  ')}</span>;
-          if (f.type === 'checkbox' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `☐ ${o}`).join('  ')}</span>;
-          if (f.type === 'textarea') return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', width: '100%', minHeight: '14px' }}>&nbsp;</span>;
-          if (f.type === 'date') return <span style={{ fontSize: '9px', color: '#9ca3af' }}>____ / ____ / ________</span>;
-          if (f.type === 'toggle') return <span style={{ fontSize: '9px', color: '#6b7280' }}>☐ {bn ? 'হ্যাঁ' : 'Yes'} / ☐ {bn ? 'না' : 'No'}</span>;
-          return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '80px' }}>&nbsp;</span>;
-        };
+        {/* Form sections */}
+        {formType === 'form' && config.sections.map(sec => {
+          const style = sec.style || {};
+          const visibleFields = sec.fields.filter(f => f.show);
+          const photoField = visibleFields.find(f => f.type === 'photo');
+          const separators = visibleFields.filter(f => f.type === 'separator');
+          const staticTexts = visibleFields.filter(f => f.type === 'static_text');
+          const attachmentLists = visibleFields.filter(f => f.type === 'attachment_list');
+          const qrFields = visibleFields.filter(f => f.type === 'qr_code');
+          const normalFields = visibleFields.filter(f => !['photo', 'separator', 'static_text', 'attachment_list', 'qr_code'].includes(f.type));
 
-        return (
-          <div key={sec.id} style={{ marginBottom: style.margin ? `${style.margin}px` : '12px' }}>
-            <h4 className="text-xs font-bold px-2 py-1" style={{
-              fontSize: style.fontSize ? `${style.fontSize}px` : '13px',
-              color: style.color || '#000',
-              textAlign: style.textAlign || 'left',
-              backgroundColor: style.bgColor || '#f3f4f6',
-              borderStyle: style.borderStyle || 'solid',
-              borderWidth: style.borderStyle === 'none' ? 0 : '1px',
-              borderColor: style.borderColor || '#d1d5db',
-            }}>{bn ? sec.name_bn : sec.name}</h4>
-            <div style={{
-              padding: style.padding ? `${style.padding}px` : '8px',
-              borderStyle: style.borderStyle === 'none' ? 'none' : (style.borderStyle || 'solid'),
-              borderWidth: style.borderStyle === 'none' ? 0 : '1px',
-              borderTop: 'none',
-              borderColor: style.borderColor || '#d1d5db',
-            }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {/* Main fields area */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', tableLayout: 'fixed' }}>
-                    <colgroup>
-                      <col style={{ width: '22%' }} />
-                      <col style={{ width: '28%' }} />
-                      <col style={{ width: '22%' }} />
-                      <col style={{ width: '28%' }} />
-                    </colgroup>
-                    <tbody>
-                      {rows.map((row, ri) => (
-                        <tr key={ri}>
-                          {row.length === 1 && row[0].width === 'full' ? (
-                            <>
-                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
-                                {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
-                              </td>
-                              <td colSpan={3} style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
-                                {renderFieldValue(row[0])}
-                              </td>
-                            </>
-                          ) : row.length === 2 ? (
-                            <>
-                              {row.map(f => {
-                                const fs = f.style || {};
-                                return (
-                                  <React.Fragment key={f.id}>
-                                    <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px', color: fs.color || '#000', fontWeight: fs.bold ? 'bold' : 'normal', fontStyle: fs.italic ? 'italic' : 'normal' }}>
-                                      {bn ? f.label_bn : f.label}{f.required && <span style={{ color: '#ef4444' }}>*</span>}:
-                                    </td>
-                                    <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
-                                      {renderFieldValue(f)}
-                                    </td>
-                                  </React.Fragment>
-                                );
-                              })}
-                            </>
-                          ) : (
-                            <>
-                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
-                                {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
-                              </td>
-                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
-                                {renderFieldValue(row[0])}
-                              </td>
-                              <td colSpan={2} style={{ borderBottom: '1px solid #e5e7eb' }}>&nbsp;</td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+          const rows: Array<LayoutField[]> = [];
+          let currentRow: LayoutField[] = [];
+          // Interleave special fields at their positions
+          const orderedFields = visibleFields.filter(f => f.type !== 'photo');
+          const tableFields: LayoutField[][] = [];
+          let tempRow: LayoutField[] = [];
+
+          orderedFields.forEach(f => {
+            if (['separator', 'static_text', 'attachment_list', 'qr_code'].includes(f.type)) {
+              if (tempRow.length > 0) { tableFields.push([...tempRow]); tempRow = []; }
+              tableFields.push([f]); // special field gets its own "row"
+            } else if (f.width === 'full') {
+              if (tempRow.length > 0) { tableFields.push([...tempRow]); tempRow = []; }
+              tableFields.push([f]);
+            } else {
+              tempRow.push(f);
+              if (tempRow.length === 2) { tableFields.push([...tempRow]); tempRow = []; }
+            }
+          });
+          if (tempRow.length > 0) tableFields.push([...tempRow]);
+
+          const photoSz = photoField ? getPhotoSize(photoField) : { w: 64, h: 76 };
+
+          const renderFieldValue = (f: LayoutField) => {
+            if (f.type === 'select' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>[{f.options.join(' / ')}]</span>;
+            if (f.type === 'radio' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `○ ${o}`).join('  ')}</span>;
+            if (f.type === 'checkbox' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `☐ ${o}`).join('  ')}</span>;
+            if (f.type === 'textarea') return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', width: '100%', minHeight: '14px' }}>&nbsp;</span>;
+            if (f.type === 'date') return <span style={{ fontSize: '9px', color: '#9ca3af' }}>____ / ____ / ________</span>;
+            if (f.type === 'toggle') return <span style={{ fontSize: '9px', color: '#6b7280' }}>☐ {bn ? 'হ্যাঁ' : 'Yes'} / ☐ {bn ? 'না' : 'No'}</span>;
+            return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '80px' }}>&nbsp;</span>;
+          };
+
+          const renderSpecialField = (f: LayoutField) => {
+            if (f.type === 'separator') return <tr key={f.id}><td colSpan={4} style={{ padding: '4px 0', borderBottom: 'none' }}><hr style={{ border: 'none', borderTop: '1px solid #9ca3af', margin: '4px 0' }} /></td></tr>;
+            if (f.type === 'static_text') return <tr key={f.id}><td colSpan={4} style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb', fontSize: '9px', color: '#374151', fontStyle: 'italic', backgroundColor: '#fefce8' }}>{bn ? (f.staticContent_bn || f.staticContent || f.label_bn) : (f.staticContent || f.label)}</td></tr>;
+            if (f.type === 'attachment_list') return (
+              <tr key={f.id}><td colSpan={4} style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb' }}>
+                <div style={{ fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>{bn ? f.label_bn : f.label}:</div>
+                <div style={{ fontSize: '9px', color: '#374151' }}>
+                  {(f.attachments || []).map((att, i) => <div key={i} style={{ marginBottom: '2px' }}>☐ {att}</div>)}
                 </div>
-                {/* Photo field - fixed position right side */}
-                {photoField && (
-                  <div style={{ width: '70px', flexShrink: 0, paddingTop: '2px' }}>
-                    <div style={{ width: '64px', height: '76px', border: '1px dashed #9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>
-                      {bn ? 'ছবি' : 'Photo'}
+              </td></tr>
+            );
+            if (f.type === 'qr_code') return (
+              <tr key={f.id}><td colSpan={4} style={{ padding: '6px 8px', borderBottom: '1px solid #e5e7eb', textAlign: 'center' }}>
+                <div style={{ width: '60px', height: '60px', border: '1px dashed #9ca3af', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>QR Code</div>
+              </td></tr>
+            );
+            return null;
+          };
+
+          return (
+            <div key={sec.id} style={{ marginBottom: style.margin ? `${style.margin}px` : '12px' }}>
+              <h4 className="text-xs font-bold px-2 py-1" style={{
+                fontSize: style.fontSize ? `${style.fontSize}px` : '13px',
+                color: style.color || '#000',
+                textAlign: style.textAlign || 'left',
+                backgroundColor: style.bgColor || '#f3f4f6',
+                borderStyle: style.borderStyle || 'solid',
+                borderWidth: style.borderStyle === 'none' ? 0 : '1px',
+                borderColor: style.borderColor || '#d1d5db',
+              }}>{bn ? sec.name_bn : sec.name}</h4>
+              <div style={{
+                padding: style.padding ? `${style.padding}px` : '8px',
+                borderStyle: style.borderStyle === 'none' ? 'none' : (style.borderStyle || 'solid'),
+                borderWidth: style.borderStyle === 'none' ? 0 : '1px',
+                borderTop: 'none',
+                borderColor: style.borderColor || '#d1d5db',
+              }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', tableLayout: 'fixed' }}>
+                      <colgroup>
+                        <col style={{ width: '22%' }} />
+                        <col style={{ width: '28%' }} />
+                        <col style={{ width: '22%' }} />
+                        <col style={{ width: '28%' }} />
+                      </colgroup>
+                      <tbody>
+                        {tableFields.map((row, ri) => {
+                          // Check if special field
+                          if (row.length === 1 && ['separator', 'static_text', 'attachment_list', 'qr_code'].includes(row[0].type)) {
+                            return renderSpecialField(row[0]);
+                          }
+                          return (
+                            <tr key={ri}>
+                              {row.length === 1 && row[0].width === 'full' ? (
+                                <>
+                                  <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
+                                    {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
+                                  </td>
+                                  <td colSpan={3} style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>{renderFieldValue(row[0])}</td>
+                                </>
+                              ) : row.length === 2 ? (
+                                <>
+                                  {row.map(f => {
+                                    const fs = f.style || {};
+                                    return (
+                                      <React.Fragment key={f.id}>
+                                        <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px', color: fs.color || '#000', fontWeight: fs.bold ? 'bold' : 'normal', fontStyle: fs.italic ? 'italic' : 'normal' }}>
+                                          {bn ? f.label_bn : f.label}{f.required && <span style={{ color: '#ef4444' }}>*</span>}:
+                                        </td>
+                                        <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>{renderFieldValue(f)}</td>
+                                      </React.Fragment>
+                                    );
+                                  })}
+                                </>
+                              ) : (
+                                <>
+                                  <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
+                                    {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
+                                  </td>
+                                  <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>{renderFieldValue(row[0])}</td>
+                                  <td colSpan={2} style={{ borderBottom: '1px solid #e5e7eb' }}>&nbsp;</td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {photoField && (
+                    <div style={{ width: `${photoSz.w + 6}px`, flexShrink: 0, paddingTop: '2px' }}>
+                      <div style={{ width: `${photoSz.w}px`, height: `${photoSz.h}px`, border: '1px dashed #9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>
+                        {bn ? 'ছবি' : 'Photo'}
+                      </div>
                     </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Receipt */}
+        {formType === 'receipt' && config.receiptRows.length > 0 && (
+          <table className="w-full text-[10px] mb-3"><thead><tr><th className="border border-gray-400 bg-gray-100 px-2 py-1">{bn ? 'বিবরণ' : 'Description'}</th><th className="border border-gray-400 bg-gray-100 px-2 py-1 w-24">{bn ? 'পরিমাণ' : 'Amount'}</th></tr></thead>
+            <tbody>{config.receiptRows.filter(r => r.show).map(r => (<tr key={r.id}><td className="border border-gray-400 px-2 py-1">{bn ? r.label_bn : r.label}</td><td className="border border-gray-400 px-2 py-1 text-right">{r.type === 'amount' ? <strong>৳ _____</strong> : '৳ _____'}</td></tr>))}</tbody>
+          </table>
+        )}
+        {formType === 'receipt' && config.showFields.amountInWords && <p className="text-[10px] mb-3"><strong>{bn ? 'কথায়:' : 'In Words:'}</strong> ________________________________</p>}
+
+        {/* Declaration */}
+        {decl.show && (
+          <div style={{ marginTop: '16px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '4px' }}>
+            <h5 style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '6px' }}>{bn ? 'ঘোষণা' : 'Declaration'}</h5>
+            <p style={{ fontSize: '9px', lineHeight: '1.5', color: '#374151' }}>{bn ? decl.text_bn : decl.text}</p>
+            {decl.showSignature && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', alignItems: 'flex-end' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ borderTop: '1px solid #000', width: '120px', marginBottom: '2px' }} />
+                  <span style={{ fontSize: '9px' }}>{bn ? decl.signatureLabel_bn : decl.signatureLabel}</span>
+                </div>
+                {decl.showDate && (
+                  <div style={{ fontSize: '9px' }}>
+                    <strong>{bn ? 'তারিখ:' : 'Date:'}</strong> ____ / ____ / ________
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
-        );
-      })}
-      {formType === 'receipt' && config.receiptRows.length > 0 && (
-        <table className="w-full text-[10px] mb-3"><thead><tr><th className="border border-gray-400 bg-gray-100 px-2 py-1">{bn ? 'বিবরণ' : 'Description'}</th><th className="border border-gray-400 bg-gray-100 px-2 py-1 w-24">{bn ? 'পরিমাণ' : 'Amount'}</th></tr></thead>
-          <tbody>{config.receiptRows.filter(r => r.show).map(r => (<tr key={r.id}><td className="border border-gray-400 px-2 py-1">{bn ? r.label_bn : r.label}</td><td className="border border-gray-400 px-2 py-1 text-right">{r.type === 'amount' ? <strong>৳ _____</strong> : '৳ _____'}</td></tr>))}</tbody>
-        </table>
-      )}
-      {formType === 'receipt' && config.showFields.amountInWords && <p className="text-[10px] mb-3"><strong>{bn ? 'কথায়:' : 'In Words:'}</strong> ________________________________</p>}
-      <div className="mt-6">
-        {config.footer.termsText && <p className="text-[8px] text-gray-500 mb-4">{bn ? config.footer.termsText_bn || config.footer.termsText : config.footer.termsText}</p>}
-        {config.footer.customNote && <p className="text-[9px] text-gray-600 mb-3">{bn ? config.footer.customNote_bn || config.footer.customNote : config.footer.customNote}</p>}
-        <div className="flex justify-between mt-8 pt-2">
-          {config.footer.signatures.map(sig => (<div key={sig.id} className="text-center"><div className="border-t border-black w-28 mx-auto mb-1" /><span className="text-[10px]">{bn ? sig.title_bn : sig.title}</span></div>))}
+        )}
+
+        {/* Official Use Only */}
+        {offUse.show && (
+          <div style={{ marginTop: '16px', padding: '8px', border: '2px solid #9ca3af', borderRadius: '4px', backgroundColor: '#f9fafb' }}>
+            <h5 style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '8px', textAlign: 'center', textDecoration: 'underline' }}>{bn ? offUse.title_bn : offUse.title}</h5>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <tbody>
+                {offUse.fields.map(f => (
+                  <tr key={f.id}>
+                    <td style={{ padding: '4px 6px', borderBottom: '1px solid #e5e7eb', width: '30%', fontWeight: '600' }}>{bn ? f.label_bn : f.label}:</td>
+                    <td style={{ padding: '4px 6px', borderBottom: '1px solid #e5e7eb' }}>
+                      <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '150px' }}>&nbsp;</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="mt-6">
+          {config.footer.termsText && <p className="text-[8px] text-gray-500 mb-4">{bn ? config.footer.termsText_bn || config.footer.termsText : config.footer.termsText}</p>}
+          {config.footer.customNote && <p className="text-[9px] text-gray-600 mb-3">{bn ? config.footer.customNote_bn || config.footer.customNote : config.footer.customNote}</p>}
+          <div className="flex justify-between mt-8 pt-2">
+            {config.footer.signatures.map(sig => (<div key={sig.id} className="text-center"><div className="border-t border-black w-28 mx-auto mb-1" /><span className="text-[10px]">{bn ? sig.title_bn : sig.title}</span></div>))}
+          </div>
+          {config.footer.showAddress && config.footer.addressText && <p className="text-[8px] text-center text-gray-500 mt-3">{config.footer.addressText}</p>}
+          {config.footer.showAddress && config.footer.contactText && <p className="text-[8px] text-center text-gray-500">{config.footer.contactText}</p>}
+          {config.footer.copyrightText && <p className="text-[8px] text-center text-gray-400 mt-4">{config.footer.copyrightText}</p>}
+          {config.footer.showPageNumber && <p className="text-[8px] text-center text-gray-400 mt-2">{bn ? 'পৃষ্ঠা ১/১' : 'Page 1/1'}</p>}
         </div>
-        {config.footer.showAddress && config.footer.addressText && <p className="text-[8px] text-center text-gray-500 mt-3">{config.footer.addressText}</p>}
-        {config.footer.showAddress && config.footer.contactText && <p className="text-[8px] text-center text-gray-500">{config.footer.contactText}</p>}
-        {config.footer.copyrightText && <p className="text-[8px] text-center text-gray-400 mt-4">{config.footer.copyrightText}</p>}
-        {config.footer.showPageNumber && <p className="text-[8px] text-center text-gray-400 mt-2">{bn ? 'পৃষ্ঠা ১/১' : 'Page 1/1'}</p>}
       </div>
     </div>
   );
@@ -602,12 +794,132 @@ const DocumentLayoutBuilder = () => {
                 </div>
                 <Separator />
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="w-full grid grid-cols-4">
-                    <TabsTrigger value="header">{bn ? 'হেডার' : 'Header'}</TabsTrigger>
-                    {formType === 'form' ? <TabsTrigger value="sections">{bn ? 'সেকশন' : 'Sections'}</TabsTrigger> : <TabsTrigger value="receipt">{bn ? 'রসিদ' : 'Receipt'}</TabsTrigger>}
-                    <TabsTrigger value="footer">{bn ? 'ফুটার' : 'Footer'}</TabsTrigger>
-                    <TabsTrigger value="preview"><Eye className="w-3 h-3 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}</TabsTrigger>
+                  <TabsList className="w-full grid grid-cols-5">
+                    <TabsTrigger value="page" className="text-xs">{bn ? 'পেইজ' : 'Page'}</TabsTrigger>
+                    <TabsTrigger value="header" className="text-xs">{bn ? 'হেডার' : 'Header'}</TabsTrigger>
+                    {formType === 'form' ? <TabsTrigger value="sections" className="text-xs">{bn ? 'সেকশন' : 'Sections'}</TabsTrigger> : <TabsTrigger value="receipt" className="text-xs">{bn ? 'রসিদ' : 'Receipt'}</TabsTrigger>}
+                    <TabsTrigger value="footer" className="text-xs">{bn ? 'ফুটার' : 'Footer'}</TabsTrigger>
+                    <TabsTrigger value="preview" className="text-xs"><Eye className="w-3 h-3 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}</TabsTrigger>
                   </TabsList>
+
+                  {/* Page Settings Tab */}
+                  <TabsContent value="page" className="space-y-3 mt-3">
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm flex items-center gap-2"><FileText className="w-4 h-4" />{bn ? 'পেপার সেটিংস' : 'Paper Settings'}</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>{bn ? 'পেপার সাইজ' : 'Paper Size'}</Label>
+                          <Select value={ps.paperSize} onValueChange={v => updatePageSettings('paperSize', v)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>{Object.entries(PAPER_SIZES).map(([k, v]) => <SelectItem key={k} value={k}>{bn ? v.bn : v.en}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{bn ? 'ওরিয়েন্টেশন' : 'Orientation'}</Label>
+                          <Select value={ps.orientation} onValueChange={v => updatePageSettings('orientation', v)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="portrait">{bn ? 'পোর্ট্রেট (লম্বা)' : 'Portrait'}</SelectItem>
+                              <SelectItem value="landscape">{bn ? 'ল্যান্ডস্কেপ (চওড়া)' : 'Landscape'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { k: 'marginTop', l: bn ? 'উপর' : 'Top' },
+                          { k: 'marginBottom', l: bn ? 'নিচ' : 'Bottom' },
+                          { k: 'marginLeft', l: bn ? 'বাম' : 'Left' },
+                          { k: 'marginRight', l: bn ? 'ডান' : 'Right' },
+                        ].map(m => (
+                          <div key={m.k}>
+                            <Label className="text-[10px]">{m.l} (mm)</Label>
+                            <Input type="number" value={(ps as any)[m.k]} onChange={e => updatePageSettings(m.k, Number(e.target.value))} className="h-8 text-xs" min={0} max={50} />
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent></Card>
+
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm flex items-center gap-2"><Hash className="w-4 h-4" />{bn ? 'ফর্ম নম্বর' : 'Form Number'}</h4>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={ps.showFormNumber} onCheckedChange={v => updatePageSettings('showFormNumber', v)} />
+                        <Label>{bn ? 'ফর্ম নম্বর দেখান' : 'Show Form Number'}</Label>
+                      </div>
+                      {ps.showFormNumber && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div><Label className="text-[10px]">Prefix (EN)</Label><Input value={ps.formNumberPrefix} onChange={e => updatePageSettings('formNumberPrefix', e.target.value)} className="h-8 text-xs" /></div>
+                          <div><Label className="text-[10px]">Prefix (BN)</Label><Input value={ps.formNumberPrefix_bn} onChange={e => updatePageSettings('formNumberPrefix_bn', e.target.value)} className="h-8 text-xs" /></div>
+                        </div>
+                      )}
+                    </CardContent></Card>
+
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm flex items-center gap-2"><Stamp className="w-4 h-4" />{bn ? 'ওয়াটারমার্ক' : 'Watermark'}</h4>
+                      <div><Label className="text-[10px]">{bn ? 'ওয়াটারমার্ক টেক্সট' : 'Watermark Text'}</Label><Input value={ps.watermarkText} onChange={e => updatePageSettings('watermarkText', e.target.value)} className="h-8 text-xs" placeholder={bn ? 'যেমন: খসড়া, নকল' : 'e.g. DRAFT, COPY'} /></div>
+                      {ps.watermarkText && (
+                        <div className="flex items-center gap-2">
+                          <Label className="text-[10px] w-16">{bn ? 'অপাসিটি' : 'Opacity'}</Label>
+                          <Slider value={[ps.watermarkOpacity]} min={2} max={30} step={1} onValueChange={([v]) => updatePageSettings('watermarkOpacity', v)} className="flex-1" />
+                          <span className="text-[10px] w-8">{ps.watermarkOpacity}%</span>
+                        </div>
+                      )}
+                    </CardContent></Card>
+
+                    {/* Declaration */}
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm flex items-center gap-2"><FileCheck className="w-4 h-4" />{bn ? 'ঘোষণা / শপথ' : 'Declaration / Oath'}</h4>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={decl.show} onCheckedChange={v => updateDeclaration('show', v)} />
+                        <Label>{bn ? 'ঘোষণা সেকশন দেখান' : 'Show Declaration Section'}</Label>
+                      </div>
+                      {decl.show && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><Label className="text-[10px]">Text (EN)</Label><Textarea value={decl.text} onChange={e => updateDeclaration('text', e.target.value)} className="text-xs h-16" /></div>
+                            <div><Label className="text-[10px]">Text (BN)</Label><Textarea value={decl.text_bn} onChange={e => updateDeclaration('text_bn', e.target.value)} className="text-xs h-16" /></div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2"><Switch checked={decl.showSignature} onCheckedChange={v => updateDeclaration('showSignature', v)} /><Label className="text-xs">{bn ? 'স্বাক্ষর' : 'Signature'}</Label></div>
+                            <div className="flex items-center gap-2"><Switch checked={decl.showDate} onCheckedChange={v => updateDeclaration('showDate', v)} /><Label className="text-xs">{bn ? 'তারিখ' : 'Date'}</Label></div>
+                          </div>
+                          {decl.showSignature && (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div><Label className="text-[10px]">Sig Label (EN)</Label><Input value={decl.signatureLabel} onChange={e => updateDeclaration('signatureLabel', e.target.value)} className="h-7 text-xs" /></div>
+                              <div><Label className="text-[10px]">Sig Label (BN)</Label><Input value={decl.signatureLabel_bn} onChange={e => updateDeclaration('signatureLabel_bn', e.target.value)} className="h-7 text-xs" /></div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </CardContent></Card>
+
+                    {/* Official Use Only */}
+                    <Card><CardContent className="p-3 space-y-3">
+                      <h4 className="font-semibold text-sm flex items-center gap-2"><Shield className="w-4 h-4" />{bn ? 'অফিস ব্যবহার সেকশন' : 'Official Use Section'}</h4>
+                      <div className="flex items-center gap-2">
+                        <Switch checked={offUse.show} onCheckedChange={v => updateOfficialUse('show', v)} />
+                        <Label>{bn ? 'অফিস ব্যবহার সেকশন দেখান' : 'Show Official Use Section'}</Label>
+                      </div>
+                      {offUse.show && (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div><Label className="text-[10px]">Title (EN)</Label><Input value={offUse.title} onChange={e => updateOfficialUse('title', e.target.value)} className="h-7 text-xs" /></div>
+                            <div><Label className="text-[10px]">Title (BN)</Label><Input value={offUse.title_bn} onChange={e => updateOfficialUse('title_bn', e.target.value)} className="h-7 text-xs" /></div>
+                          </div>
+                          <div className="space-y-1.5">
+                            {offUse.fields.map(f => (
+                              <div key={f.id} className="flex items-center gap-1.5">
+                                <Input value={f.label} onChange={e => updateOfficialField(f.id, 'label', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
+                                <Input value={f.label_bn} onChange={e => updateOfficialField(f.id, 'label_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeOfficialField(f.id)}><X className="w-3 h-3" /></Button>
+                              </div>
+                            ))}
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addOfficialField}><Plus className="w-3 h-3 mr-1" />{bn ? 'ফিল্ড যোগ' : 'Add Field'}</Button>
+                          </div>
+                        </>
+                      )}
+                    </CardContent></Card>
+                  </TabsContent>
 
                   {/* Header Tab */}
                   <TabsContent value="header" className="space-y-3 mt-3">
@@ -671,11 +983,7 @@ const DocumentLayoutBuilder = () => {
                               <div className="flex items-center gap-1">
                                 <Label className="text-[10px] whitespace-nowrap">{bn ? 'সাইজ' : 'Size'}</Label>
                                 <div className="w-20">
-                                  <Slider
-                                    value={[sec.style?.fontSize || 13]}
-                                    min={10} max={24} step={1}
-                                    onValueChange={([v]) => updateSectionStyle(sec.id, 'fontSize', v)}
-                                  />
+                                  <Slider value={[sec.style?.fontSize || 13]} min={10} max={24} step={1} onValueChange={([v]) => updateSectionStyle(sec.id, 'fontSize', v)} />
                                 </div>
                                 <span className="text-[10px] text-muted-foreground w-6">{sec.style?.fontSize || 13}px</span>
                               </div>
@@ -803,48 +1111,98 @@ const DocumentLayoutBuilder = () => {
                                     {/* Row 2: Type, Width, Toggles, Style */}
                                     <div className="flex items-center gap-1.5 pl-7 flex-wrap">
                                       <Select value={f.type} onValueChange={v => updateField(sec.id, f.id, 'type', v)}>
-                                        <SelectTrigger className="h-6 text-[10px] w-[72px]"><SelectValue /></SelectTrigger>
-                                        <SelectContent>{Object.keys(FIELD_TYPE_ICONS).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                        <SelectTrigger className="h-6 text-[10px] w-[80px]"><SelectValue /></SelectTrigger>
+                                        <SelectContent>{Object.entries(FIELD_TYPE_LABELS).map(([t, labels]) => <SelectItem key={t} value={t}>{bn ? labels.bn : labels.en}</SelectItem>)}</SelectContent>
                                       </Select>
-                                      <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
-                                        <SelectTrigger className="h-6 text-[10px] w-14"><SelectValue /></SelectTrigger>
-                                        <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
-                                      </Select>
-                                      <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
+                                      {!['separator', 'static_text', 'attachment_list', 'qr_code'].includes(f.type) && (
+                                        <>
+                                          <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
+                                            <SelectTrigger className="h-6 text-[10px] w-14"><SelectValue /></SelectTrigger>
+                                            <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
+                                          </Select>
+                                          <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
+                                        </>
+                                      )}
                                       <div className="flex items-center gap-1"><Switch checked={f.show} onCheckedChange={v => updateField(sec.id, f.id, 'show', v)} /><span className="text-[10px]">Show</span></div>
 
-                                      {/* Field style popover */}
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button size="sm" variant="outline" className="h-6 text-[10px] px-2"><Settings2 className="w-3 h-3 mr-1" />{bn ? 'স্টাইল' : 'Style'}</Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-56 p-3 space-y-2" align="end">
-                                          <h5 className="text-xs font-semibold">{bn ? 'ফিল্ড স্টাইল' : 'Field Style'}</h5>
-                                          <div className="flex items-center gap-2">
-                                            <Label className="text-[10px] w-10">{bn ? 'সাইজ' : 'Size'}</Label>
-                                            <Slider value={[f.style?.fontSize || 10]} min={8} max={18} step={1} onValueChange={([v]) => updateFieldStyle(sec.id, f.id, 'fontSize', v)} className="flex-1" />
-                                            <span className="text-[10px] w-6">{f.style?.fontSize || 10}px</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Label className="text-[10px] w-10">{bn ? 'রং' : 'Color'}</Label>
-                                            <Input type="color" value={f.style?.color || '#000000'} onChange={e => updateFieldStyle(sec.id, f.id, 'color', e.target.value)} className="h-6 w-10 p-0 border-0" />
-                                            <Button size="icon" variant={f.style?.bold ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'bold', !f.style?.bold)}><Bold className="w-3 h-3" /></Button>
-                                            <Button size="icon" variant={f.style?.italic ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'italic', !f.style?.italic)}><Italic className="w-3 h-3" /></Button>
-                                          </div>
-                                          {(['select', 'radio', 'checkbox'].includes(f.type)) && (
-                                            <div className="space-y-1.5 pt-1 border-t">
-                                              <Label className="text-[10px]">{bn ? 'অপশনসমূহ' : 'Options'}</Label>
-                                              {(f.options || []).map((opt, oi) => (
-                                                <div key={oi} className="flex items-center gap-1">
-                                                  <Input value={opt} onChange={e => { const newOpts = [...(f.options || [])]; newOpts[oi] = e.target.value; updateFieldOptions(sec.id, f.id, newOpts); }} className="h-6 text-[10px] flex-1" />
-                                                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => { const newOpts = (f.options || []).filter((_, i) => i !== oi); updateFieldOptions(sec.id, f.id, newOpts); }}><X className="w-2.5 h-2.5" /></Button>
-                                                </div>
-                                              ))}
-                                              <Button size="sm" variant="outline" className="h-6 text-[10px] w-full" onClick={() => updateFieldOptions(sec.id, f.id, [...(f.options || []), bn ? 'নতুন অপশন' : 'New Option'])}><Plus className="w-2.5 h-2.5 mr-1" />{bn ? 'অপশন যোগ' : 'Add Option'}</Button>
+                                      {/* Photo size controls */}
+                                      {f.type === 'photo' && (
+                                        <Select value={f.photoSize || 'passport'} onValueChange={v => updateField(sec.id, f.id, 'photoSize', v)}>
+                                          <SelectTrigger className="h-6 text-[10px] w-[80px]"><SelectValue /></SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="passport">{bn ? 'পাসপোর্ট' : 'Passport'}</SelectItem>
+                                            <SelectItem value="stamp">{bn ? 'স্ট্যাম্প' : 'Stamp'}</SelectItem>
+                                            <SelectItem value="custom">{bn ? 'কাস্টম' : 'Custom'}</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      )}
+                                      {f.type === 'photo' && f.photoSize === 'custom' && (
+                                        <div className="flex items-center gap-1">
+                                          <Input type="number" value={f.photoWidth || 64} onChange={e => updateField(sec.id, f.id, 'photoWidth', Number(e.target.value))} className="h-6 text-[10px] w-12" placeholder="W" />
+                                          <span className="text-[10px]">×</span>
+                                          <Input type="number" value={f.photoHeight || 76} onChange={e => updateField(sec.id, f.id, 'photoHeight', Number(e.target.value))} className="h-6 text-[10px] w-12" placeholder="H" />
+                                        </div>
+                                      )}
+
+                                      {/* Field style popover (only for regular fields) */}
+                                      {!['separator', 'qr_code'].includes(f.type) && (
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <Button size="sm" variant="outline" className="h-6 text-[10px] px-2"><Settings2 className="w-3 h-3 mr-1" />{bn ? 'স্টাইল' : 'Style'}</Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-56 p-3 space-y-2" align="end">
+                                            <h5 className="text-xs font-semibold">{bn ? 'ফিল্ড স্টাইল' : 'Field Style'}</h5>
+
+                                            {/* Static text content */}
+                                            {f.type === 'static_text' && (
+                                              <div className="space-y-1.5 pb-2 border-b">
+                                                <Label className="text-[10px]">{bn ? 'কন্টেন্ট (EN)' : 'Content (EN)'}</Label>
+                                                <Textarea value={f.staticContent || ''} onChange={e => updateField(sec.id, f.id, 'staticContent', e.target.value)} className="text-[10px] h-14" />
+                                                <Label className="text-[10px]">{bn ? 'কন্টেন্ট (BN)' : 'Content (BN)'}</Label>
+                                                <Textarea value={f.staticContent_bn || ''} onChange={e => updateField(sec.id, f.id, 'staticContent_bn', e.target.value)} className="text-[10px] h-14" />
+                                              </div>
+                                            )}
+
+                                            {/* Attachment list items */}
+                                            {f.type === 'attachment_list' && (
+                                              <div className="space-y-1.5 pb-2 border-b">
+                                                <Label className="text-[10px]">{bn ? 'সংযুক্তি তালিকা' : 'Attachment Items'}</Label>
+                                                {(f.attachments || []).map((att, ai) => (
+                                                  <div key={ai} className="flex items-center gap-1">
+                                                    <Input value={att} onChange={e => { const newAtts = [...(f.attachments || [])]; newAtts[ai] = e.target.value; updateField(sec.id, f.id, 'attachments', newAtts); }} className="h-6 text-[10px] flex-1" />
+                                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => { const newAtts = (f.attachments || []).filter((_, i) => i !== ai); updateField(sec.id, f.id, 'attachments', newAtts); }}><X className="w-2.5 h-2.5" /></Button>
+                                                  </div>
+                                                ))}
+                                                <Button size="sm" variant="outline" className="h-6 text-[10px] w-full" onClick={() => updateField(sec.id, f.id, 'attachments', [...(f.attachments || []), bn ? 'নতুন আইটেম' : 'New Item'])}><Plus className="w-2.5 h-2.5 mr-1" />{bn ? 'আইটেম যোগ' : 'Add Item'}</Button>
+                                              </div>
+                                            )}
+
+                                            <div className="flex items-center gap-2">
+                                              <Label className="text-[10px] w-10">{bn ? 'সাইজ' : 'Size'}</Label>
+                                              <Slider value={[f.style?.fontSize || 10]} min={8} max={18} step={1} onValueChange={([v]) => updateFieldStyle(sec.id, f.id, 'fontSize', v)} className="flex-1" />
+                                              <span className="text-[10px] w-6">{f.style?.fontSize || 10}px</span>
                                             </div>
-                                          )}
-                                        </PopoverContent>
-                                      </Popover>
+                                            <div className="flex items-center gap-2">
+                                              <Label className="text-[10px] w-10">{bn ? 'রং' : 'Color'}</Label>
+                                              <Input type="color" value={f.style?.color || '#000000'} onChange={e => updateFieldStyle(sec.id, f.id, 'color', e.target.value)} className="h-6 w-10 p-0 border-0" />
+                                              <Button size="icon" variant={f.style?.bold ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'bold', !f.style?.bold)}><Bold className="w-3 h-3" /></Button>
+                                              <Button size="icon" variant={f.style?.italic ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'italic', !f.style?.italic)}><Italic className="w-3 h-3" /></Button>
+                                            </div>
+                                            {(['select', 'radio', 'checkbox'].includes(f.type)) && (
+                                              <div className="space-y-1.5 pt-1 border-t">
+                                                <Label className="text-[10px]">{bn ? 'অপশনসমূহ' : 'Options'}</Label>
+                                                {(f.options || []).map((opt, oi) => (
+                                                  <div key={oi} className="flex items-center gap-1">
+                                                    <Input value={opt} onChange={e => { const newOpts = [...(f.options || [])]; newOpts[oi] = e.target.value; updateFieldOptions(sec.id, f.id, newOpts); }} className="h-6 text-[10px] flex-1" />
+                                                    <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => { const newOpts = (f.options || []).filter((_, i) => i !== oi); updateFieldOptions(sec.id, f.id, newOpts); }}><X className="w-2.5 h-2.5" /></Button>
+                                                  </div>
+                                                ))}
+                                                <Button size="sm" variant="outline" className="h-6 text-[10px] w-full" onClick={() => updateFieldOptions(sec.id, f.id, [...(f.options || []), bn ? 'নতুন অপশন' : 'New Option'])}><Plus className="w-2.5 h-2.5 mr-1" />{bn ? 'অপশন যোগ' : 'Add Option'}</Button>
+                                              </div>
+                                            )}
+                                          </PopoverContent>
+                                        </Popover>
+                                      )}
                                     </div>
                                   </div>
                                 );
@@ -862,7 +1220,23 @@ const DocumentLayoutBuilder = () => {
                                   <span className="text-[10px] text-muted-foreground">{bn ? 'এখানে ড্রপ করুন' : 'Drop here'}</span>
                                 )}
                               </div>
-                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => addField(sec.id)}><Plus className="w-3 h-3 mr-1" />{bn ? 'ফিল্ড যোগ' : 'Add Field'}</Button>
+                              {/* Add field dropdown */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs"><Plus className="w-3 h-3 mr-1" />{bn ? 'ফিল্ড যোগ' : 'Add Field'}</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="grid grid-cols-2 gap-0.5 w-[260px]">
+                                  {Object.entries(FIELD_TYPE_LABELS).map(([type, labels]) => {
+                                    const Icon = FIELD_TYPE_ICONS[type] || Type;
+                                    return (
+                                      <DropdownMenuItem key={type} onClick={() => addField(sec.id, type as LayoutField['type'])} className="flex items-center gap-1.5 text-xs">
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {bn ? labels.bn : labels.en}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           )}
                         </CardContent>
@@ -944,7 +1318,6 @@ const DocumentLayoutBuilder = () => {
 
                   {/* Footer Tab */}
                   <TabsContent value="footer" className="space-y-3 mt-3">
-                    {/* Custom Note */}
                     <Card><CardContent className="p-3 space-y-3">
                       <h4 className="font-semibold text-sm">{bn ? 'কাস্টম নোট/বার্তা' : 'Custom Note/Message'}</h4>
                       <div className="grid grid-cols-2 gap-3">
@@ -953,7 +1326,6 @@ const DocumentLayoutBuilder = () => {
                       </div>
                     </CardContent></Card>
 
-                    {/* Address & Contact */}
                     <Card><CardContent className="p-3 space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="font-semibold text-sm">{bn ? 'ঠিকানা ও যোগাযোগ' : 'Address & Contact'}</h4>
@@ -967,7 +1339,6 @@ const DocumentLayoutBuilder = () => {
                       )}
                     </CardContent></Card>
 
-                    {/* Terms & Copyright */}
                     <Card><CardContent className="p-3 space-y-3">
                       <h4 className="font-semibold text-sm">{bn ? 'শর্তাবলী ও কপিরাইট' : 'Terms & Copyright'}</h4>
                       <div className="grid grid-cols-2 gap-3">
@@ -977,7 +1348,6 @@ const DocumentLayoutBuilder = () => {
                       <div><Label>Copyright</Label><Input value={config.footer.copyrightText} onChange={e => setConfig(c => ({ ...c, footer: { ...c.footer, copyrightText: e.target.value } }))} className="text-xs" /></div>
                     </CardContent></Card>
 
-                    {/* Page Number */}
                     <Card><CardContent className="p-3">
                       <div className="flex items-center gap-3">
                         <Switch checked={config.footer.showPageNumber} onCheckedChange={v => setConfig(c => ({ ...c, footer: { ...c.footer, showPageNumber: v } }))} />
