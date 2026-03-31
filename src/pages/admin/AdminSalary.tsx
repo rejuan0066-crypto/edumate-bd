@@ -274,103 +274,34 @@ const AdminSalary = () => {
   const calculateSalary = (staffMember: any) => {
     const baseSalary = Number(staffMember.salary) || 0;
     const attStats = getAttendanceStats(staffMember);
-    const lateDeductionSetting = getSetting('late_deduction_per_day');
-    const defaultLateRate = Number(lateDeductionSetting?.amount) || 50;
-    const calcMode = getSetting('calculation_mode')?.mode || 'per_minute';
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
     const workingDays = new Date(year, month, 0).getDate();
 
-    const dailyRate = baseSalary / 30;
-    const perMinuteRate = attStats.scheduledMinutesPerDay > 0 ? dailyRate / attStats.scheduledMinutesPerDay : 0;
+    // Additive approach: net salary = sum of daily earnings from attendance records
+    // Days without attendance record = 0 contribution
+    const totalEarned = attStats.totalDailyEarnings;
+    
+    // Additional allowances
+    const bonus = 0;
+    const otherAllowance = 0;
+    const advanceDeduction = 0;
 
-    // Build variables context
-    const ctx: Record<string, number> = {
-      base_salary: baseSalary,
-      working_days: workingDays,
-      present_days: attStats.present,
-      absent_days: attStats.absent,
-      late_days: attStats.late,
-      half_days: attStats.halfDay,
-      late_rate: defaultLateRate,
-      daily_rate: Math.round(dailyRate),
-      per_minute_rate: Math.round(perMinuteRate * 100) / 100,
-      missed_minutes: attStats.totalMissedMinutes,
-      overtime_minutes: attStats.totalOvertimeMinutes,
-      scheduled_minutes: attStats.scheduledMinutesPerDay,
-      percentage: 100,
-      bonus: 0, overtime: 0, other_allowance: 0, advance_deduction: 0,
-    };
+    // Total deductions from daily breakdown
+    const totalDeductions = attStats.dailyBreakdown.reduce((sum, d) => sum + d.deduction, 0);
+    const totalAdditions = attStats.dailyBreakdown.reduce((sum, d) => sum + d.addition, 0);
 
-    // Calculate deductions based on mode
-    if (calcMode === 'attendance_based') {
-      // Attendance-based: net salary = (present_days / working_days) * base_salary
-      const effectivePresentDays = attStats.present + (attStats.halfDay * 0.5);
-      ctx.absence_deduction = 0;
-      ctx.late_deduction = Math.round(attStats.totalMissedMinutes * perMinuteRate);
-      ctx.overtime = Math.round(attStats.totalOvertimeMinutes * perMinuteRate);
-      ctx.other_deduction = 0;
+    // Absence deduction = absent days * daily rate (for display)
+    const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
+    // Late/early deduction
+    const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
+    // Half day deduction
+    const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
+    // Overtime
+    const overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
-      // Net = proportional salary based on attendance
-      const netFormula = getFormula('net_salary');
-      if (netFormula) {
-        const expr = (netFormula.expression as any)?.formula;
-        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
-      } else {
-        const proportionalSalary = workingDays > 0 ? Math.round((effectivePresentDays / workingDays) * baseSalary) : 0;
-        ctx.net_salary = Math.max(0, proportionalSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
-          - ctx.late_deduction - ctx.advance_deduction);
-      }
-    } else if (calcMode === 'per_minute') {
-      // Per-minute: absence = full day, late/early = per minute
-      ctx.absence_deduction = Math.round(attStats.absent * dailyRate);
-      ctx.late_deduction = Math.round(attStats.totalMissedMinutes * perMinuteRate);
-      ctx.overtime = Math.round(attStats.totalOvertimeMinutes * perMinuteRate);
-
-      // Half day deduction
-      ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
-
-      // Apply net salary formula
-      const netFormula = getFormula('net_salary');
-      if (netFormula) {
-        const expr = (netFormula.expression as any)?.formula;
-        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
-      } else {
-        ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
-          - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
-      }
-    } else {
-      // Legacy fixed-rate mode
-      const absFormula = getFormula('absence_deduction');
-      if (absFormula) {
-        const expr = (absFormula.expression as any)?.formula;
-        ctx.absence_deduction = evaluateFormula(expr, ctx);
-      } else {
-        ctx.absence_deduction = Math.round(attStats.absent * (baseSalary / workingDays));
-      }
-
-      const lateFormula = getFormula('late_deduction');
-      if (lateFormula) {
-        const expr = (lateFormula.expression as any)?.formula;
-        ctx.late_deduction = evaluateFormula(expr, ctx);
-      } else {
-        ctx.late_deduction = attStats.late * defaultLateRate;
-      }
-
-      // Half day deduction
-      ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
-
-      // Apply net salary formula
-      const netFormula = getFormula('net_salary');
-      if (netFormula) {
-        const expr = (netFormula.expression as any)?.formula;
-        ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
-      } else {
-        ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
-          - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
-      }
-    }
+    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance - advanceDeduction);
 
     return {
       base_salary: baseSalary,
@@ -378,14 +309,14 @@ const AdminSalary = () => {
       present_days: attStats.present,
       absent_days: attStats.absent,
       late_days: attStats.late,
-      absence_deduction: ctx.absence_deduction,
-      late_deduction: ctx.late_deduction,
-      other_deduction: ctx.other_deduction,
-      bonus: ctx.bonus,
-      overtime: ctx.overtime,
-      other_allowance: ctx.other_allowance,
-      advance_deduction: ctx.advance_deduction,
-      net_salary: ctx.net_salary,
+      absence_deduction: absenceDeduction,
+      late_deduction: lateDeduction,
+      other_deduction: otherDeduction,
+      bonus,
+      overtime,
+      other_allowance: otherAllowance,
+      advance_deduction: advanceDeduction,
+      net_salary: netSalary,
     };
   };
 
