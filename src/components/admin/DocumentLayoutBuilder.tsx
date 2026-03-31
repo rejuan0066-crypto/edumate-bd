@@ -652,32 +652,68 @@ const DocumentLayoutBuilder = () => {
                               {sec.fields.map((f, fi) => {
                                 const FIcon = FIELD_TYPE_ICONS[f.type] || Type;
                                 return (
-                                  <div
-                                    key={f.id}
-                                    draggable
-                                    onDragStart={e => { e.stopPropagation(); handleFieldDragStart(e, sec.id, fi); }}
-                                    onDragOver={e => { e.stopPropagation(); handleFieldDragOver(e, sec.id, fi); }}
-                                    onDrop={e => { e.stopPropagation(); handleFieldDrop(e, sec.id, fi); }}
-                                    onDragEnd={() => setDragOverField(null)}
-                                    className={`flex items-center gap-1.5 bg-secondary/30 rounded p-1.5 transition-all cursor-move ${
-                                      dragOverField?.sectionId === sec.id && dragOverField?.fieldIndex === fi ? 'ring-2 ring-primary bg-primary/10' : ''
-                                    }`}
-                                  >
-                                    <GripVertical className="w-3.5 h-3.5 text-muted-foreground cursor-grab shrink-0" />
-                                    <FIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                                    <Input value={f.label} onChange={e => updateField(sec.id, f.id, 'label', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
-                                    <Input value={f.label_bn} onChange={e => updateField(sec.id, f.id, 'label_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
-                                    <Select value={f.type} onValueChange={v => updateField(sec.id, f.id, 'type', v)}>
-                                      <SelectTrigger className="h-7 text-xs w-20"><SelectValue /></SelectTrigger>
-                                      <SelectContent>{Object.keys(FIELD_TYPE_ICONS).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
-                                      <SelectTrigger className="h-7 text-xs w-16"><SelectValue /></SelectTrigger>
-                                      <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
-                                    </Select>
-                                    <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
-                                    <div className="flex items-center gap-1"><Switch checked={f.show} onCheckedChange={v => updateField(sec.id, f.id, 'show', v)} /><span className="text-[10px]">Show</span></div>
-                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeField(sec.id, f.id)}><X className="w-3 h-3" /></Button>
+                                  <div key={f.id} className="space-y-1">
+                                    <div
+                                      draggable
+                                      onDragStart={e => { e.stopPropagation(); handleFieldDragStart(e, sec.id, fi); }}
+                                      onDragOver={e => { e.stopPropagation(); handleFieldDragOver(e, sec.id, fi); }}
+                                      onDrop={e => { e.stopPropagation(); handleFieldDrop(e, sec.id, fi); }}
+                                      onDragEnd={() => setDragOverField(null)}
+                                      className={`flex items-center gap-1.5 bg-secondary/30 rounded p-1.5 transition-all cursor-move ${
+                                        dragOverField?.sectionId === sec.id && dragOverField?.fieldIndex === fi ? 'ring-2 ring-primary bg-primary/10' : ''
+                                      }`}
+                                    >
+                                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground cursor-grab shrink-0" />
+                                      <FIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                      <Input value={f.label} onChange={e => updateField(sec.id, f.id, 'label', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
+                                      <Input value={f.label_bn} onChange={e => updateField(sec.id, f.id, 'label_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
+                                      <Select value={f.type} onValueChange={v => updateField(sec.id, f.id, 'type', v)}>
+                                        <SelectTrigger className="h-7 text-xs w-20"><SelectValue /></SelectTrigger>
+                                        <SelectContent>{Object.keys(FIELD_TYPE_ICONS).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                      </Select>
+                                      <Select value={f.width} onValueChange={v => updateField(sec.id, f.id, 'width', v)}>
+                                        <SelectTrigger className="h-7 text-xs w-16"><SelectValue /></SelectTrigger>
+                                        <SelectContent><SelectItem value="half">½</SelectItem><SelectItem value="full">Full</SelectItem></SelectContent>
+                                      </Select>
+                                      <div className="flex items-center gap-1"><Switch checked={f.required} onCheckedChange={v => updateField(sec.id, f.id, 'required', v)} /><span className="text-[10px]">Req</span></div>
+                                      <div className="flex items-center gap-1"><Switch checked={f.show} onCheckedChange={v => updateField(sec.id, f.id, 'show', v)} /><span className="text-[10px]">Show</span></div>
+
+                                      {/* Field style popover */}
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button size="icon" variant="ghost" className="h-6 w-6"><Settings2 className="w-3 h-3" /></Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-56 p-3 space-y-2" align="end">
+                                          <h5 className="text-xs font-semibold">{bn ? 'ফিল্ড স্টাইল' : 'Field Style'}</h5>
+                                          <div className="flex items-center gap-2">
+                                            <Label className="text-[10px] w-10">{bn ? 'সাইজ' : 'Size'}</Label>
+                                            <Slider value={[f.style?.fontSize || 10]} min={8} max={18} step={1} onValueChange={([v]) => updateFieldStyle(sec.id, f.id, 'fontSize', v)} className="flex-1" />
+                                            <span className="text-[10px] w-6">{f.style?.fontSize || 10}px</span>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <Label className="text-[10px] w-10">{bn ? 'রং' : 'Color'}</Label>
+                                            <Input type="color" value={f.style?.color || '#000000'} onChange={e => updateFieldStyle(sec.id, f.id, 'color', e.target.value)} className="h-6 w-10 p-0 border-0" />
+                                            <Button size="icon" variant={f.style?.bold ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'bold', !f.style?.bold)}><Bold className="w-3 h-3" /></Button>
+                                            <Button size="icon" variant={f.style?.italic ? 'default' : 'ghost'} className="h-6 w-6" onClick={() => updateFieldStyle(sec.id, f.id, 'italic', !f.style?.italic)}><Italic className="w-3 h-3" /></Button>
+                                          </div>
+                                          {/* Options editor for select/radio */}
+                                          {(f.type === 'select') && (
+                                            <div className="space-y-1.5 pt-1 border-t">
+                                              <Label className="text-[10px]">{bn ? 'অপশনসমূহ' : 'Options'}</Label>
+                                              {(f.options || []).map((opt, oi) => (
+                                                <div key={oi} className="flex items-center gap-1">
+                                                  <Input value={opt} onChange={e => { const newOpts = [...(f.options || [])]; newOpts[oi] = e.target.value; updateFieldOptions(sec.id, f.id, newOpts); }} className="h-6 text-[10px] flex-1" />
+                                                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => { const newOpts = (f.options || []).filter((_, i) => i !== oi); updateFieldOptions(sec.id, f.id, newOpts); }}><X className="w-2.5 h-2.5" /></Button>
+                                                </div>
+                                              ))}
+                                              <Button size="sm" variant="outline" className="h-6 text-[10px] w-full" onClick={() => updateFieldOptions(sec.id, f.id, [...(f.options || []), bn ? 'নতুন অপশন' : 'New Option'])}><Plus className="w-2.5 h-2.5 mr-1" />{bn ? 'অপশন যোগ' : 'Add Option'}</Button>
+                                            </div>
+                                          )}
+                                        </PopoverContent>
+                                      </Popover>
+
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeField(sec.id, f.id)}><X className="w-3 h-3" /></Button>
+                                    </div>
                                   </div>
                                 );
                               })}
