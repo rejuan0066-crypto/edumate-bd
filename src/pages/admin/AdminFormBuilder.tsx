@@ -309,7 +309,14 @@ const AdminFormBuilder = () => {
   // Field mutations
   const saveField = useMutation({
     mutationFn: async (data: FieldData) => {
-      const validationObj = data.condition.enabled ? { condition: { source_field_id: data.condition.source_field_id, operator: data.condition.operator, value: data.condition.value } } : {};
+      const validationObj: Record<string, any> = {};
+      if (data.condition.enabled) {
+        validationObj.condition = { source_field_id: data.condition.source_field_id, operator: data.condition.operator, value: data.condition.value };
+      }
+      const hasRules = data.validation.min_length || data.validation.max_length || data.validation.min_value || data.validation.max_value || data.validation.pattern || data.validation.error_message || data.validation.error_message_bn;
+      if (hasRules) {
+        validationObj.rules = { ...data.validation };
+      }
       const payload = {
         form_id: selectedFormId!,
         field_type: data.field_type,
