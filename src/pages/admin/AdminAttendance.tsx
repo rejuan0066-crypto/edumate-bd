@@ -112,9 +112,14 @@ const AdminAttendance = () => {
       }
     }
 
-    // All students tab: filter by division/class only
-    if (studentSubTab === 'all' && selectedDivisionId && selectedDivisionId !== 'all') {
-      filtered = filtered.filter((s: any) => s.division_id === selectedDivisionId);
+    // All students tab: filter by session year + division/class
+    if (studentSubTab === 'all') {
+      if (selectedSessionYear) {
+        filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
+      }
+      if (selectedDivisionId && selectedDivisionId !== 'all') {
+        filtered = filtered.filter((s: any) => s.division_id === selectedDivisionId);
+      }
     }
 
     return filtered;
