@@ -368,20 +368,6 @@ const AdminAttendance = () => {
                   </Select>
                 )}
 
-                {/* Session Year (for 'residential' sub-tab only) */}
-                {studentSubTab === 'residential' && (
-                  <Select value={selectedSessionYear} onValueChange={setSelectedSessionYear}>
-                    <SelectTrigger className="w-36 h-8 text-xs">
-                      <SelectValue placeholder={bn ? 'সেশন ইয়ার' : 'Session Year'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sessionYears.map((sy: any) => (
-                        <SelectItem key={sy} value={sy}>{sy}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
                 {/* Search */}
                 <div className="relative flex-1 min-w-[150px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
