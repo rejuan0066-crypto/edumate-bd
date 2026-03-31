@@ -760,7 +760,53 @@ const AdminFormBuilder = () => {
                             )}
                           </div>
 
-                          <div>
+                          {/* Validation Rules */}
+                          {['text', 'number', 'textarea', 'email', 'phone', 'nid'].includes(fieldData.field_type) && (
+                            <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                              <Label className="font-semibold">{bn ? 'ভ্যালিডেশন নিয়ম' : 'Validation Rules'}</Label>
+                              <div className="grid grid-cols-2 gap-3">
+                                {['text', 'textarea', 'email', 'phone', 'nid'].includes(fieldData.field_type) && (
+                                  <>
+                                    <div>
+                                      <Label className="text-xs">{bn ? 'সর্বনিম্ন অক্ষর' : 'Min Length'}</Label>
+                                      <Input type="number" className="mt-1" value={fieldData.validation.min_length} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_length: e.target.value } }))} placeholder="0" />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">{bn ? 'সর্বোচ্চ অক্ষর' : 'Max Length'}</Label>
+                                      <Input type="number" className="mt-1" value={fieldData.validation.max_length} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_length: e.target.value } }))} placeholder="999" />
+                                    </div>
+                                  </>
+                                )}
+                                {fieldData.field_type === 'number' && (
+                                  <>
+                                    <div>
+                                      <Label className="text-xs">{bn ? 'সর্বনিম্ন মান' : 'Min Value'}</Label>
+                                      <Input type="number" className="mt-1" value={fieldData.validation.min_value} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_value: e.target.value } }))} placeholder="0" />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">{bn ? 'সর্বোচ্চ মান' : 'Max Value'}</Label>
+                                      <Input type="number" className="mt-1" value={fieldData.validation.max_value} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_value: e.target.value } }))} placeholder="999999" />
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              <div>
+                                <Label className="text-xs">{bn ? 'রেজেক্স প্যাটার্ন' : 'Regex Pattern'}</Label>
+                                <Input className="mt-1 font-mono text-xs" value={fieldData.validation.pattern} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, pattern: e.target.value } }))} placeholder={bn ? 'যেমন: ^[0-9]{10,17}$' : 'e.g. ^[0-9]{10,17}$'} />
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs">{bn ? 'এরর মেসেজ (EN)' : 'Error Message (EN)'}</Label>
+                                  <Input className="mt-1" value={fieldData.validation.error_message} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, error_message: e.target.value } }))} placeholder="Invalid input" />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">{bn ? 'এরর মেসেজ (বাংলা)' : 'Error Message (BN)'}</Label>
+                                  <Input className="mt-1" value={fieldData.validation.error_message_bn} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, error_message_bn: e.target.value } }))} placeholder="সঠিক তথ্য দিন" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                             <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
                             <Input type="number" value={fieldData.sort_order} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
                           </div>
