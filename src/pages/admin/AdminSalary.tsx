@@ -41,6 +41,14 @@ const timeToMinutes = (t: string): number => {
   return (h || 0) * 60 + (m || 0);
 };
 
+const formatTime12h = (t: string) => {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+};
+
 const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -509,7 +517,7 @@ const AdminSalary = () => {
           <th>${bn ? 'কর্মদিবস' : 'Working Days'}</th><td>${record.working_days}</td></tr>
       <tr><th>${bn ? 'উপস্থিত' : 'Present'}</th><td>${record.present_days}</td>
           <th>${bn ? 'অনুপস্থিত' : 'Absent'}</th><td>${record.absent_days}</td></tr>
-      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${staffMember.duty_start_time || '08:00'} - ${staffMember.duty_end_time || '17:00'}</td>
+      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${formatTime12h(staffMember.duty_start_time || '08:00')} - ${formatTime12h(staffMember.duty_end_time || '17:00')}</td>
           <th>${bn ? 'বিলম্ব দিন' : 'Late Days'}</th><td>${record.late_days || 0}</td></tr>
     </table>
     <table>
@@ -651,7 +659,7 @@ const AdminSalary = () => {
                           <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: s.duty_start_time || '08:00', duty_end_time: s.duty_end_time || '17:00' })}
                             className="text-[10px] text-primary hover:underline">
                             <Timer className="h-3 w-3 inline mr-0.5" />
-                            {s.duty_start_time || '08:00'}-{s.duty_end_time || '17:00'}
+                            {formatTime12h(s.duty_start_time || '08:00')}-{formatTime12h(s.duty_end_time || '17:00')}
                           </button>
                         </td>
                         <td className="px-3 py-2 text-right">৳{Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
