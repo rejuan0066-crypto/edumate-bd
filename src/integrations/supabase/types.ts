@@ -17,6 +17,8 @@ export type Database = {
       attendance_records: {
         Row: {
           attendance_date: string
+          check_in_time: string | null
+          check_out_time: string | null
           created_at: string | null
           entity_id: string
           entity_type: string
@@ -28,6 +30,8 @@ export type Database = {
         }
         Insert: {
           attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
           created_at?: string | null
           entity_id: string
           entity_type?: string
@@ -39,6 +43,8 @@ export type Database = {
         }
         Update: {
           attendance_date?: string
+          check_in_time?: string | null
+          check_out_time?: string | null
           created_at?: string | null
           entity_id?: string
           entity_type?: string
@@ -1408,6 +1414,8 @@ export type Database = {
           date_of_birth: string | null
           department: string | null
           designation: string | null
+          duty_end_time: string | null
+          duty_start_time: string | null
           education: string | null
           email: string | null
           employment_type: string | null
@@ -1434,6 +1442,8 @@ export type Database = {
           date_of_birth?: string | null
           department?: string | null
           designation?: string | null
+          duty_end_time?: string | null
+          duty_start_time?: string | null
           education?: string | null
           email?: string | null
           employment_type?: string | null
@@ -1460,6 +1470,8 @@ export type Database = {
           date_of_birth?: string | null
           department?: string | null
           designation?: string | null
+          duty_end_time?: string | null
+          duty_start_time?: string | null
           education?: string | null
           email?: string | null
           employment_type?: string | null

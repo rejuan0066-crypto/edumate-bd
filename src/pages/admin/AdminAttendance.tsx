@@ -85,15 +85,18 @@ const AdminAttendance = () => {
 
   // Save attendance mutation
   const saveMutation = useMutation({
-    mutationFn: async ({ entityId, status, remarks }: { entityId: string; status: string; remarks?: string }) => {
+    mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
       const existing = attendance.find((a: any) => a.entity_id === entityId);
+      const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
+      if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
+      if (check_out_time !== undefined) updateData.check_out_time = check_out_time;
       if (existing) {
-        const { error } = await supabase.from('attendance_records').update({ status, remarks, updated_at: new Date().toISOString() }).eq('id', existing.id);
+        const { error } = await supabase.from('attendance_records').update(updateData).eq('id', existing.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('attendance_records').insert({
           attendance_date: selectedDate, entity_type: entityType,
-          entity_id: entityId, status, remarks,
+          entity_id: entityId, ...updateData,
         });
         if (error) throw error;
       }
@@ -278,6 +281,27 @@ const AdminAttendance = () => {
                       {entityType === 'student' ? `ID: ${entity.student_id || '-'}` : (entity.designation || '-')}
                     </p>
                   </div>
+
+                  {/* Time Inputs for Staff */}
+                  {entityType === 'staff' && (
+                    <div className="flex gap-1 items-center shrink-0">
+                      <Input
+                        type="time"
+                        className="h-7 w-24 text-xs"
+                        placeholder="In"
+                        value={att?.check_in_time || ''}
+                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: e.target.value, check_out_time: att?.check_out_time || '' })}
+                      />
+                      <span className="text-[10px] text-muted-foreground">-</span>
+                      <Input
+                        type="time"
+                        className="h-7 w-24 text-xs"
+                        placeholder="Out"
+                        value={att?.check_out_time || ''}
+                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: att?.check_in_time || '', check_out_time: e.target.value })}
+                      />
+                    </div>
+                  )}
 
                   {/* Status Buttons */}
                   <div className="flex gap-1 flex-wrap justify-end">

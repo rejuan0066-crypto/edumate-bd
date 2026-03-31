@@ -11,12 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
-  Calculator, Plus, Trash2, DollarSign
+  Calculator, Plus, Trash2, DollarSign, FileText, Timer
 } from 'lucide-react';
 
 const MONTHS = [
@@ -34,6 +34,13 @@ const MONTHS = [
   { value: '12', bn: 'ডিসেম্বর', en: 'December' },
 ];
 
+// Helper: parse "HH:MM" to total minutes from midnight
+const timeToMinutes = (t: string): number => {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
 const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -45,7 +52,8 @@ const AdminSalary = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialog, setEditDialog] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [slipDialog, setSlipDialog] = useState<any>(null);
+  const [settingsTab, setSettingsTab] = useState('general');
+  const [dutyDialog, setDutyDialog] = useState<any>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
@@ -112,25 +120,48 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
-  // Calculate attendance stats for a staff member
-  const getAttendanceStats = (staffId: string) => {
-    const records = attendanceData.filter((a: any) => a.entity_id === staffId);
+  // Calculate attendance stats with per-minute tracking
+  const getAttendanceStats = (staffMember: any) => {
+    const records = attendanceData.filter((a: any) => a.entity_id === staffMember.id);
     const present = records.filter((r: any) => r.status === 'present').length;
     const absent = records.filter((r: any) => r.status === 'absent').length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
-    return { present, absent, late, halfDay, total: records.length };
+
+    // Per-minute calculation
+    const dutyStart = timeToMinutes(staffMember.duty_start_time || '08:00');
+    const dutyEnd = timeToMinutes(staffMember.duty_end_time || '17:00');
+    const scheduledMinutesPerDay = dutyEnd - dutyStart;
+
+    let totalMissedMinutes = 0;
+    let totalOvertimeMinutes = 0;
+
+    records.forEach((r: any) => {
+      if (r.status === 'absent') return; // full day deduction handled separately
+      const checkIn = r.check_in_time ? timeToMinutes(r.check_in_time) : dutyStart;
+      const checkOut = r.check_out_time ? timeToMinutes(r.check_out_time) : dutyEnd;
+
+      // Late arrival minutes
+      const lateMinutes = Math.max(0, checkIn - dutyStart);
+      // Early exit minutes
+      const earlyExitMinutes = Math.max(0, dutyEnd - checkOut);
+      // Overtime (stayed after duty end)
+      const overtimeMinutes = Math.max(0, checkOut - dutyEnd);
+
+      totalMissedMinutes += lateMinutes + earlyExitMinutes;
+      totalOvertimeMinutes += overtimeMinutes;
+    });
+
+    return { present, absent, late, halfDay, total: records.length, totalMissedMinutes, totalOvertimeMinutes, scheduledMinutesPerDay };
   };
 
   // Evaluate a formula expression safely
   const evaluateFormula = (formulaStr: string, vars: Record<string, number>): number => {
     try {
-      // Replace variable names with their values
       let expr = formulaStr;
       for (const [key, val] of Object.entries(vars)) {
         expr = expr.replace(new RegExp(`\\b${key}\\b`, 'g'), String(val));
       }
-      // Safe math evaluation (only numbers, operators, parentheses)
       if (/^[\d\s+\-*/().]+$/.test(expr)) {
         const result = new Function(`return (${expr})`)();
         return isNaN(result) || !isFinite(result) ? 0 : Math.round(result);
@@ -147,18 +178,22 @@ const AdminSalary = () => {
     });
   };
 
-  // Calculate salary for a staff member using formula builder
+  // Calculate salary for a staff member using per-minute logic
   const calculateSalary = (staffMember: any) => {
     const baseSalary = Number(staffMember.salary) || 0;
-    const attStats = getAttendanceStats(staffMember.id);
+    const attStats = getAttendanceStats(staffMember);
     const lateDeductionSetting = getSetting('late_deduction_per_day');
     const defaultLateRate = Number(lateDeductionSetting?.amount) || 50;
+    const calcMode = getSetting('calculation_mode')?.mode || 'per_minute';
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
     const workingDays = new Date(year, month, 0).getDate();
 
-    // Build variables context for formula evaluation
+    const dailyRate = baseSalary / 30;
+    const perMinuteRate = attStats.scheduledMinutesPerDay > 0 ? dailyRate / attStats.scheduledMinutesPerDay : 0;
+
+    // Build variables context
     const ctx: Record<string, number> = {
       base_salary: baseSalary,
       working_days: workingDays,
@@ -167,29 +202,41 @@ const AdminSalary = () => {
       late_days: attStats.late,
       half_days: attStats.halfDay,
       late_rate: defaultLateRate,
+      daily_rate: Math.round(dailyRate),
+      per_minute_rate: Math.round(perMinuteRate * 100) / 100,
+      missed_minutes: attStats.totalMissedMinutes,
+      overtime_minutes: attStats.totalOvertimeMinutes,
+      scheduled_minutes: attStats.scheduledMinutesPerDay,
       percentage: 100,
       bonus: 0, overtime: 0, other_allowance: 0, advance_deduction: 0,
     };
 
-    // Apply absence deduction formula
-    const absFormula = getFormula('absence_deduction');
-    if (absFormula) {
-      const expr = (absFormula.expression as any)?.formula;
-      ctx.absence_deduction = evaluateFormula(expr, ctx);
+    // Calculate deductions based on mode
+    if (calcMode === 'per_minute') {
+      // Per-minute: absence = full day, late/early = per minute
+      ctx.absence_deduction = Math.round(attStats.absent * dailyRate);
+      ctx.late_deduction = Math.round(attStats.totalMissedMinutes * perMinuteRate);
+      ctx.overtime = Math.round(attStats.totalOvertimeMinutes * perMinuteRate);
     } else {
-      ctx.absence_deduction = Math.round(attStats.absent * (baseSalary / workingDays));
+      // Legacy fixed-rate mode
+      const absFormula = getFormula('absence_deduction');
+      if (absFormula) {
+        const expr = (absFormula.expression as any)?.formula;
+        ctx.absence_deduction = evaluateFormula(expr, ctx);
+      } else {
+        ctx.absence_deduction = Math.round(attStats.absent * (baseSalary / workingDays));
+      }
+
+      const lateFormula = getFormula('late_deduction');
+      if (lateFormula) {
+        const expr = (lateFormula.expression as any)?.formula;
+        ctx.late_deduction = evaluateFormula(expr, ctx);
+      } else {
+        ctx.late_deduction = attStats.late * defaultLateRate;
+      }
     }
 
-    // Apply late deduction formula
-    const lateFormula = getFormula('late_deduction');
-    if (lateFormula) {
-      const expr = (lateFormula.expression as any)?.formula;
-      ctx.late_deduction = evaluateFormula(expr, ctx);
-    } else {
-      ctx.late_deduction = attStats.late * defaultLateRate;
-    }
-
-    // Half day deduction (fallback)
+    // Half day deduction
     ctx.other_deduction = Math.round(attStats.halfDay * (baseSalary / workingDays / 2));
 
     // Apply net salary formula
@@ -198,7 +245,8 @@ const AdminSalary = () => {
       const expr = (netFormula.expression as any)?.formula;
       ctx.net_salary = Math.max(0, evaluateFormula(expr, ctx));
     } else {
-      ctx.net_salary = Math.max(0, baseSalary - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction);
+      ctx.net_salary = Math.max(0, baseSalary + ctx.overtime + ctx.bonus + ctx.other_allowance
+        - ctx.absence_deduction - ctx.late_deduction - ctx.other_deduction - ctx.advance_deduction);
     }
 
     return {
@@ -223,14 +271,9 @@ const AdminSalary = () => {
     mutationFn: async () => {
       const records = staff.map((s: any) => {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
-        if (existing) return null; // Skip already generated
+        if (existing) return null;
         const calc = calculateSalary(s);
-        return {
-          staff_id: s.id,
-          month_year: monthYear,
-          ...calc,
-          status: 'pending',
-        };
+        return { staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' };
       }).filter(Boolean);
 
       if (records.length === 0) {
@@ -296,13 +339,35 @@ const AdminSalary = () => {
     },
   });
 
+  // Update duty time for a staff member
+  const updateDutyMutation = useMutation({
+    mutationFn: async ({ staffId, dutyStart, dutyEnd }: { staffId: string; dutyStart: string; dutyEnd: string }) => {
+      const { error } = await supabase.from('staff')
+        .update({ duty_start_time: dutyStart, duty_end_time: dutyEnd, updated_at: new Date().toISOString() })
+        .eq('id', staffId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+      setDutyDialog(null);
+      toast.success(bn ? 'ডিউটি সময় আপডেট হয়েছে' : 'Duty time updated');
+    },
+  });
+
   // Save settings
   const saveSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const { error } = await supabase.from('salary_settings')
-        .update({ setting_value: value, updated_at: new Date().toISOString() })
-        .eq('setting_key', key);
-      if (error) throw error;
+      const existing = settings.find((s: any) => s.setting_key === key);
+      if (existing) {
+        const { error } = await supabase.from('salary_settings')
+          .update({ setting_value: value, updated_at: new Date().toISOString() })
+          .eq('setting_key', key);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('salary_settings')
+          .insert({ setting_key: key, setting_value: value });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-settings'] });
@@ -333,13 +398,14 @@ const AdminSalary = () => {
   const exportCSV = () => {
     const BOM = '\uFEFF';
     const headers = [bn ? 'নাম' : 'Name', bn ? 'পদবি' : 'Designation', bn ? 'মূল বেতন' : 'Base Salary',
-      bn ? 'বোনাস' : 'Bonus', bn ? 'কর্তন' : 'Deductions', bn ? 'নিট বেতন' : 'Net Salary', bn ? 'স্ট্যাটাস' : 'Status'];
+      bn ? 'বোনাস' : 'Bonus', bn ? 'ওভারটাইম' : 'Overtime', bn ? 'কর্তন' : 'Deductions', bn ? 'অগ্রিম' : 'Advance', bn ? 'নিট বেতন' : 'Net Salary', bn ? 'স্ট্যাটাস' : 'Status'];
     const rows = filtered.map((s: any) => {
       const rec = getRecord(s.id);
       return [
         s.name_bn, s.designation || '-',
-        rec?.base_salary || s.salary || 0, rec?.bonus || 0,
-        (Number(rec?.late_deduction || 0) + Number(rec?.absence_deduction || 0) + Number(rec?.advance_deduction || 0) + Number(rec?.other_deduction || 0)),
+        rec?.base_salary || s.salary || 0, rec?.bonus || 0, rec?.overtime || 0,
+        (Number(rec?.late_deduction || 0) + Number(rec?.absence_deduction || 0) + Number(rec?.other_deduction || 0)),
+        rec?.advance_deduction || 0,
         rec?.net_salary || 0, rec?.status || 'not_generated'
       ].join(',');
     });
@@ -349,6 +415,69 @@ const AdminSalary = () => {
     const a = document.createElement('a');
     a.href = url; a.download = `salary_${monthYear}.csv`; a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Export PDF via edge function
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const exportPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const monthName = MONTHS.find(m => m.value === selectedMonth);
+      const payload = {
+        monthYear,
+        monthLabel: bn ? monthName?.bn : monthName?.en,
+        year: selectedYear,
+        language: bn ? 'bn' : 'en',
+        staff: filtered.map((s: any) => {
+          const rec = getRecord(s.id);
+          const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
+          return {
+            name: s.name_bn,
+            designation: s.designation || '-',
+            base_salary: Number(rec?.base_salary || s.salary || 0),
+            present: rec?.present_days || 0,
+            absent: rec?.absent_days || 0,
+            late: rec?.late_days || 0,
+            bonus: Number(rec?.bonus || 0),
+            overtime: Number(rec?.overtime || 0),
+            deductions: totalDed,
+            advance: Number(rec?.advance_deduction || 0),
+            net_salary: Number(rec?.net_salary || 0),
+            status: rec?.status || 'not_generated',
+          };
+        }),
+        totals: { base: stats.totalBase, net: stats.totalNet, deductions: stats.totalDeduction },
+      };
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`https://${projectId}.supabase.co/functions/v1/salary-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error('PDF generation failed');
+
+      const html = await res.text();
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        // Wait for fonts to load then trigger print
+        setTimeout(() => printWindow.print(), 1000);
+      }
+      toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+    } catch (err) {
+      console.error(err);
+      toast.error(bn ? 'PDF তৈরি করতে সমস্যা' : 'Failed to generate PDF');
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   // Print salary slip
@@ -380,12 +509,14 @@ const AdminSalary = () => {
           <th>${bn ? 'কর্মদিবস' : 'Working Days'}</th><td>${record.working_days}</td></tr>
       <tr><th>${bn ? 'উপস্থিত' : 'Present'}</th><td>${record.present_days}</td>
           <th>${bn ? 'অনুপস্থিত' : 'Absent'}</th><td>${record.absent_days}</td></tr>
+      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${staffMember.duty_start_time || '08:00'} - ${staffMember.duty_end_time || '17:00'}</td>
+          <th>${bn ? 'বিলম্ব দিন' : 'Late Days'}</th><td>${record.late_days || 0}</td></tr>
     </table>
     <table>
       <tr><th colspan="2" style="text-align:center">${bn ? 'আয়' : 'Earnings'}</th>
           <th colspan="2" style="text-align:center">${bn ? 'কর্তন' : 'Deductions'}</th></tr>
       <tr><td>${bn ? 'মূল বেতন' : 'Base Salary'}</td><td>৳${Number(record.base_salary).toLocaleString()}</td>
-          <td>${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</td><td>৳${Number(record.late_deduction || 0).toLocaleString()}</td></tr>
+          <td>${bn ? 'বিলম্ব কর্তন' : 'Late/Time Ded.'}</td><td>৳${Number(record.late_deduction || 0).toLocaleString()}</td></tr>
       <tr><td>${bn ? 'বোনাস' : 'Bonus'}</td><td>৳${Number(record.bonus || 0).toLocaleString()}</td>
           <td>${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</td><td>৳${Number(record.absence_deduction || 0).toLocaleString()}</td></tr>
       <tr><td>${bn ? 'ওভারটাইম' : 'Overtime'}</td><td>৳${Number(record.overtime || 0).toLocaleString()}</td>
@@ -418,7 +549,7 @@ const AdminSalary = () => {
               {bn ? 'বেতন ব্যবস্থাপনা' : 'Salary Management'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {bn ? 'শিক্ষক ও স্টাফদের মাসিক বেতন হিসাব, কর্তন ও স্লিপ' : 'Monthly salary calculation, deductions & slips'}
+              {bn ? 'Per-Minute হিসাবসহ মাসিক বেতন, কর্তন ও স্লিপ' : 'Per-minute salary calculation, deductions & slips'}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
@@ -448,7 +579,6 @@ const AdminSalary = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-3 items-center flex-wrap">
-              {/* Month/Year Selection */}
               <div className="flex gap-2 items-center shrink-0">
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger className="w-32 h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -462,20 +592,21 @@ const AdminSalary = () => {
                   className="w-20 h-8 text-sm" min="2020" max="2040" />
               </div>
 
-              {/* Search */}
               <div className="relative flex-1 w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input className="pl-9 h-8 text-sm" placeholder={bn ? 'নাম বা পদবি দিয়ে খুঁজুন...' : 'Search by name or designation...'}
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
 
-              {/* Actions */}
               <div className="flex gap-2 shrink-0 flex-wrap">
                 <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
-                  <Calculator className="h-3 w-3 mr-1" /> {bn ? 'বেতন জেনারেট' : 'Generate'}
+                  <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
                 </Button>
                 <Button size="sm" variant="outline" onClick={exportCSV}>
-                  <Download className="h-3 w-3 mr-1" /> {bn ? 'এক্সেল' : 'Excel'}
+                  <Download className="h-3 w-3 mr-1" /> CSV
+                </Button>
+                <Button size="sm" variant="outline" onClick={exportPDF} disabled={pdfLoading}>
+                  <FileText className="h-3 w-3 mr-1" /> {pdfLoading ? '...' : 'PDF'}
                 </Button>
               </div>
             </div>
@@ -492,10 +623,11 @@ const AdminSalary = () => {
                     <th className="px-3 py-2 text-left text-xs font-medium">#</th>
                     <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'নাম' : 'Name'}</th>
                     <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'পদবি' : 'Designation'}</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'ডিউটি' : 'Duty'}</th>
                     <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মূল বেতন' : 'Base'}</th>
                     <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি' : 'P/A/L'}</th>
                     <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'কর্তন' : 'Ded.'}</th>
-                    <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'বোনাস' : 'Bonus'}</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম' : 'OT'}</th>
                     <th className="px-3 py-2 text-right text-xs font-medium text-emerald-600">{bn ? 'নিট বেতন' : 'Net'}</th>
                     <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                     <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'অ্যাকশন' : 'Actions'}</th>
@@ -504,10 +636,9 @@ const AdminSalary = () => {
                 <tbody>
                   {filtered.map((s: any, idx: number) => {
                     const rec = getRecord(s.id);
-                    const attStats = getAttendanceStats(s.id);
+                    const attStats = getAttendanceStats(s);
                     const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
                       Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
-                    const totalBonus = rec ? Number(rec.bonus || 0) + Number(rec.overtime || 0) + Number(rec.other_allowance || 0) : 0;
 
                     return (
                       <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
@@ -516,6 +647,13 @@ const AdminSalary = () => {
                           <p className="font-medium">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
                         </td>
                         <td className="px-3 py-2 text-muted-foreground">{s.designation || '-'}</td>
+                        <td className="px-3 py-2 text-center">
+                          <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: s.duty_start_time || '08:00', duty_end_time: s.duty_end_time || '17:00' })}
+                            className="text-[10px] text-primary hover:underline">
+                            <Timer className="h-3 w-3 inline mr-0.5" />
+                            {s.duty_start_time || '08:00'}-{s.duty_end_time || '17:00'}
+                          </button>
+                        </td>
                         <td className="px-3 py-2 text-right">৳{Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
                         <td className="px-3 py-2 text-center">
                           <span className="text-emerald-600">{attStats.present}</span>/
@@ -525,8 +663,8 @@ const AdminSalary = () => {
                         <td className="px-3 py-2 text-right text-red-500">
                           {rec ? `৳${totalDed.toLocaleString()}` : '-'}
                         </td>
-                        <td className="px-3 py-2 text-right text-emerald-600">
-                          {rec ? `৳${totalBonus.toLocaleString()}` : '-'}
+                        <td className="px-3 py-2 text-right text-blue-600">
+                          {rec ? `৳${Number(rec.overtime || 0).toLocaleString()}` : '-'}
                         </td>
                         <td className="px-3 py-2 text-right font-bold text-emerald-700 dark:text-emerald-400">
                           {rec ? `৳${Number(rec.net_salary).toLocaleString()}` : '-'}
@@ -568,7 +706,7 @@ const AdminSalary = () => {
                 {salaryRecords.length > 0 && (
                   <tfoot>
                     <tr className="bg-muted/50 font-bold">
-                      <td colSpan={3} className="px-3 py-2">{bn ? 'মোট' : 'Total'}</td>
+                      <td colSpan={4} className="px-3 py-2">{bn ? 'মোট' : 'Total'}</td>
                       <td className="px-3 py-2 text-right">৳{stats.totalBase.toLocaleString()}</td>
                       <td className="px-3 py-2"></td>
                       <td className="px-3 py-2 text-right text-red-500">৳{stats.totalDeduction.toLocaleString()}</td>
@@ -588,6 +726,42 @@ const AdminSalary = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Duty Time Dialog */}
+        <Dialog open={!!dutyDialog} onOpenChange={() => setDutyDialog(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle><Timer className="inline h-5 w-5 mr-2" />{bn ? 'ডিউটি সময় সেট করুন' : 'Set Duty Time'}</DialogTitle>
+            </DialogHeader>
+            {dutyDialog && (
+              <div className="space-y-4">
+                <p className="text-sm font-medium">{dutyDialog.name}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'শুরু' : 'Start Time'}</Label>
+                    <Input type="time" value={dutyDialog.duty_start_time}
+                      onChange={e => setDutyDialog({ ...dutyDialog, duty_start_time: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'শেষ' : 'End Time'}</Label>
+                    <Input type="time" value={dutyDialog.duty_end_time}
+                      onChange={e => setDutyDialog({ ...dutyDialog, duty_end_time: e.target.value })} />
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg text-sm">
+                  <p><strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong> {timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)} {bn ? 'মিনিট' : 'minutes'}
+                    ({Math.floor((timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)) / 60)}h {(timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)) % 60}m)
+                  </p>
+                </div>
+                <Button className="w-full" onClick={() => updateDutyMutation.mutate({
+                  staffId: dutyDialog.id, dutyStart: dutyDialog.duty_start_time, dutyEnd: dutyDialog.duty_end_time
+                })}>
+                  <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Edit Salary Dialog */}
         <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
@@ -619,7 +793,7 @@ const AdminSalary = () => {
                   <Label className="text-xs font-semibold text-red-500">{bn ? 'কর্তনসমূহ' : 'Deductions'}</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
-                      <Label className="text-xs">{bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</Label>
+                      <Label className="text-xs">{bn ? 'বিলম্ব/সময় কর্তন' : 'Late/Time Ded.'}</Label>
                       <Input type="number" value={editDialog.late_deduction || 0} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
@@ -627,7 +801,7 @@ const AdminSalary = () => {
                       <Input type="number" value={editDialog.absence_deduction || 0} onChange={e => setEditDialog({ ...editDialog, absence_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
-                      <Label className="text-xs">{bn ? 'অগ্রিম কর্তন' : 'Advance Ded.'}</Label>
+                      <Label className="text-xs">{bn ? 'অগ্রিম/ডিপোজিট কর্তন' : 'Advance/Deposit Ded.'}</Label>
                       <Input type="number" value={editDialog.advance_deduction || 0} onChange={e => setEditDialog({ ...editDialog, advance_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
@@ -657,35 +831,63 @@ const AdminSalary = () => {
 
         {/* Settings Dialog */}
         <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle><Settings2 className="inline h-5 w-5 mr-2" />{bn ? 'বেতন সেটিংস' : 'Salary Settings'}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>{bn ? 'প্রতি বিলম্বের দিনে কর্তন (৳)' : 'Late Deduction Per Day (৳)'}</Label>
-                <Input type="number" defaultValue={getSetting('late_deduction_per_day')?.amount || 50}
-                  onBlur={e => saveSettingMutation.mutate({ key: 'late_deduction_per_day', value: { amount: Number(e.target.value) } })} />
-              </div>
-              <div>
-                <Label>{bn ? 'অনুপস্থিতি কর্তন সূত্র' : 'Absence Deduction Formula'}</Label>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {bn ? 'মূল বেতন ÷ কর্মদিবস × অনুপস্থিত দিন' : 'Base Salary ÷ Working Days × Absent Days'}
-                </p>
-              </div>
-              <div className="border-t pt-3">
-                <Label className="font-semibold">{bn ? 'বোনাস নিয়মাবলী' : 'Bonus Rules'}</Label>
-                {(() => {
-                  const bonusRules = getSetting('bonus_rules') || {};
-                  return Object.entries(bonusRules).map(([key, rule]: any) => (
-                    <div key={key} className="flex items-center gap-2 mt-2 p-2 border rounded bg-muted/30">
-                      <span className="text-sm flex-1">{rule.label}</span>
-                      <Badge variant="outline">{rule.percentage}%</Badge>
+            <Tabs value={settingsTab} onValueChange={setSettingsTab}>
+              <TabsList className="w-full">
+                <TabsTrigger value="general" className="flex-1">{bn ? 'সাধারণ' : 'General'}</TabsTrigger>
+                <TabsTrigger value="formula" className="flex-1">{bn ? 'ফর্মুলা' : 'Formula'}</TabsTrigger>
+              </TabsList>
+              <TabsContent value="general" className="space-y-4 mt-4">
+                <div>
+                  <Label>{bn ? 'হিসাব পদ্ধতি' : 'Calculation Mode'}</Label>
+                  <Select
+                    value={getSetting('calculation_mode')?.mode || 'per_minute'}
+                    onValueChange={v => saveSettingMutation.mutate({ key: 'calculation_mode', value: { mode: v } })}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="per_minute">{bn ? 'Per-Minute (মিনিট ভিত্তিক)' : 'Per-Minute Rate'}</SelectItem>
+                      <SelectItem value="fixed_rate">{bn ? 'Fixed Rate (নির্দিষ্ট হার)' : 'Fixed Rate'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {bn ? 'Per-Minute: মাসিক বেতন ÷ ৩০ দিন ÷ দৈনিক ডিউটি মিনিট = প্রতি মিনিটের হার' : 'Per-Minute: Monthly ÷ 30 days ÷ duty minutes = rate/minute'}
+                  </p>
+                </div>
+                <div>
+                  <Label>{bn ? 'প্রতি বিলম্বের দিনে কর্তন (৳) - Fixed মোডে' : 'Late Deduction Per Day (৳) - Fixed mode'}</Label>
+                  <Input type="number" defaultValue={getSetting('late_deduction_per_day')?.amount || 50}
+                    onBlur={e => saveSettingMutation.mutate({ key: 'late_deduction_per_day', value: { amount: Number(e.target.value) } })} />
+                </div>
+              </TabsContent>
+              <TabsContent value="formula" className="space-y-4 mt-4">
+                <div className="p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
+                  <h4 className="font-semibold">{bn ? 'Per-Minute ফর্মুলা' : 'Per-Minute Formula'}</h4>
+                  <div className="space-y-1 text-muted-foreground text-xs">
+                    <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ ৩০' : 'Monthly Salary ÷ 30'}</p>
+                    <p>• <strong>{bn ? 'প্রতি মিনিট হার' : 'Per-Minute Rate'}</strong> = {bn ? 'দৈনিক হার ÷ ডিউটি মিনিট' : 'Daily Rate ÷ Duty Minutes'}</p>
+                    <p>• <strong>{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</strong> = {bn ? 'অনুপস্থিত দিন × দৈনিক হার' : 'Absent Days × Daily Rate'}</p>
+                    <p>• <strong>{bn ? 'বিলম্ব কর্তন' : 'Late/Time Ded.'}</strong> = {bn ? 'মিসড মিনিট × প্রতি মিনিট হার' : 'Missed Minutes × Per-Minute Rate'}</p>
+                    <p>• <strong>{bn ? 'ওভারটাইম' : 'Overtime'}</strong> = {bn ? 'অতিরিক্ত মিনিট × প্রতি মিনিট হার' : 'Extra Minutes × Per-Minute Rate'}</p>
+                    <p>• <strong>{bn ? 'নিট বেতন' : 'Net Salary'}</strong> = {bn ? 'মূল + ওভারটাইম + বোনাস - সকল কর্তন' : 'Base + OT + Bonus - All Deductions'}</p>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <Label className="font-semibold">{bn ? 'কাস্টম ফর্মুলা' : 'Custom Formulas'}</Label>
+                  <p className="text-xs text-muted-foreground mb-2">{bn ? 'ফর্মুলা বিল্ডারে গিয়ে কাস্টম সূত্র তৈরি করুন' : 'Create custom formulas in Formula Builder'}</p>
+                  {salaryFormulas.map((f: any) => (
+                    <div key={f.id} className="flex items-center gap-2 p-2 border rounded bg-muted/30 mb-1">
+                      <Calculator className="h-4 w-4 text-primary" />
+                      <span className="text-sm flex-1">{bn ? f.name_bn : f.name}</span>
+                      <Badge variant="outline" className="text-[10px]">{(f.expression as any)?.result_field}</Badge>
                     </div>
-                  ));
-                })()}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
       </div>

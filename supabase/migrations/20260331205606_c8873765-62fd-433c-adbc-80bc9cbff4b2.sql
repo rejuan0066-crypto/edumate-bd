@@ -1,0 +1,8 @@
+
+ALTER TABLE public.attendance_records 
+  ADD COLUMN IF NOT EXISTS check_in_time TEXT DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS check_out_time TEXT DEFAULT NULL;
+
+ALTER TABLE public.staff 
+  ADD COLUMN IF NOT EXISTS duty_start_time TEXT DEFAULT '08:00',
+  ADD COLUMN IF NOT EXISTS duty_end_time TEXT DEFAULT '17:00';
