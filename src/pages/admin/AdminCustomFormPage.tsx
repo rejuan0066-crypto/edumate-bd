@@ -164,6 +164,18 @@ const AdminCustomFormPage = () => {
         return;
       }
     }
+    // Check validation errors
+    const activeFields = fields.filter(f => f.is_active);
+    const errors: Record<string, string> = {};
+    for (const field of activeFields) {
+      const err = validateField(field, formValues[field.id]);
+      if (err) errors[field.id] = err;
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      toast.error(bn ? 'ফর্মে ত্রুটি রয়েছে, সংশোধন করুন' : 'Please fix form errors');
+      return;
+    }
     submitMutation.mutate();
   };
 
