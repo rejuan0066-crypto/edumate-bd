@@ -338,6 +338,42 @@ export type Database = {
         }
         Relationships: []
       }
+      document_layouts: {
+        Row: {
+          category: string
+          config: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          layout_type: string
+          name: string
+          name_bn: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout_type?: string
+          name: string
+          name_bn: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          config?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          layout_type?: string
+          name?: string
+          name_bn?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       donors: {
         Row: {
           address: string | null
