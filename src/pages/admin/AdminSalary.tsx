@@ -157,32 +157,71 @@ const AdminSalary = () => {
     const absent = records.filter((r: any) => r.status === 'absent').length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
+    const leave = records.filter((r: any) => r.status === 'leave').length;
 
-    // Per-minute calculation
     const dutyStart = timeToMinutes(staffMember.duty_start_time || '08:00');
     const dutyEnd = timeToMinutes(staffMember.duty_end_time || '17:00');
     const scheduledMinutesPerDay = dutyEnd - dutyStart;
 
-    let totalMissedMinutes = 0;
+    let totalLateArrivalMinutes = 0;
+    let totalEarlyExitMinutes = 0;
     let totalOvertimeMinutes = 0;
 
+    // Per-day breakdown for detail view
+    const dailyBreakdown: Array<{
+      date: string; status: string; checkIn: string; checkOut: string;
+      lateMin: number; earlyMin: number; overtimeMin: number;
+      deduction: number; addition: number;
+    }> = [];
+
+    const baseSalary = Number(staffMember.salary) || 0;
+    const dailyRate = baseSalary / 30;
+    const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
+
     records.forEach((r: any) => {
-      if (r.status === 'absent') return; // full day deduction handled separately
+      const entry: any = {
+        date: r.attendance_date, status: r.status,
+        checkIn: r.check_in_time || '', checkOut: r.check_out_time || '',
+        lateMin: 0, earlyMin: 0, overtimeMin: 0, deduction: 0, addition: 0,
+      };
+
+      if (r.status === 'absent') {
+        entry.deduction = Math.round(dailyRate);
+        dailyBreakdown.push(entry);
+        return;
+      }
+      if (r.status === 'half_day') {
+        entry.deduction = Math.round(dailyRate / 2);
+      }
+
       const checkIn = r.check_in_time ? timeToMinutes(r.check_in_time) : dutyStart;
       const checkOut = r.check_out_time ? timeToMinutes(r.check_out_time) : dutyEnd;
 
-      // Late arrival minutes
       const lateMinutes = Math.max(0, checkIn - dutyStart);
-      // Early exit minutes
       const earlyExitMinutes = Math.max(0, dutyEnd - checkOut);
-      // Overtime (stayed after duty end)
       const overtimeMinutes = Math.max(0, checkOut - dutyEnd);
 
-      totalMissedMinutes += lateMinutes + earlyExitMinutes;
+      totalLateArrivalMinutes += lateMinutes;
+      totalEarlyExitMinutes += earlyExitMinutes;
       totalOvertimeMinutes += overtimeMinutes;
+
+      entry.lateMin = lateMinutes;
+      entry.earlyMin = earlyExitMinutes;
+      entry.overtimeMin = overtimeMinutes;
+      entry.deduction += Math.round((lateMinutes + earlyExitMinutes) * perMinuteRate);
+      entry.addition = Math.round(overtimeMinutes * perMinuteRate);
+
+      dailyBreakdown.push(entry);
     });
 
-    return { present, absent, late, halfDay, total: records.length, totalMissedMinutes, totalOvertimeMinutes, scheduledMinutesPerDay };
+    const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
+
+    return {
+      present, absent, late, halfDay, leave, total: records.length,
+      totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
+      scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate,
+    };
+  };
   };
 
   // Evaluate a formula expression safely
