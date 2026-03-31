@@ -852,7 +852,8 @@ const AdminStaffForm = () => {
               <PhoneInput label={bn ? 'পিতার মোবাইল' : 'Father Mobile'} required value={fatherMobile} countryCode={fatherMobileCode} onChange={(p, c) => { setFatherMobile(p); setFatherMobileCode(c); }} />
               <div>
                 <Label>{bn ? 'পিতার NID' : 'Father NID'} <span className="text-destructive">*</span></Label>
-                <Input className="bg-background mt-1" maxLength={17} value={fatherNid} onChange={e => validateNid(e.target.value, setFatherNid)} />
+                <Input className={`bg-background mt-1 ${fatherNidError ? 'border-destructive' : ''}`} maxLength={17} value={fatherNid} onChange={e => validateNid(e.target.value, setFatherNid, setFatherNidError)} />
+                {fatherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fatherNidError}</p>}
               </div>
               <div>
                 <Label>{bn ? 'পিতার পেশা' : 'Father Occupation'} <span className="text-destructive">*</span></Label>
