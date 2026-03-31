@@ -42,12 +42,6 @@ const timeToMinutes = (t: string): number => {
   const [h, m] = t.split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
 };
-  if (!t) return '';
-  const [h, m] = t.split(':').map(Number);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
-};
 
 const AdminSalary = () => {
   const { language } = useLanguage();
