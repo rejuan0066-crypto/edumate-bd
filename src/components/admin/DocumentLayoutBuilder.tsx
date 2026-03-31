@@ -325,9 +325,33 @@ const DocumentLayoutBuilder = () => {
     {formType === 'form' && config.sections.map(sec => {
         const style = sec.style || {};
         const visibleFields = sec.fields.filter(f => f.show);
-        // Photo field separate (render at top-right of section)
         const photoField = visibleFields.find(f => f.type === 'photo');
         const normalFields = visibleFields.filter(f => f.type !== 'photo');
+
+        // Build rows: pair half-width fields, full-width gets own row
+        const rows: Array<LayoutField[]> = [];
+        let currentRow: LayoutField[] = [];
+        normalFields.forEach(f => {
+          if (f.width === 'full') {
+            if (currentRow.length > 0) { rows.push([...currentRow]); currentRow = []; }
+            rows.push([f]);
+          } else {
+            currentRow.push(f);
+            if (currentRow.length === 2) { rows.push([...currentRow]); currentRow = []; }
+          }
+        });
+        if (currentRow.length > 0) rows.push([...currentRow]);
+
+        const renderFieldValue = (f: LayoutField) => {
+          if (f.type === 'select' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>[{f.options.join(' / ')}]</span>;
+          if (f.type === 'radio' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `○ ${o}`).join('  ')}</span>;
+          if (f.type === 'checkbox' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `☐ ${o}`).join('  ')}</span>;
+          if (f.type === 'textarea') return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', width: '100%', minHeight: '14px' }}>&nbsp;</span>;
+          if (f.type === 'date') return <span style={{ fontSize: '9px', color: '#9ca3af' }}>____ / ____ / ________</span>;
+          if (f.type === 'toggle') return <span style={{ fontSize: '9px', color: '#6b7280' }}>☐ {bn ? 'হ্যাঁ' : 'Yes'} / ☐ {bn ? 'না' : 'No'}</span>;
+          return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '80px' }}>&nbsp;</span>;
+        };
+
         return (
           <div key={sec.id} style={{ marginBottom: style.margin ? `${style.margin}px` : '12px' }}>
             <h4 className="text-xs font-bold px-2 py-1" style={{
@@ -345,69 +369,70 @@ const DocumentLayoutBuilder = () => {
               borderWidth: style.borderStyle === 'none' ? 0 : '1px',
               borderTop: 'none',
               borderColor: style.borderColor || '#d1d5db',
-              position: 'relative',
             }}>
-              {photoField && (
-                <div style={{ position: 'absolute', top: '8px', right: '8px', width: '64px', height: '76px', border: '1px dashed #9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>
-                  {bn ? 'ছবি' : 'Photo'}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {/* Main fields area */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '28%' }} />
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '28%' }} />
+                    </colgroup>
+                    <tbody>
+                      {rows.map((row, ri) => (
+                        <tr key={ri}>
+                          {row.length === 1 && row[0].width === 'full' ? (
+                            <>
+                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
+                                {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
+                              </td>
+                              <td colSpan={3} style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
+                                {renderFieldValue(row[0])}
+                              </td>
+                            </>
+                          ) : row.length === 2 ? (
+                            <>
+                              {row.map(f => {
+                                const fs = f.style || {};
+                                return (
+                                  <React.Fragment key={f.id}>
+                                    <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px', color: fs.color || '#000', fontWeight: fs.bold ? 'bold' : 'normal', fontStyle: fs.italic ? 'italic' : 'normal' }}>
+                                      {bn ? f.label_bn : f.label}{f.required && <span style={{ color: '#ef4444' }}>*</span>}:
+                                    </td>
+                                    <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
+                                      {renderFieldValue(f)}
+                                    </td>
+                                  </React.Fragment>
+                                );
+                              })}
+                            </>
+                          ) : (
+                            <>
+                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap', fontSize: row[0].style?.fontSize ? `${row[0].style.fontSize}px` : '10px', color: row[0].style?.color || '#000', fontWeight: row[0].style?.bold ? 'bold' : 'normal', fontStyle: row[0].style?.italic ? 'italic' : 'normal' }}>
+                                {bn ? row[0].label_bn : row[0].label}{row[0].required && <span style={{ color: '#ef4444' }}>*</span>}:
+                              </td>
+                              <td style={{ padding: '3px 4px', borderBottom: '1px solid #e5e7eb' }}>
+                                {renderFieldValue(row[0])}
+                              </td>
+                              <td colSpan={2} style={{ borderBottom: '1px solid #e5e7eb' }}>&nbsp;</td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              )}
-              <table style={{ width: photoField ? 'calc(100% - 80px)' : '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
-                <tbody>
-                  {(() => {
-                    const rows: Array<typeof normalFields> = [];
-                    let currentRow: typeof normalFields = [];
-                    normalFields.forEach(f => {
-                      if (f.width === 'full') {
-                        if (currentRow.length > 0) { rows.push(currentRow); currentRow = []; }
-                        rows.push([f]);
-                      } else {
-                        currentRow.push(f);
-                        if (currentRow.length === 2) { rows.push(currentRow); currentRow = []; }
-                      }
-                    });
-                    if (currentRow.length > 0) rows.push(currentRow);
-                    return rows.map((row, ri) => (
-                      <tr key={ri}>
-                        {row.map((f, fi) => {
-                          const fs = f.style || {};
-                          const labelStyle: React.CSSProperties = {
-                            fontSize: fs.fontSize ? `${fs.fontSize}px` : '10px',
-                            color: fs.color || '#000',
-                            fontWeight: fs.bold ? 'bold' : 'normal',
-                            fontStyle: fs.italic ? 'italic' : 'normal',
-                            padding: '2px 4px',
-                            whiteSpace: 'nowrap',
-                            borderBottom: '1px solid #e5e7eb',
-                            width: f.width === 'full' ? '25%' : '25%',
-                          };
-                          const valueStyle: React.CSSProperties = {
-                            padding: '2px 4px',
-                            borderBottom: '1px solid #e5e7eb',
-                          };
-                          const colSpan = f.width === 'full' ? 3 : 1;
-                          const renderValue = () => {
-                            if (f.type === 'select' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>[{f.options.join(' / ')}]</span>;
-                            if (f.type === 'radio' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `○ ${o}`).join('  ')}</span>;
-                            if (f.type === 'checkbox' && f.options?.length) return <span style={{ fontSize: '9px', color: '#6b7280' }}>{f.options.map(o => `☐ ${o}`).join('  ')}</span>;
-                            if (f.type === 'textarea') return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', width: '100%', minHeight: '14px' }}>&nbsp;</span>;
-                            if (f.type === 'date') return <span style={{ fontSize: '9px', color: '#9ca3af' }}>____ / ____ / ________</span>;
-                            if (f.type === 'toggle') return <span style={{ fontSize: '9px', color: '#6b7280' }}>☐ {bn ? 'হ্যাঁ' : 'Yes'} / ☐ {bn ? 'না' : 'No'}</span>;
-                            return <span style={{ borderBottom: '1px dotted #9ca3af', display: 'inline-block', minWidth: '80px' }}>&nbsp;</span>;
-                          };
-                          return (
-                            <React.Fragment key={f.id}>
-                              <td style={labelStyle}>{bn ? f.label_bn : f.label}{f.required && <span style={{ color: '#ef4444' }}>*</span>}:</td>
-                              <td style={valueStyle} colSpan={colSpan}>{renderValue()}</td>
-                            </React.Fragment>
-                          );
-                        })}
-                        {row.length === 1 && row[0].width !== 'full' && <td style={{ padding: '2px 4px', borderBottom: '1px solid #e5e7eb' }} colSpan={2}>&nbsp;</td>}
-                      </tr>
-                    ));
-                  })()}
-                </tbody>
-              </table>
+                {/* Photo field - fixed position right side */}
+                {photoField && (
+                  <div style={{ width: '70px', flexShrink: 0, paddingTop: '2px' }}>
+                    <div style={{ width: '64px', height: '76px', border: '1px dashed #9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', color: '#9ca3af' }}>
+                      {bn ? 'ছবি' : 'Photo'}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
