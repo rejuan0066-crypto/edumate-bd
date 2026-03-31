@@ -496,6 +496,20 @@ const AdminSalary = () => {
     },
   });
 
+  // Mark as unpaid (reverse paid status)
+  const markUnpaidMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('salary_records')
+        .update({ status: 'pending', paid_at: null, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      toast.success(bn ? 'অপরিশোধিত হিসেবে চিহ্নিত হয়েছে' : 'Marked as unpaid');
+    },
+  });
+
   // Update duty time for a staff member
   const updateDutyMutation = useMutation({
     mutationFn: async ({ staffId, dutyStart, dutyEnd }: { staffId: string; dutyStart: string; dutyEnd: string }) => {
@@ -853,9 +867,13 @@ const AdminSalary = () => {
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => printSlip(s, rec)}>
                                   <Printer className="h-3 w-3" />
                                 </Button>
-                                {rec.status !== 'paid' && (
-                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" onClick={() => markPaidMutation.mutate(rec.id)}>
+                                {rec.status !== 'paid' ? (
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => markPaidMutation.mutate(rec.id)}>
                                     <CheckCircle2 className="h-3 w-3" />
+                                  </Button>
+                                ) : (
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => { if (confirm(bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?')) markUnpaidMutation.mutate(rec.id); }}>
+                                    <AlertCircle className="h-3 w-3" />
                                   </Button>
                                 )}
                               </>
