@@ -691,18 +691,6 @@ const DocumentLayoutBuilder = () => {
                   {/* Footer Tab */}
                   <TabsContent value="footer" className="space-y-3 mt-3">
                     <Card><CardContent className="p-3 space-y-3">
-                      <h4 className="font-semibold text-sm">{bn ? 'স্বাক্ষর লাইন' : 'Signature Lines'}</h4>
-                      {config.footer.signatures.map(sig => (
-                        <div key={sig.id} className="flex items-center gap-2">
-                          <Pen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <Input value={sig.title} onChange={e => updateSignature(sig.id, 'title', e.target.value)} className="h-7 text-xs flex-1" placeholder="EN" />
-                          <Input value={sig.title_bn} onChange={e => updateSignature(sig.id, 'title_bn', e.target.value)} className="h-7 text-xs flex-1" placeholder="BN" />
-                          <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => removeSignature(sig.id)}><X className="w-3 h-3" /></Button>
-                        </div>
-                      ))}
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addSignature}><Plus className="w-3 h-3 mr-1" />{bn ? 'স্বাক্ষর যোগ' : 'Add Signature'}</Button>
-                    </CardContent></Card>
-                    <Card><CardContent className="p-3 space-y-3">
                       <h4 className="font-semibold text-sm">{bn ? 'শর্তাবলী ও কপিরাইট' : 'Terms & Copyright'}</h4>
                       <div className="grid grid-cols-2 gap-3">
                         <div><Label>Terms (EN)</Label><Textarea value={config.footer.termsText} onChange={e => setConfig(c => ({ ...c, footer: { ...c.footer, termsText: e.target.value } }))} className="text-xs h-16" /></div>
