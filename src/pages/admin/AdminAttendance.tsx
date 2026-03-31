@@ -279,6 +279,27 @@ const AdminAttendance = () => {
                     </p>
                   </div>
 
+                  {/* Time Inputs for Staff */}
+                  {entityType === 'staff' && (
+                    <div className="flex gap-1 items-center shrink-0">
+                      <Input
+                        type="time"
+                        className="h-7 w-24 text-xs"
+                        placeholder="In"
+                        value={att?.check_in_time || ''}
+                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: e.target.value, check_out_time: att?.check_out_time || '' })}
+                      />
+                      <span className="text-[10px] text-muted-foreground">-</span>
+                      <Input
+                        type="time"
+                        className="h-7 w-24 text-xs"
+                        placeholder="Out"
+                        value={att?.check_out_time || ''}
+                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: att?.check_in_time || '', check_out_time: e.target.value })}
+                      />
+                    </div>
+                  )}
+
                   {/* Status Buttons */}
                   <div className="flex gap-1 flex-wrap justify-end">
                     {statusOptions.map((rule: any) => {
