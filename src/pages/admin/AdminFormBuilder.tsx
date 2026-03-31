@@ -807,6 +807,7 @@ const AdminFormBuilder = () => {
                             </div>
                           )}
 
+                          <div>
                             <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
                             <Input type="number" value={fieldData.sort_order} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
                           </div>
