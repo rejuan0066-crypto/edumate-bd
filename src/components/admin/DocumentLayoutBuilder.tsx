@@ -550,7 +550,7 @@ const DocumentLayoutBuilder = () => {
             <DialogDescription>{bn ? 'ফর্ম বা রসিদের লেআউট ডিজাইন করুন' : 'Design your form or receipt layout'}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col lg:flex-row h-[calc(90vh-130px)]">
-            <ScrollArea ref={scrollAreaRef} className="w-full lg:w-1/2 border-r border-border" onDragOver={e => handleDragAutoScroll(e as unknown as DragEvent)}>
+            <ScrollArea ref={scrollAreaRef} className="w-full lg:w-1/2 border-r border-border">
               <div className="p-4 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label>{bn ? 'নাম (EN)' : 'Name (EN)'}</Label><Input value={formName} onChange={e => setFormName(e.target.value)} /></div>
