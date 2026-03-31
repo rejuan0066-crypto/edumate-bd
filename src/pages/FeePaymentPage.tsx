@@ -1,4 +1,4 @@
-import PublicLayout from '@/components/PublicLayout';
+import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState } from 'react';
 import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2, CreditCard } from 'lucide-react';
