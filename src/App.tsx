@@ -79,7 +79,7 @@ const App = () => (
               <Route path="/student-info" element={<StudentInfoPage />} />
               <Route path="/admission" element={<AdmissionPage />} />
               <Route path="/donation" element={<DonationPage />} />
-              <Route path="/fee-payment" element={<FeePaymentPage />} />
+              <Route path="/fee-payment" element={<ProtectedRoute><FeePaymentPage /></ProtectedRoute>} />
               <Route path="/posts" element={<PostsPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/admin" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

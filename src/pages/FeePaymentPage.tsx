@@ -1,4 +1,4 @@
-import PublicLayout from '@/components/PublicLayout';
+import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState } from 'react';
 import { CheckCircle2, Download, Printer, Receipt, Search, Calendar, Building2, CreditCard } from 'lucide-react';
@@ -174,7 +174,7 @@ const FeePaymentPage = () => {
   };
 
   return (
-    <PublicLayout>
+    <AdminLayout>
       <div className="container mx-auto px-4 py-12 max-w-4xl space-y-6">
         {/* Header */}
         <div className="text-center mb-2">
@@ -388,7 +388,7 @@ const FeePaymentPage = () => {
           </div>
         )}
       </div>
-    </PublicLayout>
+    </AdminLayout>
   );
 };
 
