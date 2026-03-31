@@ -55,7 +55,6 @@ import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications
 import AdminSalary from "./pages/admin/AdminSalary";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
-import AdminDocumentLayouts from "./pages/admin/AdminDocumentLayouts";
 import PostsPage from "./pages/PostsPage";
 import NotFound from "./pages/NotFound";
 
