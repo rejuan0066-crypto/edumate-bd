@@ -31,7 +31,7 @@ interface FieldStyle {
 }
 interface LayoutField {
   id: string; label: string; label_bn: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
+  type: 'text' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'photo' | 'textarea' | 'toggle' | 'email' | 'phone';
   required: boolean; options?: string[]; show: boolean; width: 'full' | 'half';
   style?: FieldStyle;
 }
