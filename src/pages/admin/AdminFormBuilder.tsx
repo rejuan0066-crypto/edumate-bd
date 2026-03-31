@@ -820,6 +820,7 @@ const AdminFormBuilder = () => {
                     {field.field_type === 'switch' && <Switch />}
                     {field.field_type === 'post_office' && <Input placeholder={bn ? 'পোস্ট অফিস লিখুন' : 'Enter post office'} />}
                     {field.field_type === 'village' && <Input placeholder={bn ? 'গ্রাম লিখুন' : 'Enter village'} />}
+                    {field.field_type === 'nid' && <Input placeholder={bn ? '১০ বা ১৭ ডিজিট NID' : '10 or 17 digit NID'} maxLength={17} onChange={e => { const cleaned = e.target.value.replace(/\D/g, ''); e.target.value = cleaned; updatePreviewValue(field.id, cleaned); }} />}
                     {field.field_type === 'address_permanent' && (
                       <AddressFields
                         label={bn ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}
