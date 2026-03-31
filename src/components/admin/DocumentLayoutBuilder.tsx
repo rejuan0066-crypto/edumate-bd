@@ -247,6 +247,7 @@ const DocumentLayoutBuilder = () => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverField({ sectionId, fieldIndex });
+    handleDragAutoScroll(e);
   };
   const handleFieldDrop = (e: DragEvent, targetSectionId: string, targetIndex: number) => {
     e.preventDefault();
