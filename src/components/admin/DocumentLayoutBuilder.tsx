@@ -343,10 +343,14 @@ const DocumentLayoutBuilder = () => {
       {formType === 'receipt' && config.showFields.amountInWords && <p className="text-[10px] mb-3"><strong>{bn ? 'কথায়:' : 'In Words:'}</strong> ________________________________</p>}
       <div className="mt-6">
         {config.footer.termsText && <p className="text-[8px] text-gray-500 mb-4">{bn ? config.footer.termsText_bn || config.footer.termsText : config.footer.termsText}</p>}
+        {config.footer.customNote && <p className="text-[9px] text-gray-600 mb-3">{bn ? config.footer.customNote_bn || config.footer.customNote : config.footer.customNote}</p>}
         <div className="flex justify-between mt-8 pt-2">
           {config.footer.signatures.map(sig => (<div key={sig.id} className="text-center"><div className="border-t border-black w-28 mx-auto mb-1" /><span className="text-[10px]">{bn ? sig.title_bn : sig.title}</span></div>))}
         </div>
+        {config.footer.showAddress && config.footer.addressText && <p className="text-[8px] text-center text-gray-500 mt-3">{config.footer.addressText}</p>}
+        {config.footer.showAddress && config.footer.contactText && <p className="text-[8px] text-center text-gray-500">{config.footer.contactText}</p>}
         {config.footer.copyrightText && <p className="text-[8px] text-center text-gray-400 mt-4">{config.footer.copyrightText}</p>}
+        {config.footer.showPageNumber && <p className="text-[8px] text-center text-gray-400 mt-2">{bn ? 'পৃষ্ঠা ১/১' : 'Page 1/1'}</p>}
       </div>
     </div>
   );
