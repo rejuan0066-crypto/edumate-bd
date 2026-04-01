@@ -26,6 +26,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'students', path: '/admin/students', label_bn: 'ছাত্র ব্যবস্থাপনা', label_en: 'Student Management', icon: 'Users', visible: true, sort_order: 2 },
   { id: 'staff', path: '/admin/staff', label_bn: 'স্টাফ/শিক্ষক ব্যবস্থাপনা', label_en: 'Staff/Teacher Management', icon: 'UserCog', visible: true, sort_order: 3 },
   { id: 'divisions', path: '/admin/divisions', label_bn: 'বিভাগ ও শ্রেণী', label_en: 'Division & Class', icon: 'Layers', visible: true, sort_order: 4 },
+  { id: 'academic-sessions', path: '/admin/academic-sessions', label_bn: 'একাডেমিক সেশন', label_en: 'Academic Session', icon: 'CalendarDays', visible: true, sort_order: 5 },
   { id: 'fee-receipts', path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts', icon: 'ReceiptText', visible: true, sort_order: 5 },
   { id: 'resign-letters', path: '/admin/resign-letters', label_bn: 'পদত্যাগ পত্র', label_en: 'Resign Letters', icon: 'FileSignature', visible: true, sort_order: 6 },
   { id: 'joining-letters', path: '/admin/joining-letters', label_bn: 'যোগদান পত্র', label_en: 'Joining Letters', icon: 'FilePlus', visible: true, sort_order: 7 },
