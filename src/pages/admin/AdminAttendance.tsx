@@ -58,7 +58,9 @@ const AdminAttendance = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
   const [selectedDivisionId, setSelectedDivisionId] = useState('');
-  const [selectedShift, setSelectedShift] = useState('morning');
+  const [selectedShift, setSelectedShift] = useState('full_day');
+  // Effective shift: fulltime tab always uses 'full_day'
+  const effectiveShift = entityType === 'staff' && staffSubTab === 'fulltime' ? 'full_day' : entityType === 'staff' ? selectedShift : 'full_day';
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
@@ -153,19 +155,14 @@ const AdminAttendance = () => {
 
   // Fetch attendance for selected date (for staff, fetch by shift too)
   const { data: attendance = [] } = useQuery({
-    queryKey: ['attendance', selectedDate, entityType, entityType === 'staff' ? selectedShift : 'full_day'],
+    queryKey: ['attendance', selectedDate, entityType, effectiveShift],
     queryFn: async () => {
       let query = supabase
         .from('attendance_records')
         .select('*')
         .eq('attendance_date', selectedDate)
-        .eq('entity_type', entityType);
-
-      if (entityType === 'staff') {
-        query = query.eq('shift', selectedShift);
-      } else {
-        query = query.eq('shift', 'full_day');
-      }
+        .eq('entity_type', entityType)
+        .eq('shift', effectiveShift);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -230,7 +227,7 @@ const AdminAttendance = () => {
   // Save attendance mutation
   const saveMutation = useMutation({
     mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
-      const shiftVal = entityType === 'staff' ? selectedShift : 'full_day';
+      const shiftVal = effectiveShift;
       const existing = attendance.find((a: any) => a.entity_id === entityId);
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
@@ -253,7 +250,7 @@ const AdminAttendance = () => {
   // Bulk mark all
   const bulkMutation = useMutation({
     mutationFn: async (status: string) => {
-      const shiftVal = entityType === 'staff' ? selectedShift : 'full_day';
+      const shiftVal = effectiveShift;
       const unmarked = entities.filter((e: any) => !attendance.find((a: any) => a.entity_id === e.id));
       if (unmarked.length === 0) return;
       const records = unmarked.map((e: any) => ({
