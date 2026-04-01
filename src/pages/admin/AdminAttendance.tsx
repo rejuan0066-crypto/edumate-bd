@@ -368,9 +368,62 @@ const AdminAttendance = () => {
   };
 
   // CSV Download
-  const handleDownloadCSV = () => {
+  const handleDownloadCSV = async () => {
+    // For duty tab, combine morning + evening
+    if (entityType === 'staff' && staffSubTab === 'duty') {
+      const { data: morningAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'morning');
+      const { data: eveningAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'evening');
+
+      const rows: string[][] = [];
+      rows.push([
+        bn ? 'ক্রম' : 'SL',
+        bn ? 'নাম' : 'Name',
+        bn ? 'পদবী' : 'Designation',
+        bn ? 'সকাল স্ট্যাটাস' : 'Morning Status',
+        bn ? 'সকাল চেক-ইন' : 'Morning In',
+        bn ? 'সকাল চেক-আউট' : 'Morning Out',
+        bn ? 'সন্ধ্যা স্ট্যাটাস' : 'Evening Status',
+        bn ? 'সন্ধ্যা চেক-ইন' : 'Evening In',
+        bn ? 'সন্ধ্যা চেক-আউট' : 'Evening Out',
+      ]);
+
+      filtered.forEach((entity: any, idx: number) => {
+        const mAtt = (morningAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const eAtt = (eveningAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        rows.push([
+          String(idx + 1),
+          entity.name_bn,
+          entity.designation || '-',
+          mAtt ? statusLabel(mAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          mAtt?.check_in_time ? fmt(mAtt.check_in_time) : '-',
+          mAtt?.check_out_time ? fmt(mAtt.check_out_time) : '-',
+          eAtt ? statusLabel(eAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          eAtt?.check_in_time ? fmt(eAtt.check_in_time) : '-',
+          eAtt?.check_out_time ? fmt(eAtt.check_out_time) : '-',
+        ]);
+      });
+
+      const mPresent = (morningAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const ePresent = (eveningAtt as any[]).filter((a: any) => a.status === 'present').length;
+      rows.push([]);
+      rows.push([bn ? 'সকাল উপস্থিত' : 'Morning Present', String(mPresent), '', bn ? 'সন্ধ্যা উপস্থিত' : 'Evening Present', String(ePresent)]);
+
+      const bom = '\uFEFF';
+      const csv = bom + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${bn ? 'আবাসিক_ডিউটি_হাজিরা' : 'Residential_Duty_Attendance'}_${selectedDate}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(bn ? 'CSV ডাউনলোড হয়েছে' : 'CSV downloaded');
+      return;
+    }
+
     const rows: string[][] = [];
-    // Header
     const header = [
       bn ? 'ক্রম' : 'SL',
       bn ? 'নাম' : 'Name',
@@ -397,7 +450,6 @@ const AdminAttendance = () => {
       rows.push(row);
     });
 
-    // Summary row
     rows.push([]);
     rows.push([bn ? 'মোট' : 'Total', String(stats.total), bn ? 'উপস্থিত' : 'Present', String(stats.present), bn ? 'অনুপস্থিত' : 'Absent', String(stats.absent)]);
 
@@ -414,26 +466,104 @@ const AdminAttendance = () => {
   };
 
   // Print attendance
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const statusRows = filtered.map((entity: any, idx: number) => {
-      const att = getAttendance(entity.id);
-      const status = att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked');
-      const statusColor = att?.status === 'present' ? '#16a34a' : att?.status === 'absent' ? '#dc2626' : att?.status === 'late' ? '#ca8a04' : '#6b7280';
-      return `<tr>
-        <td style="text-align:center">${idx + 1}</td>
-        <td>${entity.name_bn}</td>
-        <td>${entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-')}</td>
-        <td style="color:${statusColor};font-weight:600">${status}</td>
-        ${entityType === 'staff' ? `<td>${att?.check_in_time ? fmt(att.check_in_time) : '-'}</td><td>${att?.check_out_time ? fmt(att.check_out_time) : '-'}</td>` : ''}
-      </tr>`;
-    }).join('');
+    let tableHtml = '';
+
+    // For duty tab, combine morning + evening
+    if (entityType === 'staff' && staffSubTab === 'duty') {
+      const { data: morningAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'morning');
+      const { data: eveningAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'evening');
+
+      const statusRows = filtered.map((entity: any, idx: number) => {
+        const mAtt = (morningAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const eAtt = (eveningAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const mColor = mAtt?.status === 'present' ? '#16a34a' : mAtt?.status === 'absent' ? '#dc2626' : mAtt?.status === 'late' ? '#ca8a04' : '#6b7280';
+        const eColor = eAtt?.status === 'present' ? '#16a34a' : eAtt?.status === 'absent' ? '#dc2626' : eAtt?.status === 'late' ? '#ca8a04' : '#6b7280';
+        return `<tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${entity.name_bn}</td>
+          <td>${entity.designation || '-'}</td>
+          <td style="color:${mColor};font-weight:600">${mAtt ? statusLabel(mAtt.status) : (bn ? '-' : '-')}</td>
+          <td>${mAtt?.check_in_time ? fmt(mAtt.check_in_time) : '-'}</td>
+          <td>${mAtt?.check_out_time ? fmt(mAtt.check_out_time) : '-'}</td>
+          <td style="color:${eColor};font-weight:600">${eAtt ? statusLabel(eAtt.status) : (bn ? '-' : '-')}</td>
+          <td>${eAtt?.check_in_time ? fmt(eAtt.check_in_time) : '-'}</td>
+          <td>${eAtt?.check_out_time ? fmt(eAtt.check_out_time) : '-'}</td>
+        </tr>`;
+      }).join('');
+
+      const mPresent = (morningAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const mAbsent = (morningAtt as any[]).filter((a: any) => a.status === 'absent').length;
+      const ePresent = (eveningAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const eAbsent = (eveningAtt as any[]).filter((a: any) => a.status === 'absent').length;
+
+      tableHtml = `
+        <table>
+          <thead><tr>
+            <th style="width:40px" rowspan="2">${bn ? 'ক্রম' : 'SL'}</th>
+            <th rowspan="2">${bn ? 'নাম' : 'Name'}</th>
+            <th rowspan="2">${bn ? 'পদবী' : 'Designation'}</th>
+            <th colspan="3" style="text-align:center;background:#fef3c7">${bn ? 'সকাল ডিউটি' : 'Morning Duty'}</th>
+            <th colspan="3" style="text-align:center;background:#dbeafe">${bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}</th>
+          </tr><tr>
+            <th style="background:#fef3c7">${bn ? 'স্ট্যাটাস' : 'Status'}</th>
+            <th style="background:#fef3c7">${bn ? 'ইন' : 'In'}</th>
+            <th style="background:#fef3c7">${bn ? 'আউট' : 'Out'}</th>
+            <th style="background:#dbeafe">${bn ? 'স্ট্যাটাস' : 'Status'}</th>
+            <th style="background:#dbeafe">${bn ? 'ইন' : 'In'}</th>
+            <th style="background:#dbeafe">${bn ? 'আউট' : 'Out'}</th>
+          </tr></thead>
+          <tbody>${statusRows}</tbody>
+        </table>
+        <div class="summary">
+          <span style="background:#fef3c7;color:#92400e">${bn ? 'সকাল উপস্থিত' : 'Morning Present'}: ${mPresent} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${mAbsent}</span>
+          <span style="background:#dbeafe;color:#1e40af">${bn ? 'সন্ধ্যা উপস্থিত' : 'Evening Present'}: ${ePresent} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${eAbsent}</span>
+        </div>`;
+    } else {
+      const statusRows = filtered.map((entity: any, idx: number) => {
+        const att = getAttendance(entity.id);
+        const status = att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked');
+        const statusColor = att?.status === 'present' ? '#16a34a' : att?.status === 'absent' ? '#dc2626' : att?.status === 'late' ? '#ca8a04' : '#6b7280';
+        return `<tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${entity.name_bn}</td>
+          <td>${entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-')}</td>
+          <td style="color:${statusColor};font-weight:600">${status}</td>
+          ${entityType === 'staff' ? `<td>${att?.check_in_time ? fmt(att.check_in_time) : '-'}</td><td>${att?.check_out_time ? fmt(att.check_out_time) : '-'}</td>` : ''}
+        </tr>`;
+      }).join('');
+
+      tableHtml = `
+        <table>
+          <thead><tr>
+            <th style="width:40px">${bn ? 'ক্রম' : 'SL'}</th>
+            <th>${bn ? 'নাম' : 'Name'}</th>
+            <th>${entityType === 'student' ? (bn ? 'আইডি' : 'ID') : (bn ? 'পদবী' : 'Designation')}</th>
+            <th>${bn ? 'স্ট্যাটাস' : 'Status'}</th>
+            ${entityType === 'staff' ? `<th>${bn ? 'চেক-ইন' : 'Check In'}</th><th>${bn ? 'চেক-আউট' : 'Check Out'}</th>` : ''}
+          </tr></thead>
+          <tbody>${statusRows}</tbody>
+        </table>
+        <div class="summary">
+          <span style="background:#dcfce7;color:#16a34a">${bn ? 'উপস্থিত' : 'Present'}: ${stats.present}</span>
+          <span style="background:#fee2e2;color:#dc2626">${bn ? 'অনুপস্থিত' : 'Absent'}: ${stats.absent}</span>
+          <span style="background:#fef9c3;color:#ca8a04">${bn ? 'বিলম্ব' : 'Late'}: ${stats.late}</span>
+          <span style="background:#f3f4f6;color:#6b7280">${bn ? 'বাকি' : 'Unmarked'}: ${stats.unmarked}</span>
+        </div>`;
+    }
+
+    const title = entityType === 'staff' && staffSubTab === 'duty'
+      ? (bn ? 'আবাসিক ডিউটি হাজিরা (সকাল + সন্ধ্যা)' : 'Residential Duty Attendance (Morning + Evening)')
+      : currentTabLabel;
 
     const html = `<!DOCTYPE html><html><head>
       <meta charset="utf-8">
-      <title>${currentTabLabel} - ${selectedDate}</title>
+      <title>${title} - ${selectedDate}</title>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
       <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -446,7 +576,7 @@ const AdminAttendance = () => {
         table { width:100%; border-collapse:collapse; margin-top:8px; }
         th,td { border:1px solid #ccc; padding:5px 8px; text-align:left; font-size:11px; }
         th { background:#f3f4f6; font-weight:700; }
-        .summary { margin-top:12px; display:flex; gap:20px; font-size:11px; font-weight:600; }
+        .summary { margin-top:12px; display:flex; gap:20px; font-size:11px; font-weight:600; flex-wrap:wrap; }
         .summary span { padding:3px 10px; border-radius:4px; }
         @media print { body { padding:10px; } }
       </style>
@@ -457,33 +587,16 @@ const AdminAttendance = () => {
         ${institution?.name_en ? `<p>${institution.name_en}</p>` : ''}
         ${institution?.address ? `<p>${institution.address}</p>` : ''}
       </div>
-      <h3 style="text-align:center;margin-bottom:8px">${currentTabLabel}</h3>
+      <h3 style="text-align:center;margin-bottom:8px">${title}</h3>
       <div class="meta">
         <span>${bn ? 'তারিখ' : 'Date'}: ${selectedDate}</span>
-        ${currentShiftLabel ? `<span>${bn ? 'শিফট' : 'Shift'}: ${currentShiftLabel}</span>` : ''}
-        <span>${bn ? 'মোট' : 'Total'}: ${stats.total}</span>
+        <span>${bn ? 'মোট স্টাফ' : 'Total'}: ${filtered.length}</span>
       </div>
-      <table>
-        <thead><tr>
-          <th style="width:40px">${bn ? 'ক্রম' : 'SL'}</th>
-          <th>${bn ? 'নাম' : 'Name'}</th>
-          <th>${entityType === 'student' ? (bn ? 'আইডি' : 'ID') : (bn ? 'পদবী' : 'Designation')}</th>
-          <th>${bn ? 'স্ট্যাটাস' : 'Status'}</th>
-          ${entityType === 'staff' ? `<th>${bn ? 'চেক-ইন' : 'Check In'}</th><th>${bn ? 'চেক-আউট' : 'Check Out'}</th>` : ''}
-        </tr></thead>
-        <tbody>${statusRows}</tbody>
-      </table>
-      <div class="summary">
-        <span style="background:#dcfce7;color:#16a34a">${bn ? 'উপস্থিত' : 'Present'}: ${stats.present}</span>
-        <span style="background:#fee2e2;color:#dc2626">${bn ? 'অনুপস্থিত' : 'Absent'}: ${stats.absent}</span>
-        <span style="background:#fef9c3;color:#ca8a04">${bn ? 'বিলম্ব' : 'Late'}: ${stats.late}</span>
-        <span style="background:#f3f4f6;color:#6b7280">${bn ? 'বাকি' : 'Unmarked'}: ${stats.unmarked}</span>
-      </div>
+      ${tableHtml}
     </body></html>`;
 
     printWindow.document.write(html);
     printWindow.document.close();
-    // Wait for font load
     setTimeout(() => { printWindow.print(); }, 800);
   };
 
