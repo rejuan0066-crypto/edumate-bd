@@ -1143,21 +1143,17 @@ const AdmissionPage = () => {
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = 210;
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      let heightLeft = pdfHeight;
-      let position = 0;
       const pageHeight = 297;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
-        heightLeft -= pageHeight;
+      const imgAspect = canvas.height / canvas.width;
+      // Scale to fit within one A4 page
+      let imgW = pdfWidth;
+      let imgH = pdfWidth * imgAspect;
+      if (imgH > pageHeight) {
+        imgH = pageHeight;
+        imgW = pageHeight / imgAspect;
       }
+      const offsetX = (pdfWidth - imgW) / 2;
+      pdf.addImage(imgData, 'JPEG', offsetX, 0, imgW, imgH);
 
       const fileName = blank ? 'ভর্তি_আবেদন_ফর্ম.pdf' : `ভর্তি_আবেদন_${submittedData?.student_id || ''}.pdf`;
       pdf.save(fileName);
