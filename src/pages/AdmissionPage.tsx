@@ -1109,8 +1109,8 @@ const AdmissionPage = () => {
     iframe.style.position = 'fixed';
     iframe.style.left = '-10000px';
     iframe.style.top = '0';
-    iframe.style.width = '794px'; // A4 width at 96dpi
-    iframe.style.height = '1123px'; // A4 height at 96dpi
+    iframe.style.width = '794px';
+    iframe.style.height = 'auto';
     iframe.style.border = 'none';
     document.body.appendChild(iframe);
 
@@ -1132,12 +1132,15 @@ const AdmissionPage = () => {
       const { jsPDF } = await import('jspdf');
 
       const body = iframeDoc.body;
+      const actualHeight = body.scrollHeight;
       const canvas = await html2canvas(body, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
+        height: actualHeight,
         windowWidth: 794,
+        windowHeight: actualHeight,
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
