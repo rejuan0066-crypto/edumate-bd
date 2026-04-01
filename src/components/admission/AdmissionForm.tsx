@@ -640,6 +640,36 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
           </div>
         );
 
+      case 'first_name':
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
+              value={form.first_name || ''}
+              onChange={e => {
+                const val = e.target.value.replace(/[a-zA-Z0-9]/g, '');
+                setForm(prev => ({ ...prev, first_name: val }));
+              }}
+              placeholder={bn ? 'বাংলায় লিখুন' : 'Type in Bangla only'} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
+      case 'last_name':
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
+              value={form.last_name || ''}
+              onChange={e => {
+                const val = e.target.value.replace(/[^\x00-\x7F]/g, '');
+                setForm(prev => ({ ...prev, last_name: val }));
+              }}
+              placeholder={bn ? 'ইংরেজিতে লিখুন' : 'Type in English only'} />
+            <FieldError field={fieldKey} />
+          </div>
+        );
+
       default:
         return (
           <div>
