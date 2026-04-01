@@ -570,6 +570,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'roll_number':
+        if (!isFormFieldVisible('roll_no')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
