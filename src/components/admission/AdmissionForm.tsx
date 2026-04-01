@@ -530,8 +530,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'birth_reg_no':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${hasError || birthRegError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder || (birthRegError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
               maxLength={17} value={form.birth_reg_no} onChange={e => validateBirthReg(e.target.value)} />
             {birthRegError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {birthRegError}</p>}
             {form.birth_reg_no.length === 17 && !birthRegError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
