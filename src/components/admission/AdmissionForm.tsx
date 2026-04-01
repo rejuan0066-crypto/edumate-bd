@@ -1150,7 +1150,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             {/* Approver Section */}
             <div className="border rounded-lg p-4 space-y-4">
               <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">
-                {bn ? '৪. অনুমোদনকারীর তথ্য' : '4. Approver Information'}
+                {bn ? '৪. অফিস কর্তৃক পূরণীয়' : '4. To be filled by Office'}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
