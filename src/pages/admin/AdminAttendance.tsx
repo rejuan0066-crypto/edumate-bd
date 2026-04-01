@@ -66,6 +66,9 @@ const AdminAttendance = () => {
     evening_start: '17:00', evening_end: '19:00',
     extra_duty_enabled: false,
     extra_duty_rate: 0,
+    morning_days: 30,
+    evening_days: 30,
+    total_salary: 0,
   });
 
   // Fetch divisions
