@@ -339,8 +339,7 @@ const AdmissionPage = () => {
       };
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
-    },
-    onSuccess: () => {
+      return payload;
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
       // Reset form
       setForm({
