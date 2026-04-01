@@ -1230,7 +1230,7 @@ const AdmissionPage = () => {
                 {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
               </Button>
               <Button onClick={() => handlePrint(true)} variant="outline" className="flex-1 text-lg py-6 flex items-center justify-center gap-2">
-                <Printer className="w-5 h-5" /> {bn ? 'ব্লাংক ফর্ম প্রিন্ট' : 'Print Blank Form'}
+                <Printer className="w-5 h-5" /> {bn ? 'ফর্ম ডাউনলোড করুন' : 'Download Form'}
               </Button>
             </div>
             <p className="text-center text-xs text-muted-foreground">
