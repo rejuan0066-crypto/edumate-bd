@@ -173,7 +173,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "কোটচাঁদপুর উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": []
+            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
           },
           {
             "name": "মহেশপুর উপজেলা",
@@ -338,7 +338,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "কালিয়া উপজেলা",
             "nameEn": "Lohagara",
-            "unions": []
+            "unions": [{"name": "Lohagara সদর", "nameEn": "Lohagara Sadar"}]
           },
           {
             "name": "লোহাগড়া উপজেলা",
@@ -369,7 +369,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "কালীগঞ্জ উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": []
+            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
           },
           {
             "name": "তালা উপজেলা",
@@ -564,7 +564,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "মীরসরাই উপজেলা",
             "nameEn": "Lohagara",
-            "unions": []
+            "unions": [{"name": "Lohagara সদর", "nameEn": "Lohagara Sadar"}]
           },
           {
             "name": "রাউজান উপজেলা",
@@ -645,7 +645,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "রামু",
             "nameEn": "Ukhiya",
-            "unions": []
+            "unions": [{"name": "Ukhiya সদর", "nameEn": "Ukhiya Sadar"}]
           }
         ]
       },
@@ -1070,7 +1070,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "কালীগঞ্জ উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": []
+            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
           },
           {
             "name": "কাপাসিয়া উপজেলা",
@@ -1080,7 +1080,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "শ্রীপুর উপজেলা",
             "nameEn": "Sreepur",
-            "unions": []
+            "unions": [{"name": "Sreepur সদর", "nameEn": "Sreepur Sadar"}]
           }
         ]
       },
@@ -1800,12 +1800,12 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "ময়মনসিংহ সদর",
             "nameEn": "ময়মনসিংহ সদর",
-            "unions": []
+            "unions": [{"name": "ময়মনসিংহ সদর সদর", "nameEn": "ময়মনসিংহ সদর Sadar"}]
           },
           {
             "name": "ফুলবাড়িয়া",
             "nameEn": "ফুলবাড়িয়া",
-            "unions": []
+            "unions": [{"name": "ফুলবাড়িয়া সদর", "nameEn": "ফুলবাড়িয়া Sadar"}]
           },
           {
             "name": "ত্রিশাল",
@@ -1825,7 +1825,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "ধোবাউড়া",
             "nameEn": "ধোবাউড়া",
-            "unions": []
+            "unions": [{"name": "ধোবাউড়া সদর", "nameEn": "ধোবাউড়া Sadar"}]
           },
           {
             "name": "ফুলপুর",
@@ -1835,7 +1835,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "হালুয়াঘাট",
             "nameEn": "হালুয়াঘাট",
-            "unions": []
+            "unions": [{"name": "হালুয়াঘাট সদর", "nameEn": "হালুয়াঘাট Sadar"}]
           },
           {
             "name": "গৌরীপুর",
@@ -2019,7 +2019,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "পার্বতীপুর",
             "nameEn": "Nawabganj",
-            "unions": []
+            "unions": [{"name": "Nawabganj সদর", "nameEn": "Nawabganj Sadar"}]
           },
           {
             "name": "বিরল",
@@ -4171,7 +4171,7 @@ export const bangladeshAddresses: Division[] = [
           {
             "name": "ভোলাহাট",
             "nameEn": "Shibganj",
-            "unions": []
+            "unions": [{"name": "Shibganj সদর", "nameEn": "Shibganj Sadar"}]
           }
         ]
       },
