@@ -299,6 +299,15 @@ const AdminAttendance = () => {
     },
   });
 
+  // Fetch institution
+  const { data: institution } = useQuery({
+    queryKey: ['institution'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+  });
+
   const filtered = entities.filter((e: any) => {
     const name = e.name_bn + (e.name_en || '') + (e.student_id || '');
     return name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -320,6 +329,150 @@ const AdminAttendance = () => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + dir);
     setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  // Current tab label
+  const currentTabLabel = useMemo(() => {
+    if (entityType === 'student') return bn ? (studentSubTab === 'residential' ? 'আবাসিক ছাত্র হাজিরা' : 'ছাত্র হাজিরা') : (studentSubTab === 'residential' ? 'Residential Student Attendance' : 'Student Attendance');
+    if (staffSubTab === 'fulltime') return bn ? 'ফুল টাইম হাজিরা' : 'Full Time Attendance';
+    if (staffSubTab === 'duty') return bn ? 'আবাসিক ডিউটি হাজিরা' : 'Residential Duty Attendance';
+    return bn ? 'খাওয়া হাজিরা' : 'Meal Attendance';
+  }, [entityType, staffSubTab, studentSubTab, bn]);
+
+  const currentShiftLabel = useMemo(() => {
+    if (entityType === 'student') return '';
+    if (staffSubTab === 'fulltime') return bn ? 'ফুল ডে' : 'Full Day';
+    const shifts = staffSubTab === 'duty' ? DUTY_SHIFTS : MEAL_SHIFTS;
+    const sh = shifts.find(s => s.value === selectedShift);
+    return sh ? (bn ? sh.labelBn : sh.labelEn) : '';
+  }, [entityType, staffSubTab, selectedShift, bn]);
+
+  // Status label helper
+  const statusLabel = (status: string) => {
+    const map: Record<string, string> = bn
+      ? { present: 'উপস্থিত', absent: 'অনুপস্থিত', late: 'বিলম্ব', half_day: 'অর্ধদিন', leave: 'ছুটি' }
+      : { present: 'Present', absent: 'Absent', late: 'Late', half_day: 'Half Day', leave: 'Leave' };
+    return map[status] || status;
+  };
+
+  // CSV Download
+  const handleDownloadCSV = () => {
+    const rows: string[][] = [];
+    // Header
+    const header = [
+      bn ? 'ক্রম' : 'SL',
+      bn ? 'নাম' : 'Name',
+      entityType === 'student' ? (bn ? 'আইডি' : 'ID') : (bn ? 'পদবী' : 'Designation'),
+      bn ? 'স্ট্যাটাস' : 'Status',
+    ];
+    if (entityType === 'staff') {
+      header.push(bn ? 'চেক-ইন' : 'Check In', bn ? 'চেক-আউট' : 'Check Out');
+    }
+    rows.push(header);
+
+    filtered.forEach((entity: any, idx: number) => {
+      const att = getAttendance(entity.id);
+      const row = [
+        String(idx + 1),
+        entity.name_bn,
+        entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-'),
+        att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+      ];
+      if (entityType === 'staff') {
+        row.push(att?.check_in_time ? fmt(att.check_in_time) : '-');
+        row.push(att?.check_out_time ? fmt(att.check_out_time) : '-');
+      }
+      rows.push(row);
+    });
+
+    // Summary row
+    rows.push([]);
+    rows.push([bn ? 'মোট' : 'Total', String(stats.total), bn ? 'উপস্থিত' : 'Present', String(stats.present), bn ? 'অনুপস্থিত' : 'Absent', String(stats.absent)]);
+
+    const bom = '\uFEFF';
+    const csv = bom + rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentTabLabel}_${selectedDate}${currentShiftLabel ? `_${currentShiftLabel}` : ''}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(bn ? 'CSV ডাউনলোড হয়েছে' : 'CSV downloaded');
+  };
+
+  // Print attendance
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const statusRows = filtered.map((entity: any, idx: number) => {
+      const att = getAttendance(entity.id);
+      const status = att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked');
+      const statusColor = att?.status === 'present' ? '#16a34a' : att?.status === 'absent' ? '#dc2626' : att?.status === 'late' ? '#ca8a04' : '#6b7280';
+      return `<tr>
+        <td style="text-align:center">${idx + 1}</td>
+        <td>${entity.name_bn}</td>
+        <td>${entityType === 'student' ? (entity.student_id || '-') : (entity.designation || '-')}</td>
+        <td style="color:${statusColor};font-weight:600">${status}</td>
+        ${entityType === 'staff' ? `<td>${att?.check_in_time ? fmt(att.check_in_time) : '-'}</td><td>${att?.check_out_time ? fmt(att.check_out_time) : '-'}</td>` : ''}
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head>
+      <meta charset="utf-8">
+      <title>${currentTabLabel} - ${selectedDate}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Noto Sans Bengali',sans-serif; padding:20px; font-size:12px; }
+        .header { text-align:center; margin-bottom:16px; border-bottom:2px solid #333; padding-bottom:10px; }
+        .header img { height:50px; margin-bottom:6px; }
+        .header h2 { font-size:18px; margin:4px 0; }
+        .header p { font-size:11px; color:#555; }
+        .meta { display:flex; justify-content:space-between; margin-bottom:10px; font-size:11px; }
+        table { width:100%; border-collapse:collapse; margin-top:8px; }
+        th,td { border:1px solid #ccc; padding:5px 8px; text-align:left; font-size:11px; }
+        th { background:#f3f4f6; font-weight:700; }
+        .summary { margin-top:12px; display:flex; gap:20px; font-size:11px; font-weight:600; }
+        .summary span { padding:3px 10px; border-radius:4px; }
+        @media print { body { padding:10px; } }
+      </style>
+    </head><body>
+      <div class="header">
+        ${institution?.logo_url ? `<img src="${institution.logo_url}" alt="logo">` : ''}
+        <h2>${institution?.name || ''}</h2>
+        ${institution?.name_en ? `<p>${institution.name_en}</p>` : ''}
+        ${institution?.address ? `<p>${institution.address}</p>` : ''}
+      </div>
+      <h3 style="text-align:center;margin-bottom:8px">${currentTabLabel}</h3>
+      <div class="meta">
+        <span>${bn ? 'তারিখ' : 'Date'}: ${selectedDate}</span>
+        ${currentShiftLabel ? `<span>${bn ? 'শিফট' : 'Shift'}: ${currentShiftLabel}</span>` : ''}
+        <span>${bn ? 'মোট' : 'Total'}: ${stats.total}</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th style="width:40px">${bn ? 'ক্রম' : 'SL'}</th>
+          <th>${bn ? 'নাম' : 'Name'}</th>
+          <th>${entityType === 'student' ? (bn ? 'আইডি' : 'ID') : (bn ? 'পদবী' : 'Designation')}</th>
+          <th>${bn ? 'স্ট্যাটাস' : 'Status'}</th>
+          ${entityType === 'staff' ? `<th>${bn ? 'চেক-ইন' : 'Check In'}</th><th>${bn ? 'চেক-আউট' : 'Check Out'}</th>` : ''}
+        </tr></thead>
+        <tbody>${statusRows}</tbody>
+      </table>
+      <div class="summary">
+        <span style="background:#dcfce7;color:#16a34a">${bn ? 'উপস্থিত' : 'Present'}: ${stats.present}</span>
+        <span style="background:#fee2e2;color:#dc2626">${bn ? 'অনুপস্থিত' : 'Absent'}: ${stats.absent}</span>
+        <span style="background:#fef9c3;color:#ca8a04">${bn ? 'বিলম্ব' : 'Late'}: ${stats.late}</span>
+        <span style="background:#f3f4f6;color:#6b7280">${bn ? 'বাকি' : 'Unmarked'}: ${stats.unmarked}</span>
+      </div>
+    </body></html>`;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    // Wait for font load
+    setTimeout(() => { printWindow.print(); }, 800);
   };
 
   return (
