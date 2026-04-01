@@ -668,6 +668,8 @@ const AdminAttendance = () => {
 
     const title = entityType === 'staff' && staffSubTab === 'duty'
       ? (bn ? 'আবাসিক ডিউটি হাজিরা (সকাল + সন্ধ্যা)' : 'Residential Duty Attendance (Morning + Evening)')
+      : entityType === 'staff' && staffSubTab === 'meal'
+      ? (bn ? 'খাওয়া হাজিরা (নাস্তা + দুপুর + রাত)' : 'Meal Attendance (Breakfast + Lunch + Dinner)')
       : currentTabLabel;
 
     const html = `<!DOCTYPE html><html><head>
