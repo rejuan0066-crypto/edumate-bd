@@ -680,6 +680,9 @@ const AdminAttendance = () => {
       const pLate = entityType === 'student' ? printAttData.filter((a: any) => a.status === 'late').length : stats.late;
       const pUnmarked = filtered.length - (entityType === 'student' ? printAttData.length : attendance.length);
 
+      // Store for meta section
+      printMetaStats = { total: filtered.length, present: pPresent, absent: pAbsent, late: pLate, unmarked: pUnmarked };
+
       tableHtml = `
         <table>
           <thead><tr>
