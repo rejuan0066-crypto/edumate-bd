@@ -730,6 +730,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'guardian_nid':
+        if (!isFormFieldVisible('guardian_nid')) return null;
         return (
           <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
