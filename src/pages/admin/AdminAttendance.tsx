@@ -642,10 +642,12 @@ const AdminAttendance = () => {
                     <div>
                       <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
                       <Input type="time" className="h-8 text-sm" value={dutyTimes.morning_start} onChange={e => setDutyTimes(p => ({ ...p, morning_start: e.target.value }))} />
+                      <span className="text-[10px] text-primary font-medium">{fmt(dutyTimes.morning_start)}</span>
                     </div>
                     <div>
                       <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
                       <Input type="time" className="h-8 text-sm" value={dutyTimes.morning_end} onChange={e => setDutyTimes(p => ({ ...p, morning_end: e.target.value }))} />
+                      <span className="text-[10px] text-primary font-medium">{fmt(dutyTimes.morning_end)}</span>
                     </div>
                   </div>
                 </div>
@@ -655,10 +657,12 @@ const AdminAttendance = () => {
                     <div>
                       <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
                       <Input type="time" className="h-8 text-sm" value={dutyTimes.evening_start} onChange={e => setDutyTimes(p => ({ ...p, evening_start: e.target.value }))} />
+                      <span className="text-[10px] text-primary font-medium">{fmt(dutyTimes.evening_start)}</span>
                     </div>
                     <div>
                       <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
                       <Input type="time" className="h-8 text-sm" value={dutyTimes.evening_end} onChange={e => setDutyTimes(p => ({ ...p, evening_end: e.target.value }))} />
+                      <span className="text-[10px] text-primary font-medium">{fmt(dutyTimes.evening_end)}</span>
                     </div>
                   </div>
                 </div>
