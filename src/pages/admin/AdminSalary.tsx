@@ -300,7 +300,8 @@ const AdminSalary = () => {
     });
   };
 
-  // Calculate salary for a staff member using per-minute logic
+  // Calculate salary for a staff member using additive per-day logic
+  // Works consistently for ALL months and ALL years
   const calculateSalary = (staffMember: any) => {
     const baseSalary = Number(staffMember.salary) || 0;
     const attStats = getAttendanceStats(staffMember);
@@ -310,17 +311,17 @@ const AdminSalary = () => {
     const workingDays = new Date(year, month, 0).getDate();
 
     // Additive approach: net salary = sum of daily earnings from attendance records
-    // Days without attendance record = 0 contribution
+    // উপস্থিত = পূর্ণ দৈনিক রেট
+    // বিলম্ব = পূর্ণ রেট - বিলম্বের মিনিট কর্তন
+    // অর্ধদিন = অর্ধেক দৈনিক রেট
+    // অনুপস্থিত/ছুটি = ০
+    // কোনো রেকর্ড নেই = ০ (যোগ হবে না)
     const totalEarned = attStats.totalDailyEarnings;
     
     // Additional allowances
     const bonus = 0;
     const otherAllowance = 0;
     const advanceDeduction = 0;
-
-    // Total deductions from daily breakdown
-    const totalDeductions = attStats.dailyBreakdown.reduce((sum, d) => sum + d.deduction, 0);
-    const totalAdditions = attStats.dailyBreakdown.reduce((sum, d) => sum + d.addition, 0);
 
     // Absence deduction = absent days * daily rate (for display)
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
@@ -340,7 +341,27 @@ const AdminSalary = () => {
       overtime += Math.round(dutyOvertime);
     }
 
-    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance + overtime - advanceDeduction);
+    // Check if a net_salary formula exists from formula builder
+    const netFormula = getFormula('net_salary');
+    let netSalary: number;
+    if (netFormula) {
+      const expr = (netFormula.expression as any)?.formula;
+      const ctx: Record<string, number> = {
+        base_salary: baseSalary,
+        total_earned: totalEarned,
+        bonus,
+        overtime,
+        other_allowance: otherAllowance,
+        late_deduction: lateDeduction,
+        absence_deduction: absenceDeduction,
+        advance_deduction: advanceDeduction,
+        other_deduction: otherDeduction,
+      };
+      netSalary = Math.max(0, evaluateFormula(expr, ctx));
+    } else {
+      // Default additive: total earned from daily attendance + overtime + allowances - deductions
+      netSalary = Math.max(0, totalEarned + bonus + otherAllowance + overtime - advanceDeduction);
+    }
 
     return {
       base_salary: baseSalary,
