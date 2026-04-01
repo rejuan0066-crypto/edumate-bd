@@ -314,6 +314,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       guardian_phone: form.guardian_type === 'other' ? form.guardian_phone : (form.guardian_type === 'mother' ? form.mother_phone : form.father_phone) || null,
       address: formatAddress(permanentAddr) || null,
       division_id: form.admission_class ? (classes.find((c: any) => c.id === form.admission_class) as any)?.division_id || null : null,
+      class_id: form.admission_class || null,
       gender: form.gender,
       date_of_birth: form.date_of_birth || null,
       photo_url: form.photo_url || null,
