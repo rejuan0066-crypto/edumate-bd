@@ -44,10 +44,10 @@ const PhoneInput = ({ label, value = '', countryCode = '+880', onChange, require
 
   return (
     <div>
-      <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
+      <Label className={error ? 'text-destructive' : ''}>{label} {required && <span className="text-destructive">*</span>}</Label>
       <div className="flex gap-2 mt-1">
         <Select value={code} onValueChange={handleCodeChange}>
-          <SelectTrigger className="bg-background w-28 shrink-0">
+          <SelectTrigger className={`bg-background w-28 shrink-0 ${error ? 'border-destructive ring-1 ring-destructive/30' : ''}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -57,7 +57,7 @@ const PhoneInput = ({ label, value = '', countryCode = '+880', onChange, require
           </SelectContent>
         </Select>
         <Input
-          className="bg-background flex-1"
+          className={`bg-background flex-1 ${error ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
           type="tel"
           value={phone}
           onChange={(e) => handlePhoneChange(e.target.value)}
