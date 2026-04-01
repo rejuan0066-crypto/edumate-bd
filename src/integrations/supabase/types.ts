@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           attendance_date: string
@@ -1532,6 +1556,7 @@ export type Database = {
           religion: string | null
           residence_type: string | null
           roll_number: string | null
+          session_id: string | null
           session_year: string | null
           status: string | null
           student_category: string | null
@@ -1572,6 +1597,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           roll_number?: string | null
+          session_id?: string | null
           session_year?: string | null
           status?: string | null
           student_category?: string | null
@@ -1612,6 +1638,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           roll_number?: string | null
+          session_id?: string | null
           session_year?: string | null
           status?: string | null
           student_category?: string | null
@@ -1624,6 +1651,13 @@ export type Database = {
             columns: ["division_id"]
             isOneToOne: false
             referencedRelation: "divisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
             referencedColumns: ["id"]
           },
         ]
