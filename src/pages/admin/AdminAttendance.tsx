@@ -57,7 +57,7 @@ const AdminAttendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
-  const [selectedDivisionId, setSelectedDivisionId] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedShift, setSelectedShift] = useState('full_day');
   // Effective shift: fulltime tab always uses 'full_day'
   const effectiveShift = entityType === 'staff' && staffSubTab === 'fulltime' ? 'full_day' : entityType === 'staff' ? selectedShift : 'full_day';
@@ -150,12 +150,15 @@ const AdminAttendance = () => {
     if (selectedSessionYear) {
       filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
     }
-    if (selectedDivisionId && selectedDivisionId !== 'all') {
-      filtered = filtered.filter((s: any) => s.division_id === selectedDivisionId);
+    if (selectedClassId && selectedClassId !== 'all') {
+      const selectedClass = classes.find((c: any) => c.id === selectedClassId);
+      if (selectedClass) {
+        filtered = filtered.filter((s: any) => s.division_id === selectedClass.division_id);
+      }
     }
 
     return filtered;
-  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedDivisionId]);
+  }, [entityType, allStudents, allStaff, studentSubTab, selectedSessionYear, selectedClassId, classes]);
 
   // Fetch attendance for selected date (for staff, fetch by shift too)
   const { data: attendance = [] } = useQuery({
@@ -719,7 +722,7 @@ const AdminAttendance = () => {
                 </Select>
 
                 {/* Division/Class filter (all student sub-tabs) */}
-                <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
+                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                   <SelectTrigger className="w-44 h-8 text-xs">
                     <SelectValue placeholder={bn ? 'শ্রেণী নির্বাচন' : 'Select Class'} />
                   </SelectTrigger>
@@ -728,8 +731,8 @@ const AdminAttendance = () => {
                     {classes.map((c: any) => {
                       const div = divisions.find((d: any) => d.id === c.division_id);
                       return (
-                        <SelectItem key={c.id} value={c.division_id}>
-                          {bn ? c.name_bn : c.name} {div ? `(${div.name})` : ''}
+                        <SelectItem key={c.id} value={c.id}>
+                          {bn ? c.name_bn : c.name} {div ? `(${bn ? div.name_bn : div.name})` : ''}
                         </SelectItem>
                       );
                     })}
