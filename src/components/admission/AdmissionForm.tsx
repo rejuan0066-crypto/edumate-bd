@@ -599,9 +599,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'guardian_type':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.guardian_type} onValueChange={v => setForm(prev => ({ ...prev, guardian_type: v }))}>
-              <SelectTrigger className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="father">{bn ? 'পিতা' : 'Father'}</SelectItem>
                 <SelectItem value="mother">{bn ? 'মাতা' : 'Mother'}</SelectItem>
