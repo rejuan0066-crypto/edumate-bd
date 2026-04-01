@@ -627,7 +627,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 placeholder={bn ? 'অটো জেনারেট / টাইপ করুন' : 'Auto / Type'} />
               <button type="button"
                 className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                onClick={() => generateRegistrationNumber(form.session_year, true)}>
+                onClick={() => generateRegistrationNumber(form.session_year, form.admission_class || undefined, true)}>
                 {bn ? 'অটো' : 'Auto'}
               </button>
             </div>
