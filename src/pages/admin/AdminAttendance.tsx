@@ -430,6 +430,58 @@ const AdminAttendance = () => {
       return;
     }
 
+    // For meal tab, combine all three meals
+    if (entityType === 'staff' && staffSubTab === 'meal') {
+      const { data: breakfastAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_breakfast');
+      const { data: lunchAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_lunch');
+      const { data: dinnerAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_dinner');
+
+      const rows: string[][] = [];
+      rows.push([
+        bn ? 'ক্রম' : 'SL',
+        bn ? 'নাম' : 'Name',
+        bn ? 'পদবী' : 'Designation',
+        bn ? 'সকালের নাস্তা' : 'Breakfast',
+        bn ? 'দুপুরের খাবার' : 'Lunch',
+        bn ? 'রাতের খাবার' : 'Dinner',
+      ]);
+
+      filtered.forEach((entity: any, idx: number) => {
+        const bAtt = (breakfastAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const lAtt = (lunchAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const dAtt = (dinnerAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        rows.push([
+          String(idx + 1),
+          entity.name_bn,
+          entity.designation || '-',
+          bAtt ? statusLabel(bAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          lAtt ? statusLabel(lAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          dAtt ? statusLabel(dAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+        ]);
+      });
+
+      const bPresent = (breakfastAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const lPresent = (lunchAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const dPresent = (dinnerAtt as any[]).filter((a: any) => a.status === 'present').length;
+      rows.push([]);
+      rows.push([bn ? 'নাস্তা উপস্থিত' : 'Breakfast Present', String(bPresent), '', bn ? 'দুপুর উপস্থিত' : 'Lunch Present', String(lPresent), bn ? 'রাত উপস্থিত' : 'Dinner Present', String(dPresent)]);
+
+      const bom = '\uFEFF';
+      const csv = bom + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${bn ? 'খাওয়া_হাজিরা' : 'Meal_Attendance'}_${selectedDate}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(bn ? 'CSV ডাউনলোড হয়েছে' : 'CSV downloaded');
+      return;
+    }
+
     const rows: string[][] = [];
     const header = [
       bn ? 'ক্রম' : 'SL',
@@ -531,6 +583,56 @@ const AdminAttendance = () => {
           <span style="background:#fef3c7;color:#92400e">${bn ? 'সকাল উপস্থিত' : 'Morning Present'}: ${mPresent} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${mAbsent}</span>
           <span style="background:#dbeafe;color:#1e40af">${bn ? 'সন্ধ্যা উপস্থিত' : 'Evening Present'}: ${ePresent} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${eAbsent}</span>
         </div>`;
+    } else if (entityType === 'staff' && staffSubTab === 'meal') {
+      // Meal tab: combine all three meals
+      const { data: breakfastAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_breakfast');
+      const { data: lunchAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_lunch');
+      const { data: dinnerAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_dinner');
+
+      const statusRows = filtered.map((entity: any, idx: number) => {
+        const bAtt = (breakfastAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const lAtt = (lunchAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const dAtt = (dinnerAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const bColor = bAtt?.status === 'present' ? '#16a34a' : bAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
+        const lColor = lAtt?.status === 'present' ? '#16a34a' : lAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
+        const dColor = dAtt?.status === 'present' ? '#16a34a' : dAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
+        return `<tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${entity.name_bn}</td>
+          <td>${entity.designation || '-'}</td>
+          <td style="color:${bColor};font-weight:600">${bAtt ? statusLabel(bAtt.status) : '-'}</td>
+          <td style="color:${lColor};font-weight:600">${lAtt ? statusLabel(lAtt.status) : '-'}</td>
+          <td style="color:${dColor};font-weight:600">${dAtt ? statusLabel(dAtt.status) : '-'}</td>
+        </tr>`;
+      }).join('');
+
+      const bPresent = (breakfastAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const bAbsent = (breakfastAtt as any[]).filter((a: any) => a.status === 'absent').length;
+      const lPresent = (lunchAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const lAbsent = (lunchAtt as any[]).filter((a: any) => a.status === 'absent').length;
+      const dPresent = (dinnerAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const dAbsent = (dinnerAtt as any[]).filter((a: any) => a.status === 'absent').length;
+
+      tableHtml = `
+        <table>
+          <thead><tr>
+            <th style="width:40px">${bn ? 'ক্রম' : 'SL'}</th>
+            <th>${bn ? 'নাম' : 'Name'}</th>
+            <th>${bn ? 'পদবী' : 'Designation'}</th>
+            <th style="text-align:center;background:#fef3c7">${bn ? 'সকালের নাস্তা' : 'Breakfast'}</th>
+            <th style="text-align:center;background:#dcfce7">${bn ? 'দুপুরের খাবার' : 'Lunch'}</th>
+            <th style="text-align:center;background:#dbeafe">${bn ? 'রাতের খাবার' : 'Dinner'}</th>
+          </tr></thead>
+          <tbody>${statusRows}</tbody>
+        </table>
+        <div class="summary">
+          <span style="background:#fef3c7;color:#92400e">${bn ? 'নাস্তা' : 'Breakfast'}: ${bPresent}/${bPresent + bAbsent}</span>
+          <span style="background:#dcfce7;color:#16a34a">${bn ? 'দুপুর' : 'Lunch'}: ${lPresent}/${lPresent + lAbsent}</span>
+          <span style="background:#dbeafe;color:#1e40af">${bn ? 'রাত' : 'Dinner'}: ${dPresent}/${dPresent + dAbsent}</span>
+        </div>`;
     } else {
       const statusRows = filtered.map((entity: any, idx: number) => {
         const att = getAttendance(entity.id);
@@ -566,6 +668,8 @@ const AdminAttendance = () => {
 
     const title = entityType === 'staff' && staffSubTab === 'duty'
       ? (bn ? 'আবাসিক ডিউটি হাজিরা (সকাল + সন্ধ্যা)' : 'Residential Duty Attendance (Morning + Evening)')
+      : entityType === 'staff' && staffSubTab === 'meal'
+      ? (bn ? 'খাওয়া হাজিরা (নাস্তা + দুপুর + রাত)' : 'Meal Attendance (Breakfast + Lunch + Dinner)')
       : currentTabLabel;
 
     const html = `<!DOCTYPE html><html><head>
