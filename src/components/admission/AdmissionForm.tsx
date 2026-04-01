@@ -434,6 +434,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     const required = config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
     const hasError = !!fieldErrors[fieldKey];
+    const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';
+    const errorLabel = hasError ? 'text-destructive' : '';
 
     switch (fieldKey) {
       case 'photo_url':
