@@ -154,7 +154,23 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
-  // Class-based roll number start offsets (sort_order based: 1st=1001, 2nd=2001, 3rd=3001, etc.)
+  // Fetch form_settings for field visibility & footer text
+  const { data: formSettings = [] } = useQuery({
+    queryKey: ['form-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('form_settings').select('*');
+      if (error) throw error;
+      return data as Array<{ id: string; field_name: string; is_visible: boolean; footer_text: string | null }>;
+    },
+  });
+
+  const isFormFieldVisible = useCallback((fieldName: string) => {
+    const setting = formSettings.find(s => s.field_name === fieldName);
+    return setting ? setting.is_visible : true; // default visible if not in settings
+  }, [formSettings]);
+
+  const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
+
   const getRollStartForClass = useCallback((classId: string) => {
     const cls = classes.find((c: any) => c.id === classId);
     if (!cls) return 1001;
@@ -554,6 +570,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'roll_number':
+        if (!isFormFieldVisible('roll_no')) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
@@ -1144,6 +1161,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 </div>
               </div>
             </div>
+
+            {/* Footer Paragraph from form_settings */}
+            {footerParagraph?.is_visible && footerParagraph?.footer_text && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <p className="text-sm text-foreground whitespace-pre-wrap">{footerParagraph.footer_text}</p>
+              </div>
+            )}
 
             {/* Submit */}
             <Button onClick={handleSubmit} className="btn-primary-gradient w-full text-lg py-5" disabled={addMutation.isPending || updateMutation.isPending}>
