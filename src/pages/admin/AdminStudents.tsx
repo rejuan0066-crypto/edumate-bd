@@ -23,6 +23,17 @@ const AdminStudents = () => {
   const [filterClassId, setFilterClassId] = useState('all');
   const [filterApproval, setFilterApproval] = useState('all');
 
+  // Realtime subscription for auto-refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel('students-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        queryClient.invalidateQueries({ queryKey: ['students'] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   const { data: academicSessions = [] } = useQuery({
     queryKey: ['academic-sessions-active'],
     queryFn: async () => {
