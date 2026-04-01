@@ -366,6 +366,9 @@ const AdminWebsite = () => {
             <TabsTrigger value="sync" className="text-xs py-2 px-2.5">
               <Database className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'সিঙ্ক স্ট্যাটাস' : 'Sync Status'}
             </TabsTrigger>
+            <TabsTrigger value="form-settings" className="text-xs py-2 px-2.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফর্ম সেটিংস' : 'Form Settings'}
+            </TabsTrigger>
           </TabsList>
 
           {/* Institution Tab */}
