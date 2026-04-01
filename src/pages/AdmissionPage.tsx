@@ -404,6 +404,7 @@ const AdmissionPage = () => {
                 <Label>{language === 'bn' ? 'পিতার পেশা' : 'Father Occupation'}</Label>
                 <Input className="bg-background mt-1" />
               </div>
+              {showFatherNid && (
               <div>
                 <Label>{language === 'bn' ? 'পিতার NID (১০/১৭ ডিজিট)' : 'Father NID (10/17 digits)'}</Label>
                 <Input className="bg-background mt-1" maxLength={17} value={fatherNid}
@@ -411,6 +412,7 @@ const AdmissionPage = () => {
                 {fatherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fatherNidError}</p>}
                 {(fatherNid.length === 10 || fatherNid.length === 17) && !fatherNidError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {language === 'bn' ? 'সঠিক' : 'Valid'}</p>}
               </div>
+              )}
               <PhoneInput label={language === 'bn' ? 'পিতার মোবাইল' : 'Father Mobile'} required />
               <div>
                 <Label>{language === 'bn' ? 'মাতার নাম' : 'Mother Name'} <span className="text-destructive">*</span></Label>
