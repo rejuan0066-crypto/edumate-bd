@@ -482,6 +482,19 @@ const AdminAttendance = () => {
       return;
     }
 
+    // For student tabs, fetch attendance fresh from DB
+    let studentAttData: any[] = [];
+    if (entityType === 'student') {
+      const entityIds = filtered.map((e: any) => e.id);
+      if (entityIds.length > 0) {
+        const { data } = await supabase.from('attendance_records').select('*')
+          .eq('attendance_date', selectedDate).eq('entity_type', 'student').eq('shift', 'full_day')
+          .in('entity_id', entityIds);
+        studentAttData = data || [];
+      }
+    }
+    const getAtt = (id: string) => entityType === 'student' ? studentAttData.find((a: any) => a.entity_id === id) : getAttendance(id);
+
     const rows: string[][] = [];
     const header = [
       bn ? 'ক্রম' : 'SL',
@@ -495,7 +508,7 @@ const AdminAttendance = () => {
     rows.push(header);
 
     filtered.forEach((entity: any, idx: number) => {
-      const att = getAttendance(entity.id);
+      const att = getAtt(entity.id);
       const row = [
         String(idx + 1),
         entity.name_bn,
@@ -509,8 +522,10 @@ const AdminAttendance = () => {
       rows.push(row);
     });
 
+    const csvPresent = entityType === 'student' ? studentAttData.filter((a: any) => a.status === 'present').length : stats.present;
+    const csvAbsent = entityType === 'student' ? studentAttData.filter((a: any) => a.status === 'absent').length : stats.absent;
     rows.push([]);
-    rows.push([bn ? 'মোট' : 'Total', String(stats.total), bn ? 'উপস্থিত' : 'Present', String(stats.present), bn ? 'অনুপস্থিত' : 'Absent', String(stats.absent)]);
+    rows.push([bn ? 'মোট' : 'Total', String(filtered.length), bn ? 'উপস্থিত' : 'Present', String(csvPresent), bn ? 'অনুপস্থিত' : 'Absent', String(csvAbsent)]);
 
     const bom = '\uFEFF';
     const csv = bom + rows.map(r => r.join(',')).join('\n');
@@ -634,8 +649,21 @@ const AdminAttendance = () => {
           <span style="background:#dbeafe;color:#1e40af">${bn ? 'রাত' : 'Dinner'}: ${dPresent}/${dPresent + dAbsent}</span>
         </div>`;
     } else {
+      // For student tabs, fetch attendance fresh
+      let printAttData: any[] = [];
+      if (entityType === 'student') {
+        const entityIds = filtered.map((e: any) => e.id);
+        if (entityIds.length > 0) {
+          const { data } = await supabase.from('attendance_records').select('*')
+            .eq('attendance_date', selectedDate).eq('entity_type', 'student').eq('shift', 'full_day')
+            .in('entity_id', entityIds);
+          printAttData = data || [];
+        }
+      }
+      const getPrintAtt = (id: string) => entityType === 'student' ? printAttData.find((a: any) => a.entity_id === id) : getAttendance(id);
+
       const statusRows = filtered.map((entity: any, idx: number) => {
-        const att = getAttendance(entity.id);
+        const att = getPrintAtt(entity.id);
         const status = att ? statusLabel(att.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked');
         const statusColor = att?.status === 'present' ? '#16a34a' : att?.status === 'absent' ? '#dc2626' : att?.status === 'late' ? '#ca8a04' : '#6b7280';
         return `<tr>
@@ -646,6 +674,11 @@ const AdminAttendance = () => {
           ${entityType === 'staff' ? `<td>${att?.check_in_time ? fmt(att.check_in_time) : '-'}</td><td>${att?.check_out_time ? fmt(att.check_out_time) : '-'}</td>` : ''}
         </tr>`;
       }).join('');
+
+      const pPresent = entityType === 'student' ? printAttData.filter((a: any) => a.status === 'present').length : stats.present;
+      const pAbsent = entityType === 'student' ? printAttData.filter((a: any) => a.status === 'absent').length : stats.absent;
+      const pLate = entityType === 'student' ? printAttData.filter((a: any) => a.status === 'late').length : stats.late;
+      const pUnmarked = filtered.length - (entityType === 'student' ? printAttData.length : attendance.length);
 
       tableHtml = `
         <table>
@@ -659,10 +692,10 @@ const AdminAttendance = () => {
           <tbody>${statusRows}</tbody>
         </table>
         <div class="summary">
-          <span style="background:#dcfce7;color:#16a34a">${bn ? 'উপস্থিত' : 'Present'}: ${stats.present}</span>
-          <span style="background:#fee2e2;color:#dc2626">${bn ? 'অনুপস্থিত' : 'Absent'}: ${stats.absent}</span>
-          <span style="background:#fef9c3;color:#ca8a04">${bn ? 'বিলম্ব' : 'Late'}: ${stats.late}</span>
-          <span style="background:#f3f4f6;color:#6b7280">${bn ? 'বাকি' : 'Unmarked'}: ${stats.unmarked}</span>
+          <span style="background:#dcfce7;color:#16a34a">${bn ? 'উপস্থিত' : 'Present'}: ${pPresent}</span>
+          <span style="background:#fee2e2;color:#dc2626">${bn ? 'অনুপস্থিত' : 'Absent'}: ${pAbsent}</span>
+          <span style="background:#fef9c3;color:#ca8a04">${bn ? 'বিলম্ব' : 'Late'}: ${pLate}</span>
+          <span style="background:#f3f4f6;color:#6b7280">${bn ? 'বাকি' : 'Unmarked'}: ${pUnmarked}</span>
         </div>`;
     }
 
@@ -701,7 +734,7 @@ const AdminAttendance = () => {
       <h3 style="text-align:center;margin-bottom:8px">${title}</h3>
       <div class="meta">
         <span>${bn ? 'তারিখ' : 'Date'}: ${selectedDate}</span>
-        <span>${bn ? 'মোট স্টাফ' : 'Total'}: ${filtered.length}</span>
+        <span>${entityType === 'student' ? (bn ? 'মোট ছাত্র' : 'Total Students') : (bn ? 'মোট স্টাফ' : 'Total Staff')}: ${filtered.length}</span>
       </div>
       ${tableHtml}
     </body></html>`;
