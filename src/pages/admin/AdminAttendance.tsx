@@ -568,7 +568,16 @@ const AdminAttendance = () => {
                           key={rule.id}
                           onClick={() => {
                             const mutateData: any = { entityId: entity.id, status: countsAs };
-                            if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                            if (entityType === 'staff' && staffSubTab === 'duty' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                              // Use saved residential duty times for duty tab
+                              if (selectedShift === 'morning') {
+                                mutateData.check_in_time = dutyTimes.morning_start;
+                                mutateData.check_out_time = dutyTimes.morning_end;
+                              } else if (selectedShift === 'evening') {
+                                mutateData.check_in_time = dutyTimes.evening_start;
+                                mutateData.check_out_time = dutyTimes.evening_end;
+                              }
+                            } else if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
                               mutateData.check_in_time = entity.duty_start_time || '08:00';
                               mutateData.check_out_time = entity.duty_end_time || '17:00';
                             }
