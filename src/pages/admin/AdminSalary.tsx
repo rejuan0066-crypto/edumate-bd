@@ -82,7 +82,7 @@ const AdminSalary = () => {
     },
   });
 
-  // Fetch attendance data for the month
+  // Fetch attendance data for the month (only full_day shift for salary)
   const { data: attendanceData = [] } = useQuery({
     queryKey: ['salary-attendance', monthYear],
     queryFn: async () => {
@@ -92,6 +92,7 @@ const AdminSalary = () => {
         .from('attendance_records')
         .select('*')
         .eq('entity_type', 'staff')
+        .eq('shift', 'full_day')
         .gte('attendance_date', startDate)
         .lte('attendance_date', endDate);
       if (error) throw error;
