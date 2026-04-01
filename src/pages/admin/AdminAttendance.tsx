@@ -502,7 +502,7 @@ const AdminAttendance = () => {
                     <p className="text-[10px] text-muted-foreground">
                       {entityType === 'student'
                         ? `${bn ? 'আইডি' : 'ID'}: ${entity.student_id || '-'} ${entity.roll_number ? `| ${bn ? 'রোল' : 'Roll'}: ${entity.roll_number}` : ''}`
-                        : (entity.designation || '-')}
+                        : `${entity.designation || '-'} | ${fmt(entity.duty_start_time || '08:00')} - ${fmt(entity.duty_end_time || '17:00')}`}
                     </p>
                   </div>
 
@@ -525,21 +525,27 @@ const AdminAttendance = () => {
                   {/* Time Inputs for Staff */}
                   {entityType === 'staff' && (
                     <div className="flex gap-1 items-center shrink-0">
-                      <Input
-                        type="time"
-                        className="h-7 w-24 text-xs"
-                        placeholder="In"
-                        value={att?.check_in_time || ''}
-                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: e.target.value, check_out_time: att?.check_out_time || '' })}
-                      />
+                      <div className="flex flex-col items-center">
+                        <Input
+                          type="time"
+                          className="h-7 w-24 text-xs"
+                          placeholder="In"
+                          value={att?.check_in_time || ''}
+                          onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: e.target.value, check_out_time: att?.check_out_time || '' })}
+                        />
+                        {att?.check_in_time && <span className="text-[9px] text-muted-foreground">{fmt(att.check_in_time)}</span>}
+                      </div>
                       <span className="text-[10px] text-muted-foreground">-</span>
-                      <Input
-                        type="time"
-                        className="h-7 w-24 text-xs"
-                        placeholder="Out"
-                        value={att?.check_out_time || ''}
-                        onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: att?.check_in_time || '', check_out_time: e.target.value })}
-                      />
+                      <div className="flex flex-col items-center">
+                        <Input
+                          type="time"
+                          className="h-7 w-24 text-xs"
+                          placeholder="Out"
+                          value={att?.check_out_time || ''}
+                          onChange={e => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: att?.check_in_time || '', check_out_time: e.target.value })}
+                        />
+                        {att?.check_out_time && <span className="text-[9px] text-muted-foreground">{fmt(att.check_out_time)}</span>}
+                      </div>
                     </div>
                   )}
 
