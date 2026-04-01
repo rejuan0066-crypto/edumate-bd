@@ -486,14 +486,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'gender':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.gender} onValueChange={v => setForm(prev => ({ ...prev, gender: v }))}>
-              <SelectTrigger className="bg-background mt-1"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
                 <SelectItem value="female">{bn ? 'মহিলা' : 'Female'}</SelectItem>
               </SelectContent>
             </Select>
+            <FieldError field={fieldKey} />
           </div>
         );
 
