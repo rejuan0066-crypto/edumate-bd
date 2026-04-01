@@ -513,11 +513,10 @@ const AdmissionPage = () => {
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${errorBorder}`}
+            <Input className={`bg-muted mt-1 ${errorBorder}`}
               value={form.registration_no || ''}
-              onChange={e => setForm(prev => ({ ...prev, registration_no: e.target.value }))}
-              placeholder={bn ? 'অটো জেনারেট / টাইপ করুন' : 'Auto / Type'} />
-            <p className="text-xs text-muted-foreground mt-0.5">{bn ? 'অটো জেনারেট, এডিটযোগ্য' : 'Auto-generated, editable'}</p>
+              readOnly
+              placeholder={bn ? 'অটো জেনারেট' : 'Auto-generated'} />
             <FieldError field={fieldKey} />
           </div>
         );
