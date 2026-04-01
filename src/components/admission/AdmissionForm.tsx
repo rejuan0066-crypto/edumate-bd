@@ -434,6 +434,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     const required = config.is_required;
     const reqStar = required ? <span className="text-destructive">*</span> : null;
     const hasError = !!fieldErrors[fieldKey];
+    const errorBorder = hasError ? 'border-destructive ring-1 ring-destructive/30' : '';
+    const errorLabel = hasError ? 'text-destructive' : '';
 
     switch (fieldKey) {
       case 'photo_url':
@@ -472,9 +474,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'admission_class':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))}>
-              <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
               <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
             </Select>
             <FieldError field={fieldKey} />
@@ -484,23 +486,24 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'gender':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.gender} onValueChange={v => setForm(prev => ({ ...prev, gender: v }))}>
-              <SelectTrigger className="bg-background mt-1"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="male">{bn ? 'পুরুষ' : 'Male'}</SelectItem>
                 <SelectItem value="female">{bn ? 'মহিলা' : 'Female'}</SelectItem>
               </SelectContent>
             </Select>
+            <FieldError field={fieldKey} />
           </div>
         );
 
       case 'religion':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.religion} onValueChange={v => setForm(prev => ({ ...prev, religion: v }))}>
-              <SelectTrigger className="bg-background mt-1"><SelectValue /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="islam">{bn ? 'ইসলাম' : 'Islam'}</SelectItem>
                 <SelectItem value="hinduism">{bn ? 'হিন্দু' : 'Hinduism'}</SelectItem>
@@ -509,14 +512,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
               </SelectContent>
             </Select>
+            <FieldError field={fieldKey} />
           </div>
         );
 
       case 'date_of_birth':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input type="date" className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input type="date" className={`bg-background mt-1 ${errorBorder}`}
               value={form.date_of_birth} onChange={e => setForm(prev => ({ ...prev, date_of_birth: e.target.value }))} />
             {form.date_of_birth && <p className="text-xs text-primary mt-1 font-medium">{bn ? 'বয়স: ' : 'Age: '}{calculateAge(form.date_of_birth)}</p>}
             <FieldError field={fieldKey} />
@@ -526,8 +530,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'birth_reg_no':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${hasError || birthRegError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder || (birthRegError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
               maxLength={17} value={form.birth_reg_no} onChange={e => validateBirthReg(e.target.value)} />
             {birthRegError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {birthRegError}</p>}
             {form.birth_reg_no.length === 17 && !birthRegError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'সঠিক' : 'Valid'}</p>}
@@ -542,8 +546,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'father_nid':
         return (
           <div>
-            <Label>{label}</Label>
-            <Input className={`bg-background mt-1 ${hasError || fatherNidError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder || (fatherNidError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
               maxLength={17} value={form.father_nid}
               onChange={e => validateNid(e.target.value, 'father_nid', setFatherNidError)} />
             {fatherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fatherNidError}</p>}
@@ -555,8 +559,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'mother_nid':
         return (
           <div>
-            <Label>{label}</Label>
-            <Input className={`bg-background mt-1 ${hasError || motherNidError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder || (motherNidError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
               maxLength={17} value={form.mother_nid}
               onChange={e => validateNid(e.target.value, 'mother_nid', setMotherNidError)} />
             {motherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {motherNidError}</p>}
@@ -568,8 +572,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'guardian_nid':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${hasError || guardianNidError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder || (guardianNidError ? 'border-destructive ring-1 ring-destructive/30' : '')}`}
               maxLength={17} value={form.guardian_nid}
               onChange={e => validateNid(e.target.value, 'guardian_nid', setGuardianNidError)} />
             {guardianNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {guardianNidError}</p>}
@@ -578,23 +582,26 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'father_phone':
-        return <PhoneInput label={label} value={form.father_phone} countryCode={form.father_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, father_phone: phone, father_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.father_phone} countryCode={form.father_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, father_phone: phone, father_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'mother_phone':
-        return <PhoneInput label={label} value={form.mother_phone} countryCode={form.mother_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, mother_phone: phone, mother_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.mother_phone} countryCode={form.mother_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, mother_phone: phone, mother_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'guardian_phone':
-        return <PhoneInput label={label} value={form.guardian_phone} countryCode={form.guardian_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, guardian_phone: phone, guardian_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.guardian_phone} countryCode={form.guardian_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, guardian_phone: phone, guardian_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'guardian_type':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
             <Select value={form.guardian_type} onValueChange={v => setForm(prev => ({ ...prev, guardian_type: v }))}>
-              <SelectTrigger className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="father">{bn ? 'পিতা' : 'Father'}</SelectItem>
                 <SelectItem value="mother">{bn ? 'মাতা' : 'Mother'}</SelectItem>
@@ -622,8 +629,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'admission_date':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input type="date" className="bg-background mt-1" value={form.admission_date}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input type="date" className={`bg-background mt-1 ${errorBorder}`} value={form.admission_date}
               onChange={e => setForm(prev => ({ ...prev, admission_date: e.target.value }))} />
             <FieldError field={fieldKey} />
           </div>
@@ -632,8 +639,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       default:
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form[fieldKey] || ''} onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
               placeholder={config.placeholder || ''} />
             <FieldError field={fieldKey} />
