@@ -38,7 +38,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
   // Form state
   const [form, setForm] = useState<Record<string, any>>({
-    student_type: 'new', residence_type: 'non-resident',
+    student_type: '', residence_type: '',
     admission_session: '', roll_number: '', registration_no: '',
     admission_date: new Date().toISOString().split('T')[0],
     session_year: new Date().getFullYear().toString(),
