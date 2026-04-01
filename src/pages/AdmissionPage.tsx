@@ -340,29 +340,11 @@ const AdmissionPage = () => {
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
       return payload;
+    },
+    onSuccess: (payload) => {
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
-      // Reset form
-      setForm({
-        student_type: 'new', residence_type: 'non-resident',
-        admission_session: '', roll_number: '', registration_no: '',
-        admission_date: new Date().toISOString().split('T')[0],
-        session_year: new Date().getFullYear().toString(),
-        admission_class: '', first_name: '', last_name: '',
-        gender: 'male', religion: 'islam', date_of_birth: '',
-        birth_reg_no: '', previous_class: '', previous_institute: '',
-        is_orphan: false, is_poor: false, photo_url: '',
-        father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
-        mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
-        guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
-      });
-      setFieldErrors({});
-      setCustomFieldValues({});
-      setPermanentAddr(emptyAddress); setPresentAddr(emptyAddress);
-      setParentPermanentAddr(emptyAddress); setParentPresentAddr(emptyAddress);
-      setGuardianPermAddr(emptyAddress); setGuardianPresAddr(emptyAddress);
-      setSameAddress(false); setParentAddrSameAsStudent(false);
-      setParentSamePresAddr(false); setGuardianSameAddr(false);
-      setPhotoFile(null); setPhotoPreview(null);
+      // Store submitted data for print/download
+      setSubmittedData(payload);
     },
     onError: (e: any) => toast.error(e.message || 'Error submitting application'),
   });
