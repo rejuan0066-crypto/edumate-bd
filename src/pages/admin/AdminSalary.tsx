@@ -103,6 +103,37 @@ const AdminSalary = () => {
     },
   });
 
+  // Fetch residential duty settings
+  const { data: dutySettings } = useQuery({
+    queryKey: ['residential-duty-times-salary'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'residential_duty_times').maybeSingle();
+      return data?.value as any;
+    },
+  });
+
+  // Fetch morning/evening duty attendance for overtime calculation
+  const { data: dutyAttendanceData = [] } = useQuery({
+    queryKey: ['salary-duty-attendance', monthYear],
+    enabled: !!dutySettings?.extra_duty_enabled,
+    queryFn: async () => {
+      const year = Number(selectedYear);
+      const month = Number(selectedMonth);
+      const lastDay = new Date(year, month, 0).getDate();
+      const startDate = `${monthYear}-01`;
+      const endDate = `${monthYear}-${String(lastDay).padStart(2, '0')}`;
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('entity_type', 'staff')
+        .in('shift', ['morning', 'evening'])
+        .gte('attendance_date', startDate)
+        .lte('attendance_date', endDate);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch salary settings
   const { data: settings = [] } = useQuery({
     queryKey: ['salary-settings'],
