@@ -639,8 +639,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       default:
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input className={`bg-background mt-1 ${errorBorder}`}
               value={form[fieldKey] || ''} onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
               placeholder={config.placeholder || ''} />
             <FieldError field={fieldKey} />
