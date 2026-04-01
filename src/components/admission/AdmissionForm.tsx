@@ -164,15 +164,36 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
+  // Fetch website_settings for admission-specific overrides
+  const { data: websiteAdmissionSettings } = useQuery({
+    queryKey: ['website-admission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text']);
+      if (error) throw error;
+      const result: Record<string, any> = {};
+      data?.forEach(row => { result[row.key] = row.value; });
+      return result;
+    },
+  });
+
   // Derive visibility from form_settings
   const isFormFieldVisible = (fieldName: string) => {
     const setting = formSettings.find(s => s.field_name === fieldName);
-    return setting ? setting.is_visible : true; // default visible if no setting exists
+    return setting ? setting.is_visible : true;
   };
 
-  const showRollNo = isFormFieldVisible('roll_no');
-  const showSession = isFormFieldVisible('admission_session');
+  // Merge: website_settings overrides form_settings for roll & session
+  const showRollNo = websiteAdmissionSettings?.show_roll_no !== undefined
+    ? String(websiteAdmissionSettings.show_roll_no) === 'true'
+    : isFormFieldVisible('roll_no');
+  const showSession = websiteAdmissionSettings?.show_session !== undefined
+    ? String(websiteAdmissionSettings.show_session) === 'true'
+    : isFormFieldVisible('admission_session');
   const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
+  const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
 
   const getRollStartForClass = useCallback((classId: string) => {
     const cls = classes.find((c: any) => c.id === classId);
