@@ -132,22 +132,17 @@ const AdminAttendance = () => {
     }
     let filtered = allStudents;
 
-    // Residential sub-tab: only residential students with session year filter
+    // Residential sub-tab: only residential students
     if (studentSubTab === 'residential') {
       filtered = filtered.filter((s: any) => s.residence_type === 'resident');
-      if (selectedSessionYear) {
-        filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
-      }
     }
 
-    // All students tab: filter by session year + division/class
-    if (studentSubTab === 'all') {
-      if (selectedSessionYear) {
-        filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
-      }
-      if (selectedDivisionId && selectedDivisionId !== 'all') {
-        filtered = filtered.filter((s: any) => s.division_id === selectedDivisionId);
-      }
+    // Common filters for all student sub-tabs: session year + division/class
+    if (selectedSessionYear) {
+      filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
+    }
+    if (selectedDivisionId && selectedDivisionId !== 'all') {
+      filtered = filtered.filter((s: any) => s.division_id === selectedDivisionId);
     }
 
     return filtered;
@@ -714,20 +709,18 @@ const AdminAttendance = () => {
                   </SelectContent>
                 </Select>
 
-                {/* Division/Class filter (for 'all' sub-tab) */}
-                {studentSubTab === 'all' && (
-                  <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
-                    <SelectTrigger className="w-44 h-8 text-xs">
-                      <SelectValue placeholder={bn ? 'বিভাগ/শ্রেণী নির্বাচন' : 'Select Class'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Classes'}</SelectItem>
-                      {divisions.map((d: any) => (
-                        <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                {/* Division/Class filter (all student sub-tabs) */}
+                <Select value={selectedDivisionId} onValueChange={setSelectedDivisionId}>
+                  <SelectTrigger className="w-44 h-8 text-xs">
+                    <SelectValue placeholder={bn ? 'বিভাগ/শ্রেণী নির্বাচন' : 'Select Class'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Classes'}</SelectItem>
+                    {divisions.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 {/* Search */}
                 <div className="relative flex-1 min-w-[150px]">
