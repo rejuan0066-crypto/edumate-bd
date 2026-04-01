@@ -878,9 +878,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">{title}</h3>
         {sectionFields.map(f => {
           const key = f.default_value;
-          if (!key) return <div key={f.id}>{renderCustomField(f)}</div>;
-          if (SYSTEM_KEYS.includes(key)) return <div key={f.id}>{renderSystemField(key, f)}</div>;
-          return <div key={f.id}>{renderCustomField(f)}</div>;
+          if (!key) return <div key={f.id} data-field={f.id}>{renderCustomField(f)}</div>;
+          if (SYSTEM_KEYS.includes(key)) return <div key={f.id} data-field={key}>{renderSystemField(key, f)}</div>;
+          return <div key={f.id} data-field={key}>{renderCustomField(f)}</div>;
         })}
       </div>
     );
