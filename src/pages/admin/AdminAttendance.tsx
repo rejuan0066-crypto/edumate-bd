@@ -838,8 +838,8 @@ const AdminAttendance = () => {
                     ) : null;
                   })()}
 
-                  {/* Time Inputs for Staff */}
-                  {entityType === 'staff' && (
+                  {/* Time Inputs for Staff (hide for meal tab) */}
+                  {entityType === 'staff' && staffSubTab !== 'meal' && (
                     <div className="flex gap-1 items-center shrink-0">
                       <div className="flex flex-col items-center">
                         <Input
@@ -867,43 +867,64 @@ const AdminAttendance = () => {
 
                   {/* Status Buttons */}
                   <div className="flex gap-1 flex-wrap justify-end">
-                    {statusOptions.map((rule: any) => {
-                      const cfg = rule.config as any;
-                      const countsAs = cfg?.counts_as || rule.name.toLowerCase();
-                      const isActive = currentStatus === countsAs;
-                      const Icon = STATUS_ICONS[countsAs] || Check;
-                      const colorClass = isActive ? (STATUS_COLORS[countsAs] || 'bg-muted') : 'bg-background hover:bg-muted/50';
-                      return (
-                        <button
-                          key={rule.id}
-                          onClick={() => {
-                            const mutateData: any = { entityId: entity.id, status: countsAs };
-                            if (entityType === 'staff' && staffSubTab === 'duty' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                              // Use saved residential duty times for duty tab
-                              if (selectedShift === 'morning') {
-                                mutateData.check_in_time = dutyTimes.morning_start;
-                                mutateData.check_out_time = dutyTimes.morning_end;
-                              } else if (selectedShift === 'evening') {
-                                mutateData.check_in_time = dutyTimes.evening_start;
-                                mutateData.check_out_time = dutyTimes.evening_end;
+                    {entityType === 'staff' && staffSubTab === 'meal' ? (
+                      // Meal tab: only Present / Absent
+                      <>
+                        {[
+                          { status: 'present', label: bn ? 'উপস্থিত' : 'Present', Icon: CheckCircle2, colors: STATUS_COLORS.present },
+                          { status: 'absent', label: bn ? 'অনুপস্থিত' : 'Absent', Icon: XCircle, colors: STATUS_COLORS.absent },
+                        ].map(opt => {
+                          const isActive = currentStatus === opt.status;
+                          return (
+                            <button
+                              key={opt.status}
+                              onClick={() => saveMutation.mutate({ entityId: entity.id, status: opt.status })}
+                              className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium border transition-all ${isActive ? opt.colors + ' ring-1 ring-offset-1 ring-primary/30' : 'bg-background hover:bg-muted/50'}`}
+                            >
+                              <opt.Icon className="h-3 w-3" />
+                              <span className="hidden sm:inline">{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      statusOptions.map((rule: any) => {
+                        const cfg = rule.config as any;
+                        const countsAs = cfg?.counts_as || rule.name.toLowerCase();
+                        const isActive = currentStatus === countsAs;
+                        const Icon = STATUS_ICONS[countsAs] || Check;
+                        const colorClass = isActive ? (STATUS_COLORS[countsAs] || 'bg-muted') : 'bg-background hover:bg-muted/50';
+                        return (
+                          <button
+                            key={rule.id}
+                            onClick={() => {
+                              const mutateData: any = { entityId: entity.id, status: countsAs };
+                              if (entityType === 'staff' && staffSubTab === 'duty' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                                if (selectedShift === 'morning') {
+                                  mutateData.check_in_time = dutyTimes.morning_start;
+                                  mutateData.check_out_time = dutyTimes.morning_end;
+                                } else if (selectedShift === 'evening') {
+                                  mutateData.check_in_time = dutyTimes.evening_start;
+                                  mutateData.check_out_time = dutyTimes.evening_end;
+                                }
+                              } else if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                                mutateData.check_in_time = entity.duty_start_time || '08:00';
+                                mutateData.check_out_time = entity.duty_end_time || '17:00';
                               }
-                            } else if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                              mutateData.check_in_time = entity.duty_start_time || '08:00';
-                              mutateData.check_out_time = entity.duty_end_time || '17:00';
-                            }
-                            if (countsAs === 'absent' || countsAs === 'leave') {
-                              mutateData.check_in_time = '';
-                              mutateData.check_out_time = '';
-                            }
-                            saveMutation.mutate(mutateData);
-                          }}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium border transition-all ${colorClass} ${isActive ? 'ring-1 ring-offset-1 ring-primary/30' : ''}`}
-                        >
-                          <Icon className="h-3 w-3" />
-                          <span className="hidden sm:inline">{bn ? rule.name_bn : rule.name}</span>
-                        </button>
-                      );
-                    })}
+                              if (countsAs === 'absent' || countsAs === 'leave') {
+                                mutateData.check_in_time = '';
+                                mutateData.check_out_time = '';
+                              }
+                              saveMutation.mutate(mutateData);
+                            }}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium border transition-all ${colorClass} ${isActive ? 'ring-1 ring-offset-1 ring-primary/30' : ''}`}
+                          >
+                            <Icon className="h-3 w-3" />
+                            <span className="hidden sm:inline">{bn ? rule.name_bn : rule.name}</span>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </CardContent>
               </Card>
