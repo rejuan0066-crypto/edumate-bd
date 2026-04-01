@@ -629,8 +629,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'admission_date':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input type="date" className="bg-background mt-1" value={form.admission_date}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input type="date" className={`bg-background mt-1 ${errorBorder}`} value={form.admission_date}
               onChange={e => setForm(prev => ({ ...prev, admission_date: e.target.value }))} />
             <FieldError field={fieldKey} />
           </div>
