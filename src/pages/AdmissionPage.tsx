@@ -542,6 +542,20 @@ const AdmissionPage = () => {
             )}
           </div>
 
+          {/* Footer from form_settings */}
+          {footerParagraph?.is_visible && footerParagraph?.footer_text && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{footerParagraph.footer_text}</p>
+            </div>
+          )}
+
+          {/* Footer from website_settings */}
+          {websiteFooterText && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{websiteFooterText}</p>
+            </div>
+          )}
+
           <Button type="submit" className="btn-primary-gradient w-full text-lg py-6">
             {language === 'bn' ? 'আবেদন জমা দিন' : 'Submit Application'}
           </Button>
