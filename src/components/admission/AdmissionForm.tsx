@@ -364,7 +364,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     }
     if (isFieldActive('father_nid') && isFieldActive('mother_nid')) {
       if (!form.father_nid && !form.mother_nid) {
-        errors['father_nid'] = bn ? 'কমপক্ষে একটি NID প্রয়োজন' : 'At least one NID required';
+        const nidMsg = bn ? 'পিতা বা মাতার যে কোন একজনের NID আবশ্যক' : 'At least one parent NID is required';
+        errors['father_nid'] = nidMsg;
+        errors['mother_nid'] = nidMsg;
       }
     }
     if (isFieldActive('father_nid') && form.father_nid && form.father_nid.length !== 10 && form.father_nid.length !== 17) {
@@ -375,7 +377,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     }
     if (isFieldActive('father_phone') && isFieldActive('mother_phone')) {
       if (!form.father_phone && !form.mother_phone) {
-        errors['father_phone'] = bn ? 'কমপক্ষে একটি মোবাইল নম্বর প্রয়োজন' : 'At least one mobile required';
+        const phoneMsg = bn ? 'পিতা বা মাতার যে কোন একজনের মোবাইল আবশ্যক' : 'At least one parent mobile is required';
+        errors['father_phone'] = phoneMsg;
+        errors['mother_phone'] = phoneMsg;
       }
     }
     if (isFieldActive('guardian_type') && !form.guardian_type) {
