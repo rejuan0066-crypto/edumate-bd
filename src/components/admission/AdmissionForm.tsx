@@ -519,8 +519,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'date_of_birth':
         return (
           <div>
-            <Label>{label} {reqStar}</Label>
-            <Input type="date" className={`bg-background mt-1 ${hasError ? 'border-destructive' : ''}`}
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <Input type="date" className={`bg-background mt-1 ${errorBorder}`}
               value={form.date_of_birth} onChange={e => setForm(prev => ({ ...prev, date_of_birth: e.target.value }))} />
             {form.date_of_birth && <p className="text-xs text-primary mt-1 font-medium">{bn ? 'বয়স: ' : 'Age: '}{calculateAge(form.date_of_birth)}</p>}
             <FieldError field={fieldKey} />
