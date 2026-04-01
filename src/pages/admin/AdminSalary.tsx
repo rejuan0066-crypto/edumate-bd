@@ -385,23 +385,40 @@ const AdminSalary = () => {
     mutationFn: async () => {
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       const skippedNames: string[] = [];
+      const newRecords: any[] = [];
+      const updateRecords: any[] = [];
 
-      const records = staff.map((s: any) => {
+      for (const s of staff) {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
-        if (existing) return null;
 
         // Check if attendance exists for this staff
         if (requireAttendance) {
           const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
           if (!hasAttendance) {
             skippedNames.push(s.name_bn || s.name_en || 'Unknown');
-            return null;
+            continue;
           }
         }
 
         const calc = calculateSalary(s);
-        return { staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' };
-      }).filter(Boolean);
+
+        if (existing) {
+          // Recalculate existing pending records with latest additive formula
+          if (existing.status === 'pending') {
+            updateRecords.push({
+              id: existing.id,
+              ...calc,
+              // Preserve manually edited fields
+              bonus: Number(existing.bonus || 0),
+              other_allowance: Number(existing.other_allowance || 0),
+              advance_deduction: Number(existing.advance_deduction || 0),
+              remarks: existing.remarks,
+            });
+          }
+        } else {
+          newRecords.push({ staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' });
+        }
+      }
 
       if (skippedNames.length > 0) {
         toast.warning(
@@ -411,18 +428,53 @@ const AdminSalary = () => {
         );
       }
 
-      if (records.length === 0 && skippedNames.length === 0) {
+      // Update existing pending records with recalculated values
+      for (const rec of updateRecords) {
+        const { id, ...updateData } = rec;
+        // Recalculate net with preserved manual fields
+        const netFormula = getFormula('net_salary');
+        let netSalary: number;
+        const ctx: Record<string, number> = {
+          base_salary: Number(updateData.base_salary || 0),
+          bonus: Number(updateData.bonus || 0),
+          overtime: Number(updateData.overtime || 0),
+          other_allowance: Number(updateData.other_allowance || 0),
+          late_deduction: Number(updateData.late_deduction || 0),
+          absence_deduction: Number(updateData.absence_deduction || 0),
+          advance_deduction: Number(updateData.advance_deduction || 0),
+          other_deduction: Number(updateData.other_deduction || 0),
+        };
+        if (netFormula) {
+          const expr = (netFormula.expression as any)?.formula;
+          netSalary = Math.max(0, evaluateFormula(expr, ctx));
+        } else {
+          // Additive: recalculate from attendance-based earnings + manual adjustments
+          netSalary = Math.max(0, updateData.net_salary + Number(updateData.bonus || 0) + Number(updateData.other_allowance || 0) - Number(updateData.advance_deduction || 0));
+        }
+        updateData.net_salary = netSalary;
+        updateData.updated_at = new Date().toISOString();
+
+        const { error } = await supabase.from('salary_records').update(updateData).eq('id', id);
+        if (error) throw error;
+      }
+
+      if (newRecords.length === 0 && updateRecords.length === 0 && skippedNames.length === 0) {
         toast.info(bn ? 'ইতোমধ্যে সব বেতন জেনারেট হয়েছে' : 'All salaries already generated');
         return;
       }
-      if (records.length === 0) return;
 
-      const { error } = await supabase.from('salary_records').insert(records);
-      if (error) throw error;
+      if (newRecords.length > 0) {
+        const { error } = await supabase.from('salary_records').insert(newRecords);
+        if (error) throw error;
+      }
+
+      const msgs: string[] = [];
+      if (newRecords.length > 0) msgs.push(bn ? `${newRecords.length} জন নতুন জেনারেট` : `${newRecords.length} new generated`);
+      if (updateRecords.length > 0) msgs.push(bn ? `${updateRecords.length} জন রিক্যালকুলেট` : `${updateRecords.length} recalculated`);
+      toast.success(msgs.join(', '));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
-      toast.success(bn ? 'বেতন শিট জেনারেট হয়েছে' : 'Salary sheet generated');
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error generating salary'),
   });
