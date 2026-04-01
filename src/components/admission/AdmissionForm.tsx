@@ -582,16 +582,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'father_phone':
-        return <PhoneInput label={label} value={form.father_phone} countryCode={form.father_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, father_phone: phone, father_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.father_phone} countryCode={form.father_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, father_phone: phone, father_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'mother_phone':
-        return <PhoneInput label={label} value={form.mother_phone} countryCode={form.mother_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, mother_phone: phone, mother_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.mother_phone} countryCode={form.mother_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, mother_phone: phone, mother_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'guardian_phone':
-        return <PhoneInput label={label} value={form.guardian_phone} countryCode={form.guardian_phone_code}
-          onChange={(phone, code) => setForm(prev => ({ ...prev, guardian_phone: phone, guardian_phone_code: code }))} required={required} />;
+        return <div><PhoneInput label={label} value={form.guardian_phone} countryCode={form.guardian_phone_code}
+          onChange={(phone, code) => setForm(prev => ({ ...prev, guardian_phone: phone, guardian_phone_code: code }))} required={required} error={hasError} />
+          <FieldError field={fieldKey} /></div>;
 
       case 'guardian_type':
         return (
