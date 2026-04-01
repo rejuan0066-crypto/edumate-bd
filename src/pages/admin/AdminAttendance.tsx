@@ -727,16 +727,12 @@ const AdminAttendance = () => {
                     <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
                     {divisions.map((d: any) => {
                       const divClasses = classes.filter((c: any) => c.division_id === d.id);
-                      return [
-                        <SelectItem key={`div-${d.id}`} value={d.id} className="font-semibold">
-                          {bn ? d.name : d.name} ({bn ? 'সকল' : 'All'})
-                        </SelectItem>,
-                        ...divClasses.map((c: any) => (
-                          <SelectItem key={c.id} value={`class_${c.id}_${d.id}`} className="pl-6">
-                            &nbsp;&nbsp;{bn ? c.name_bn : c.name} — {bn ? d.name : d.name}
-                          </SelectItem>
-                        ))
-                      ];
+                      const classNames = divClasses.map((c: any) => bn ? c.name_bn : c.name).join(', ');
+                      return (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name} {classNames ? `(${classNames})` : ''}
+                        </SelectItem>
+                      );
                     })}
                   </SelectContent>
                 </Select>
