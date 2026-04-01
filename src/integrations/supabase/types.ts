@@ -1529,6 +1529,7 @@ export type Database = {
           admission_session: string | null
           approval_status: string | null
           birth_reg_no: string | null
+          class_id: string | null
           created_at: string | null
           date_of_birth: string | null
           division_id: string | null
@@ -1570,6 +1571,7 @@ export type Database = {
           admission_session?: string | null
           approval_status?: string | null
           birth_reg_no?: string | null
+          class_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           division_id?: string | null
@@ -1611,6 +1613,7 @@ export type Database = {
           admission_session?: string | null
           approval_status?: string | null
           birth_reg_no?: string | null
+          class_id?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           division_id?: string | null
@@ -1646,6 +1649,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "students_division_id_fkey"
             columns: ["division_id"]
