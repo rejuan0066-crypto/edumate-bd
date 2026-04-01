@@ -1147,52 +1147,58 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
 
             {activeSections.map(section => renderSection(section))}
 
-            {/* Approver Section */}
-            <div className="border rounded-lg p-4 space-y-4">
-              <h3 className="text-md font-display font-semibold text-foreground border-b pb-2">
-                {bn ? '৪. অফিস কর্তৃক পূরণীয়' : '4. To be filled by Office'}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>{bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}</Label>
-                  <Input className="bg-background mt-1" value={form.approver_name || ''}
-                    onChange={e => setForm(prev => ({ ...prev, approver_name: e.target.value }))}
-                    placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
-                </div>
-                <div>
-                  <Label>{bn ? 'পদবী' : 'Designation'}</Label>
-                  <Select value={form.approver_designation || ''} onValueChange={v => setForm(prev => ({ ...prev, approver_designation: v }))}>
-                    <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="principal">{bn ? 'প্রিন্সিপাল' : 'Principal'}</SelectItem>
-                      <SelectItem value="vice_principal">{bn ? 'ভাইস প্রিন্সিপাল' : 'Vice Principal'}</SelectItem>
-                      <SelectItem value="head_teacher">{bn ? 'প্রধান শিক্ষক' : 'Head Teacher'}</SelectItem>
-                      <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                      <SelectItem value="office_staff">{bn ? 'অফিস স্টাফ' : 'Office Staff'}</SelectItem>
-                      <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}</Label>
-                  <Input type="date" className="bg-background mt-1" value={form.approver_date || ''}
-                    onChange={e => setForm(prev => ({ ...prev, approver_date: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>{bn ? 'স্বাক্ষর' : 'Signature'}</Label>
-                  <div className="mt-1">
-                    <PhotoUpload
-                      value={form.approver_signature || null}
-                      onChange={(url) => setForm(prev => ({ ...prev, approver_signature: url || '' }))}
-                      folder="students"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      {bn ? 'স্বাক্ষর আপলোড করুন অথবা প্রিন্টের পর বক্সে স্বাক্ষর করুন' : 'Upload signature or sign in box after print'}
-                    </p>
+            {/* Approver Section - Only visible in edit/approve mode */}
+            {isEditMode && (
+              <div className="border rounded-lg p-4 space-y-4 border-primary/30 bg-primary/5">
+                <h3 className="text-md font-display font-semibold text-foreground border-b pb-2 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-primary" />
+                  {bn ? '৪. অফিস কর্তৃক পূরণীয়' : '4. To be filled by Office'}
+                </h3>
+                <p className="text-xs text-muted-foreground italic">
+                  {bn ? 'এই অংশ শুধুমাত্র অনুমোদন ও প্রিন্টের সময় দেখা যাবে' : 'This section is only visible during approval and printing'}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'অনুমোদনকারীর নাম' : 'Approver Name'}</Label>
+                    <Input className="bg-background mt-1" value={form.approver_name || ''}
+                      onChange={e => setForm(prev => ({ ...prev, approver_name: e.target.value }))}
+                      placeholder={bn ? 'নাম লিখুন' : 'Enter name'} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'পদবী' : 'Designation'}</Label>
+                    <Select value={form.approver_designation || ''} onValueChange={v => setForm(prev => ({ ...prev, approver_designation: v }))}>
+                      <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'পদবী নির্বাচন করুন' : 'Select Designation'} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="principal">{bn ? 'প্রিন্সিপাল' : 'Principal'}</SelectItem>
+                        <SelectItem value="vice_principal">{bn ? 'ভাইস প্রিন্সিপাল' : 'Vice Principal'}</SelectItem>
+                        <SelectItem value="head_teacher">{bn ? 'প্রধান শিক্ষক' : 'Head Teacher'}</SelectItem>
+                        <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                        <SelectItem value="office_staff">{bn ? 'অফিস স্টাফ' : 'Office Staff'}</SelectItem>
+                        <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{bn ? 'অনুমোদনের তারিখ' : 'Approval Date'}</Label>
+                    <Input type="date" className="bg-background mt-1" value={form.approver_date || ''}
+                      onChange={e => setForm(prev => ({ ...prev, approver_date: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'স্বাক্ষর' : 'Signature'}</Label>
+                    <div className="mt-1">
+                      <PhotoUpload
+                        value={form.approver_signature || null}
+                        onChange={(url) => setForm(prev => ({ ...prev, approver_signature: url || '' }))}
+                        folder="students"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {bn ? 'স্বাক্ষর আপলোড করুন অথবা প্রিন্টের পর বক্সে স্বাক্ষর করুন' : 'Upload signature or sign in box after print'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Footer Paragraph from form_settings */}
             {footerParagraph?.is_visible && footerParagraph?.footer_text && (
