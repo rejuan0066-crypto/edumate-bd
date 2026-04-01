@@ -1150,10 +1150,10 @@ const AdmissionPage = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2" variant="outline">
+              <Button onClick={() => handlePrint(false)} className="flex-1 flex items-center justify-center gap-2" variant="outline">
                 <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
-              <Button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
+              <Button onClick={() => handlePrint(false)} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
                 <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড (PDF)' : 'Download (PDF)'}
               </Button>
             </div>
