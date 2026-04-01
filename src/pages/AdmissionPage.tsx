@@ -88,6 +88,14 @@ const AdmissionPage = () => {
     },
   });
 
+  const { data: institution } = useQuery({
+    queryKey: ['institution-default'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+  });
+
   // Fetch form_settings for visibility & footer
   const { data: formSettings = [] } = useQuery({
     queryKey: ['form-settings'],
