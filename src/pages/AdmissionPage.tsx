@@ -236,33 +236,47 @@ const AdmissionPage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {showSession && (
               <div>
                 <Label>{language === 'bn' ? 'ভর্তি সেশন' : 'Admission Session'} <span className="text-destructive">*</span></Label>
                 <Select>
                   <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2026">২০২৬</SelectItem>
-                    <SelectItem value="2025">২০২৫</SelectItem>
-                    <SelectItem value="2024">২০২৪</SelectItem>
+                    {academicSessions.length > 0 ? academicSessions.map((s: any) => (
+                      <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+                    )) : (
+                      <>
+                        <SelectItem value="2026">২০২৬</SelectItem>
+                        <SelectItem value="2025">২০২৫</SelectItem>
+                        <SelectItem value="2024">২০২৪</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+              )}
+              {showRollNo && (
               <div>
                 <Label>{language === 'bn' ? 'রোল' : 'Roll'} ({language === 'bn' ? 'স্বয়ংক্রিয় ও সম্পাদনযোগ্য' : 'Auto & Editable'})</Label>
                 <Input className="bg-background mt-1" placeholder={language === 'bn' ? 'স্বয়ংক্রিয়' : 'Auto'} />
               </div>
+              )}
+              {showRegistrationNo && (
               <div>
                 <Label>{language === 'bn' ? 'রেজিস্ট্রেশন নং' : 'Registration No'} ({language === 'bn' ? 'স্বয়ংক্রিয় ও সম্পাদনযোগ্য' : 'Auto & Editable'})</Label>
                 <Input className="bg-background mt-1" placeholder={language === 'bn' ? 'স্বয়ংক্রিয়' : 'Auto'} />
               </div>
+              )}
               <div>
                 <Label>{language === 'bn' ? 'ভর্তির তারিখ' : 'Admission Date'}</Label>
                 <Input type="date" className="bg-background mt-1" defaultValue={new Date().toISOString().split('T')[0]} />
               </div>
+              {showSessionYear && (
               <div>
                 <Label>{language === 'bn' ? 'সেশন বছর' : 'Session Year'}</Label>
                 <Input className="bg-background mt-1" placeholder="2026" />
               </div>
+              )}
               <div>
                 <Label>{language === 'bn' ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
                 <Input className="bg-background mt-1" required />
