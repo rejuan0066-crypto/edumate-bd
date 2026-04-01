@@ -510,12 +510,14 @@ const AdmissionPage = () => {
                     <Input className="bg-background mt-1" required />
                   </div>
                   <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} required />
+                  {showGuardianNid && (
                   <div>
                     <Label>{language === 'bn' ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
                     <Input className="bg-background mt-1" maxLength={17} value={guardianNid}
                       onChange={(e) => validateNid(e.target.value, setGuardianNid, setGuardianNidError)} required />
                     {guardianNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {guardianNidError}</p>}
                   </div>
+                  )}
                 </div>
                 <AddressFields
                   label={language === 'bn' ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}
