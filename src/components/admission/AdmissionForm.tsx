@@ -235,10 +235,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     setForm(prev => ({ ...prev, roll_number: nextRoll }));
   }, [isEditMode, getRollStartForClass]);
 
+  // Convert Bengali digits to English
+  const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
   // Auto-generate registration number based on session + class
   const generateRegistrationNumber = useCallback(async (sessionYear: string, classId?: string, force = false) => {
     if (!sessionYear || isEditMode) return;
-    const year = sessionYear.trim();
+    const year = bnToEn(sessionYear.trim());
 
     let query = supabase
       .from('students')
