@@ -155,19 +155,14 @@ const AdminAttendance = () => {
 
   // Fetch attendance for selected date (for staff, fetch by shift too)
   const { data: attendance = [] } = useQuery({
-    queryKey: ['attendance', selectedDate, entityType, entityType === 'staff' ? selectedShift : 'full_day'],
+    queryKey: ['attendance', selectedDate, entityType, effectiveShift],
     queryFn: async () => {
       let query = supabase
         .from('attendance_records')
         .select('*')
         .eq('attendance_date', selectedDate)
-        .eq('entity_type', entityType);
-
-      if (entityType === 'staff') {
-        query = query.eq('shift', selectedShift);
-      } else {
-        query = query.eq('shift', 'full_day');
-      }
+        .eq('entity_type', entityType)
+        .eq('shift', effectiveShift);
 
       const { data, error } = await query;
       if (error) throw error;
