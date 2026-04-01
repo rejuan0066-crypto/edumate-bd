@@ -266,6 +266,21 @@ const AdminAttendance = () => {
     },
   });
 
+  // Reset all attendance for current date/shift
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      const ids = attendance.map((a: any) => a.id);
+      if (ids.length === 0) throw new Error('No records to reset');
+      const { error } = await supabase.from('attendance_records').delete().in('id', ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      toast.success(bn ? 'উপস্থিতি রিসেট হয়েছে' : 'Attendance reset');
+    },
+    onError: () => toast.error(bn ? 'রিসেট করতে সমস্যা' : 'Failed to reset'),
+  });
+
   // Rule CRUD
   const saveRuleMutation = useMutation({
     mutationFn: async (data: any) => {
