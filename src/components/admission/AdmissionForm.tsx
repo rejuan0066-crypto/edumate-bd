@@ -145,6 +145,30 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
+  // Auto-generate roll & registration numbers
+  const generateAutoNumber = useCallback(async (sessionYear: string) => {
+    if (!sessionYear || isEditMode) return;
+    const year = sessionYear.trim();
+    const { count } = await supabase
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .or(`session_year.eq.${year},admission_session.ilike.%${year}%`);
+    const serial = String((count || 0) + 1).padStart(3, '0');
+    const autoNum = `${year}${serial}`;
+    setForm(prev => ({
+      ...prev,
+      roll_number: prev.roll_number || autoNum,
+      registration_no: prev.registration_no || autoNum,
+    }));
+  }, [isEditMode]);
+
+  // Trigger auto-generation when session_year changes
+  useEffect(() => {
+    if (open && !isEditMode && form.session_year) {
+      generateAutoNumber(form.session_year);
+    }
+  }, [open, form.session_year, isEditMode, generateAutoNumber]);
+
   const calculateAge = useCallback((dateStr: string) => {
     if (!dateStr) return '';
     const birth = new Date(dateStr);
@@ -472,6 +496,27 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
                 </button>
               ))}
             </div>
+          </div>
+        );
+
+      case 'roll_number':
+      case 'registration_no':
+        return (
+          <div data-field={fieldKey}>
+            <Label className={errorLabel}>{label} {reqStar}</Label>
+            <div className="relative">
+              <Input className={`bg-background mt-1 pr-24 ${errorBorder}`}
+                value={form[fieldKey] || ''}
+                onChange={e => setForm(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+                placeholder={bn ? 'অটো জেনারেট / টাইপ করুন' : 'Auto / Type'} />
+              <button type="button"
+                className="absolute right-1 top-1/2 -translate-y-1/2 mt-0.5 text-xs px-2 py-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                onClick={() => generateAutoNumber(form.session_year)}>
+                {bn ? 'অটো' : 'Auto'}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">{bn ? 'সেশন+সিরিয়াল অটো জেনারেট, এডিটযোগ্য' : 'Auto: session+serial, editable'}</p>
+            <FieldError field={fieldKey} />
           </div>
         );
 
