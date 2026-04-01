@@ -987,9 +987,8 @@ const AdmissionPage = () => {
     setPhotoFile(null); setPhotoPreview(null);
   };
 
-  const handlePrint = (blank = false) => {
+  const buildFormHTML = (blank = false) => {
     const d = blank ? {} as any : submittedData;
-    if (!blank && !d) return;
     const instName = institution?.name || '';
     const instNameEn = institution?.name_en || '';
     const instAddr = institution?.address || '';
@@ -997,10 +996,7 @@ const AdmissionPage = () => {
     const className = !blank && d?.class_id ? (classes.find((c: any) => c.id === d.class_id) as any)?.name_bn || '' : '';
     const blankVal = blank ? '&nbsp;' : '';
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
-    printWindow.document.write(`<!DOCTYPE html><html><head>
+    return `<!DOCTYPE html><html><head>
       <meta charset="utf-8">
       <title>ভর্তি আবেদন ফর্ম</title>
       <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1091,10 +1087,60 @@ const AdmissionPage = () => {
       <div class="footer">
         <p>${instName} — ভর্তি আবেদন ফর্ম</p>
       </div>
-    </body></html>`);
+    </body></html>`;
+  };
 
+  const handlePrint = (blank = false) => {
+    if (!blank && !submittedData) return;
+    const html = buildFormHTML(blank);
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(html);
     printWindow.document.close();
     setTimeout(() => { printWindow.focus(); printWindow.print(); }, 800);
+  };
+
+  const handleDownloadPDF = async (blank = false) => {
+    if (!blank && !submittedData) return;
+    const html = buildFormHTML(blank);
+    
+    // Create a temporary container
+    const container = document.createElement('div');
+    container.innerHTML = html.replace(/.*<body>/s, '').replace(/<\/body>.*/s, '');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = '210mm';
+    container.style.fontFamily = "'Noto Sans Bengali', sans-serif";
+    container.style.padding = '20mm';
+    container.style.fontSize = '12px';
+    container.style.color = '#333';
+    document.body.appendChild(container);
+
+    // Apply styles inline
+    const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+    if (styleMatch) {
+      const styleEl = document.createElement('style');
+      styleEl.textContent = styleMatch[1];
+      container.prepend(styleEl);
+    }
+
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+      const fileName = blank ? 'ভর্তি_আবেদন_ফর্ম.pdf' : `ভর্তি_আবেদন_${submittedData?.student_id || ''}.pdf`;
+      
+      await html2pdf().set({
+        margin: 0,
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(container).save();
+    } catch (err) {
+      console.error('PDF generation failed:', err);
+      toast.error(bn ? 'PDF তৈরি করতে সমস্যা হয়েছে' : 'Failed to generate PDF');
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
   // If submitted, show success screen
@@ -1153,7 +1199,7 @@ const AdmissionPage = () => {
               <Button onClick={() => handlePrint(false)} className="flex-1 flex items-center justify-center gap-2" variant="outline">
                 <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট করুন' : 'Print'}
               </Button>
-              <Button onClick={() => handlePrint(false)} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
+              <Button onClick={() => handleDownloadPDF(false)} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
                 <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড (PDF)' : 'Download (PDF)'}
               </Button>
             </div>
@@ -1229,8 +1275,8 @@ const AdmissionPage = () => {
                 {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
                 {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
               </Button>
-              <Button onClick={() => handlePrint(true)} variant="outline" className="flex-1 text-lg py-6 flex items-center justify-center gap-2">
-                <Printer className="w-5 h-5" /> {bn ? 'ফর্ম ডাউনলোড করুন' : 'Download Form'}
+              <Button onClick={() => handleDownloadPDF(true)} variant="outline" className="flex-1 text-lg py-6 flex items-center justify-center gap-2">
+                <Download className="w-5 h-5" /> {bn ? 'ফর্ম ডাউনলোড করুন' : 'Download Form'}
               </Button>
             </div>
             <p className="text-center text-xs text-muted-foreground">
