@@ -83,6 +83,15 @@ const AdminAttendance = () => {
     },
   });
 
+  // Fetch classes
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+  });
+
   // Fetch students
   const { data: allStudents = [] } = useQuery({
     queryKey: ['students-attendance'],
@@ -715,10 +724,16 @@ const AdminAttendance = () => {
                     <SelectValue placeholder={bn ? 'বিভাগ/শ্রেণী নির্বাচন' : 'Select Class'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Classes'}</SelectItem>
-                    {divisions.map((d: any) => (
-                      <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
-                    ))}
+                    <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
+                    {divisions.map((d: any) => {
+                      const divClasses = classes.filter((c: any) => c.division_id === d.id);
+                      const classNames = divClasses.map((c: any) => bn ? c.name_bn : c.name).join(', ');
+                      return (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name} {classNames ? `(${classNames})` : ''}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
 
