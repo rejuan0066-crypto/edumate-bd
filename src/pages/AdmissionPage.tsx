@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useState, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
 import { Camera, Search, AlertCircle, CheckCircle } from 'lucide-react';
@@ -43,8 +45,68 @@ const AdmissionPage = () => {
   const [oldSession, setOldSession] = useState('');
   const [oldClass, setOldClass] = useState('');
 
-  const calculateAge = useCallback((dateStr: string) => {
-    if (!dateStr) return '';
+  // Fetch form_settings for field visibility & footer
+  const { data: formSettings = [] } = useQuery({
+    queryKey: ['form-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('form_settings').select('*');
+      if (error) throw error;
+      return data as Array<{ id: string; field_name: string; is_visible: boolean; footer_text: string | null }>;
+    },
+  });
+
+  // Fetch website_settings overrides
+  const { data: websiteAdmissionSettings } = useQuery({
+    queryKey: ['website-admission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text']);
+      if (error) throw error;
+      const result: Record<string, any> = {};
+      data?.forEach(row => { result[row.key] = row.value; });
+      return result;
+    },
+  });
+
+  // Fetch academic sessions
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Visibility helper
+  const isFormFieldVisible = (fieldName: string) => {
+    const setting = formSettings.find(s => s.field_name === fieldName);
+    return setting ? setting.is_visible : true;
+  };
+
+  const showRollNo = websiteAdmissionSettings?.show_roll_no !== undefined
+    ? String(websiteAdmissionSettings.show_roll_no) === 'true'
+    : isFormFieldVisible('roll_no');
+  const showSession = websiteAdmissionSettings?.show_session !== undefined
+    ? String(websiteAdmissionSettings.show_session) === 'true'
+    : isFormFieldVisible('admission_session');
+  const showRegistrationNo = isFormFieldVisible('registration_no');
+  const showSessionYear = isFormFieldVisible('session_year');
+  const showBirthRegNo = isFormFieldVisible('birth_reg_no');
+  const showIsOrphan = isFormFieldVisible('is_orphan');
+  const showIsPoor = isFormFieldVisible('is_poor');
+  const showFatherNid = isFormFieldVisible('father_nid');
+  const showMotherNid = isFormFieldVisible('mother_nid');
+  const showGuardianNid = isFormFieldVisible('guardian_nid');
+  const showPreviousClass = isFormFieldVisible('previous_class');
+  const showPreviousInstitute = isFormFieldVisible('previous_institute');
+  const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
+  const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
+
+
+    const calculateAge = useCallback((dateStr: string) => {
     const birth = new Date(dateStr);
     const today = new Date();
     const years = today.getFullYear() - birth.getFullYear();
@@ -174,33 +236,47 @@ const AdmissionPage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {showSession && (
               <div>
                 <Label>{language === 'bn' ? 'ভর্তি সেশন' : 'Admission Session'} <span className="text-destructive">*</span></Label>
                 <Select>
                   <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="2026">২০২৬</SelectItem>
-                    <SelectItem value="2025">২০২৫</SelectItem>
-                    <SelectItem value="2024">২০২৪</SelectItem>
+                    {academicSessions.length > 0 ? academicSessions.map((s: any) => (
+                      <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+                    )) : (
+                      <>
+                        <SelectItem value="2026">২০২৬</SelectItem>
+                        <SelectItem value="2025">২০২৫</SelectItem>
+                        <SelectItem value="2024">২০২৪</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+              )}
+              {showRollNo && (
               <div>
                 <Label>{language === 'bn' ? 'রোল' : 'Roll'} ({language === 'bn' ? 'স্বয়ংক্রিয় ও সম্পাদনযোগ্য' : 'Auto & Editable'})</Label>
                 <Input className="bg-background mt-1" placeholder={language === 'bn' ? 'স্বয়ংক্রিয়' : 'Auto'} />
               </div>
+              )}
+              {showRegistrationNo && (
               <div>
                 <Label>{language === 'bn' ? 'রেজিস্ট্রেশন নং' : 'Registration No'} ({language === 'bn' ? 'স্বয়ংক্রিয় ও সম্পাদনযোগ্য' : 'Auto & Editable'})</Label>
                 <Input className="bg-background mt-1" placeholder={language === 'bn' ? 'স্বয়ংক্রিয়' : 'Auto'} />
               </div>
+              )}
               <div>
                 <Label>{language === 'bn' ? 'ভর্তির তারিখ' : 'Admission Date'}</Label>
                 <Input type="date" className="bg-background mt-1" defaultValue={new Date().toISOString().split('T')[0]} />
               </div>
+              {showSessionYear && (
               <div>
                 <Label>{language === 'bn' ? 'সেশন বছর' : 'Session Year'}</Label>
                 <Input className="bg-background mt-1" placeholder="2026" />
               </div>
+              )}
               <div>
                 <Label>{language === 'bn' ? 'প্রথম নাম' : 'First Name'} <span className="text-destructive">*</span></Label>
                 <Input className="bg-background mt-1" required />
@@ -241,6 +317,7 @@ const AdmissionPage = () => {
                   </p>
                 )}
               </div>
+              {showBirthRegNo && (
               <div>
                 <Label>{language === 'bn' ? 'জন্ম নিবন্ধন নম্বর (১৭ ডিজিট)' : 'Birth Reg No (17 digits)'} <span className="text-destructive">*</span></Label>
                 <Input className="bg-background mt-1" maxLength={17} value={birthRegNo} onChange={(e) => validateBirthReg(e.target.value)} required />
@@ -251,19 +328,24 @@ const AdmissionPage = () => {
                   <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {language === 'bn' ? 'সঠিক' : 'Valid'}</p>
                 )}
               </div>
+              )}
               <div className="sm:col-span-2 flex flex-wrap gap-6">
                 <div className="flex items-center gap-2">
                   <Checkbox id="nonOrphanPoor" />
                   <Label htmlFor="nonOrphanPoor">{language === 'bn' ? 'সাধারণ (এতিম/গরীব নয়)' : 'Non Orphan & Poor'}</Label>
                 </div>
+                {showIsOrphan && (
                 <div className="flex items-center gap-2">
                   <Checkbox id="orphan" />
                   <Label htmlFor="orphan">{language === 'bn' ? 'এতিম' : 'Orphan'}</Label>
                 </div>
+                )}
+                {showIsPoor && (
                 <div className="flex items-center gap-2">
                   <Checkbox id="poor" />
                   <Label htmlFor="poor">{language === 'bn' ? 'গরীব' : 'Poor'}</Label>
                 </div>
+                )}
               </div>
               <div className="sm:col-span-2 flex flex-wrap gap-6">
                 <div className="flex items-center gap-2">
@@ -322,6 +404,7 @@ const AdmissionPage = () => {
                 <Label>{language === 'bn' ? 'পিতার পেশা' : 'Father Occupation'}</Label>
                 <Input className="bg-background mt-1" />
               </div>
+              {showFatherNid && (
               <div>
                 <Label>{language === 'bn' ? 'পিতার NID (১০/১৭ ডিজিট)' : 'Father NID (10/17 digits)'}</Label>
                 <Input className="bg-background mt-1" maxLength={17} value={fatherNid}
@@ -329,6 +412,7 @@ const AdmissionPage = () => {
                 {fatherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {fatherNidError}</p>}
                 {(fatherNid.length === 10 || fatherNid.length === 17) && !fatherNidError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {language === 'bn' ? 'সঠিক' : 'Valid'}</p>}
               </div>
+              )}
               <PhoneInput label={language === 'bn' ? 'পিতার মোবাইল' : 'Father Mobile'} required />
               <div>
                 <Label>{language === 'bn' ? 'মাতার নাম' : 'Mother Name'} <span className="text-destructive">*</span></Label>
@@ -338,6 +422,7 @@ const AdmissionPage = () => {
                 <Label>{language === 'bn' ? 'মাতার পেশা' : 'Mother Occupation'}</Label>
                 <Input className="bg-background mt-1" />
               </div>
+              {showMotherNid && (
               <div>
                 <Label>{language === 'bn' ? 'মাতার NID (১০/১৭ ডিজিট)' : 'Mother NID (10/17 digits)'}</Label>
                 <Input className="bg-background mt-1" maxLength={17} value={motherNid}
@@ -345,6 +430,7 @@ const AdmissionPage = () => {
                 {motherNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {motherNidError}</p>}
                 {(motherNid.length === 10 || motherNid.length === 17) && !motherNidError && <p className="text-xs text-success mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {language === 'bn' ? 'সঠিক' : 'Valid'}</p>}
               </div>
+              )}
               <PhoneInput label={language === 'bn' ? 'মাতার মোবাইল' : 'Mother Mobile'} required />
             </div>
 
@@ -424,12 +510,14 @@ const AdmissionPage = () => {
                     <Input className="bg-background mt-1" required />
                   </div>
                   <PhoneInput label={language === 'bn' ? 'মোবাইল' : 'Mobile'} required />
+                  {showGuardianNid && (
                   <div>
                     <Label>{language === 'bn' ? 'NID (১০/১৭ ডিজিট)' : 'NID (10/17 digits)'} <span className="text-destructive">*</span></Label>
                     <Input className="bg-background mt-1" maxLength={17} value={guardianNid}
                       onChange={(e) => validateNid(e.target.value, setGuardianNid, setGuardianNidError)} required />
                     {guardianNidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {guardianNidError}</p>}
                   </div>
+                  )}
                 </div>
                 <AddressFields
                   label={language === 'bn' ? 'স্থায়ী ঠিকানা' : 'Permanent Address'}
@@ -453,6 +541,20 @@ const AdmissionPage = () => {
               </div>
             )}
           </div>
+
+          {/* Footer from form_settings */}
+          {footerParagraph?.is_visible && footerParagraph?.footer_text && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{footerParagraph.footer_text}</p>
+            </div>
+          )}
+
+          {/* Footer from website_settings */}
+          {websiteFooterText && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <p className="text-sm text-foreground whitespace-pre-wrap">{websiteFooterText}</p>
+            </div>
+          )}
 
           <Button type="submit" className="btn-primary-gradient w-full text-lg py-6">
             {language === 'bn' ? 'আবেদন জমা দিন' : 'Submit Application'}
