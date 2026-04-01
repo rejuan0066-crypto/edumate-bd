@@ -1201,6 +1201,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               </div>
             )}
 
+            {/* Footer text from website_settings */}
+            {websiteFooterText && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <p className="text-sm text-foreground whitespace-pre-wrap">{websiteFooterText}</p>
+              </div>
+            )}
+
 
             {/* Submit */}
             <Button onClick={handleSubmit} className="btn-primary-gradient w-full text-lg py-5" disabled={addMutation.isPending || updateMutation.isPending}>
