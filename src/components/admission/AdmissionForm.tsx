@@ -828,6 +828,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       default:
+        if (!isFormFieldVisible(fieldKey)) return null;
         return (
           <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
