@@ -328,10 +328,19 @@ const AdminSalary = () => {
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     // Half day deduction
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
-    // Overtime
-    const overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+    // Overtime from full_day
+    let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
-    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance - advanceDeduction);
+    // Add residential duty overtime if enabled
+    if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
+      const staffDutyRecords = dutyAttendanceData.filter((a: any) => a.entity_id === staffMember.id);
+      const morningPresent = staffDutyRecords.filter((r: any) => r.shift === 'morning' && ['present', 'late'].includes(r.status)).length;
+      const eveningPresent = staffDutyRecords.filter((r: any) => r.shift === 'evening' && ['present', 'late'].includes(r.status)).length;
+      const dutyOvertime = (morningPresent + eveningPresent) * Number(dutySettings.extra_duty_rate);
+      overtime += Math.round(dutyOvertime);
+    }
+
+    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance + overtime - advanceDeduction);
 
     return {
       base_salary: baseSalary,
