@@ -45,7 +45,67 @@ const AdmissionPage = () => {
   const [oldSession, setOldSession] = useState('');
   const [oldClass, setOldClass] = useState('');
 
-  const calculateAge = useCallback((dateStr: string) => {
+  // Fetch form_settings for field visibility & footer
+  const { data: formSettings = [] } = useQuery({
+    queryKey: ['form-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('form_settings').select('*');
+      if (error) throw error;
+      return data as Array<{ id: string; field_name: string; is_visible: boolean; footer_text: string | null }>;
+    },
+  });
+
+  // Fetch website_settings overrides
+  const { data: websiteAdmissionSettings } = useQuery({
+    queryKey: ['website-admission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text']);
+      if (error) throw error;
+      const result: Record<string, any> = {};
+      data?.forEach(row => { result[row.key] = row.value; });
+      return result;
+    },
+  });
+
+  // Fetch academic sessions
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Visibility helper
+  const isFormFieldVisible = (fieldName: string) => {
+    const setting = formSettings.find(s => s.field_name === fieldName);
+    return setting ? setting.is_visible : true;
+  };
+
+  const showRollNo = websiteAdmissionSettings?.show_roll_no !== undefined
+    ? String(websiteAdmissionSettings.show_roll_no) === 'true'
+    : isFormFieldVisible('roll_no');
+  const showSession = websiteAdmissionSettings?.show_session !== undefined
+    ? String(websiteAdmissionSettings.show_session) === 'true'
+    : isFormFieldVisible('admission_session');
+  const showRegistrationNo = isFormFieldVisible('registration_no');
+  const showSessionYear = isFormFieldVisible('session_year');
+  const showBirthRegNo = isFormFieldVisible('birth_reg_no');
+  const showIsOrphan = isFormFieldVisible('is_orphan');
+  const showIsPoor = isFormFieldVisible('is_poor');
+  const showFatherNid = isFormFieldVisible('father_nid');
+  const showMotherNid = isFormFieldVisible('mother_nid');
+  const showGuardianNid = isFormFieldVisible('guardian_nid');
+  const showPreviousClass = isFormFieldVisible('previous_class');
+  const showPreviousInstitute = isFormFieldVisible('previous_institute');
+  const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
+  const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
+
+
     if (!dateStr) return '';
     const birth = new Date(dateStr);
     const today = new Date();
