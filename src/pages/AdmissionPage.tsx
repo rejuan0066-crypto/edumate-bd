@@ -1224,10 +1224,15 @@ const AdmissionPage = () => {
               </div>
             )}
 
-            <Button onClick={handleSubmit} className="btn-primary-gradient w-full text-lg py-6" disabled={addMutation.isPending}>
-              {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
-              {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={handleSubmit} className="btn-primary-gradient flex-1 text-lg py-6" disabled={addMutation.isPending}>
+                {addMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Plus className="w-5 h-5 mr-2" />}
+                {bn ? 'আবেদন জমা দিন' : 'Submit Application'}
+              </Button>
+              <Button onClick={() => handlePrint(true)} variant="outline" className="flex-1 text-lg py-6 flex items-center justify-center gap-2">
+                <Printer className="w-5 h-5" /> {bn ? 'ব্লাংক ফর্ম প্রিন্ট' : 'Print Blank Form'}
+              </Button>
+            </div>
             <p className="text-center text-xs text-muted-foreground">
               {bn ? 'জমা দেওয়ার পর অ্যাডমিনের অনুমোদন প্রয়োজন' : 'Admin approval required after submission'}
             </p>
