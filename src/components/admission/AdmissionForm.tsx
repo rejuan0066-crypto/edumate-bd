@@ -196,9 +196,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
 
   const getRollStartForClass = useCallback((classId: string) => {
-    const cls = classes.find((c: any) => c.id === classId);
-    if (!cls) return 1001;
-    const order = cls.sort_order || 1;
+    const idx = classes.findIndex((c: any) => c.id === classId);
+    const order = idx >= 0 ? idx + 1 : 1;
     return order * 1000 + 1;
   }, [classes]);
 
