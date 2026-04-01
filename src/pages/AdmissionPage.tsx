@@ -1103,43 +1103,69 @@ const AdmissionPage = () => {
   const handleDownloadPDF = async (blank = false) => {
     if (!blank && !submittedData) return;
     const html = buildFormHTML(blank);
-    
-    // Create a temporary container
-    const container = document.createElement('div');
-    container.innerHTML = html.replace(/.*<body>/s, '').replace(/<\/body>.*/s, '');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.width = '210mm';
-    container.style.fontFamily = "'Noto Sans Bengali', sans-serif";
-    container.style.padding = '20mm';
-    container.style.fontSize = '12px';
-    container.style.color = '#333';
-    document.body.appendChild(container);
 
-    // Apply styles inline
-    const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
-    if (styleMatch) {
-      const styleEl = document.createElement('style');
-      styleEl.textContent = styleMatch[1];
-      container.prepend(styleEl);
+    // Use a hidden iframe to render the HTML properly
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.left = '-10000px';
+    iframe.style.top = '0';
+    iframe.style.width = '794px'; // A4 width at 96dpi
+    iframe.style.height = '1123px'; // A4 height at 96dpi
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      document.body.removeChild(iframe);
+      return;
     }
 
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    // Wait for fonts and content to load
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
     try {
-      const html2pdf = (await import('html2pdf.js')).default;
+      const { default: html2canvas } = await import('html2canvas');
+      const { jsPDF } = await import('jspdf');
+
+      const body = iframeDoc.body;
+      const canvas = await html2canvas(body, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: 794,
+        windowWidth: 794,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = 210;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      let heightLeft = pdfHeight;
+      let position = 0;
+      const pageHeight = 297;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position -= pageHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
       const fileName = blank ? 'ভর্তি_আবেদন_ফর্ম.pdf' : `ভর্তি_আবেদন_${submittedData?.student_id || ''}.pdf`;
-      
-      await html2pdf().set({
-        margin: 0,
-        filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(container).save();
+      pdf.save(fileName);
     } catch (err) {
       console.error('PDF generation failed:', err);
       toast.error(bn ? 'PDF তৈরি করতে সমস্যা হয়েছে' : 'Failed to generate PDF');
     } finally {
-      document.body.removeChild(container);
+      document.body.removeChild(iframe);
     }
   };
 
