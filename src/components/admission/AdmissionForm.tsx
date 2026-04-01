@@ -251,10 +251,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     if (form.admission_class) {
       generateRollNumber(form.admission_class, form.admission_session || undefined);
     }
-    if (form.session_year) {
-      generateRegistrationNumber(form.session_year, form.admission_class || undefined, true);
+  }, [open, form.admission_class, form.admission_session, form.session_year, isEditMode, generateRollNumber]);
+
+  // Update registration whenever roll or session changes
+  useEffect(() => {
+    if (!open || isEditMode) return;
+    if (form.session_year && form.roll_number) {
+      updateRegistrationFromRoll(form.session_year, form.roll_number);
     }
-  }, [open, form.admission_class, form.admission_session, form.session_year, isEditMode, generateRollNumber, generateRegistrationNumber]);
+  }, [open, form.session_year, form.roll_number, isEditMode, updateRegistrationFromRoll]);
 
   const calculateAge = useCallback((dateStr: string) => {
     if (!dateStr) return '';
