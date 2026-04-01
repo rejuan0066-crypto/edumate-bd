@@ -83,6 +83,15 @@ const AdminAttendance = () => {
     },
   });
 
+  // Fetch classes
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+  });
+
   // Fetch students
   const { data: allStudents = [] } = useQuery({
     queryKey: ['students-attendance'],
