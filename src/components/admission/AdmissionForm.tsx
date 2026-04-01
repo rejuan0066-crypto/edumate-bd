@@ -257,7 +257,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   // Trigger registration number generation when session_year changes
   useEffect(() => {
     if (open && !isEditMode && form.session_year) {
-      generateRegistrationNumber(form.session_year);
+      generateRegistrationNumber(form.session_year, true);
     }
   }, [open, form.session_year, isEditMode, generateRegistrationNumber]);
 
