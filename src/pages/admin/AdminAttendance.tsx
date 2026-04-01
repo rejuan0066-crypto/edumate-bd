@@ -666,11 +666,32 @@ const AdminAttendance = () => {
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি টাইম সেভ করুন' : 'Save Duty Times'}
                 </Button>
 
-                {/* Extra Duty Option */}
+                {/* Days & Salary Settings */}
                 <div className="border-t pt-3 mt-3 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">{bn ? 'ডিউটি দিন ও বেতন সেটিংস' : 'Duty Days & Salary Settings'}</p>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <p className="text-sm font-medium">{bn ? 'অতিরিক্ত ডিউটি হিসেবে যোগ করুন' : 'Count as Extra Duty'}</p>
+                      <Label className="text-[10px]">{bn ? 'সকাল ডিউটি (দিন)' : 'Morning Duty (Days)'}</Label>
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.morning_days} onChange={e => setDutyTimes(p => ({ ...p, morning_days: Number(e.target.value) }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'সন্ধ্যা ডিউটি (দিন)' : 'Evening Duty (Days)'}</Label>
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.evening_days} onChange={e => setDutyTimes(p => ({ ...p, evening_days: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">{bn ? 'মোট ডিউটি বেতন (৳)' : 'Total Duty Salary (৳)'}</Label>
+                    <Input type="number" className="h-8 text-sm" placeholder="0" value={dutyTimes.total_salary || ''} onChange={e => setDutyTimes(p => ({ ...p, total_salary: Number(e.target.value) }))} />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn
+                        ? `মোট ${dutyTimes.morning_days + dutyTimes.evening_days} শিফট | প্রতি শিফট: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`
+                        : `Total ${dutyTimes.morning_days + dutyTimes.evening_days} shifts | Per shift: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="secondary" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
+                    <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+                  </Button>
+                </div>
                       <p className="text-[10px] text-muted-foreground">{bn ? 'চালু করলে আবাসিক ডিউটি অতিরিক্ত বেতন হিসেবে যোগ হবে' : 'If enabled, residential duty will be added as extra pay'}</p>
                     </div>
                     <Switch
