@@ -164,10 +164,26 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
-  const isFormFieldVisible = useCallback((fieldName: string) => {
-    const setting = formSettings.find(s => s.field_name === fieldName);
-    return setting ? setting.is_visible : true; // default visible if not in settings
-  }, [formSettings]);
+  // Fetch website_settings for show_roll_no, show_session, admission_footer_text
+  const { data: websiteAdmissionSettings } = useQuery({
+    queryKey: ['website-admission-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text']);
+      if (error) throw error;
+      const result: Record<string, any> = {};
+      data?.forEach(row => { result[row.key] = row.value; });
+      return result;
+    },
+  });
+
+  const showRollNo = websiteAdmissionSettings?.show_roll_no !== 'false' && websiteAdmissionSettings?.show_roll_no !== false;
+  const showSession = websiteAdmissionSettings?.show_session !== 'false' && websiteAdmissionSettings?.show_session !== false;
+  const admissionFooterText = typeof websiteAdmissionSettings?.admission_footer_text === 'string'
+    ? websiteAdmissionSettings.admission_footer_text
+    : '';
 
   const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
 
@@ -570,7 +586,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'roll_number':
-        if (!isFormFieldVisible('roll_no')) return null;
+        if (!showRollNo) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
@@ -604,6 +620,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'admission_session':
+        if (!showSession) return null;
         return (
           <div data-field={fieldKey}>
             <Label className={errorLabel}>{label} {reqStar}</Label>
@@ -1166,6 +1183,13 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             {footerParagraph?.is_visible && footerParagraph?.footer_text && (
               <div className="border rounded-lg p-4 bg-muted/50">
                 <p className="text-sm text-foreground whitespace-pre-wrap">{footerParagraph.footer_text}</p>
+              </div>
+            )}
+
+            {/* Footer from website_settings admission_footer_text */}
+            {admissionFooterText && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <p className="text-sm text-foreground whitespace-pre-wrap">{admissionFooterText}</p>
               </div>
             )}
 
