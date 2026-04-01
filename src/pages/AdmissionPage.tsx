@@ -106,7 +106,7 @@ const AdmissionPage = () => {
   const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
 
 
-    if (!dateStr) return '';
+    const calculateAge = useCallback((dateStr: string) => {
     const birth = new Date(dateStr);
     const today = new Date();
     const years = today.getFullYear() - birth.getFullYear();
