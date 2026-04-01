@@ -1,5 +1,5 @@
-// Bangladesh 4-level address hierarchy: Division -> District -> Upazila -> Union
-// Comprehensive data: 8 Divisions, 64 Districts, 492 Upazilas, 769 Unions
+// Bangladesh address hierarchy: Division -> District -> Upazila/City Corporation/Municipality -> Union/Ward
+// Comprehensive data: 8 Divisions, 64 Districts, Upazilas + City Corporations + Municipalities with Wards
 
 export interface AddressData {
   divisions: Division[];
@@ -38,49 +38,264 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Bagerhat",
         "upazilas": [
           {
+            "name": "বাগেরহাট পৌরসভা",
+            "nameEn": "Bagerhat Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "বাগেরহাট সদর উপজেলা",
             "nameEn": "Bagerhat Sadar",
-            "unions": [{"name": "ফকিরহাট", "nameEn": "ফকিরহাট"}, {"name": "কচুয়া", "nameEn": "কচুয়া"}, {"name": "রাখালগাছি", "nameEn": "রাখালগাছি"}, {"name": "বেমরতা", "nameEn": "বেমরতা"}, {"name": "ষাটদোহ", "nameEn": "ষাটদোহ"}, {"name": "বারুইপাড়া", "nameEn": "বারুইপাড়া"}, {"name": "দেবহাটা", "nameEn": "দেবহাটা"}]
+            "unions": [
+              {
+                "name": "ফকিরহাট",
+                "nameEn": "ফকিরহাট"
+              },
+              {
+                "name": "কচুয়া",
+                "nameEn": "কচুয়া"
+              },
+              {
+                "name": "রাখালগাছি",
+                "nameEn": "রাখালগাছি"
+              },
+              {
+                "name": "বেমরতা",
+                "nameEn": "বেমরতা"
+              },
+              {
+                "name": "ষাটদোহ",
+                "nameEn": "ষাটদোহ"
+              },
+              {
+                "name": "বারুইপাড়া",
+                "nameEn": "বারুইপাড়া"
+              },
+              {
+                "name": "দেবহাটা",
+                "nameEn": "দেবহাটা"
+              }
+            ]
           },
           {
             "name": "কচুয়া উপজেলা",
             "nameEn": "Chitalmari",
-            "unions": [{"name": "চিতলমারী", "nameEn": "চিতলমারী"}, {"name": "চরবানিয়ারী", "nameEn": "চরবানিয়ারী"}, {"name": "কালাইচাপড়া", "nameEn": "কালাইচাপড়া"}]
+            "unions": [
+              {
+                "name": "চিতলমারী",
+                "nameEn": "চিতলমারী"
+              },
+              {
+                "name": "চরবানিয়ারী",
+                "nameEn": "চরবানিয়ারী"
+              },
+              {
+                "name": "কালাইচাপড়া",
+                "nameEn": "কালাইচাপড়া"
+              }
+            ]
           },
           {
             "name": "চিতলমারী উপজেলা",
             "nameEn": "Fakirhat",
-            "unions": [{"name": "ফকিরহাট", "nameEn": "ফকিরহাট"}, {"name": "বেতাগা", "nameEn": "বেতাগা"}, {"name": "পিলজং", "nameEn": "পিলজং"}, {"name": "শুভদিয়া", "nameEn": "শুভদিয়া"}, {"name": "মুকুন্দকাটি", "nameEn": "মুকুন্দকাটি"}]
+            "unions": [
+              {
+                "name": "ফকিরহাট",
+                "nameEn": "ফকিরহাট"
+              },
+              {
+                "name": "বেতাগা",
+                "nameEn": "বেতাগা"
+              },
+              {
+                "name": "পিলজং",
+                "nameEn": "পিলজং"
+              },
+              {
+                "name": "শুভদিয়া",
+                "nameEn": "শুভদিয়া"
+              },
+              {
+                "name": "মুকুন্দকাটি",
+                "nameEn": "মুকুন্দকাটি"
+              }
+            ]
           },
           {
             "name": "ফকিরহাট উপজেলা",
             "nameEn": "Kachua",
-            "unions": [{"name": "কচুয়া", "nameEn": "কচুয়া"}, {"name": "বদরপুর", "nameEn": "বদরপুর"}, {"name": "গোয়ালবাথান", "nameEn": "গোয়ালবাথান"}]
+            "unions": [
+              {
+                "name": "কচুয়া",
+                "nameEn": "কচুয়া"
+              },
+              {
+                "name": "বদরপুর",
+                "nameEn": "বদরপুর"
+              },
+              {
+                "name": "গোয়ালবাথান",
+                "nameEn": "গোয়ালবাথান"
+              }
+            ]
           },
           {
             "name": "মোংলা উপজেলা",
             "nameEn": "Mollahat",
-            "unions": [{"name": "মোল্লাহাট", "nameEn": "মোল্লাহাট"}, {"name": "চুনখোলা", "nameEn": "চুনখোলা"}, {"name": "গোপালপুর", "nameEn": "গোপালপুর"}, {"name": "নাগরঘাটা", "nameEn": "নাগরঘাটা"}, {"name": "পানগুছি", "nameEn": "পানগুছি"}]
+            "unions": [
+              {
+                "name": "মোল্লাহাট",
+                "nameEn": "মোল্লাহাট"
+              },
+              {
+                "name": "চুনখোলা",
+                "nameEn": "চুনখোলা"
+              },
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "নাগরঘাটা",
+                "nameEn": "নাগরঘাটা"
+              },
+              {
+                "name": "পানগুছি",
+                "nameEn": "পানগুছি"
+              }
+            ]
           },
           {
             "name": "মোড়েলগঞ্জ উপজেলা",
             "nameEn": "Mongla",
-            "unions": [{"name": "মোংলা", "nameEn": "মোংলা"}, {"name": "বুড়িরডাঙ্গা", "nameEn": "বুড়িরডাঙ্গা"}, {"name": "মোংলা পোর্ট", "nameEn": "মোংলা পোর্ট"}, {"name": "সুন্দরবন", "nameEn": "সুন্দরবন"}]
+            "unions": [
+              {
+                "name": "মোংলা",
+                "nameEn": "মোংলা"
+              },
+              {
+                "name": "বুড়িরডাঙ্গা",
+                "nameEn": "বুড়িরডাঙ্গা"
+              },
+              {
+                "name": "মোংলা পোর্ট",
+                "nameEn": "মোংলা পোর্ট"
+              },
+              {
+                "name": "সুন্দরবন",
+                "nameEn": "সুন্দরবন"
+              }
+            ]
           },
           {
             "name": "মোল্লাহাট উপজেলা",
             "nameEn": "Morrelganj",
-            "unions": [{"name": "মোড়েলগঞ্জ", "nameEn": "মোড়েলগঞ্জ"}, {"name": "বারৈখালী", "nameEn": "বারৈখালী"}, {"name": "পানখালী", "nameEn": "পানখালী"}, {"name": "তেলিগাতি", "nameEn": "তেলিগাতি"}, {"name": "নিশানবাড়িয়া", "nameEn": "নিশানবাড়িয়া"}]
+            "unions": [
+              {
+                "name": "মোড়েলগঞ্জ",
+                "nameEn": "মোড়েলগঞ্জ"
+              },
+              {
+                "name": "বারৈখালী",
+                "nameEn": "বারৈখালী"
+              },
+              {
+                "name": "পানখালী",
+                "nameEn": "পানখালী"
+              },
+              {
+                "name": "তেলিগাতি",
+                "nameEn": "তেলিগাতি"
+              },
+              {
+                "name": "নিশানবাড়িয়া",
+                "nameEn": "নিশানবাড়িয়া"
+              }
+            ]
           },
           {
             "name": "রামপাল উপজেলা",
             "nameEn": "Rampal",
-            "unions": [{"name": "রামপাল", "nameEn": "রামপাল"}, {"name": "গোরান", "nameEn": "গোরান"}, {"name": "ভোজপাতিয়া", "nameEn": "ভোজপাতিয়া"}, {"name": "পেড়িখালী", "nameEn": "পেড়িখালী"}, {"name": "হুরকা", "nameEn": "হুরকা"}]
+            "unions": [
+              {
+                "name": "রামপাল",
+                "nameEn": "রামপাল"
+              },
+              {
+                "name": "গোরান",
+                "nameEn": "গোরান"
+              },
+              {
+                "name": "ভোজপাতিয়া",
+                "nameEn": "ভোজপাতিয়া"
+              },
+              {
+                "name": "পেড়িখালী",
+                "nameEn": "পেড়িখালী"
+              },
+              {
+                "name": "হুরকা",
+                "nameEn": "হুরকা"
+              }
+            ]
           },
           {
             "name": "শরণখোলা উপজেলা",
             "nameEn": "Sharankhola",
-            "unions": [{"name": "শরণখোলা", "nameEn": "শরণখোলা"}, {"name": "ধানসাগর", "nameEn": "ধানসাগর"}, {"name": "রায়েন্দা", "nameEn": "রায়েন্দা"}, {"name": "সাউথখালী", "nameEn": "সাউথখালী"}]
+            "unions": [
+              {
+                "name": "শরণখোলা",
+                "nameEn": "শরণখোলা"
+              },
+              {
+                "name": "ধানসাগর",
+                "nameEn": "ধানসাগর"
+              },
+              {
+                "name": "রায়েন্দা",
+                "nameEn": "রায়েন্দা"
+              },
+              {
+                "name": "সাউথখালী",
+                "nameEn": "সাউথখালী"
+              }
+            ]
           }
         ]
       },
@@ -89,24 +304,142 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Chuadanga",
         "upazilas": [
           {
+            "name": "চুয়াডাঙ্গা পৌরসভা",
+            "nameEn": "Chuadanga Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "চুয়াডাঙ্গা সদর উপজেলা",
             "nameEn": "Alamdanga",
-            "unions": [{"name": "আলমডাঙ্গা", "nameEn": "আলমডাঙ্গা"}, {"name": "হাটবোয়ালিয়া", "nameEn": "হাটবোয়ালিয়া"}, {"name": "নাটুদহ", "nameEn": "নাটুদহ"}, {"name": "খাসকররা", "nameEn": "খাসকররা"}]
+            "unions": [
+              {
+                "name": "আলমডাঙ্গা",
+                "nameEn": "আলমডাঙ্গা"
+              },
+              {
+                "name": "হাটবোয়ালিয়া",
+                "nameEn": "হাটবোয়ালিয়া"
+              },
+              {
+                "name": "নাটুদহ",
+                "nameEn": "নাটুদহ"
+              },
+              {
+                "name": "খাসকররা",
+                "nameEn": "খাসকররা"
+              }
+            ]
           },
           {
             "name": "আলমডাঙ্গা উপজেলা",
             "nameEn": "Chuadanga Sadar",
-            "unions": [{"name": "চুয়াডাঙ্গা সদর", "nameEn": "চুয়াডাঙ্গা সদর"}, {"name": "শংকরপুর", "nameEn": "শংকরপুর"}, {"name": "আলুকদিয়া", "nameEn": "আলুকদিয়া"}, {"name": "দর্শনা", "nameEn": "দর্শনা"}, {"name": "তুতপাড়া", "nameEn": "তুতপাড়া"}]
+            "unions": [
+              {
+                "name": "চুয়াডাঙ্গা সদর",
+                "nameEn": "চুয়াডাঙ্গা সদর"
+              },
+              {
+                "name": "শংকরপুর",
+                "nameEn": "শংকরপুর"
+              },
+              {
+                "name": "আলুকদিয়া",
+                "nameEn": "আলুকদিয়া"
+              },
+              {
+                "name": "দর্শনা",
+                "nameEn": "দর্শনা"
+              },
+              {
+                "name": "তুতপাড়া",
+                "nameEn": "তুতপাড়া"
+              }
+            ]
           },
           {
             "name": "জীবননগর উপজেলা",
             "nameEn": "Damurhuda",
-            "unions": [{"name": "দামুড়হুদা", "nameEn": "দামুড়হুদা"}, {"name": "জুরানপুর", "nameEn": "জুরানপুর"}, {"name": "কুড়ালগাছি", "nameEn": "কুড়ালগাছি"}, {"name": "পড়াগাছা", "nameEn": "পড়াগাছা"}, {"name": "নতিপোতা", "nameEn": "নতিপোতা"}]
+            "unions": [
+              {
+                "name": "দামুড়হুদা",
+                "nameEn": "দামুড়হুদা"
+              },
+              {
+                "name": "জুরানপুর",
+                "nameEn": "জুরানপুর"
+              },
+              {
+                "name": "কুড়ালগাছি",
+                "nameEn": "কুড়ালগাছি"
+              },
+              {
+                "name": "পড়াগাছা",
+                "nameEn": "পড়াগাছা"
+              },
+              {
+                "name": "নতিপোতা",
+                "nameEn": "নতিপোতা"
+              }
+            ]
           },
           {
             "name": "দামুড়হুদা উপজেলা",
             "nameEn": "Jibannagar",
-            "unions": [{"name": "জীবননগর", "nameEn": "জীবননগর"}, {"name": "চান্দ্রপুর", "nameEn": "চান্দ্রপুর"}, {"name": "পাতিলা", "nameEn": "পাতিলা"}, {"name": "মোহাম্মদনগর", "nameEn": "মোহাম্মদনগর"}]
+            "unions": [
+              {
+                "name": "জীবননগর",
+                "nameEn": "জীবননগর"
+              },
+              {
+                "name": "চান্দ্রপুর",
+                "nameEn": "চান্দ্রপুর"
+              },
+              {
+                "name": "পাতিলা",
+                "nameEn": "পাতিলা"
+              },
+              {
+                "name": "মোহাম্মদনগর",
+                "nameEn": "মোহাম্মদনগর"
+              }
+            ]
           }
         ]
       },
@@ -115,44 +448,226 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Jashore",
         "upazilas": [
           {
+            "name": "যশোর পৌরসভা",
+            "nameEn": "Jashore Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "যশোর সদর উপজেলা",
             "nameEn": "Abhoynagar",
-            "unions": [{"name": "অভয়নগর", "nameEn": "অভয়নগর"}, {"name": "বাঘুটিয়া", "nameEn": "বাঘুটিয়া"}, {"name": "পয়সা", "nameEn": "পয়সা"}, {"name": "সুন্দরপুর", "nameEn": "সুন্দরপুর"}]
+            "unions": [
+              {
+                "name": "অভয়নগর",
+                "nameEn": "অভয়নগর"
+              },
+              {
+                "name": "বাঘুটিয়া",
+                "nameEn": "বাঘুটিয়া"
+              },
+              {
+                "name": "পয়সা",
+                "nameEn": "পয়সা"
+              },
+              {
+                "name": "সুন্দরপুর",
+                "nameEn": "সুন্দরপুর"
+              }
+            ]
           },
           {
             "name": "অভয়নগর উপজেলা",
             "nameEn": "Bagherpara",
-            "unions": [{"name": "বাঘারপাড়া", "nameEn": "বাঘারপাড়া"}, {"name": "জামালপুর", "nameEn": "জামালপুর"}, {"name": "বারীনগর", "nameEn": "বারীনগর"}, {"name": "সতুজান", "nameEn": "সতুজান"}]
+            "unions": [
+              {
+                "name": "বাঘারপাড়া",
+                "nameEn": "বাঘারপাড়া"
+              },
+              {
+                "name": "জামালপুর",
+                "nameEn": "জামালপুর"
+              },
+              {
+                "name": "বারীনগর",
+                "nameEn": "বারীনগর"
+              },
+              {
+                "name": "সতুজান",
+                "nameEn": "সতুজান"
+              }
+            ]
           },
           {
             "name": "কেশবপুর উপজেলা",
             "nameEn": "Chowgacha",
-            "unions": [{"name": "চৌগাছা", "nameEn": "চৌগাছা"}, {"name": "ধূলিয়ানী", "nameEn": "ধূলিয়ানী"}, {"name": "নারায়ণপুর", "nameEn": "নারায়ণপুর"}, {"name": "স্বরূপদাহ", "nameEn": "স্বরূপদাহ"}]
+            "unions": [
+              {
+                "name": "চৌগাছা",
+                "nameEn": "চৌগাছা"
+              },
+              {
+                "name": "ধূলিয়ানী",
+                "nameEn": "ধূলিয়ানী"
+              },
+              {
+                "name": "নারায়ণপুর",
+                "nameEn": "নারায়ণপুর"
+              },
+              {
+                "name": "স্বরূপদাহ",
+                "nameEn": "স্বরূপদাহ"
+              }
+            ]
           },
           {
             "name": "চৌগাছা উপজেলা",
             "nameEn": "Jashore Sadar",
-            "unions": [{"name": "যশোর সদর", "nameEn": "যশোর সদর"}, {"name": "দিয়াড়", "nameEn": "দিয়াড়"}, {"name": "লেবুতলা", "nameEn": "লেবুতলা"}, {"name": "ফতেহপুর", "nameEn": "ফতেহপুর"}]
+            "unions": [
+              {
+                "name": "যশোর সদর",
+                "nameEn": "যশোর সদর"
+              },
+              {
+                "name": "দিয়াড়",
+                "nameEn": "দিয়াড়"
+              },
+              {
+                "name": "লেবুতলা",
+                "nameEn": "লেবুতলা"
+              },
+              {
+                "name": "ফতেহপুর",
+                "nameEn": "ফতেহপুর"
+              }
+            ]
           },
           {
             "name": "ঝিকরগাছা উপজেলা",
             "nameEn": "Jhikargacha",
-            "unions": [{"name": "ঝিকরগাছা", "nameEn": "ঝিকরগাছা"}, {"name": "গদখালী", "nameEn": "গদখালী"}, {"name": "সাগরদাঁড়ি", "nameEn": "সাগরদাঁড়ি"}, {"name": "মাগুরা", "nameEn": "মাগুরা"}]
+            "unions": [
+              {
+                "name": "ঝিকরগাছা",
+                "nameEn": "ঝিকরগাছা"
+              },
+              {
+                "name": "গদখালী",
+                "nameEn": "গদখালী"
+              },
+              {
+                "name": "সাগরদাঁড়ি",
+                "nameEn": "সাগরদাঁড়ি"
+              },
+              {
+                "name": "মাগুরা",
+                "nameEn": "মাগুরা"
+              }
+            ]
           },
           {
             "name": "বাঘারপাড়া উপজেলা",
             "nameEn": "Keshabpur",
-            "unions": [{"name": "কেশবপুর", "nameEn": "কেশবপুর"}, {"name": "সাগরদাঁড়ী", "nameEn": "সাগরদাঁড়ী"}, {"name": "বিদ্যানন্দকাটি", "nameEn": "বিদ্যানন্দকাটি"}, {"name": "পাজিয়া", "nameEn": "পাজিয়া"}, {"name": "মঙ্গলকোট", "nameEn": "মঙ্গলকোট"}]
+            "unions": [
+              {
+                "name": "কেশবপুর",
+                "nameEn": "কেশবপুর"
+              },
+              {
+                "name": "সাগরদাঁড়ী",
+                "nameEn": "সাগরদাঁড়ী"
+              },
+              {
+                "name": "বিদ্যানন্দকাটি",
+                "nameEn": "বিদ্যানন্দকাটি"
+              },
+              {
+                "name": "পাজিয়া",
+                "nameEn": "পাজিয়া"
+              },
+              {
+                "name": "মঙ্গলকোট",
+                "nameEn": "মঙ্গলকোট"
+              }
+            ]
           },
           {
             "name": "মনিরামপুর উপজেলা",
             "nameEn": "Monirampur",
-            "unions": [{"name": "মণিরামপুর", "nameEn": "মণিরামপুর"}, {"name": "কাঁঠালতলা", "nameEn": "কাঁঠালতলা"}, {"name": "রোহিতা", "nameEn": "রোহিতা"}, {"name": "শংকরপুর", "nameEn": "শংকরপুর"}]
+            "unions": [
+              {
+                "name": "মণিরামপুর",
+                "nameEn": "মণিরামপুর"
+              },
+              {
+                "name": "কাঁঠালতলা",
+                "nameEn": "কাঁঠালতলা"
+              },
+              {
+                "name": "রোহিতা",
+                "nameEn": "রোহিতা"
+              },
+              {
+                "name": "শংকরপুর",
+                "nameEn": "শংকরপুর"
+              }
+            ]
           },
           {
             "name": "শার্শা উপজেলা",
             "nameEn": "Sarsha",
-            "unions": [{"name": "শার্শা", "nameEn": "শার্শা"}, {"name": "বাগডাঙ্গা", "nameEn": "বাগডাঙ্গা"}, {"name": "বেনাপোল", "nameEn": "বেনাপোল"}, {"name": "নাভারণ", "nameEn": "নাভারণ"}]
+            "unions": [
+              {
+                "name": "শার্শা",
+                "nameEn": "শার্শা"
+              },
+              {
+                "name": "বাগডাঙ্গা",
+                "nameEn": "বাগডাঙ্গা"
+              },
+              {
+                "name": "বেনাপোল",
+                "nameEn": "বেনাপোল"
+              },
+              {
+                "name": "নাভারণ",
+                "nameEn": "নাভারণ"
+              }
+            ]
           }
         ]
       },
@@ -161,34 +676,166 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Jhenaidah",
         "upazilas": [
           {
+            "name": "ঝিনাইদহ পৌরসভা",
+            "nameEn": "Jhenaidah Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ঝিনাইদহ সদর উপজেলা",
             "nameEn": "Harinakunda",
-            "unions": [{"name": "হরিণাকুন্ডু", "nameEn": "হরিণাকুন্ডু"}, {"name": "ভবানীপুর", "nameEn": "ভবানীপুর"}, {"name": "মাথাভাঙ্গা", "nameEn": "মাথাভাঙ্গা"}, {"name": "রতনপুর", "nameEn": "রতনপুর"}]
+            "unions": [
+              {
+                "name": "হরিণাকুন্ডু",
+                "nameEn": "হরিণাকুন্ডু"
+              },
+              {
+                "name": "ভবানীপুর",
+                "nameEn": "ভবানীপুর"
+              },
+              {
+                "name": "মাথাভাঙ্গা",
+                "nameEn": "মাথাভাঙ্গা"
+              },
+              {
+                "name": "রতনপুর",
+                "nameEn": "রতনপুর"
+              }
+            ]
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
             "nameEn": "Jhenaidah Sadar",
-            "unions": [{"name": "ঝিনাইদহ সদর", "nameEn": "ঝিনাইদহ সদর"}, {"name": "ঘোড়াঘাট", "nameEn": "ঘোড়াঘাট"}, {"name": "পদ্মাবতী", "nameEn": "পদ্মাবতী"}, {"name": "সৈয়দপুর", "nameEn": "সৈয়দপুর"}, {"name": "দুধসর", "nameEn": "দুধসর"}]
+            "unions": [
+              {
+                "name": "ঝিনাইদহ সদর",
+                "nameEn": "ঝিনাইদহ সদর"
+              },
+              {
+                "name": "ঘোড়াঘাট",
+                "nameEn": "ঘোড়াঘাট"
+              },
+              {
+                "name": "পদ্মাবতী",
+                "nameEn": "পদ্মাবতী"
+              },
+              {
+                "name": "সৈয়দপুর",
+                "nameEn": "সৈয়দপুর"
+              },
+              {
+                "name": "দুধসর",
+                "nameEn": "দুধসর"
+              }
+            ]
           },
           {
             "name": "কোটচাঁদপুর উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
+            "unions": [
+              {
+                "name": "Kaliganj সদর",
+                "nameEn": "Kaliganj Sadar"
+              }
+            ]
           },
           {
             "name": "মহেশপুর উপজেলা",
             "nameEn": "Kotchandpur",
-            "unions": [{"name": "কোটচাঁদপুর", "nameEn": "কোটচাঁদপুর"}, {"name": "কলোড়া", "nameEn": "কলোড়া"}, {"name": "লংগলজোড়", "nameEn": "লংগলজোড়"}, {"name": "সুখপুকুরিয়া", "nameEn": "সুখপুকুরিয়া"}]
+            "unions": [
+              {
+                "name": "কোটচাঁদপুর",
+                "nameEn": "কোটচাঁদপুর"
+              },
+              {
+                "name": "কলোড়া",
+                "nameEn": "কলোড়া"
+              },
+              {
+                "name": "লংগলজোড়",
+                "nameEn": "লংগলজোড়"
+              },
+              {
+                "name": "সুখপুকুরিয়া",
+                "nameEn": "সুখপুকুরিয়া"
+              }
+            ]
           },
           {
             "name": "শৈলকুপা উপজেলা",
             "nameEn": "Moheshpur",
-            "unions": [{"name": "মহেশপুর", "nameEn": "মহেশপুর"}, {"name": "মনোহরপুর", "nameEn": "মনোহরপুর"}, {"name": "ফতেহপুর", "nameEn": "ফতেহপুর"}]
+            "unions": [
+              {
+                "name": "মহেশপুর",
+                "nameEn": "মহেশপুর"
+              },
+              {
+                "name": "মনোহরপুর",
+                "nameEn": "মনোহরপুর"
+              },
+              {
+                "name": "ফতেহপুর",
+                "nameEn": "ফতেহপুর"
+              }
+            ]
           },
           {
             "name": "হরিণাকুন্ডু উপজেলা",
             "nameEn": "Shailkupa",
-            "unions": [{"name": "শৈলকুপা", "nameEn": "শৈলকুপা"}, {"name": "বিরামপুর", "nameEn": "বিরামপুর"}, {"name": "বাড়ইগ্রাম", "nameEn": "বাড়ইগ্রাম"}, {"name": "আওতাপাড়া", "nameEn": "আওতাপাড়া"}]
+            "unions": [
+              {
+                "name": "শৈলকুপা",
+                "nameEn": "শৈলকুপা"
+              },
+              {
+                "name": "বিরামপুর",
+                "nameEn": "বিরামপুর"
+              },
+              {
+                "name": "বাড়ইগ্রাম",
+                "nameEn": "বাড়ইগ্রাম"
+              },
+              {
+                "name": "আওতাপাড়া",
+                "nameEn": "আওতাপাড়া"
+              }
+            ]
           }
         ]
       },
@@ -197,49 +844,324 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Khulna",
         "upazilas": [
           {
+            "name": "খুলনা সিটি কর্পোরেশন",
+            "nameEn": "Khulna City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              }
+            ]
+          },
+          {
             "name": "কয়রা উপজেলা",
             "nameEn": "Batiaghata",
-            "unions": [{"name": "বটিয়াঘাটা", "nameEn": "বটিয়াঘাটা"}, {"name": "বলাবুনিয়া", "nameEn": "বলাবুনিয়া"}, {"name": "গঙ্গারামপুর", "nameEn": "গঙ্গারামপুর"}, {"name": "সুরখালী", "nameEn": "সুরখালী"}, {"name": "জলমা", "nameEn": "জলমা"}]
+            "unions": [
+              {
+                "name": "বটিয়াঘাটা",
+                "nameEn": "বটিয়াঘাটা"
+              },
+              {
+                "name": "বলাবুনিয়া",
+                "nameEn": "বলাবুনিয়া"
+              },
+              {
+                "name": "গঙ্গারামপুর",
+                "nameEn": "গঙ্গারামপুর"
+              },
+              {
+                "name": "সুরখালী",
+                "nameEn": "সুরখালী"
+              },
+              {
+                "name": "জলমা",
+                "nameEn": "জলমা"
+              }
+            ]
           },
           {
             "name": "ডুমুরিয়া উপজেলা",
             "nameEn": "Dacope",
-            "unions": [{"name": "দাকোপ", "nameEn": "দাকোপ"}, {"name": "পানখালী", "nameEn": "পানখালী"}, {"name": "কৈলাশগঞ্জ", "nameEn": "কৈলাশগঞ্জ"}, {"name": "বানিশান্তা", "nameEn": "বানিশান্তা"}, {"name": "সুতারখালি", "nameEn": "সুতারখালি"}]
+            "unions": [
+              {
+                "name": "দাকোপ",
+                "nameEn": "দাকোপ"
+              },
+              {
+                "name": "পানখালী",
+                "nameEn": "পানখালী"
+              },
+              {
+                "name": "কৈলাশগঞ্জ",
+                "nameEn": "কৈলাশগঞ্জ"
+              },
+              {
+                "name": "বানিশান্তা",
+                "nameEn": "বানিশান্তা"
+              },
+              {
+                "name": "সুতারখালি",
+                "nameEn": "সুতারখালি"
+              }
+            ]
           },
           {
             "name": "তেরখাদা উপজেলা",
             "nameEn": "Dighalia",
-            "unions": [{"name": "দিঘলিয়া", "nameEn": "দিঘলিয়া"}, {"name": "সেনহাটি", "nameEn": "সেনহাটি"}, {"name": "গাজীরহাট", "nameEn": "গাজীরহাট"}, {"name": "আড়ংঘাটা", "nameEn": "আড়ংঘাটা"}]
+            "unions": [
+              {
+                "name": "দিঘলিয়া",
+                "nameEn": "দিঘলিয়া"
+              },
+              {
+                "name": "সেনহাটি",
+                "nameEn": "সেনহাটি"
+              },
+              {
+                "name": "গাজীরহাট",
+                "nameEn": "গাজীরহাট"
+              },
+              {
+                "name": "আড়ংঘাটা",
+                "nameEn": "আড়ংঘাটা"
+              }
+            ]
           },
           {
             "name": "দাকোপ উপজেলা",
             "nameEn": "Dumuria",
-            "unions": [{"name": "ডুমুরিয়া", "nameEn": "ডুমুরিয়া"}, {"name": "শোলগাতিয়া", "nameEn": "শোলগাতিয়া"}, {"name": "রুদাঘরা", "nameEn": "রুদাঘরা"}, {"name": "শোভনা", "nameEn": "শোভনা"}, {"name": "কৈলাশগঞ্জ", "nameEn": "কৈলাশগঞ্জ"}]
+            "unions": [
+              {
+                "name": "ডুমুরিয়া",
+                "nameEn": "ডুমুরিয়া"
+              },
+              {
+                "name": "শোলগাতিয়া",
+                "nameEn": "শোলগাতিয়া"
+              },
+              {
+                "name": "রুদাঘরা",
+                "nameEn": "রুদাঘরা"
+              },
+              {
+                "name": "শোভনা",
+                "nameEn": "শোভনা"
+              },
+              {
+                "name": "কৈলাশগঞ্জ",
+                "nameEn": "কৈলাশগঞ্জ"
+              }
+            ]
           },
           {
             "name": "দিঘলিয়া উপজেলা",
             "nameEn": "Koira",
-            "unions": [{"name": "কয়রা", "nameEn": "কয়রা"}, {"name": "মহেশ্বরীপুর", "nameEn": "মহেশ্বরীপুর"}, {"name": "বাগালী", "nameEn": "বাগালী"}]
+            "unions": [
+              {
+                "name": "কয়রা",
+                "nameEn": "কয়রা"
+              },
+              {
+                "name": "মহেশ্বরীপুর",
+                "nameEn": "মহেশ্বরীপুর"
+              },
+              {
+                "name": "বাগালী",
+                "nameEn": "বাগালী"
+              }
+            ]
           },
           {
             "name": "পাইকগাছা উপজেলা",
             "nameEn": "Paikgacha",
-            "unions": [{"name": "পাইকগাছা", "nameEn": "পাইকগাছা"}, {"name": "কপিলমুনি", "nameEn": "কপিলমুনি"}, {"name": "গড়ইখালী", "nameEn": "গড়ইখালী"}]
+            "unions": [
+              {
+                "name": "পাইকগাছা",
+                "nameEn": "পাইকগাছা"
+              },
+              {
+                "name": "কপিলমুনি",
+                "nameEn": "কপিলমুনি"
+              },
+              {
+                "name": "গড়ইখালী",
+                "nameEn": "গড়ইখালী"
+              }
+            ]
           },
           {
             "name": "ফুলতলা উপজেলা",
             "nameEn": "Phultala",
-            "unions": [{"name": "ফুলতলা", "nameEn": "ফুলতলা"}, {"name": "আটলিয়া", "nameEn": "আটলিয়া"}, {"name": "দামোদর", "nameEn": "দামোদর"}]
+            "unions": [
+              {
+                "name": "ফুলতলা",
+                "nameEn": "ফুলতলা"
+              },
+              {
+                "name": "আটলিয়া",
+                "nameEn": "আটলিয়া"
+              },
+              {
+                "name": "দামোদর",
+                "nameEn": "দামোদর"
+              }
+            ]
           },
           {
             "name": "বটিয়াঘাটা উপজেলা",
             "nameEn": "Rupsa",
-            "unions": [{"name": "রূপসা", "nameEn": "রূপসা"}, {"name": "চাঁদখালী", "nameEn": "চাঁদখালী"}, {"name": "আইচগাতি", "nameEn": "আইচগাতি"}]
+            "unions": [
+              {
+                "name": "রূপসা",
+                "nameEn": "রূপসা"
+              },
+              {
+                "name": "চাঁদখালী",
+                "nameEn": "চাঁদখালী"
+              },
+              {
+                "name": "আইচগাতি",
+                "nameEn": "আইচগাতি"
+              }
+            ]
           },
           {
             "name": "রূপসা উপজেলা",
             "nameEn": "Terokhada",
-            "unions": [{"name": "তেরখাদা", "nameEn": "তেরখাদা"}, {"name": "আজগরা", "nameEn": "আজগরা"}, {"name": "সচিদানন্দপুর", "nameEn": "সচিদানন্দপুর"}]
+            "unions": [
+              {
+                "name": "তেরখাদা",
+                "nameEn": "তেরখাদা"
+              },
+              {
+                "name": "আজগরা",
+                "nameEn": "আজগরা"
+              },
+              {
+                "name": "সচিদানন্দপুর",
+                "nameEn": "সচিদানন্দপুর"
+              }
+            ]
           }
         ]
       },
@@ -248,34 +1170,202 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Kushtia",
         "upazilas": [
           {
+            "name": "কুষ্টিয়া পৌরসভা",
+            "nameEn": "Kushtia Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              }
+            ]
+          },
+          {
             "name": "কুষ্টিয়া সদর উপজেলা",
             "nameEn": "Bheramara",
-            "unions": [{"name": "ভেড়ামারা", "nameEn": "ভেড়ামারা"}, {"name": "বাহিরচাপড়া", "nameEn": "বাহিরচাপড়া"}, {"name": "দুর্লভপুর", "nameEn": "দুর্লভপুর"}, {"name": "মোহনপুর", "nameEn": "মোহনপুর"}]
+            "unions": [
+              {
+                "name": "ভেড়ামারা",
+                "nameEn": "ভেড়ামারা"
+              },
+              {
+                "name": "বাহিরচাপড়া",
+                "nameEn": "বাহিরচাপড়া"
+              },
+              {
+                "name": "দুর্লভপুর",
+                "nameEn": "দুর্লভপুর"
+              },
+              {
+                "name": "মোহনপুর",
+                "nameEn": "মোহনপুর"
+              }
+            ]
           },
           {
             "name": "কুমারখালী উপজেলা",
             "nameEn": "Daulatpur",
-            "unions": [{"name": "দৌলতপুর", "nameEn": "দৌলতপুর"}, {"name": "আলুতলা", "nameEn": "আলুতলা"}, {"name": "খানপুর", "nameEn": "খানপুর"}, {"name": "সেনহাটি", "nameEn": "সেনহাটি"}, {"name": "ফুলতলা", "nameEn": "ফুলতলা"}]
+            "unions": [
+              {
+                "name": "দৌলতপুর",
+                "nameEn": "দৌলতপুর"
+              },
+              {
+                "name": "আলুতলা",
+                "nameEn": "আলুতলা"
+              },
+              {
+                "name": "খানপুর",
+                "nameEn": "খানপুর"
+              },
+              {
+                "name": "সেনহাটি",
+                "nameEn": "সেনহাটি"
+              },
+              {
+                "name": "ফুলতলা",
+                "nameEn": "ফুলতলা"
+              }
+            ]
           },
           {
             "name": "খোকসা উপজেলা",
             "nameEn": "Khoksha",
-            "unions": [{"name": "খোকসা", "nameEn": "খোকসা"}, {"name": "আমলা", "nameEn": "আমলা"}, {"name": "কুমারখালী", "nameEn": "কুমারখালী"}]
+            "unions": [
+              {
+                "name": "খোকসা",
+                "nameEn": "খোকসা"
+              },
+              {
+                "name": "আমলা",
+                "nameEn": "আমলা"
+              },
+              {
+                "name": "কুমারখালী",
+                "nameEn": "কুমারখালী"
+              }
+            ]
           },
           {
             "name": "দৌলতপুর উপজেলা",
             "nameEn": "Kumarkhali",
-            "unions": [{"name": "কুমারখালী", "nameEn": "কুমারখালী"}, {"name": "জাফরপুর", "nameEn": "জাফরপুর"}, {"name": "পদমদি", "nameEn": "পদমদি"}, {"name": "শিলাইদহ", "nameEn": "শিলাইদহ"}]
+            "unions": [
+              {
+                "name": "কুমারখালী",
+                "nameEn": "কুমারখালী"
+              },
+              {
+                "name": "জাফরপুর",
+                "nameEn": "জাফরপুর"
+              },
+              {
+                "name": "পদমদি",
+                "nameEn": "পদমদি"
+              },
+              {
+                "name": "শিলাইদহ",
+                "nameEn": "শিলাইদহ"
+              }
+            ]
           },
           {
             "name": "ভেড়ামারা উপজেলা",
             "nameEn": "Kushtia Sadar",
-            "unions": [{"name": "কুষ্টিয়া সদর", "nameEn": "কুষ্টিয়া সদর"}, {"name": "জগতি", "nameEn": "জগতি"}, {"name": "আলমপুর", "nameEn": "আলমপুর"}, {"name": "হাটশহরিপুর", "nameEn": "হাটশহরিপুর"}, {"name": "মজমপুর", "nameEn": "মজমপুর"}]
+            "unions": [
+              {
+                "name": "কুষ্টিয়া সদর",
+                "nameEn": "কুষ্টিয়া সদর"
+              },
+              {
+                "name": "জগতি",
+                "nameEn": "জগতি"
+              },
+              {
+                "name": "আলমপুর",
+                "nameEn": "আলমপুর"
+              },
+              {
+                "name": "হাটশহরিপুর",
+                "nameEn": "হাটশহরিপুর"
+              },
+              {
+                "name": "মজমপুর",
+                "nameEn": "মজমপুর"
+              }
+            ]
           },
           {
             "name": "মিরপুর উপজেলা",
             "nameEn": "Mirpur",
-            "unions": [{"name": "মিরপুর", "nameEn": "মিরপুর"}, {"name": "আমবাড়িয়া", "nameEn": "আমবাড়িয়া"}, {"name": "পোড়াদহ", "nameEn": "পোড়াদহ"}]
+            "unions": [
+              {
+                "name": "মিরপুর",
+                "nameEn": "মিরপুর"
+              },
+              {
+                "name": "আমবাড়িয়া",
+                "nameEn": "আমবাড়িয়া"
+              },
+              {
+                "name": "পোড়াদহ",
+                "nameEn": "পোড়াদহ"
+              }
+            ]
           }
         ]
       },
@@ -284,24 +1374,122 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Magura",
         "upazilas": [
           {
+            "name": "মাগুরা পৌরসভা",
+            "nameEn": "Magura Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "মাগুরা সদর উপজেলা",
             "nameEn": "Magura Sadar",
-            "unions": [{"name": "মাগুরা সদর", "nameEn": "মাগুরা সদর"}, {"name": "আটঘর", "nameEn": "আটঘর"}, {"name": "জগদল", "nameEn": "জগদল"}, {"name": "হাজরাপুর", "nameEn": "হাজরাপুর"}]
+            "unions": [
+              {
+                "name": "মাগুরা সদর",
+                "nameEn": "মাগুরা সদর"
+              },
+              {
+                "name": "আটঘর",
+                "nameEn": "আটঘর"
+              },
+              {
+                "name": "জগদল",
+                "nameEn": "জগদল"
+              },
+              {
+                "name": "হাজরাপুর",
+                "nameEn": "হাজরাপুর"
+              }
+            ]
           },
           {
             "name": "মোহাম্মদপুর উপজেলা",
             "nameEn": "Mohammadpur",
-            "unions": [{"name": "মোহাম্মদপুর", "nameEn": "মোহাম্মদপুর"}, {"name": "বিনোদপুর", "nameEn": "বিনোদপুর"}, {"name": "রায়পুর", "nameEn": "রায়পুর"}]
+            "unions": [
+              {
+                "name": "মোহাম্মদপুর",
+                "nameEn": "মোহাম্মদপুর"
+              },
+              {
+                "name": "বিনোদপুর",
+                "nameEn": "বিনোদপুর"
+              },
+              {
+                "name": "রায়পুর",
+                "nameEn": "রায়পুর"
+              }
+            ]
           },
           {
             "name": "শালিখা উপজেলা",
             "nameEn": "Salikha",
-            "unions": [{"name": "শালিখা", "nameEn": "শালিখা"}, {"name": "ধনেশ্বরপুর", "nameEn": "ধনেশ্বরপুর"}, {"name": "বুনাগাতি", "nameEn": "বুনাগাতি"}]
+            "unions": [
+              {
+                "name": "শালিখা",
+                "nameEn": "শালিখা"
+              },
+              {
+                "name": "ধনেশ্বরপুর",
+                "nameEn": "ধনেশ্বরপুর"
+              },
+              {
+                "name": "বুনাগাতি",
+                "nameEn": "বুনাগাতি"
+              }
+            ]
           },
           {
             "name": "শ্রীপুর উপজেলা",
             "nameEn": "Sreepur",
-            "unions": [{"name": "শ্রীপুর", "nameEn": "শ্রীপুর"}, {"name": "বালিয়াকান্দি", "nameEn": "বালিয়াকান্দি"}, {"name": "গোপীনাথপুর", "nameEn": "গোপীনাথপুর"}]
+            "unions": [
+              {
+                "name": "শ্রীপুর",
+                "nameEn": "শ্রীপুর"
+              },
+              {
+                "name": "বালিয়াকান্দি",
+                "nameEn": "বালিয়াকান্দি"
+              },
+              {
+                "name": "গোপীনাথপুর",
+                "nameEn": "গোপীনাথপুর"
+              }
+            ]
           }
         ]
       },
@@ -310,19 +1498,108 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Meherpur",
         "upazilas": [
           {
+            "name": "মেহেরপুর পৌরসভা",
+            "nameEn": "Meherpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "মেহেরপুর সদর উপজেলা",
             "nameEn": "Gangni",
-            "unions": [{"name": "গাংনী", "nameEn": "গাংনী"}, {"name": "ধরমপুর", "nameEn": "ধরমপুর"}, {"name": "শাহরপুর", "nameEn": "শাহরপুর"}, {"name": "মাথুরাপুর", "nameEn": "মাথুরাপুর"}]
+            "unions": [
+              {
+                "name": "গাংনী",
+                "nameEn": "গাংনী"
+              },
+              {
+                "name": "ধরমপুর",
+                "nameEn": "ধরমপুর"
+              },
+              {
+                "name": "শাহরপুর",
+                "nameEn": "শাহরপুর"
+              },
+              {
+                "name": "মাথুরাপুর",
+                "nameEn": "মাথুরাপুর"
+              }
+            ]
           },
           {
             "name": "গাংনী উপজেলা",
             "nameEn": "Meherpur Sadar",
-            "unions": [{"name": "মেহেরপুর সদর", "nameEn": "মেহেরপুর সদর"}, {"name": "আমঝুপি", "nameEn": "আমঝুপি"}, {"name": "বুড়িপোতা", "nameEn": "বুড়িপোতা"}, {"name": "কুতুবপুর", "nameEn": "কুতুবপুর"}]
+            "unions": [
+              {
+                "name": "মেহেরপুর সদর",
+                "nameEn": "মেহেরপুর সদর"
+              },
+              {
+                "name": "আমঝুপি",
+                "nameEn": "আমঝুপি"
+              },
+              {
+                "name": "বুড়িপোতা",
+                "nameEn": "বুড়িপোতা"
+              },
+              {
+                "name": "কুতুবপুর",
+                "nameEn": "কুতুবপুর"
+              }
+            ]
           },
           {
             "name": "মুজিবনগর উপজেলা",
             "nameEn": "Mujib Nagar",
-            "unions": [{"name": "মুজিবনগর", "nameEn": "মুজিবনগর"}, {"name": "বৈদ্যনাথতলা", "nameEn": "বৈদ্যনাথতলা"}, {"name": "মহেন্দ্রপুর", "nameEn": "মহেন্দ্রপুর"}]
+            "unions": [
+              {
+                "name": "মুজিবনগর",
+                "nameEn": "মুজিবনগর"
+              },
+              {
+                "name": "বৈদ্যনাথতলা",
+                "nameEn": "বৈদ্যনাথতলা"
+              },
+              {
+                "name": "মহেন্দ্রপুর",
+                "nameEn": "মহেন্দ্রপুর"
+              }
+            ]
           }
         ]
       },
@@ -331,19 +1608,100 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Narail",
         "upazilas": [
           {
+            "name": "নড়াইল পৌরসভা",
+            "nameEn": "Narail Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নড়াইল সদর উপজেলা",
             "nameEn": "Kalia",
-            "unions": [{"name": "কালিয়া", "nameEn": "কালিয়া"}, {"name": "মাহমুদপুর", "nameEn": "মাহমুদপুর"}, {"name": "পালুয়া", "nameEn": "পালুয়া"}, {"name": "হামিদপুর", "nameEn": "হামিদপুর"}]
+            "unions": [
+              {
+                "name": "কালিয়া",
+                "nameEn": "কালিয়া"
+              },
+              {
+                "name": "মাহমুদপুর",
+                "nameEn": "মাহমুদপুর"
+              },
+              {
+                "name": "পালুয়া",
+                "nameEn": "পালুয়া"
+              },
+              {
+                "name": "হামিদপুর",
+                "nameEn": "হামিদপুর"
+              }
+            ]
           },
           {
             "name": "কালিয়া উপজেলা",
             "nameEn": "Lohagara",
-            "unions": [{"name": "Lohagara সদর", "nameEn": "Lohagara Sadar"}]
+            "unions": [
+              {
+                "name": "Lohagara সদর",
+                "nameEn": "Lohagara Sadar"
+              }
+            ]
           },
           {
             "name": "লোহাগড়া উপজেলা",
             "nameEn": "Narail Sadar",
-            "unions": [{"name": "নড়াইল সদর", "nameEn": "নড়াইল সদর"}, {"name": "মাইজপাড়া", "nameEn": "মাইজপাড়া"}, {"name": "বিদ্যানন্দকাটি", "nameEn": "বিদ্যানন্দকাটি"}, {"name": "কালিয়া", "nameEn": "কালিয়া"}]
+            "unions": [
+              {
+                "name": "নড়াইল সদর",
+                "nameEn": "নড়াইল সদর"
+              },
+              {
+                "name": "মাইজপাড়া",
+                "nameEn": "মাইজপাড়া"
+              },
+              {
+                "name": "বিদ্যানন্দকাটি",
+                "nameEn": "বিদ্যানন্দকাটি"
+              },
+              {
+                "name": "কালিয়া",
+                "nameEn": "কালিয়া"
+              }
+            ]
           }
         ]
       },
@@ -352,39 +1710,192 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Satkhira",
         "upazilas": [
           {
+            "name": "সাতক্ষীরা পৌরসভা",
+            "nameEn": "Satkhira Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "সাতক্ষীরা সদর উপজেলা",
             "nameEn": "Assasuni",
-            "unions": [{"name": "আশাশুনি", "nameEn": "আশাশুনি"}, {"name": "আনাদি", "nameEn": "আনাদি"}, {"name": "প্রতাপনগর", "nameEn": "প্রতাপনগর"}, {"name": "কদমতলা", "nameEn": "কদমতলা"}]
+            "unions": [
+              {
+                "name": "আশাশুনি",
+                "nameEn": "আশাশুনি"
+              },
+              {
+                "name": "আনাদি",
+                "nameEn": "আনাদি"
+              },
+              {
+                "name": "প্রতাপনগর",
+                "nameEn": "প্রতাপনগর"
+              },
+              {
+                "name": "কদমতলা",
+                "nameEn": "কদমতলা"
+              }
+            ]
           },
           {
             "name": "আশাশুনি উপজেলা",
             "nameEn": "Debhata",
-            "unions": [{"name": "দেবহাটা", "nameEn": "দেবহাটা"}, {"name": "পারুলিয়া", "nameEn": "পারুলিয়া"}, {"name": "কুলিয়া", "nameEn": "কুলিয়া"}, {"name": "সখিপুর", "nameEn": "সখিপুর"}]
+            "unions": [
+              {
+                "name": "দেবহাটা",
+                "nameEn": "দেবহাটা"
+              },
+              {
+                "name": "পারুলিয়া",
+                "nameEn": "পারুলিয়া"
+              },
+              {
+                "name": "কুলিয়া",
+                "nameEn": "কুলিয়া"
+              },
+              {
+                "name": "সখিপুর",
+                "nameEn": "সখিপুর"
+              }
+            ]
           },
           {
             "name": "কলারোয়া উপজেলা",
             "nameEn": "Kalaroa",
-            "unions": [{"name": "কলারোয়া", "nameEn": "কলারোয়া"}, {"name": "চান্দনগর", "nameEn": "চান্দনগর"}, {"name": "সোনাবাড়িয়া", "nameEn": "সোনাবাড়িয়া"}, {"name": "কেড়াগাছি", "nameEn": "কেড়াগাছি"}]
+            "unions": [
+              {
+                "name": "কলারোয়া",
+                "nameEn": "কলারোয়া"
+              },
+              {
+                "name": "চান্দনগর",
+                "nameEn": "চান্দনগর"
+              },
+              {
+                "name": "সোনাবাড়িয়া",
+                "nameEn": "সোনাবাড়িয়া"
+              },
+              {
+                "name": "কেড়াগাছি",
+                "nameEn": "কেড়াগাছি"
+              }
+            ]
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
+            "unions": [
+              {
+                "name": "Kaliganj সদর",
+                "nameEn": "Kaliganj Sadar"
+              }
+            ]
           },
           {
             "name": "তালা উপজেলা",
             "nameEn": "Satkhira Sadar",
-            "unions": [{"name": "সাতক্ষীরা সদর", "nameEn": "সাতক্ষীরা সদর"}, {"name": "আলীপুর", "nameEn": "আলীপুর"}, {"name": "ঝাউডাঙ্গা", "nameEn": "ঝাউডাঙ্গা"}, {"name": "ব্রহ্মরাজপুর", "nameEn": "ব্রহ্মরাজপুর"}]
+            "unions": [
+              {
+                "name": "সাতক্ষীরা সদর",
+                "nameEn": "সাতক্ষীরা সদর"
+              },
+              {
+                "name": "আলীপুর",
+                "nameEn": "আলীপুর"
+              },
+              {
+                "name": "ঝাউডাঙ্গা",
+                "nameEn": "ঝাউডাঙ্গা"
+              },
+              {
+                "name": "ব্রহ্মরাজপুর",
+                "nameEn": "ব্রহ্মরাজপুর"
+              }
+            ]
           },
           {
             "name": "দেবহাটা উপজেলা",
             "nameEn": "Shyamnagar",
-            "unions": [{"name": "শ্যামনগর", "nameEn": "শ্যামনগর"}, {"name": "বুড়িগোয়ালিনী", "nameEn": "বুড়িগোয়ালিনী"}, {"name": "পদ্মপুকুর", "nameEn": "পদ্মপুকুর"}, {"name": "মুন্সিগঞ্জ", "nameEn": "মুন্সিগঞ্জ"}, {"name": "সুন্দরবন", "nameEn": "সুন্দরবন"}]
+            "unions": [
+              {
+                "name": "শ্যামনগর",
+                "nameEn": "শ্যামনগর"
+              },
+              {
+                "name": "বুড়িগোয়ালিনী",
+                "nameEn": "বুড়িগোয়ালিনী"
+              },
+              {
+                "name": "পদ্মপুকুর",
+                "nameEn": "পদ্মপুকুর"
+              },
+              {
+                "name": "মুন্সিগঞ্জ",
+                "nameEn": "মুন্সিগঞ্জ"
+              },
+              {
+                "name": "সুন্দরবন",
+                "nameEn": "সুন্দরবন"
+              }
+            ]
           },
           {
             "name": "শ্যামনগর উপজেলা",
             "nameEn": "Tala",
-            "unions": [{"name": "তালা", "nameEn": "তালা"}, {"name": "খলিষখালী", "nameEn": "খলিষখালী"}, {"name": "জাতপুর", "nameEn": "জাতপুর"}, {"name": "মাগুরা", "nameEn": "মাগুরা"}]
+            "unions": [
+              {
+                "name": "তালা",
+                "nameEn": "তালা"
+              },
+              {
+                "name": "খলিষখালী",
+                "nameEn": "খলিষখালী"
+              },
+              {
+                "name": "জাতপুর",
+                "nameEn": "জাতপুর"
+              },
+              {
+                "name": "মাগুরা",
+                "nameEn": "মাগুরা"
+              }
+            ]
           }
         ]
       }
@@ -399,49 +1910,260 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "B.baria",
         "upazilas": [
           {
+            "name": "ব্রাহ্মণবাড়িয়া পৌরসভা",
+            "nameEn": "Brahmanbaria Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              }
+            ]
+          },
+          {
             "name": "ব্রাহ্মণবাড়িয়া সদর উপজেলা",
             "nameEn": "Akhaura",
-            "unions": [{"name": "আখাউড়া", "nameEn": "আখাউড়া"}, {"name": "মোগলটুলী", "nameEn": "মোগলটুলী"}, {"name": "ধরখার", "nameEn": "ধরখার"}, {"name": "দেবগ্রাম", "nameEn": "দেবগ্রাম"}]
+            "unions": [
+              {
+                "name": "আখাউড়া",
+                "nameEn": "আখাউড়া"
+              },
+              {
+                "name": "মোগলটুলী",
+                "nameEn": "মোগলটুলী"
+              },
+              {
+                "name": "ধরখার",
+                "nameEn": "ধরখার"
+              },
+              {
+                "name": "দেবগ্রাম",
+                "nameEn": "দেবগ্রাম"
+              }
+            ]
           },
           {
             "name": "নবীনগর উপজেলা",
             "nameEn": "Ashuganj",
-            "unions": [{"name": "আশুগঞ্জ", "nameEn": "আশুগঞ্জ"}, {"name": "লালপুর", "nameEn": "লালপুর"}, {"name": "তালশহর", "nameEn": "তালশহর"}, {"name": "আড়াইবাড়ী", "nameEn": "আড়াইবাড়ী"}]
+            "unions": [
+              {
+                "name": "আশুগঞ্জ",
+                "nameEn": "আশুগঞ্জ"
+              },
+              {
+                "name": "লালপুর",
+                "nameEn": "লালপুর"
+              },
+              {
+                "name": "তালশহর",
+                "nameEn": "তালশহর"
+              },
+              {
+                "name": "আড়াইবাড়ী",
+                "nameEn": "আড়াইবাড়ী"
+              }
+            ]
           },
           {
             "name": "আশুগঞ্জ উপজেলা",
             "nameEn": "B.Baria Sadar",
-            "unions": [{"name": "ব্রাহ্মণবাড়িয়া সদর", "nameEn": "ব্রাহ্মণবাড়িয়া সদর"}, {"name": "মাজাইরা", "nameEn": "মাজাইরা"}, {"name": "কুটি", "nameEn": "কুটি"}]
+            "unions": [
+              {
+                "name": "ব্রাহ্মণবাড়িয়া সদর",
+                "nameEn": "ব্রাহ্মণবাড়িয়া সদর"
+              },
+              {
+                "name": "মাজাইরা",
+                "nameEn": "মাজাইরা"
+              },
+              {
+                "name": "কুটি",
+                "nameEn": "কুটি"
+              }
+            ]
           },
           {
             "name": "আখাউড়া উপজেলা",
             "nameEn": "Bancharampur",
-            "unions": [{"name": "বাঞ্ছারামপুর", "nameEn": "বাঞ্ছারামপুর"}, {"name": "সুজাতপুর", "nameEn": "সুজাতপুর"}, {"name": "রূপসদী", "nameEn": "রূপসদী"}, {"name": "চাতলপুর", "nameEn": "চাতলপুর"}, {"name": "দরিকান্দী", "nameEn": "দরিকান্দী"}]
+            "unions": [
+              {
+                "name": "বাঞ্ছারামপুর",
+                "nameEn": "বাঞ্ছারামপুর"
+              },
+              {
+                "name": "সুজাতপুর",
+                "nameEn": "সুজাতপুর"
+              },
+              {
+                "name": "রূপসদী",
+                "nameEn": "রূপসদী"
+              },
+              {
+                "name": "চাতলপুর",
+                "nameEn": "চাতলপুর"
+              },
+              {
+                "name": "দরিকান্দী",
+                "nameEn": "দরিকান্দী"
+              }
+            ]
           },
           {
             "name": "কসবা উপজেলা",
             "nameEn": "Bijoynagar",
-            "unions": [{"name": "বিজয়নগর", "nameEn": "বিজয়নগর"}, {"name": "ফান্দাউক", "nameEn": "ফান্দাউক"}, {"name": "মেড্ডা", "nameEn": "মেড্ডা"}, {"name": "হরষপুর", "nameEn": "হরষপুর"}]
+            "unions": [
+              {
+                "name": "বিজয়নগর",
+                "nameEn": "বিজয়নগর"
+              },
+              {
+                "name": "ফান্দাউক",
+                "nameEn": "ফান্দাউক"
+              },
+              {
+                "name": "মেড্ডা",
+                "nameEn": "মেড্ডা"
+              },
+              {
+                "name": "হরষপুর",
+                "nameEn": "হরষপুর"
+              }
+            ]
           },
           {
             "name": "বিজয়নগর উপজেলা",
             "nameEn": "Kasba",
-            "unions": [{"name": "কসবা", "nameEn": "কসবা"}, {"name": "মেহারী", "nameEn": "মেহারী"}, {"name": "বুধন্তি", "nameEn": "বুধন্তি"}, {"name": "কুল্লাপাথর", "nameEn": "কুল্লাপাথর"}]
+            "unions": [
+              {
+                "name": "কসবা",
+                "nameEn": "কসবা"
+              },
+              {
+                "name": "মেহারী",
+                "nameEn": "মেহারী"
+              },
+              {
+                "name": "বুধন্তি",
+                "nameEn": "বুধন্তি"
+              },
+              {
+                "name": "কুল্লাপাথর",
+                "nameEn": "কুল্লাপাথর"
+              }
+            ]
           },
           {
             "name": "সরাইল উপজেলা",
             "nameEn": "Nabinagar",
-            "unions": [{"name": "নবীনগর", "nameEn": "নবীনগর"}, {"name": "বিটঘর", "nameEn": "বিটঘর"}, {"name": "শাহবাজপুর", "nameEn": "শাহবাজপুর"}, {"name": "ইব্রাহিমপুর", "nameEn": "ইব্রাহিমপুর"}, {"name": "রতনপুর", "nameEn": "রতনপুর"}]
+            "unions": [
+              {
+                "name": "নবীনগর",
+                "nameEn": "নবীনগর"
+              },
+              {
+                "name": "বিটঘর",
+                "nameEn": "বিটঘর"
+              },
+              {
+                "name": "শাহবাজপুর",
+                "nameEn": "শাহবাজপুর"
+              },
+              {
+                "name": "ইব্রাহিমপুর",
+                "nameEn": "ইব্রাহিমপুর"
+              },
+              {
+                "name": "রতনপুর",
+                "nameEn": "রতনপুর"
+              }
+            ]
           },
           {
             "name": "নাসিরনগর উপজেলা",
             "nameEn": "Nasirnagar",
-            "unions": [{"name": "নাসিরনগর", "nameEn": "নাসিরনগর"}, {"name": "চাতলপুর", "nameEn": "চাতলপুর"}, {"name": "গোকর্ণ", "nameEn": "গোকর্ণ"}, {"name": "হরিপুর", "nameEn": "হরিপুর"}]
+            "unions": [
+              {
+                "name": "নাসিরনগর",
+                "nameEn": "নাসিরনগর"
+              },
+              {
+                "name": "চাতলপুর",
+                "nameEn": "চাতলপুর"
+              },
+              {
+                "name": "গোকর্ণ",
+                "nameEn": "গোকর্ণ"
+              },
+              {
+                "name": "হরিপুর",
+                "nameEn": "হরিপুর"
+              }
+            ]
           },
           {
             "name": "বাঞ্ছারামপুর উপজেলা",
             "nameEn": "Sarail",
-            "unions": [{"name": "সরাইল", "nameEn": "সরাইল"}, {"name": "শাহবাজপুর", "nameEn": "শাহবাজপুর"}, {"name": "নোয়াগাঁও", "nameEn": "নোয়াগাঁও"}, {"name": "শাহজাদাপুর", "nameEn": "শাহজাদাপুর"}]
+            "unions": [
+              {
+                "name": "সরাইল",
+                "nameEn": "সরাইল"
+              },
+              {
+                "name": "শাহবাজপুর",
+                "nameEn": "শাহবাজপুর"
+              },
+              {
+                "name": "নোয়াগাঁও",
+                "nameEn": "নোয়াগাঁও"
+              },
+              {
+                "name": "শাহজাদাপুর",
+                "nameEn": "শাহজাদাপুর"
+              }
+            ]
           }
         ]
       },
@@ -450,39 +2172,188 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Bandarban",
         "upazilas": [
           {
+            "name": "বান্দরবান পৌরসভা",
+            "nameEn": "Bandarban Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "বান্দরবন সদর",
             "nameEn": "Alikadam",
-            "unions": [{"name": "আলীকদম", "nameEn": "আলীকদম"}, {"name": "চৈক্ষ্যং", "nameEn": "চৈক্ষ্যং"}, {"name": "নয়াপাটং", "nameEn": "নয়াপাটং"}]
+            "unions": [
+              {
+                "name": "আলীকদম",
+                "nameEn": "আলীকদম"
+              },
+              {
+                "name": "চৈক্ষ্যং",
+                "nameEn": "চৈক্ষ্যং"
+              },
+              {
+                "name": "নয়াপাটং",
+                "nameEn": "নয়াপাটং"
+              }
+            ]
           },
           {
             "name": "আলীকদম",
             "nameEn": "Bandarban Sadar",
-            "unions": [{"name": "বান্দরবান সদর", "nameEn": "বান্দরবান সদর"}, {"name": "কুহালং", "nameEn": "কুহালং"}, {"name": "রাজবিলা", "nameEn": "রাজবিলা"}, {"name": "সুয়ালক", "nameEn": "সুয়ালক"}]
+            "unions": [
+              {
+                "name": "বান্দরবান সদর",
+                "nameEn": "বান্দরবান সদর"
+              },
+              {
+                "name": "কুহালং",
+                "nameEn": "কুহালং"
+              },
+              {
+                "name": "রাজবিলা",
+                "nameEn": "রাজবিলা"
+              },
+              {
+                "name": "সুয়ালক",
+                "nameEn": "সুয়ালক"
+              }
+            ]
           },
           {
             "name": "থানচি",
             "nameEn": "Lama",
-            "unions": [{"name": "লামা", "nameEn": "লামা"}, {"name": "রূপসীপাড়া", "nameEn": "রূপসীপাড়া"}, {"name": "ফাঁসিয়াখালী", "nameEn": "ফাঁসিয়াখালী"}, {"name": "গজালিয়া", "nameEn": "গজালিয়া"}]
+            "unions": [
+              {
+                "name": "লামা",
+                "nameEn": "লামা"
+              },
+              {
+                "name": "রূপসীপাড়া",
+                "nameEn": "রূপসীপাড়া"
+              },
+              {
+                "name": "ফাঁসিয়াখালী",
+                "nameEn": "ফাঁসিয়াখালী"
+              },
+              {
+                "name": "গজালিয়া",
+                "nameEn": "গজালিয়া"
+              }
+            ]
           },
           {
             "name": "নাইক্ষ্যংছড়ি",
             "nameEn": "Naikhyongchari",
-            "unions": [{"name": "নাইক্ষ্যংছড়ি", "nameEn": "নাইক্ষ্যংছড়ি"}, {"name": "ঘুমধুম", "nameEn": "ঘুমধুম"}, {"name": "দোছড়ি", "nameEn": "দোছড়ি"}]
+            "unions": [
+              {
+                "name": "নাইক্ষ্যংছড়ি",
+                "nameEn": "নাইক্ষ্যংছড়ি"
+              },
+              {
+                "name": "ঘুমধুম",
+                "nameEn": "ঘুমধুম"
+              },
+              {
+                "name": "দোছড়ি",
+                "nameEn": "দোছড়ি"
+              }
+            ]
           },
           {
             "name": "রুমা",
             "nameEn": "Rowangchari",
-            "unions": [{"name": "রোয়াংছড়ি", "nameEn": "রোয়াংছড়ি"}, {"name": "তারাচা", "nameEn": "তারাচা"}, {"name": "আলেখ্যং", "nameEn": "আলেখ্যং"}]
+            "unions": [
+              {
+                "name": "রোয়াংছড়ি",
+                "nameEn": "রোয়াংছড়ি"
+              },
+              {
+                "name": "তারাচা",
+                "nameEn": "তারাচা"
+              },
+              {
+                "name": "আলেখ্যং",
+                "nameEn": "আলেখ্যং"
+              }
+            ]
           },
           {
             "name": "রোয়াংছড়ি",
             "nameEn": "Ruma",
-            "unions": [{"name": "রুমা", "nameEn": "রুমা"}, {"name": "গালেংয়া", "nameEn": "গালেংয়া"}, {"name": "রেমাক্রী", "nameEn": "রেমাক্রী"}, {"name": "পাইন্দু", "nameEn": "পাইন্দু"}]
+            "unions": [
+              {
+                "name": "রুমা",
+                "nameEn": "রুমা"
+              },
+              {
+                "name": "গালেংয়া",
+                "nameEn": "গালেংয়া"
+              },
+              {
+                "name": "রেমাক্রী",
+                "nameEn": "রেমাক্রী"
+              },
+              {
+                "name": "পাইন্দু",
+                "nameEn": "পাইন্দু"
+              }
+            ]
           },
           {
             "name": "লামা",
             "nameEn": "Thanchi",
-            "unions": [{"name": "থানচি", "nameEn": "থানচি"}, {"name": "বলীপাড়া", "nameEn": "বলীপাড়া"}, {"name": "তিন্দু", "nameEn": "তিন্দু"}, {"name": "রেমাক্রী প্রাংসা", "nameEn": "রেমাক্রী প্রাংসা"}]
+            "unions": [
+              {
+                "name": "থানচি",
+                "nameEn": "থানচি"
+              },
+              {
+                "name": "বলীপাড়া",
+                "nameEn": "বলীপাড়া"
+              },
+              {
+                "name": "তিন্দু",
+                "nameEn": "তিন্দু"
+              },
+              {
+                "name": "রেমাক্রী প্রাংসা",
+                "nameEn": "রেমাক্রী প্রাংসা"
+              }
+            ]
           }
         ]
       },
@@ -491,34 +2362,170 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Chandpur",
         "upazilas": [
           {
+            "name": "চাঁদপুর পৌরসভা",
+            "nameEn": "Chandpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "চাঁদপুর সদর",
             "nameEn": "Chandpur Sadar",
-            "unions": [{"name": "চাঁদপুর সদর", "nameEn": "চাঁদপুর সদর"}, {"name": "বাজাপুর", "nameEn": "বাজাপুর"}, {"name": "রাজরাজেশ্বর", "nameEn": "রাজরাজেশ্বর"}, {"name": "হাজীগঞ্জ", "nameEn": "হাজীগঞ্জ"}, {"name": "মতলব", "nameEn": "মতলব"}]
+            "unions": [
+              {
+                "name": "চাঁদপুর সদর",
+                "nameEn": "চাঁদপুর সদর"
+              },
+              {
+                "name": "বাজাপুর",
+                "nameEn": "বাজাপুর"
+              },
+              {
+                "name": "রাজরাজেশ্বর",
+                "nameEn": "রাজরাজেশ্বর"
+              },
+              {
+                "name": "হাজীগঞ্জ",
+                "nameEn": "হাজীগঞ্জ"
+              },
+              {
+                "name": "মতলব",
+                "nameEn": "মতলব"
+              }
+            ]
           },
           {
             "name": "ফরিদগঞ্জ",
             "nameEn": "Faridganj",
-            "unions": [{"name": "ফরিদগঞ্জ", "nameEn": "ফরিদগঞ্জ"}, {"name": "গান্ধীগ্রাম", "nameEn": "গান্ধীগ্রাম"}, {"name": "সুবিদপুর", "nameEn": "সুবিদপুর"}, {"name": "সালামাবাদ", "nameEn": "সালামাবাদ"}]
+            "unions": [
+              {
+                "name": "ফরিদগঞ্জ",
+                "nameEn": "ফরিদগঞ্জ"
+              },
+              {
+                "name": "গান্ধীগ্রাম",
+                "nameEn": "গান্ধীগ্রাম"
+              },
+              {
+                "name": "সুবিদপুর",
+                "nameEn": "সুবিদপুর"
+              },
+              {
+                "name": "সালামাবাদ",
+                "nameEn": "সালামাবাদ"
+              }
+            ]
           },
           {
             "name": "হাজীগঞ্জ",
             "nameEn": "Haimchar",
-            "unions": [{"name": "হাইমচর", "nameEn": "হাইমচর"}, {"name": "নিলকমল", "nameEn": "নিলকমল"}, {"name": "চরমাটুয়া", "nameEn": "চরমাটুয়া"}, {"name": "আলগী", "nameEn": "আলগী"}]
+            "unions": [
+              {
+                "name": "হাইমচর",
+                "nameEn": "হাইমচর"
+              },
+              {
+                "name": "নিলকমল",
+                "nameEn": "নিলকমল"
+              },
+              {
+                "name": "চরমাটুয়া",
+                "nameEn": "চরমাটুয়া"
+              },
+              {
+                "name": "আলগী",
+                "nameEn": "আলগী"
+              }
+            ]
           },
           {
             "name": "হাইমচর",
             "nameEn": "Haziganj",
-            "unions": [{"name": "হাজীগঞ্জ", "nameEn": "হাজীগঞ্জ"}, {"name": "রাজাপুর", "nameEn": "রাজাপুর"}, {"name": "বাকিলা", "nameEn": "বাকিলা"}]
+            "unions": [
+              {
+                "name": "হাজীগঞ্জ",
+                "nameEn": "হাজীগঞ্জ"
+              },
+              {
+                "name": "রাজাপুর",
+                "nameEn": "রাজাপুর"
+              },
+              {
+                "name": "বাকিলা",
+                "nameEn": "বাকিলা"
+              }
+            ]
           },
           {
             "name": "শাহরাস্তি",
             "nameEn": "Kachua",
-            "unions": [{"name": "কচুয়া", "nameEn": "কচুয়া"}, {"name": "বদরপুর", "nameEn": "বদরপুর"}, {"name": "গোয়ালবাথান", "nameEn": "গোয়ালবাথান"}]
+            "unions": [
+              {
+                "name": "কচুয়া",
+                "nameEn": "কচুয়া"
+              },
+              {
+                "name": "বদরপুর",
+                "nameEn": "বদরপুর"
+              },
+              {
+                "name": "গোয়ালবাথান",
+                "nameEn": "গোয়ালবাথান"
+              }
+            ]
           },
           {
             "name": "শাহরাস্তি",
             "nameEn": "Dakshin",
-            "unions": [{"name": "মতলব দক্ষিণ", "nameEn": "মতলব দক্ষিণ"}, {"name": "উপাদি", "nameEn": "উপাদি"}, {"name": "নয়নপুর", "nameEn": "নয়নপুর"}]
+            "unions": [
+              {
+                "name": "মতলব দক্ষিণ",
+                "nameEn": "মতলব দক্ষিণ"
+              },
+              {
+                "name": "উপাদি",
+                "nameEn": "উপাদি"
+              },
+              {
+                "name": "নয়নপুর",
+                "nameEn": "নয়নপুর"
+              }
+            ]
           }
         ]
       },
@@ -527,79 +2534,496 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Chattogram",
         "upazilas": [
           {
+            "name": "চট্টগ্রাম সিটি কর্পোরেশন",
+            "nameEn": "Chattogram City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              },
+              {
+                "name": "ওয়ার্ড নং-32",
+                "nameEn": "Ward No-32"
+              },
+              {
+                "name": "ওয়ার্ড নং-33",
+                "nameEn": "Ward No-33"
+              },
+              {
+                "name": "ওয়ার্ড নং-34",
+                "nameEn": "Ward No-34"
+              },
+              {
+                "name": "ওয়ার্ড নং-35",
+                "nameEn": "Ward No-35"
+              },
+              {
+                "name": "ওয়ার্ড নং-36",
+                "nameEn": "Ward No-36"
+              },
+              {
+                "name": "ওয়ার্ড নং-37",
+                "nameEn": "Ward No-37"
+              },
+              {
+                "name": "ওয়ার্ড নং-38",
+                "nameEn": "Ward No-38"
+              },
+              {
+                "name": "ওয়ার্ড নং-39",
+                "nameEn": "Ward No-39"
+              },
+              {
+                "name": "ওয়ার্ড নং-40",
+                "nameEn": "Ward No-40"
+              },
+              {
+                "name": "ওয়ার্ড নং-41",
+                "nameEn": "Ward No-41"
+              }
+            ]
+          },
+          {
             "name": "আনোয়ারা উপজেলা",
             "nameEn": "Anwara",
-            "unions": [{"name": "আনোয়ারা", "nameEn": "আনোয়ারা"}, {"name": "চাহার প্রেমধাম", "nameEn": "চাহার প্রেমধাম"}, {"name": "বাড়ৈয়ারহাট", "nameEn": "বাড়ৈয়ারহাট"}, {"name": "হাইলধর", "nameEn": "হাইলধর"}]
+            "unions": [
+              {
+                "name": "আনোয়ারা",
+                "nameEn": "আনোয়ারা"
+              },
+              {
+                "name": "চাহার প্রেমধাম",
+                "nameEn": "চাহার প্রেমধাম"
+              },
+              {
+                "name": "বাড়ৈয়ারহাট",
+                "nameEn": "বাড়ৈয়ারহাট"
+              },
+              {
+                "name": "হাইলধর",
+                "nameEn": "হাইলধর"
+              }
+            ]
           },
           {
             "name": "কর্ণফুলি উপজেলা",
             "nameEn": "Banskhali",
-            "unions": [{"name": "বাঁশখালী", "nameEn": "বাঁশখালী"}, {"name": "শেখেরখীল", "nameEn": "শেখেরখীল"}, {"name": "সমিতিরহাট", "nameEn": "সমিতিরহাট"}]
+            "unions": [
+              {
+                "name": "বাঁশখালী",
+                "nameEn": "বাঁশখালী"
+              },
+              {
+                "name": "শেখেরখীল",
+                "nameEn": "শেখেরখীল"
+              },
+              {
+                "name": "সমিতিরহাট",
+                "nameEn": "সমিতিরহাট"
+              }
+            ]
           },
           {
             "name": "চন্দনাইশ উপজেলা",
             "nameEn": "Boalkhali",
-            "unions": [{"name": "বোয়ালখালী", "nameEn": "বোয়ালখালী"}, {"name": "সারৈকাইন", "nameEn": "সারৈকাইন"}, {"name": "কধুরখীল", "nameEn": "কধুরখীল"}, {"name": "পোপাদিয়া", "nameEn": "পোপাদিয়া"}]
+            "unions": [
+              {
+                "name": "বোয়ালখালী",
+                "nameEn": "বোয়ালখালী"
+              },
+              {
+                "name": "সারৈকাইন",
+                "nameEn": "সারৈকাইন"
+              },
+              {
+                "name": "কধুরখীল",
+                "nameEn": "কধুরখীল"
+              },
+              {
+                "name": "পোপাদিয়া",
+                "nameEn": "পোপাদিয়া"
+              }
+            ]
           },
           {
             "name": "পটিয়া উপজেলা",
             "nameEn": "Chandanish",
-            "unions": [{"name": "চন্দনাইশ", "nameEn": "চন্দনাইশ"}, {"name": "ধোপাছড়ি", "nameEn": "ধোপাছড়ি"}, {"name": "হাশিমপুর", "nameEn": "হাশিমপুর"}]
+            "unions": [
+              {
+                "name": "চন্দনাইশ",
+                "nameEn": "চন্দনাইশ"
+              },
+              {
+                "name": "ধোপাছড়ি",
+                "nameEn": "ধোপাছড়ি"
+              },
+              {
+                "name": "হাশিমপুর",
+                "nameEn": "হাশিমপুর"
+              }
+            ]
           },
           {
             "name": "ফটিকছড়ি উপজেলা",
             "nameEn": "Fatikchari",
-            "unions": [{"name": "ফটিকছড়ি", "nameEn": "ফটিকছড়ি"}, {"name": "নানুপুর", "nameEn": "নানুপুর"}, {"name": "পাহাড়তলী", "nameEn": "পাহাড়তলী"}]
+            "unions": [
+              {
+                "name": "ফটিকছড়ি",
+                "nameEn": "ফটিকছড়ি"
+              },
+              {
+                "name": "নানুপুর",
+                "nameEn": "নানুপুর"
+              },
+              {
+                "name": "পাহাড়তলী",
+                "nameEn": "পাহাড়তলী"
+              }
+            ]
           },
           {
             "name": "বাঁশখালী উপজেলা",
             "nameEn": "Hathazari",
-            "unions": [{"name": "হাটহাজারী", "nameEn": "হাটহাজারী"}, {"name": "গড়দুয়ারা", "nameEn": "গড়দুয়ারা"}, {"name": "মেখল", "nameEn": "মেখল"}, {"name": "চিকনদণ্ডী", "nameEn": "চিকনদণ্ডী"}, {"name": "ফতেয়াবাদ", "nameEn": "ফতেয়াবাদ"}]
+            "unions": [
+              {
+                "name": "হাটহাজারী",
+                "nameEn": "হাটহাজারী"
+              },
+              {
+                "name": "গড়দুয়ারা",
+                "nameEn": "গড়দুয়ারা"
+              },
+              {
+                "name": "মেখল",
+                "nameEn": "মেখল"
+              },
+              {
+                "name": "চিকনদণ্ডী",
+                "nameEn": "চিকনদণ্ডী"
+              },
+              {
+                "name": "ফতেয়াবাদ",
+                "nameEn": "ফতেয়াবাদ"
+              }
+            ]
           },
           {
             "name": "বোয়ালখালী উপজেলা",
             "nameEn": "Karnaphuli",
-            "unions": [{"name": "কর্ণফুলী", "nameEn": "কর্ণফুলী"}, {"name": "চরপাথরঘাটা", "nameEn": "চরপাথরঘাটা"}, {"name": "জুলদা", "nameEn": "জুলদা"}]
+            "unions": [
+              {
+                "name": "কর্ণফুলী",
+                "nameEn": "কর্ণফুলী"
+              },
+              {
+                "name": "চরপাথরঘাটা",
+                "nameEn": "চরপাথরঘাটা"
+              },
+              {
+                "name": "জুলদা",
+                "nameEn": "জুলদা"
+              }
+            ]
           },
           {
             "name": "মীরসরাই উপজেলা",
             "nameEn": "Lohagara",
-            "unions": [{"name": "Lohagara সদর", "nameEn": "Lohagara Sadar"}]
+            "unions": [
+              {
+                "name": "Lohagara সদর",
+                "nameEn": "Lohagara Sadar"
+              }
+            ]
           },
           {
             "name": "রাউজান উপজেলা",
             "nameEn": "Mirsharai",
-            "unions": [{"name": "মিরসরাই", "nameEn": "মিরসরাই"}, {"name": "মৈষভান্ডার", "nameEn": "মৈষভান্ডার"}, {"name": "সাহেরখালী", "nameEn": "সাহেরখালী"}, {"name": "হিঙ্গুলী", "nameEn": "হিঙ্গুলী"}, {"name": "করেরহাট", "nameEn": "করেরহাট"}]
+            "unions": [
+              {
+                "name": "মিরসরাই",
+                "nameEn": "মিরসরাই"
+              },
+              {
+                "name": "মৈষভান্ডার",
+                "nameEn": "মৈষভান্ডার"
+              },
+              {
+                "name": "সাহেরখালী",
+                "nameEn": "সাহেরখালী"
+              },
+              {
+                "name": "হিঙ্গুলী",
+                "nameEn": "হিঙ্গুলী"
+              },
+              {
+                "name": "করেরহাট",
+                "nameEn": "করেরহাট"
+              }
+            ]
           },
           {
             "name": "রাঙ্গুনিয়া উপজেলা",
             "nameEn": "Patiya",
-            "unions": [{"name": "পটিয়া", "nameEn": "পটিয়া"}, {"name": "হাইদগাঁও", "nameEn": "হাইদগাঁও"}, {"name": "ছনহরা", "nameEn": "ছনহরা"}, {"name": "শোভনদণ্ডী", "nameEn": "শোভনদণ্ডী"}]
+            "unions": [
+              {
+                "name": "পটিয়া",
+                "nameEn": "পটিয়া"
+              },
+              {
+                "name": "হাইদগাঁও",
+                "nameEn": "হাইদগাঁও"
+              },
+              {
+                "name": "ছনহরা",
+                "nameEn": "ছনহরা"
+              },
+              {
+                "name": "শোভনদণ্ডী",
+                "nameEn": "শোভনদণ্ডী"
+              }
+            ]
           },
           {
             "name": "লোহাগাড়া উপজেলা",
             "nameEn": "Rangunia",
-            "unions": [{"name": "রাঙ্গুনিয়া", "nameEn": "রাঙ্গুনিয়া"}, {"name": "পোমরা", "nameEn": "পোমরা"}, {"name": "ইছানগর", "nameEn": "ইছানগর"}, {"name": "পদুয়া", "nameEn": "পদুয়া"}, {"name": "মরিয়মনগর", "nameEn": "মরিয়মনগর"}]
+            "unions": [
+              {
+                "name": "রাঙ্গুনিয়া",
+                "nameEn": "রাঙ্গুনিয়া"
+              },
+              {
+                "name": "পোমরা",
+                "nameEn": "পোমরা"
+              },
+              {
+                "name": "ইছানগর",
+                "nameEn": "ইছানগর"
+              },
+              {
+                "name": "পদুয়া",
+                "nameEn": "পদুয়া"
+              },
+              {
+                "name": "মরিয়মনগর",
+                "nameEn": "মরিয়মনগর"
+              }
+            ]
           },
           {
             "name": "সন্দ্বীপ উপজেলা",
             "nameEn": "Raojan",
-            "unions": [{"name": "রাউজান", "nameEn": "রাউজান"}, {"name": "পাহাড়তলী", "nameEn": "পাহাড়তলী"}, {"name": "গহিরা", "nameEn": "গহিরা"}]
+            "unions": [
+              {
+                "name": "রাউজান",
+                "nameEn": "রাউজান"
+              },
+              {
+                "name": "পাহাড়তলী",
+                "nameEn": "পাহাড়তলী"
+              },
+              {
+                "name": "গহিরা",
+                "nameEn": "গহিরা"
+              }
+            ]
           },
           {
             "name": "সাতকানিয়া উপজেলা",
             "nameEn": "Sandwip",
-            "unions": [{"name": "সন্দ্বীপ", "nameEn": "সন্দ্বীপ"}, {"name": "হরিষপুর", "nameEn": "হরিষপুর"}, {"name": "বাউলিয়া", "nameEn": "বাউলিয়া"}, {"name": "আমানুল্লাহ", "nameEn": "আমানুল্লাহ"}, {"name": "সারিকাইত", "nameEn": "সারিকাইত"}]
+            "unions": [
+              {
+                "name": "সন্দ্বীপ",
+                "nameEn": "সন্দ্বীপ"
+              },
+              {
+                "name": "হরিষপুর",
+                "nameEn": "হরিষপুর"
+              },
+              {
+                "name": "বাউলিয়া",
+                "nameEn": "বাউলিয়া"
+              },
+              {
+                "name": "আমানুল্লাহ",
+                "nameEn": "আমানুল্লাহ"
+              },
+              {
+                "name": "সারিকাইত",
+                "nameEn": "সারিকাইত"
+              }
+            ]
           },
           {
             "name": "সীতাকুণ্ড উপজেলা",
             "nameEn": "Satkania",
-            "unions": [{"name": "সাতকানিয়া", "nameEn": "সাতকানিয়া"}, {"name": "বাজালিয়া", "nameEn": "বাজালিয়া"}, {"name": "ধেমশা", "nameEn": "ধেমশা"}, {"name": "কালিয়াইশ", "nameEn": "কালিয়াইশ"}, {"name": "মাদার্শা", "nameEn": "মাদার্শা"}]
+            "unions": [
+              {
+                "name": "সাতকানিয়া",
+                "nameEn": "সাতকানিয়া"
+              },
+              {
+                "name": "বাজালিয়া",
+                "nameEn": "বাজালিয়া"
+              },
+              {
+                "name": "ধেমশা",
+                "nameEn": "ধেমশা"
+              },
+              {
+                "name": "কালিয়াইশ",
+                "nameEn": "কালিয়াইশ"
+              },
+              {
+                "name": "মাদার্শা",
+                "nameEn": "মাদার্শা"
+              }
+            ]
           },
           {
             "name": "হাটহাজারী উপজেলা",
             "nameEn": "Sitakunda",
-            "unions": [{"name": "সীতাকুণ্ড", "nameEn": "সীতাকুণ্ড"}, {"name": "বড়কমল", "nameEn": "বড়কমল"}, {"name": "কুমিরা", "nameEn": "কুমিরা"}, {"name": "সোনাইছড়ি", "nameEn": "সোনাইছড়ি"}, {"name": "বাড়বকুন্ড", "nameEn": "বাড়বকুন্ড"}]
+            "unions": [
+              {
+                "name": "সীতাকুণ্ড",
+                "nameEn": "সীতাকুণ্ড"
+              },
+              {
+                "name": "বড়কমল",
+                "nameEn": "বড়কমল"
+              },
+              {
+                "name": "কুমিরা",
+                "nameEn": "কুমিরা"
+              },
+              {
+                "name": "সোনাইছড়ি",
+                "nameEn": "সোনাইছড়ি"
+              },
+              {
+                "name": "বাড়বকুন্ড",
+                "nameEn": "বাড়বকুন্ড"
+              }
+            ]
           }
         ]
       },
@@ -608,44 +3032,198 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Cox's bazar",
         "upazilas": [
           {
+            "name": "কক্সবাজার পৌরসভা",
+            "nameEn": "Cox's Bazar Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "কক্সবাজার সদর",
             "nameEn": "Chakoria",
-            "unions": [{"name": "চকরিয়া", "nameEn": "চকরিয়া"}, {"name": "কৈয়ারবিল", "nameEn": "কৈয়ারবিল"}, {"name": "ঢেমুশিয়া", "nameEn": "ঢেমুশিয়া"}]
+            "unions": [
+              {
+                "name": "চকরিয়া",
+                "nameEn": "চকরিয়া"
+              },
+              {
+                "name": "কৈয়ারবিল",
+                "nameEn": "কৈয়ারবিল"
+              },
+              {
+                "name": "ঢেমুশিয়া",
+                "nameEn": "ঢেমুশিয়া"
+              }
+            ]
           },
           {
             "name": "উখিয়া",
             "nameEn": "Cox'S Bazar Sadar",
-            "unions": [{"name": "কক্সবাজার সদর", "nameEn": "কক্সবাজার সদর"}, {"name": "ঝিলংজা", "nameEn": "ঝিলংজা"}, {"name": "ইদগাঁও", "nameEn": "ইদগাঁও"}]
+            "unions": [
+              {
+                "name": "কক্সবাজার সদর",
+                "nameEn": "কক্সবাজার সদর"
+              },
+              {
+                "name": "ঝিলংজা",
+                "nameEn": "ঝিলংজা"
+              },
+              {
+                "name": "ইদগাঁও",
+                "nameEn": "ইদগাঁও"
+              }
+            ]
           },
           {
             "name": "কুতুবদিয়া",
             "nameEn": "Kutubdia",
-            "unions": [{"name": "কুতুবদিয়া", "nameEn": "কুতুবদিয়া"}, {"name": "আলী আকবরদেল", "nameEn": "আলী আকবরদেল"}, {"name": "ধুরুং", "nameEn": "ধুরুং"}, {"name": "লেমশীখালী", "nameEn": "লেমশীখালী"}]
+            "unions": [
+              {
+                "name": "কুতুবদিয়া",
+                "nameEn": "কুতুবদিয়া"
+              },
+              {
+                "name": "আলী আকবরদেল",
+                "nameEn": "আলী আকবরদেল"
+              },
+              {
+                "name": "ধুরুং",
+                "nameEn": "ধুরুং"
+              },
+              {
+                "name": "লেমশীখালী",
+                "nameEn": "লেমশীখালী"
+              }
+            ]
           },
           {
             "name": "চকরিয়া",
             "nameEn": "Moheskhali",
-            "unions": [{"name": "মহেশখালী", "nameEn": "মহেশখালী"}, {"name": "কুতুবজোম", "nameEn": "কুতুবজোম"}, {"name": "মাতারবাড়ী", "nameEn": "মাতারবাড়ী"}]
+            "unions": [
+              {
+                "name": "মহেশখালী",
+                "nameEn": "মহেশখালী"
+              },
+              {
+                "name": "কুতুবজোম",
+                "nameEn": "কুতুবজোম"
+              },
+              {
+                "name": "মাতারবাড়ী",
+                "nameEn": "মাতারবাড়ী"
+              }
+            ]
           },
           {
             "name": "টেকনাফ",
             "nameEn": "Pekua",
-            "unions": [{"name": "পেকুয়া", "nameEn": "পেকুয়া"}, {"name": "মগনামা", "nameEn": "মগনামা"}, {"name": "শীলখালী", "nameEn": "শীলখালী"}, {"name": "তাতাপাং", "nameEn": "তাতাপাং"}]
+            "unions": [
+              {
+                "name": "পেকুয়া",
+                "nameEn": "পেকুয়া"
+              },
+              {
+                "name": "মগনামা",
+                "nameEn": "মগনামা"
+              },
+              {
+                "name": "শীলখালী",
+                "nameEn": "শীলখালী"
+              },
+              {
+                "name": "তাতাপাং",
+                "nameEn": "তাতাপাং"
+              }
+            ]
           },
           {
             "name": "পেকুয়া",
             "nameEn": "Ramu",
-            "unions": [{"name": "রামু", "nameEn": "রামু"}, {"name": "কাউয়ারখোপ", "nameEn": "কাউয়ারখোপ"}, {"name": "রাজারকুল", "nameEn": "রাজারকুল"}, {"name": "খুনিয়াপালং", "nameEn": "খুনিয়াপালং"}]
+            "unions": [
+              {
+                "name": "রামু",
+                "nameEn": "রামু"
+              },
+              {
+                "name": "কাউয়ারখোপ",
+                "nameEn": "কাউয়ারখোপ"
+              },
+              {
+                "name": "রাজারকুল",
+                "nameEn": "রাজারকুল"
+              },
+              {
+                "name": "খুনিয়াপালং",
+                "nameEn": "খুনিয়াপালং"
+              }
+            ]
           },
           {
             "name": "মহেশখালী",
             "nameEn": "Teknaf",
-            "unions": [{"name": "টেকনাফ", "nameEn": "টেকনাফ"}, {"name": "জাদিমুরা", "nameEn": "জাদিমুরা"}, {"name": "হোয়াইক্যং", "nameEn": "হোয়াইক্যং"}, {"name": "বাহারছড়া", "nameEn": "বাহারছড়া"}]
+            "unions": [
+              {
+                "name": "টেকনাফ",
+                "nameEn": "টেকনাফ"
+              },
+              {
+                "name": "জাদিমুরা",
+                "nameEn": "জাদিমুরা"
+              },
+              {
+                "name": "হোয়াইক্যং",
+                "nameEn": "হোয়াইক্যং"
+              },
+              {
+                "name": "বাহারছড়া",
+                "nameEn": "বাহারছড়া"
+              }
+            ]
           },
           {
             "name": "রামু",
             "nameEn": "Ukhiya",
-            "unions": [{"name": "Ukhiya সদর", "nameEn": "Ukhiya Sadar"}]
+            "unions": [
+              {
+                "name": "Ukhiya সদর",
+                "nameEn": "Ukhiya Sadar"
+              }
+            ]
           }
         ]
       },
@@ -654,89 +3232,464 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Cumilla",
         "upazilas": [
           {
+            "name": "কুমিল্লা সিটি কর্পোরেশন",
+            "nameEn": "Cumilla City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              }
+            ]
+          },
+          {
             "name": "বরুড়া উপজেলা",
             "nameEn": "Barura",
-            "unions": [{"name": "বরুড়া", "nameEn": "বরুড়া"}, {"name": "মোকাম", "nameEn": "মোকাম"}, {"name": "জগৎমল্লিকা", "nameEn": "জগৎমল্লিকা"}, {"name": "আদরা", "nameEn": "আদরা"}]
+            "unions": [
+              {
+                "name": "বরুড়া",
+                "nameEn": "বরুড়া"
+              },
+              {
+                "name": "মোকাম",
+                "nameEn": "মোকাম"
+              },
+              {
+                "name": "জগৎমল্লিকা",
+                "nameEn": "জগৎমল্লিকা"
+              },
+              {
+                "name": "আদরা",
+                "nameEn": "আদরা"
+              }
+            ]
           },
           {
             "name": "ব্রাহ্মনপাড়া উপজেলা",
             "nameEn": "Brahmanpara",
-            "unions": [{"name": "ব্রাহ্মণপাড়া", "nameEn": "ব্রাহ্মণপাড়া"}, {"name": "সিদ্ধিরগঞ্জ", "nameEn": "সিদ্ধিরগঞ্জ"}, {"name": "মাধবপুর", "nameEn": "মাধবপুর"}, {"name": "শশীদল", "nameEn": "শশীদল"}]
+            "unions": [
+              {
+                "name": "ব্রাহ্মণপাড়া",
+                "nameEn": "ব্রাহ্মণপাড়া"
+              },
+              {
+                "name": "সিদ্ধিরগঞ্জ",
+                "nameEn": "সিদ্ধিরগঞ্জ"
+              },
+              {
+                "name": "মাধবপুর",
+                "nameEn": "মাধবপুর"
+              },
+              {
+                "name": "শশীদল",
+                "nameEn": "শশীদল"
+              }
+            ]
           },
           {
             "name": "বুড়িচং উপজেলা",
             "nameEn": "Burichong",
-            "unions": [{"name": "বুড়িচং", "nameEn": "বুড়িচং"}, {"name": "ময়নামতি", "nameEn": "ময়নামতি"}, {"name": "রাজাপুর", "nameEn": "রাজাপুর"}]
+            "unions": [
+              {
+                "name": "বুড়িচং",
+                "nameEn": "বুড়িচং"
+              },
+              {
+                "name": "ময়নামতি",
+                "nameEn": "ময়নামতি"
+              },
+              {
+                "name": "রাজাপুর",
+                "nameEn": "রাজাপুর"
+              }
+            ]
           },
           {
             "name": "চান্দিনা উপজেলা",
             "nameEn": "Chandina",
-            "unions": [{"name": "চান্দিনা", "nameEn": "চান্দিনা"}, {"name": "মাধাইয়া", "nameEn": "মাধাইয়া"}, {"name": "বাতিষা", "nameEn": "বাতিষা"}, {"name": "মাইজখার", "nameEn": "মাইজখার"}]
+            "unions": [
+              {
+                "name": "চান্দিনা",
+                "nameEn": "চান্দিনা"
+              },
+              {
+                "name": "মাধাইয়া",
+                "nameEn": "মাধাইয়া"
+              },
+              {
+                "name": "বাতিষা",
+                "nameEn": "বাতিষা"
+              },
+              {
+                "name": "মাইজখার",
+                "nameEn": "মাইজখার"
+              }
+            ]
           },
           {
             "name": "চৌদ্দগ্রাম উপজেলা",
             "nameEn": "Chouddagram",
-            "unions": [{"name": "চৌদ্দগ্রাম", "nameEn": "চৌদ্দগ্রাম"}, {"name": "গুণবতী", "nameEn": "গুণবতী"}, {"name": "জগন্নাথপুর", "nameEn": "জগন্নাথপুর"}]
+            "unions": [
+              {
+                "name": "চৌদ্দগ্রাম",
+                "nameEn": "চৌদ্দগ্রাম"
+              },
+              {
+                "name": "গুণবতী",
+                "nameEn": "গুণবতী"
+              },
+              {
+                "name": "জগন্নাথপুর",
+                "nameEn": "জগন্নাথপুর"
+              }
+            ]
           },
           {
             "name": "কুমিল্লা- সদর",
             "nameEn": "Cumilla Sadar",
-            "unions": [{"name": "কুমিল্লা সদর", "nameEn": "কুমিল্লা সদর"}, {"name": "কোটবাড়ী", "nameEn": "কোটবাড়ী"}, {"name": "বিজয়পুর", "nameEn": "বিজয়পুর"}]
+            "unions": [
+              {
+                "name": "কুমিল্লা সদর",
+                "nameEn": "কুমিল্লা সদর"
+              },
+              {
+                "name": "কোটবাড়ী",
+                "nameEn": "কোটবাড়ী"
+              },
+              {
+                "name": "বিজয়পুর",
+                "nameEn": "বিজয়পুর"
+              }
+            ]
           },
           {
             "name": "সদর দক্ষিন উপজেলা",
             "nameEn": "Cumilla Sadar Daksin",
-            "unions": [{"name": "কুমিল্লা সদর দক্ষিণ", "nameEn": "কুমিল্লা সদর দক্ষিণ"}, {"name": "বিজয়পুর", "nameEn": "বিজয়পুর"}, {"name": "কালিকাপুর", "nameEn": "কালিকাপুর"}]
+            "unions": [
+              {
+                "name": "কুমিল্লা সদর দক্ষিণ",
+                "nameEn": "কুমিল্লা সদর দক্ষিণ"
+              },
+              {
+                "name": "বিজয়পুর",
+                "nameEn": "বিজয়পুর"
+              },
+              {
+                "name": "কালিকাপুর",
+                "nameEn": "কালিকাপুর"
+              }
+            ]
           },
           {
             "name": "দাউদকান্দি উপজেলা",
             "nameEn": "Daudkandi",
-            "unions": [{"name": "দাউদকান্দি", "nameEn": "দাউদকান্দি"}, {"name": "পদুয়া", "nameEn": "পদুয়া"}, {"name": "এলাহাবাদ", "nameEn": "এলাহাবাদ"}, {"name": "সুন্দরপুর", "nameEn": "সুন্দরপুর"}]
+            "unions": [
+              {
+                "name": "দাউদকান্দি",
+                "nameEn": "দাউদকান্দি"
+              },
+              {
+                "name": "পদুয়া",
+                "nameEn": "পদুয়া"
+              },
+              {
+                "name": "এলাহাবাদ",
+                "nameEn": "এলাহাবাদ"
+              },
+              {
+                "name": "সুন্দরপুর",
+                "nameEn": "সুন্দরপুর"
+              }
+            ]
           },
           {
             "name": "দেবিদ্বার উপজেলা",
             "nameEn": "Debidwar",
-            "unions": [{"name": "দেবিদ্বার", "nameEn": "দেবিদ্বার"}, {"name": "রাজমেহের", "nameEn": "রাজমেহের"}, {"name": "এল্লাহাবাদ", "nameEn": "এল্লাহাবাদ"}, {"name": "ধামতি", "nameEn": "ধামতি"}]
+            "unions": [
+              {
+                "name": "দেবিদ্বার",
+                "nameEn": "দেবিদ্বার"
+              },
+              {
+                "name": "রাজমেহের",
+                "nameEn": "রাজমেহের"
+              },
+              {
+                "name": "এল্লাহাবাদ",
+                "nameEn": "এল্লাহাবাদ"
+              },
+              {
+                "name": "ধামতি",
+                "nameEn": "ধামতি"
+              }
+            ]
           },
           {
             "name": "হোমনা উপজেলা",
             "nameEn": "Homna",
-            "unions": [{"name": "হোমনা", "nameEn": "হোমনা"}, {"name": "ঘাগটিয়া", "nameEn": "ঘাগটিয়া"}, {"name": "নিলখী", "nameEn": "নিলখী"}, {"name": "আশরাফপুর", "nameEn": "আশরাফপুর"}]
+            "unions": [
+              {
+                "name": "হোমনা",
+                "nameEn": "হোমনা"
+              },
+              {
+                "name": "ঘাগটিয়া",
+                "nameEn": "ঘাগটিয়া"
+              },
+              {
+                "name": "নিলখী",
+                "nameEn": "নিলখী"
+              },
+              {
+                "name": "আশরাফপুর",
+                "nameEn": "আশরাফপুর"
+              }
+            ]
           },
           {
             "name": "লাকসাম উপজেলা",
             "nameEn": "Laksham",
-            "unions": [{"name": "লাকসাম", "nameEn": "লাকসাম"}, {"name": "মুদাফরগঞ্জ", "nameEn": "মুদাফরগঞ্জ"}, {"name": "কাচুয়া", "nameEn": "কাচুয়া"}]
+            "unions": [
+              {
+                "name": "লাকসাম",
+                "nameEn": "লাকসাম"
+              },
+              {
+                "name": "মুদাফরগঞ্জ",
+                "nameEn": "মুদাফরগঞ্জ"
+              },
+              {
+                "name": "কাচুয়া",
+                "nameEn": "কাচুয়া"
+              }
+            ]
           },
           {
             "name": "লালমাই উপজেলা",
             "nameEn": "Lalmai",
-            "unions": [{"name": "লালমাই", "nameEn": "লালমাই"}, {"name": "জগন্নাথদিঘী", "nameEn": "জগন্নাথদিঘী"}, {"name": "কাশীনাথপুর", "nameEn": "কাশীনাথপুর"}]
+            "unions": [
+              {
+                "name": "লালমাই",
+                "nameEn": "লালমাই"
+              },
+              {
+                "name": "জগন্নাথদিঘী",
+                "nameEn": "জগন্নাথদিঘী"
+              },
+              {
+                "name": "কাশীনাথপুর",
+                "nameEn": "কাশীনাথপুর"
+              }
+            ]
           },
           {
             "name": "মেঘনা উপজেলা",
             "nameEn": "Meghna",
-            "unions": [{"name": "মেঘনা", "nameEn": "মেঘনা"}, {"name": "বাটামারা", "nameEn": "বাটামারা"}, {"name": "নারায়ণপুর", "nameEn": "নারায়ণপুর"}, {"name": "রামচন্দ্রপুর", "nameEn": "রামচন্দ্রপুর"}]
+            "unions": [
+              {
+                "name": "মেঘনা",
+                "nameEn": "মেঘনা"
+              },
+              {
+                "name": "বাটামারা",
+                "nameEn": "বাটামারা"
+              },
+              {
+                "name": "নারায়ণপুর",
+                "nameEn": "নারায়ণপুর"
+              },
+              {
+                "name": "রামচন্দ্রপুর",
+                "nameEn": "রামচন্দ্রপুর"
+              }
+            ]
           },
           {
             "name": "মনোহরগঞ্জ উপজেলা",
             "nameEn": "Monohorganj",
-            "unions": [{"name": "মনোহরগঞ্জ", "nameEn": "মনোহরগঞ্জ"}, {"name": "বেগমপুর", "nameEn": "বেগমপুর"}, {"name": "খিলা", "nameEn": "খিলা"}]
+            "unions": [
+              {
+                "name": "মনোহরগঞ্জ",
+                "nameEn": "মনোহরগঞ্জ"
+              },
+              {
+                "name": "বেগমপুর",
+                "nameEn": "বেগমপুর"
+              },
+              {
+                "name": "খিলা",
+                "nameEn": "খিলা"
+              }
+            ]
           },
           {
             "name": "মুরাদনগর উপজেলা",
             "nameEn": "Muradnagar",
-            "unions": [{"name": "মুরাদনগর", "nameEn": "মুরাদনগর"}, {"name": "রাজাপুর", "nameEn": "রাজাপুর"}, {"name": "টনকি", "nameEn": "টনকি"}, {"name": "পাহাড়পুর", "nameEn": "পাহাড়পুর"}]
+            "unions": [
+              {
+                "name": "মুরাদনগর",
+                "nameEn": "মুরাদনগর"
+              },
+              {
+                "name": "রাজাপুর",
+                "nameEn": "রাজাপুর"
+              },
+              {
+                "name": "টনকি",
+                "nameEn": "টনকি"
+              },
+              {
+                "name": "পাহাড়পুর",
+                "nameEn": "পাহাড়পুর"
+              }
+            ]
           },
           {
             "name": "নাঙ্গলকোট উপজেলা",
             "nameEn": "Nangalkot",
-            "unions": [{"name": "নাঙ্গলকোট", "nameEn": "নাঙ্গলকোট"}, {"name": "পেরোল", "nameEn": "পেরোল"}, {"name": "দৌলতপুর", "nameEn": "দৌলতপুর"}, {"name": "সাতবাড়িয়া", "nameEn": "সাতবাড়িয়া"}]
+            "unions": [
+              {
+                "name": "নাঙ্গলকোট",
+                "nameEn": "নাঙ্গলকোট"
+              },
+              {
+                "name": "পেরোল",
+                "nameEn": "পেরোল"
+              },
+              {
+                "name": "দৌলতপুর",
+                "nameEn": "দৌলতপুর"
+              },
+              {
+                "name": "সাতবাড়িয়া",
+                "nameEn": "সাতবাড়িয়া"
+              }
+            ]
           },
           {
             "name": "তিতাস উপজেলা",
             "nameEn": "Titas",
-            "unions": [{"name": "তিতাস", "nameEn": "তিতাস"}, {"name": "কালিকাপুর", "nameEn": "কালিকাপুর"}, {"name": "জগৎপুর", "nameEn": "জগৎপুর"}, {"name": "হোমনা", "nameEn": "হোমনা"}]
+            "unions": [
+              {
+                "name": "তিতাস",
+                "nameEn": "তিতাস"
+              },
+              {
+                "name": "কালিকাপুর",
+                "nameEn": "কালিকাপুর"
+              },
+              {
+                "name": "জগৎপুর",
+                "nameEn": "জগৎপুর"
+              },
+              {
+                "name": "হোমনা",
+                "nameEn": "হোমনা"
+              }
+            ]
           }
         ]
       },
@@ -745,34 +3698,170 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Feni",
         "upazilas": [
           {
+            "name": "ফেনী পৌরসভা",
+            "nameEn": "Feni Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ফেনী সদর",
             "nameEn": "Chhagalniya",
-            "unions": [{"name": "ছাগলনাইয়া", "nameEn": "ছাগলনাইয়া"}, {"name": "রসুলপুর", "nameEn": "রসুলপুর"}, {"name": "শুভপুর", "nameEn": "শুভপুর"}]
+            "unions": [
+              {
+                "name": "ছাগলনাইয়া",
+                "nameEn": "ছাগলনাইয়া"
+              },
+              {
+                "name": "রসুলপুর",
+                "nameEn": "রসুলপুর"
+              },
+              {
+                "name": "শুভপুর",
+                "nameEn": "শুভপুর"
+              }
+            ]
           },
           {
             "name": "দাগনভূঁইয়া",
             "nameEn": "Daganbhuiyan",
-            "unions": [{"name": "দাগনভূঞা", "nameEn": "দাগনভূঞা"}, {"name": "সিন্দুরপুর", "nameEn": "সিন্দুরপুর"}, {"name": "ইয়াকুবাবাদ", "nameEn": "ইয়াকুবাবাদ"}, {"name": "রসুলপুর", "nameEn": "রসুলপুর"}]
+            "unions": [
+              {
+                "name": "দাগনভূঞা",
+                "nameEn": "দাগনভূঞা"
+              },
+              {
+                "name": "সিন্দুরপুর",
+                "nameEn": "সিন্দুরপুর"
+              },
+              {
+                "name": "ইয়াকুবাবাদ",
+                "nameEn": "ইয়াকুবাবাদ"
+              },
+              {
+                "name": "রসুলপুর",
+                "nameEn": "রসুলপুর"
+              }
+            ]
           },
           {
             "name": "সোনাগাজী",
             "nameEn": "Feni Sadar",
-            "unions": [{"name": "ফেনী সদর", "nameEn": "ফেনী সদর"}, {"name": "চরপূর্বা", "nameEn": "চরপূর্বা"}, {"name": "লেমুয়া", "nameEn": "লেমুয়া"}, {"name": "চরচান্দিয়া", "nameEn": "চরচান্দিয়া"}]
+            "unions": [
+              {
+                "name": "ফেনী সদর",
+                "nameEn": "ফেনী সদর"
+              },
+              {
+                "name": "চরপূর্বা",
+                "nameEn": "চরপূর্বা"
+              },
+              {
+                "name": "লেমুয়া",
+                "nameEn": "লেমুয়া"
+              },
+              {
+                "name": "চরচান্দিয়া",
+                "nameEn": "চরচান্দিয়া"
+              }
+            ]
           },
           {
             "name": "ছাগলনাইয়া",
             "nameEn": "Fulgazi",
-            "unions": [{"name": "ফুলগাজী", "nameEn": "ফুলগাজী"}, {"name": "মুন্সিরহাট", "nameEn": "মুন্সিরহাট"}, {"name": "আমীরাবাদ", "nameEn": "আমীরাবাদ"}, {"name": "আনন্দপুর", "nameEn": "আনন্দপুর"}]
+            "unions": [
+              {
+                "name": "ফুলগাজী",
+                "nameEn": "ফুলগাজী"
+              },
+              {
+                "name": "মুন্সিরহাট",
+                "nameEn": "মুন্সিরহাট"
+              },
+              {
+                "name": "আমীরাবাদ",
+                "nameEn": "আমীরাবাদ"
+              },
+              {
+                "name": "আনন্দপুর",
+                "nameEn": "আনন্দপুর"
+              }
+            ]
           },
           {
             "name": "পরশুরাম",
             "nameEn": "Porshuram",
-            "unions": [{"name": "পরশুরাম", "nameEn": "পরশুরাম"}, {"name": "চিতলিয়া", "nameEn": "চিতলিয়া"}, {"name": "মাদবপুর", "nameEn": "মাদবপুর"}]
+            "unions": [
+              {
+                "name": "পরশুরাম",
+                "nameEn": "পরশুরাম"
+              },
+              {
+                "name": "চিতলিয়া",
+                "nameEn": "চিতলিয়া"
+              },
+              {
+                "name": "মাদবপুর",
+                "nameEn": "মাদবপুর"
+              }
+            ]
           },
           {
             "name": "ফুলগাজী",
             "nameEn": "Sonagazi",
-            "unions": [{"name": "সোনাগাজী", "nameEn": "সোনাগাজী"}, {"name": "চরদরবেশ", "nameEn": "চরদরবেশ"}, {"name": "আমিরাবাদ", "nameEn": "আমিরাবাদ"}, {"name": "চরচান্দিয়া", "nameEn": "চরচান্দিয়া"}]
+            "unions": [
+              {
+                "name": "সোনাগাজী",
+                "nameEn": "সোনাগাজী"
+              },
+              {
+                "name": "চরদরবেশ",
+                "nameEn": "চরদরবেশ"
+              },
+              {
+                "name": "আমিরাবাদ",
+                "nameEn": "আমিরাবাদ"
+              },
+              {
+                "name": "চরচান্দিয়া",
+                "nameEn": "চরচান্দিয়া"
+              }
+            ]
           }
         ]
       },
@@ -781,49 +3870,200 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Khagrachari",
         "upazilas": [
           {
+            "name": "খাগড়াছড়ি পৌরসভা",
+            "nameEn": "Khagrachari Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "খাগড়াছড়ি সদর উপজেলা",
             "nameEn": "Dighinala",
-            "unions": [{"name": "দীঘিনালা", "nameEn": "দীঘিনালা"}, {"name": "বাবুছড়া", "nameEn": "বাবুছড়া"}, {"name": "মেরুং", "nameEn": "মেরুং"}, {"name": "কবাখালী", "nameEn": "কবাখালী"}]
+            "unions": [
+              {
+                "name": "দীঘিনালা",
+                "nameEn": "দীঘিনালা"
+              },
+              {
+                "name": "বাবুছড়া",
+                "nameEn": "বাবুছড়া"
+              },
+              {
+                "name": "মেরুং",
+                "nameEn": "মেরুং"
+              },
+              {
+                "name": "কবাখালী",
+                "nameEn": "কবাখালী"
+              }
+            ]
           },
           {
             "name": "পানছড়ি উপজেলা",
             "nameEn": "Guimara",
-            "unions": [{"name": "গুইমারা", "nameEn": "গুইমারা"}, {"name": "হাফছড়ি", "nameEn": "হাফছড়ি"}, {"name": "বোয়ালখালী", "nameEn": "বোয়ালখালী"}]
+            "unions": [
+              {
+                "name": "গুইমারা",
+                "nameEn": "গুইমারা"
+              },
+              {
+                "name": "হাফছড়ি",
+                "nameEn": "হাফছড়ি"
+              },
+              {
+                "name": "বোয়ালখালী",
+                "nameEn": "বোয়ালখালী"
+              }
+            ]
           },
           {
             "name": "পানছড়ি উপজেলা",
             "nameEn": "Khagrachari Sadar",
-            "unions": [{"name": "খাগড়াছড়ি সদর", "nameEn": "খাগড়াছড়ি সদর"}, {"name": "পেরাছড়া", "nameEn": "পেরাছড়া"}]
+            "unions": [
+              {
+                "name": "খাগড়াছড়ি সদর",
+                "nameEn": "খাগড়াছড়ি সদর"
+              },
+              {
+                "name": "পেরাছড়া",
+                "nameEn": "পেরাছড়া"
+              }
+            ]
           },
           {
             "name": "মহালছড়ি উপজেলা",
             "nameEn": "Laxmichari",
-            "unions": [{"name": "লক্ষ্মীছড়ি", "nameEn": "লক্ষ্মীছড়ি"}, {"name": "দুল্যাতলী", "nameEn": "দুল্যাতলী"}]
+            "unions": [
+              {
+                "name": "লক্ষ্মীছড়ি",
+                "nameEn": "লক্ষ্মীছড়ি"
+              },
+              {
+                "name": "দুল্যাতলী",
+                "nameEn": "দুল্যাতলী"
+              }
+            ]
           },
           {
             "name": "মাটিরাঙ্গা উপজেলা",
             "nameEn": "Mahalchari",
-            "unions": [{"name": "মহালছড়ি", "nameEn": "মহালছড়ি"}, {"name": "কায়ংঘাট", "nameEn": "কায়ংঘাট"}]
+            "unions": [
+              {
+                "name": "মহালছড়ি",
+                "nameEn": "মহালছড়ি"
+              },
+              {
+                "name": "কায়ংঘাট",
+                "nameEn": "কায়ংঘাট"
+              }
+            ]
           },
           {
             "name": "মানিকছড়ি উপজেলা",
             "nameEn": "Manikchari",
-            "unions": [{"name": "মানিকছড়ি", "nameEn": "মানিকছড়ি"}, {"name": "বাটনাতলী", "nameEn": "বাটনাতলী"}]
+            "unions": [
+              {
+                "name": "মানিকছড়ি",
+                "nameEn": "মানিকছড়ি"
+              },
+              {
+                "name": "বাটনাতলী",
+                "nameEn": "বাটনাতলী"
+              }
+            ]
           },
           {
             "name": "রামগড় উপজেলা",
             "nameEn": "Matiranga",
-            "unions": [{"name": "মাটিরাঙ্গা", "nameEn": "মাটিরাঙ্গা"}, {"name": "তাইন্দং", "nameEn": "তাইন্দং"}, {"name": "আমতলী", "nameEn": "আমতলী"}, {"name": "বেলছড়ি", "nameEn": "বেলছড়ি"}]
+            "unions": [
+              {
+                "name": "মাটিরাঙ্গা",
+                "nameEn": "মাটিরাঙ্গা"
+              },
+              {
+                "name": "তাইন্দং",
+                "nameEn": "তাইন্দং"
+              },
+              {
+                "name": "আমতলী",
+                "nameEn": "আমতলী"
+              },
+              {
+                "name": "বেলছড়ি",
+                "nameEn": "বেলছড়ি"
+              }
+            ]
           },
           {
             "name": "লক্ষীছড়ি উপজেলা",
             "nameEn": "Panchari",
-            "unions": [{"name": "পানছড়ি", "nameEn": "পানছড়ি"}, {"name": "লোগাং", "nameEn": "লোগাং"}, {"name": "চেংমী", "nameEn": "চেংমী"}]
+            "unions": [
+              {
+                "name": "পানছড়ি",
+                "nameEn": "পানছড়ি"
+              },
+              {
+                "name": "লোগাং",
+                "nameEn": "লোগাং"
+              },
+              {
+                "name": "চেংমী",
+                "nameEn": "চেংমী"
+              }
+            ]
           },
           {
             "name": "গুইমারা উপজেলা",
             "nameEn": "Ramgarh",
-            "unions": [{"name": "রামগড়", "nameEn": "রামগড়"}, {"name": "পাতাছড়া", "nameEn": "পাতাছড়া"}, {"name": "হাফছড়ি", "nameEn": "হাফছড়ি"}]
+            "unions": [
+              {
+                "name": "রামগড়",
+                "nameEn": "রামগড়"
+              },
+              {
+                "name": "পাতাছড়া",
+                "nameEn": "পাতাছড়া"
+              },
+              {
+                "name": "হাফছড়ি",
+                "nameEn": "হাফছড়ি"
+              }
+            ]
           }
         ]
       },
@@ -832,29 +4072,144 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Laxmipur",
         "upazilas": [
           {
+            "name": "লক্ষ্মীপুর পৌরসভা",
+            "nameEn": "Lakshmipur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "লক্ষ্মীপুর",
             "nameEn": "Komol Nagar",
-            "unions": [{"name": "কমলনগর", "nameEn": "কমলনগর"}, {"name": "চরমার্টিন", "nameEn": "চরমার্টিন"}, {"name": "পাটারী", "nameEn": "পাটারী"}]
+            "unions": [
+              {
+                "name": "কমলনগর",
+                "nameEn": "কমলনগর"
+              },
+              {
+                "name": "চরমার্টিন",
+                "nameEn": "চরমার্টিন"
+              },
+              {
+                "name": "পাটারী",
+                "nameEn": "পাটারী"
+              }
+            ]
           },
           {
             "name": "রায়পুর",
             "nameEn": "Laxmipur Sadar",
-            "unions": [{"name": "লক্ষ্মীপুর সদর", "nameEn": "লক্ষ্মীপুর সদর"}, {"name": "চরশরীফ", "nameEn": "চরশরীফ"}, {"name": "হাজিরহাট", "nameEn": "হাজিরহাট"}]
+            "unions": [
+              {
+                "name": "লক্ষ্মীপুর সদর",
+                "nameEn": "লক্ষ্মীপুর সদর"
+              },
+              {
+                "name": "চরশরীফ",
+                "nameEn": "চরশরীফ"
+              },
+              {
+                "name": "হাজিরহাট",
+                "nameEn": "হাজিরহাট"
+              }
+            ]
           },
           {
             "name": "রামগঞ্জ",
             "nameEn": "Raipur",
-            "unions": [{"name": "রায়পুর", "nameEn": "রায়পুর"}, {"name": "চরবাটা", "nameEn": "চরবাটা"}, {"name": "নোয়াবাদ", "nameEn": "নোয়াবাদ"}]
+            "unions": [
+              {
+                "name": "রায়পুর",
+                "nameEn": "রায়পুর"
+              },
+              {
+                "name": "চরবাটা",
+                "nameEn": "চরবাটা"
+              },
+              {
+                "name": "নোয়াবাদ",
+                "nameEn": "নোয়াবাদ"
+              }
+            ]
           },
           {
             "name": "রামগতি",
             "nameEn": "Ramganj",
-            "unions": [{"name": "রামগঞ্জ", "nameEn": "রামগঞ্জ"}, {"name": "চণ্ডীপুর", "nameEn": "চণ্ডীপুর"}, {"name": "চরবাদাম", "nameEn": "চরবাদাম"}, {"name": "কাঞ্চনপুর", "nameEn": "কাঞ্চনপুর"}]
+            "unions": [
+              {
+                "name": "রামগঞ্জ",
+                "nameEn": "রামগঞ্জ"
+              },
+              {
+                "name": "চণ্ডীপুর",
+                "nameEn": "চণ্ডীপুর"
+              },
+              {
+                "name": "চরবাদাম",
+                "nameEn": "চরবাদাম"
+              },
+              {
+                "name": "কাঞ্চনপুর",
+                "nameEn": "কাঞ্চনপুর"
+              }
+            ]
           },
           {
             "name": "কমলনগর",
             "nameEn": "Ramgati",
-            "unions": [{"name": "রামগতি", "nameEn": "রামগতি"}, {"name": "চরআলেকজান্ডার", "nameEn": "চরআলেকজান্ডার"}, {"name": "চরফলকন", "nameEn": "চরফলকন"}, {"name": "চরলরেন্স", "nameEn": "চরলরেন্স"}]
+            "unions": [
+              {
+                "name": "রামগতি",
+                "nameEn": "রামগতি"
+              },
+              {
+                "name": "চরআলেকজান্ডার",
+                "nameEn": "চরআলেকজান্ডার"
+              },
+              {
+                "name": "চরফলকন",
+                "nameEn": "চরফলকন"
+              },
+              {
+                "name": "চরলরেন্স",
+                "nameEn": "চরলরেন্স"
+              }
+            ]
           }
         ]
       },
@@ -863,49 +4218,220 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Noakhali",
         "upazilas": [
           {
+            "name": "নোয়াখালী পৌরসভা",
+            "nameEn": "Noakhali Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "বেগমগঞ্জ",
             "nameEn": "Begumganj",
-            "unions": [{"name": "বেগমগঞ্জ", "nameEn": "বেগমগঞ্জ"}, {"name": "আলাইয়ারচর", "nameEn": "আলাইয়ারচর"}, {"name": "দুর্গাপুর", "nameEn": "দুর্গাপুর"}, {"name": "সোনাইমুড়ী", "nameEn": "সোনাইমুড়ী"}]
+            "unions": [
+              {
+                "name": "বেগমগঞ্জ",
+                "nameEn": "বেগমগঞ্জ"
+              },
+              {
+                "name": "আলাইয়ারচর",
+                "nameEn": "আলাইয়ারচর"
+              },
+              {
+                "name": "দুর্গাপুর",
+                "nameEn": "দুর্গাপুর"
+              },
+              {
+                "name": "সোনাইমুড়ী",
+                "nameEn": "সোনাইমুড়ী"
+              }
+            ]
           },
           {
             "name": "চাটখিল",
             "nameEn": "Chatkhil",
-            "unions": [{"name": "চাটখিল", "nameEn": "চাটখিল"}, {"name": "খিলপাড়া", "nameEn": "খিলপাড়া"}, {"name": "সাহাপুর", "nameEn": "সাহাপুর"}, {"name": "রশিদপুর", "nameEn": "রশিদপুর"}]
+            "unions": [
+              {
+                "name": "চাটখিল",
+                "nameEn": "চাটখিল"
+              },
+              {
+                "name": "খিলপাড়া",
+                "nameEn": "খিলপাড়া"
+              },
+              {
+                "name": "সাহাপুর",
+                "nameEn": "সাহাপুর"
+              },
+              {
+                "name": "রশিদপুর",
+                "nameEn": "রশিদপুর"
+              }
+            ]
           },
           {
             "name": "কোম্পানীগঞ্জ",
             "nameEn": "Companiganj",
-            "unions": [{"name": "কোম্পানীগঞ্জ", "nameEn": "কোম্পানীগঞ্জ"}, {"name": "চরফকিরা", "nameEn": "চরফকিরা"}, {"name": "চরএলাহী", "nameEn": "চরএলাহী"}]
+            "unions": [
+              {
+                "name": "কোম্পানীগঞ্জ",
+                "nameEn": "কোম্পানীগঞ্জ"
+              },
+              {
+                "name": "চরফকিরা",
+                "nameEn": "চরফকিরা"
+              },
+              {
+                "name": "চরএলাহী",
+                "nameEn": "চরএলাহী"
+              }
+            ]
           },
           {
             "name": "হাতিয়া",
             "nameEn": "Hatiya",
-            "unions": [{"name": "হাতিয়া", "nameEn": "হাতিয়া"}, {"name": "চরকিং", "nameEn": "চরকিং"}, {"name": "নলচিরা", "nameEn": "নলচিরা"}, {"name": "সুখচর", "nameEn": "সুখচর"}]
+            "unions": [
+              {
+                "name": "হাতিয়া",
+                "nameEn": "হাতিয়া"
+              },
+              {
+                "name": "চরকিং",
+                "nameEn": "চরকিং"
+              },
+              {
+                "name": "নলচিরা",
+                "nameEn": "নলচিরা"
+              },
+              {
+                "name": "সুখচর",
+                "nameEn": "সুখচর"
+              }
+            ]
           },
           {
             "name": "কবিরহাট",
             "nameEn": "Kabir Hat",
-            "unions": [{"name": "কবিরহাট", "nameEn": "কবিরহাট"}, {"name": "রামনারায়ণপুর", "nameEn": "রামনারায়ণপুর"}]
+            "unions": [
+              {
+                "name": "কবিরহাট",
+                "nameEn": "কবিরহাট"
+              },
+              {
+                "name": "রামনারায়ণপুর",
+                "nameEn": "রামনারায়ণপুর"
+              }
+            ]
           },
           {
             "name": "নোয়াখালী সদর",
             "nameEn": "Noakhali Sadar",
-            "unions": [{"name": "নোয়াখালী সদর", "nameEn": "নোয়াখালী সদর"}, {"name": "চরজুবিলি", "nameEn": "চরজুবিলি"}, {"name": "ইউয়েটাবাদ", "nameEn": "ইউয়েটাবাদ"}, {"name": "বিনোদপুর", "nameEn": "বিনোদপুর"}]
+            "unions": [
+              {
+                "name": "নোয়াখালী সদর",
+                "nameEn": "নোয়াখালী সদর"
+              },
+              {
+                "name": "চরজুবিলি",
+                "nameEn": "চরজুবিলি"
+              },
+              {
+                "name": "ইউয়েটাবাদ",
+                "nameEn": "ইউয়েটাবাদ"
+              },
+              {
+                "name": "বিনোদপুর",
+                "nameEn": "বিনোদপুর"
+              }
+            ]
           },
           {
             "name": "সেনবাগ",
             "nameEn": "Senbag",
-            "unions": [{"name": "সেনবাগ", "nameEn": "সেনবাগ"}, {"name": "আরজনগর", "nameEn": "আরজনগর"}]
+            "unions": [
+              {
+                "name": "সেনবাগ",
+                "nameEn": "সেনবাগ"
+              },
+              {
+                "name": "আরজনগর",
+                "nameEn": "আরজনগর"
+              }
+            ]
           },
           {
             "name": "সোনাইমুড়ী",
             "nameEn": "Sonaimuri",
-            "unions": [{"name": "সোনাইমুড়ী", "nameEn": "সোনাইমুড়ী"}, {"name": "অগ্রাণী", "nameEn": "অগ্রাণী"}, {"name": "আমিশাপাড়া", "nameEn": "আমিশাপাড়া"}, {"name": "চরবাটা", "nameEn": "চরবাটা"}]
+            "unions": [
+              {
+                "name": "সোনাইমুড়ী",
+                "nameEn": "সোনাইমুড়ী"
+              },
+              {
+                "name": "অগ্রাণী",
+                "nameEn": "অগ্রাণী"
+              },
+              {
+                "name": "আমিশাপাড়া",
+                "nameEn": "আমিশাপাড়া"
+              },
+              {
+                "name": "চরবাটা",
+                "nameEn": "চরবাটা"
+              }
+            ]
           },
           {
             "name": "সুবর্ণচর",
             "nameEn": "Subarna Char",
-            "unions": [{"name": "সুবর্ণচর", "nameEn": "সুবর্ণচর"}, {"name": "চরক্লার্ক", "nameEn": "চরক্লার্ক"}, {"name": "চরওয়াপদা", "nameEn": "চরওয়াপদা"}]
+            "unions": [
+              {
+                "name": "সুবর্ণচর",
+                "nameEn": "সুবর্ণচর"
+              },
+              {
+                "name": "চরক্লার্ক",
+                "nameEn": "চরক্লার্ক"
+              },
+              {
+                "name": "চরওয়াপদা",
+                "nameEn": "চরওয়াপদা"
+              }
+            ]
           }
         ]
       },
@@ -914,54 +4440,210 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Rangamati",
         "upazilas": [
           {
+            "name": "রাঙ্গামাটি পৌরসভা",
+            "nameEn": "Rangamati Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "রাঙ্গামাটি সদর",
             "nameEn": "Baghaichari",
-            "unions": [{"name": "বাঘাইছড়ি", "nameEn": "বাঘাইছড়ি"}, {"name": "সাজেক", "nameEn": "সাজেক"}, {"name": "মারিশ্যা", "nameEn": "মারিশ্যা"}]
+            "unions": [
+              {
+                "name": "বাঘাইছড়ি",
+                "nameEn": "বাঘাইছড়ি"
+              },
+              {
+                "name": "সাজেক",
+                "nameEn": "সাজেক"
+              },
+              {
+                "name": "মারিশ্যা",
+                "nameEn": "মারিশ্যা"
+              }
+            ]
           },
           {
             "name": "নানিয়ারচর",
             "nameEn": "Barkal",
-            "unions": [{"name": "বরকল", "nameEn": "বরকল"}, {"name": "ভূষণছড়া", "nameEn": "ভূষণছড়া"}, {"name": "শুভলং", "nameEn": "শুভলং"}]
+            "unions": [
+              {
+                "name": "বরকল",
+                "nameEn": "বরকল"
+              },
+              {
+                "name": "ভূষণছড়া",
+                "nameEn": "ভূষণছড়া"
+              },
+              {
+                "name": "শুভলং",
+                "nameEn": "শুভলং"
+              }
+            ]
           },
           {
             "name": "লংগদু",
             "nameEn": "Belaichari",
-            "unions": [{"name": "বিলাইছড়ি", "nameEn": "বিলাইছড়ি"}, {"name": "ফারুয়া", "nameEn": "ফারুয়া"}]
+            "unions": [
+              {
+                "name": "বিলাইছড়ি",
+                "nameEn": "বিলাইছড়ি"
+              },
+              {
+                "name": "ফারুয়া",
+                "nameEn": "ফারুয়া"
+              }
+            ]
           },
           {
             "name": "বাঘাইছড়ি",
             "nameEn": "Juraichari",
-            "unions": [{"name": "জুরাছড়ি", "nameEn": "জুরাছড়ি"}, {"name": "বনযোগীছড়া", "nameEn": "বনযোগীছড়া"}]
+            "unions": [
+              {
+                "name": "জুরাছড়ি",
+                "nameEn": "জুরাছড়ি"
+              },
+              {
+                "name": "বনযোগীছড়া",
+                "nameEn": "বনযোগীছড়া"
+              }
+            ]
           },
           {
             "name": "বরকল",
             "nameEn": "Kaptai",
-            "unions": [{"name": "কাপ্তাই", "nameEn": "কাপ্তাই"}, {"name": "চিৎমরম", "nameEn": "চিৎমরম"}, {"name": "ওয়াগ্গা", "nameEn": "ওয়াগ্গা"}, {"name": "রাইখালী", "nameEn": "রাইখালী"}]
+            "unions": [
+              {
+                "name": "কাপ্তাই",
+                "nameEn": "কাপ্তাই"
+              },
+              {
+                "name": "চিৎমরম",
+                "nameEn": "চিৎমরম"
+              },
+              {
+                "name": "ওয়াগ্গা",
+                "nameEn": "ওয়াগ্গা"
+              },
+              {
+                "name": "রাইখালী",
+                "nameEn": "রাইখালী"
+              }
+            ]
           },
           {
             "name": "জুরাছড়ি",
             "nameEn": "Kaukhali",
-            "unions": [{"name": "কাউখালী", "nameEn": "কাউখালী"}, {"name": "ঘিলাছড়ি", "nameEn": "ঘিলাছড়ি"}]
+            "unions": [
+              {
+                "name": "কাউখালী",
+                "nameEn": "কাউখালী"
+              },
+              {
+                "name": "ঘিলাছড়ি",
+                "nameEn": "ঘিলাছড়ি"
+              }
+            ]
           },
           {
             "name": "বিলাইছড়ি",
             "nameEn": "Langadu",
-            "unions": [{"name": "লংগদু", "nameEn": "লংগদু"}, {"name": "মাইনীমুখ", "nameEn": "মাইনীমুখ"}, {"name": "বগাচাটর", "nameEn": "বগাচাটর"}]
+            "unions": [
+              {
+                "name": "লংগদু",
+                "nameEn": "লংগদু"
+              },
+              {
+                "name": "মাইনীমুখ",
+                "nameEn": "মাইনীমুখ"
+              },
+              {
+                "name": "বগাচাটর",
+                "nameEn": "বগাচাটর"
+              }
+            ]
           },
           {
             "name": "রাজস্থলী",
             "nameEn": "Nanniarchar",
-            "unions": [{"name": "নানিয়ারচর", "nameEn": "নানিয়ারচর"}, {"name": "বুড়িঘাট", "nameEn": "বুড়িঘাট"}]
+            "unions": [
+              {
+                "name": "নানিয়ারচর",
+                "nameEn": "নানিয়ারচর"
+              },
+              {
+                "name": "বুড়িঘাট",
+                "nameEn": "বুড়িঘাট"
+              }
+            ]
           },
           {
             "name": "কাপ্তাই",
             "nameEn": "Rajosthali",
-            "unions": [{"name": "রাজস্থলী", "nameEn": "রাজস্থলী"}, {"name": "গাইন্দ্যা", "nameEn": "গাইন্দ্যা"}]
+            "unions": [
+              {
+                "name": "রাজস্থলী",
+                "nameEn": "রাজস্থলী"
+              },
+              {
+                "name": "গাইন্দ্যা",
+                "nameEn": "গাইন্দ্যা"
+              }
+            ]
           },
           {
             "name": "কাউখালী",
             "nameEn": "Rangamati Sadar",
-            "unions": [{"name": "রাঙ্গামাটি সদর", "nameEn": "রাঙ্গামাটি সদর"}, {"name": "সাপছড়ি", "nameEn": "সাপছড়ি"}, {"name": "কুতুকছড়ি", "nameEn": "কুতুকছড়ি"}]
+            "unions": [
+              {
+                "name": "রাঙ্গামাটি সদর",
+                "nameEn": "রাঙ্গামাটি সদর"
+              },
+              {
+                "name": "সাপছড়ি",
+                "nameEn": "সাপছড়ি"
+              },
+              {
+                "name": "কুতুকছড়ি",
+                "nameEn": "কুতুকছড়ি"
+              }
+            ]
           }
         ]
       }
@@ -976,29 +4658,654 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Dhaka",
         "upazilas": [
           {
+            "name": "ঢাকা দক্ষিণ সিটি কর্পোরেশন",
+            "nameEn": "Dhaka South City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              },
+              {
+                "name": "ওয়ার্ড নং-32",
+                "nameEn": "Ward No-32"
+              },
+              {
+                "name": "ওয়ার্ড নং-33",
+                "nameEn": "Ward No-33"
+              },
+              {
+                "name": "ওয়ার্ড নং-34",
+                "nameEn": "Ward No-34"
+              },
+              {
+                "name": "ওয়ার্ড নং-35",
+                "nameEn": "Ward No-35"
+              },
+              {
+                "name": "ওয়ার্ড নং-36",
+                "nameEn": "Ward No-36"
+              },
+              {
+                "name": "ওয়ার্ড নং-37",
+                "nameEn": "Ward No-37"
+              },
+              {
+                "name": "ওয়ার্ড নং-38",
+                "nameEn": "Ward No-38"
+              },
+              {
+                "name": "ওয়ার্ড নং-39",
+                "nameEn": "Ward No-39"
+              },
+              {
+                "name": "ওয়ার্ড নং-40",
+                "nameEn": "Ward No-40"
+              },
+              {
+                "name": "ওয়ার্ড নং-41",
+                "nameEn": "Ward No-41"
+              },
+              {
+                "name": "ওয়ার্ড নং-42",
+                "nameEn": "Ward No-42"
+              },
+              {
+                "name": "ওয়ার্ড নং-43",
+                "nameEn": "Ward No-43"
+              },
+              {
+                "name": "ওয়ার্ড নং-44",
+                "nameEn": "Ward No-44"
+              },
+              {
+                "name": "ওয়ার্ড নং-45",
+                "nameEn": "Ward No-45"
+              },
+              {
+                "name": "ওয়ার্ড নং-46",
+                "nameEn": "Ward No-46"
+              },
+              {
+                "name": "ওয়ার্ড নং-47",
+                "nameEn": "Ward No-47"
+              },
+              {
+                "name": "ওয়ার্ড নং-48",
+                "nameEn": "Ward No-48"
+              },
+              {
+                "name": "ওয়ার্ড নং-49",
+                "nameEn": "Ward No-49"
+              },
+              {
+                "name": "ওয়ার্ড নং-50",
+                "nameEn": "Ward No-50"
+              },
+              {
+                "name": "ওয়ার্ড নং-51",
+                "nameEn": "Ward No-51"
+              },
+              {
+                "name": "ওয়ার্ড নং-52",
+                "nameEn": "Ward No-52"
+              },
+              {
+                "name": "ওয়ার্ড নং-53",
+                "nameEn": "Ward No-53"
+              },
+              {
+                "name": "ওয়ার্ড নং-54",
+                "nameEn": "Ward No-54"
+              },
+              {
+                "name": "ওয়ার্ড নং-55",
+                "nameEn": "Ward No-55"
+              },
+              {
+                "name": "ওয়ার্ড নং-56",
+                "nameEn": "Ward No-56"
+              },
+              {
+                "name": "ওয়ার্ড নং-57",
+                "nameEn": "Ward No-57"
+              },
+              {
+                "name": "ওয়ার্ড নং-58",
+                "nameEn": "Ward No-58"
+              },
+              {
+                "name": "ওয়ার্ড নং-59",
+                "nameEn": "Ward No-59"
+              },
+              {
+                "name": "ওয়ার্ড নং-60",
+                "nameEn": "Ward No-60"
+              },
+              {
+                "name": "ওয়ার্ড নং-61",
+                "nameEn": "Ward No-61"
+              },
+              {
+                "name": "ওয়ার্ড নং-62",
+                "nameEn": "Ward No-62"
+              },
+              {
+                "name": "ওয়ার্ড নং-63",
+                "nameEn": "Ward No-63"
+              },
+              {
+                "name": "ওয়ার্ড নং-64",
+                "nameEn": "Ward No-64"
+              },
+              {
+                "name": "ওয়ার্ড নং-65",
+                "nameEn": "Ward No-65"
+              },
+              {
+                "name": "ওয়ার্ড নং-66",
+                "nameEn": "Ward No-66"
+              },
+              {
+                "name": "ওয়ার্ড নং-67",
+                "nameEn": "Ward No-67"
+              },
+              {
+                "name": "ওয়ার্ড নং-68",
+                "nameEn": "Ward No-68"
+              },
+              {
+                "name": "ওয়ার্ড নং-69",
+                "nameEn": "Ward No-69"
+              },
+              {
+                "name": "ওয়ার্ড নং-70",
+                "nameEn": "Ward No-70"
+              },
+              {
+                "name": "ওয়ার্ড নং-71",
+                "nameEn": "Ward No-71"
+              },
+              {
+                "name": "ওয়ার্ড নং-72",
+                "nameEn": "Ward No-72"
+              },
+              {
+                "name": "ওয়ার্ড নং-73",
+                "nameEn": "Ward No-73"
+              },
+              {
+                "name": "ওয়ার্ড নং-74",
+                "nameEn": "Ward No-74"
+              },
+              {
+                "name": "ওয়ার্ড নং-75",
+                "nameEn": "Ward No-75"
+              }
+            ]
+          },
+          {
+            "name": "ঢাকা উত্তর সিটি কর্পোরেশন",
+            "nameEn": "Dhaka North City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              },
+              {
+                "name": "ওয়ার্ড নং-32",
+                "nameEn": "Ward No-32"
+              },
+              {
+                "name": "ওয়ার্ড নং-33",
+                "nameEn": "Ward No-33"
+              },
+              {
+                "name": "ওয়ার্ড নং-34",
+                "nameEn": "Ward No-34"
+              },
+              {
+                "name": "ওয়ার্ড নং-35",
+                "nameEn": "Ward No-35"
+              },
+              {
+                "name": "ওয়ার্ড নং-36",
+                "nameEn": "Ward No-36"
+              },
+              {
+                "name": "ওয়ার্ড নং-37",
+                "nameEn": "Ward No-37"
+              },
+              {
+                "name": "ওয়ার্ড নং-38",
+                "nameEn": "Ward No-38"
+              },
+              {
+                "name": "ওয়ার্ড নং-39",
+                "nameEn": "Ward No-39"
+              },
+              {
+                "name": "ওয়ার্ড নং-40",
+                "nameEn": "Ward No-40"
+              },
+              {
+                "name": "ওয়ার্ড নং-41",
+                "nameEn": "Ward No-41"
+              },
+              {
+                "name": "ওয়ার্ড নং-42",
+                "nameEn": "Ward No-42"
+              },
+              {
+                "name": "ওয়ার্ড নং-43",
+                "nameEn": "Ward No-43"
+              },
+              {
+                "name": "ওয়ার্ড নং-44",
+                "nameEn": "Ward No-44"
+              },
+              {
+                "name": "ওয়ার্ড নং-45",
+                "nameEn": "Ward No-45"
+              },
+              {
+                "name": "ওয়ার্ড নং-46",
+                "nameEn": "Ward No-46"
+              },
+              {
+                "name": "ওয়ার্ড নং-47",
+                "nameEn": "Ward No-47"
+              },
+              {
+                "name": "ওয়ার্ড নং-48",
+                "nameEn": "Ward No-48"
+              },
+              {
+                "name": "ওয়ার্ড নং-49",
+                "nameEn": "Ward No-49"
+              },
+              {
+                "name": "ওয়ার্ড নং-50",
+                "nameEn": "Ward No-50"
+              },
+              {
+                "name": "ওয়ার্ড নং-51",
+                "nameEn": "Ward No-51"
+              },
+              {
+                "name": "ওয়ার্ড নং-52",
+                "nameEn": "Ward No-52"
+              },
+              {
+                "name": "ওয়ার্ড নং-53",
+                "nameEn": "Ward No-53"
+              },
+              {
+                "name": "ওয়ার্ড নং-54",
+                "nameEn": "Ward No-54"
+              }
+            ]
+          },
+          {
             "name": "সাভার উপজেলা",
             "nameEn": "Dhamrai",
-            "unions": [{"name": "ধামরাই", "nameEn": "ধামরাই"}, {"name": "সুতিপাড়া", "nameEn": "সুতিপাড়া"}, {"name": "গাংটিয়া", "nameEn": "গাংটিয়া"}, {"name": "রোয়াইল", "nameEn": "রোয়াইল"}, {"name": "সাংসার", "nameEn": "সাংসার"}]
+            "unions": [
+              {
+                "name": "ধামরাই",
+                "nameEn": "ধামরাই"
+              },
+              {
+                "name": "সুতিপাড়া",
+                "nameEn": "সুতিপাড়া"
+              },
+              {
+                "name": "গাংটিয়া",
+                "nameEn": "গাংটিয়া"
+              },
+              {
+                "name": "রোয়াইল",
+                "nameEn": "রোয়াইল"
+              },
+              {
+                "name": "সাংসার",
+                "nameEn": "সাংসার"
+              }
+            ]
           },
           {
             "name": "ধামরাই উপজেলা",
             "nameEn": "Dohar",
-            "unions": [{"name": "দোহার", "nameEn": "দোহার"}, {"name": "নবাবগঞ্জ", "nameEn": "নবাবগঞ্জ"}, {"name": "মাহমুদপুর", "nameEn": "মাহমুদপুর"}, {"name": "সুয়াপুর", "nameEn": "সুয়াপুর"}]
+            "unions": [
+              {
+                "name": "দোহার",
+                "nameEn": "দোহার"
+              },
+              {
+                "name": "নবাবগঞ্জ",
+                "nameEn": "নবাবগঞ্জ"
+              },
+              {
+                "name": "মাহমুদপুর",
+                "nameEn": "মাহমুদপুর"
+              },
+              {
+                "name": "সুয়াপুর",
+                "nameEn": "সুয়াপুর"
+              }
+            ]
           },
           {
             "name": "দোহার উপজেলা",
             "nameEn": "Keraniganj",
-            "unions": [{"name": "কেরানীগঞ্জ", "nameEn": "কেরানীগঞ্জ"}, {"name": "কালিন্দী", "nameEn": "কালিন্দী"}, {"name": "আড়াইবাড়ী", "nameEn": "আড়াইবাড়ী"}, {"name": "শুভাঢ্যা", "nameEn": "শুভাঢ্যা"}, {"name": "তেঘরিয়া", "nameEn": "তেঘরিয়া"}]
+            "unions": [
+              {
+                "name": "কেরানীগঞ্জ",
+                "nameEn": "কেরানীগঞ্জ"
+              },
+              {
+                "name": "কালিন্দী",
+                "nameEn": "কালিন্দী"
+              },
+              {
+                "name": "আড়াইবাড়ী",
+                "nameEn": "আড়াইবাড়ী"
+              },
+              {
+                "name": "শুভাঢ্যা",
+                "nameEn": "শুভাঢ্যা"
+              },
+              {
+                "name": "তেঘরিয়া",
+                "nameEn": "তেঘরিয়া"
+              }
+            ]
           },
           {
             "name": "কেরানীগঞ্জ উপজেলা",
             "nameEn": "Nawabganj",
-            "unions": [{"name": "নবাবগঞ্জ", "nameEn": "নবাবগঞ্জ"}, {"name": "আগলা", "nameEn": "আগলা"}, {"name": "কালাকোপা", "nameEn": "কালাকোপা"}]
+            "unions": [
+              {
+                "name": "নবাবগঞ্জ",
+                "nameEn": "নবাবগঞ্জ"
+              },
+              {
+                "name": "আগলা",
+                "nameEn": "আগলা"
+              },
+              {
+                "name": "কালাকোপা",
+                "nameEn": "কালাকোপা"
+              }
+            ]
           },
           {
             "name": "নবাবগঞ্জ উপজেলা",
             "nameEn": "Savar",
-            "unions": [{"name": "সাভার", "nameEn": "সাভার"}, {"name": "আমিনবাজার", "nameEn": "আমিনবাজার"}, {"name": "আশুলিয়া", "nameEn": "আশুলিয়া"}, {"name": "বিরুলিয়া", "nameEn": "বিরুলিয়া"}, {"name": "পাথালিয়া", "nameEn": "পাথালিয়া"}, {"name": "তেঁতুলঝরা", "nameEn": "তেঁতুলঝরা"}]
+            "unions": [
+              {
+                "name": "সাভার",
+                "nameEn": "সাভার"
+              },
+              {
+                "name": "আমিনবাজার",
+                "nameEn": "আমিনবাজার"
+              },
+              {
+                "name": "আশুলিয়া",
+                "nameEn": "আশুলিয়া"
+              },
+              {
+                "name": "বিরুলিয়া",
+                "nameEn": "বিরুলিয়া"
+              },
+              {
+                "name": "পাথালিয়া",
+                "nameEn": "পাথালিয়া"
+              },
+              {
+                "name": "তেঁতুলঝরা",
+                "nameEn": "তেঁতুলঝরা"
+              }
+            ]
           }
         ]
       },
@@ -1007,49 +5314,248 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Faridpur",
         "upazilas": [
           {
+            "name": "ফরিদপুর পৌরসভা",
+            "nameEn": "Faridpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              }
+            ]
+          },
+          {
             "name": "ফরিদপুর সদর উপজেলা",
             "nameEn": "Alfadanga",
-            "unions": [{"name": "আলফাডাঙ্গা", "nameEn": "আলফাডাঙ্গা"}, {"name": "বুল্লতলা", "nameEn": "বুল্লতলা"}, {"name": "গোবিন্দপুর", "nameEn": "গোবিন্দপুর"}, {"name": "তাগরবন্দ", "nameEn": "তাগরবন্দ"}]
+            "unions": [
+              {
+                "name": "আলফাডাঙ্গা",
+                "nameEn": "আলফাডাঙ্গা"
+              },
+              {
+                "name": "বুল্লতলা",
+                "nameEn": "বুল্লতলা"
+              },
+              {
+                "name": "গোবিন্দপুর",
+                "nameEn": "গোবিন্দপুর"
+              },
+              {
+                "name": "তাগরবন্দ",
+                "nameEn": "তাগরবন্দ"
+              }
+            ]
           },
           {
             "name": "বোয়ালমারী উপজেলা",
             "nameEn": "Bhanga",
-            "unions": [{"name": "ভাঙ্গা", "nameEn": "ভাঙ্গা"}, {"name": "হামিরদী", "nameEn": "হামিরদী"}, {"name": "মাছপাড়া", "nameEn": "মাছপাড়া"}, {"name": "কদমবাড়ী", "nameEn": "কদমবাড়ী"}]
+            "unions": [
+              {
+                "name": "ভাঙ্গা",
+                "nameEn": "ভাঙ্গা"
+              },
+              {
+                "name": "হামিরদী",
+                "nameEn": "হামিরদী"
+              },
+              {
+                "name": "মাছপাড়া",
+                "nameEn": "মাছপাড়া"
+              },
+              {
+                "name": "কদমবাড়ী",
+                "nameEn": "কদমবাড়ী"
+              }
+            ]
           },
           {
             "name": "আলফাডাঙ্গা উপজেলা",
             "nameEn": "Boalmari",
-            "unions": [{"name": "বোয়ালমারী", "nameEn": "বোয়ালমারী"}, {"name": "চরমাধবদিয়া", "nameEn": "চরমাধবদিয়া"}, {"name": "সাতৈর", "nameEn": "সাতৈর"}, {"name": "রূপাপাত", "nameEn": "রূপাপাত"}]
+            "unions": [
+              {
+                "name": "বোয়ালমারী",
+                "nameEn": "বোয়ালমারী"
+              },
+              {
+                "name": "চরমাধবদিয়া",
+                "nameEn": "চরমাধবদিয়া"
+              },
+              {
+                "name": "সাতৈর",
+                "nameEn": "সাতৈর"
+              },
+              {
+                "name": "রূপাপাত",
+                "nameEn": "রূপাপাত"
+              }
+            ]
           },
           {
             "name": "মধুখালী উপজেলা",
             "nameEn": "Charbhadrasan",
-            "unions": [{"name": "চরভদ্রাসন", "nameEn": "চরভদ্রাসন"}, {"name": "চরনয়ানগর", "nameEn": "চরনয়ানগর"}]
+            "unions": [
+              {
+                "name": "চরভদ্রাসন",
+                "nameEn": "চরভদ্রাসন"
+              },
+              {
+                "name": "চরনয়ানগর",
+                "nameEn": "চরনয়ানগর"
+              }
+            ]
           },
           {
             "name": "ভাঙ্গা উপজেলা",
             "nameEn": "Faridpur Sadar",
-            "unions": [{"name": "ফরিদপুর সদর", "nameEn": "ফরিদপুর সদর"}, {"name": "কানাইপুর", "nameEn": "কানাইপুর"}, {"name": "ঢাকা-বারিশাল মহাসড়ক", "nameEn": "ঢাকা-বারিশাল মহাসড়ক"}]
+            "unions": [
+              {
+                "name": "ফরিদপুর সদর",
+                "nameEn": "ফরিদপুর সদর"
+              },
+              {
+                "name": "কানাইপুর",
+                "nameEn": "কানাইপুর"
+              },
+              {
+                "name": "ঢাকা-বারিশাল মহাসড়ক",
+                "nameEn": "ঢাকা-বারিশাল মহাসড়ক"
+              }
+            ]
           },
           {
             "name": "নগরকান্দা উপজেলা",
             "nameEn": "Madhukhali",
-            "unions": [{"name": "মধুখালী", "nameEn": "মধুখালী"}, {"name": "বালিয়াকান্দি", "nameEn": "বালিয়াকান্দি"}, {"name": "কামারখালী", "nameEn": "কামারখালী"}]
+            "unions": [
+              {
+                "name": "মধুখালী",
+                "nameEn": "মধুখালী"
+              },
+              {
+                "name": "বালিয়াকান্দি",
+                "nameEn": "বালিয়াকান্দি"
+              },
+              {
+                "name": "কামারখালী",
+                "nameEn": "কামারখালী"
+              }
+            ]
           },
           {
             "name": "চরভদ্রাসন উপজেলা",
             "nameEn": "Nagarkanda",
-            "unions": [{"name": "নগরকান্দা", "nameEn": "নগরকান্দা"}, {"name": "ভদ্রকালী", "nameEn": "ভদ্রকালী"}, {"name": "ডাংমারী", "nameEn": "ডাংমারী"}, {"name": "তালমা", "nameEn": "তালমা"}]
+            "unions": [
+              {
+                "name": "নগরকান্দা",
+                "nameEn": "নগরকান্দা"
+              },
+              {
+                "name": "ভদ্রকালী",
+                "nameEn": "ভদ্রকালী"
+              },
+              {
+                "name": "ডাংমারী",
+                "nameEn": "ডাংমারী"
+              },
+              {
+                "name": "তালমা",
+                "nameEn": "তালমা"
+              }
+            ]
           },
           {
             "name": "সদরপুর উপজেলা",
             "nameEn": "Sadarpur",
-            "unions": [{"name": "সদরপুর", "nameEn": "সদরপুর"}, {"name": "চরমুগুরিয়া", "nameEn": "চরমুগুরিয়া"}, {"name": "ঘোষপুর", "nameEn": "ঘোষপুর"}, {"name": "মাদবরেড়", "nameEn": "মাদবরেড়"}]
+            "unions": [
+              {
+                "name": "সদরপুর",
+                "nameEn": "সদরপুর"
+              },
+              {
+                "name": "চরমুগুরিয়া",
+                "nameEn": "চরমুগুরিয়া"
+              },
+              {
+                "name": "ঘোষপুর",
+                "nameEn": "ঘোষপুর"
+              },
+              {
+                "name": "মাদবরেড়",
+                "nameEn": "মাদবরেড়"
+              }
+            ]
           },
           {
             "name": "সালথা উপজেলা",
             "nameEn": "Saltha",
-            "unions": [{"name": "সালথা", "nameEn": "সালথা"}, {"name": "আমড়া", "nameEn": "আমড়া"}, {"name": "বিলামচি", "nameEn": "বিলামচি"}]
+            "unions": [
+              {
+                "name": "সালথা",
+                "nameEn": "সালথা"
+              },
+              {
+                "name": "আমড়া",
+                "nameEn": "আমড়া"
+              },
+              {
+                "name": "বিলামচি",
+                "nameEn": "বিলামচি"
+              }
+            ]
           }
         ]
       },
@@ -1058,29 +5564,316 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Gazipur",
         "upazilas": [
           {
+            "name": "গাজীপুর সিটি কর্পোরেশন",
+            "nameEn": "Gazipur City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              },
+              {
+                "name": "ওয়ার্ড নং-32",
+                "nameEn": "Ward No-32"
+              },
+              {
+                "name": "ওয়ার্ড নং-33",
+                "nameEn": "Ward No-33"
+              },
+              {
+                "name": "ওয়ার্ড নং-34",
+                "nameEn": "Ward No-34"
+              },
+              {
+                "name": "ওয়ার্ড নং-35",
+                "nameEn": "Ward No-35"
+              },
+              {
+                "name": "ওয়ার্ড নং-36",
+                "nameEn": "Ward No-36"
+              },
+              {
+                "name": "ওয়ার্ড নং-37",
+                "nameEn": "Ward No-37"
+              },
+              {
+                "name": "ওয়ার্ড নং-38",
+                "nameEn": "Ward No-38"
+              },
+              {
+                "name": "ওয়ার্ড নং-39",
+                "nameEn": "Ward No-39"
+              },
+              {
+                "name": "ওয়ার্ড নং-40",
+                "nameEn": "Ward No-40"
+              },
+              {
+                "name": "ওয়ার্ড নং-41",
+                "nameEn": "Ward No-41"
+              },
+              {
+                "name": "ওয়ার্ড নং-42",
+                "nameEn": "Ward No-42"
+              },
+              {
+                "name": "ওয়ার্ড নং-43",
+                "nameEn": "Ward No-43"
+              },
+              {
+                "name": "ওয়ার্ড নং-44",
+                "nameEn": "Ward No-44"
+              },
+              {
+                "name": "ওয়ার্ড নং-45",
+                "nameEn": "Ward No-45"
+              },
+              {
+                "name": "ওয়ার্ড নং-46",
+                "nameEn": "Ward No-46"
+              },
+              {
+                "name": "ওয়ার্ড নং-47",
+                "nameEn": "Ward No-47"
+              },
+              {
+                "name": "ওয়ার্ড নং-48",
+                "nameEn": "Ward No-48"
+              },
+              {
+                "name": "ওয়ার্ড নং-49",
+                "nameEn": "Ward No-49"
+              },
+              {
+                "name": "ওয়ার্ড নং-50",
+                "nameEn": "Ward No-50"
+              },
+              {
+                "name": "ওয়ার্ড নং-51",
+                "nameEn": "Ward No-51"
+              },
+              {
+                "name": "ওয়ার্ড নং-52",
+                "nameEn": "Ward No-52"
+              },
+              {
+                "name": "ওয়ার্ড নং-53",
+                "nameEn": "Ward No-53"
+              },
+              {
+                "name": "ওয়ার্ড নং-54",
+                "nameEn": "Ward No-54"
+              },
+              {
+                "name": "ওয়ার্ড নং-55",
+                "nameEn": "Ward No-55"
+              },
+              {
+                "name": "ওয়ার্ড নং-56",
+                "nameEn": "Ward No-56"
+              },
+              {
+                "name": "ওয়ার্ড নং-57",
+                "nameEn": "Ward No-57"
+              }
+            ]
+          },
+          {
             "name": "গাজীপুর সদর উপজেলা",
             "nameEn": "Gazipur Sadar",
-            "unions": [{"name": "গাজীপুর সদর", "nameEn": "গাজীপুর সদর"}, {"name": "বাসন", "nameEn": "বাসন"}, {"name": "মাস্তারবাড়ী", "nameEn": "মাস্তারবাড়ী"}]
+            "unions": [
+              {
+                "name": "গাজীপুর সদর",
+                "nameEn": "গাজীপুর সদর"
+              },
+              {
+                "name": "বাসন",
+                "nameEn": "বাসন"
+              },
+              {
+                "name": "মাস্তারবাড়ী",
+                "nameEn": "মাস্তারবাড়ী"
+              }
+            ]
           },
           {
             "name": "কালিয়াকৈর উপজেলা",
             "nameEn": "Kaliakoir",
-            "unions": [{"name": "কালিয়াকৈর", "nameEn": "কালিয়াকৈর"}, {"name": "ফুলবাড়ীয়া", "nameEn": "ফুলবাড়ীয়া"}, {"name": "চন্দ্রা", "nameEn": "চন্দ্রা"}]
+            "unions": [
+              {
+                "name": "কালিয়াকৈর",
+                "nameEn": "কালিয়াকৈর"
+              },
+              {
+                "name": "ফুলবাড়ীয়া",
+                "nameEn": "ফুলবাড়ীয়া"
+              },
+              {
+                "name": "চন্দ্রা",
+                "nameEn": "চন্দ্রা"
+              }
+            ]
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
             "nameEn": "Kaliganj",
-            "unions": [{"name": "Kaliganj সদর", "nameEn": "Kaliganj Sadar"}]
+            "unions": [
+              {
+                "name": "Kaliganj সদর",
+                "nameEn": "Kaliganj Sadar"
+              }
+            ]
           },
           {
             "name": "কাপাসিয়া উপজেলা",
             "nameEn": "Kapasia",
-            "unions": [{"name": "কাপাসিয়া", "nameEn": "কাপাসিয়া"}, {"name": "সিংহশ্রী", "nameEn": "সিংহশ্রী"}, {"name": "ঘাগটিয়া", "nameEn": "ঘাগটিয়া"}, {"name": "চান্দপুর", "nameEn": "চান্দপুর"}]
+            "unions": [
+              {
+                "name": "কাপাসিয়া",
+                "nameEn": "কাপাসিয়া"
+              },
+              {
+                "name": "সিংহশ্রী",
+                "nameEn": "সিংহশ্রী"
+              },
+              {
+                "name": "ঘাগটিয়া",
+                "nameEn": "ঘাগটিয়া"
+              },
+              {
+                "name": "চান্দপুর",
+                "nameEn": "চান্দপুর"
+              }
+            ]
           },
           {
             "name": "শ্রীপুর উপজেলা",
             "nameEn": "Sreepur",
-            "unions": [{"name": "Sreepur সদর", "nameEn": "Sreepur Sadar"}]
+            "unions": [
+              {
+                "name": "Sreepur সদর",
+                "nameEn": "Sreepur Sadar"
+              }
+            ]
           }
         ]
       },
@@ -1089,29 +5882,148 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Gopalganj",
         "upazilas": [
           {
+            "name": "গোপালগঞ্জ পৌরসভা",
+            "nameEn": "Gopalganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "গোপালগঞ্জ সদর উপজেলা",
             "nameEn": "Gopalganj Sadar",
-            "unions": [{"name": "গোপালগঞ্জ সদর", "nameEn": "গোপালগঞ্জ সদর"}, {"name": "রাঘদী", "nameEn": "রাঘদী"}, {"name": "গোপালপুর", "nameEn": "গোপালপুর"}, {"name": "উলপুর", "nameEn": "উলপুর"}]
+            "unions": [
+              {
+                "name": "গোপালগঞ্জ সদর",
+                "nameEn": "গোপালগঞ্জ সদর"
+              },
+              {
+                "name": "রাঘদী",
+                "nameEn": "রাঘদী"
+              },
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "উলপুর",
+                "nameEn": "উলপুর"
+              }
+            ]
           },
           {
             "name": "মুকসুদপুর উপজেলা",
             "nameEn": "Kasiani",
-            "unions": [{"name": "কাশিয়ানী", "nameEn": "কাশিয়ানী"}, {"name": "ফুকরা", "nameEn": "ফুকরা"}, {"name": "সাজাইল", "nameEn": "সাজাইল"}]
+            "unions": [
+              {
+                "name": "কাশিয়ানী",
+                "nameEn": "কাশিয়ানী"
+              },
+              {
+                "name": "ফুকরা",
+                "nameEn": "ফুকরা"
+              },
+              {
+                "name": "সাজাইল",
+                "nameEn": "সাজাইল"
+              }
+            ]
           },
           {
             "name": "কাশিয়ানী উপজেলা",
             "nameEn": "Kotwalipara",
-            "unions": [{"name": "কোটালীপাড়া", "nameEn": "কোটালীপাড়া"}, {"name": "কুশলা", "nameEn": "কুশলা"}, {"name": "রাধাগঞ্জ", "nameEn": "রাধাগঞ্জ"}]
+            "unions": [
+              {
+                "name": "কোটালীপাড়া",
+                "nameEn": "কোটালীপাড়া"
+              },
+              {
+                "name": "কুশলা",
+                "nameEn": "কুশলা"
+              },
+              {
+                "name": "রাধাগঞ্জ",
+                "nameEn": "রাধাগঞ্জ"
+              }
+            ]
           },
           {
             "name": "কোটালীপাড়া উপজেলা",
             "nameEn": "Muksudpur",
-            "unions": [{"name": "মুকসুদপুর", "nameEn": "মুকসুদপুর"}, {"name": "বাটিকামারী", "nameEn": "বাটিকামারী"}, {"name": "পাটগাতি", "nameEn": "পাটগাতি"}, {"name": "কান্দি", "nameEn": "কান্দি"}]
+            "unions": [
+              {
+                "name": "মুকসুদপুর",
+                "nameEn": "মুকসুদপুর"
+              },
+              {
+                "name": "বাটিকামারী",
+                "nameEn": "বাটিকামারী"
+              },
+              {
+                "name": "পাটগাতি",
+                "nameEn": "পাটগাতি"
+              },
+              {
+                "name": "কান্দি",
+                "nameEn": "কান্দি"
+              }
+            ]
           },
           {
             "name": "টুঙ্গিপাড়া উপজেলা",
             "nameEn": "Tungipara",
-            "unions": [{"name": "টুঙ্গিপাড়া", "nameEn": "টুঙ্গিপাড়া"}, {"name": "পাটগাতি", "nameEn": "পাটগাতি"}, {"name": "গোপালপুর", "nameEn": "গোপালপুর"}, {"name": "বর্ণি", "nameEn": "বর্ণি"}]
+            "unions": [
+              {
+                "name": "টুঙ্গিপাড়া",
+                "nameEn": "টুঙ্গিপাড়া"
+              },
+              {
+                "name": "পাটগাতি",
+                "nameEn": "পাটগাতি"
+              },
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "বর্ণি",
+                "nameEn": "বর্ণি"
+              }
+            ]
           }
         ]
       },
@@ -1120,69 +6032,272 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Kishoreganj",
         "upazilas": [
           {
+            "name": "কিশোরগঞ্জ পৌরসভা",
+            "nameEn": "Kishoreganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "কিশোরগঞ্জ সদর উপজেলা",
             "nameEn": "Austagram",
-            "unions": [{"name": "অষ্টগ্রাম", "nameEn": "অষ্টগ্রাম"}, {"name": "বাংগালপাড়া", "nameEn": "বাংগালপাড়া"}, {"name": "কালিকাপ্রসাদ", "nameEn": "কালিকাপ্রসাদ"}]
+            "unions": [
+              {
+                "name": "অষ্টগ্রাম",
+                "nameEn": "অষ্টগ্রাম"
+              },
+              {
+                "name": "বাংগালপাড়া",
+                "nameEn": "বাংগালপাড়া"
+              },
+              {
+                "name": "কালিকাপ্রসাদ",
+                "nameEn": "কালিকাপ্রসাদ"
+              }
+            ]
           },
           {
             "name": "অষ্টগ্রাম উপজেলা",
             "nameEn": "Bajitpur",
-            "unions": [{"name": "বাজিতপুর", "nameEn": "বাজিতপুর"}, {"name": "সরষপুর", "nameEn": "সরষপুর"}, {"name": "দিলালপুর", "nameEn": "দিলালপুর"}, {"name": "পোগলদিঘী", "nameEn": "পোগলদিঘী"}]
+            "unions": [
+              {
+                "name": "বাজিতপুর",
+                "nameEn": "বাজিতপুর"
+              },
+              {
+                "name": "সরষপুর",
+                "nameEn": "সরষপুর"
+              },
+              {
+                "name": "দিলালপুর",
+                "nameEn": "দিলালপুর"
+              },
+              {
+                "name": "পোগলদিঘী",
+                "nameEn": "পোগলদিঘী"
+              }
+            ]
           },
           {
             "name": "ইটনা উপজেলা",
             "nameEn": "Bhairab",
-            "unions": [{"name": "ভৈরব", "nameEn": "ভৈরব"}]
+            "unions": [
+              {
+                "name": "ভৈরব",
+                "nameEn": "ভৈরব"
+              }
+            ]
           },
           {
             "name": "করিমগঞ্জ উপজেলা",
             "nameEn": "Hossainpur",
-            "unions": [{"name": "হোসেনপুর", "nameEn": "হোসেনপুর"}, {"name": "আড়াইসিধা", "nameEn": "আড়াইসিধা"}, {"name": "রতনপুর", "nameEn": "রতনপুর"}]
+            "unions": [
+              {
+                "name": "হোসেনপুর",
+                "nameEn": "হোসেনপুর"
+              },
+              {
+                "name": "আড়াইসিধা",
+                "nameEn": "আড়াইসিধা"
+              },
+              {
+                "name": "রতনপুর",
+                "nameEn": "রতনপুর"
+              }
+            ]
           },
           {
             "name": "কটিয়াদি উপজেলা",
             "nameEn": "Itna",
-            "unions": [{"name": "ইটনা", "nameEn": "ইটনা"}, {"name": "ধনপুর", "nameEn": "ধনপুর"}, {"name": "রায়পুর", "nameEn": "রায়পুর"}]
+            "unions": [
+              {
+                "name": "ইটনা",
+                "nameEn": "ইটনা"
+              },
+              {
+                "name": "ধনপুর",
+                "nameEn": "ধনপুর"
+              },
+              {
+                "name": "রায়পুর",
+                "nameEn": "রায়পুর"
+              }
+            ]
           },
           {
             "name": "কুলিয়ারচর উপজেলা",
             "nameEn": "Karimganj",
-            "unions": [{"name": "করিমগঞ্জ", "nameEn": "করিমগঞ্জ"}, {"name": "কান্দুয়া", "nameEn": "কান্দুয়া"}, {"name": "জাওয়ার", "nameEn": "জাওয়ার"}]
+            "unions": [
+              {
+                "name": "করিমগঞ্জ",
+                "nameEn": "করিমগঞ্জ"
+              },
+              {
+                "name": "কান্দুয়া",
+                "nameEn": "কান্দুয়া"
+              },
+              {
+                "name": "জাওয়ার",
+                "nameEn": "জাওয়ার"
+              }
+            ]
           },
           {
             "name": "তাড়াইল উপজেলা",
             "nameEn": "Katiadi",
-            "unions": [{"name": "কটিয়াদী", "nameEn": "কটিয়াদী"}, {"name": "মশুয়া", "nameEn": "মশুয়া"}, {"name": "ইছাপুরা", "nameEn": "ইছাপুরা"}]
+            "unions": [
+              {
+                "name": "কটিয়াদী",
+                "nameEn": "কটিয়াদী"
+              },
+              {
+                "name": "মশুয়া",
+                "nameEn": "মশুয়া"
+              },
+              {
+                "name": "ইছাপুরা",
+                "nameEn": "ইছাপুরা"
+              }
+            ]
           },
           {
             "name": "নিকলী উপজেলা",
             "nameEn": "Kishoreganj Sadar",
-            "unions": [{"name": "কিশোরগঞ্জ সদর", "nameEn": "কিশোরগঞ্জ সদর"}, {"name": "মাইজখাপন", "nameEn": "মাইজখাপন"}, {"name": "চামড়াগাতি", "nameEn": "চামড়াগাতি"}]
+            "unions": [
+              {
+                "name": "কিশোরগঞ্জ সদর",
+                "nameEn": "কিশোরগঞ্জ সদর"
+              },
+              {
+                "name": "মাইজখাপন",
+                "nameEn": "মাইজখাপন"
+              },
+              {
+                "name": "চামড়াগাতি",
+                "nameEn": "চামড়াগাতি"
+              }
+            ]
           },
           {
             "name": "পাকুন্দিয়া উপজেলা",
             "nameEn": "Kuliarchar",
-            "unions": [{"name": "কুলিয়ারচর", "nameEn": "কুলিয়ারচর"}, {"name": "হিলচিয়া", "nameEn": "হিলচিয়া"}, {"name": "ভৈরবপুর", "nameEn": "ভৈরবপুর"}]
+            "unions": [
+              {
+                "name": "কুলিয়ারচর",
+                "nameEn": "কুলিয়ারচর"
+              },
+              {
+                "name": "হিলচিয়া",
+                "nameEn": "হিলচিয়া"
+              },
+              {
+                "name": "ভৈরবপুর",
+                "nameEn": "ভৈরবপুর"
+              }
+            ]
           },
           {
             "name": "বাজিতপুর উপজেলা",
             "nameEn": "Mithamoin",
-            "unions": [{"name": "মিঠামইন", "nameEn": "মিঠামইন"}, {"name": "ঘোড়াউতরা", "nameEn": "ঘোড়াউতরা"}]
+            "unions": [
+              {
+                "name": "মিঠামইন",
+                "nameEn": "মিঠামইন"
+              },
+              {
+                "name": "ঘোড়াউতরা",
+                "nameEn": "ঘোড়াউতরা"
+              }
+            ]
           },
           {
             "name": "ভৈরব উপজেলা",
             "nameEn": "Nikli",
-            "unions": [{"name": "নিকলী", "nameEn": "নিকলী"}, {"name": "গুরুই", "nameEn": "গুরুই"}, {"name": "জাওয়ার", "nameEn": "জাওয়ার"}]
+            "unions": [
+              {
+                "name": "নিকলী",
+                "nameEn": "নিকলী"
+              },
+              {
+                "name": "গুরুই",
+                "nameEn": "গুরুই"
+              },
+              {
+                "name": "জাওয়ার",
+                "nameEn": "জাওয়ার"
+              }
+            ]
           },
           {
             "name": "মিঠামইন উপজেলা",
             "nameEn": "Pakundia",
-            "unions": [{"name": "পাকুন্দিয়া", "nameEn": "পাকুন্দিয়া"}, {"name": "ছাতিরচর", "nameEn": "ছাতিরচর"}, {"name": "এগারসিন্ধুর", "nameEn": "এগারসিন্ধুর"}]
+            "unions": [
+              {
+                "name": "পাকুন্দিয়া",
+                "nameEn": "পাকুন্দিয়া"
+              },
+              {
+                "name": "ছাতিরচর",
+                "nameEn": "ছাতিরচর"
+              },
+              {
+                "name": "এগারসিন্ধুর",
+                "nameEn": "এগারসিন্ধুর"
+              }
+            ]
           },
           {
             "name": "হোসেনপুর উপজেলা",
             "nameEn": "Tarail",
-            "unions": [{"name": "তাড়াইল", "nameEn": "তাড়াইল"}, {"name": "ধলা", "nameEn": "ধলা"}, {"name": "গোপদিঘী", "nameEn": "গোপদিঘী"}]
+            "unions": [
+              {
+                "name": "তাড়াইল",
+                "nameEn": "তাড়াইল"
+              },
+              {
+                "name": "ধলা",
+                "nameEn": "ধলা"
+              },
+              {
+                "name": "গোপদিঘী",
+                "nameEn": "গোপদিঘী"
+              }
+            ]
           }
         ]
       },
@@ -1191,24 +6306,130 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Madaripur",
         "upazilas": [
           {
+            "name": "মাদারীপুর পৌরসভা",
+            "nameEn": "Madaripur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "মাদারীপুর সদর উপজেলা",
             "nameEn": "Kalkini",
-            "unions": [{"name": "কালকিনি", "nameEn": "কালকিনি"}, {"name": "লক্ষ্মীপুর", "nameEn": "লক্ষ্মীপুর"}, {"name": "কাদিরবন্দর", "nameEn": "কাদিরবন্দর"}, {"name": "সাহেবরামপুর", "nameEn": "সাহেবরামপুর"}]
+            "unions": [
+              {
+                "name": "কালকিনি",
+                "nameEn": "কালকিনি"
+              },
+              {
+                "name": "লক্ষ্মীপুর",
+                "nameEn": "লক্ষ্মীপুর"
+              },
+              {
+                "name": "কাদিরবন্দর",
+                "nameEn": "কাদিরবন্দর"
+              },
+              {
+                "name": "সাহেবরামপুর",
+                "nameEn": "সাহেবরামপুর"
+              }
+            ]
           },
           {
             "name": "শিবচর উপজেলা",
             "nameEn": "Madaripur Sadar",
-            "unions": [{"name": "মাদারীপুর সদর", "nameEn": "মাদারীপুর সদর"}, {"name": "পাঁচগাঁও", "nameEn": "পাঁচগাঁও"}, {"name": "বারহামন্ডল", "nameEn": "বারহামন্ডল"}]
+            "unions": [
+              {
+                "name": "মাদারীপুর সদর",
+                "nameEn": "মাদারীপুর সদর"
+              },
+              {
+                "name": "পাঁচগাঁও",
+                "nameEn": "পাঁচগাঁও"
+              },
+              {
+                "name": "বারহামন্ডল",
+                "nameEn": "বারহামন্ডল"
+              }
+            ]
           },
           {
             "name": "কালকিনী উপজেলা",
             "nameEn": "Rajoir",
-            "unions": [{"name": "রাজৈর", "nameEn": "রাজৈর"}, {"name": "খালিয়া", "nameEn": "খালিয়া"}, {"name": "মদাপুর", "nameEn": "মদাপুর"}, {"name": "রাজৈর", "nameEn": "রাজৈর"}]
+            "unions": [
+              {
+                "name": "রাজৈর",
+                "nameEn": "রাজৈর"
+              },
+              {
+                "name": "খালিয়া",
+                "nameEn": "খালিয়া"
+              },
+              {
+                "name": "মদাপুর",
+                "nameEn": "মদাপুর"
+              },
+              {
+                "name": "রাজৈর",
+                "nameEn": "রাজৈর"
+              }
+            ]
           },
           {
             "name": "রাজৈর উপজেলা",
             "nameEn": "Shibchar",
-            "unions": [{"name": "শিবচর", "nameEn": "শিবচর"}, {"name": "পানচর", "nameEn": "পানচর"}, {"name": "পাটুরিয়া", "nameEn": "পাটুরিয়া"}, {"name": "বান্দেরকোলা", "nameEn": "বান্দেরকোলা"}]
+            "unions": [
+              {
+                "name": "শিবচর",
+                "nameEn": "শিবচর"
+              },
+              {
+                "name": "পানচর",
+                "nameEn": "পানচর"
+              },
+              {
+                "name": "পাটুরিয়া",
+                "nameEn": "পাটুরিয়া"
+              },
+              {
+                "name": "বান্দেরকোলা",
+                "nameEn": "বান্দেরকোলা"
+              }
+            ]
           }
         ]
       },
@@ -1217,44 +6438,206 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Manikganj",
         "upazilas": [
           {
+            "name": "মানিকগঞ্জ পৌরসভা",
+            "nameEn": "Manikganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "মাদারীপুর সদর উপজেলা",
             "nameEn": "Daulatpur",
-            "unions": [{"name": "দৌলতপুর", "nameEn": "দৌলতপুর"}, {"name": "আলুতলা", "nameEn": "আলুতলা"}, {"name": "খানপুর", "nameEn": "খানপুর"}, {"name": "সেনহাটি", "nameEn": "সেনহাটি"}, {"name": "ফুলতলা", "nameEn": "ফুলতলা"}]
+            "unions": [
+              {
+                "name": "দৌলতপুর",
+                "nameEn": "দৌলতপুর"
+              },
+              {
+                "name": "আলুতলা",
+                "nameEn": "আলুতলা"
+              },
+              {
+                "name": "খানপুর",
+                "nameEn": "খানপুর"
+              },
+              {
+                "name": "সেনহাটি",
+                "nameEn": "সেনহাটি"
+              },
+              {
+                "name": "ফুলতলা",
+                "nameEn": "ফুলতলা"
+              }
+            ]
           },
           {
             "name": "মানিকগঞ্জ সদর উপজেলা",
             "nameEn": "Ghior",
-            "unions": [{"name": "ঘিওর", "nameEn": "ঘিওর"}, {"name": "পাইলপুর", "nameEn": "পাইলপুর"}, {"name": "বালিয়াটি", "nameEn": "বালিয়াটি"}, {"name": "কামরাইল", "nameEn": "কামরাইল"}]
+            "unions": [
+              {
+                "name": "ঘিওর",
+                "nameEn": "ঘিওর"
+              },
+              {
+                "name": "পাইলপুর",
+                "nameEn": "পাইলপুর"
+              },
+              {
+                "name": "বালিয়াটি",
+                "nameEn": "বালিয়াটি"
+              },
+              {
+                "name": "কামরাইল",
+                "nameEn": "কামরাইল"
+              }
+            ]
           },
           {
             "name": "ঘিওর উপজেলা",
             "nameEn": "Harirampur",
-            "unions": [{"name": "হরিরামপুর", "nameEn": "হরিরামপুর"}, {"name": "সুলতানপুর", "nameEn": "সুলতানপুর"}, {"name": "ধনেশ্বরদি", "nameEn": "ধনেশ্বরদি"}]
+            "unions": [
+              {
+                "name": "হরিরামপুর",
+                "nameEn": "হরিরামপুর"
+              },
+              {
+                "name": "সুলতানপুর",
+                "nameEn": "সুলতানপুর"
+              },
+              {
+                "name": "ধনেশ্বরদি",
+                "nameEn": "ধনেশ্বরদি"
+              }
+            ]
           },
           {
             "name": "দৌলতপুর উপজেলা",
             "nameEn": "Manikganj Sadar",
-            "unions": [{"name": "মানিকগঞ্জ সদর", "nameEn": "মানিকগঞ্জ সদর"}, {"name": "বেতিলা মিতরা", "nameEn": "বেতিলা মিতরা"}, {"name": "খানবাড়ী", "nameEn": "খানবাড়ী"}, {"name": "হাটিপাড়া", "nameEn": "হাটিপাড়া"}]
+            "unions": [
+              {
+                "name": "মানিকগঞ্জ সদর",
+                "nameEn": "মানিকগঞ্জ সদর"
+              },
+              {
+                "name": "বেতিলা মিতরা",
+                "nameEn": "বেতিলা মিতরা"
+              },
+              {
+                "name": "খানবাড়ী",
+                "nameEn": "খানবাড়ী"
+              },
+              {
+                "name": "হাটিপাড়া",
+                "nameEn": "হাটিপাড়া"
+              }
+            ]
           },
           {
             "name": "শিবালয় উপজেলা",
             "nameEn": "Saturia",
-            "unions": [{"name": "সাটুরিয়া", "nameEn": "সাটুরিয়া"}, {"name": "ধানকোড়া", "nameEn": "ধানকোড়া"}, {"name": "নিমতা", "nameEn": "নিমতা"}]
+            "unions": [
+              {
+                "name": "সাটুরিয়া",
+                "nameEn": "সাটুরিয়া"
+              },
+              {
+                "name": "ধানকোড়া",
+                "nameEn": "ধানকোড়া"
+              },
+              {
+                "name": "নিমতা",
+                "nameEn": "নিমতা"
+              }
+            ]
           },
           {
             "name": "সাটুরিয়া উপজেলা",
             "nameEn": "Shivalaya",
-            "unions": [{"name": "শিবালয়", "nameEn": "শিবালয়"}, {"name": "আরুয়া", "nameEn": "আরুয়া"}, {"name": "উলাইল", "nameEn": "উলাইল"}]
+            "unions": [
+              {
+                "name": "শিবালয়",
+                "nameEn": "শিবালয়"
+              },
+              {
+                "name": "আরুয়া",
+                "nameEn": "আরুয়া"
+              },
+              {
+                "name": "উলাইল",
+                "nameEn": "উলাইল"
+              }
+            ]
           },
           {
             "name": "সিঙ্গাইর উপজেলা",
             "nameEn": "Singair",
-            "unions": [{"name": "সিঙ্গাইর", "nameEn": "সিঙ্গাইর"}, {"name": "চারাভাঙ্গা", "nameEn": "চারাভাঙ্গা"}, {"name": "বালিয়াখোড়া", "nameEn": "বালিয়াখোড়া"}, {"name": "জামশা", "nameEn": "জামশা"}]
+            "unions": [
+              {
+                "name": "সিঙ্গাইর",
+                "nameEn": "সিঙ্গাইর"
+              },
+              {
+                "name": "চারাভাঙ্গা",
+                "nameEn": "চারাভাঙ্গা"
+              },
+              {
+                "name": "বালিয়াখোড়া",
+                "nameEn": "বালিয়াখোড়া"
+              },
+              {
+                "name": "জামশা",
+                "nameEn": "জামশা"
+              }
+            ]
           },
           {
             "name": "হরিরামপুর উপজেলা",
             "nameEn": "হরিরামপুর",
-            "unions": [{"name": "হরিরামপুর", "nameEn": "হরিরামপুর"}, {"name": "সুলতানপুর", "nameEn": "সুলতানপুর"}]
+            "unions": [
+              {
+                "name": "হরিরামপুর",
+                "nameEn": "হরিরামপুর"
+              },
+              {
+                "name": "সুলতানপুর",
+                "nameEn": "সুলতানপুর"
+              }
+            ]
           }
         ]
       },
@@ -1263,34 +6646,174 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Munshiganj",
         "upazilas": [
           {
+            "name": "মুন্সীগঞ্জ পৌরসভা",
+            "nameEn": "Munshiganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "মুন্সিগঞ্জ সদর উপজেলা",
             "nameEn": "Gazaria",
-            "unions": [{"name": "গজারিয়া", "nameEn": "গজারিয়া"}, {"name": "কোন্ডা", "nameEn": "কোন্ডা"}, {"name": "ভাবেরচর", "nameEn": "ভাবেরচর"}, {"name": "ইমামপুর", "nameEn": "ইমামপুর"}]
+            "unions": [
+              {
+                "name": "গজারিয়া",
+                "nameEn": "গজারিয়া"
+              },
+              {
+                "name": "কোন্ডা",
+                "nameEn": "কোন্ডা"
+              },
+              {
+                "name": "ভাবেরচর",
+                "nameEn": "ভাবেরচর"
+              },
+              {
+                "name": "ইমামপুর",
+                "nameEn": "ইমামপুর"
+              }
+            ]
           },
           {
             "name": "শ্রীনগর সদর উপজেলা",
             "nameEn": "Lauhajong",
-            "unions": [{"name": "লৌহজং", "nameEn": "লৌহজং"}, {"name": "কুমারভোগ", "nameEn": "কুমারভোগ"}, {"name": "মেদিনীমণ্ডল", "nameEn": "মেদিনীমণ্ডল"}]
+            "unions": [
+              {
+                "name": "লৌহজং",
+                "nameEn": "লৌহজং"
+              },
+              {
+                "name": "কুমারভোগ",
+                "nameEn": "কুমারভোগ"
+              },
+              {
+                "name": "মেদিনীমণ্ডল",
+                "nameEn": "মেদিনীমণ্ডল"
+              }
+            ]
           },
           {
             "name": "সিরাজদীখান উপজেলা",
             "nameEn": "Munshiganj Sadar",
-            "unions": [{"name": "মুন্সীগঞ্জ সদর", "nameEn": "মুন্সীগঞ্জ সদর"}, {"name": "মাহাকালী", "nameEn": "মাহাকালী"}, {"name": "পঞ্চসার", "nameEn": "পঞ্চসার"}, {"name": "রামপাল", "nameEn": "রামপাল"}]
+            "unions": [
+              {
+                "name": "মুন্সীগঞ্জ সদর",
+                "nameEn": "মুন্সীগঞ্জ সদর"
+              },
+              {
+                "name": "মাহাকালী",
+                "nameEn": "মাহাকালী"
+              },
+              {
+                "name": "পঞ্চসার",
+                "nameEn": "পঞ্চসার"
+              },
+              {
+                "name": "রামপাল",
+                "nameEn": "রামপাল"
+              }
+            ]
           },
           {
             "name": "লৌহজং উপজেলা",
             "nameEn": "Sirajdikhan",
-            "unions": [{"name": "সিরাজদিখান", "nameEn": "সিরাজদিখান"}, {"name": "ইছাপুরা", "nameEn": "ইছাপুরা"}, {"name": "রশিদপুর", "nameEn": "রশিদপুর"}, {"name": "কলমা", "nameEn": "কলমা"}]
+            "unions": [
+              {
+                "name": "সিরাজদিখান",
+                "nameEn": "সিরাজদিখান"
+              },
+              {
+                "name": "ইছাপুরা",
+                "nameEn": "ইছাপুরা"
+              },
+              {
+                "name": "রশিদপুর",
+                "nameEn": "রশিদপুর"
+              },
+              {
+                "name": "কলমা",
+                "nameEn": "কলমা"
+              }
+            ]
           },
           {
             "name": "টঙ্গীবাড়ী উপজেলা",
             "nameEn": "Sreenagar",
-            "unions": [{"name": "শ্রীনগর", "nameEn": "শ্রীনগর"}, {"name": "শ্যামসিদ্ধি", "nameEn": "শ্যামসিদ্ধি"}, {"name": "আটপাড়া", "nameEn": "আটপাড়া"}, {"name": "ভাগ্যকুল", "nameEn": "ভাগ্যকুল"}]
+            "unions": [
+              {
+                "name": "শ্রীনগর",
+                "nameEn": "শ্রীনগর"
+              },
+              {
+                "name": "শ্যামসিদ্ধি",
+                "nameEn": "শ্যামসিদ্ধি"
+              },
+              {
+                "name": "আটপাড়া",
+                "nameEn": "আটপাড়া"
+              },
+              {
+                "name": "ভাগ্যকুল",
+                "nameEn": "ভাগ্যকুল"
+              }
+            ]
           },
           {
             "name": "গজারিয়া উপজেলা",
             "nameEn": "Tongibari",
-            "unions": [{"name": "টঙ্গীবাড়ী", "nameEn": "টঙ্গীবাড়ী"}, {"name": "ধীপুরা", "nameEn": "ধীপুরা"}, {"name": "বজ্রযোগিনী", "nameEn": "বজ্রযোগিনী"}, {"name": "আব্দুল্লাপুর", "nameEn": "আব্দুল্লাপুর"}]
+            "unions": [
+              {
+                "name": "টঙ্গীবাড়ী",
+                "nameEn": "টঙ্গীবাড়ী"
+              },
+              {
+                "name": "ধীপুরা",
+                "nameEn": "ধীপুরা"
+              },
+              {
+                "name": "বজ্রযোগিনী",
+                "nameEn": "বজ্রযোগিনী"
+              },
+              {
+                "name": "আব্দুল্লাপুর",
+                "nameEn": "আব্দুল্লাপুর"
+              }
+            ]
           }
         ]
       },
@@ -1299,29 +6822,330 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Narayanganj",
         "upazilas": [
           {
+            "name": "নারায়ণগঞ্জ সিটি কর্পোরেশন",
+            "nameEn": "Narayanganj City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              }
+            ]
+          },
+          {
+            "name": "আড়াইহাজার পৌরসভা",
+            "nameEn": "Araihazar Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "বন্দর পৌরসভা",
+            "nameEn": "Bandar Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "সোনারগাঁও পৌরসভা",
+            "nameEn": "Sonargaon Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নারায়ণগঞ্জ সদর উপজেলা",
             "nameEn": "Araihazar",
-            "unions": [{"name": "আড়াইহাজার", "nameEn": "আড়াইহাজার"}, {"name": "সিদ্ধিরগঞ্জ", "nameEn": "সিদ্ধিরগঞ্জ"}, {"name": "গোপালদী", "nameEn": "গোপালদী"}, {"name": "ফতুল্লা", "nameEn": "ফতুল্লা"}]
+            "unions": [
+              {
+                "name": "আড়াইহাজার",
+                "nameEn": "আড়াইহাজার"
+              },
+              {
+                "name": "সিদ্ধিরগঞ্জ",
+                "nameEn": "সিদ্ধিরগঞ্জ"
+              },
+              {
+                "name": "গোপালদী",
+                "nameEn": "গোপালদী"
+              },
+              {
+                "name": "ফতুল্লা",
+                "nameEn": "ফতুল্লা"
+              }
+            ]
           },
           {
             "name": "বন্দর উপজেলা",
             "nameEn": "Bandar",
-            "unions": [{"name": "বন্দর", "nameEn": "বন্দর"}]
+            "unions": [
+              {
+                "name": "বন্দর",
+                "nameEn": "বন্দর"
+              }
+            ]
           },
           {
             "name": "আড়াইহাজার উপজেলা",
             "nameEn": "Narayanganj Sadar",
-            "unions": [{"name": "নারায়ণগঞ্জ সদর", "nameEn": "নারায়ণগঞ্জ সদর"}]
+            "unions": [
+              {
+                "name": "নারায়ণগঞ্জ সদর",
+                "nameEn": "নারায়ণগঞ্জ সদর"
+              }
+            ]
           },
           {
             "name": "রূপগঞ্জ উপজেলা",
             "nameEn": "Rupganj",
-            "unions": [{"name": "রূপগঞ্জ", "nameEn": "রূপগঞ্জ"}, {"name": "মুড়াপাড়া", "nameEn": "মুড়াপাড়া"}, {"name": "ভূলতা", "nameEn": "ভূলতা"}, {"name": "কাঞ্চন", "nameEn": "কাঞ্চন"}]
+            "unions": [
+              {
+                "name": "রূপগঞ্জ",
+                "nameEn": "রূপগঞ্জ"
+              },
+              {
+                "name": "মুড়াপাড়া",
+                "nameEn": "মুড়াপাড়া"
+              },
+              {
+                "name": "ভূলতা",
+                "nameEn": "ভূলতা"
+              },
+              {
+                "name": "কাঞ্চন",
+                "nameEn": "কাঞ্চন"
+              }
+            ]
           },
           {
             "name": "সোনারগাঁও উপজেলা",
             "nameEn": "Sonargaon",
-            "unions": [{"name": "সোনারগাঁও", "nameEn": "সোনারগাঁও"}, {"name": "পাড়া", "nameEn": "পাড়া"}, {"name": "পিরোজপুর", "nameEn": "পিরোজপুর"}, {"name": "মোগরাপাড়া", "nameEn": "মোগরাপাড়া"}]
+            "unions": [
+              {
+                "name": "সোনারগাঁও",
+                "nameEn": "সোনারগাঁও"
+              },
+              {
+                "name": "পাড়া",
+                "nameEn": "পাড়া"
+              },
+              {
+                "name": "পিরোজপুর",
+                "nameEn": "পিরোজপুর"
+              },
+              {
+                "name": "মোগরাপাড়া",
+                "nameEn": "মোগরাপাড়া"
+              }
+            ]
           }
         ]
       },
@@ -1330,34 +7154,150 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Narshingdi",
         "upazilas": [
           {
+            "name": "নরসিংদী পৌরসভা",
+            "nameEn": "Narsingdi Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নরসিংদী সদর উপজেলা",
             "nameEn": "Belabo",
-            "unions": [{"name": "বেলাবো", "nameEn": "বেলাবো"}, {"name": "বৈরাগীবাজার", "nameEn": "বৈরাগীবাজার"}, {"name": "নরসিংদী", "nameEn": "নরসিংদী"}]
+            "unions": [
+              {
+                "name": "বেলাবো",
+                "nameEn": "বেলাবো"
+              },
+              {
+                "name": "বৈরাগীবাজার",
+                "nameEn": "বৈরাগীবাজার"
+              },
+              {
+                "name": "নরসিংদী",
+                "nameEn": "নরসিংদী"
+              }
+            ]
           },
           {
             "name": "বেলাবো উপজেলা",
             "nameEn": "Monohardi",
-            "unions": [{"name": "মনোহরদী", "nameEn": "মনোহরদী"}, {"name": "চরশিন্দুর", "nameEn": "চরশিন্দুর"}, {"name": "মালিজোড়া", "nameEn": "মালিজোড়া"}]
+            "unions": [
+              {
+                "name": "মনোহরদী",
+                "nameEn": "মনোহরদী"
+              },
+              {
+                "name": "চরশিন্দুর",
+                "nameEn": "চরশিন্দুর"
+              },
+              {
+                "name": "মালিজোড়া",
+                "nameEn": "মালিজোড়া"
+              }
+            ]
           },
           {
             "name": "শিবপুর উপজেলা",
             "nameEn": "Narshingdi Sadar",
-            "unions": [{"name": "নরসিংদী সদর", "nameEn": "নরসিংদী সদর"}, {"name": "করিমপুর", "nameEn": "করিমপুর"}]
+            "unions": [
+              {
+                "name": "নরসিংদী সদর",
+                "nameEn": "নরসিংদী সদর"
+              },
+              {
+                "name": "করিমপুর",
+                "nameEn": "করিমপুর"
+              }
+            ]
           },
           {
             "name": "মনোহরদী উপজেলা",
             "nameEn": "Palash",
-            "unions": [{"name": "পলাশ", "nameEn": "পলাশ"}, {"name": "চরসিন্ধুর", "nameEn": "চরসিন্ধুর"}, {"name": "গজারিয়া", "nameEn": "গজারিয়া"}]
+            "unions": [
+              {
+                "name": "পলাশ",
+                "nameEn": "পলাশ"
+              },
+              {
+                "name": "চরসিন্ধুর",
+                "nameEn": "চরসিন্ধুর"
+              },
+              {
+                "name": "গজারিয়া",
+                "nameEn": "গজারিয়া"
+              }
+            ]
           },
           {
             "name": "রায়পুরা উপজেলা",
             "nameEn": "Raipura",
-            "unions": [{"name": "রায়পুরা", "nameEn": "রায়পুরা"}, {"name": "মর্জাল", "nameEn": "মর্জাল"}, {"name": "মুসাপুর", "nameEn": "মুসাপুর"}]
+            "unions": [
+              {
+                "name": "রায়পুরা",
+                "nameEn": "রায়পুরা"
+              },
+              {
+                "name": "মর্জাল",
+                "nameEn": "মর্জাল"
+              },
+              {
+                "name": "মুসাপুর",
+                "nameEn": "মুসাপুর"
+              }
+            ]
           },
           {
             "name": "পলাশ উপজেলা",
             "nameEn": "Shibpur",
-            "unions": [{"name": "শিবপুর", "nameEn": "শিবপুর"}, {"name": "পুটিয়া", "nameEn": "পুটিয়া"}, {"name": "সাদেকপুর", "nameEn": "সাদেকপুর"}]
+            "unions": [
+              {
+                "name": "শিবপুর",
+                "nameEn": "শিবপুর"
+              },
+              {
+                "name": "পুটিয়া",
+                "nameEn": "পুটিয়া"
+              },
+              {
+                "name": "সাদেকপুর",
+                "nameEn": "সাদেকপুর"
+              }
+            ]
           }
         ]
       },
@@ -1366,29 +7306,140 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Rajbari",
         "upazilas": [
           {
+            "name": "রাজবাড়ী পৌরসভা",
+            "nameEn": "Rajbari Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "রাজবাড়ি সদর উপজেলা",
             "nameEn": "Baliakandi",
-            "unions": [{"name": "বালিয়াকান্দি", "nameEn": "বালিয়াকান্দি"}, {"name": "ইসলামপুর", "nameEn": "ইসলামপুর"}, {"name": "নলিয়া", "nameEn": "নলিয়া"}, {"name": "জামালপুর", "nameEn": "জামালপুর"}]
+            "unions": [
+              {
+                "name": "বালিয়াকান্দি",
+                "nameEn": "বালিয়াকান্দি"
+              },
+              {
+                "name": "ইসলামপুর",
+                "nameEn": "ইসলামপুর"
+              },
+              {
+                "name": "নলিয়া",
+                "nameEn": "নলিয়া"
+              },
+              {
+                "name": "জামালপুর",
+                "nameEn": "জামালপুর"
+              }
+            ]
           },
           {
             "name": "গোয়ালন্দ উপজেলা",
             "nameEn": "Goalanda",
-            "unions": [{"name": "গোয়ালন্দঘাট", "nameEn": "গোয়ালন্দঘাট"}, {"name": "ডৌলতদিয়া", "nameEn": "ডৌলতদিয়া"}]
+            "unions": [
+              {
+                "name": "গোয়ালন্দঘাট",
+                "nameEn": "গোয়ালন্দঘাট"
+              },
+              {
+                "name": "ডৌলতদিয়া",
+                "nameEn": "ডৌলতদিয়া"
+              }
+            ]
           },
           {
             "name": "পাংশা উপজেলা",
             "nameEn": "Kalukhali",
-            "unions": [{"name": "কালুখালী", "nameEn": "কালুখালী"}, {"name": "বহরপুর", "nameEn": "বহরপুর"}, {"name": "মাজবাড়ী", "nameEn": "মাজবাড়ী"}]
+            "unions": [
+              {
+                "name": "কালুখালী",
+                "nameEn": "কালুখালী"
+              },
+              {
+                "name": "বহরপুর",
+                "nameEn": "বহরপুর"
+              },
+              {
+                "name": "মাজবাড়ী",
+                "nameEn": "মাজবাড়ী"
+              }
+            ]
           },
           {
             "name": "বালিয়াকান্দি উপজেলা",
             "nameEn": "Pangsha",
-            "unions": [{"name": "পাংশা", "nameEn": "পাংশা"}, {"name": "হাবাশপুর", "nameEn": "হাবাশপুর"}, {"name": "বরাট", "nameEn": "বরাট"}, {"name": "কৃষ্ণপুর", "nameEn": "কৃষ্ণপুর"}]
+            "unions": [
+              {
+                "name": "পাংশা",
+                "nameEn": "পাংশা"
+              },
+              {
+                "name": "হাবাশপুর",
+                "nameEn": "হাবাশপুর"
+              },
+              {
+                "name": "বরাট",
+                "nameEn": "বরাট"
+              },
+              {
+                "name": "কৃষ্ণপুর",
+                "nameEn": "কৃষ্ণপুর"
+              }
+            ]
           },
           {
             "name": "কালুখালী উপজেলা",
             "nameEn": "Rajbari Sadar",
-            "unions": [{"name": "রাজবাড়ী সদর", "nameEn": "রাজবাড়ী সদর"}, {"name": "সিদ্ধিরগঞ্জ", "nameEn": "সিদ্ধিরগঞ্জ"}, {"name": "বসন্তপুর", "nameEn": "বসন্তপুর"}]
+            "unions": [
+              {
+                "name": "রাজবাড়ী সদর",
+                "nameEn": "রাজবাড়ী সদর"
+              },
+              {
+                "name": "সিদ্ধিরগঞ্জ",
+                "nameEn": "সিদ্ধিরগঞ্জ"
+              },
+              {
+                "name": "বসন্তপুর",
+                "nameEn": "বসন্তপুর"
+              }
+            ]
           }
         ]
       },
@@ -1397,34 +7448,146 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Shariatpur",
         "upazilas": [
           {
+            "name": "শরীয়তপুর পৌরসভা",
+            "nameEn": "Shariatpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "শরিয়তপুর সদর উপজেলা",
             "nameEn": "Bhedarganj",
-            "unions": [{"name": "ভেদরগঞ্জ", "nameEn": "ভেদরগঞ্জ"}, {"name": "আরশীনগর", "nameEn": "আরশীনগর"}, {"name": "কাচিপুর", "nameEn": "কাচিপুর"}]
+            "unions": [
+              {
+                "name": "ভেদরগঞ্জ",
+                "nameEn": "ভেদরগঞ্জ"
+              },
+              {
+                "name": "আরশীনগর",
+                "nameEn": "আরশীনগর"
+              },
+              {
+                "name": "কাচিপুর",
+                "nameEn": "কাচিপুর"
+              }
+            ]
           },
           {
             "name": "ডামুড্যা উপজেলা",
             "nameEn": "Damuddya",
-            "unions": [{"name": "ডামুড্যা", "nameEn": "ডামুড্যা"}, {"name": "সিরাজপুর", "nameEn": "সিরাজপুর"}]
+            "unions": [
+              {
+                "name": "ডামুড্যা",
+                "nameEn": "ডামুড্যা"
+              },
+              {
+                "name": "সিরাজপুর",
+                "nameEn": "সিরাজপুর"
+              }
+            ]
           },
           {
             "name": "নড়িয়া উপজেলা",
             "nameEn": "Goshairhat",
-            "unions": [{"name": "গোসাইরহাট", "nameEn": "গোসাইরহাট"}, {"name": "ইদিলপুর", "nameEn": "ইদিলপুর"}]
+            "unions": [
+              {
+                "name": "গোসাইরহাট",
+                "nameEn": "গোসাইরহাট"
+              },
+              {
+                "name": "ইদিলপুর",
+                "nameEn": "ইদিলপুর"
+              }
+            ]
           },
           {
             "name": "ভেদরগঞ্জ উপজেলা",
             "nameEn": "Janjira",
-            "unions": [{"name": "জাজিরা", "nameEn": "জাজিরা"}, {"name": "বরিশাল", "nameEn": "বরিশাল"}, {"name": "কুন্ডেরচর", "nameEn": "কুন্ডেরচর"}]
+            "unions": [
+              {
+                "name": "জাজিরা",
+                "nameEn": "জাজিরা"
+              },
+              {
+                "name": "বরিশাল",
+                "nameEn": "বরিশাল"
+              },
+              {
+                "name": "কুন্ডেরচর",
+                "nameEn": "কুন্ডেরচর"
+              }
+            ]
           },
           {
             "name": "জাজিরা উপজেলা",
             "nameEn": "Naria",
-            "unions": [{"name": "নড়িয়া", "nameEn": "নড়িয়া"}, {"name": "ফতেজংগপুর", "nameEn": "ফতেজংগপুর"}, {"name": "সখীপুর", "nameEn": "সখীপুর"}]
+            "unions": [
+              {
+                "name": "নড়িয়া",
+                "nameEn": "নড়িয়া"
+              },
+              {
+                "name": "ফতেজংগপুর",
+                "nameEn": "ফতেজংগপুর"
+              },
+              {
+                "name": "সখীপুর",
+                "nameEn": "সখীপুর"
+              }
+            ]
           },
           {
             "name": "গোসাইরহাট উপজেলা",
             "nameEn": "Shariatpur Sadar",
-            "unions": [{"name": "শরীয়তপুর সদর", "nameEn": "শরীয়তপুর সদর"}, {"name": "চিকন্দী", "nameEn": "চিকন্দী"}, {"name": "মহিষারা", "nameEn": "মহিষারা"}]
+            "unions": [
+              {
+                "name": "শরীয়তপুর সদর",
+                "nameEn": "শরীয়তপুর সদর"
+              },
+              {
+                "name": "চিকন্দী",
+                "nameEn": "চিকন্দী"
+              },
+              {
+                "name": "মহিষারা",
+                "nameEn": "মহিষারা"
+              }
+            ]
           }
         ]
       },
@@ -1433,64 +7596,286 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Tangail",
         "upazilas": [
           {
+            "name": "টাঙ্গাইল পৌরসভা",
+            "nameEn": "Tangail Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              }
+            ]
+          },
+          {
             "name": "টাঙ্গাইল সদর উপজেলা",
             "nameEn": "Basail",
-            "unions": [{"name": "বাসাইল", "nameEn": "বাসাইল"}, {"name": "ফুলকী", "nameEn": "ফুলকী"}, {"name": "কাশিল", "nameEn": "কাশিল"}]
+            "unions": [
+              {
+                "name": "বাসাইল",
+                "nameEn": "বাসাইল"
+              },
+              {
+                "name": "ফুলকী",
+                "nameEn": "ফুলকী"
+              },
+              {
+                "name": "কাশিল",
+                "nameEn": "কাশিল"
+              }
+            ]
           },
           {
             "name": "কালিহাতি উপজেলা",
             "nameEn": "Bhuapur",
-            "unions": [{"name": "ভূঞাপুর", "nameEn": "ভূঞাপুর"}, {"name": "অলোয়া", "nameEn": "অলোয়া"}, {"name": "ফলদা", "nameEn": "ফলদা"}]
+            "unions": [
+              {
+                "name": "ভূঞাপুর",
+                "nameEn": "ভূঞাপুর"
+              },
+              {
+                "name": "অলোয়া",
+                "nameEn": "অলোয়া"
+              },
+              {
+                "name": "ফলদা",
+                "nameEn": "ফলদা"
+              }
+            ]
           },
           {
             "name": "ঘাটাইল উপজেলা",
             "nameEn": "Delduar",
-            "unions": [{"name": "দেলদুয়ার", "nameEn": "দেলদুয়ার"}, {"name": "পাথরাইল", "nameEn": "পাথরাইল"}, {"name": "আটিয়া", "nameEn": "আটিয়া"}]
+            "unions": [
+              {
+                "name": "দেলদুয়ার",
+                "nameEn": "দেলদুয়ার"
+              },
+              {
+                "name": "পাথরাইল",
+                "nameEn": "পাথরাইল"
+              },
+              {
+                "name": "আটিয়া",
+                "nameEn": "আটিয়া"
+              }
+            ]
           },
           {
             "name": "বাসাইল উপজেলা",
             "nameEn": "Dhanbari",
-            "unions": [{"name": "ধনবাড়ী", "nameEn": "ধনবাড়ী"}, {"name": "বীরবাসন্দা", "nameEn": "বীরবাসন্দা"}, {"name": "মুশুদ্দি", "nameEn": "মুশুদ্দি"}]
+            "unions": [
+              {
+                "name": "ধনবাড়ী",
+                "nameEn": "ধনবাড়ী"
+              },
+              {
+                "name": "বীরবাসন্দা",
+                "nameEn": "বীরবাসন্দা"
+              },
+              {
+                "name": "মুশুদ্দি",
+                "nameEn": "মুশুদ্দি"
+              }
+            ]
           },
           {
             "name": "গোপালপুর উপজেলা",
             "nameEn": "Ghatail",
-            "unions": [{"name": "ঘাটাইল", "nameEn": "ঘাটাইল"}, {"name": "ডিঘলকান্দি", "nameEn": "ডিঘলকান্দি"}, {"name": "দেওহাটা", "nameEn": "দেওহাটা"}, {"name": "রশিদপুর", "nameEn": "রশিদপুর"}]
+            "unions": [
+              {
+                "name": "ঘাটাইল",
+                "nameEn": "ঘাটাইল"
+              },
+              {
+                "name": "ডিঘলকান্দি",
+                "nameEn": "ডিঘলকান্দি"
+              },
+              {
+                "name": "দেওহাটা",
+                "nameEn": "দেওহাটা"
+              },
+              {
+                "name": "রশিদপুর",
+                "nameEn": "রশিদপুর"
+              }
+            ]
           },
           {
             "name": "মির্জাপুর উপজেলা",
             "nameEn": "Gopalpur",
-            "unions": [{"name": "গোপালপুর", "nameEn": "গোপালপুর"}, {"name": "হাদিরা", "nameEn": "হাদিরা"}]
+            "unions": [
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "হাদিরা",
+                "nameEn": "হাদিরা"
+              }
+            ]
           },
           {
             "name": "ভূঞাপুর উপজেলা",
             "nameEn": "Kalihati",
-            "unions": [{"name": "কালিহাতী", "nameEn": "কালিহাতী"}, {"name": "নাগরপুর", "nameEn": "নাগরপুর"}, {"name": "বল্লা", "nameEn": "বল্লা"}, {"name": "শহজানী", "nameEn": "শহজানী"}]
+            "unions": [
+              {
+                "name": "কালিহাতী",
+                "nameEn": "কালিহাতী"
+              },
+              {
+                "name": "নাগরপুর",
+                "nameEn": "নাগরপুর"
+              },
+              {
+                "name": "বল্লা",
+                "nameEn": "বল্লা"
+              },
+              {
+                "name": "শহজানী",
+                "nameEn": "শহজানী"
+              }
+            ]
           },
           {
             "name": "নাগরপুর উপজেলা",
             "nameEn": "Madhupur",
-            "unions": [{"name": "মধুপুর", "nameEn": "মধুপুর"}, {"name": "আউশনারা", "nameEn": "আউশনারা"}, {"name": "ধোবাউড়া", "nameEn": "ধোবাউড়া"}, {"name": "মীরজাপুর", "nameEn": "মীরজাপুর"}]
+            "unions": [
+              {
+                "name": "মধুপুর",
+                "nameEn": "মধুপুর"
+              },
+              {
+                "name": "আউশনারা",
+                "nameEn": "আউশনারা"
+              },
+              {
+                "name": "ধোবাউড়া",
+                "nameEn": "ধোবাউড়া"
+              },
+              {
+                "name": "মীরজাপুর",
+                "nameEn": "মীরজাপুর"
+              }
+            ]
           },
           {
             "name": "মধুপুর উপজেলা",
             "nameEn": "Mirzapur",
-            "unions": [{"name": "মির্জাপুর", "nameEn": "মির্জাপুর"}, {"name": "ওয়ারী", "nameEn": "ওয়ারী"}]
+            "unions": [
+              {
+                "name": "মির্জাপুর",
+                "nameEn": "মির্জাপুর"
+              },
+              {
+                "name": "ওয়ারী",
+                "nameEn": "ওয়ারী"
+              }
+            ]
           },
           {
             "name": "সখিপুর উপজেলা",
             "nameEn": "Nagarpur",
-            "unions": [{"name": "নাগরপুর", "nameEn": "নাগরপুর"}, {"name": "দুবইল", "nameEn": "দুবইল"}, {"name": "ধুবড়িয়া", "nameEn": "ধুবড়িয়া"}]
+            "unions": [
+              {
+                "name": "নাগরপুর",
+                "nameEn": "নাগরপুর"
+              },
+              {
+                "name": "দুবইল",
+                "nameEn": "দুবইল"
+              },
+              {
+                "name": "ধুবড়িয়া",
+                "nameEn": "ধুবড়িয়া"
+              }
+            ]
           },
           {
             "name": "দেলদুয়ার উপজেলা",
             "nameEn": "Shakhipur",
-            "unions": [{"name": "সখিপুর", "nameEn": "সখিপুর"}, {"name": "কাকড়াজান", "nameEn": "কাকড়াজান"}]
+            "unions": [
+              {
+                "name": "সখিপুর",
+                "nameEn": "সখিপুর"
+              },
+              {
+                "name": "কাকড়াজান",
+                "nameEn": "কাকড়াজান"
+              }
+            ]
           },
           {
             "name": "ধনবাড়ী উপজেলা",
             "nameEn": "Tangail Sadar",
-            "unions": [{"name": "টাঙ্গাইল সদর", "nameEn": "টাঙ্গাইল সদর"}, {"name": "কাকুয়া", "nameEn": "কাকুয়া"}, {"name": "ঠেগারপুর", "nameEn": "ঠেগারপুর"}]
+            "unions": [
+              {
+                "name": "টাঙ্গাইল সদর",
+                "nameEn": "টাঙ্গাইল সদর"
+              },
+              {
+                "name": "কাকুয়া",
+                "nameEn": "কাকুয়া"
+              },
+              {
+                "name": "ঠেগারপুর",
+                "nameEn": "ঠেগারপুর"
+              }
+            ]
           }
         ]
       }
@@ -1505,34 +7890,166 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Barguna",
         "upazilas": [
           {
+            "name": "বরগুনা পৌরসভা",
+            "nameEn": "Barguna Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "বরগুনা সদর",
             "nameEn": "Amtali",
-            "unions": [{"name": "আমতলী", "nameEn": "আমতলী"}, {"name": "আঠারোগাছিয়া", "nameEn": "আঠারোগাছিয়া"}, {"name": "গুলিশাখালী", "nameEn": "গুলিশাখালী"}, {"name": "চাওরা", "nameEn": "চাওরা"}]
+            "unions": [
+              {
+                "name": "আমতলী",
+                "nameEn": "আমতলী"
+              },
+              {
+                "name": "আঠারোগাছিয়া",
+                "nameEn": "আঠারোগাছিয়া"
+              },
+              {
+                "name": "গুলিশাখালী",
+                "nameEn": "গুলিশাখালী"
+              },
+              {
+                "name": "চাওরা",
+                "nameEn": "চাওরা"
+              }
+            ]
           },
           {
             "name": "আমতলী",
             "nameEn": "Bamna",
-            "unions": [{"name": "বামনা", "nameEn": "বামনা"}, {"name": "বামনা", "nameEn": "বামনা"}, {"name": "ডাউকাঠি", "nameEn": "ডাউকাঠি"}]
+            "unions": [
+              {
+                "name": "বামনা",
+                "nameEn": "বামনা"
+              },
+              {
+                "name": "বামনা",
+                "nameEn": "বামনা"
+              },
+              {
+                "name": "ডাউকাঠি",
+                "nameEn": "ডাউকাঠি"
+              }
+            ]
           },
           {
             "name": "বেতাগী",
             "nameEn": "Barguna Sadar",
-            "unions": [{"name": "বরগুনা সদর", "nameEn": "বরগুনা সদর"}, {"name": "বুড়িরচর", "nameEn": "বুড়িরচর"}, {"name": "কেওড়াবুনিয়া", "nameEn": "কেওড়াবুনিয়া"}, {"name": "ফুলঝুরি", "nameEn": "ফুলঝুরি"}]
+            "unions": [
+              {
+                "name": "বরগুনা সদর",
+                "nameEn": "বরগুনা সদর"
+              },
+              {
+                "name": "বুড়িরচর",
+                "nameEn": "বুড়িরচর"
+              },
+              {
+                "name": "কেওড়াবুনিয়া",
+                "nameEn": "কেওড়াবুনিয়া"
+              },
+              {
+                "name": "ফুলঝুরি",
+                "nameEn": "ফুলঝুরি"
+              }
+            ]
           },
           {
             "name": "বামনা",
             "nameEn": "Betagi",
-            "unions": [{"name": "বেতাগী", "nameEn": "বেতাগী"}, {"name": "হোসনাবাদ", "nameEn": "হোসনাবাদ"}, {"name": "বুড়িরচর", "nameEn": "বুড়িরচর"}]
+            "unions": [
+              {
+                "name": "বেতাগী",
+                "nameEn": "বেতাগী"
+              },
+              {
+                "name": "হোসনাবাদ",
+                "nameEn": "হোসনাবাদ"
+              },
+              {
+                "name": "বুড়িরচর",
+                "nameEn": "বুড়িরচর"
+              }
+            ]
           },
           {
             "name": "পাথরঘাটা",
             "nameEn": "Patharghata",
-            "unions": [{"name": "পাথরঘাটা", "nameEn": "পাথরঘাটা"}, {"name": "কাকচিড়া", "nameEn": "কাকচিড়া"}, {"name": "চরদুয়ানী", "nameEn": "চরদুয়ানী"}, {"name": "গুলিশাখালী", "nameEn": "গুলিশাখালী"}]
+            "unions": [
+              {
+                "name": "পাথরঘাটা",
+                "nameEn": "পাথরঘাটা"
+              },
+              {
+                "name": "কাকচিড়া",
+                "nameEn": "কাকচিড়া"
+              },
+              {
+                "name": "চরদুয়ানী",
+                "nameEn": "চরদুয়ানী"
+              },
+              {
+                "name": "গুলিশাখালী",
+                "nameEn": "গুলিশাখালী"
+              }
+            ]
           },
           {
             "name": "তালতলী",
             "nameEn": "Taltali",
-            "unions": [{"name": "তালতলী", "nameEn": "তালতলী"}, {"name": "সরিষাবাড়িয়া", "nameEn": "সরিষাবাড়িয়া"}, {"name": "নিশানবাড়িয়া", "nameEn": "নিশানবাড়িয়া"}]
+            "unions": [
+              {
+                "name": "তালতলী",
+                "nameEn": "তালতলী"
+              },
+              {
+                "name": "সরিষাবাড়িয়া",
+                "nameEn": "সরিষাবাড়িয়া"
+              },
+              {
+                "name": "নিশানবাড়িয়া",
+                "nameEn": "নিশানবাড়িয়া"
+              }
+            ]
           }
         ]
       },
@@ -1541,54 +8058,346 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Barisal",
         "upazilas": [
           {
+            "name": "বরিশাল সিটি কর্পোরেশন",
+            "nameEn": "Barishal City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              }
+            ]
+          },
+          {
             "name": "বরিশাল সদর",
             "nameEn": "Barisal Sadar",
-            "unions": [{"name": "বরিশাল সদর", "nameEn": "বরিশাল সদর"}, {"name": "কাশীপুর", "nameEn": "কাশীপুর"}, {"name": "রুপাতলী", "nameEn": "রুপাতলী"}, {"name": "চরকাউয়া", "nameEn": "চরকাউয়া"}]
+            "unions": [
+              {
+                "name": "বরিশাল সদর",
+                "nameEn": "বরিশাল সদর"
+              },
+              {
+                "name": "কাশীপুর",
+                "nameEn": "কাশীপুর"
+              },
+              {
+                "name": "রুপাতলী",
+                "nameEn": "রুপাতলী"
+              },
+              {
+                "name": "চরকাউয়া",
+                "nameEn": "চরকাউয়া"
+              }
+            ]
           },
           {
             "name": "গৌরনদী",
             "nameEn": "Gournadi",
-            "unions": [{"name": "গৌরনদী", "nameEn": "গৌরনদী"}, {"name": "বাটাজোর", "nameEn": "বাটাজোর"}, {"name": "মাহিলারা", "nameEn": "মাহিলারা"}, {"name": "চরআমদ্দি", "nameEn": "চরআমদ্দি"}]
+            "unions": [
+              {
+                "name": "গৌরনদী",
+                "nameEn": "গৌরনদী"
+              },
+              {
+                "name": "বাটাজোর",
+                "nameEn": "বাটাজোর"
+              },
+              {
+                "name": "মাহিলারা",
+                "nameEn": "মাহিলারা"
+              },
+              {
+                "name": "চরআমদ্দি",
+                "nameEn": "চরআমদ্দি"
+              }
+            ]
           },
           {
             "name": "মুলাদী",
             "nameEn": "Muladi",
-            "unions": [{"name": "মুলাদী", "nameEn": "মুলাদী"}, {"name": "চরকালেখান", "nameEn": "চরকালেখান"}, {"name": "গালুয়া", "nameEn": "গালুয়া"}, {"name": "সফিপুর", "nameEn": "সফিপুর"}]
+            "unions": [
+              {
+                "name": "মুলাদী",
+                "nameEn": "মুলাদী"
+              },
+              {
+                "name": "চরকালেখান",
+                "nameEn": "চরকালেখান"
+              },
+              {
+                "name": "গালুয়া",
+                "nameEn": "গালুয়া"
+              },
+              {
+                "name": "সফিপুর",
+                "nameEn": "সফিপুর"
+              }
+            ]
           },
           {
             "name": "মেহেন্দিগঞ্জ",
             "nameEn": "Mehendiganj",
-            "unions": [{"name": "মেহেন্দীগঞ্জ", "nameEn": "মেহেন্দীগঞ্জ"}, {"name": "চরগোপালপুর", "nameEn": "চরগোপালপুর"}, {"name": "চরইকড়ি", "nameEn": "চরইকড়ি"}, {"name": "বিদ্যানন্দকাটি", "nameEn": "বিদ্যানন্দকাটি"}]
+            "unions": [
+              {
+                "name": "মেহেন্দীগঞ্জ",
+                "nameEn": "মেহেন্দীগঞ্জ"
+              },
+              {
+                "name": "চরগোপালপুর",
+                "nameEn": "চরগোপালপুর"
+              },
+              {
+                "name": "চরইকড়ি",
+                "nameEn": "চরইকড়ি"
+              },
+              {
+                "name": "বিদ্যানন্দকাটি",
+                "nameEn": "বিদ্যানন্দকাটি"
+              }
+            ]
           },
           {
             "name": "বাবুগঞ্জ",
             "nameEn": "Babuganj",
-            "unions": [{"name": "বাবুগঞ্জ", "nameEn": "বাবুগঞ্জ"}, {"name": "চাঁদপুরা", "nameEn": "চাঁদপুরা"}, {"name": "রহমতপুর", "nameEn": "রহমতপুর"}, {"name": "মাধবকাটি", "nameEn": "মাধবকাটি"}]
+            "unions": [
+              {
+                "name": "বাবুগঞ্জ",
+                "nameEn": "বাবুগঞ্জ"
+              },
+              {
+                "name": "চাঁদপুরা",
+                "nameEn": "চাঁদপুরা"
+              },
+              {
+                "name": "রহমতপুর",
+                "nameEn": "রহমতপুর"
+              },
+              {
+                "name": "মাধবকাটি",
+                "nameEn": "মাধবকাটি"
+              }
+            ]
           },
           {
             "name": "হিজলা",
             "nameEn": "Hizla",
-            "unions": [{"name": "হিজলা", "nameEn": "হিজলা"}, {"name": "গুয়াবাড়িয়া", "nameEn": "গুয়াবাড়িয়া"}, {"name": "ভারপাশা", "nameEn": "ভারপাশা"}, {"name": "মেহেন্দীগঞ্জ", "nameEn": "মেহেন্দীগঞ্জ"}]
+            "unions": [
+              {
+                "name": "হিজলা",
+                "nameEn": "হিজলা"
+              },
+              {
+                "name": "গুয়াবাড়িয়া",
+                "nameEn": "গুয়াবাড়িয়া"
+              },
+              {
+                "name": "ভারপাশা",
+                "nameEn": "ভারপাশা"
+              },
+              {
+                "name": "মেহেন্দীগঞ্জ",
+                "nameEn": "মেহেন্দীগঞ্জ"
+              }
+            ]
           },
           {
             "name": "উজিরপুর",
             "nameEn": "Uzirpur",
-            "unions": [{"name": "উজিরপুর", "nameEn": "উজিরপুর"}, {"name": "শিকারপুর", "nameEn": "শিকারপুর"}, {"name": "সাতলা", "nameEn": "সাতলা"}]
+            "unions": [
+              {
+                "name": "উজিরপুর",
+                "nameEn": "উজিরপুর"
+              },
+              {
+                "name": "শিকারপুর",
+                "nameEn": "শিকারপুর"
+              },
+              {
+                "name": "সাতলা",
+                "nameEn": "সাতলা"
+              }
+            ]
           },
           {
             "name": "বাকেরগঞ্জ",
             "nameEn": "Bakerganj",
-            "unions": [{"name": "বাকেরগঞ্জ", "nameEn": "বাকেরগঞ্জ"}, {"name": "বাউফল", "nameEn": "বাউফল"}, {"name": "চরামদ্দি", "nameEn": "চরামদ্দি"}, {"name": "দাড়িয়ালচর", "nameEn": "দাড়িয়ালচর"}]
+            "unions": [
+              {
+                "name": "বাকেরগঞ্জ",
+                "nameEn": "বাকেরগঞ্জ"
+              },
+              {
+                "name": "বাউফল",
+                "nameEn": "বাউফল"
+              },
+              {
+                "name": "চরামদ্দি",
+                "nameEn": "চরামদ্দি"
+              },
+              {
+                "name": "দাড়িয়ালচর",
+                "nameEn": "দাড়িয়ালচর"
+              }
+            ]
           },
           {
             "name": "আগৈলঝাড়া",
             "nameEn": "Agailjhara",
-            "unions": [{"name": "আগৈলঝাড়া", "nameEn": "আগৈলঝাড়া"}, {"name": "গৈলা", "nameEn": "গৈলা"}, {"name": "বাগধা", "nameEn": "বাগধা"}, {"name": "রত্নপুর", "nameEn": "রত্নপুর"}]
+            "unions": [
+              {
+                "name": "আগৈলঝাড়া",
+                "nameEn": "আগৈলঝাড়া"
+              },
+              {
+                "name": "গৈলা",
+                "nameEn": "গৈলা"
+              },
+              {
+                "name": "বাগধা",
+                "nameEn": "বাগধা"
+              },
+              {
+                "name": "রত্নপুর",
+                "nameEn": "রত্নপুর"
+              }
+            ]
           },
           {
             "name": "বানারীপাড়া",
             "nameEn": "Banaripara",
-            "unions": [{"name": "বানারীপাড়া", "nameEn": "বানারীপাড়া"}, {"name": "সৈয়দকাঠি", "nameEn": "সৈয়দকাঠি"}, {"name": "ইলুহার", "nameEn": "ইলুহার"}, {"name": "চাখার", "nameEn": "চাখার"}]
+            "unions": [
+              {
+                "name": "বানারীপাড়া",
+                "nameEn": "বানারীপাড়া"
+              },
+              {
+                "name": "সৈয়দকাঠি",
+                "nameEn": "সৈয়দকাঠি"
+              },
+              {
+                "name": "ইলুহার",
+                "nameEn": "ইলুহার"
+              },
+              {
+                "name": "চাখার",
+                "nameEn": "চাখার"
+              }
+            ]
           }
         ]
       },
@@ -1597,39 +8406,176 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Bhola",
         "upazilas": [
           {
+            "name": "ভোলা পৌরসভা",
+            "nameEn": "Bhola Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ভোলা সদর",
             "nameEn": "Borhanuddin",
-            "unions": [{"name": "বোরহানউদ্দিন", "nameEn": "বোরহানউদ্দিন"}, {"name": "দেউলা", "nameEn": "দেউলা"}, {"name": "সাচড়া", "nameEn": "সাচড়া"}, {"name": "দেনায়েতপুর", "nameEn": "দেনায়েতপুর"}]
+            "unions": [
+              {
+                "name": "বোরহানউদ্দিন",
+                "nameEn": "বোরহানউদ্দিন"
+              },
+              {
+                "name": "দেউলা",
+                "nameEn": "দেউলা"
+              },
+              {
+                "name": "সাচড়া",
+                "nameEn": "সাচড়া"
+              },
+              {
+                "name": "দেনায়েতপুর",
+                "nameEn": "দেনায়েতপুর"
+              }
+            ]
           },
           {
             "name": "বোরহান উদ্দিন",
             "nameEn": "Charfassion",
-            "unions": [{"name": "চরফ্যাশন", "nameEn": "চরফ্যাশন"}, {"name": "চরমাণিকা", "nameEn": "চরমাণিকা"}, {"name": "আশ্বাদনগর", "nameEn": "আশ্বাদনগর"}]
+            "unions": [
+              {
+                "name": "চরফ্যাশন",
+                "nameEn": "চরফ্যাশন"
+              },
+              {
+                "name": "চরমাণিকা",
+                "nameEn": "চরমাণিকা"
+              },
+              {
+                "name": "আশ্বাদনগর",
+                "nameEn": "আশ্বাদনগর"
+              }
+            ]
           },
           {
             "name": "দৌলতখান",
             "nameEn": "Daulatkhan",
-            "unions": [{"name": "দৌলতখান", "nameEn": "দৌলতখান"}, {"name": "সাদুল্লাপুর", "nameEn": "সাদুল্লাপুর"}, {"name": "মদনপুর", "nameEn": "মদনপুর"}, {"name": "চরখলিফা", "nameEn": "চরখলিফা"}]
+            "unions": [
+              {
+                "name": "দৌলতখান",
+                "nameEn": "দৌলতখান"
+              },
+              {
+                "name": "সাদুল্লাপুর",
+                "nameEn": "সাদুল্লাপুর"
+              },
+              {
+                "name": "মদনপুর",
+                "nameEn": "মদনপুর"
+              },
+              {
+                "name": "চরখলিফা",
+                "nameEn": "চরখলিফা"
+              }
+            ]
           },
           {
             "name": "লালমোহন",
             "nameEn": "Lalmohan",
-            "unions": [{"name": "লালমোহন", "nameEn": "লালমোহন"}, {"name": "চরবাংলা", "nameEn": "চরবাংলা"}, {"name": "কালমেঘা", "nameEn": "কালমেঘা"}, {"name": "পাতারহাট", "nameEn": "পাতারহাট"}]
+            "unions": [
+              {
+                "name": "লালমোহন",
+                "nameEn": "লালমোহন"
+              },
+              {
+                "name": "চরবাংলা",
+                "nameEn": "চরবাংলা"
+              },
+              {
+                "name": "কালমেঘা",
+                "nameEn": "কালমেঘা"
+              },
+              {
+                "name": "পাতারহাট",
+                "nameEn": "পাতারহাট"
+              }
+            ]
           },
           {
             "name": "তজুমদ্দিন",
             "nameEn": "Monpura",
-            "unions": [{"name": "মনপুরা", "nameEn": "মনপুরা"}, {"name": "সাকুচিয়া", "nameEn": "সাকুচিয়া"}]
+            "unions": [
+              {
+                "name": "মনপুরা",
+                "nameEn": "মনপুরা"
+              },
+              {
+                "name": "সাকুচিয়া",
+                "nameEn": "সাকুচিয়া"
+              }
+            ]
           },
           {
             "name": "চরফ্যাশন",
             "nameEn": "Tazumuddin",
-            "unions": [{"name": "তজুমউদ্দিন", "nameEn": "তজুমউদ্দিন"}, {"name": "চরনিজাম", "nameEn": "চরনিজাম"}, {"name": "শশীভূষণ", "nameEn": "শশীভূষণ"}]
+            "unions": [
+              {
+                "name": "তজুমউদ্দিন",
+                "nameEn": "তজুমউদ্দিন"
+              },
+              {
+                "name": "চরনিজাম",
+                "nameEn": "চরনিজাম"
+              },
+              {
+                "name": "শশীভূষণ",
+                "nameEn": "শশীভূষণ"
+              }
+            ]
           },
           {
             "name": "মনপুরা",
             "nameEn": "মনপুরা",
-            "unions": [{"name": "মনপুরা", "nameEn": "মনপুরা"}, {"name": "সাকুচিয়া", "nameEn": "সাকুচিয়া"}]
+            "unions": [
+              {
+                "name": "মনপুরা",
+                "nameEn": "মনপুরা"
+              },
+              {
+                "name": "সাকুচিয়া",
+                "nameEn": "সাকুচিয়া"
+              }
+            ]
           }
         ]
       },
@@ -1638,24 +8584,126 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Jhalokathi",
         "upazilas": [
           {
+            "name": "ঝালকাঠি পৌরসভা",
+            "nameEn": "Jhalokathi Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ঝালকাঠি সদর উপজেলা",
             "nameEn": "Tazumuddin",
-            "unions": [{"name": "তজুমউদ্দিন", "nameEn": "তজুমউদ্দিন"}, {"name": "চরনিজাম", "nameEn": "চরনিজাম"}, {"name": "শশীভূষণ", "nameEn": "শশীভূষণ"}]
+            "unions": [
+              {
+                "name": "তজুমউদ্দিন",
+                "nameEn": "তজুমউদ্দিন"
+              },
+              {
+                "name": "চরনিজাম",
+                "nameEn": "চরনিজাম"
+              },
+              {
+                "name": "শশীভূষণ",
+                "nameEn": "শশীভূষণ"
+              }
+            ]
           },
           {
             "name": "কাঁঠালিয়া উপজেলা",
             "nameEn": "Jhalokathi Sadar",
-            "unions": [{"name": "ঝালকাঠি সদর", "nameEn": "ঝালকাঠি সদর"}, {"name": "কীর্তিপাশা", "nameEn": "কীর্তিপাশা"}, {"name": "গাবখান", "nameEn": "গাবখান"}]
+            "unions": [
+              {
+                "name": "ঝালকাঠি সদর",
+                "nameEn": "ঝালকাঠি সদর"
+              },
+              {
+                "name": "কীর্তিপাশা",
+                "nameEn": "কীর্তিপাশা"
+              },
+              {
+                "name": "গাবখান",
+                "nameEn": "গাবখান"
+              }
+            ]
           },
           {
             "name": "নলছিটি উপজেলা",
             "nameEn": "Kathalia",
-            "unions": [{"name": "কাঠালিয়া", "nameEn": "কাঠালিয়া"}, {"name": "শওলজালিয়া", "nameEn": "শওলজালিয়া"}, {"name": "পাটিকেলঘাটা", "nameEn": "পাটিকেলঘাটা"}, {"name": "আমুয়া", "nameEn": "আমুয়া"}]
+            "unions": [
+              {
+                "name": "কাঠালিয়া",
+                "nameEn": "কাঠালিয়া"
+              },
+              {
+                "name": "শওলজালিয়া",
+                "nameEn": "শওলজালিয়া"
+              },
+              {
+                "name": "পাটিকেলঘাটা",
+                "nameEn": "পাটিকেলঘাটা"
+              },
+              {
+                "name": "আমুয়া",
+                "nameEn": "আমুয়া"
+              }
+            ]
           },
           {
             "name": "রাজাপুর উপজেলা",
             "nameEn": "Nalchity",
-            "unions": [{"name": "নলছিটি", "nameEn": "নলছিটি"}, {"name": "বারৈকরণ", "nameEn": "বারৈকরণ"}, {"name": "ভীমরুলী", "nameEn": "ভীমরুলী"}, {"name": "দামোদর", "nameEn": "দামোদর"}]
+            "unions": [
+              {
+                "name": "নলছিটি",
+                "nameEn": "নলছিটি"
+              },
+              {
+                "name": "বারৈকরণ",
+                "nameEn": "বারৈকরণ"
+              },
+              {
+                "name": "ভীমরুলী",
+                "nameEn": "ভীমরুলী"
+              },
+              {
+                "name": "দামোদর",
+                "nameEn": "দামোদর"
+              }
+            ]
           }
         ]
       },
@@ -1664,44 +8712,202 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Patuakhali",
         "upazilas": [
           {
+            "name": "পটুয়াখালী পৌরসভা",
+            "nameEn": "Patuakhali Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "পটুয়াখালী সদর উপজেলা",
             "nameEn": "Bauphal",
-            "unions": [{"name": "বাউফল", "nameEn": "বাউফল"}, {"name": "বেতাগী", "nameEn": "বেতাগী"}, {"name": "মদনপুর", "nameEn": "মদনপুর"}, {"name": "কেশবপুর", "nameEn": "কেশবপুর"}]
+            "unions": [
+              {
+                "name": "বাউফল",
+                "nameEn": "বাউফল"
+              },
+              {
+                "name": "বেতাগী",
+                "nameEn": "বেতাগী"
+              },
+              {
+                "name": "মদনপুর",
+                "nameEn": "মদনপুর"
+              },
+              {
+                "name": "কেশবপুর",
+                "nameEn": "কেশবপুর"
+              }
+            ]
           },
           {
             "name": "বাউফল উপজেলা",
             "nameEn": "Dashmina",
-            "unions": [{"name": "দশমিনা", "nameEn": "দশমিনা"}, {"name": "চরবাংলা", "nameEn": "চরবাংলা"}, {"name": "চরহরিণা", "nameEn": "চরহরিণা"}]
+            "unions": [
+              {
+                "name": "দশমিনা",
+                "nameEn": "দশমিনা"
+              },
+              {
+                "name": "চরবাংলা",
+                "nameEn": "চরবাংলা"
+              },
+              {
+                "name": "চরহরিণা",
+                "nameEn": "চরহরিণা"
+              }
+            ]
           },
           {
             "name": "দশমিনা উপজেলা",
             "nameEn": "Dumki",
-            "unions": [{"name": "দুমকী", "nameEn": "দুমকী"}, {"name": "পাঙ্গাশিয়া", "nameEn": "পাঙ্গাশিয়া"}, {"name": "মুরাদিয়া", "nameEn": "মুরাদিয়া"}]
+            "unions": [
+              {
+                "name": "দুমকী",
+                "nameEn": "দুমকী"
+              },
+              {
+                "name": "পাঙ্গাশিয়া",
+                "nameEn": "পাঙ্গাশিয়া"
+              },
+              {
+                "name": "মুরাদিয়া",
+                "nameEn": "মুরাদিয়া"
+              }
+            ]
           },
           {
             "name": "গলাচিপা উপজেলা",
             "nameEn": "Galachipa",
-            "unions": [{"name": "গলাচিপা", "nameEn": "গলাচিপা"}, {"name": "চররমিজ", "nameEn": "চররমিজ"}, {"name": "ডাকুয়া", "nameEn": "ডাকুয়া"}, {"name": "পানপট্টি", "nameEn": "পানপট্টি"}]
+            "unions": [
+              {
+                "name": "গলাচিপা",
+                "nameEn": "গলাচিপা"
+              },
+              {
+                "name": "চররমিজ",
+                "nameEn": "চররমিজ"
+              },
+              {
+                "name": "ডাকুয়া",
+                "nameEn": "ডাকুয়া"
+              },
+              {
+                "name": "পানপট্টি",
+                "nameEn": "পানপট্টি"
+              }
+            ]
           },
           {
             "name": "কলাপাড়া উপজেলা",
             "nameEn": "Kalapara",
-            "unions": [{"name": "কলাপাড়া", "nameEn": "কলাপাড়া"}, {"name": "চাকামইয়া", "nameEn": "চাকামইয়া"}, {"name": "ধানখালী", "nameEn": "ধানখালী"}, {"name": "লতাচাপলী", "nameEn": "লতাচাপলী"}]
+            "unions": [
+              {
+                "name": "কলাপাড়া",
+                "nameEn": "কলাপাড়া"
+              },
+              {
+                "name": "চাকামইয়া",
+                "nameEn": "চাকামইয়া"
+              },
+              {
+                "name": "ধানখালী",
+                "nameEn": "ধানখালী"
+              },
+              {
+                "name": "লতাচাপলী",
+                "nameEn": "লতাচাপলী"
+              }
+            ]
           },
           {
             "name": "মির্জাগঞ্জ উপজেলা",
             "nameEn": "Mirjaganj",
-            "unions": [{"name": "মির্জাগঞ্জ", "nameEn": "মির্জাগঞ্জ"}, {"name": "মাদারবুনিয়া", "nameEn": "মাদারবুনিয়া"}]
+            "unions": [
+              {
+                "name": "মির্জাগঞ্জ",
+                "nameEn": "মির্জাগঞ্জ"
+              },
+              {
+                "name": "মাদারবুনিয়া",
+                "nameEn": "মাদারবুনিয়া"
+              }
+            ]
           },
           {
             "name": "দুমকি উপজেলা",
             "nameEn": "Patuakhali Sadar",
-            "unions": [{"name": "পটুয়াখালী সদর", "nameEn": "পটুয়াখালী সদর"}, {"name": "লৌহালিয়া", "nameEn": "লৌহালিয়া"}, {"name": "কামলাপুর", "nameEn": "কামলাপুর"}, {"name": "মির্জাগঞ্জ", "nameEn": "মির্জাগঞ্জ"}]
+            "unions": [
+              {
+                "name": "পটুয়াখালী সদর",
+                "nameEn": "পটুয়াখালী সদর"
+              },
+              {
+                "name": "লৌহালিয়া",
+                "nameEn": "লৌহালিয়া"
+              },
+              {
+                "name": "কামলাপুর",
+                "nameEn": "কামলাপুর"
+              },
+              {
+                "name": "মির্জাগঞ্জ",
+                "nameEn": "মির্জাগঞ্জ"
+              }
+            ]
           },
           {
             "name": "রাঙ্গাবালী উপজেলা",
             "nameEn": "Rangabali",
-            "unions": [{"name": "রাঙ্গাবালী", "nameEn": "রাঙ্গাবালী"}, {"name": "চররুকনুদ্দিন", "nameEn": "চররুকনুদ্দিন"}, {"name": "চরসাপেলা", "nameEn": "চরসাপেলা"}]
+            "unions": [
+              {
+                "name": "রাঙ্গাবালী",
+                "nameEn": "রাঙ্গাবালী"
+              },
+              {
+                "name": "চররুকনুদ্দিন",
+                "nameEn": "চররুকনুদ্দিন"
+              },
+              {
+                "name": "চরসাপেলা",
+                "nameEn": "চরসাপেলা"
+              }
+            ]
           }
         ]
       },
@@ -1710,39 +8916,188 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Pirojpur",
         "upazilas": [
           {
+            "name": "পিরোজপুর পৌরসভা",
+            "nameEn": "Pirojpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ভান্ডারিয়া উপজেলা",
             "nameEn": "Bhandaria",
-            "unions": [{"name": "ভান্ডারিয়া", "nameEn": "ভান্ডারিয়া"}, {"name": "ঝগরাবিল", "nameEn": "ঝগরাবিল"}, {"name": "তেলিহাটি", "nameEn": "তেলিহাটি"}, {"name": "ধোপাখালী", "nameEn": "ধোপাখালী"}]
+            "unions": [
+              {
+                "name": "ভান্ডারিয়া",
+                "nameEn": "ভান্ডারিয়া"
+              },
+              {
+                "name": "ঝগরাবিল",
+                "nameEn": "ঝগরাবিল"
+              },
+              {
+                "name": "তেলিহাটি",
+                "nameEn": "তেলিহাটি"
+              },
+              {
+                "name": "ধোপাখালী",
+                "nameEn": "ধোপাখালী"
+              }
+            ]
           },
           {
             "name": "কাউখালী উপজেলা",
             "nameEn": "Kawkhali",
-            "unions": [{"name": "কাউখালী", "nameEn": "কাউখালী"}, {"name": "চিড়াপাতা", "nameEn": "চিড়াপাতা"}, {"name": "শিয়ালকাঠি", "nameEn": "শিয়ালকাঠি"}]
+            "unions": [
+              {
+                "name": "কাউখালী",
+                "nameEn": "কাউখালী"
+              },
+              {
+                "name": "চিড়াপাতা",
+                "nameEn": "চিড়াপাতা"
+              },
+              {
+                "name": "শিয়ালকাঠি",
+                "nameEn": "শিয়ালকাঠি"
+              }
+            ]
           },
           {
             "name": "মঠবাড়িয়া উপজেলা",
             "nameEn": "Mothbaria",
-            "unions": [{"name": "মঠবাড়িয়া", "nameEn": "মঠবাড়িয়া"}, {"name": "তুষখালী", "nameEn": "তুষখালী"}, {"name": "গুলিশাখালী", "nameEn": "গুলিশাখালী"}]
+            "unions": [
+              {
+                "name": "মঠবাড়িয়া",
+                "nameEn": "মঠবাড়িয়া"
+              },
+              {
+                "name": "তুষখালী",
+                "nameEn": "তুষখালী"
+              },
+              {
+                "name": "গুলিশাখালী",
+                "nameEn": "গুলিশাখালী"
+              }
+            ]
           },
           {
             "name": "নাজিরপুর উপজেলা",
             "nameEn": "Nazirpur",
-            "unions": [{"name": "নাজিরপুর", "nameEn": "নাজিরপুর"}, {"name": "পারেরহাট", "nameEn": "পারেরহাট"}, {"name": "শ্রীরামকাঠি", "nameEn": "শ্রীরামকাঠি"}, {"name": "মালিখালী", "nameEn": "মালিখালী"}]
+            "unions": [
+              {
+                "name": "নাজিরপুর",
+                "nameEn": "নাজিরপুর"
+              },
+              {
+                "name": "পারেরহাট",
+                "nameEn": "পারেরহাট"
+              },
+              {
+                "name": "শ্রীরামকাঠি",
+                "nameEn": "শ্রীরামকাঠি"
+              },
+              {
+                "name": "মালিখালী",
+                "nameEn": "মালিখালী"
+              }
+            ]
           },
           {
             "name": "পিরোজপুর সদর উপজেলা",
             "nameEn": "Nesarabad",
-            "unions": [{"name": "নেছারাবাদ", "nameEn": "নেছারাবাদ"}, {"name": "শেখেরহাট", "nameEn": "শেখেরহাট"}, {"name": "দেউলবাড়ী", "nameEn": "দেউলবাড়ী"}, {"name": "বারোইপাড়া", "nameEn": "বারোইপাড়া"}]
+            "unions": [
+              {
+                "name": "নেছারাবাদ",
+                "nameEn": "নেছারাবাদ"
+              },
+              {
+                "name": "শেখেরহাট",
+                "nameEn": "শেখেরহাট"
+              },
+              {
+                "name": "দেউলবাড়ী",
+                "nameEn": "দেউলবাড়ী"
+              },
+              {
+                "name": "বারোইপাড়া",
+                "nameEn": "বারোইপাড়া"
+              }
+            ]
           },
           {
             "name": "নেছারাবাদ উপজেলা",
             "nameEn": "Pirojpur Sadar",
-            "unions": [{"name": "পিরোজপুর সদর", "nameEn": "পিরোজপুর সদর"}, {"name": "সদরপুর", "nameEn": "সদরপুর"}, {"name": "শাখারী", "nameEn": "শাখারী"}, {"name": "কদমতলা", "nameEn": "কদমতলা"}]
+            "unions": [
+              {
+                "name": "পিরোজপুর সদর",
+                "nameEn": "পিরোজপুর সদর"
+              },
+              {
+                "name": "সদরপুর",
+                "nameEn": "সদরপুর"
+              },
+              {
+                "name": "শাখারী",
+                "nameEn": "শাখারী"
+              },
+              {
+                "name": "কদমতলা",
+                "nameEn": "কদমতলা"
+              }
+            ]
           },
           {
             "name": "ইন্দুরকানী উপজেলা",
             "nameEn": "Zianagar",
-            "unions": [{"name": "জিয়ানগর", "nameEn": "জিয়ানগর"}, {"name": "পশ্চিমবুনিয়া", "nameEn": "পশ্চিমবুনিয়া"}, {"name": "দুর্গাপাশা", "nameEn": "দুর্গাপাশা"}]
+            "unions": [
+              {
+                "name": "জিয়ানগর",
+                "nameEn": "জিয়ানগর"
+              },
+              {
+                "name": "পশ্চিমবুনিয়া",
+                "nameEn": "পশ্চিমবুনিয়া"
+              },
+              {
+                "name": "দুর্গাপাশা",
+                "nameEn": "দুর্গাপাশা"
+              }
+            ]
           }
         ]
       }
@@ -1757,39 +9112,148 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "জামালপুর",
         "upazilas": [
           {
+            "name": "জামালপুর পৌরসভা",
+            "nameEn": "Jamalpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "জামালপুর সদর উপজেলা",
             "nameEn": "জামালপুর সদর",
-            "unions": [{"name": "জামালপুর সদর", "nameEn": "জামালপুর সদর"}, {"name": "গুনেরচর", "nameEn": "গুনেরচর"}, {"name": "রানাগাছা", "nameEn": "রানাগাছা"}]
+            "unions": [
+              {
+                "name": "জামালপুর সদর",
+                "nameEn": "জামালপুর সদর"
+              },
+              {
+                "name": "গুনেরচর",
+                "nameEn": "গুনেরচর"
+              },
+              {
+                "name": "রানাগাছা",
+                "nameEn": "রানাগাছা"
+              }
+            ]
           },
           {
             "name": "বকশীগঞ্জ উপজেলা",
             "nameEn": "বকশীগঞ্জ",
-            "unions": [{"name": "বকশীগঞ্জ", "nameEn": "বকশীগঞ্জ"}, {"name": "মেরুরচর", "nameEn": "মেরুরচর"}]
+            "unions": [
+              {
+                "name": "বকশীগঞ্জ",
+                "nameEn": "বকশীগঞ্জ"
+              },
+              {
+                "name": "মেরুরচর",
+                "nameEn": "মেরুরচর"
+              }
+            ]
           },
           {
             "name": "দেওয়ানগঞ্জ উপজেলা",
             "nameEn": "দেওয়ানগঞ্জ",
-            "unions": [{"name": "দেওয়ানগঞ্জ", "nameEn": "দেওয়ানগঞ্জ"}, {"name": "বাহাদুরাবাদ", "nameEn": "বাহাদুরাবাদ"}]
+            "unions": [
+              {
+                "name": "দেওয়ানগঞ্জ",
+                "nameEn": "দেওয়ানগঞ্জ"
+              },
+              {
+                "name": "বাহাদুরাবাদ",
+                "nameEn": "বাহাদুরাবাদ"
+              }
+            ]
           },
           {
             "name": "ইসলামপুর উপজেলা",
             "nameEn": "ইসলামপুর",
-            "unions": [{"name": "ইসলামপুর", "nameEn": "ইসলামপুর"}, {"name": "গৈরহাটা", "nameEn": "গৈরহাটা"}]
+            "unions": [
+              {
+                "name": "ইসলামপুর",
+                "nameEn": "ইসলামপুর"
+              },
+              {
+                "name": "গৈরহাটা",
+                "nameEn": "গৈরহাটা"
+              }
+            ]
           },
           {
             "name": "মাদারগঞ্জ উপজেলা",
             "nameEn": "মাদারগঞ্জ",
-            "unions": [{"name": "মাদারগঞ্জ", "nameEn": "মাদারগঞ্জ"}, {"name": "গুনারীতলা", "nameEn": "গুনারীতলা"}]
+            "unions": [
+              {
+                "name": "মাদারগঞ্জ",
+                "nameEn": "মাদারগঞ্জ"
+              },
+              {
+                "name": "গুনারীতলা",
+                "nameEn": "গুনারীতলা"
+              }
+            ]
           },
           {
             "name": "মেলান্দহ উপজেলা",
             "nameEn": "মেলান্দহ",
-            "unions": [{"name": "মেলান্দহ", "nameEn": "মেলান্দহ"}, {"name": "নান্দিনা", "nameEn": "নান্দিনা"}]
+            "unions": [
+              {
+                "name": "মেলান্দহ",
+                "nameEn": "মেলান্দহ"
+              },
+              {
+                "name": "নান্দিনা",
+                "nameEn": "নান্দিনা"
+              }
+            ]
           },
           {
             "name": "সরিষাবাড়ি উপজেলা",
             "nameEn": "সরিষাবাড়ি",
-            "unions": [{"name": "সরিষাবাড়ী", "nameEn": "সরিষাবাড়ী"}, {"name": "পিংনা", "nameEn": "পিংনা"}]
+            "unions": [
+              {
+                "name": "সরিষাবাড়ী",
+                "nameEn": "সরিষাবাড়ী"
+              },
+              {
+                "name": "পিংনা",
+                "nameEn": "পিংনা"
+              }
+            ]
           }
         ]
       },
@@ -1798,69 +9262,264 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "ময়মনসিংহ",
         "upazilas": [
           {
+            "name": "ময়মনসিংহ সিটি কর্পোরেশন",
+            "nameEn": "Mymensingh City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              }
+            ]
+          },
+          {
             "name": "ময়মনসিংহ সদর",
             "nameEn": "ময়মনসিংহ সদর",
-            "unions": [{"name": "ময়মনসিংহ সদর সদর", "nameEn": "ময়মনসিংহ সদর Sadar"}]
+            "unions": [
+              {
+                "name": "ময়মনসিংহ সদর সদর",
+                "nameEn": "ময়মনসিংহ সদর Sadar"
+              }
+            ]
           },
           {
             "name": "ফুলবাড়িয়া",
             "nameEn": "ফুলবাড়িয়া",
-            "unions": [{"name": "ফুলবাড়িয়া সদর", "nameEn": "ফুলবাড়িয়া Sadar"}]
+            "unions": [
+              {
+                "name": "ফুলবাড়িয়া সদর",
+                "nameEn": "ফুলবাড়িয়া Sadar"
+              }
+            ]
           },
           {
             "name": "ত্রিশাল",
             "nameEn": "ত্রিশাল",
-            "unions": [{"name": "ত্রিশাল", "nameEn": "ত্রিশাল"}, {"name": "ধানীখোলা", "nameEn": "ধানীখোলা"}, {"name": "বলিপাড়া", "nameEn": "বলিপাড়া"}]
+            "unions": [
+              {
+                "name": "ত্রিশাল",
+                "nameEn": "ত্রিশাল"
+              },
+              {
+                "name": "ধানীখোলা",
+                "nameEn": "ধানীখোলা"
+              },
+              {
+                "name": "বলিপাড়া",
+                "nameEn": "বলিপাড়া"
+              }
+            ]
           },
           {
             "name": "ভালুকা",
             "nameEn": "ভালুকা",
-            "unions": [{"name": "ভালুকা", "nameEn": "ভালুকা"}, {"name": "রাজৈ", "nameEn": "রাজৈ"}]
+            "unions": [
+              {
+                "name": "ভালুকা",
+                "nameEn": "ভালুকা"
+              },
+              {
+                "name": "রাজৈ",
+                "nameEn": "রাজৈ"
+              }
+            ]
           },
           {
             "name": "মুক্তাগাছা",
             "nameEn": "মুক্তাগাছা",
-            "unions": [{"name": "মুক্তাগাছা", "nameEn": "মুক্তাগাছা"}, {"name": "মানকোণা", "nameEn": "মানকোণা"}]
+            "unions": [
+              {
+                "name": "মুক্তাগাছা",
+                "nameEn": "মুক্তাগাছা"
+              },
+              {
+                "name": "মানকোণা",
+                "nameEn": "মানকোণা"
+              }
+            ]
           },
           {
             "name": "ধোবাউড়া",
             "nameEn": "ধোবাউড়া",
-            "unions": [{"name": "ধোবাউড়া সদর", "nameEn": "ধোবাউড়া Sadar"}]
+            "unions": [
+              {
+                "name": "ধোবাউড়া সদর",
+                "nameEn": "ধোবাউড়া Sadar"
+              }
+            ]
           },
           {
             "name": "ফুলপুর",
             "nameEn": "ফুলপুর",
-            "unions": [{"name": "ফুলপুর", "nameEn": "ফুলপুর"}, {"name": "বৈরাটী", "nameEn": "বৈরাটী"}]
+            "unions": [
+              {
+                "name": "ফুলপুর",
+                "nameEn": "ফুলপুর"
+              },
+              {
+                "name": "বৈরাটী",
+                "nameEn": "বৈরাটী"
+              }
+            ]
           },
           {
             "name": "হালুয়াঘাট",
             "nameEn": "হালুয়াঘাট",
-            "unions": [{"name": "হালুয়াঘাট সদর", "nameEn": "হালুয়াঘাট Sadar"}]
+            "unions": [
+              {
+                "name": "হালুয়াঘাট সদর",
+                "nameEn": "হালুয়াঘাট Sadar"
+              }
+            ]
           },
           {
             "name": "গৌরীপুর",
             "nameEn": "গৌরীপুর",
-            "unions": [{"name": "গৌরীপুর", "nameEn": "গৌরীপুর"}, {"name": "শিবগঞ্জ", "nameEn": "শিবগঞ্জ"}]
+            "unions": [
+              {
+                "name": "গৌরীপুর",
+                "nameEn": "গৌরীপুর"
+              },
+              {
+                "name": "শিবগঞ্জ",
+                "nameEn": "শিবগঞ্জ"
+              }
+            ]
           },
           {
             "name": "গফরগাঁও",
             "nameEn": "গফরগাঁও",
-            "unions": [{"name": "গফরগাঁও", "nameEn": "গফরগাঁও"}, {"name": "দুর্গাপুর", "nameEn": "দুর্গাপুর"}]
+            "unions": [
+              {
+                "name": "গফরগাঁও",
+                "nameEn": "গফরগাঁও"
+              },
+              {
+                "name": "দুর্গাপুর",
+                "nameEn": "দুর্গাপুর"
+              }
+            ]
           },
           {
             "name": "ঈশ্বরগঞ্জ",
             "nameEn": "ঈশ্বরগঞ্জ",
-            "unions": [{"name": "ঈশ্বরগঞ্জ", "nameEn": "ঈশ্বরগঞ্জ"}, {"name": "সোহাগী", "nameEn": "সোহাগী"}]
+            "unions": [
+              {
+                "name": "ঈশ্বরগঞ্জ",
+                "nameEn": "ঈশ্বরগঞ্জ"
+              },
+              {
+                "name": "সোহাগী",
+                "nameEn": "সোহাগী"
+              }
+            ]
           },
           {
             "name": "নান্দাইল",
             "nameEn": "নান্দাইল",
-            "unions": [{"name": "নান্দাইল", "nameEn": "নান্দাইল"}, {"name": "মুসুল্লী", "nameEn": "মুসুল্লী"}]
+            "unions": [
+              {
+                "name": "নান্দাইল",
+                "nameEn": "নান্দাইল"
+              },
+              {
+                "name": "মুসুল্লী",
+                "nameEn": "মুসুল্লী"
+              }
+            ]
           },
           {
             "name": "তারাকান্দা",
             "nameEn": "তারাকান্দা",
-            "unions": [{"name": "তারাকান্দা", "nameEn": "তারাকান্দা"}, {"name": "কাকনী", "nameEn": "কাকনী"}]
+            "unions": [
+              {
+                "name": "তারাকান্দা",
+                "nameEn": "তারাকান্দা"
+              },
+              {
+                "name": "কাকনী",
+                "nameEn": "কাকনী"
+              }
+            ]
           }
         ]
       },
@@ -1869,54 +9528,186 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "নেত্রকোনা",
         "upazilas": [
           {
+            "name": "নেত্রকোনা পৌরসভা",
+            "nameEn": "Netrokona Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নেত্রকোনা সদর",
             "nameEn": "নেত্রকোনা সদর",
-            "unions": [{"name": "নেত্রকোণা সদর", "nameEn": "নেত্রকোণা সদর"}, {"name": "মুক্তিজোধা", "nameEn": "মুক্তিজোধা"}]
+            "unions": [
+              {
+                "name": "নেত্রকোণা সদর",
+                "nameEn": "নেত্রকোণা সদর"
+              },
+              {
+                "name": "মুক্তিজোধা",
+                "nameEn": "মুক্তিজোধা"
+              }
+            ]
           },
           {
             "name": "আটপাড়া",
             "nameEn": "আটপাড়া",
-            "unions": [{"name": "আটপাড়া", "nameEn": "আটপাড়া"}, {"name": "চান্দগাজী", "nameEn": "চান্দগাজী"}]
+            "unions": [
+              {
+                "name": "আটপাড়া",
+                "nameEn": "আটপাড়া"
+              },
+              {
+                "name": "চান্দগাজী",
+                "nameEn": "চান্দগাজী"
+              }
+            ]
           },
           {
             "name": "বারহাট্টা",
             "nameEn": "বারহাট্টা",
-            "unions": [{"name": "বারহাট্টা", "nameEn": "বারহাট্টা"}, {"name": "চিলারচর", "nameEn": "চিলারচর"}]
+            "unions": [
+              {
+                "name": "বারহাট্টা",
+                "nameEn": "বারহাট্টা"
+              },
+              {
+                "name": "চিলারচর",
+                "nameEn": "চিলারচর"
+              }
+            ]
           },
           {
             "name": "দুর্গাপুর",
             "nameEn": "দুর্গাপুর",
-            "unions": [{"name": "দুর্গাপুর", "nameEn": "দুর্গাপুর"}, {"name": "বিরিশিরি", "nameEn": "বিরিশিরি"}]
+            "unions": [
+              {
+                "name": "দুর্গাপুর",
+                "nameEn": "দুর্গাপুর"
+              },
+              {
+                "name": "বিরিশিরি",
+                "nameEn": "বিরিশিরি"
+              }
+            ]
           },
           {
             "name": "খালিয়াজুড়ি",
             "nameEn": "খালিয়াজুড়ি",
-            "unions": [{"name": "খালিয়াজুরী", "nameEn": "খালিয়াজুরী"}, {"name": "মেনকীফান্দি", "nameEn": "মেনকীফান্দি"}]
+            "unions": [
+              {
+                "name": "খালিয়াজুরী",
+                "nameEn": "খালিয়াজুরী"
+              },
+              {
+                "name": "মেনকীফান্দি",
+                "nameEn": "মেনকীফান্দি"
+              }
+            ]
           },
           {
             "name": "কলমাকান্দা",
             "nameEn": "কলমাকান্দা",
-            "unions": [{"name": "কলমাকান্দা", "nameEn": "কলমাকান্দা"}, {"name": "খর্ণিয়া", "nameEn": "খর্ণিয়া"}]
+            "unions": [
+              {
+                "name": "কলমাকান্দা",
+                "nameEn": "কলমাকান্দা"
+              },
+              {
+                "name": "খর্ণিয়া",
+                "nameEn": "খর্ণিয়া"
+              }
+            ]
           },
           {
             "name": "কেন্দুয়া",
             "nameEn": "কেন্দুয়া",
-            "unions": [{"name": "কেন্দুয়া", "nameEn": "কেন্দুয়া"}, {"name": "মশিয়ালহাটি", "nameEn": "মশিয়ালহাটি"}]
+            "unions": [
+              {
+                "name": "কেন্দুয়া",
+                "nameEn": "কেন্দুয়া"
+              },
+              {
+                "name": "মশিয়ালহাটি",
+                "nameEn": "মশিয়ালহাটি"
+              }
+            ]
           },
           {
             "name": "মদন",
             "nameEn": "মদন",
-            "unions": [{"name": "মদন", "nameEn": "মদন"}, {"name": "চন্দ্রনগর", "nameEn": "চন্দ্রনগর"}]
+            "unions": [
+              {
+                "name": "মদন",
+                "nameEn": "মদন"
+              },
+              {
+                "name": "চন্দ্রনগর",
+                "nameEn": "চন্দ্রনগর"
+              }
+            ]
           },
           {
             "name": "মোহনগঞ্জ",
             "nameEn": "মোহনগঞ্জ",
-            "unions": [{"name": "মোহনগঞ্জ", "nameEn": "মোহনগঞ্জ"}, {"name": "গাগলাজুর", "nameEn": "গাগলাজুর"}]
+            "unions": [
+              {
+                "name": "মোহনগঞ্জ",
+                "nameEn": "মোহনগঞ্জ"
+              },
+              {
+                "name": "গাগলাজুর",
+                "nameEn": "গাগলাজুর"
+              }
+            ]
           },
           {
             "name": "পূর্বধলা",
             "nameEn": "পূর্বধলা",
-            "unions": [{"name": "পূর্বধলা", "nameEn": "পূর্বধলা"}, {"name": "বিরাটী", "nameEn": "বিরাটী"}]
+            "unions": [
+              {
+                "name": "পূর্বধলা",
+                "nameEn": "পূর্বধলা"
+              },
+              {
+                "name": "বিরাটী",
+                "nameEn": "বিরাটী"
+              }
+            ]
           }
         ]
       },
@@ -1925,29 +9716,116 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "শেরপুর",
         "upazilas": [
           {
+            "name": "শেরপুর পৌরসভা",
+            "nameEn": "Sherpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "শেরপুর সদর",
             "nameEn": "শেরপুর সদর",
-            "unions": [{"name": "শেরপুর সদর", "nameEn": "শেরপুর সদর"}, {"name": "খরমপুর", "nameEn": "খরমপুর"}]
+            "unions": [
+              {
+                "name": "শেরপুর সদর",
+                "nameEn": "শেরপুর সদর"
+              },
+              {
+                "name": "খরমপুর",
+                "nameEn": "খরমপুর"
+              }
+            ]
           },
           {
             "name": "ঝিনাইগাতী",
             "nameEn": "ঝিনাইগাতী",
-            "unions": [{"name": "ঝিনাইগাতী", "nameEn": "ঝিনাইগাতী"}, {"name": "হাতিবান্দা", "nameEn": "হাতিবান্দা"}]
+            "unions": [
+              {
+                "name": "ঝিনাইগাতী",
+                "nameEn": "ঝিনাইগাতী"
+              },
+              {
+                "name": "হাতিবান্দা",
+                "nameEn": "হাতিবান্দা"
+              }
+            ]
           },
           {
             "name": "নকলা",
             "nameEn": "নকলা",
-            "unions": [{"name": "নকলা", "nameEn": "নকলা"}, {"name": "গণেশপুর", "nameEn": "গণেশপুর"}]
+            "unions": [
+              {
+                "name": "নকলা",
+                "nameEn": "নকলা"
+              },
+              {
+                "name": "গণেশপুর",
+                "nameEn": "গণেশপুর"
+              }
+            ]
           },
           {
             "name": "নালিতাবাড়ী",
             "nameEn": "নালিতাবাড়ী",
-            "unions": [{"name": "নালিতাবাড়ী", "nameEn": "নালিতাবাড়ী"}, {"name": "কলমাকান্দা", "nameEn": "কলমাকান্দা"}]
+            "unions": [
+              {
+                "name": "নালিতাবাড়ী",
+                "nameEn": "নালিতাবাড়ী"
+              },
+              {
+                "name": "কলমাকান্দা",
+                "nameEn": "কলমাকান্দা"
+              }
+            ]
           },
           {
             "name": "শ্রীবরদী",
             "nameEn": "শ্রীবরদী",
-            "unions": [{"name": "শ্রীবর্দী", "nameEn": "শ্রীবর্দী"}, {"name": "রঘুনাথপুর", "nameEn": "রঘুনাথপুর"}]
+            "unions": [
+              {
+                "name": "শ্রীবর্দী",
+                "nameEn": "শ্রীবর্দী"
+              },
+              {
+                "name": "রঘুনাথপুর",
+                "nameEn": "রঘুনাথপুর"
+              }
+            ]
           }
         ]
       }
@@ -1962,69 +9840,280 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Dinajpur",
         "upazilas": [
           {
+            "name": "দিনাজপুর পৌরসভা",
+            "nameEn": "Dinajpur Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              }
+            ]
+          },
+          {
             "name": "দিনাজপুর সদর",
             "nameEn": "Birampur",
-            "unions": [{"name": "বিরামপুর", "nameEn": "বিরামপুর"}, {"name": "কালোরহাট", "nameEn": "কালোরহাট"}]
+            "unions": [
+              {
+                "name": "বিরামপুর",
+                "nameEn": "বিরামপুর"
+              },
+              {
+                "name": "কালোরহাট",
+                "nameEn": "কালোরহাট"
+              }
+            ]
           },
           {
             "name": "বিরামপুর",
             "nameEn": "Birganj",
-            "unions": [{"name": "বীরগঞ্জ", "nameEn": "বীরগঞ্জ"}, {"name": "ভোগনগর", "nameEn": "ভোগনগর"}, {"name": "মোহনপুর", "nameEn": "মোহনপুর"}]
+            "unions": [
+              {
+                "name": "বীরগঞ্জ",
+                "nameEn": "বীরগঞ্জ"
+              },
+              {
+                "name": "ভোগনগর",
+                "nameEn": "ভোগনগর"
+              },
+              {
+                "name": "মোহনপুর",
+                "nameEn": "মোহনপুর"
+              }
+            ]
           },
           {
             "name": "বীরগঞ্জ",
             "nameEn": "Birol",
-            "unions": [{"name": "বিরল", "nameEn": "বিরল"}, {"name": "কাটলাহার", "nameEn": "কাটলাহার"}, {"name": "ফুলবাড়ী", "nameEn": "ফুলবাড়ী"}]
+            "unions": [
+              {
+                "name": "বিরল",
+                "nameEn": "বিরল"
+              },
+              {
+                "name": "কাটলাহার",
+                "nameEn": "কাটলাহার"
+              },
+              {
+                "name": "ফুলবাড়ী",
+                "nameEn": "ফুলবাড়ী"
+              }
+            ]
           },
           {
             "name": "বোচাগঞ্জ",
             "nameEn": "Bochaganj",
-            "unions": [{"name": "বোচাগঞ্জ", "nameEn": "বোচাগঞ্জ"}, {"name": "মিরজাপুর", "nameEn": "মিরজাপুর"}, {"name": "গোবিন্দপুর", "nameEn": "গোবিন্দপুর"}]
+            "unions": [
+              {
+                "name": "বোচাগঞ্জ",
+                "nameEn": "বোচাগঞ্জ"
+              },
+              {
+                "name": "মিরজাপুর",
+                "nameEn": "মিরজাপুর"
+              },
+              {
+                "name": "গোবিন্দপুর",
+                "nameEn": "গোবিন্দপুর"
+              }
+            ]
           },
           {
             "name": "ফুলবাড়ী",
             "nameEn": "Chirirbandar",
-            "unions": [{"name": "চিরিরবন্দর", "nameEn": "চিরিরবন্দর"}, {"name": "পুলহাট", "nameEn": "পুলহাট"}, {"name": "আউলিয়াপুর", "nameEn": "আউলিয়াপুর"}]
+            "unions": [
+              {
+                "name": "চিরিরবন্দর",
+                "nameEn": "চিরিরবন্দর"
+              },
+              {
+                "name": "পুলহাট",
+                "nameEn": "পুলহাট"
+              },
+              {
+                "name": "আউলিয়াপুর",
+                "nameEn": "আউলিয়াপুর"
+              }
+            ]
           },
           {
             "name": "চিরিরবন্দর",
             "nameEn": "Dinajpur Sadar",
-            "unions": [{"name": "দিনাজপুর সদর", "nameEn": "দিনাজপুর সদর"}, {"name": "চেহেলগাজী", "nameEn": "চেহেলগাজী"}, {"name": "আউলিয়াপুর", "nameEn": "আউলিয়াপুর"}]
+            "unions": [
+              {
+                "name": "দিনাজপুর সদর",
+                "nameEn": "দিনাজপুর সদর"
+              },
+              {
+                "name": "চেহেলগাজী",
+                "nameEn": "চেহেলগাজী"
+              },
+              {
+                "name": "আউলিয়াপুর",
+                "nameEn": "আউলিয়াপুর"
+              }
+            ]
           },
           {
             "name": "ঘোড়াঘাট",
             "nameEn": "Fulbari",
-            "unions": [{"name": "ফুলবাড়ী", "nameEn": "ফুলবাড়ী"}, {"name": "শিবরামপুর", "nameEn": "শিবরামপুর"}, {"name": "খয়েরবাড়ী", "nameEn": "খয়েরবাড়ী"}]
+            "unions": [
+              {
+                "name": "ফুলবাড়ী",
+                "nameEn": "ফুলবাড়ী"
+              },
+              {
+                "name": "শিবরামপুর",
+                "nameEn": "শিবরামপুর"
+              },
+              {
+                "name": "খয়েরবাড়ী",
+                "nameEn": "খয়েরবাড়ী"
+              }
+            ]
           },
           {
             "name": "হাকিমপুর",
             "nameEn": "Ghoraghat",
-            "unions": [{"name": "ঘোড়াঘাট", "nameEn": "ঘোড়াঘাট"}, {"name": "নিতপুর", "nameEn": "নিতপুর"}, {"name": "সিংড়া", "nameEn": "সিংড়া"}]
+            "unions": [
+              {
+                "name": "ঘোড়াঘাট",
+                "nameEn": "ঘোড়াঘাট"
+              },
+              {
+                "name": "নিতপুর",
+                "nameEn": "নিতপুর"
+              },
+              {
+                "name": "সিংড়া",
+                "nameEn": "সিংড়া"
+              }
+            ]
           },
           {
             "name": "কাহারোল",
             "nameEn": "Hakimpur",
-            "unions": [{"name": "হাকিমপুর", "nameEn": "হাকিমপুর"}, {"name": "পালপাড়া", "nameEn": "পালপাড়া"}, {"name": "আনতাহার", "nameEn": "আনতাহার"}]
+            "unions": [
+              {
+                "name": "হাকিমপুর",
+                "nameEn": "হাকিমপুর"
+              },
+              {
+                "name": "পালপাড়া",
+                "nameEn": "পালপাড়া"
+              },
+              {
+                "name": "আনতাহার",
+                "nameEn": "আনতাহার"
+              }
+            ]
           },
           {
             "name": "খানসামা",
             "nameEn": "Kaharol",
-            "unions": [{"name": "কাহারোল", "nameEn": "কাহারোল"}, {"name": "রাণীরবন্দর", "nameEn": "রাণীরবন্দর"}, {"name": "মুন্সীপাড়া", "nameEn": "মুন্সীপাড়া"}]
+            "unions": [
+              {
+                "name": "কাহারোল",
+                "nameEn": "কাহারোল"
+              },
+              {
+                "name": "রাণীরবন্দর",
+                "nameEn": "রাণীরবন্দর"
+              },
+              {
+                "name": "মুন্সীপাড়া",
+                "nameEn": "মুন্সীপাড়া"
+              }
+            ]
           },
           {
             "name": "নবাবগঞ্জ",
             "nameEn": "Khanshama",
-            "unions": [{"name": "খানসামা", "nameEn": "খানসামা"}, {"name": "আলোকজুরি", "nameEn": "আলোকজুরি"}, {"name": "ভেলাবাড়ী", "nameEn": "ভেলাবাড়ী"}]
+            "unions": [
+              {
+                "name": "খানসামা",
+                "nameEn": "খানসামা"
+              },
+              {
+                "name": "আলোকজুরি",
+                "nameEn": "আলোকজুরি"
+              },
+              {
+                "name": "ভেলাবাড়ী",
+                "nameEn": "ভেলাবাড়ী"
+              }
+            ]
           },
           {
             "name": "পার্বতীপুর",
             "nameEn": "Nawabganj",
-            "unions": [{"name": "Nawabganj সদর", "nameEn": "Nawabganj Sadar"}]
+            "unions": [
+              {
+                "name": "Nawabganj সদর",
+                "nameEn": "Nawabganj Sadar"
+              }
+            ]
           },
           {
             "name": "বিরল",
             "nameEn": "Parbatipur",
-            "unions": [{"name": "পার্বতীপুর", "nameEn": "পার্বতীপুর"}, {"name": "হাবড়া", "nameEn": "হাবড়া"}, {"name": "মোমিনপুর", "nameEn": "মোমিনপুর"}]
+            "unions": [
+              {
+                "name": "পার্বতীপুর",
+                "nameEn": "পার্বতীপুর"
+              },
+              {
+                "name": "হাবড়া",
+                "nameEn": "হাবড়া"
+              },
+              {
+                "name": "মোমিনপুর",
+                "nameEn": "মোমিনপুর"
+              }
+            ]
           }
         ]
       },
@@ -2032,6 +10121,48 @@ export const bangladeshAddresses: Division[] = [
         "name": "গাইবান্ধা",
         "nameEn": "Gaibandha",
         "upazilas": [
+          {
+            "name": "গাইবান্ধা পৌরসভা",
+            "nameEn": "Gaibandha Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
           {
             "name": "লক্ষ্মীপুর উপজেলা",
             "nameEn": "Fulchari",
@@ -2409,6 +10540,48 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Kurigram",
         "upazilas": [
           {
+            "name": "কুড়িগ্রাম পৌরসভা",
+            "nameEn": "Kurigram Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "কুড়িগ্রাম সদর উপজেলা",
             "nameEn": "Bhurungamari",
             "unions": [
@@ -2761,6 +10934,48 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Lalmonirhat",
         "upazilas": [
           {
+            "name": "লালমনিরহাট পৌরসভা",
+            "nameEn": "Lalmonirhat Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "লালমনিরহাট সদর উপজেলা",
             "nameEn": "Aditmari",
             "unions": [
@@ -2976,6 +11191,48 @@ export const bangladeshAddresses: Division[] = [
         "name": "নীলফামারী",
         "nameEn": "Nilphamari",
         "upazilas": [
+          {
+            "name": "নীলফামারী পৌরসভা",
+            "nameEn": "Nilphamari Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
           {
             "name": "নীলফামারী সদর উপজেলা",
             "nameEn": "Dimla",
@@ -3259,6 +11516,48 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Panchagarh",
         "upazilas": [
           {
+            "name": "পঞ্চগড় পৌরসভা",
+            "nameEn": "Panchagarh Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "পঞ্চগড় সদর উপজেলা",
             "nameEn": "Atwari",
             "unions": [
@@ -3466,6 +11765,144 @@ export const bangladeshAddresses: Division[] = [
         "name": "রংপুর",
         "nameEn": "Rangpur",
         "upazilas": [
+          {
+            "name": "রংপুর সিটি কর্পোরেশন",
+            "nameEn": "Rangpur City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              },
+              {
+                "name": "ওয়ার্ড নং-31",
+                "nameEn": "Ward No-31"
+              },
+              {
+                "name": "ওয়ার্ড নং-32",
+                "nameEn": "Ward No-32"
+              },
+              {
+                "name": "ওয়ার্ড নং-33",
+                "nameEn": "Ward No-33"
+              }
+            ]
+          },
           {
             "name": "রংপুর সদর উপজেলা",
             "nameEn": "Badarganj",
@@ -3829,6 +12266,48 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Thakurgaon",
         "upazilas": [
           {
+            "name": "ঠাকুরগাঁও পৌরসভা",
+            "nameEn": "Thakurgaon Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "ঠাকুরগাঁও সদর উপজেলা",
             "nameEn": "Baliadangi",
             "unions": [
@@ -4083,64 +12562,290 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Bogura",
         "upazilas": [
           {
+            "name": "বগুড়া পৌরসভা",
+            "nameEn": "Bogura Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              }
+            ]
+          },
+          {
             "name": "বগুড়া সদর",
             "nameEn": "Adamdighi",
-            "unions": [{"name": "আদমদিঘী", "nameEn": "আদমদিঘী"}, {"name": "সান্তাহার", "nameEn": "সান্তাহার"}, {"name": "নশরতপুর", "nameEn": "নশরতপুর"}]
+            "unions": [
+              {
+                "name": "আদমদিঘী",
+                "nameEn": "আদমদিঘী"
+              },
+              {
+                "name": "সান্তাহার",
+                "nameEn": "সান্তাহার"
+              },
+              {
+                "name": "নশরতপুর",
+                "nameEn": "নশরতপুর"
+              }
+            ]
           },
           {
             "name": "আদমদিঘী",
             "nameEn": "Bogura Sadar",
-            "unions": [{"name": "বগুড়া সদর", "nameEn": "বগুড়া সদর"}, {"name": "লাহিড়ীপাড়া", "nameEn": "লাহিড়ীপাড়া"}, {"name": "সেউজগাড়ী", "nameEn": "সেউজগাড়ী"}]
+            "unions": [
+              {
+                "name": "বগুড়া সদর",
+                "nameEn": "বগুড়া সদর"
+              },
+              {
+                "name": "লাহিড়ীপাড়া",
+                "nameEn": "লাহিড়ীপাড়া"
+              },
+              {
+                "name": "সেউজগাড়ী",
+                "nameEn": "সেউজগাড়ী"
+              }
+            ]
           },
           {
             "name": "ধুনট",
             "nameEn": "Dhunot",
-            "unions": [{"name": "ধুনট", "nameEn": "ধুনট"}, {"name": "গোসাইবাড়ী", "nameEn": "গোসাইবাড়ী"}]
+            "unions": [
+              {
+                "name": "ধুনট",
+                "nameEn": "ধুনট"
+              },
+              {
+                "name": "গোসাইবাড়ী",
+                "nameEn": "গোসাইবাড়ী"
+              }
+            ]
           },
           {
             "name": "ধুপচাঁচিয়া",
             "nameEn": "Dhupchancia",
-            "unions": [{"name": "দুপচাঁচিয়া", "nameEn": "দুপচাঁচিয়া"}, {"name": "তালোড়া", "nameEn": "তালোড়া"}]
+            "unions": [
+              {
+                "name": "দুপচাঁচিয়া",
+                "nameEn": "দুপচাঁচিয়া"
+              },
+              {
+                "name": "তালোড়া",
+                "nameEn": "তালোড়া"
+              }
+            ]
           },
           {
             "name": "গাবতলী",
             "nameEn": "Gabtali",
-            "unions": [{"name": "গাবতলী", "nameEn": "গাবতলী"}, {"name": "কাগইল", "nameEn": "কাগইল"}, {"name": "মহাস্থানগড়", "nameEn": "মহাস্থানগড়"}]
+            "unions": [
+              {
+                "name": "গাবতলী",
+                "nameEn": "গাবতলী"
+              },
+              {
+                "name": "কাগইল",
+                "nameEn": "কাগইল"
+              },
+              {
+                "name": "মহাস্থানগড়",
+                "nameEn": "মহাস্থানগড়"
+              }
+            ]
           },
           {
             "name": "কাহালু",
             "nameEn": "Kahaloo",
-            "unions": [{"name": "কাহালু", "nameEn": "কাহালু"}, {"name": "দুর্গাহাটা", "nameEn": "দুর্গাহাটা"}, {"name": "হাম্মামকুণ্ড", "nameEn": "হাম্মামকুণ্ড"}]
+            "unions": [
+              {
+                "name": "কাহালু",
+                "nameEn": "কাহালু"
+              },
+              {
+                "name": "দুর্গাহাটা",
+                "nameEn": "দুর্গাহাটা"
+              },
+              {
+                "name": "হাম্মামকুণ্ড",
+                "nameEn": "হাম্মামকুণ্ড"
+              }
+            ]
           },
           {
             "name": "নন্দীগ্রাম",
             "nameEn": "Nandigram",
-            "unions": [{"name": "নন্দীগ্রাম", "nameEn": "নন্দীগ্রাম"}, {"name": "আলমপুর", "nameEn": "আলমপুর"}, {"name": "ভাদুরিয়া", "nameEn": "ভাদুরিয়া"}]
+            "unions": [
+              {
+                "name": "নন্দীগ্রাম",
+                "nameEn": "নন্দীগ্রাম"
+              },
+              {
+                "name": "আলমপুর",
+                "nameEn": "আলমপুর"
+              },
+              {
+                "name": "ভাদুরিয়া",
+                "nameEn": "ভাদুরিয়া"
+              }
+            ]
           },
           {
             "name": "সারিয়াকান্দি",
             "nameEn": "Sariakandi",
-            "unions": [{"name": "সারিয়াকান্দি", "nameEn": "সারিয়াকান্দি"}, {"name": "হাটশেরপুর", "nameEn": "হাটশেরপুর"}, {"name": "কুতুবপুর", "nameEn": "কুতুবপুর"}]
+            "unions": [
+              {
+                "name": "সারিয়াকান্দি",
+                "nameEn": "সারিয়াকান্দি"
+              },
+              {
+                "name": "হাটশেরপুর",
+                "nameEn": "হাটশেরপুর"
+              },
+              {
+                "name": "কুতুবপুর",
+                "nameEn": "কুতুবপুর"
+              }
+            ]
           },
           {
             "name": "শেরপুর",
             "nameEn": "Shajahanpur",
-            "unions": [{"name": "শাজাহানপুর", "nameEn": "শাজাহানপুর"}, {"name": "আমরুল", "nameEn": "আমরুল"}]
+            "unions": [
+              {
+                "name": "শাজাহানপুর",
+                "nameEn": "শাজাহানপুর"
+              },
+              {
+                "name": "আমরুল",
+                "nameEn": "আমরুল"
+              }
+            ]
           },
           {
             "name": "শিবগঞ্জ",
             "nameEn": "Sherpur",
-            "unions": [{"name": "শেরপুর", "nameEn": "শেরপুর"}, {"name": "খামারকান্দি", "nameEn": "খামারকান্দি"}]
+            "unions": [
+              {
+                "name": "শেরপুর",
+                "nameEn": "শেরপুর"
+              },
+              {
+                "name": "খামারকান্দি",
+                "nameEn": "খামারকান্দি"
+              }
+            ]
           },
           {
             "name": "সোনাতলা",
             "nameEn": "Shibganj",
-            "unions": [{"name": "শিবগঞ্জ", "nameEn": "শিবগঞ্জ"}, {"name": "মোকামতলা", "nameEn": "মোকামতলা"}]
+            "unions": [
+              {
+                "name": "শিবগঞ্জ",
+                "nameEn": "শিবগঞ্জ"
+              },
+              {
+                "name": "মোকামতলা",
+                "nameEn": "মোকামতলা"
+              }
+            ]
           },
           {
             "name": "শাজাহানপুর",
             "nameEn": "Sonatala",
-            "unions": [{"name": "সোনাতলা", "nameEn": "সোনাতলা"}, {"name": "দিঘলকান্দি", "nameEn": "দিঘলকান্দি"}, {"name": "পাকুল্লা", "nameEn": "পাকুল্লা"}]
+            "unions": [
+              {
+                "name": "সোনাতলা",
+                "nameEn": "সোনাতলা"
+              },
+              {
+                "name": "দিঘলকান্দি",
+                "nameEn": "দিঘলকান্দি"
+              },
+              {
+                "name": "পাকুল্লা",
+                "nameEn": "পাকুল্লা"
+              }
+            ]
           }
         ]
       },
@@ -4149,29 +12854,120 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "C. nawabganj",
         "upazilas": [
           {
+            "name": "চাঁপাইনবাবগঞ্জ পৌরসভা",
+            "nameEn": "Chapainawabganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "চাঁপাইনবাবগঞ্জ সদর",
             "nameEn": "Bholahat",
-            "unions": [{"name": "ভোলাহাট", "nameEn": "ভোলাহাট"}, {"name": "গোহালকান্দি", "nameEn": "গোহালকান্দি"}, {"name": "জামবাড়িয়া", "nameEn": "জামবাড়িয়া"}]
+            "unions": [
+              {
+                "name": "ভোলাহাট",
+                "nameEn": "ভোলাহাট"
+              },
+              {
+                "name": "গোহালকান্দি",
+                "nameEn": "গোহালকান্দি"
+              },
+              {
+                "name": "জামবাড়িয়া",
+                "nameEn": "জামবাড়িয়া"
+              }
+            ]
           },
           {
             "name": "গোমস্তাপুর",
             "nameEn": "Gomostapur",
-            "unions": [{"name": "গোমস্তাপুর", "nameEn": "গোমস্তাপুর"}, {"name": "রাধানগর", "nameEn": "রাধানগর"}]
+            "unions": [
+              {
+                "name": "গোমস্তাপুর",
+                "nameEn": "গোমস্তাপুর"
+              },
+              {
+                "name": "রাধানগর",
+                "nameEn": "রাধানগর"
+              }
+            ]
           },
           {
             "name": "শিবগঞ্জ",
             "nameEn": "Nachol",
-            "unions": [{"name": "নাচোল", "nameEn": "নাচোল"}, {"name": "নেজামপুর", "nameEn": "নেজামপুর"}]
+            "unions": [
+              {
+                "name": "নাচোল",
+                "nameEn": "নাচোল"
+              },
+              {
+                "name": "নেজামপুর",
+                "nameEn": "নেজামপুর"
+              }
+            ]
           },
           {
             "name": "নাচোল",
             "nameEn": "Nawabganj Sadar",
-            "unions": [{"name": "নবাবগঞ্জ সদর", "nameEn": "নবাবগঞ্জ সদর"}, {"name": "কুমারপুর", "nameEn": "কুমারপুর"}, {"name": "গোমতানগর", "nameEn": "গোমতানগর"}]
+            "unions": [
+              {
+                "name": "নবাবগঞ্জ সদর",
+                "nameEn": "নবাবগঞ্জ সদর"
+              },
+              {
+                "name": "কুমারপুর",
+                "nameEn": "কুমারপুর"
+              },
+              {
+                "name": "গোমতানগর",
+                "nameEn": "গোমতানগর"
+              }
+            ]
           },
           {
             "name": "ভোলাহাট",
             "nameEn": "Shibganj",
-            "unions": [{"name": "Shibganj সদর", "nameEn": "Shibganj Sadar"}]
+            "unions": [
+              {
+                "name": "Shibganj সদর",
+                "nameEn": "Shibganj Sadar"
+              }
+            ]
           }
         ]
       },
@@ -4180,29 +12976,136 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Joypurhat",
         "upazilas": [
           {
+            "name": "জয়পুরহাট পৌরসভা",
+            "nameEn": "Joypurhat Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "জয়পুরহাট সদর",
             "nameEn": "Akkelpur",
-            "unions": [{"name": "আক্কেলপুর", "nameEn": "আক্কেলপুর"}, {"name": "সোনামুখী", "nameEn": "সোনামুখী"}, {"name": "রায়পুর", "nameEn": "রায়পুর"}]
+            "unions": [
+              {
+                "name": "আক্কেলপুর",
+                "nameEn": "আক্কেলপুর"
+              },
+              {
+                "name": "সোনামুখী",
+                "nameEn": "সোনামুখী"
+              },
+              {
+                "name": "রায়পুর",
+                "nameEn": "রায়পুর"
+              }
+            ]
           },
           {
             "name": "পাঁচবিবি",
             "nameEn": "Joypurhat Sadar",
-            "unions": [{"name": "জয়পুরহাট সদর", "nameEn": "জয়পুরহাট সদর"}, {"name": "বেলাল", "nameEn": "বেলাল"}, {"name": "ধলাহারা", "nameEn": "ধলাহারা"}]
+            "unions": [
+              {
+                "name": "জয়পুরহাট সদর",
+                "nameEn": "জয়পুরহাট সদর"
+              },
+              {
+                "name": "বেলাল",
+                "nameEn": "বেলাল"
+              },
+              {
+                "name": "ধলাহারা",
+                "nameEn": "ধলাহারা"
+              }
+            ]
           },
           {
             "name": "কালাই",
             "nameEn": "Kalai",
-            "unions": [{"name": "কালাই", "nameEn": "কালাই"}, {"name": "পুনাট", "nameEn": "পুনাট"}, {"name": "মাধবপুর", "nameEn": "মাধবপুর"}]
+            "unions": [
+              {
+                "name": "কালাই",
+                "nameEn": "কালাই"
+              },
+              {
+                "name": "পুনাট",
+                "nameEn": "পুনাট"
+              },
+              {
+                "name": "মাধবপুর",
+                "nameEn": "মাধবপুর"
+              }
+            ]
           },
           {
             "name": "ক্ষেতলাল",
             "nameEn": "Khetlal",
-            "unions": [{"name": "ক্ষেতলাল", "nameEn": "ক্ষেতলাল"}, {"name": "বাধাইড়", "nameEn": "বাধাইড়"}, {"name": "মামুদপুর", "nameEn": "মামুদপুর"}]
+            "unions": [
+              {
+                "name": "ক্ষেতলাল",
+                "nameEn": "ক্ষেতলাল"
+              },
+              {
+                "name": "বাধাইড়",
+                "nameEn": "বাধাইড়"
+              },
+              {
+                "name": "মামুদপুর",
+                "nameEn": "মামুদপুর"
+              }
+            ]
           },
           {
             "name": "আক্কেলপুর",
             "nameEn": "Panchbibi",
-            "unions": [{"name": "পাঁচবিবি", "nameEn": "পাঁচবিবি"}, {"name": "আওরঙ্গজেবপুর", "nameEn": "আওরঙ্গজেবপুর"}, {"name": "কুসুম্বা", "nameEn": "কুসুম্বা"}]
+            "unions": [
+              {
+                "name": "পাঁচবিবি",
+                "nameEn": "পাঁচবিবি"
+              },
+              {
+                "name": "আওরঙ্গজেবপুর",
+                "nameEn": "আওরঙ্গজেবপুর"
+              },
+              {
+                "name": "কুসুম্বা",
+                "nameEn": "কুসুম্বা"
+              }
+            ]
           }
         ]
       },
@@ -4211,59 +13114,236 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Naogaon",
         "upazilas": [
           {
+            "name": "নওগাঁ পৌরসভা",
+            "nameEn": "Naogaon Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নওগাঁ সদর",
             "nameEn": "Atrai",
-            "unions": [{"name": "আত্রাই", "nameEn": "আত্রাই"}, {"name": "মান্দা", "nameEn": "মান্দা"}, {"name": "বাণগ্রাম", "nameEn": "বাণগ্রাম"}]
+            "unions": [
+              {
+                "name": "আত্রাই",
+                "nameEn": "আত্রাই"
+              },
+              {
+                "name": "মান্দা",
+                "nameEn": "মান্দা"
+              },
+              {
+                "name": "বাণগ্রাম",
+                "nameEn": "বাণগ্রাম"
+              }
+            ]
           },
           {
             "name": "পত্নীতলা",
             "nameEn": "Badalgachi",
-            "unions": [{"name": "বদলগাছী", "nameEn": "বদলগাছী"}, {"name": "আধাইপুর", "nameEn": "আধাইপুর"}]
+            "unions": [
+              {
+                "name": "বদলগাছী",
+                "nameEn": "বদলগাছী"
+              },
+              {
+                "name": "আধাইপুর",
+                "nameEn": "আধাইপুর"
+              }
+            ]
           },
           {
             "name": "ধামইরহাট",
             "nameEn": "Dhamoirhat",
-            "unions": [{"name": "ধামইরহাট", "nameEn": "ধামইরহাট"}, {"name": "উমার", "nameEn": "উমার"}, {"name": "আড়ানগর", "nameEn": "আড়ানগর"}]
+            "unions": [
+              {
+                "name": "ধামইরহাট",
+                "nameEn": "ধামইরহাট"
+              },
+              {
+                "name": "উমার",
+                "nameEn": "উমার"
+              },
+              {
+                "name": "আড়ানগর",
+                "nameEn": "আড়ানগর"
+              }
+            ]
           },
           {
             "name": "মহাদেবপুর",
             "nameEn": "Manda",
-            "unions": [{"name": "মান্দা", "nameEn": "মান্দা"}, {"name": "কলম", "nameEn": "কলম"}, {"name": "প্রাণপুর", "nameEn": "প্রাণপুর"}]
+            "unions": [
+              {
+                "name": "মান্দা",
+                "nameEn": "মান্দা"
+              },
+              {
+                "name": "কলম",
+                "nameEn": "কলম"
+              },
+              {
+                "name": "প্রাণপুর",
+                "nameEn": "প্রাণপুর"
+              }
+            ]
           },
           {
             "name": "পরশা",
             "nameEn": "Mohadevpur",
-            "unions": [{"name": "মহাদেবপুর", "nameEn": "মহাদেবপুর"}, {"name": "এনায়েতপুর", "nameEn": "এনায়েতপুর"}, {"name": "ভীমপুর", "nameEn": "ভীমপুর"}]
+            "unions": [
+              {
+                "name": "মহাদেবপুর",
+                "nameEn": "মহাদেবপুর"
+              },
+              {
+                "name": "এনায়েতপুর",
+                "nameEn": "এনায়েতপুর"
+              },
+              {
+                "name": "ভীমপুর",
+                "nameEn": "ভীমপুর"
+              }
+            ]
           },
           {
             "name": "সাপাহার",
             "nameEn": "Naogaon Sadar",
-            "unions": [{"name": "নওগাঁ সদর", "nameEn": "নওগাঁ সদর"}, {"name": "কীর্তিপুর", "nameEn": "কীর্তিপুর"}, {"name": "হাসাইগাড়ী", "nameEn": "হাসাইগাড়ী"}]
+            "unions": [
+              {
+                "name": "নওগাঁ সদর",
+                "nameEn": "নওগাঁ সদর"
+              },
+              {
+                "name": "কীর্তিপুর",
+                "nameEn": "কীর্তিপুর"
+              },
+              {
+                "name": "হাসাইগাড়ী",
+                "nameEn": "হাসাইগাড়ী"
+              }
+            ]
           },
           {
             "name": "বদলগাছী",
             "nameEn": "Niamatpur",
-            "unions": [{"name": "নিয়ামতপুর", "nameEn": "নিয়ামতপুর"}, {"name": "শিরনগর", "nameEn": "শিরনগর"}, {"name": "চাঁইপুর", "nameEn": "চাঁইপুর"}]
+            "unions": [
+              {
+                "name": "নিয়ামতপুর",
+                "nameEn": "নিয়ামতপুর"
+              },
+              {
+                "name": "শিরনগর",
+                "nameEn": "শিরনগর"
+              },
+              {
+                "name": "চাঁইপুর",
+                "nameEn": "চাঁইপুর"
+              }
+            ]
           },
           {
             "name": "মান্দা",
             "nameEn": "Patnitala",
-            "unions": [{"name": "পত্নীতলা", "nameEn": "পত্নীতলা"}, {"name": "দিবর", "nameEn": "দিবর"}, {"name": "মহিষলুটি", "nameEn": "মহিষলুটি"}]
+            "unions": [
+              {
+                "name": "পত্নীতলা",
+                "nameEn": "পত্নীতলা"
+              },
+              {
+                "name": "দিবর",
+                "nameEn": "দিবর"
+              },
+              {
+                "name": "মহিষলুটি",
+                "nameEn": "মহিষলুটি"
+              }
+            ]
           },
           {
             "name": "নিয়ামতপুর",
             "nameEn": "Porsha",
-            "unions": [{"name": "পোরশা", "nameEn": "পোরশা"}, {"name": "নিতপুর", "nameEn": "নিতপুর"}, {"name": "পত্নীতলা", "nameEn": "পত্নীতলা"}]
+            "unions": [
+              {
+                "name": "পোরশা",
+                "nameEn": "পোরশা"
+              },
+              {
+                "name": "নিতপুর",
+                "nameEn": "নিতপুর"
+              },
+              {
+                "name": "পত্নীতলা",
+                "nameEn": "পত্নীতলা"
+              }
+            ]
           },
           {
             "name": "আত্রাই",
             "nameEn": "Raninagar",
-            "unions": [{"name": "রাণীনগর", "nameEn": "রাণীনগর"}, {"name": "পারইল", "nameEn": "পারইল"}, {"name": "মহিপুর", "nameEn": "মহিপুর"}]
+            "unions": [
+              {
+                "name": "রাণীনগর",
+                "nameEn": "রাণীনগর"
+              },
+              {
+                "name": "পারইল",
+                "nameEn": "পারইল"
+              },
+              {
+                "name": "মহিপুর",
+                "nameEn": "মহিপুর"
+              }
+            ]
           },
           {
             "name": "রাণীনগর",
             "nameEn": "Shapahar",
-            "unions": [{"name": "সাপাহার", "nameEn": "সাপাহার"}, {"name": "ঐতিহাসিক পাহাড়পুর", "nameEn": "ঐতিহাসিক পাহাড়পুর"}]
+            "unions": [
+              {
+                "name": "সাপাহার",
+                "nameEn": "সাপাহার"
+              },
+              {
+                "name": "ঐতিহাসিক পাহাড়পুর",
+                "nameEn": "ঐতিহাসিক পাহাড়পুর"
+              }
+            ]
           }
         ]
       },
@@ -4272,39 +13352,172 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Natore",
         "upazilas": [
           {
+            "name": "নাটোর পৌরসভা",
+            "nameEn": "Natore Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "নাটোর সদর",
             "nameEn": "Bagatipara",
-            "unions": [{"name": "বাগাতিপাড়া", "nameEn": "বাগাতিপাড়া"}, {"name": "দয়ারামপুর", "nameEn": "দয়ারামপুর"}, {"name": "জামবাড়িয়া", "nameEn": "জামবাড়িয়া"}]
+            "unions": [
+              {
+                "name": "বাগাতিপাড়া",
+                "nameEn": "বাগাতিপাড়া"
+              },
+              {
+                "name": "দয়ারামপুর",
+                "nameEn": "দয়ারামপুর"
+              },
+              {
+                "name": "জামবাড়িয়া",
+                "nameEn": "জামবাড়িয়া"
+              }
+            ]
           },
           {
             "name": "বাগাতিপাড়া",
             "nameEn": "Baraigram",
-            "unions": [{"name": "বড়াইগ্রাম", "nameEn": "বড়াইগ্রাম"}, {"name": "গোপালপুর", "nameEn": "গোপালপুর"}, {"name": "জোনাইল", "nameEn": "জোনাইল"}]
+            "unions": [
+              {
+                "name": "বড়াইগ্রাম",
+                "nameEn": "বড়াইগ্রাম"
+              },
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "জোনাইল",
+                "nameEn": "জোনাইল"
+              }
+            ]
           },
           {
             "name": "বড়াইগ্রাম",
             "nameEn": "Gurudaspur",
-            "unions": [{"name": "গুরুদাসপুর", "nameEn": "গুরুদাসপুর"}, {"name": "নগর", "nameEn": "নগর"}, {"name": "পাঁচুপুর", "nameEn": "পাঁচুপুর"}]
+            "unions": [
+              {
+                "name": "গুরুদাসপুর",
+                "nameEn": "গুরুদাসপুর"
+              },
+              {
+                "name": "নগর",
+                "nameEn": "নগর"
+              },
+              {
+                "name": "পাঁচুপুর",
+                "nameEn": "পাঁচুপুর"
+              }
+            ]
           },
           {
             "name": "গুরুদাসপুর",
             "nameEn": "Lalpur",
-            "unions": [{"name": "লালপুর", "nameEn": "লালপুর"}, {"name": "আরবাব", "nameEn": "আরবাব"}]
+            "unions": [
+              {
+                "name": "লালপুর",
+                "nameEn": "লালপুর"
+              },
+              {
+                "name": "আরবাব",
+                "nameEn": "আরবাব"
+              }
+            ]
           },
           {
             "name": "লালপুর",
             "nameEn": "Naldanga",
-            "unions": [{"name": "নলডাঙ্গা", "nameEn": "নলডাঙ্গা"}, {"name": "চলনবিল", "nameEn": "চলনবিল"}, {"name": "ময়দানদিঘী", "nameEn": "ময়দানদিঘী"}]
+            "unions": [
+              {
+                "name": "নলডাঙ্গা",
+                "nameEn": "নলডাঙ্গা"
+              },
+              {
+                "name": "চলনবিল",
+                "nameEn": "চলনবিল"
+              },
+              {
+                "name": "ময়দানদিঘী",
+                "nameEn": "ময়দানদিঘী"
+              }
+            ]
           },
           {
             "name": "সিংড়া",
             "nameEn": "Natore Sadar",
-            "unions": [{"name": "নাটোর সদর", "nameEn": "নাটোর সদর"}, {"name": "কাচিকাটা", "nameEn": "কাচিকাটা"}, {"name": "লক্ষ্মীকোল", "nameEn": "লক্ষ্মীকোল"}]
+            "unions": [
+              {
+                "name": "নাটোর সদর",
+                "nameEn": "নাটোর সদর"
+              },
+              {
+                "name": "কাচিকাটা",
+                "nameEn": "কাচিকাটা"
+              },
+              {
+                "name": "লক্ষ্মীকোল",
+                "nameEn": "লক্ষ্মীকোল"
+              }
+            ]
           },
           {
             "name": "নলডাঙ্গা",
             "nameEn": "Singra",
-            "unions": [{"name": "সিংড়া", "nameEn": "সিংড়া"}, {"name": "ছাতনী", "nameEn": "ছাতনী"}, {"name": "রায়গঞ্জ", "nameEn": "রায়গঞ্জ"}, {"name": "তাজপুর", "nameEn": "তাজপুর"}]
+            "unions": [
+              {
+                "name": "সিংড়া",
+                "nameEn": "সিংড়া"
+              },
+              {
+                "name": "ছাতনী",
+                "nameEn": "ছাতনী"
+              },
+              {
+                "name": "রায়গঞ্জ",
+                "nameEn": "রায়গঞ্জ"
+              },
+              {
+                "name": "তাজপুর",
+                "nameEn": "তাজপুর"
+              }
+            ]
           }
         ]
       },
@@ -4313,49 +13526,228 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Pabna",
         "upazilas": [
           {
+            "name": "পাবনা পৌরসভা",
+            "nameEn": "Pabna Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              }
+            ]
+          },
+          {
             "name": "পাবনা সদর",
             "nameEn": "Atghoria",
-            "unions": [{"name": "আটঘরিয়া", "nameEn": "আটঘরিয়া"}, {"name": "একদন্ত", "nameEn": "একদন্ত"}]
+            "unions": [
+              {
+                "name": "আটঘরিয়া",
+                "nameEn": "আটঘরিয়া"
+              },
+              {
+                "name": "একদন্ত",
+                "nameEn": "একদন্ত"
+              }
+            ]
           },
           {
             "name": "আটঘরিয়া",
             "nameEn": "Bera",
-            "unions": [{"name": "বেড়া", "nameEn": "বেড়া"}, {"name": "নাকালিয়া", "nameEn": "নাকালিয়া"}, {"name": "ধলারচর", "nameEn": "ধলারচর"}]
+            "unions": [
+              {
+                "name": "বেড়া",
+                "nameEn": "বেড়া"
+              },
+              {
+                "name": "নাকালিয়া",
+                "nameEn": "নাকালিয়া"
+              },
+              {
+                "name": "ধলারচর",
+                "nameEn": "ধলারচর"
+              }
+            ]
           },
           {
             "name": "ঈশ্বরদী",
             "nameEn": "Bhangura",
-            "unions": [{"name": "ভাঙ্গুড়া", "nameEn": "ভাঙ্গুড়া"}, {"name": "অষ্টমনিষা", "nameEn": "অষ্টমনিষা"}, {"name": "দিলপাশার", "nameEn": "দিলপাশার"}]
+            "unions": [
+              {
+                "name": "ভাঙ্গুড়া",
+                "nameEn": "ভাঙ্গুড়া"
+              },
+              {
+                "name": "অষ্টমনিষা",
+                "nameEn": "অষ্টমনিষা"
+              },
+              {
+                "name": "দিলপাশার",
+                "nameEn": "দিলপাশার"
+              }
+            ]
           },
           {
             "name": "চাটমোহর",
             "nameEn": "Chatmohar",
-            "unions": [{"name": "চাটমোহর", "nameEn": "চাটমোহর"}, {"name": "হরিপুর", "nameEn": "হরিপুর"}, {"name": "মথুরাপুর", "nameEn": "মথুরাপুর"}]
+            "unions": [
+              {
+                "name": "চাটমোহর",
+                "nameEn": "চাটমোহর"
+              },
+              {
+                "name": "হরিপুর",
+                "nameEn": "হরিপুর"
+              },
+              {
+                "name": "মথুরাপুর",
+                "nameEn": "মথুরাপুর"
+              }
+            ]
           },
           {
             "name": "ফরিদপুর",
             "nameEn": "Faridpur",
-            "unions": [{"name": "ফরিদপুর", "nameEn": "ফরিদপুর"}, {"name": "বিলমাড়িয়া", "nameEn": "বিলমাড়িয়া"}]
+            "unions": [
+              {
+                "name": "ফরিদপুর",
+                "nameEn": "ফরিদপুর"
+              },
+              {
+                "name": "বিলমাড়িয়া",
+                "nameEn": "বিলমাড়িয়া"
+              }
+            ]
           },
           {
             "name": "বেড়া",
             "nameEn": "Ishwardi",
-            "unions": [{"name": "ঈশ্বরদী", "nameEn": "ঈশ্বরদী"}, {"name": "দাশুরিয়া", "nameEn": "দাশুরিয়া"}, {"name": "সাড়া", "nameEn": "সাড়া"}, {"name": "পাকশী", "nameEn": "পাকশী"}]
+            "unions": [
+              {
+                "name": "ঈশ্বরদী",
+                "nameEn": "ঈশ্বরদী"
+              },
+              {
+                "name": "দাশুরিয়া",
+                "nameEn": "দাশুরিয়া"
+              },
+              {
+                "name": "সাড়া",
+                "nameEn": "সাড়া"
+              },
+              {
+                "name": "পাকশী",
+                "nameEn": "পাকশী"
+              }
+            ]
           },
           {
             "name": "ভাঙ্গুড়া",
             "nameEn": "Pabna Sadar",
-            "unions": [{"name": "পাবনা সদর", "nameEn": "পাবনা সদর"}, {"name": "ধানমন্ডি", "nameEn": "ধানমন্ডি"}, {"name": "হাটখালী", "nameEn": "হাটখালী"}]
+            "unions": [
+              {
+                "name": "পাবনা সদর",
+                "nameEn": "পাবনা সদর"
+              },
+              {
+                "name": "ধানমন্ডি",
+                "nameEn": "ধানমন্ডি"
+              },
+              {
+                "name": "হাটখালী",
+                "nameEn": "হাটখালী"
+              }
+            ]
           },
           {
             "name": "সাঁথিয়া",
             "nameEn": "Santhia",
-            "unions": [{"name": "সাঁথিয়া", "nameEn": "সাঁথিয়া"}, {"name": "দৌলতপুর", "nameEn": "দৌলতপুর"}, {"name": "ধুলাউড়ি", "nameEn": "ধুলাউড়ি"}]
+            "unions": [
+              {
+                "name": "সাঁথিয়া",
+                "nameEn": "সাঁথিয়া"
+              },
+              {
+                "name": "দৌলতপুর",
+                "nameEn": "দৌলতপুর"
+              },
+              {
+                "name": "ধুলাউড়ি",
+                "nameEn": "ধুলাউড়ি"
+              }
+            ]
           },
           {
             "name": "সুজানগর",
             "nameEn": "Sujanagar",
-            "unions": [{"name": "সুজানগর", "nameEn": "সুজানগর"}, {"name": "মাটিকান্দা", "nameEn": "মাটিকান্দা"}, {"name": "সাগরকান্দি", "nameEn": "সাগরকান্দি"}]
+            "unions": [
+              {
+                "name": "সুজানগর",
+                "nameEn": "সুজানগর"
+              },
+              {
+                "name": "মাটিকান্দা",
+                "nameEn": "মাটিকান্দা"
+              },
+              {
+                "name": "সাগরকান্দি",
+                "nameEn": "সাগরকান্দি"
+              }
+            ]
           }
         ]
       },
@@ -4364,49 +13756,296 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Rajshahi",
         "upazilas": [
           {
+            "name": "রাজশাহী সিটি কর্পোরেশন",
+            "nameEn": "Rajshahi City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              },
+              {
+                "name": "ওয়ার্ড নং-28",
+                "nameEn": "Ward No-28"
+              },
+              {
+                "name": "ওয়ার্ড নং-29",
+                "nameEn": "Ward No-29"
+              },
+              {
+                "name": "ওয়ার্ড নং-30",
+                "nameEn": "Ward No-30"
+              }
+            ]
+          },
+          {
             "name": "বাঘা",
             "nameEn": "Bagha",
-            "unions": [{"name": "বাঘা", "nameEn": "বাঘা"}, {"name": "আড়ানী", "nameEn": "আড়ানী"}, {"name": "মনিগ্রাম", "nameEn": "মনিগ্রাম"}]
+            "unions": [
+              {
+                "name": "বাঘা",
+                "nameEn": "বাঘা"
+              },
+              {
+                "name": "আড়ানী",
+                "nameEn": "আড়ানী"
+              },
+              {
+                "name": "মনিগ্রাম",
+                "nameEn": "মনিগ্রাম"
+              }
+            ]
           },
           {
             "name": "পুঠিয়া",
             "nameEn": "Bagmara",
-            "unions": [{"name": "বাগমারা", "nameEn": "বাগমারা"}, {"name": "মাধবদিয়া", "nameEn": "মাধবদিয়া"}, {"name": "গাড়াগঞ্জ", "nameEn": "গাড়াগঞ্জ"}, {"name": "তাহেরপুর", "nameEn": "তাহেরপুর"}]
+            "unions": [
+              {
+                "name": "বাগমারা",
+                "nameEn": "বাগমারা"
+              },
+              {
+                "name": "মাধবদিয়া",
+                "nameEn": "মাধবদিয়া"
+              },
+              {
+                "name": "গাড়াগঞ্জ",
+                "nameEn": "গাড়াগঞ্জ"
+              },
+              {
+                "name": "তাহেরপুর",
+                "nameEn": "তাহেরপুর"
+              }
+            ]
           },
           {
             "name": "পবা",
             "nameEn": "Charghat",
-            "unions": [{"name": "চারঘাট", "nameEn": "চারঘাট"}, {"name": "সরদহ", "nameEn": "সরদহ"}, {"name": "ভালুকগাছি", "nameEn": "ভালুকগাছি"}]
+            "unions": [
+              {
+                "name": "চারঘাট",
+                "nameEn": "চারঘাট"
+              },
+              {
+                "name": "সরদহ",
+                "nameEn": "সরদহ"
+              },
+              {
+                "name": "ভালুকগাছি",
+                "nameEn": "ভালুকগাছি"
+              }
+            ]
           },
           {
             "name": "বাগমারা",
             "nameEn": "Durgapur",
-            "unions": [{"name": "দুর্গাপুর", "nameEn": "দুর্গাপুর"}, {"name": "গ্রামবাংলা", "nameEn": "গ্রামবাংলা"}]
+            "unions": [
+              {
+                "name": "দুর্গাপুর",
+                "nameEn": "দুর্গাপুর"
+              },
+              {
+                "name": "গ্রামবাংলা",
+                "nameEn": "গ্রামবাংলা"
+              }
+            ]
           },
           {
             "name": "তানোর",
             "nameEn": "Godagari",
-            "unions": [{"name": "গোদাগাড়ী", "nameEn": "গোদাগাড়ী"}, {"name": "পাকরী", "nameEn": "পাকরী"}, {"name": "রিশিকুল", "nameEn": "রিশিকুল"}, {"name": "দেওপাড়া", "nameEn": "দেওপাড়া"}]
+            "unions": [
+              {
+                "name": "গোদাগাড়ী",
+                "nameEn": "গোদাগাড়ী"
+              },
+              {
+                "name": "পাকরী",
+                "nameEn": "পাকরী"
+              },
+              {
+                "name": "রিশিকুল",
+                "nameEn": "রিশিকুল"
+              },
+              {
+                "name": "দেওপাড়া",
+                "nameEn": "দেওপাড়া"
+              }
+            ]
           },
           {
             "name": "মোহনপুর",
             "nameEn": "Mohanpur",
-            "unions": [{"name": "মোহনপুর", "nameEn": "মোহনপুর"}, {"name": "নওহাটা", "nameEn": "নওহাটা"}]
+            "unions": [
+              {
+                "name": "মোহনপুর",
+                "nameEn": "মোহনপুর"
+              },
+              {
+                "name": "নওহাটা",
+                "nameEn": "নওহাটা"
+              }
+            ]
           },
           {
             "name": "চারঘাট",
             "nameEn": "Paba",
-            "unions": [{"name": "পবা", "nameEn": "পবা"}, {"name": "দর্শনপাড়া", "nameEn": "দর্শনপাড়া"}, {"name": "হরিপুর", "nameEn": "হরিপুর"}, {"name": "নওদাপাড়া", "nameEn": "নওদাপাড়া"}]
+            "unions": [
+              {
+                "name": "পবা",
+                "nameEn": "পবা"
+              },
+              {
+                "name": "দর্শনপাড়া",
+                "nameEn": "দর্শনপাড়া"
+              },
+              {
+                "name": "হরিপুর",
+                "nameEn": "হরিপুর"
+              },
+              {
+                "name": "নওদাপাড়া",
+                "nameEn": "নওদাপাড়া"
+              }
+            ]
           },
           {
             "name": "গোদাগাড়ী",
             "nameEn": "Puthia",
-            "unions": [{"name": "পুঠিয়া", "nameEn": "পুঠিয়া"}, {"name": "বানেশ্বর", "nameEn": "বানেশ্বর"}, {"name": "ভারতখালী", "nameEn": "ভারতখালী"}]
+            "unions": [
+              {
+                "name": "পুঠিয়া",
+                "nameEn": "পুঠিয়া"
+              },
+              {
+                "name": "বানেশ্বর",
+                "nameEn": "বানেশ্বর"
+              },
+              {
+                "name": "ভারতখালী",
+                "nameEn": "ভারতখালী"
+              }
+            ]
           },
           {
             "name": "দূর্গাপুর",
             "nameEn": "Tanore",
-            "unions": [{"name": "তানোর", "nameEn": "তানোর"}, {"name": "মুন্ডুমালা", "nameEn": "মুন্ডুমালা"}, {"name": "তালন্দ", "nameEn": "তালন্দ"}]
+            "unions": [
+              {
+                "name": "তানোর",
+                "nameEn": "তানোর"
+              },
+              {
+                "name": "মুন্ডুমালা",
+                "nameEn": "মুন্ডুমালা"
+              },
+              {
+                "name": "তালন্দ",
+                "nameEn": "তালন্দ"
+              }
+            ]
           }
         ]
       },
@@ -4415,49 +14054,220 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Sirajganj",
         "upazilas": [
           {
+            "name": "সিরাজগঞ্জ পৌরসভা",
+            "nameEn": "Sirajganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              }
+            ]
+          },
+          {
             "name": "সিরাজগঞ্জ সদর",
             "nameEn": "Belkuchi",
-            "unions": [{"name": "বেলকুচি", "nameEn": "বেলকুচি"}, {"name": "ভাটিকয়া", "nameEn": "ভাটিকয়া"}, {"name": "দুবিলা", "nameEn": "দুবিলা"}]
+            "unions": [
+              {
+                "name": "বেলকুচি",
+                "nameEn": "বেলকুচি"
+              },
+              {
+                "name": "ভাটিকয়া",
+                "nameEn": "ভাটিকয়া"
+              },
+              {
+                "name": "দুবিলা",
+                "nameEn": "দুবিলা"
+              }
+            ]
           },
           {
             "name": "উল্লাপাড়া",
             "nameEn": "Chowhali",
-            "unions": [{"name": "চৌহালী", "nameEn": "চৌহালী"}, {"name": "স্তম্ভপুর", "nameEn": "স্তম্ভপুর"}]
+            "unions": [
+              {
+                "name": "চৌহালী",
+                "nameEn": "চৌহালী"
+              },
+              {
+                "name": "স্তম্ভপুর",
+                "nameEn": "স্তম্ভপুর"
+              }
+            ]
           },
           {
             "name": "কাজীপুর",
             "nameEn": "Kamarkhand",
-            "unions": [{"name": "কামারখন্দ", "nameEn": "কামারখন্দ"}, {"name": "শেরপুর", "nameEn": "শেরপুর"}]
+            "unions": [
+              {
+                "name": "কামারখন্দ",
+                "nameEn": "কামারখন্দ"
+              },
+              {
+                "name": "শেরপুর",
+                "nameEn": "শেরপুর"
+              }
+            ]
           },
           {
             "name": "কামারখন্দ",
             "nameEn": "Kazipur",
-            "unions": [{"name": "কাজীপুর", "nameEn": "কাজীপুর"}, {"name": "সুবর্ণখালী", "nameEn": "সুবর্ণখালী"}, {"name": "চরগিরীশ", "nameEn": "চরগিরীশ"}, {"name": "নাটুয়ারপাড়া", "nameEn": "নাটুয়ারপাড়া"}]
+            "unions": [
+              {
+                "name": "কাজীপুর",
+                "nameEn": "কাজীপুর"
+              },
+              {
+                "name": "সুবর্ণখালী",
+                "nameEn": "সুবর্ণখালী"
+              },
+              {
+                "name": "চরগিরীশ",
+                "nameEn": "চরগিরীশ"
+              },
+              {
+                "name": "নাটুয়ারপাড়া",
+                "nameEn": "নাটুয়ারপাড়া"
+              }
+            ]
           },
           {
             "name": "চৌহালি",
             "nameEn": "Raiganj",
-            "unions": [{"name": "রায়গঞ্জ", "nameEn": "রায়গঞ্জ"}, {"name": "সোনাখাড়া", "nameEn": "সোনাখাড়া"}]
+            "unions": [
+              {
+                "name": "রায়গঞ্জ",
+                "nameEn": "রায়গঞ্জ"
+              },
+              {
+                "name": "সোনাখাড়া",
+                "nameEn": "সোনাখাড়া"
+              }
+            ]
           },
           {
             "name": "তাড়াশ",
             "nameEn": "Shahzadpur",
-            "unions": [{"name": "শাহজাদপুর", "nameEn": "শাহজাদপুর"}, {"name": "কৈজুরী", "nameEn": "কৈজুরী"}, {"name": "পোতাজিয়া", "nameEn": "পোতাজিয়া"}]
+            "unions": [
+              {
+                "name": "শাহজাদপুর",
+                "nameEn": "শাহজাদপুর"
+              },
+              {
+                "name": "কৈজুরী",
+                "nameEn": "কৈজুরী"
+              },
+              {
+                "name": "পোতাজিয়া",
+                "nameEn": "পোতাজিয়া"
+              }
+            ]
           },
           {
             "name": "বেলকুচি",
             "nameEn": "Sirajganj Sadar",
-            "unions": [{"name": "সিরাজগঞ্জ সদর", "nameEn": "সিরাজগঞ্জ সদর"}, {"name": "খোকশাবাড়ী", "nameEn": "খোকশাবাড়ী"}, {"name": "রতনকান্দি", "nameEn": "রতনকান্দি"}]
+            "unions": [
+              {
+                "name": "সিরাজগঞ্জ সদর",
+                "nameEn": "সিরাজগঞ্জ সদর"
+              },
+              {
+                "name": "খোকশাবাড়ী",
+                "nameEn": "খোকশাবাড়ী"
+              },
+              {
+                "name": "রতনকান্দি",
+                "nameEn": "রতনকান্দি"
+              }
+            ]
           },
           {
             "name": "রায়গঞ্জ",
             "nameEn": "Tarash",
-            "unions": [{"name": "তাড়াশ", "nameEn": "তাড়াশ"}, {"name": "নারঙ্গী", "nameEn": "নারঙ্গী"}, {"name": "মাঝাইল", "nameEn": "মাঝাইল"}]
+            "unions": [
+              {
+                "name": "তাড়াশ",
+                "nameEn": "তাড়াশ"
+              },
+              {
+                "name": "নারঙ্গী",
+                "nameEn": "নারঙ্গী"
+              },
+              {
+                "name": "মাঝাইল",
+                "nameEn": "মাঝাইল"
+              }
+            ]
           },
           {
             "name": "শাহজাদপুর",
             "nameEn": "Ullapara",
-            "unions": [{"name": "উল্লাপাড়া", "nameEn": "উল্লাপাড়া"}, {"name": "সলঙ্গা", "nameEn": "সলঙ্গা"}]
+            "unions": [
+              {
+                "name": "উল্লাপাড়া",
+                "nameEn": "উল্লাপাড়া"
+              },
+              {
+                "name": "সলঙ্গা",
+                "nameEn": "সলঙ্গা"
+              }
+            ]
           }
         ]
       }
@@ -4471,6 +14281,48 @@ export const bangladeshAddresses: Division[] = [
         "name": "হবিগঞ্জ",
         "nameEn": "Habiganj",
         "upazilas": [
+          {
+            "name": "হবিগঞ্জ পৌরসভা",
+            "nameEn": "Habiganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
           {
             "name": "হবিগঞ্জ সদর উপজেলা",
             "nameEn": "Azmiriganj",
@@ -4844,6 +14696,48 @@ export const bangladeshAddresses: Division[] = [
         "nameEn": "Moulvibazar",
         "upazilas": [
           {
+            "name": "মৌলভীবাজার পৌরসভা",
+            "nameEn": "Moulvibazar Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
             "name": "কমলগঞ্জ উপজেলা",
             "nameEn": "Barlekha",
             "unions": [
@@ -5159,6 +15053,48 @@ export const bangladeshAddresses: Division[] = [
         "name": "সুনামগঞ্জ",
         "nameEn": "Sunamganj",
         "upazilas": [
+          {
+            "name": "সুনামগঞ্জ পৌরসভা",
+            "nameEn": "Sunamganj Municipality",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
           {
             "name": "জামালগঞ্জ",
             "nameEn": "Biswamvarpur",
@@ -5585,6 +15521,120 @@ export const bangladeshAddresses: Division[] = [
         "name": "সিলেট",
         "nameEn": "Sylhet",
         "upazilas": [
+          {
+            "name": "সিলেট সিটি কর্পোরেশন",
+            "nameEn": "Sylhet City Corporation",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              },
+              {
+                "name": "ওয়ার্ড নং-10",
+                "nameEn": "Ward No-10"
+              },
+              {
+                "name": "ওয়ার্ড নং-11",
+                "nameEn": "Ward No-11"
+              },
+              {
+                "name": "ওয়ার্ড নং-12",
+                "nameEn": "Ward No-12"
+              },
+              {
+                "name": "ওয়ার্ড নং-13",
+                "nameEn": "Ward No-13"
+              },
+              {
+                "name": "ওয়ার্ড নং-14",
+                "nameEn": "Ward No-14"
+              },
+              {
+                "name": "ওয়ার্ড নং-15",
+                "nameEn": "Ward No-15"
+              },
+              {
+                "name": "ওয়ার্ড নং-16",
+                "nameEn": "Ward No-16"
+              },
+              {
+                "name": "ওয়ার্ড নং-17",
+                "nameEn": "Ward No-17"
+              },
+              {
+                "name": "ওয়ার্ড নং-18",
+                "nameEn": "Ward No-18"
+              },
+              {
+                "name": "ওয়ার্ড নং-19",
+                "nameEn": "Ward No-19"
+              },
+              {
+                "name": "ওয়ার্ড নং-20",
+                "nameEn": "Ward No-20"
+              },
+              {
+                "name": "ওয়ার্ড নং-21",
+                "nameEn": "Ward No-21"
+              },
+              {
+                "name": "ওয়ার্ড নং-22",
+                "nameEn": "Ward No-22"
+              },
+              {
+                "name": "ওয়ার্ড নং-23",
+                "nameEn": "Ward No-23"
+              },
+              {
+                "name": "ওয়ার্ড নং-24",
+                "nameEn": "Ward No-24"
+              },
+              {
+                "name": "ওয়ার্ড নং-25",
+                "nameEn": "Ward No-25"
+              },
+              {
+                "name": "ওয়ার্ড নং-26",
+                "nameEn": "Ward No-26"
+              },
+              {
+                "name": "ওয়ার্ড নং-27",
+                "nameEn": "Ward No-27"
+              }
+            ]
+          },
           {
             "name": "সিলেট সদর উপজেলা",
             "nameEn": "Balaganj",
