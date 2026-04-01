@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import PhoneInput from '@/components/PhoneInput';
-import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus } from 'lucide-react';
+import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Download, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
@@ -53,6 +53,7 @@ const AdmissionPage = () => {
   const [guardianPresAddr, setGuardianPresAddr] = useState<AddressData>(emptyAddress);
   const [guardianSameAddr, setGuardianSameAddr] = useState(false);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+  const [submittedData, setSubmittedData] = useState<Record<string, any> | null>(null);
 
   // Old student search
   const [oldRoll, setOldRoll] = useState('');
@@ -83,6 +84,14 @@ const AdmissionPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name', { ascending: false });
       if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: institution } = useQuery({
+    queryKey: ['institution-default'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
       return data;
     },
   });
@@ -338,31 +347,12 @@ const AdmissionPage = () => {
       };
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
+      return payload;
     },
-    onSuccess: () => {
+    onSuccess: (payload) => {
       toast.success(bn ? 'ভর্তি আবেদন সফলভাবে জমা হয়েছে! অনুমোদনের অপেক্ষায়।' : 'Admission submitted! Pending approval.');
-      // Reset form
-      setForm({
-        student_type: 'new', residence_type: 'non-resident',
-        admission_session: '', roll_number: '', registration_no: '',
-        admission_date: new Date().toISOString().split('T')[0],
-        session_year: new Date().getFullYear().toString(),
-        admission_class: '', first_name: '', last_name: '',
-        gender: 'male', religion: 'islam', date_of_birth: '',
-        birth_reg_no: '', previous_class: '', previous_institute: '',
-        is_orphan: false, is_poor: false, photo_url: '',
-        father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
-        mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
-        guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
-      });
-      setFieldErrors({});
-      setCustomFieldValues({});
-      setPermanentAddr(emptyAddress); setPresentAddr(emptyAddress);
-      setParentPermanentAddr(emptyAddress); setParentPresentAddr(emptyAddress);
-      setGuardianPermAddr(emptyAddress); setGuardianPresAddr(emptyAddress);
-      setSameAddress(false); setParentAddrSameAsStudent(false);
-      setParentSamePresAddr(false); setGuardianSameAddr(false);
-      setPhotoFile(null); setPhotoPreview(null);
+      // Store submitted data for print/download
+      setSubmittedData(payload);
     },
     onError: (e: any) => toast.error(e.message || 'Error submitting application'),
   });
@@ -971,6 +961,210 @@ const AdmissionPage = () => {
   };
 
   const activeSections = sections.filter(section => getFieldsBySection(section).length > 0);
+
+  const resetForm = () => {
+    setSubmittedData(null);
+    setForm({
+      student_type: 'new', residence_type: 'non-resident',
+      admission_session: '', roll_number: '', registration_no: '',
+      admission_date: new Date().toISOString().split('T')[0],
+      session_year: new Date().getFullYear().toString(),
+      admission_class: '', first_name: '', last_name: '',
+      gender: 'male', religion: 'islam', date_of_birth: '',
+      birth_reg_no: '', previous_class: '', previous_institute: '',
+      is_orphan: false, is_poor: false, photo_url: '',
+      father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
+      mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
+      guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
+    });
+    setFieldErrors({});
+    setCustomFieldValues({});
+    setPermanentAddr(emptyAddress); setPresentAddr(emptyAddress);
+    setParentPermanentAddr(emptyAddress); setParentPresentAddr(emptyAddress);
+    setGuardianPermAddr(emptyAddress); setGuardianPresAddr(emptyAddress);
+    setSameAddress(false); setParentAddrSameAsStudent(false);
+    setParentSamePresAddr(false); setGuardianSameAddr(false);
+    setPhotoFile(null); setPhotoPreview(null);
+  };
+
+  const handlePrint = () => {
+    if (!submittedData) return;
+    const d = submittedData;
+    const instName = institution?.name || '';
+    const instNameEn = institution?.name_en || '';
+    const instAddr = institution?.address || '';
+    const instLogo = institution?.logo_url || '';
+    const className = d.class_id ? (classes.find((c: any) => c.id === d.class_id) as any)?.name_bn || '' : '';
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="utf-8">
+      <title>ভর্তি আবেদন ফর্ম</title>
+      <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans Bengali', sans-serif; padding: 20mm; font-size: 12px; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .header img { height: 60px; margin-bottom: 5px; }
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .header p { font-size: 11px; color: #666; }
+        .form-title { text-align: center; font-size: 16px; font-weight: 700; margin: 15px 0; padding: 8px; background: #f5f5f5; border: 1px solid #ddd; }
+        .photo-section { float: right; width: 100px; height: 120px; border: 1px solid #999; display: flex; align-items: center; justify-content: center; margin-left: 15px; }
+        .photo-section img { width: 100%; height: 100%; object-fit: cover; }
+        .section { margin-bottom: 15px; clear: both; }
+        .section-title { font-size: 13px; font-weight: 700; padding: 5px 10px; background: #e8e8e8; border-left: 3px solid #333; margin-bottom: 8px; }
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 15px; }
+        .field { display: flex; gap: 5px; padding: 3px 0; border-bottom: 1px dotted #ccc; }
+        .field-label { font-weight: 600; min-width: 120px; color: #555; }
+        .field-value { flex: 1; }
+        .status-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+        .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 10px; }
+        @media print { body { padding: 10mm; } @page { margin: 10mm; } }
+      </style>
+    </head><body>
+      <div class="header">
+        ${instLogo ? `<img src="${instLogo}" alt="Logo">` : ''}
+        <h1>${instName}</h1>
+        ${instNameEn ? `<p>${instNameEn}</p>` : ''}
+        ${instAddr ? `<p>${instAddr}</p>` : ''}
+      </div>
+      <div class="form-title">ভর্তি আবেদন ফর্ম</div>
+
+      ${d.photo_url ? `<div class="photo-section"><img src="${d.photo_url}" /></div>` : '<div class="photo-section">ছবি</div>'}
+
+      <div class="section">
+        <div class="section-title">১. শিক্ষার্থীর তথ্য</div>
+        <div class="field-grid">
+          <div class="field"><span class="field-label">নাম (বাংলা):</span><span class="field-value">${d.name_bn || '-'}</span></div>
+          <div class="field"><span class="field-label">নাম (ইংরেজি):</span><span class="field-value">${d.name_en || '-'}</span></div>
+          <div class="field"><span class="field-label">রোল নম্বর:</span><span class="field-value">${d.roll_number || '-'}</span></div>
+          <div class="field"><span class="field-label">রেজিস্ট্রেশন নং:</span><span class="field-value">${d.registration_no || '-'}</span></div>
+          <div class="field"><span class="field-label">ভর্তি সেশন:</span><span class="field-value">${d.admission_session || '-'}</span></div>
+          <div class="field"><span class="field-label">শ্রেণী:</span><span class="field-value">${className || '-'}</span></div>
+          <div class="field"><span class="field-label">লিঙ্গ:</span><span class="field-value">${d.gender === 'male' ? 'পুরুষ' : d.gender === 'female' ? 'মহিলা' : d.gender || '-'}</span></div>
+          <div class="field"><span class="field-label">ধর্ম:</span><span class="field-value">${d.religion || '-'}</span></div>
+          <div class="field"><span class="field-label">জন্ম তারিখ:</span><span class="field-value">${d.date_of_birth || '-'}</span></div>
+          <div class="field"><span class="field-label">জন্ম নিবন্ধন:</span><span class="field-value">${d.birth_reg_no || '-'}</span></div>
+          <div class="field"><span class="field-label">ভর্তির তারিখ:</span><span class="field-value">${d.admission_date || '-'}</span></div>
+          <div class="field"><span class="field-label">আবাসিক ধরন:</span><span class="field-value">${d.residence_type || '-'}</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">২. পিতা-মাতার তথ্য</div>
+        <div class="field-grid">
+          <div class="field"><span class="field-label">পিতার নাম:</span><span class="field-value">${d.father_name || '-'}</span></div>
+          <div class="field"><span class="field-label">পিতার পেশা:</span><span class="field-value">${d.father_occupation || '-'}</span></div>
+          <div class="field"><span class="field-label">পিতার ফোন:</span><span class="field-value">${d.father_phone || '-'}</span></div>
+          <div class="field"><span class="field-label">পিতার NID:</span><span class="field-value">${d.father_nid || '-'}</span></div>
+          <div class="field"><span class="field-label">মাতার নাম:</span><span class="field-value">${d.mother_name || '-'}</span></div>
+          <div class="field"><span class="field-label">মাতার পেশা:</span><span class="field-value">${d.mother_occupation || '-'}</span></div>
+          <div class="field"><span class="field-label">মাতার ফোন:</span><span class="field-value">${d.mother_phone || '-'}</span></div>
+          <div class="field"><span class="field-label">মাতার NID:</span><span class="field-value">${d.mother_nid || '-'}</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">৩. ঠিকানা</div>
+        <div class="field-grid">
+          <div class="field"><span class="field-label">ঠিকানা:</span><span class="field-value">${d.address || '-'}</span></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">৪. অফিস কর্তৃক পূরণীয়</div>
+        <div class="field-grid">
+          <div class="field"><span class="field-label">অনুমোদনকারীর নাম:</span><span class="field-value" style="border-bottom: 1px solid #999; min-height: 20px;">&nbsp;</span></div>
+          <div class="field"><span class="field-label">পদবী:</span><span class="field-value" style="border-bottom: 1px solid #999; min-height: 20px;">&nbsp;</span></div>
+          <div class="field"><span class="field-label">তারিখ:</span><span class="field-value" style="border-bottom: 1px solid #999; min-height: 20px;">&nbsp;</span></div>
+          <div class="field"><span class="field-label">স্বাক্ষর:</span><span class="field-value" style="border-bottom: 1px solid #999; min-height: 40px;">&nbsp;</span></div>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top: 25px; text-align: center;">
+        <span class="status-badge">অনুমোদনের অপেক্ষায়</span>
+      </div>
+
+      <div class="footer">
+        <p>${instName} — ভর্তি আবেদন ফর্ম</p>
+      </div>
+    </body></html>`);
+
+    printWindow.document.close();
+    setTimeout(() => { printWindow.focus(); printWindow.print(); }, 800);
+  };
+
+  // If submitted, show success screen
+  if (submittedData) {
+    const className = submittedData.class_id ? (classes.find((c: any) => c.id === submittedData.class_id) as any)?.name_bn || '' : '';
+    return (
+      <PublicLayout>
+        <div className="container mx-auto px-4 py-12 max-w-2xl">
+          <div className="card-elevated p-8 text-center space-y-6">
+            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-10 h-10 text-success" />
+            </div>
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              {bn ? 'আবেদন সফলভাবে জমা হয়েছে!' : 'Application Submitted Successfully!'}
+            </h1>
+            <p className="text-muted-foreground">
+              {bn ? 'আপনার ভর্তি আবেদন অনুমোদনের অপেক্ষায় রয়েছে।' : 'Your admission application is pending approval.'}
+            </p>
+
+            <div className="bg-secondary/50 rounded-lg p-4 text-left space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{bn ? 'নাম:' : 'Name:'}</span>
+                <span className="font-medium">{submittedData.name_bn}</span>
+              </div>
+              {submittedData.name_en && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{bn ? 'নাম (ইংরেজি):' : 'Name (English):'}</span>
+                  <span className="font-medium">{submittedData.name_en}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{bn ? 'আইডি:' : 'ID:'}</span>
+                <span className="font-medium">{submittedData.student_id}</span>
+              </div>
+              {submittedData.roll_number && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{bn ? 'রোল:' : 'Roll:'}</span>
+                  <span className="font-medium">{submittedData.roll_number}</span>
+                </div>
+              )}
+              {className && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{bn ? 'শ্রেণী:' : 'Class:'}</span>
+                  <span className="font-medium">{className}</span>
+                </div>
+              )}
+              {submittedData.registration_no && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{bn ? 'রেজিস্ট্রেশন:' : 'Registration:'}</span>
+                  <span className="font-medium">{submittedData.registration_no}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2" variant="outline">
+                <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট করুন' : 'Print'}
+              </Button>
+              <Button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2 btn-primary-gradient">
+                <Download className="w-4 h-4" /> {bn ? 'ডাউনলোড (PDF)' : 'Download (PDF)'}
+              </Button>
+            </div>
+
+            <Button onClick={resetForm} variant="ghost" className="flex items-center gap-2 mx-auto text-muted-foreground">
+              <RotateCcw className="w-4 h-4" /> {bn ? 'নতুন আবেদন করুন' : 'Submit New Application'}
+            </Button>
+          </div>
+        </div>
+      </PublicLayout>
+    );
+  }
 
   return (
     <PublicLayout>
