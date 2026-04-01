@@ -685,6 +685,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         );
 
       case 'birth_reg_no':
+        if (!isFormFieldVisible('birth_reg_no')) return null;
         return (
           <div>
             <Label className={errorLabel}>{label} {reqStar}</Label>
