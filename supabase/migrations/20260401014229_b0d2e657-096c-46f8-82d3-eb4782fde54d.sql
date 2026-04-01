@@ -1,0 +1,2 @@
+ALTER TABLE public.attendance_records DROP CONSTRAINT attendance_records_attendance_date_entity_type_entity_id_key;
+ALTER TABLE public.attendance_records ADD CONSTRAINT attendance_records_date_type_id_shift_key UNIQUE (attendance_date, entity_type, entity_id, shift);

@@ -243,8 +243,8 @@ const AdminAttendance = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] }),
-    onError: () => toast.error(bn ? 'সেভ করতে সমস্যা' : 'Failed to save'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] }),
+    onError: (err) => { console.error('Attendance save error:', err); toast.error(bn ? 'সেভ করতে সমস্যা' : 'Failed to save'); },
   });
 
   // Bulk mark all
@@ -261,7 +261,7 @@ const AdminAttendance = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType] });
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
       toast.success(bn ? 'সবার উপস্থিতি সেভ হয়েছে' : 'Bulk attendance saved');
     },
   });
