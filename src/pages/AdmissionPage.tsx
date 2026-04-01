@@ -157,16 +157,12 @@ const AdmissionPage = () => {
     setForm(prev => ({ ...prev, roll_number: String(maxRoll + 1) }));
   }, [getRollStartForClass]);
 
-  const generateRegistrationNumber = useCallback(async (sessionYear: string) => {
-    if (!sessionYear) return;
-    const year = sessionYear.trim();
-    const { count } = await supabase
-      .from('students')
-      .select('id', { count: 'exact', head: true })
-      .or(`session_year.eq.${year},admission_session.ilike.%${year}%`);
-    const serial = String((count || 0) + 1).padStart(3, '0');
-    const autoNum = `${year}${serial}`;
-    setForm(prev => ({ ...prev, registration_no: prev.registration_no || autoNum }));
+  const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+
+  const updateRegistrationFromRoll = useCallback((sessionYear: string, rollNumber: string) => {
+    if (!sessionYear || !rollNumber) return;
+    const year = bnToEn(sessionYear.trim()).slice(0, 4);
+    setForm(prev => ({ ...prev, registration_no: `${year}${rollNumber}` }));
   }, []);
 
   useEffect(() => {
@@ -176,10 +172,10 @@ const AdmissionPage = () => {
   }, [form.admission_class, form.admission_session, generateRollNumber]);
 
   useEffect(() => {
-    if (form.session_year) {
-      generateRegistrationNumber(form.session_year);
+    if (form.session_year && form.roll_number) {
+      updateRegistrationFromRoll(form.session_year, form.roll_number);
     }
-  }, [form.session_year, generateRegistrationNumber]);
+  }, [form.session_year, form.roll_number, updateRegistrationFromRoll]);
 
   const calculateAge = useCallback((dateStr: string) => {
     if (!dateStr) return '';
