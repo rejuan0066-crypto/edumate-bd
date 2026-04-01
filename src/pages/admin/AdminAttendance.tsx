@@ -430,6 +430,58 @@ const AdminAttendance = () => {
       return;
     }
 
+    // For meal tab, combine all three meals
+    if (entityType === 'staff' && staffSubTab === 'meal') {
+      const { data: breakfastAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_breakfast');
+      const { data: lunchAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_lunch');
+      const { data: dinnerAtt = [] } = await supabase.from('attendance_records').select('*')
+        .eq('attendance_date', selectedDate).eq('entity_type', 'staff').eq('shift', 'meal_dinner');
+
+      const rows: string[][] = [];
+      rows.push([
+        bn ? 'ক্রম' : 'SL',
+        bn ? 'নাম' : 'Name',
+        bn ? 'পদবী' : 'Designation',
+        bn ? 'সকালের নাস্তা' : 'Breakfast',
+        bn ? 'দুপুরের খাবার' : 'Lunch',
+        bn ? 'রাতের খাবার' : 'Dinner',
+      ]);
+
+      filtered.forEach((entity: any, idx: number) => {
+        const bAtt = (breakfastAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const lAtt = (lunchAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        const dAtt = (dinnerAtt as any[]).find((a: any) => a.entity_id === entity.id);
+        rows.push([
+          String(idx + 1),
+          entity.name_bn,
+          entity.designation || '-',
+          bAtt ? statusLabel(bAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          lAtt ? statusLabel(lAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+          dAtt ? statusLabel(dAtt.status) : (bn ? 'চিহ্নিত হয়নি' : 'Unmarked'),
+        ]);
+      });
+
+      const bPresent = (breakfastAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const lPresent = (lunchAtt as any[]).filter((a: any) => a.status === 'present').length;
+      const dPresent = (dinnerAtt as any[]).filter((a: any) => a.status === 'present').length;
+      rows.push([]);
+      rows.push([bn ? 'নাস্তা উপস্থিত' : 'Breakfast Present', String(bPresent), '', bn ? 'দুপুর উপস্থিত' : 'Lunch Present', String(lPresent), bn ? 'রাত উপস্থিত' : 'Dinner Present', String(dPresent)]);
+
+      const bom = '\uFEFF';
+      const csv = bom + rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${bn ? 'খাওয়া_হাজিরা' : 'Meal_Attendance'}_${selectedDate}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(bn ? 'CSV ডাউনলোড হয়েছে' : 'CSV downloaded');
+      return;
+    }
+
     const rows: string[][] = [];
     const header = [
       bn ? 'ক্রম' : 'SL',
