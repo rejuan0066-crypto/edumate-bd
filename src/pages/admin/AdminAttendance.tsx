@@ -599,14 +599,14 @@ const AdminAttendance = () => {
         const bColor = bAtt?.status === 'present' ? '#16a34a' : bAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
         const lColor = lAtt?.status === 'present' ? '#16a34a' : lAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
         const dColor = dAtt?.status === 'present' ? '#16a34a' : dAtt?.status === 'absent' ? '#dc2626' : '#6b7280';
-        return \`<tr>
-          <td style="text-align:center">\${idx + 1}</td>
-          <td>\${entity.name_bn}</td>
-          <td>\${entity.designation || '-'}</td>
-          <td style="color:\${bColor};font-weight:600">\${bAtt ? statusLabel(bAtt.status) : '-'}</td>
-          <td style="color:\${lColor};font-weight:600">\${lAtt ? statusLabel(lAtt.status) : '-'}</td>
-          <td style="color:\${dColor};font-weight:600">\${dAtt ? statusLabel(dAtt.status) : '-'}</td>
-        </tr>\`;
+        return `<tr>
+          <td style="text-align:center">${idx + 1}</td>
+          <td>${entity.name_bn}</td>
+          <td>${entity.designation || '-'}</td>
+          <td style="color:${bColor};font-weight:600">${bAtt ? statusLabel(bAtt.status) : '-'}</td>
+          <td style="color:${lColor};font-weight:600">${lAtt ? statusLabel(lAtt.status) : '-'}</td>
+          <td style="color:${dColor};font-weight:600">${dAtt ? statusLabel(dAtt.status) : '-'}</td>
+        </tr>`;
       }).join('');
 
       const bPresent = (breakfastAtt as any[]).filter((a: any) => a.status === 'present').length;
@@ -616,23 +616,23 @@ const AdminAttendance = () => {
       const dPresent = (dinnerAtt as any[]).filter((a: any) => a.status === 'present').length;
       const dAbsent = (dinnerAtt as any[]).filter((a: any) => a.status === 'absent').length;
 
-      tableHtml = \`
+      tableHtml = `
         <table>
           <thead><tr>
-            <th style="width:40px">\${bn ? 'ক্রম' : 'SL'}</th>
-            <th>\${bn ? 'নাম' : 'Name'}</th>
-            <th>\${bn ? 'পদবী' : 'Designation'}</th>
-            <th style="text-align:center;background:#fef3c7">\${bn ? 'সকালের নাস্তা' : 'Breakfast'}</th>
-            <th style="text-align:center;background:#dcfce7">\${bn ? 'দুপুরের খাবার' : 'Lunch'}</th>
-            <th style="text-align:center;background:#dbeafe">\${bn ? 'রাতের খাবার' : 'Dinner'}</th>
+            <th style="width:40px">${bn ? 'ক্রম' : 'SL'}</th>
+            <th>${bn ? 'নাম' : 'Name'}</th>
+            <th>${bn ? 'পদবী' : 'Designation'}</th>
+            <th style="text-align:center;background:#fef3c7">${bn ? 'সকালের নাস্তা' : 'Breakfast'}</th>
+            <th style="text-align:center;background:#dcfce7">${bn ? 'দুপুরের খাবার' : 'Lunch'}</th>
+            <th style="text-align:center;background:#dbeafe">${bn ? 'রাতের খাবার' : 'Dinner'}</th>
           </tr></thead>
-          <tbody>\${statusRows}</tbody>
+          <tbody>${statusRows}</tbody>
         </table>
         <div class="summary">
-          <span style="background:#fef3c7;color:#92400e">\${bn ? 'নাস্তা' : 'Breakfast'}: \${bPresent}/\${bPresent + bAbsent}</span>
-          <span style="background:#dcfce7;color:#16a34a">\${bn ? 'দুপুর' : 'Lunch'}: \${lPresent}/\${lPresent + lAbsent}</span>
-          <span style="background:#dbeafe;color:#1e40af">\${bn ? 'রাত' : 'Dinner'}: \${dPresent}/\${dPresent + dAbsent}</span>
-        </div>\`;
+          <span style="background:#fef3c7;color:#92400e">${bn ? 'নাস্তা' : 'Breakfast'}: ${bPresent}/${bPresent + bAbsent}</span>
+          <span style="background:#dcfce7;color:#16a34a">${bn ? 'দুপুর' : 'Lunch'}: ${lPresent}/${lPresent + lAbsent}</span>
+          <span style="background:#dbeafe;color:#1e40af">${bn ? 'রাত' : 'Dinner'}: ${dPresent}/${dPresent + dAbsent}</span>
+        </div>`;
     } else {
       const statusRows = filtered.map((entity: any, idx: number) => {
         const att = getAttendance(entity.id);
