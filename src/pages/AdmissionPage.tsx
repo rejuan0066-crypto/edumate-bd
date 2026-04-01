@@ -1132,12 +1132,15 @@ const AdmissionPage = () => {
       const { jsPDF } = await import('jspdf');
 
       const body = iframeDoc.body;
+      const actualHeight = body.scrollHeight;
       const canvas = await html2canvas(body, {
         scale: 2,
         useCORS: true,
         logging: false,
         width: 794,
+        height: actualHeight,
         windowWidth: 794,
+        windowHeight: actualHeight,
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
