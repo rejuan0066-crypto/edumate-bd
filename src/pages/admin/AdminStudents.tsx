@@ -15,6 +15,7 @@ import AdmissionForm from '@/components/admission/AdmissionForm';
 const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
