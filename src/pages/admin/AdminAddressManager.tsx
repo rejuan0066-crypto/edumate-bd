@@ -215,7 +215,7 @@ const AdminAddressManager = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{bn ? 'সব লেভেল' : 'All Levels'}</SelectItem>
-              {LEVELS.map(l => <SelectItem key={l.value} value={l.value}>{bn ? l.label_bn : l.label}</SelectItem>)}
+              {levels.map(l => <SelectItem key={l.key} value={l.key}>{bn ? l.label_bn : l.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
