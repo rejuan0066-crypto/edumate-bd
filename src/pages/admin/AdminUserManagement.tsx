@@ -405,7 +405,7 @@ const AdminUserManagement = () => {
 
         {/* Permission Dialog */}
         <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
-          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-primary" />
