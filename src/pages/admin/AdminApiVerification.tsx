@@ -53,7 +53,6 @@ const AdminApiVerification = () => {
 
   const handleUnlock = () => {
     if (!config) return;
-    // First time setup - no password set yet
     if (!config.master_password) {
       setUnlocked(true);
       return;
@@ -63,6 +62,27 @@ const AdminApiVerification = () => {
       setMasterInput('');
     } else {
       toast.error(bn ? 'ভুল পাসওয়ার্ড' : 'Wrong password');
+    }
+  };
+
+  const handleForgotReset = async () => {
+    if (resetConfirmInput !== 'RESET') {
+      toast.error(bn ? 'অনুগ্রহ করে RESET টাইপ করুন' : 'Please type RESET to confirm');
+      return;
+    }
+    if (!config?.id) return;
+    const { error } = await supabase
+      .from('api_verification_config')
+      .update({ master_password: '', updated_at: new Date().toISOString() })
+      .eq('id', config.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(bn ? 'পাসওয়ার্ড রিসেট হয়েছে। নতুন পাসওয়ার্ড সেট করুন।' : 'Password reset. Please set a new password.');
+      setForgotMode(false);
+      setResetConfirmInput('');
+      setUnlocked(true);
+      queryClient.invalidateQueries({ queryKey: ['api-verification-config'] });
     }
   };
 
