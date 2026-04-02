@@ -79,6 +79,7 @@ const AdminStaff = () => {
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
+          action: 'create',
           email: accEmail.trim(),
           password: accPassword,
           role: accRole,
