@@ -955,8 +955,8 @@ const AdminUserManagement = () => {
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
                             </TableCell>
-                            {(['approval_view', 'approval_add', 'approval_edit', 'approval_delete'] as const).map((af, i) => {
-                              const relatedPerm = (['can_view', 'can_add', 'can_edit', 'can_delete'] as const)[i];
+                            {(['approval_add', 'approval_edit', 'approval_delete'] as const).map((af, i) => {
+                              const relatedPerm = (['can_add', 'can_edit', 'can_delete'] as const)[i];
                               return (
                                 <TableCell key={af} className="text-center">
                                   <Checkbox
