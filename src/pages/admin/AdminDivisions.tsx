@@ -151,7 +151,7 @@ const AdminDivisions = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button onClick={(e) => { e.stopPropagation(); deleteDivMutation.mutate(d.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                      {canDeleteItem && <button onClick={(e) => { e.stopPropagation(); deleteDivMutation.mutate(d.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
