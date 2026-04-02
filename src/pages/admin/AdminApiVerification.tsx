@@ -28,7 +28,10 @@ const AdminApiVerification = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
-  const [resetConfirmInput, setResetConfirmInput] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [adminEmail, setAdminEmail] = useState('');
 
   // Form state
   const [apiUrl, setApiUrl] = useState('');
