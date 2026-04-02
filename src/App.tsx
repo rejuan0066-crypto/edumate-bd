@@ -120,6 +120,7 @@ const App = () => (
               <Route path="/admin/posts" element={<ProtectedRoute><AdminPosts /></ProtectedRoute>} />
               <Route path="/admin/prayer-calendar" element={<ProtectedRoute><AdminPrayerCalendar /></ProtectedRoute>} />
               <Route path="/admin/academic-sessions" element={<ProtectedRoute><AdminAcademicSessions /></ProtectedRoute>} />
+              <Route path="/admin/address-manager" element={<ProtectedRoute><AdminAddressManager /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
