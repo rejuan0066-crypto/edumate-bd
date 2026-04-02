@@ -296,6 +296,132 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সাউথখালী"
               }
             ]
+          },
+          {
+            "name": "Mongla পৌরসভা",
+            "nameEn": "Mongla Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Morrelganj পৌরসভা",
+            "nameEn": "Morrelganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Fakirhat পৌরসভা",
+            "nameEn": "Fakirhat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -438,6 +564,90 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "মোহাম্মদনগর",
                 "nameEn": "মোহাম্মদনগর"
+              }
+            ]
+          },
+          {
+            "name": "Alamdanga পৌরসভা",
+            "nameEn": "Alamdanga Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Damurhuda পৌরসভা",
+            "nameEn": "Damurhuda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -836,6 +1046,132 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "আওতাপাড়া"
               }
             ]
+          },
+          {
+            "name": "Kaliganj পৌরসভা",
+            "nameEn": "Kaliganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shailkupa পৌরসভা",
+            "nameEn": "Shailkupa Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Maheshpur পৌরসভা",
+            "nameEn": "Maheshpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -1162,6 +1498,174 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সচিদানন্দপুর"
               }
             ]
+          },
+          {
+            "name": "Phultala পৌরসভা",
+            "nameEn": "Phultala Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dumuria পৌরসভা",
+            "nameEn": "Dumuria Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Paikgachha পৌরসভা",
+            "nameEn": "Paikgachha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Batiaghata পৌরসভা",
+            "nameEn": "Batiaghata Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -1366,6 +1870,132 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "পোড়াদহ"
               }
             ]
+          },
+          {
+            "name": "Kumarkhali পৌরসভা",
+            "nameEn": "Kumarkhali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mirpur পৌরসভা",
+            "nameEn": "Mirpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bheramara পৌরসভা",
+            "nameEn": "Bheramara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -1490,6 +2120,132 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "গোপীনাথপুর"
               }
             ]
+          },
+          {
+            "name": "Mohammadpur পৌরসভা",
+            "nameEn": "Mohammadpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shalikha পৌরসভা",
+            "nameEn": "Shalikha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sreepur পৌরসভা",
+            "nameEn": "Sreepur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -1600,6 +2356,90 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মহেন্দ্রপুর"
               }
             ]
+          },
+          {
+            "name": "Gangni পৌরসভা",
+            "nameEn": "Gangni Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mujibnagar পৌরসভা",
+            "nameEn": "Mujibnagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -1700,6 +2540,90 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "কালিয়া",
                 "nameEn": "কালিয়া"
+              }
+            ]
+          },
+          {
+            "name": "Lohagara পৌরসভা",
+            "nameEn": "Lohagara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalia পৌরসভা",
+            "nameEn": "Kalia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -1894,6 +2818,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "মাগুরা",
                 "nameEn": "মাগুরা"
+              }
+            ]
+          },
+          {
+            "name": "Kalaroa পৌরসভা",
+            "nameEn": "Kalaroa Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tala পৌরসভা",
+            "nameEn": "Tala Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shyamnagar পৌরসভা",
+            "nameEn": "Shyamnagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Debhata পৌরসভা",
+            "nameEn": "Debhata Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -2524,6 +3616,132 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "নয়নপুর",
                 "nameEn": "নয়নপুর"
+              }
+            ]
+          },
+          {
+            "name": "Hajiganj পৌরসভা",
+            "nameEn": "Hajiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shahrasti পৌরসভা",
+            "nameEn": "Shahrasti Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Matlab পৌরসভা",
+            "nameEn": "Matlab Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -3862,6 +5080,174 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "চরচান্দিয়া"
               }
             ]
+          },
+          {
+            "name": "Daganbhuiyan পৌরসভা",
+            "nameEn": "Daganbhuiyan Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sonagazi পৌরসভা",
+            "nameEn": "Sonagazi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chhagalnaiya পৌরসভা",
+            "nameEn": "Chhagalnaiya Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Parshuram পৌরসভা",
+            "nameEn": "Parshuram Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -4432,6 +5818,216 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "চরওয়াপদা"
               }
             ]
+          },
+          {
+            "name": "Begumganj পৌরসভা",
+            "nameEn": "Begumganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Senbagh পৌরসভা",
+            "nameEn": "Senbagh Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chatkhil পৌরসভা",
+            "nameEn": "Chatkhil Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Companiganj পৌরসভা",
+            "nameEn": "Companiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Hatiya পৌরসভা",
+            "nameEn": "Hatiya Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -4642,6 +6238,90 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "কুতুকছড়ি",
                 "nameEn": "কুতুকছড়ি"
+              }
+            ]
+          },
+          {
+            "name": "Kaptai পৌরসভা",
+            "nameEn": "Kaptai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Langadu পৌরসভা",
+            "nameEn": "Langadu Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -5306,6 +6986,216 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "তেঁতুলঝরা"
               }
             ]
+          },
+          {
+            "name": "Savar পৌরসভা",
+            "nameEn": "Savar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dhamrai পৌরসভা",
+            "nameEn": "Dhamrai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Keraniganj পৌরসভা",
+            "nameEn": "Keraniganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nawabganj পৌরসভা",
+            "nameEn": "Nawabganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dohar পৌরসভা",
+            "nameEn": "Dohar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -5554,6 +7444,216 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "বিলামচি",
                 "nameEn": "বিলামচি"
+              }
+            ]
+          },
+          {
+            "name": "Bhanga পৌরসভা",
+            "nameEn": "Bhanga Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Boalmari পৌরসভা",
+            "nameEn": "Boalmari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Madhukhali পৌরসভা",
+            "nameEn": "Madhukhali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nagarkanda পৌরসভা",
+            "nameEn": "Nagarkanda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sadarpur পৌরসভা",
+            "nameEn": "Sadarpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -5874,6 +7974,216 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Sreepur Sadar"
               }
             ]
+          },
+          {
+            "name": "Kaliakair পৌরসভা",
+            "nameEn": "Kaliakair Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kaliganj পৌরসভা",
+            "nameEn": "Kaliganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kapasia পৌরসভা",
+            "nameEn": "Kapasia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sreepur পৌরসভা",
+            "nameEn": "Sreepur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tongi পৌরসভা",
+            "nameEn": "Tongi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -6022,6 +8332,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "বর্ণি",
                 "nameEn": "বর্ণি"
+              }
+            ]
+          },
+          {
+            "name": "Kashiani পৌরসভা",
+            "nameEn": "Kashiani Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kotalipara পৌরসভা",
+            "nameEn": "Kotalipara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tungipara পৌরসভা",
+            "nameEn": "Tungipara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Muksudpur পৌরসভা",
+            "nameEn": "Muksudpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -6298,6 +8776,258 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "গোপদিঘী"
               }
             ]
+          },
+          {
+            "name": "Bhairab পৌরসভা",
+            "nameEn": "Bhairab Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bajitpur পৌরসভা",
+            "nameEn": "Bajitpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kuliarchar পৌরসভা",
+            "nameEn": "Kuliarchar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Pakundia পৌরসভা",
+            "nameEn": "Pakundia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Hossainpur পৌরসভা",
+            "nameEn": "Hossainpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Katiadi পৌরসভা",
+            "nameEn": "Katiadi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -6428,6 +9158,132 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "বান্দেরকোলা",
                 "nameEn": "বান্দেরকোলা"
+              }
+            ]
+          },
+          {
+            "name": "Rajoir পৌরসভা",
+            "nameEn": "Rajoir Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shibchar পৌরসভা",
+            "nameEn": "Shibchar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalkini পৌরসভা",
+            "nameEn": "Kalkini Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -6638,6 +9494,258 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সুলতানপুর"
               }
             ]
+          },
+          {
+            "name": "Singair পৌরসভা",
+            "nameEn": "Singair Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shibalaya পৌরসভা",
+            "nameEn": "Shibalaya Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Saturia পৌরসভা",
+            "nameEn": "Saturia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Harirampur পৌরসভা",
+            "nameEn": "Harirampur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ghior পৌরসভা",
+            "nameEn": "Ghior Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Daulatpur পৌরসভা",
+            "nameEn": "Daulatpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -6812,6 +9920,216 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "আব্দুল্লাপুর",
                 "nameEn": "আব্দুল্লাপুর"
+              }
+            ]
+          },
+          {
+            "name": "Tongibari পৌরসভা",
+            "nameEn": "Tongibari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sreenagar পৌরসভা",
+            "nameEn": "Sreenagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sirajdikhan পৌরসভা",
+            "nameEn": "Sirajdikhan Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gazaria পৌরসভা",
+            "nameEn": "Gazaria Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Lohajang পৌরসভা",
+            "nameEn": "Lohajang Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -7146,6 +10464,174 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মোগরাপাড়া"
               }
             ]
+          },
+          {
+            "name": "Araihazar পৌরসভা",
+            "nameEn": "Araihazar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bandar পৌরসভা",
+            "nameEn": "Bandar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sonargaon পৌরসভা",
+            "nameEn": "Sonargaon Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Rupganj পৌরসভা",
+            "nameEn": "Rupganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -7440,6 +10926,174 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "বসন্তপুর"
               }
             ]
+          },
+          {
+            "name": "Goalanda পৌরসভা",
+            "nameEn": "Goalanda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Pangsha পৌরসভা",
+            "nameEn": "Pangsha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Baliakandi পৌরসভা",
+            "nameEn": "Baliakandi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalukhali পৌরসভা",
+            "nameEn": "Kalukhali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -7586,6 +11240,216 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "মহিষারা",
                 "nameEn": "মহিষারা"
+              }
+            ]
+          },
+          {
+            "name": "Gosairhat পৌরসভা",
+            "nameEn": "Gosairhat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Naria পৌরসভা",
+            "nameEn": "Naria Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Zanjira পৌরসভা",
+            "nameEn": "Zanjira Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bhedarganj পৌরসভা",
+            "nameEn": "Bhedarganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Damudya পৌরসভা",
+            "nameEn": "Damudya Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -7876,6 +11740,510 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "ঠেগারপুর"
               }
             ]
+          },
+          {
+            "name": "Mirzapur পৌরসভা",
+            "nameEn": "Mirzapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gopalpur পৌরসভা",
+            "nameEn": "Gopalpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sakhipur পৌরসভা",
+            "nameEn": "Sakhipur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Madhupur পৌরসভা",
+            "nameEn": "Madhupur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ghatail পৌরসভা",
+            "nameEn": "Ghatail Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalihati পৌরসভা",
+            "nameEn": "Kalihati Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nagarpur পৌরসভা",
+            "nameEn": "Nagarpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Basail পৌরসভা",
+            "nameEn": "Basail Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Delduar পৌরসভা",
+            "nameEn": "Delduar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bhuapur পৌরসভা",
+            "nameEn": "Bhuapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dhanbari পৌরসভা",
+            "nameEn": "Dhanbari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Elenga পৌরসভা",
+            "nameEn": "Elenga Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       }
@@ -8048,6 +12416,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "নিশানবাড়িয়া",
                 "nameEn": "নিশানবাড়িয়া"
+              }
+            ]
+          },
+          {
+            "name": "Amtali পৌরসভা",
+            "nameEn": "Amtali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Betagi পৌরসভা",
+            "nameEn": "Betagi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bamna পৌরসভা",
+            "nameEn": "Bamna Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Patharghata পৌরসভা",
+            "nameEn": "Patharghata Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -8398,6 +12934,384 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "চাখার"
               }
             ]
+          },
+          {
+            "name": "Bakerganj পৌরসভা",
+            "nameEn": "Bakerganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Babuganj পৌরসভা",
+            "nameEn": "Babuganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Banaripara পৌরসভা",
+            "nameEn": "Banaripara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gournadi পৌরসভা",
+            "nameEn": "Gournadi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Agailjhara পৌরসভা",
+            "nameEn": "Agailjhara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Muladi পৌরসভা",
+            "nameEn": "Muladi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mehendiganj পৌরসভা",
+            "nameEn": "Mehendiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Hizla পৌরসভা",
+            "nameEn": "Hizla Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Wazirpur পৌরসভা",
+            "nameEn": "Wazirpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -8576,6 +13490,258 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সাকুচিয়া"
               }
             ]
+          },
+          {
+            "name": "Borhanuddin পৌরসভা",
+            "nameEn": "Borhanuddin Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Charfassion পৌরসভা",
+            "nameEn": "Charfassion Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Daulatkhan পৌরসভা",
+            "nameEn": "Daulatkhan Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Lalmohan পৌরসভা",
+            "nameEn": "Lalmohan Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tazumuddin পৌরসভা",
+            "nameEn": "Tazumuddin Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Manpura পৌরসভা",
+            "nameEn": "Manpura Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -8702,6 +13868,132 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "দামোদর",
                 "nameEn": "দামোদর"
+              }
+            ]
+          },
+          {
+            "name": "Kathalia পৌরসভা",
+            "nameEn": "Kathalia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nalchity পৌরসভা",
+            "nameEn": "Nalchity Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Rajapur পৌরসভা",
+            "nameEn": "Rajapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -8908,6 +14200,300 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "চরসাপেলা"
               }
             ]
+          },
+          {
+            "name": "Galachipa পৌরসভা",
+            "nameEn": "Galachipa Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dashmina পৌরসভা",
+            "nameEn": "Dashmina Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalapara পৌরসভা",
+            "nameEn": "Kalapara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mirzaganj পৌরসভা",
+            "nameEn": "Mirzaganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dumki পৌরসভা",
+            "nameEn": "Dumki Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bauphal পৌরসভা",
+            "nameEn": "Bauphal Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Rangabali পৌরসভা",
+            "nameEn": "Rangabali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -9096,6 +14682,258 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "দুর্গাপাশা",
                 "nameEn": "দুর্গাপাশা"
+              }
+            ]
+          },
+          {
+            "name": "Bhandaria পৌরসভা",
+            "nameEn": "Bhandaria Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kawkhali পৌরসভা",
+            "nameEn": "Kawkhali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mathbaria পৌরসভা",
+            "nameEn": "Mathbaria Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nazirpur পৌরসভা",
+            "nameEn": "Nazirpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nesarabad পৌরসভা",
+            "nameEn": "Nesarabad Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Indurkani পৌরসভা",
+            "nameEn": "Indurkani Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -10114,6 +15952,510 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মোমিনপুর"
               }
             ]
+          },
+          {
+            "name": "Birampur পৌরসভা",
+            "nameEn": "Birampur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Birganj পৌরসভা",
+            "nameEn": "Birganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Biral পৌরসভা",
+            "nameEn": "Biral Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bochaganj পৌরসভা",
+            "nameEn": "Bochaganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chirirbandar পৌরসভা",
+            "nameEn": "Chirirbandar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Fulbari পৌরসভা",
+            "nameEn": "Fulbari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ghoraghat পৌরসভা",
+            "nameEn": "Ghoraghat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Hakimpur পৌরসভা",
+            "nameEn": "Hakimpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kaharole পৌরসভা",
+            "nameEn": "Kaharole Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Khansama পৌরসভা",
+            "nameEn": "Khansama Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nawabganj পৌরসভা",
+            "nameEn": "Nawabganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Parbatipur পৌরসভা",
+            "nameEn": "Parbatipur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -10532,6 +16874,258 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "হরিপুর"
               }
             ]
+          },
+          {
+            "name": "Fulchhari পৌরসভা",
+            "nameEn": "Fulchhari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gobindaganj পৌরসভা",
+            "nameEn": "Gobindaganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Palashbari পৌরসভা",
+            "nameEn": "Palashbari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sadullapur পৌরসভা",
+            "nameEn": "Sadullapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Saghata পৌরসভা",
+            "nameEn": "Saghata Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sundarganj পৌরসভা",
+            "nameEn": "Sundarganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -10926,6 +17520,342 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "চর শৌলমারী"
               }
             ]
+          },
+          {
+            "name": "Bhurungamari পৌরসভা",
+            "nameEn": "Bhurungamari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Char Rajibpur পৌরসভা",
+            "nameEn": "Char Rajibpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chilmari পৌরসভা",
+            "nameEn": "Chilmari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nageshwari পৌরসভা",
+            "nameEn": "Nageshwari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Phulbari পৌরসভা",
+            "nameEn": "Phulbari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Rajarhat পৌরসভা",
+            "nameEn": "Rajarhat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Raumari পৌরসভা",
+            "nameEn": "Raumari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ulipur পৌরসভা",
+            "nameEn": "Ulipur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -11182,6 +18112,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ফকিরপাড়া",
                 "nameEn": "ফকিরপাড়া"
+              }
+            ]
+          },
+          {
+            "name": "Aditmari পৌরসভা",
+            "nameEn": "Aditmari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Hatibandha পৌরসভা",
+            "nameEn": "Hatibandha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kaliganj পৌরসভা",
+            "nameEn": "Kaliganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Patgram পৌরসভা",
+            "nameEn": "Patgram Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -11508,6 +18606,216 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "খাতামধুপুর"
               }
             ]
+          },
+          {
+            "name": "Dimla পৌরসভা",
+            "nameEn": "Dimla Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Domar পৌরসভা",
+            "nameEn": "Domar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Jaldhaka পৌরসভা",
+            "nameEn": "Jaldhaka Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kishoreganj পৌরসভা",
+            "nameEn": "Kishoreganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Saidpur পৌরসভা",
+            "nameEn": "Saidpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -11756,6 +19064,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "পাঁচপীর",
                 "nameEn": "পাঁচপীর"
+              }
+            ]
+          },
+          {
+            "name": "Atwari পৌরসভা",
+            "nameEn": "Atwari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Boda পৌরসভা",
+            "nameEn": "Boda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Debiganj পৌরসভা",
+            "nameEn": "Debiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tetulia পৌরসভা",
+            "nameEn": "Tetulia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -12258,6 +19734,300 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সয়ার"
               }
             ]
+          },
+          {
+            "name": "Badarganj পৌরসভা",
+            "nameEn": "Badarganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gangachara পৌরসভা",
+            "nameEn": "Gangachara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kaunia পৌরসভা",
+            "nameEn": "Kaunia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mithapukur পৌরসভা",
+            "nameEn": "Mithapukur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Pirgachha পৌরসভা",
+            "nameEn": "Pirgachha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Pirganj পৌরসভা",
+            "nameEn": "Pirganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Taraganj পৌরসভা",
+            "nameEn": "Taraganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -12546,6 +20316,174 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ভাতুরিয়া ইউনিয়ন",
                 "nameEn": "ভাতুরিয়া ইউনিয়ন"
+              }
+            ]
+          },
+          {
+            "name": "Baliadangi পৌরসভা",
+            "nameEn": "Baliadangi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Haripur পৌরসভা",
+            "nameEn": "Haripur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Pirganj পৌরসভা",
+            "nameEn": "Pirganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ranisankail পৌরসভা",
+            "nameEn": "Ranisankail Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -13106,6 +21044,174 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "কুসুম্বা"
               }
             ]
+          },
+          {
+            "name": "Akkelpur পৌরসভা",
+            "nameEn": "Akkelpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kalai পৌরসভা",
+            "nameEn": "Kalai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Khetlal পৌরসভা",
+            "nameEn": "Khetlal Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Panchbibi পৌরসভা",
+            "nameEn": "Panchbibi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -13344,6 +21450,426 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "ঐতিহাসিক পাহাড়পুর"
               }
             ]
+          },
+          {
+            "name": "Patnitala পৌরসভা",
+            "nameEn": "Patnitala Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sapahar পৌরসভা",
+            "nameEn": "Sapahar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Porsha পৌরসভা",
+            "nameEn": "Porsha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dhamoirhat পৌরসভা",
+            "nameEn": "Dhamoirhat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Badalgachhi পৌরসভা",
+            "nameEn": "Badalgachhi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Manda পৌরসভা",
+            "nameEn": "Manda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Atrai পৌরসভা",
+            "nameEn": "Atrai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Raninagar পৌরসভা",
+            "nameEn": "Raninagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mahadebpur পৌরসভা",
+            "nameEn": "Mahadebpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Niamatpur পৌরসভা",
+            "nameEn": "Niamatpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -13516,6 +22042,216 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "তাজপুর",
                 "nameEn": "তাজপুর"
+              }
+            ]
+          },
+          {
+            "name": "Bagatipara পৌরসভা",
+            "nameEn": "Bagatipara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Baraigram পৌরসভা",
+            "nameEn": "Baraigram Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gurudaspur পৌরসভা",
+            "nameEn": "Gurudaspur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Lalpur পৌরসভা",
+            "nameEn": "Lalpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Singra পৌরসভা",
+            "nameEn": "Singra Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -13746,6 +22482,342 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "সাগরকান্দি",
                 "nameEn": "সাগরকান্দি"
+              }
+            ]
+          },
+          {
+            "name": "Atgharia পৌরসভা",
+            "nameEn": "Atgharia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bera পৌরসভা",
+            "nameEn": "Bera Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bhangura পৌরসভা",
+            "nameEn": "Bhangura Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chatmohar পৌরসভা",
+            "nameEn": "Chatmohar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Faridpur পৌরসভা",
+            "nameEn": "Faridpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ishwardi পৌরসভা",
+            "nameEn": "Ishwardi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Santhia পৌরসভা",
+            "nameEn": "Santhia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sujanagar পৌরসভা",
+            "nameEn": "Sujanagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -14046,6 +23118,384 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "তালন্দ"
               }
             ]
+          },
+          {
+            "name": "Bagha পৌরসভা",
+            "nameEn": "Bagha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bagmara পৌরসভা",
+            "nameEn": "Bagmara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Charghat পৌরসভা",
+            "nameEn": "Charghat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Durgapur পৌরসভা",
+            "nameEn": "Durgapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Godagari পৌরসভা",
+            "nameEn": "Godagari Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Mohanpur পৌরসভা",
+            "nameEn": "Mohanpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Paba পৌরসভা",
+            "nameEn": "Paba Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Puthia পৌরসভা",
+            "nameEn": "Puthia Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tanore পৌরসভা",
+            "nameEn": "Tanore Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -14266,6 +23716,342 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "সলঙ্গা",
                 "nameEn": "সলঙ্গা"
+              }
+            ]
+          },
+          {
+            "name": "Belkuchi পৌরসভা",
+            "nameEn": "Belkuchi Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Chauhali পৌরসভা",
+            "nameEn": "Chauhali Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kamarkhanda পৌরসভা",
+            "nameEn": "Kamarkhanda Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kazipur পৌরসভা",
+            "nameEn": "Kazipur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Raiganj পৌরসভা",
+            "nameEn": "Raiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shahjadpur পৌরসভা",
+            "nameEn": "Shahjadpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tarash পৌরসভা",
+            "nameEn": "Tarash Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ullahpara পৌরসভা",
+            "nameEn": "Ullahpara Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -14688,6 +24474,342 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "ব্রাহ্মনডোরা"
               }
             ]
+          },
+          {
+            "name": "Chunarughat পৌরসভা",
+            "nameEn": "Chunarughat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bahubal পৌরসভা",
+            "nameEn": "Bahubal Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Nabiganj পৌরসভা",
+            "nameEn": "Nabiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Baniachong পৌরসভা",
+            "nameEn": "Baniachong Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Lakhai পৌরসভা",
+            "nameEn": "Lakhai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Madhabpur পৌরসভা",
+            "nameEn": "Madhabpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Ajmiriganj পৌরসভা",
+            "nameEn": "Ajmiriganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Shaistaganj পৌরসভা",
+            "nameEn": "Shaistaganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
           }
         ]
       },
@@ -15044,6 +25166,258 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "সাতগাঁও",
                 "nameEn": "সাতগাঁও"
+              }
+            ]
+          },
+          {
+            "name": "Sreemangal পৌরসভা",
+            "nameEn": "Sreemangal Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kamalganj পৌরসভা",
+            "nameEn": "Kamalganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kulaura পৌরসভা",
+            "nameEn": "Kulaura Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Rajnagar পৌরসভা",
+            "nameEn": "Rajnagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Barlekha পৌরসভা",
+            "nameEn": "Barlekha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Juri পৌরসভা",
+            "nameEn": "Juri Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -15512,6 +25886,384 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ভাতগাও",
                 "nameEn": "ভাতগাও"
+              }
+            ]
+          },
+          {
+            "name": "Chhatak পৌরসভা",
+            "nameEn": "Chhatak Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Jagannathpur পৌরসভা",
+            "nameEn": "Jagannathpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Tahirpur পৌরসভা",
+            "nameEn": "Tahirpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bishwamvarpur পৌরসভা",
+            "nameEn": "Bishwamvarpur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dharmapasha পৌরসভা",
+            "nameEn": "Dharmapasha Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Jamalganj পৌরসভা",
+            "nameEn": "Jamalganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Derai পৌরসভা",
+            "nameEn": "Derai Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Sulla পৌরসভা",
+            "nameEn": "Sulla Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Dowarabazar পৌরসভা",
+            "nameEn": "Dowarabazar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
@@ -16126,6 +26878,468 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "দয়ামীর ইউনিয়ন",
                 "nameEn": "দয়ামীর"
+              }
+            ]
+          },
+          {
+            "name": "Beanibazar পৌরসভা",
+            "nameEn": "Beanibazar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Bishwanath পৌরসভা",
+            "nameEn": "Bishwanath Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Companiganj পৌরসভা",
+            "nameEn": "Companiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Golapganj পৌরসভা",
+            "nameEn": "Golapganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Gowainghat পৌরসভা",
+            "nameEn": "Gowainghat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Jaintiapur পৌরসভা",
+            "nameEn": "Jaintiapur Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Kanaighat পৌরসভা",
+            "nameEn": "Kanaighat Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Zakiganj পৌরসভা",
+            "nameEn": "Zakiganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Balaganj পৌরসভা",
+            "nameEn": "Balaganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Fenchuganj পৌরসভা",
+            "nameEn": "Fenchuganj Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
+              }
+            ]
+          },
+          {
+            "name": "Osmaninagar পৌরসভা",
+            "nameEn": "Osmaninagar Pourashava",
+            "unions": [
+              {
+                "name": "ওয়ার্ড নং-1",
+                "nameEn": "Ward No-1"
+              },
+              {
+                "name": "ওয়ার্ড নং-2",
+                "nameEn": "Ward No-2"
+              },
+              {
+                "name": "ওয়ার্ড নং-3",
+                "nameEn": "Ward No-3"
+              },
+              {
+                "name": "ওয়ার্ড নং-4",
+                "nameEn": "Ward No-4"
+              },
+              {
+                "name": "ওয়ার্ড নং-5",
+                "nameEn": "Ward No-5"
+              },
+              {
+                "name": "ওয়ার্ড নং-6",
+                "nameEn": "Ward No-6"
+              },
+              {
+                "name": "ওয়ার্ড নং-7",
+                "nameEn": "Ward No-7"
+              },
+              {
+                "name": "ওয়ার্ড নং-8",
+                "nameEn": "Ward No-8"
+              },
+              {
+                "name": "ওয়ার্ড নং-9",
+                "nameEn": "Ward No-9"
               }
             ]
           }
