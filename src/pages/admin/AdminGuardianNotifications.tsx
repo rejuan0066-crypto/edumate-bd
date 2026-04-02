@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import {
   MessageSquare, Send, Users, FileText, Loader2, Phone, Mail,
   CheckCircle2, XCircle, Clock, Filter, AlertCircle

@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { toast } from 'sonner';
 import {
   Plus, Edit2, Trash2, ShieldCheck, Search, AlertTriangle,

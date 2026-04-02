@@ -20,6 +20,7 @@ import {
   CheckCircle2, XCircle, AlertCircle, ChevronLeft, ChevronRight, Home, Sun, Sunset, Moon, Utensils, Coffee,
   Download, Printer, RotateCcw
 } from 'lucide-react';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,

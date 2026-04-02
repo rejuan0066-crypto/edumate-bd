@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Save, Plus, Pencil, Trash2, Clock, Calendar, MapPin, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const CALC_METHODS = [
   { value: 1, label: 'University of Islamic Sciences, Karachi', labelBn: 'করাচী ইউনিভার্সিটি' },

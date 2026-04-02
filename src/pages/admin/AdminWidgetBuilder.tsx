@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Save, Plus, Trash2, Pencil, Eye, EyeOff, ChevronUp, ChevronDown, GripVertical, LayoutGrid } from 'lucide-react';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const ICON_OPTIONS = ['Users', 'UserCog', 'CreditCard', 'Heart', 'Receipt', 'BookOpen', 'FileText', 'GraduationCap', 'UserCheck', 'UserX', 'Layers', 'Star', 'Award', 'Clock'];
 const COLOR_PRESETS = [

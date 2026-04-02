@@ -15,6 +15,7 @@ import { bangladeshAddresses } from '@/data/bangladeshAddresses';
 import SearchableSelect from '@/components/SearchableSelect';
 import AddressLevelManager, { useAddressLevels } from '@/components/admin/AddressLevelManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const SUB_TYPES = [
   { value: 'upazila', label: 'Upazila', label_bn: 'উপজেলা' },

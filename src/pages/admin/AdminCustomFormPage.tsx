@@ -20,6 +20,7 @@ import AddressFields, { type AddressData } from '@/components/AddressFields';
 import { FileText, Send, List, Trash2, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Json } from '@/integrations/supabase/types';
 
 const AdminCustomFormPage = () => {
