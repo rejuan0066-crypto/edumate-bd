@@ -111,9 +111,11 @@ const AdminStaff = () => {
             <h1 className="text-2xl font-display font-bold text-foreground">{t('staff')}</h1>
             <p className="text-sm text-muted-foreground">{bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`}</p>
           </div>
-          <Button onClick={() => navigate('/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
-            <Plus className="w-4 h-4" /> {t('addNew')}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => navigate('/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
+              <Plus className="w-4 h-4" /> {t('addNew')}
+            </Button>
+          )}
         </div>
 
         <div className="card-elevated p-4">
