@@ -165,7 +165,7 @@ const AdminUserManagement = () => {
     try {
       const { data, error } = await supabase
         .from('user_permissions')
-        .select('menu_path, can_view, can_add, can_edit, can_delete')
+        .select('menu_path, can_view, can_add, can_edit, can_delete, requires_approval' as any)
         .eq('user_id', user.id);
 
       if (error) throw error;
