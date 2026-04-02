@@ -22,6 +22,22 @@ const DEFAULT_ADMIN_ONLY_PATHS = [
   '/admin/academic-sessions',
 ];
 
+// All admin paths for matching
+const ALL_PATHS_LIST = [
+  '/admin/settings', '/admin/user-management', '/admin/permissions',
+  '/admin/module-manager', '/admin/theme', '/admin/menu-manager',
+  '/admin/widget-builder', '/admin/backup', '/admin/website',
+  '/admin/form-builder', '/admin/formula-builder', '/admin/validation-manager',
+  '/admin/api-verification', '/admin/address-manager', '/admin/prayer-calendar',
+  '/admin/guardian-notify', '/admin/approvals', '/admin/designations',
+  '/admin/academic-sessions', '/admin/students', '/admin/staff',
+  '/admin/divisions', '/admin/subjects', '/admin/results',
+  '/admin/notices', '/admin/fees', '/admin/fee-receipts',
+  '/admin/expenses', '/admin/donors', '/admin/attendance',
+  '/admin/salary', '/admin/reports', '/admin/posts',
+  '/admin/resign-letters', '/admin/joining-letters', '/admin/admission-letters',
+];
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, role } = useAuth();
   const { canView, isLoading: permLoading } = usePermissions();
