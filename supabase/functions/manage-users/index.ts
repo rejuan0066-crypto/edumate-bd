@@ -147,6 +147,24 @@ Deno.serve(async (req) => {
       // Link to staff record if staff_id provided
       if (body.staff_id) {
         await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
+      } else if (role && (role === 'staff' || role === 'teacher' || role === 'admin')) {
+        // Auto-create staff record if no staff_id provided
+        const { data: existingStaff } = await supabaseAdmin
+          .from("staff")
+          .select("id")
+          .eq("user_id", newUser.user.id)
+          .maybeSingle();
+
+        if (!existingStaff) {
+          await supabaseAdmin.from("staff").insert({
+            user_id: newUser.user.id,
+            name_bn: full_name || email.split('@')[0],
+            name_en: full_name || '',
+            email: email,
+            department: role === 'teacher' ? 'teaching' : 'general',
+            status: 'active',
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
