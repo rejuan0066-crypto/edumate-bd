@@ -33,6 +33,7 @@ const AdminApiVerification = () => {
   const [apiKey, setApiKey] = useState('');
   const [isEnabled, setIsEnabled] = useState(false);
   const [newMasterPassword, setNewMasterPassword] = useState('');
+  const [confirmMasterPassword, setConfirmMasterPassword] = useState('');
   const [studentMappings, setStudentMappings] = useState<Array<{ apiKey: string; formField: string }>>([]);
   const [staffMappings, setStaffMappings] = useState<Array<{ apiKey: string; formField: string }>>([]);
   const [saving, setSaving] = useState(false);
