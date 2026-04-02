@@ -178,14 +178,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Barabaria",
-                "nameEn": "Barabaria",
-                "code": "9361"
+                "name": "Kachua",
+                "nameEn": "Kachua",
+                "code": "3630"
               },
               {
-                "name": "Chitalmari",
-                "nameEn": "Chitalmari",
-                "code": "9360"
+                "name": "Pak Shrirampur",
+                "nameEn": "Pak Shrirampur",
+                "code": "3631"
+              },
+              {
+                "name": "Rahima Nagar",
+                "nameEn": "Rahima Nagar",
+                "code": "3632"
+              },
+              {
+                "name": "Shachar",
+                "nameEn": "Shachar",
+                "code": "3633"
               }
             ]
           },
@@ -217,19 +227,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhanganpar Bazar",
-                "nameEn": "Bhanganpar Bazar",
-                "code": "9372"
+                "name": "Barabaria",
+                "nameEn": "Barabaria",
+                "code": "9361"
               },
               {
-                "name": "Fakirhat",
-                "nameEn": "Fakirhat",
-                "code": "9370"
-              },
-              {
-                "name": "Mansa",
-                "nameEn": "Mansa",
-                "code": "9371"
+                "name": "Chitalmari",
+                "nameEn": "Chitalmari",
+                "code": "9360"
               }
             ]
           },
@@ -253,24 +258,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kachua",
-                "nameEn": "Kachua",
-                "code": "3630"
+                "name": "Bhanganpar Bazar",
+                "nameEn": "Bhanganpar Bazar",
+                "code": "9372"
               },
               {
-                "name": "Pak Shrirampur",
-                "nameEn": "Pak Shrirampur",
-                "code": "3631"
+                "name": "Fakirhat",
+                "nameEn": "Fakirhat",
+                "code": "9370"
               },
               {
-                "name": "Rahima Nagar",
-                "nameEn": "Rahima Nagar",
-                "code": "3632"
-              },
-              {
-                "name": "Shachar",
-                "nameEn": "Shachar",
-                "code": "3633"
+                "name": "Mansa",
+                "nameEn": "Mansa",
+                "code": "9371"
               }
             ]
           },
@@ -297,6 +297,95 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "পানগুছি",
                 "nameEn": "পানগুছি"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Bajua",
+                "nameEn": "Bajua",
+                "code": "9272"
+              },
+              {
+                "name": "Chalna Bazar",
+                "nameEn": "Chalna Bazar",
+                "code": "9270"
+              },
+              {
+                "name": "Dakup",
+                "nameEn": "Dakup",
+                "code": "9271"
+              },
+              {
+                "name": "Nalian",
+                "nameEn": "Nalian",
+                "code": "9273"
+              }
+            ]
+          },
+          {
+            "name": "মোড়েলগঞ্জ উপজেলা",
+            "nameEn": "Morrelganj",
+            "unions": [
+              {
+                "name": "মোংলা",
+                "nameEn": "মোংলা"
+              },
+              {
+                "name": "বুড়িরডাঙ্গা",
+                "nameEn": "বুড়িরডাঙ্গা"
+              },
+              {
+                "name": "মোংলা পোর্ট",
+                "nameEn": "মোংলা পোর্ট"
+              },
+              {
+                "name": "সুন্দরবন",
+                "nameEn": "সুন্দরবন"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Morelganj",
+                "nameEn": "Morelganj",
+                "code": "9320"
+              },
+              {
+                "name": "Sannasi Bazar",
+                "nameEn": "Sannasi Bazar",
+                "code": "9321"
+              },
+              {
+                "name": "Telisatee",
+                "nameEn": "Telisatee",
+                "code": "9322"
+              }
+            ]
+          },
+          {
+            "name": "মোল্লাহাট উপজেলা",
+            "nameEn": "Mollahat",
+            "unions": [
+              {
+                "name": "মোড়েলগঞ্জ",
+                "nameEn": "মোড়েলগঞ্জ"
+              },
+              {
+                "name": "বারৈখালী",
+                "nameEn": "বারৈখালী"
+              },
+              {
+                "name": "পানখালী",
+                "nameEn": "পানখালী"
+              },
+              {
+                "name": "তেলিগাতি",
+                "nameEn": "তেলিগাতি"
+              },
+              {
+                "name": "নিশানবাড়িয়া",
+                "nameEn": "নিশানবাড়িয়া"
               }
             ],
             "type": "upazila",
@@ -330,95 +419,6 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Pak Gangni",
                 "nameEn": "Pak Gangni",
                 "code": "9385"
-              }
-            ]
-          },
-          {
-            "name": "মোড়েলগঞ্জ উপজেলা",
-            "nameEn": "Morrelganj",
-            "unions": [
-              {
-                "name": "মোংলা",
-                "nameEn": "মোংলা"
-              },
-              {
-                "name": "বুড়িরডাঙ্গা",
-                "nameEn": "বুড়িরডাঙ্গা"
-              },
-              {
-                "name": "মোংলা পোর্ট",
-                "nameEn": "মোংলা পোর্ট"
-              },
-              {
-                "name": "সুন্দরবন",
-                "nameEn": "সুন্দরবন"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bajua",
-                "nameEn": "Bajua",
-                "code": "9272"
-              },
-              {
-                "name": "Chalna Bazar",
-                "nameEn": "Chalna Bazar",
-                "code": "9270"
-              },
-              {
-                "name": "Dakup",
-                "nameEn": "Dakup",
-                "code": "9271"
-              },
-              {
-                "name": "Nalian",
-                "nameEn": "Nalian",
-                "code": "9273"
-              }
-            ]
-          },
-          {
-            "name": "মোল্লাহাট উপজেলা",
-            "nameEn": "Mollahat",
-            "unions": [
-              {
-                "name": "মোড়েলগঞ্জ",
-                "nameEn": "মোড়েলগঞ্জ"
-              },
-              {
-                "name": "বারৈখালী",
-                "nameEn": "বারৈখালী"
-              },
-              {
-                "name": "পানখালী",
-                "nameEn": "পানখালী"
-              },
-              {
-                "name": "তেলিগাতি",
-                "nameEn": "তেলিগাতি"
-              },
-              {
-                "name": "নিশানবাড়িয়া",
-                "nameEn": "নিশানবাড়িয়া"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Morelganj",
-                "nameEn": "Morelganj",
-                "code": "9320"
-              },
-              {
-                "name": "Sannasi Bazar",
-                "nameEn": "Sannasi Bazar",
-                "code": "9321"
-              },
-              {
-                "name": "Telisatee",
-                "nameEn": "Telisatee",
-                "code": "9322"
               }
             ]
           },
@@ -771,14 +771,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Alamdanga",
-                "nameEn": "Alamdanga",
-                "code": "7210"
+                "name": "Chuadanga Sadar",
+                "nameEn": "Chuadanga Sadar",
+                "code": "7200"
               },
               {
-                "name": "Hardi",
-                "nameEn": "Hardi",
-                "code": "7211"
+                "name": "Munshiganj",
+                "nameEn": "Munshiganj",
+                "code": "7201"
               }
             ]
           },
@@ -810,14 +810,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chuadanga Sadar",
-                "nameEn": "Chuadanga Sadar",
-                "code": "7200"
+                "name": "Alamdanga",
+                "nameEn": "Alamdanga",
+                "code": "7210"
               },
               {
-                "name": "Munshiganj",
-                "nameEn": "Munshiganj",
-                "code": "7201"
+                "name": "Hardi",
+                "nameEn": "Hardi",
+                "code": "7211"
               }
             ]
           },
@@ -849,19 +849,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Andulbaria",
-                "nameEn": "Andulbaria",
-                "code": "7222"
-              },
-              {
-                "name": "Damurhuda",
-                "nameEn": "Damurhuda",
-                "code": "7220"
-              },
-              {
-                "name": "Darshana",
-                "nameEn": "Darshana",
-                "code": "7221"
+                "name": "Jibanpur",
+                "nameEn": "Jibanpur",
+                "code": "5130"
               }
             ]
           },
@@ -889,9 +879,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jibanpur",
-                "nameEn": "Jibanpur",
-                "code": "5130"
+                "name": "Andulbaria",
+                "nameEn": "Andulbaria",
+                "code": "7222"
+              },
+              {
+                "name": "Damurhuda",
+                "nameEn": "Damurhuda",
+                "code": "7220"
+              },
+              {
+                "name": "Darshana",
+                "nameEn": "Darshana",
+                "code": "7221"
               }
             ]
           },
@@ -1057,7 +1057,30 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
+            "type": "municipality"
+          },
+          {
+            "name": "যশোর সদর উপজেলা",
+            "nameEn": "Jashore Sadar",
+            "unions": [
+              {
+                "name": "অভয়নগর",
+                "nameEn": "অভয়নগর"
+              },
+              {
+                "name": "বাঘুটিয়া",
+                "nameEn": "বাঘুটিয়া"
+              },
+              {
+                "name": "পয়সা",
+                "nameEn": "পয়সা"
+              },
+              {
+                "name": "সুন্দরপুর",
+                "nameEn": "সুন্দরপুর"
+              }
+            ],
+            "type": "upazila",
             "postOffices": [
               {
                 "name": "Basundia",
@@ -1098,46 +1121,6 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Rupdia",
                 "nameEn": "Rupdia",
                 "code": "7405"
-              }
-            ]
-          },
-          {
-            "name": "যশোর সদর উপজেলা",
-            "nameEn": "Jashore Sadar",
-            "unions": [
-              {
-                "name": "অভয়নগর",
-                "nameEn": "অভয়নগর"
-              },
-              {
-                "name": "বাঘুটিয়া",
-                "nameEn": "বাঘুটিয়া"
-              },
-              {
-                "name": "পয়সা",
-                "nameEn": "পয়সা"
-              },
-              {
-                "name": "সুন্দরপুর",
-                "nameEn": "সুন্দরপুর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bhugilhat",
-                "nameEn": "Bhugilhat",
-                "code": "7462"
-              },
-              {
-                "name": "Noapara",
-                "nameEn": "Noapara",
-                "code": "7460"
-              },
-              {
-                "name": "Rajghat",
-                "nameEn": "Rajghat",
-                "code": "7461"
               }
             ]
           },
@@ -1165,14 +1148,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bagharpara",
-                "nameEn": "Bagharpara",
-                "code": "7470"
+                "name": "Bhugilhat",
+                "nameEn": "Bhugilhat",
+                "code": "7462"
               },
               {
-                "name": "Gouranagar",
-                "nameEn": "Gouranagar",
-                "code": "7471"
+                "name": "Noapara",
+                "nameEn": "Noapara",
+                "code": "7460"
+              },
+              {
+                "name": "Rajghat",
+                "nameEn": "Rajghat",
+                "code": "7461"
               }
             ]
           },
@@ -1200,9 +1188,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chougachha",
-                "nameEn": "Chougachha",
-                "code": "7410"
+                "name": "Keshobpur",
+                "nameEn": "Keshobpur",
+                "code": "7450"
               }
             ]
           },
@@ -1230,44 +1218,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Basundia",
-                "nameEn": "Basundia",
-                "code": "7406"
-              },
-              {
-                "name": "Chanchra",
-                "nameEn": "Chanchra",
-                "code": "7402"
-              },
-              {
-                "name": "Churamankathi",
-                "nameEn": "Churamankathi",
-                "code": "7407"
-              },
-              {
-                "name": "Jessore Airbach",
-                "nameEn": "Jessore Airbach",
-                "code": "7404"
-              },
-              {
-                "name": "Jessore canttonment",
-                "nameEn": "Jessore canttonment",
-                "code": "7403"
-              },
-              {
-                "name": "Jessore Sadar",
-                "nameEn": "Jessore Sadar",
-                "code": "7400"
-              },
-              {
-                "name": "Jessore Upa-Shahar",
-                "nameEn": "Jessore Upa-Shahar",
-                "code": "7401"
-              },
-              {
-                "name": "Rupdia",
-                "nameEn": "Rupdia",
-                "code": "7405"
+                "name": "Chougachha",
+                "nameEn": "Chougachha",
+                "code": "7410"
               }
             ]
           },
@@ -1329,9 +1282,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Keshobpur",
-                "nameEn": "Keshobpur",
-                "code": "7450"
+                "name": "Bagharpara",
+                "nameEn": "Bagharpara",
+                "code": "7470"
+              },
+              {
+                "name": "Gouranagar",
+                "nameEn": "Gouranagar",
+                "code": "7471"
               }
             ]
           },
@@ -1457,19 +1415,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Jinaidaha Cadet College",
-                "nameEn": "Jinaidaha Cadet College",
-                "code": "7301"
-              },
-              {
-                "name": "Jinaidaha Sadar",
-                "nameEn": "Jinaidaha Sadar",
-                "code": "7300"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "ঝিনাইদহ সদর উপজেলা",
@@ -1495,9 +1441,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Harinakundu",
-                "nameEn": "Harinakundu",
-                "code": "7310"
+                "name": "Jinaidaha Cadet College",
+                "nameEn": "Jinaidaha Cadet College",
+                "code": "7301"
+              },
+              {
+                "name": "Jinaidaha Sadar",
+                "nameEn": "Jinaidaha Sadar",
+                "code": "7300"
               }
             ]
           },
@@ -1529,29 +1480,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jinaidaha Cadet College",
-                "nameEn": "Jinaidaha Cadet College",
-                "code": "7301"
-              },
-              {
-                "name": "Jinaidaha Sadar",
-                "nameEn": "Jinaidaha Sadar",
-                "code": "7300"
-              }
-            ]
-          },
-          {
-            "name": "কোটচাঁদপুর উপজেলা",
-            "nameEn": "Kotchandpur",
-            "unions": [
-              {
-                "name": "কালীগঞ্জ সদর",
-                "nameEn": "Kaliganj Sadar"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Kaliganj",
                 "nameEn": "Kaliganj",
                 "code": "1720"
@@ -1570,6 +1498,24 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Vaoal Jamalpur",
                 "nameEn": "Vaoal Jamalpur",
                 "code": "1723"
+              }
+            ]
+          },
+          {
+            "name": "কোটচাঁদপুর উপজেলা",
+            "nameEn": "Kotchandpur",
+            "unions": [
+              {
+                "name": "কালীগঞ্জ সদর",
+                "nameEn": "Kaliganj Sadar"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Kotchandpur",
+                "nameEn": "Kotchandpur",
+                "code": "7330"
               }
             ]
           },
@@ -1597,9 +1543,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kotchandpur",
-                "nameEn": "Kotchandpur",
-                "code": "7330"
+                "name": "Maheshpur",
+                "nameEn": "Maheshpur",
+                "code": "7340"
               }
             ]
           },
@@ -1623,9 +1569,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Maheshpur",
-                "nameEn": "Maheshpur",
-                "code": "7340"
+                "name": "Kumiradaha",
+                "nameEn": "Kumiradaha",
+                "code": "7321"
+              },
+              {
+                "name": "Shailakupa",
+                "nameEn": "Shailakupa",
+                "code": "7320"
               }
             ]
           },
@@ -2051,14 +2002,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Batiaghat",
-                "nameEn": "Batiaghat",
-                "code": "9260"
-              },
-              {
-                "name": "Surkalee",
-                "nameEn": "Surkalee",
-                "code": "9261"
+                "name": "Kashkawlia",
+                "nameEn": "Kashkawlia",
+                "code": "1930"
               }
             ]
           },
@@ -2090,14 +2036,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chalna Ankorage",
-                "nameEn": "Chalna Ankorage",
-                "code": "9350"
-              },
-              {
-                "name": "Mongla Port",
-                "nameEn": "Mongla Port",
-                "code": "9351"
+                "name": "Doulatpur",
+                "nameEn": "Doulatpur",
+                "code": "1860"
               }
             ]
           },
@@ -2125,29 +2066,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chandni Mahal",
-                "nameEn": "Chandni Mahal",
-                "code": "9221"
+                "name": "Pak Barasat",
+                "nameEn": "Pak Barasat",
+                "code": "9231"
               },
               {
-                "name": "Digalia",
-                "nameEn": "Digalia",
-                "code": "9220"
-              },
-              {
-                "name": "Gazirhat",
-                "nameEn": "Gazirhat",
-                "code": "9224"
-              },
-              {
-                "name": "Ghoshghati",
-                "nameEn": "Ghoshghati",
-                "code": "9223"
-              },
-              {
-                "name": "Senhati",
-                "nameEn": "Senhati",
-                "code": "9222"
+                "name": "Terakhada",
+                "nameEn": "Terakhada",
+                "code": "9230"
               }
             ]
           },
@@ -2205,9 +2131,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kashkawlia",
-                "nameEn": "Kashkawlia",
-                "code": "1930"
+                "name": "Chandni Mahal",
+                "nameEn": "Chandni Mahal",
+                "code": "9221"
+              },
+              {
+                "name": "Digalia",
+                "nameEn": "Digalia",
+                "code": "9220"
+              },
+              {
+                "name": "Gazirhat",
+                "nameEn": "Gazirhat",
+                "code": "9224"
+              },
+              {
+                "name": "Ghoshghati",
+                "nameEn": "Ghoshghati",
+                "code": "9223"
+              },
+              {
+                "name": "Senhati",
+                "nameEn": "Senhati",
+                "code": "9222"
               }
             ]
           },
@@ -2308,6 +2254,37 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
+                "name": "Batiaghat",
+                "nameEn": "Batiaghat",
+                "code": "9260"
+              },
+              {
+                "name": "Surkalee",
+                "nameEn": "Surkalee",
+                "code": "9261"
+              }
+            ]
+          },
+          {
+            "name": "রূপসা উপজেলা",
+            "nameEn": "Rupsa",
+            "unions": [
+              {
+                "name": "তেরখাদা",
+                "nameEn": "তেরখাদা"
+              },
+              {
+                "name": "আজগরা",
+                "nameEn": "আজগরা"
+              },
+              {
+                "name": "সচিদানন্দপুর",
+                "nameEn": "সচিদানন্দপুর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
                 "name": "Atra Shilpa Area",
                 "nameEn": "Atra Shilpa Area",
                 "code": "9207"
@@ -2356,37 +2333,6 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Sonali Jute Mills",
                 "nameEn": "Sonali Jute Mills",
                 "code": "9206"
-              }
-            ]
-          },
-          {
-            "name": "রূপসা উপজেলা",
-            "nameEn": "Rupsa",
-            "unions": [
-              {
-                "name": "তেরখাদা",
-                "nameEn": "তেরখাদা"
-              },
-              {
-                "name": "আজগরা",
-                "nameEn": "আজগরা"
-              },
-              {
-                "name": "সচিদানন্দপুর",
-                "nameEn": "সচিদানন্দপুর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Pak Barasat",
-                "nameEn": "Pak Barasat",
-                "code": "9231"
-              },
-              {
-                "name": "Terakhada",
-                "nameEn": "Terakhada",
-                "code": "9230"
               }
             ]
           },
@@ -2691,29 +2637,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-15"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Islami University",
-                "nameEn": "Islami University",
-                "code": "7003"
-              },
-              {
-                "name": "Jagati",
-                "nameEn": "Jagati",
-                "code": "7002"
-              },
-              {
-                "name": "Kushtia Mohini",
-                "nameEn": "Kushtia Mohini",
-                "code": "7001"
-              },
-              {
-                "name": "Kustia Sadar",
-                "nameEn": "Kustia Sadar",
-                "code": "7000"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "কুষ্টিয়া সদর উপজেলা",
@@ -2739,19 +2663,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Allardarga",
-                "nameEn": "Allardarga",
-                "code": "7042"
+                "name": "Islami University",
+                "nameEn": "Islami University",
+                "code": "7003"
               },
               {
-                "name": "Bheramara",
-                "nameEn": "Bheramara",
-                "code": "7040"
+                "name": "Jagati",
+                "nameEn": "Jagati",
+                "code": "7002"
               },
               {
-                "name": "Ganges Bheramara",
-                "nameEn": "Ganges Bheramara",
-                "code": "7041"
+                "name": "Kushtia Mohini",
+                "nameEn": "Kushtia Mohini",
+                "code": "7001"
+              },
+              {
+                "name": "Kustia Sadar",
+                "nameEn": "Kustia Sadar",
+                "code": "7000"
               }
             ]
           },
@@ -2783,9 +2712,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Doulatpur",
-                "nameEn": "Doulatpur",
-                "code": "1860"
+                "name": "Kumarkhali",
+                "nameEn": "Kumarkhali",
+                "code": "7010"
+              },
+              {
+                "name": "Panti",
+                "nameEn": "Panti",
+                "code": "7011"
               }
             ]
           },
@@ -2854,14 +2788,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kumarkhali",
-                "nameEn": "Kumarkhali",
-                "code": "7010"
-              },
-              {
-                "name": "Panti",
-                "nameEn": "Panti",
-                "code": "7011"
+                "name": "Doulatpur",
+                "nameEn": "Doulatpur",
+                "code": "1860"
               }
             ]
           },
@@ -2893,24 +2822,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Islami University",
-                "nameEn": "Islami University",
-                "code": "7003"
+                "name": "Allardarga",
+                "nameEn": "Allardarga",
+                "code": "7042"
               },
               {
-                "name": "Jagati",
-                "nameEn": "Jagati",
-                "code": "7002"
+                "name": "Bheramara",
+                "nameEn": "Bheramara",
+                "code": "7040"
               },
               {
-                "name": "Kushtia Mohini",
-                "nameEn": "Kushtia Mohini",
-                "code": "7001"
-              },
-              {
-                "name": "Kustia Sadar",
-                "nameEn": "Kustia Sadar",
-                "code": "7000"
+                "name": "Ganges Bheramara",
+                "nameEn": "Ganges Bheramara",
+                "code": "7041"
               }
             ]
           },
@@ -3664,9 +3588,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gangni",
-                "nameEn": "Gangni",
-                "code": "7110"
+                "name": "Amjhupi",
+                "nameEn": "Amjhupi",
+                "code": "7101"
+              },
+              {
+                "name": "Amjhupi",
+                "nameEn": "Amjhupi",
+                "code": "7152"
+              },
+              {
+                "name": "Meherpur Sadar",
+                "nameEn": "Meherpur Sadar",
+                "code": "7100"
+              },
+              {
+                "name": "Mujib Nagar Complex",
+                "nameEn": "Mujib Nagar Complex",
+                "code": "7102"
               }
             ]
           },
@@ -3694,24 +3633,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Amjhupi",
-                "nameEn": "Amjhupi",
-                "code": "7101"
-              },
-              {
-                "name": "Amjhupi",
-                "nameEn": "Amjhupi",
-                "code": "7152"
-              },
-              {
-                "name": "Meherpur Sadar",
-                "nameEn": "Meherpur Sadar",
-                "code": "7100"
-              },
-              {
-                "name": "Mujib Nagar Complex",
-                "nameEn": "Mujib Nagar Complex",
-                "code": "7102"
+                "name": "Gangni",
+                "nameEn": "Gangni",
+                "code": "7110"
               }
             ]
           },
@@ -3956,9 +3880,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kalia",
-                "nameEn": "Kalia",
-                "code": "7520"
+                "name": "Narail Sadar",
+                "nameEn": "Narail Sadar",
+                "code": "7500"
+              },
+              {
+                "name": "Ratanganj",
+                "nameEn": "Ratanganj",
+                "code": "7501"
               }
             ]
           },
@@ -3974,19 +3903,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chunti",
-                "nameEn": "Chunti",
-                "code": "4398"
-              },
-              {
-                "name": "Lohagara",
-                "nameEn": "Lohagara",
-                "code": "4396"
-              },
-              {
-                "name": "Padua",
-                "nameEn": "Padua",
-                "code": "4397"
+                "name": "Kalia",
+                "nameEn": "Kalia",
+                "code": "7520"
               }
             ]
           },
@@ -4014,14 +3933,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Narail Sadar",
-                "nameEn": "Narail Sadar",
-                "code": "7500"
+                "name": "Chunti",
+                "nameEn": "Chunti",
+                "code": "4398"
               },
               {
-                "name": "Ratanganj",
-                "nameEn": "Ratanganj",
-                "code": "7501"
+                "name": "Lohagara",
+                "nameEn": "Lohagara",
+                "code": "4396"
+              },
+              {
+                "name": "Padua",
+                "nameEn": "Padua",
+                "code": "4397"
               }
             ]
           },
@@ -4230,14 +4154,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ashashuni",
-                "nameEn": "Ashashuni",
-                "code": "9460"
+                "name": "Budhhat",
+                "nameEn": "Budhhat",
+                "code": "9403"
               },
               {
-                "name": "Baradal",
-                "nameEn": "Baradal",
-                "code": "9461"
+                "name": "Gunakar kati",
+                "nameEn": "Gunakar kati",
+                "code": "9402"
+              },
+              {
+                "name": "Satkhira Islamia Acc",
+                "nameEn": "Satkhira Islamia Acc",
+                "code": "9401"
+              },
+              {
+                "name": "Satkhira Sadar",
+                "nameEn": "Satkhira Sadar",
+                "code": "9400"
               }
             ]
           },
@@ -4265,14 +4199,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Debbhata",
-                "nameEn": "Debbhata",
-                "code": "9430"
+                "name": "Ashashuni",
+                "nameEn": "Ashashuni",
+                "code": "9460"
               },
               {
-                "name": "Gurugram",
-                "nameEn": "Gurugram",
-                "code": "9431"
+                "name": "Baradal",
+                "nameEn": "Baradal",
+                "code": "9461"
               }
             ]
           },
@@ -4388,24 +4322,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Budhhat",
-                "nameEn": "Budhhat",
-                "code": "9403"
+                "name": "Patkelghata",
+                "nameEn": "Patkelghata",
+                "code": "9421"
               },
               {
-                "name": "Gunakar kati",
-                "nameEn": "Gunakar kati",
-                "code": "9402"
-              },
-              {
-                "name": "Satkhira Islamia Acc",
-                "nameEn": "Satkhira Islamia Acc",
-                "code": "9401"
-              },
-              {
-                "name": "Satkhira Sadar",
-                "nameEn": "Satkhira Sadar",
-                "code": "9400"
+                "name": "Taala",
+                "nameEn": "Taala",
+                "code": "9420"
               }
             ]
           },
@@ -4437,24 +4361,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Budhhat",
-                "nameEn": "Budhhat",
-                "code": "9403"
+                "name": "Debbhata",
+                "nameEn": "Debbhata",
+                "code": "9430"
               },
               {
-                "name": "Gunakar kati",
-                "nameEn": "Gunakar kati",
-                "code": "9402"
-              },
-              {
-                "name": "Satkhira Islamia Acc",
-                "nameEn": "Satkhira Islamia Acc",
-                "code": "9401"
-              },
-              {
-                "name": "Satkhira Sadar",
-                "nameEn": "Satkhira Sadar",
-                "code": "9400"
+                "name": "Gurugram",
+                "nameEn": "Gurugram",
+                "code": "9431"
               }
             ]
           },
@@ -4482,14 +4396,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Patkelghata",
-                "nameEn": "Patkelghata",
-                "code": "9421"
+                "name": "Budhhat",
+                "nameEn": "Budhhat",
+                "code": "9403"
               },
               {
-                "name": "Taala",
-                "nameEn": "Taala",
-                "code": "9420"
+                "name": "Gunakar kati",
+                "nameEn": "Gunakar kati",
+                "code": "9402"
+              },
+              {
+                "name": "Satkhira Islamia Acc",
+                "nameEn": "Satkhira Islamia Acc",
+                "code": "9401"
+              },
+              {
+                "name": "Satkhira Sadar",
+                "nameEn": "Satkhira Sadar",
+                "code": "9400"
               }
             ]
           },
@@ -4808,34 +4732,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-12"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Ashuganj",
-                "nameEn": "Ashuganj",
-                "code": "3402"
-              },
-              {
-                "name": "Ashuganj Share",
-                "nameEn": "Ashuganj Share",
-                "code": "3403"
-              },
-              {
-                "name": "Brahamanbaria Sadar",
-                "nameEn": "Brahamanbaria Sadar",
-                "code": "3400"
-              },
-              {
-                "name": "Poun",
-                "nameEn": "Poun",
-                "code": "3404"
-              },
-              {
-                "name": "Talshahar",
-                "nameEn": "Talshahar",
-                "code": "3401"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "ব্রাহ্মণবাড়িয়া সদর উপজেলা",
@@ -4861,19 +4758,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Akhaura",
-                "nameEn": "Akhaura",
-                "code": "3450"
+                "name": "Ashuganj",
+                "nameEn": "Ashuganj",
+                "code": "3402"
               },
               {
-                "name": "Azampur",
-                "nameEn": "Azampur",
-                "code": "3451"
+                "name": "Ashuganj Share",
+                "nameEn": "Ashuganj Share",
+                "code": "3403"
               },
               {
-                "name": "Gangasagar",
-                "nameEn": "Gangasagar",
-                "code": "3452"
+                "name": "Brahamanbaria Sadar",
+                "nameEn": "Brahamanbaria Sadar",
+                "code": "3400"
+              },
+              {
+                "name": "Poun",
+                "nameEn": "Poun",
+                "code": "3404"
+              },
+              {
+                "name": "Talshahar",
+                "nameEn": "Talshahar",
+                "code": "3401"
               }
             ]
           },
@@ -4901,14 +4808,49 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ahsanganj",
-                "nameEn": "Ahsanganj",
-                "code": "6596"
+                "name": "Jibanganj",
+                "nameEn": "Jibanganj",
+                "code": "3419"
               },
               {
-                "name": "Bandai",
-                "nameEn": "Bandai",
-                "code": "6597"
+                "name": "Kaitala",
+                "nameEn": "Kaitala",
+                "code": "3417"
+              },
+              {
+                "name": "Laubfatehpur",
+                "nameEn": "Laubfatehpur",
+                "code": "3411"
+              },
+              {
+                "name": "Nabinagar",
+                "nameEn": "Nabinagar",
+                "code": "3410"
+              },
+              {
+                "name": "Rasullabad",
+                "nameEn": "Rasullabad",
+                "code": "3412"
+              },
+              {
+                "name": "Ratanpur",
+                "nameEn": "Ratanpur",
+                "code": "3414"
+              },
+              {
+                "name": "Salimganj",
+                "nameEn": "Salimganj",
+                "code": "3418"
+              },
+              {
+                "name": "Shahapur",
+                "nameEn": "Shahapur",
+                "code": "3415"
+              },
+              {
+                "name": "Shamgram",
+                "nameEn": "Shamgram",
+                "code": "3413"
               }
             ]
           },
@@ -4932,29 +4874,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ashuganj",
-                "nameEn": "Ashuganj",
-                "code": "3402"
+                "name": "Ahsanganj",
+                "nameEn": "Ahsanganj",
+                "code": "6596"
               },
               {
-                "name": "Ashuganj Share",
-                "nameEn": "Ashuganj Share",
-                "code": "3403"
-              },
-              {
-                "name": "Brahamanbaria Sadar",
-                "nameEn": "Brahamanbaria Sadar",
-                "code": "3400"
-              },
-              {
-                "name": "Poun",
-                "nameEn": "Poun",
-                "code": "3404"
-              },
-              {
-                "name": "Talshahar",
-                "nameEn": "Talshahar",
-                "code": "3401"
+                "name": "Bandai",
+                "nameEn": "Bandai",
+                "code": "6597"
               }
             ]
           },
@@ -5016,29 +4943,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ashuganj",
-                "nameEn": "Ashuganj",
-                "code": "3402"
+                "name": "Chandidar",
+                "nameEn": "Chandidar",
+                "code": "3462"
               },
               {
-                "name": "Ashuganj Share",
-                "nameEn": "Ashuganj Share",
-                "code": "3403"
+                "name": "Chargachh",
+                "nameEn": "Chargachh",
+                "code": "3463"
               },
               {
-                "name": "Brahamanbaria Sadar",
-                "nameEn": "Brahamanbaria Sadar",
-                "code": "3400"
+                "name": "Gopinathpur",
+                "nameEn": "Gopinathpur",
+                "code": "3464"
               },
               {
-                "name": "Poun",
-                "nameEn": "Poun",
-                "code": "3404"
+                "name": "Kasba",
+                "nameEn": "Kasba",
+                "code": "3460"
               },
               {
-                "name": "Talshahar",
-                "nameEn": "Talshahar",
-                "code": "3401"
+                "name": "Kuti",
+                "nameEn": "Kuti",
+                "code": "3461"
               }
             ]
           },
@@ -5120,49 +5047,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jibanganj",
-                "nameEn": "Jibanganj",
-                "code": "3419"
+                "name": "Chandura",
+                "nameEn": "Chandura",
+                "code": "3432"
               },
               {
-                "name": "Kaitala",
-                "nameEn": "Kaitala",
-                "code": "3417"
+                "name": "Sarial",
+                "nameEn": "Sarial",
+                "code": "3430"
               },
               {
-                "name": "Laubfatehpur",
-                "nameEn": "Laubfatehpur",
-                "code": "3411"
-              },
-              {
-                "name": "Nabinagar",
-                "nameEn": "Nabinagar",
-                "code": "3410"
-              },
-              {
-                "name": "Rasullabad",
-                "nameEn": "Rasullabad",
-                "code": "3412"
-              },
-              {
-                "name": "Ratanpur",
-                "nameEn": "Ratanpur",
-                "code": "3414"
-              },
-              {
-                "name": "Salimganj",
-                "nameEn": "Salimganj",
-                "code": "3418"
-              },
-              {
-                "name": "Shahapur",
-                "nameEn": "Shahapur",
-                "code": "3415"
-              },
-              {
-                "name": "Shamgram",
-                "nameEn": "Shamgram",
-                "code": "3413"
+                "name": "Shahbajpur",
+                "nameEn": "Shahbajpur",
+                "code": "3431"
               }
             ]
           },
@@ -5225,19 +5122,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chandura",
-                "nameEn": "Chandura",
-                "code": "3432"
-              },
-              {
-                "name": "Sarial",
-                "nameEn": "Sarial",
-                "code": "3430"
-              },
-              {
-                "name": "Shahbajpur",
-                "nameEn": "Shahbajpur",
-                "code": "3431"
+                "name": "Banchharampur",
+                "nameEn": "Banchharampur",
+                "code": "3420"
               }
             ]
           }
@@ -5347,9 +5234,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bandarban Sadar",
-                "nameEn": "Bandarban Sadar",
-                "code": "4600"
+                "name": "Alikadam",
+                "nameEn": "Alikadam",
+                "code": "4650"
               }
             ]
           },
@@ -5377,9 +5264,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Alikadam",
-                "nameEn": "Alikadam",
-                "code": "4650"
+                "name": "Lama",
+                "nameEn": "Lama",
+                "code": "4641"
+              },
+              {
+                "name": "Thanchi",
+                "nameEn": "Thanchi",
+                "code": "4630"
               }
             ]
           },
@@ -5429,9 +5321,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Roanchhari",
-                "nameEn": "Roanchhari",
-                "code": "4610"
+                "name": "Ruma",
+                "nameEn": "Ruma",
+                "code": "4620"
               }
             ]
           },
@@ -5459,9 +5351,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ruma",
-                "nameEn": "Ruma",
-                "code": "4620"
+                "name": "Roanchhari",
+                "nameEn": "Roanchhari",
+                "code": "4610"
               }
             ]
           },
@@ -5489,14 +5381,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Lama",
-                "nameEn": "Lama",
-                "code": "4641"
-              },
-              {
-                "name": "Thanchi",
-                "nameEn": "Thanchi",
-                "code": "4630"
+                "name": "Alikadam",
+                "nameEn": "Alikadam",
+                "code": "4650"
               }
             ]
           }
@@ -5699,14 +5586,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gandamara",
-                "nameEn": "Gandamara",
-                "code": "3661"
+                "name": "Bolakhal",
+                "nameEn": "Bolakhal",
+                "code": "3611"
               },
               {
-                "name": "Hayemchar",
-                "nameEn": "Hayemchar",
-                "code": "3660"
+                "name": "Hajiganj",
+                "nameEn": "Hajiganj",
+                "code": "3610"
               }
             ]
           },
@@ -5730,14 +5617,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bolakhal",
-                "nameEn": "Bolakhal",
-                "code": "3611"
+                "name": "Gandamara",
+                "nameEn": "Gandamara",
+                "code": "3661"
               },
               {
-                "name": "Hajiganj",
-                "nameEn": "Hajiganj",
-                "code": "3610"
+                "name": "Hayemchar",
+                "nameEn": "Hayemchar",
+                "code": "3660"
               }
             ]
           },
@@ -5761,24 +5648,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kachua",
-                "nameEn": "Kachua",
-                "code": "3630"
+                "name": "Chotoshi",
+                "nameEn": "Chotoshi",
+                "code": "3623"
               },
               {
-                "name": "Pak Shrirampur",
-                "nameEn": "Pak Shrirampur",
-                "code": "3631"
+                "name": "Islamia Madrasha",
+                "nameEn": "Islamia Madrasha",
+                "code": "3624"
               },
               {
-                "name": "Rahima Nagar",
-                "nameEn": "Rahima Nagar",
-                "code": "3632"
+                "name": "Khilabazar",
+                "nameEn": "Khilabazar",
+                "code": "3621"
               },
               {
-                "name": "Shachar",
-                "nameEn": "Shachar",
-                "code": "3633"
+                "name": "Pashchim Kherihar Al",
+                "nameEn": "Pashchim Kherihar Al",
+                "code": "3622"
+              },
+              {
+                "name": "Shahrasti",
+                "nameEn": "Shahrasti",
+                "code": "3620"
               }
             ]
           },
@@ -5802,24 +5694,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baburhat",
-                "nameEn": "Baburhat",
-                "code": "3602"
+                "name": "Chotoshi",
+                "nameEn": "Chotoshi",
+                "code": "3623"
               },
               {
-                "name": "Chandpur Sadar",
-                "nameEn": "Chandpur Sadar",
-                "code": "3600"
+                "name": "Islamia Madrasha",
+                "nameEn": "Islamia Madrasha",
+                "code": "3624"
               },
               {
-                "name": "Puranbazar",
-                "nameEn": "Puranbazar",
-                "code": "3601"
+                "name": "Khilabazar",
+                "nameEn": "Khilabazar",
+                "code": "3621"
               },
               {
-                "name": "Sahatali",
-                "nameEn": "Sahatali",
-                "code": "3603"
+                "name": "Pashchim Kherihar Al",
+                "nameEn": "Pashchim Kherihar Al",
+                "code": "3622"
+              },
+              {
+                "name": "Shahrasti",
+                "nameEn": "Shahrasti",
+                "code": "3620"
               }
             ]
           },
@@ -5989,24 +5886,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Kalipur",
-                "nameEn": "Kalipur",
-                "code": "3642"
-              },
-              {
-                "name": "Matlobganj",
-                "nameEn": "Matlobganj",
-                "code": "3640"
-              },
-              {
-                "name": "Mohanpur",
-                "nameEn": "Mohanpur",
-                "code": "3641"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       },
@@ -6424,44 +6304,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "পোপাদিয়া"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Boalkhali",
-                "nameEn": "Boalkhali",
-                "code": "4366"
-              },
-              {
-                "name": "Charandwip",
-                "nameEn": "Charandwip",
-                "code": "4369"
-              },
-              {
-                "name": "Iqbal Park",
-                "nameEn": "Iqbal Park",
-                "code": "4365"
-              },
-              {
-                "name": "Kadurkhal",
-                "nameEn": "Kadurkhal",
-                "code": "4368"
-              },
-              {
-                "name": "Kanungopara",
-                "nameEn": "Kanungopara",
-                "code": "4363"
-              },
-              {
-                "name": "Sakpura",
-                "nameEn": "Sakpura",
-                "code": "4367"
-              },
-              {
-                "name": "Saroatoli",
-                "nameEn": "Saroatoli",
-                "code": "4364"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "পটিয়া উপজেলা",
@@ -6483,24 +6326,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Badarkali",
-                "nameEn": "Badarkali",
-                "code": "4742"
+                "name": "Budhpara",
+                "nameEn": "Budhpara",
+                "code": "4371"
               },
               {
-                "name": "Chiringga",
-                "nameEn": "Chiringga",
-                "code": "4740"
-              },
-              {
-                "name": "Chiringga S.O",
-                "nameEn": "Chiringga S.O",
-                "code": "4741"
-              },
-              {
-                "name": "Malumghat",
-                "nameEn": "Malumghat",
-                "code": "4743"
+                "name": "Patiya Head Office",
+                "nameEn": "Patiya Head Office",
+                "code": "4370"
               }
             ]
           },
@@ -6583,49 +6416,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chitt.University",
-                "nameEn": "Chitt.University",
-                "code": "4331"
+                "name": "Badarkali",
+                "nameEn": "Badarkali",
+                "code": "4742"
               },
               {
-                "name": "Fatahabad",
-                "nameEn": "Fatahabad",
-                "code": "4335"
+                "name": "Chiringga",
+                "nameEn": "Chiringga",
+                "code": "4740"
               },
               {
-                "name": "Gorduara",
-                "nameEn": "Gorduara",
-                "code": "4332"
+                "name": "Chiringga S.O",
+                "nameEn": "Chiringga S.O",
+                "code": "4741"
               },
               {
-                "name": "Hathazari",
-                "nameEn": "Hathazari",
-                "code": "4330"
-              },
-              {
-                "name": "Katirhat",
-                "nameEn": "Katirhat",
-                "code": "4333"
-              },
-              {
-                "name": "Madrasa",
-                "nameEn": "Madrasa",
-                "code": "4339"
-              },
-              {
-                "name": "Mirzapur",
-                "nameEn": "Mirzapur",
-                "code": "4334"
-              },
-              {
-                "name": "Nuralibari",
-                "nameEn": "Nuralibari",
-                "code": "4337"
-              },
-              {
-                "name": "Yunus Nagar",
-                "nameEn": "Yunus Nagar",
-                "code": "4338"
+                "name": "Malumghat",
+                "nameEn": "Malumghat",
+                "code": "4743"
               }
             ]
           },
@@ -6649,139 +6457,39 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Al- Amin Baria Madra",
-                "nameEn": "Al- Amin Baria Madra",
-                "code": "4221"
+                "name": "Boalkhali",
+                "nameEn": "Boalkhali",
+                "code": "4366"
               },
               {
-                "name": "Amin Jute Mills",
-                "nameEn": "Amin Jute Mills",
-                "code": "4211"
+                "name": "Charandwip",
+                "nameEn": "Charandwip",
+                "code": "4369"
               },
               {
-                "name": "Anandabazar",
-                "nameEn": "Anandabazar",
-                "code": "4215"
+                "name": "Iqbal Park",
+                "nameEn": "Iqbal Park",
+                "code": "4365"
               },
               {
-                "name": "Bayezid Bostami",
-                "nameEn": "Bayezid Bostami",
-                "code": "4210"
+                "name": "Kadurkhal",
+                "nameEn": "Kadurkhal",
+                "code": "4368"
               },
               {
-                "name": "Chandgaon",
-                "nameEn": "Chandgaon",
-                "code": "4212"
+                "name": "Kanungopara",
+                "nameEn": "Kanungopara",
+                "code": "4363"
               },
               {
-                "name": "Chawkbazar",
-                "nameEn": "Chawkbazar",
-                "code": "4203"
+                "name": "Sakpura",
+                "nameEn": "Sakpura",
+                "code": "4367"
               },
               {
-                "name": "Chitt. Cantonment",
-                "nameEn": "Chitt. Cantonment",
-                "code": "4220"
-              },
-              {
-                "name": "Chitt. Customs Acca",
-                "nameEn": "Chitt. Customs Acca",
-                "code": "4219"
-              },
-              {
-                "name": "Chitt. Politechnic In",
-                "nameEn": "Chitt. Politechnic In",
-                "code": "4209"
-              },
-              {
-                "name": "Chitt. Sailers Colon",
-                "nameEn": "Chitt. Sailers Colon",
-                "code": "4218"
-              },
-              {
-                "name": "Chittagong Airport",
-                "nameEn": "Chittagong Airport",
-                "code": "4205"
-              },
-              {
-                "name": "Chittagong Bandar",
-                "nameEn": "Chittagong Bandar",
-                "code": "4100"
-              },
-              {
-                "name": "Chittagong GPO",
-                "nameEn": "Chittagong GPO",
-                "code": "4000"
-              },
-              {
-                "name": "Export Processing",
-                "nameEn": "Export Processing",
-                "code": "4223"
-              },
-              {
-                "name": "Firozshah",
-                "nameEn": "Firozshah",
-                "code": "4207"
-              },
-              {
-                "name": "Halishahar",
-                "nameEn": "Halishahar",
-                "code": "4216"
-              },
-              {
-                "name": "Halishshar",
-                "nameEn": "Halishshar",
-                "code": "4225"
-              },
-              {
-                "name": "Jalalabad",
-                "nameEn": "Jalalabad",
-                "code": "4214"
-              },
-              {
-                "name": "Jaldia Merine Accade",
-                "nameEn": "Jaldia Merine Accade",
-                "code": "4206"
-              },
-              {
-                "name": "Middle Patenga",
-                "nameEn": "Middle Patenga",
-                "code": "4222"
-              },
-              {
-                "name": "Mohard",
-                "nameEn": "Mohard",
-                "code": "4208"
-              },
-              {
-                "name": "North Halishahar",
-                "nameEn": "North Halishahar",
-                "code": "4226"
-              },
-              {
-                "name": "North Katuli",
-                "nameEn": "North Katuli",
-                "code": "4217"
-              },
-              {
-                "name": "Pahartoli",
-                "nameEn": "Pahartoli",
-                "code": "4202"
-              },
-              {
-                "name": "Patenga",
-                "nameEn": "Patenga",
-                "code": "4204"
-              },
-              {
-                "name": "Rampura TSO",
-                "nameEn": "Rampura TSO",
-                "code": "4224"
-              },
-              {
-                "name": "Wazedia",
-                "nameEn": "Wazedia",
-                "code": "4213"
+                "name": "Saroatoli",
+                "nameEn": "Saroatoli",
+                "code": "4364"
               }
             ]
           },
@@ -6841,141 +6549,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Abutorab",
-                "nameEn": "Abutorab",
-                "code": "4321"
-              },
-              {
-                "name": "Azampur",
-                "nameEn": "Azampur",
-                "code": "4325"
-              },
-              {
-                "name": "Bharawazhat",
-                "nameEn": "Bharawazhat",
-                "code": "4323"
-              },
-              {
-                "name": "Darrogahat",
-                "nameEn": "Darrogahat",
-                "code": "4322"
-              },
-              {
-                "name": "Joarganj",
-                "nameEn": "Joarganj",
-                "code": "4324"
-              },
-              {
-                "name": "Korerhat",
-                "nameEn": "Korerhat",
-                "code": "4327"
-              },
-              {
-                "name": "Mirsharai",
-                "nameEn": "Mirsharai",
-                "code": "4320"
-              },
-              {
-                "name": "Mohazanhat",
-                "nameEn": "Mohazanhat",
-                "code": "4328"
-              }
-            ]
-          },
-          {
-            "name": "রাঙ্গুনিয়া উপজেলা",
-            "nameEn": "Rangunia",
-            "unions": [
-              {
-                "name": "পটিয়া",
-                "nameEn": "পটিয়া"
-              },
-              {
-                "name": "হাইদগাঁও",
-                "nameEn": "হাইদগাঁও"
-              },
-              {
-                "name": "ছনহরা",
-                "nameEn": "ছনহরা"
-              },
-              {
-                "name": "শোভনদণ্ডী",
-                "nameEn": "শোভনদণ্ডী"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Budhpara",
-                "nameEn": "Budhpara",
-                "code": "4371"
-              },
-              {
-                "name": "Patiya Head Office",
-                "nameEn": "Patiya Head Office",
-                "code": "4370"
-              }
-            ]
-          },
-          {
-            "name": "লোহাগাড়া উপজেলা",
-            "nameEn": "Lohagara",
-            "unions": [
-              {
-                "name": "রাঙ্গুনিয়া",
-                "nameEn": "রাঙ্গুনিয়া"
-              },
-              {
-                "name": "পোমরা",
-                "nameEn": "পোমরা"
-              },
-              {
-                "name": "ইছানগর",
-                "nameEn": "ইছানগর"
-              },
-              {
-                "name": "পদুয়া",
-                "nameEn": "পদুয়া"
-              },
-              {
-                "name": "মরিয়মনগর",
-                "nameEn": "মরিয়মনগর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Dhamair",
-                "nameEn": "Dhamair",
-                "code": "4361"
-              },
-              {
-                "name": "Rangunia",
-                "nameEn": "Rangunia",
-                "code": "4360"
-              }
-            ]
-          },
-          {
-            "name": "সন্দ্বীপ উপজেলা",
-            "nameEn": "Sandwip",
-            "unions": [
-              {
-                "name": "রাউজান",
-                "nameEn": "রাউজান"
-              },
-              {
-                "name": "পাহাড়তলী",
-                "nameEn": "পাহাড়তলী"
-              },
-              {
-                "name": "গহিরা",
-                "nameEn": "গহিরা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "B.I.T Post Office",
                 "nameEn": "B.I.T Post Office",
                 "code": "4349"
@@ -7028,6 +6601,121 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "রাঙ্গুনিয়া উপজেলা",
+            "nameEn": "Rangunia",
+            "unions": [
+              {
+                "name": "পটিয়া",
+                "nameEn": "পটিয়া"
+              },
+              {
+                "name": "হাইদগাঁও",
+                "nameEn": "হাইদগাঁও"
+              },
+              {
+                "name": "ছনহরা",
+                "nameEn": "ছনহরা"
+              },
+              {
+                "name": "শোভনদণ্ডী",
+                "nameEn": "শোভনদণ্ডী"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Dhamair",
+                "nameEn": "Dhamair",
+                "code": "4361"
+              },
+              {
+                "name": "Rangunia",
+                "nameEn": "Rangunia",
+                "code": "4360"
+              }
+            ]
+          },
+          {
+            "name": "লোহাগাড়া উপজেলা",
+            "nameEn": "Lohagara",
+            "unions": [
+              {
+                "name": "রাঙ্গুনিয়া",
+                "nameEn": "রাঙ্গুনিয়া"
+              },
+              {
+                "name": "পোমরা",
+                "nameEn": "পোমরা"
+              },
+              {
+                "name": "ইছানগর",
+                "nameEn": "ইছানগর"
+              },
+              {
+                "name": "পদুয়া",
+                "nameEn": "পদুয়া"
+              },
+              {
+                "name": "মরিয়মনগর",
+                "nameEn": "মরিয়মনগর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Chunti",
+                "nameEn": "Chunti",
+                "code": "4398"
+              },
+              {
+                "name": "Lohagara",
+                "nameEn": "Lohagara",
+                "code": "4396"
+              },
+              {
+                "name": "Padua",
+                "nameEn": "Padua",
+                "code": "4397"
+              }
+            ]
+          },
+          {
+            "name": "সন্দ্বীপ উপজেলা",
+            "nameEn": "Sandwip",
+            "unions": [
+              {
+                "name": "রাউজান",
+                "nameEn": "রাউজান"
+              },
+              {
+                "name": "পাহাড়তলী",
+                "nameEn": "পাহাড়তলী"
+              },
+              {
+                "name": "গহিরা",
+                "nameEn": "গহিরা"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Sandwip",
+                "nameEn": "Sandwip",
+                "code": "4300"
+              },
+              {
+                "name": "Shiberhat",
+                "nameEn": "Shiberhat",
+                "code": "4301"
+              },
+              {
+                "name": "Urirchar",
+                "nameEn": "Urirchar",
+                "code": "4302"
+              }
+            ]
+          },
+          {
             "name": "সাতকানিয়া উপজেলা",
             "nameEn": "Satkania",
             "unions": [
@@ -7055,19 +6743,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Sandwip",
-                "nameEn": "Sandwip",
-                "code": "4300"
+                "name": "Baitul Ijjat",
+                "nameEn": "Baitul Ijjat",
+                "code": "4387"
               },
               {
-                "name": "Shiberhat",
-                "nameEn": "Shiberhat",
-                "code": "4301"
+                "name": "Bazalia",
+                "nameEn": "Bazalia",
+                "code": "4388"
               },
               {
-                "name": "Urirchar",
-                "nameEn": "Urirchar",
-                "code": "4302"
+                "name": "Satkania",
+                "nameEn": "Satkania",
+                "code": "4386"
               }
             ]
           },
@@ -7094,50 +6782,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "মাদার্শা",
                 "nameEn": "মাদার্শা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Baitul Ijjat",
-                "nameEn": "Baitul Ijjat",
-                "code": "4387"
-              },
-              {
-                "name": "Bazalia",
-                "nameEn": "Bazalia",
-                "code": "4388"
-              },
-              {
-                "name": "Satkania",
-                "nameEn": "Satkania",
-                "code": "4386"
-              }
-            ]
-          },
-          {
-            "name": "হাটহাজারী উপজেলা",
-            "nameEn": "Hathazari",
-            "unions": [
-              {
-                "name": "সীতাকুণ্ড",
-                "nameEn": "সীতাকুণ্ড"
-              },
-              {
-                "name": "বড়কমল",
-                "nameEn": "বড়কমল"
-              },
-              {
-                "name": "কুমিরা",
-                "nameEn": "কুমিরা"
-              },
-              {
-                "name": "সোনাইছড়ি",
-                "nameEn": "সোনাইছড়ি"
-              },
-              {
-                "name": "বাড়বকুন্ড",
-                "nameEn": "বাড়বকুন্ড"
               }
             ],
             "type": "upazila",
@@ -7181,6 +6825,80 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Sitakunda",
                 "nameEn": "Sitakunda",
                 "code": "4310"
+              }
+            ]
+          },
+          {
+            "name": "হাটহাজারী উপজেলা",
+            "nameEn": "Hathazari",
+            "unions": [
+              {
+                "name": "সীতাকুণ্ড",
+                "nameEn": "সীতাকুণ্ড"
+              },
+              {
+                "name": "বড়কমল",
+                "nameEn": "বড়কমল"
+              },
+              {
+                "name": "কুমিরা",
+                "nameEn": "কুমিরা"
+              },
+              {
+                "name": "সোনাইছড়ি",
+                "nameEn": "সোনাইছড়ি"
+              },
+              {
+                "name": "বাড়বকুন্ড",
+                "nameEn": "বাড়বকুন্ড"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Chitt.University",
+                "nameEn": "Chitt.University",
+                "code": "4331"
+              },
+              {
+                "name": "Fatahabad",
+                "nameEn": "Fatahabad",
+                "code": "4335"
+              },
+              {
+                "name": "Gorduara",
+                "nameEn": "Gorduara",
+                "code": "4332"
+              },
+              {
+                "name": "Hathazari",
+                "nameEn": "Hathazari",
+                "code": "4330"
+              },
+              {
+                "name": "Katirhat",
+                "nameEn": "Katirhat",
+                "code": "4333"
+              },
+              {
+                "name": "Madrasa",
+                "nameEn": "Madrasa",
+                "code": "4339"
+              },
+              {
+                "name": "Mirzapur",
+                "nameEn": "Mirzapur",
+                "code": "4334"
+              },
+              {
+                "name": "Nuralibari",
+                "nameEn": "Nuralibari",
+                "code": "4337"
+              },
+              {
+                "name": "Yunus Nagar",
+                "nameEn": "Yunus Nagar",
+                "code": "4338"
               }
             ]
           }
@@ -7231,24 +6949,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Coxs Bazar Sadar",
-                "nameEn": "Coxs Bazar Sadar",
-                "code": "4700"
-              },
-              {
-                "name": "Eidga",
-                "nameEn": "Eidga",
-                "code": "4702"
-              },
-              {
-                "name": "Zhilanja",
-                "nameEn": "Zhilanja",
-                "code": "4701"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "কক্সবাজার সদর",
@@ -7306,19 +7007,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Coxs Bazar Sadar",
-                "nameEn": "Coxs Bazar Sadar",
-                "code": "4700"
-              },
-              {
-                "name": "Eidga",
-                "nameEn": "Eidga",
-                "code": "4702"
-              },
-              {
-                "name": "Zhilanja",
-                "nameEn": "Zhilanja",
-                "code": "4701"
+                "name": "Ukhia",
+                "nameEn": "Ukhia",
+                "code": "4750"
               }
             ]
           },
@@ -7412,19 +7103,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Coxs Bazar Sadar",
-                "nameEn": "Coxs Bazar Sadar",
-                "code": "4700"
+                "name": "Hnila",
+                "nameEn": "Hnila",
+                "code": "4761"
               },
               {
-                "name": "Eidga",
-                "nameEn": "Eidga",
-                "code": "4702"
+                "name": "St.Martin",
+                "nameEn": "St.Martin",
+                "code": "4762"
               },
               {
-                "name": "Zhilanja",
-                "nameEn": "Zhilanja",
-                "code": "4701"
+                "name": "Teknaf",
+                "nameEn": "Teknaf",
+                "code": "4760"
               }
             ]
           },
@@ -7452,9 +7143,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ramu",
-                "nameEn": "Ramu",
-                "code": "4730"
+                "name": "Coxs Bazar Sadar",
+                "nameEn": "Coxs Bazar Sadar",
+                "code": "4700"
+              },
+              {
+                "name": "Eidga",
+                "nameEn": "Eidga",
+                "code": "4702"
+              },
+              {
+                "name": "Zhilanja",
+                "nameEn": "Zhilanja",
+                "code": "4701"
               }
             ]
           },
@@ -7482,19 +7183,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Hnila",
-                "nameEn": "Hnila",
-                "code": "4761"
+                "name": "Coxs Bazar Sadar",
+                "nameEn": "Coxs Bazar Sadar",
+                "code": "4700"
               },
               {
-                "name": "St.Martin",
-                "nameEn": "St.Martin",
-                "code": "4762"
+                "name": "Eidga",
+                "nameEn": "Eidga",
+                "code": "4702"
               },
               {
-                "name": "Teknaf",
-                "nameEn": "Teknaf",
-                "code": "4760"
+                "name": "Zhilanja",
+                "nameEn": "Zhilanja",
+                "code": "4701"
               }
             ]
           },
@@ -7510,9 +7211,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ukhia",
-                "nameEn": "Ukhia",
-                "code": "4750"
+                "name": "Ramu",
+                "nameEn": "Ramu",
+                "code": "4730"
               }
             ]
           }
@@ -8457,24 +8158,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chhagalnaia",
-                "nameEn": "Chhagalnaia",
-                "code": "3910"
+                "name": "Fazilpur",
+                "nameEn": "Fazilpur",
+                "code": "3901"
               },
               {
-                "name": "Daraga Hat",
-                "nameEn": "Daraga Hat",
-                "code": "3912"
+                "name": "Feni Sadar",
+                "nameEn": "Feni Sadar",
+                "code": "3900"
               },
               {
-                "name": "Maharajganj",
-                "nameEn": "Maharajganj",
-                "code": "3911"
+                "name": "Laskarhat",
+                "nameEn": "Laskarhat",
+                "code": "3903"
               },
               {
-                "name": "Puabashimulia",
-                "nameEn": "Puabashimulia",
-                "code": "3913"
+                "name": "Sharshadie",
+                "nameEn": "Sharshadie",
+                "code": "3902"
               }
             ]
           },
@@ -8547,24 +8248,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Fazilpur",
-                "nameEn": "Fazilpur",
-                "code": "3901"
+                "name": "Ahmadpur",
+                "nameEn": "Ahmadpur",
+                "code": "3932"
               },
               {
-                "name": "Feni Sadar",
-                "nameEn": "Feni Sadar",
-                "code": "3900"
+                "name": "Kazirhat",
+                "nameEn": "Kazirhat",
+                "code": "3933"
               },
               {
-                "name": "Laskarhat",
-                "nameEn": "Laskarhat",
-                "code": "3903"
+                "name": "Motiganj",
+                "nameEn": "Motiganj",
+                "code": "3931"
               },
               {
-                "name": "Sharshadie",
-                "nameEn": "Sharshadie",
-                "code": "3902"
+                "name": "Sonagazi",
+                "nameEn": "Sonagazi",
+                "code": "3930"
               }
             ]
           },
@@ -8678,24 +8379,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ahmadpur",
-                "nameEn": "Ahmadpur",
-                "code": "3932"
+                "name": "Fazilpur",
+                "nameEn": "Fazilpur",
+                "code": "3901"
               },
               {
-                "name": "Kazirhat",
-                "nameEn": "Kazirhat",
-                "code": "3933"
+                "name": "Feni Sadar",
+                "nameEn": "Feni Sadar",
+                "code": "3900"
               },
               {
-                "name": "Motiganj",
-                "nameEn": "Motiganj",
-                "code": "3931"
+                "name": "Laskarhat",
+                "nameEn": "Laskarhat",
+                "code": "3903"
               },
               {
-                "name": "Sonagazi",
-                "nameEn": "Sonagazi",
-                "code": "3930"
+                "name": "Sharshadie",
+                "nameEn": "Sharshadie",
+                "code": "3902"
               }
             ]
           },
@@ -9039,9 +8740,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Diginala",
-                "nameEn": "Diginala",
-                "code": "4420"
+                "name": "Khagrachari Sadar",
+                "nameEn": "Khagrachari Sadar",
+                "code": "4400"
               }
             ]
           },
@@ -9065,9 +8766,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Khagrachari Sadar",
-                "nameEn": "Khagrachari Sadar",
-                "code": "4400"
+                "name": "Panchhari",
+                "nameEn": "Panchhari",
+                "code": "4410"
               }
             ]
           },
@@ -9087,9 +8788,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Khagrachari Sadar",
-                "nameEn": "Khagrachari Sadar",
-                "code": "4400"
+                "name": "Panchhari",
+                "nameEn": "Panchhari",
+                "code": "4410"
               }
             ]
           },
@@ -9109,9 +8810,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Laxmichhari",
-                "nameEn": "Laxmichhari",
-                "code": "4470"
+                "name": "Mahalchhari",
+                "nameEn": "Mahalchhari",
+                "code": "4430"
               }
             ]
           },
@@ -9131,9 +8832,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Mahalchhari",
-                "nameEn": "Mahalchhari",
-                "code": "4430"
+                "name": "Matiranga",
+                "nameEn": "Matiranga",
+                "code": "4450"
               }
             ]
           },
@@ -9183,9 +8884,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Matiranga",
-                "nameEn": "Matiranga",
-                "code": "4450"
+                "name": "Ramghar Head Office",
+                "nameEn": "Ramghar Head Office",
+                "code": "4440"
               }
             ]
           },
@@ -9235,9 +8936,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ramghar Head Office",
-                "nameEn": "Ramghar Head Office",
-                "code": "4440"
+                "name": "Khagrachari Sadar",
+                "nameEn": "Khagrachari Sadar",
+                "code": "4400"
               }
             ]
           }
@@ -9288,59 +8989,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Amani Lakshimpur",
-                "nameEn": "Amani Lakshimpur",
-                "code": "3709"
-              },
-              {
-                "name": "Bhabaniganj",
-                "nameEn": "Bhabaniganj",
-                "code": "3702"
-              },
-              {
-                "name": "Chandraganj",
-                "nameEn": "Chandraganj",
-                "code": "3708"
-              },
-              {
-                "name": "Choupalli",
-                "nameEn": "Choupalli",
-                "code": "3707"
-              },
-              {
-                "name": "Dalal Bazar",
-                "nameEn": "Dalal Bazar",
-                "code": "3701"
-              },
-              {
-                "name": "Duttapara",
-                "nameEn": "Duttapara",
-                "code": "3706"
-              },
-              {
-                "name": "Keramatganj",
-                "nameEn": "Keramatganj",
-                "code": "3704"
-              },
-              {
-                "name": "Lakshimpur Sadar",
-                "nameEn": "Lakshimpur Sadar",
-                "code": "3700"
-              },
-              {
-                "name": "Mandari",
-                "nameEn": "Mandari",
-                "code": "3703"
-              },
-              {
-                "name": "Rupchara",
-                "nameEn": "Rupchara",
-                "code": "3705"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "লক্ষ্মীপুর",
@@ -9504,29 +9153,34 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhuabari",
-                "nameEn": "Bhuabari",
-                "code": "3714"
+                "name": "Alipur",
+                "nameEn": "Alipur",
+                "code": "3721"
               },
               {
-                "name": "Haydarganj",
-                "nameEn": "Haydarganj",
-                "code": "3713"
+                "name": "Dolta",
+                "nameEn": "Dolta",
+                "code": "3725"
               },
               {
-                "name": "Nagerdighirpar",
-                "nameEn": "Nagerdighirpar",
-                "code": "3712"
+                "name": "Kanchanpur",
+                "nameEn": "Kanchanpur",
+                "code": "3723"
               },
               {
-                "name": "Rakhallia",
-                "nameEn": "Rakhallia",
-                "code": "3711"
+                "name": "Naagmud",
+                "nameEn": "Naagmud",
+                "code": "3724"
               },
               {
-                "name": "Raypur",
-                "nameEn": "Raypur",
-                "code": "3710"
+                "name": "Panpara",
+                "nameEn": "Panpara",
+                "code": "3722"
+              },
+              {
+                "name": "Ramganj",
+                "nameEn": "Ramganj",
+                "code": "3720"
               }
             ]
           },
@@ -9609,34 +9263,54 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Alipur",
-                "nameEn": "Alipur",
-                "code": "3721"
+                "name": "Amani Lakshimpur",
+                "nameEn": "Amani Lakshimpur",
+                "code": "3709"
               },
               {
-                "name": "Dolta",
-                "nameEn": "Dolta",
-                "code": "3725"
+                "name": "Bhabaniganj",
+                "nameEn": "Bhabaniganj",
+                "code": "3702"
               },
               {
-                "name": "Kanchanpur",
-                "nameEn": "Kanchanpur",
-                "code": "3723"
+                "name": "Chandraganj",
+                "nameEn": "Chandraganj",
+                "code": "3708"
               },
               {
-                "name": "Naagmud",
-                "nameEn": "Naagmud",
-                "code": "3724"
+                "name": "Choupalli",
+                "nameEn": "Choupalli",
+                "code": "3707"
               },
               {
-                "name": "Panpara",
-                "nameEn": "Panpara",
-                "code": "3722"
+                "name": "Dalal Bazar",
+                "nameEn": "Dalal Bazar",
+                "code": "3701"
               },
               {
-                "name": "Ramganj",
-                "nameEn": "Ramganj",
-                "code": "3720"
+                "name": "Duttapara",
+                "nameEn": "Duttapara",
+                "code": "3706"
+              },
+              {
+                "name": "Keramatganj",
+                "nameEn": "Keramatganj",
+                "code": "3704"
+              },
+              {
+                "name": "Lakshimpur Sadar",
+                "nameEn": "Lakshimpur Sadar",
+                "code": "3700"
+              },
+              {
+                "name": "Mandari",
+                "nameEn": "Mandari",
+                "code": "3703"
+              },
+              {
+                "name": "Rupchara",
+                "nameEn": "Rupchara",
+                "code": "3705"
               }
             ]
           }
@@ -10958,9 +10632,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Barakal",
-                "nameEn": "Barakal",
-                "code": "4570"
+                "name": "Rangamati Sadar",
+                "nameEn": "Rangamati Sadar",
+                "code": "4500"
               }
             ]
           },
@@ -11006,9 +10680,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bilaichhari",
-                "nameEn": "Bilaichhari",
-                "code": "4550"
+                "name": "Rangamati Sadar",
+                "nameEn": "Rangamati Sadar",
+                "code": "4500"
               }
             ]
           },
@@ -11058,24 +10732,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chandraghona",
-                "nameEn": "Chandraghona",
-                "code": "4531"
-              },
-              {
-                "name": "Kaptai",
-                "nameEn": "Kaptai",
-                "code": "4530"
-              },
-              {
-                "name": "Kaptai Nuton Bazar",
-                "nameEn": "Kaptai Nuton Bazar",
-                "code": "4533"
-              },
-              {
-                "name": "Kaptai Project",
-                "nameEn": "Kaptai Project",
-                "code": "4532"
+                "name": "Barakal",
+                "nameEn": "Barakal",
+                "code": "4570"
               }
             ]
           },
@@ -11158,9 +10817,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Nanichhar",
-                "nameEn": "Nanichhar",
-                "code": "4520"
+                "name": "Rajsthali",
+                "nameEn": "Rajsthali",
+                "code": "4540"
               }
             ]
           },
@@ -11180,9 +10839,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Rajsthali",
-                "nameEn": "Rajsthali",
-                "code": "4540"
+                "name": "Chandraghona",
+                "nameEn": "Chandraghona",
+                "code": "4531"
+              },
+              {
+                "name": "Kaptai",
+                "nameEn": "Kaptai",
+                "code": "4530"
+              },
+              {
+                "name": "Kaptai Nuton Bazar",
+                "nameEn": "Kaptai Nuton Bazar",
+                "code": "4533"
+              },
+              {
+                "name": "Kaptai Project",
+                "nameEn": "Kaptai Project",
+                "code": "4532"
               }
             ]
           },
@@ -11206,9 +10880,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Rangamati Sadar",
-                "nameEn": "Rangamati Sadar",
-                "code": "4500"
+                "name": "Jolagati",
+                "nameEn": "Jolagati",
+                "code": "8513"
+              },
+              {
+                "name": "Joykul",
+                "nameEn": "Joykul",
+                "code": "8512"
+              },
+              {
+                "name": "Kaukhali",
+                "nameEn": "Kaukhali",
+                "code": "8510"
+              },
+              {
+                "name": "Keundia",
+                "nameEn": "Keundia",
+                "code": "8511"
               }
             ]
           },
@@ -11916,14 +11605,54 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dhamrai",
-                "nameEn": "Dhamrai",
-                "code": "1350"
+                "name": "Amin Bazar",
+                "nameEn": "Amin Bazar",
+                "code": "1348"
               },
               {
-                "name": "Kamalpur",
-                "nameEn": "Kamalpur",
-                "code": "1351"
+                "name": "Dairy Farm",
+                "nameEn": "Dairy Farm",
+                "code": "1341"
+              },
+              {
+                "name": "EPZ",
+                "nameEn": "EPZ",
+                "code": "1349"
+              },
+              {
+                "name": "Jahangirnagar Univer",
+                "nameEn": "Jahangirnagar Univer",
+                "code": "1342"
+              },
+              {
+                "name": "Kashem Cotton Mills",
+                "nameEn": "Kashem Cotton Mills",
+                "code": "1346"
+              },
+              {
+                "name": "Rajphulbaria",
+                "nameEn": "Rajphulbaria",
+                "code": "1347"
+              },
+              {
+                "name": "Savar",
+                "nameEn": "Savar",
+                "code": "1340"
+              },
+              {
+                "name": "Savar Canttonment",
+                "nameEn": "Savar Canttonment",
+                "code": "1344"
+              },
+              {
+                "name": "Saver P.A.T.C",
+                "nameEn": "Saver P.A.T.C",
+                "code": "1343"
+              },
+              {
+                "name": "Shimulia",
+                "nameEn": "Shimulia",
+                "code": "1345"
               }
             ]
           },
@@ -11990,24 +11719,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ati",
-                "nameEn": "Ati",
-                "code": "1312"
+                "name": "Dhamrai",
+                "nameEn": "Dhamrai",
+                "code": "1350"
               },
               {
-                "name": "Dhaka Jute Mills",
-                "nameEn": "Dhaka Jute Mills",
-                "code": "1311"
-              },
-              {
-                "name": "Kalatia",
-                "nameEn": "Kalatia",
-                "code": "1313"
-              },
-              {
-                "name": "Keraniganj",
-                "nameEn": "Keraniganj",
-                "code": "1310"
+                "name": "Kamalpur",
+                "nameEn": "Kamalpur",
+                "code": "1351"
               }
             ]
           },
@@ -12031,34 +11750,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Agla",
-                "nameEn": "Agla",
-                "code": "1323"
+                "name": "Ati",
+                "nameEn": "Ati",
+                "code": "1312"
               },
               {
-                "name": "Churain",
-                "nameEn": "Churain",
-                "code": "1325"
+                "name": "Dhaka Jute Mills",
+                "nameEn": "Dhaka Jute Mills",
+                "code": "1311"
               },
               {
-                "name": "Daudpur",
-                "nameEn": "Daudpur",
-                "code": "1322"
+                "name": "Kalatia",
+                "nameEn": "Kalatia",
+                "code": "1313"
               },
               {
-                "name": "Hasnabad",
-                "nameEn": "Hasnabad",
-                "code": "1321"
-              },
-              {
-                "name": "Khalpar",
-                "nameEn": "Khalpar",
-                "code": "1324"
-              },
-              {
-                "name": "Nawabganj",
-                "nameEn": "Nawabganj",
-                "code": "1320"
+                "name": "Keraniganj",
+                "nameEn": "Keraniganj",
+                "code": "1310"
               }
             ]
           },
@@ -12094,54 +11803,34 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Amin Bazar",
-                "nameEn": "Amin Bazar",
-                "code": "1348"
+                "name": "Agla",
+                "nameEn": "Agla",
+                "code": "1323"
               },
               {
-                "name": "Dairy Farm",
-                "nameEn": "Dairy Farm",
-                "code": "1341"
+                "name": "Churain",
+                "nameEn": "Churain",
+                "code": "1325"
               },
               {
-                "name": "EPZ",
-                "nameEn": "EPZ",
-                "code": "1349"
+                "name": "Daudpur",
+                "nameEn": "Daudpur",
+                "code": "1322"
               },
               {
-                "name": "Jahangirnagar Univer",
-                "nameEn": "Jahangirnagar Univer",
-                "code": "1342"
+                "name": "Hasnabad",
+                "nameEn": "Hasnabad",
+                "code": "1321"
               },
               {
-                "name": "Kashem Cotton Mills",
-                "nameEn": "Kashem Cotton Mills",
-                "code": "1346"
+                "name": "Khalpar",
+                "nameEn": "Khalpar",
+                "code": "1324"
               },
               {
-                "name": "Rajphulbaria",
-                "nameEn": "Rajphulbaria",
-                "code": "1347"
-              },
-              {
-                "name": "Savar",
-                "nameEn": "Savar",
-                "code": "1340"
-              },
-              {
-                "name": "Savar Canttonment",
-                "nameEn": "Savar Canttonment",
-                "code": "1344"
-              },
-              {
-                "name": "Saver P.A.T.C",
-                "nameEn": "Saver P.A.T.C",
-                "code": "1343"
-              },
-              {
-                "name": "Shimulia",
-                "nameEn": "Shimulia",
-                "code": "1345"
+                "name": "Nawabganj",
+                "nameEn": "Nawabganj",
+                "code": "1320"
               }
             ]
           },
@@ -12609,9 +12298,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Alfadanga",
-                "nameEn": "Alfadanga",
-                "code": "7870"
+                "name": "Ambikapur",
+                "nameEn": "Ambikapur",
+                "code": "7802"
+              },
+              {
+                "name": "Baitulaman Politecni",
+                "nameEn": "Baitulaman Politecni",
+                "code": "7803"
+              },
+              {
+                "name": "Faridpursadar",
+                "nameEn": "Faridpursadar",
+                "code": "7800"
+              },
+              {
+                "name": "Kanaipur",
+                "nameEn": "Kanaipur",
+                "code": "7801"
               }
             ]
           },
@@ -12639,9 +12343,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhanga",
-                "nameEn": "Bhanga",
-                "code": "7830"
+                "name": "Boalmari",
+                "nameEn": "Boalmari",
+                "code": "7860"
+              },
+              {
+                "name": "Rupatpat",
+                "nameEn": "Rupatpat",
+                "code": "7861"
               }
             ]
           },
@@ -12669,14 +12378,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Boalmari",
-                "nameEn": "Boalmari",
-                "code": "7860"
-              },
-              {
-                "name": "Rupatpat",
-                "nameEn": "Rupatpat",
-                "code": "7861"
+                "name": "Alfadanga",
+                "nameEn": "Alfadanga",
+                "code": "7870"
               }
             ]
           },
@@ -12696,9 +12400,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Charbadrashan",
-                "nameEn": "Charbadrashan",
-                "code": "7810"
+                "name": "Kamarkali",
+                "nameEn": "Kamarkali",
+                "code": "7851"
+              },
+              {
+                "name": "Madukhali",
+                "nameEn": "Madukhali",
+                "code": "7850"
               }
             ]
           },
@@ -12722,24 +12431,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ambikapur",
-                "nameEn": "Ambikapur",
-                "code": "7802"
-              },
-              {
-                "name": "Baitulaman Politecni",
-                "nameEn": "Baitulaman Politecni",
-                "code": "7803"
-              },
-              {
-                "name": "Faridpursadar",
-                "nameEn": "Faridpursadar",
-                "code": "7800"
-              },
-              {
-                "name": "Kanaipur",
-                "nameEn": "Kanaipur",
-                "code": "7801"
+                "name": "Bhanga",
+                "nameEn": "Bhanga",
+                "code": "7830"
               }
             ]
           },
@@ -12763,14 +12457,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kamarkali",
-                "nameEn": "Kamarkali",
-                "code": "7851"
+                "name": "Nagarkanda",
+                "nameEn": "Nagarkanda",
+                "code": "7840"
               },
               {
-                "name": "Madukhali",
-                "nameEn": "Madukhali",
-                "code": "7850"
+                "name": "Talma",
+                "nameEn": "Talma",
+                "code": "7841"
               }
             ]
           },
@@ -12798,14 +12492,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Nagarkanda",
-                "nameEn": "Nagarkanda",
-                "code": "7840"
-              },
-              {
-                "name": "Talma",
-                "nameEn": "Talma",
-                "code": "7841"
+                "name": "Charbadrashan",
+                "nameEn": "Charbadrashan",
+                "code": "7810"
               }
             ]
           },
@@ -14077,24 +13766,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jonapur",
-                "nameEn": "Jonapur",
-                "code": "8133"
+                "name": "Batkiamari",
+                "nameEn": "Batkiamari",
+                "code": "8141"
               },
               {
-                "name": "Kashiani",
-                "nameEn": "Kashiani",
-                "code": "8130"
+                "name": "Khandarpara",
+                "nameEn": "Khandarpara",
+                "code": "8142"
               },
               {
-                "name": "Ramdia College",
-                "nameEn": "Ramdia College",
-                "code": "8131"
-              },
-              {
-                "name": "Ratoil",
-                "nameEn": "Ratoil",
-                "code": "8132"
+                "name": "Maksudpur",
+                "nameEn": "Maksudpur",
+                "code": "8140"
               }
             ]
           },
@@ -14118,9 +13802,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kotalipara",
-                "nameEn": "Kotalipara",
-                "code": "8110"
+                "name": "Jonapur",
+                "nameEn": "Jonapur",
+                "code": "8133"
+              },
+              {
+                "name": "Kashiani",
+                "nameEn": "Kashiani",
+                "code": "8130"
+              },
+              {
+                "name": "Ramdia College",
+                "nameEn": "Ramdia College",
+                "code": "8131"
+              },
+              {
+                "name": "Ratoil",
+                "nameEn": "Ratoil",
+                "code": "8132"
               }
             ]
           },
@@ -14148,19 +13847,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Batkiamari",
-                "nameEn": "Batkiamari",
-                "code": "8141"
-              },
-              {
-                "name": "Khandarpara",
-                "nameEn": "Khandarpara",
-                "code": "8142"
-              },
-              {
-                "name": "Maksudpur",
-                "nameEn": "Maksudpur",
-                "code": "8140"
+                "name": "Kotalipara",
+                "nameEn": "Kotalipara",
+                "code": "8110"
               }
             ]
           },
@@ -14520,9 +14209,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ostagram",
-                "nameEn": "Ostagram",
-                "code": "2380"
+                "name": "Kishoreganj S.Mills",
+                "nameEn": "Kishoreganj S.Mills",
+                "code": "2301"
+              },
+              {
+                "name": "Kishoreganj Sadar",
+                "nameEn": "Kishoreganj Sadar",
+                "code": "2300"
+              },
+              {
+                "name": "Maizhati",
+                "nameEn": "Maizhati",
+                "code": "2302"
+              },
+              {
+                "name": "Nilganj",
+                "nameEn": "Nilganj",
+                "code": "2303"
               }
             ]
           },
@@ -14550,19 +14254,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bajitpur",
-                "nameEn": "Bajitpur",
-                "code": "2336"
-              },
-              {
-                "name": "Laksmipur",
-                "nameEn": "Laksmipur",
-                "code": "2338"
-              },
-              {
-                "name": "Sararchar",
-                "nameEn": "Sararchar",
-                "code": "2337"
+                "name": "Ostagram",
+                "nameEn": "Ostagram",
+                "code": "2380"
               }
             ]
           },
@@ -14578,9 +14272,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhairab",
-                "nameEn": "Bhairab",
-                "code": "2350"
+                "name": "Itna",
+                "nameEn": "Itna",
+                "code": "2390"
               }
             ]
           },
@@ -14604,9 +14298,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Hossenpur",
-                "nameEn": "Hossenpur",
-                "code": "2320"
+                "name": "Karimganj",
+                "nameEn": "Karimganj",
+                "code": "2310"
               }
             ]
           },
@@ -14630,9 +14324,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Itna",
-                "nameEn": "Itna",
-                "code": "2390"
+                "name": "Gochhihata",
+                "nameEn": "Gochhihata",
+                "code": "2331"
+              },
+              {
+                "name": "Katiadi",
+                "nameEn": "Katiadi",
+                "code": "2330"
               }
             ]
           },
@@ -14656,9 +14355,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Karimganj",
-                "nameEn": "Karimganj",
-                "code": "2310"
+                "name": "Chhoysuti",
+                "nameEn": "Chhoysuti",
+                "code": "2341"
+              },
+              {
+                "name": "Kuliarchar",
+                "nameEn": "Kuliarchar",
+                "code": "2340"
               }
             ]
           },
@@ -14682,14 +14386,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gochhihata",
-                "nameEn": "Gochhihata",
-                "code": "2331"
-              },
-              {
-                "name": "Katiadi",
-                "nameEn": "Katiadi",
-                "code": "2330"
+                "name": "Tarial",
+                "nameEn": "Tarial",
+                "code": "2316"
               }
             ]
           },
@@ -14713,24 +14412,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kishoreganj S.Mills",
-                "nameEn": "Kishoreganj S.Mills",
-                "code": "2301"
-              },
-              {
-                "name": "Kishoreganj Sadar",
-                "nameEn": "Kishoreganj Sadar",
-                "code": "2300"
-              },
-              {
-                "name": "Maizhati",
-                "nameEn": "Maizhati",
-                "code": "2302"
-              },
-              {
-                "name": "Nilganj",
-                "nameEn": "Nilganj",
-                "code": "2303"
+                "name": "Nikli",
+                "nameEn": "Nikli",
+                "code": "2360"
               }
             ]
           },
@@ -14754,14 +14438,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chhoysuti",
-                "nameEn": "Chhoysuti",
-                "code": "2341"
-              },
-              {
-                "name": "Kuliarchar",
-                "nameEn": "Kuliarchar",
-                "code": "2340"
+                "name": "Pakundia",
+                "nameEn": "Pakundia",
+                "code": "2326"
               }
             ]
           },
@@ -14781,14 +14460,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Abdullahpur",
-                "nameEn": "Abdullahpur",
-                "code": "2371"
+                "name": "Bajitpur",
+                "nameEn": "Bajitpur",
+                "code": "2336"
               },
               {
-                "name": "MIthamoin",
-                "nameEn": "MIthamoin",
-                "code": "2370"
+                "name": "Laksmipur",
+                "nameEn": "Laksmipur",
+                "code": "2338"
+              },
+              {
+                "name": "Sararchar",
+                "nameEn": "Sararchar",
+                "code": "2337"
               }
             ]
           },
@@ -14812,9 +14496,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Nikli",
-                "nameEn": "Nikli",
-                "code": "2360"
+                "name": "Bhairab",
+                "nameEn": "Bhairab",
+                "code": "2350"
               }
             ]
           },
@@ -14838,9 +14522,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pakundia",
-                "nameEn": "Pakundia",
-                "code": "2326"
+                "name": "Abdullahpur",
+                "nameEn": "Abdullahpur",
+                "code": "2371"
+              },
+              {
+                "name": "MIthamoin",
+                "nameEn": "MIthamoin",
+                "code": "2370"
               }
             ]
           },
@@ -14864,9 +14553,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Tarial",
-                "nameEn": "Tarial",
-                "code": "2316"
+                "name": "Hossenpur",
+                "nameEn": "Hossenpur",
+                "code": "2320"
               }
             ]
           },
@@ -15290,37 +14979,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kalkini",
-                "nameEn": "Kalkini",
-                "code": "7920"
-              },
-              {
-                "name": "Sahabrampur",
-                "nameEn": "Sahabrampur",
-                "code": "7921"
-              }
-            ]
-          },
-          {
-            "name": "শিবচর উপজেলা",
-            "nameEn": "Shibchar",
-            "unions": [
-              {
-                "name": "মাদারীপুর সদর",
-                "nameEn": "মাদারীপুর সদর"
-              },
-              {
-                "name": "পাঁচগাঁও",
-                "nameEn": "পাঁচগাঁও"
-              },
-              {
-                "name": "বারহামন্ডল",
-                "nameEn": "বারহামন্ডল"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Charmugria",
                 "nameEn": "Charmugria",
                 "code": "7901"
@@ -15344,6 +15002,32 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Mustafapur",
                 "nameEn": "Mustafapur",
                 "code": "7904"
+              }
+            ]
+          },
+          {
+            "name": "শিবচর উপজেলা",
+            "nameEn": "Shibchar",
+            "unions": [
+              {
+                "name": "মাদারীপুর সদর",
+                "nameEn": "মাদারীপুর সদর"
+              },
+              {
+                "name": "পাঁচগাঁও",
+                "nameEn": "পাঁচগাঁও"
+              },
+              {
+                "name": "বারহামন্ডল",
+                "nameEn": "বারহামন্ডল"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Shibpur",
+                "nameEn": "Shibpur",
+                "code": "1620"
               }
             ]
           },
@@ -15406,9 +15090,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Shibpur",
-                "nameEn": "Shibpur",
-                "code": "1620"
+                "name": "Khalia",
+                "nameEn": "Khalia",
+                "code": "7911"
+              },
+              {
+                "name": "Rajoir",
+                "nameEn": "Rajoir",
+                "code": "7910"
               }
             ]
           },
@@ -15676,9 +15365,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Doulatpur",
-                "nameEn": "Doulatpur",
-                "code": "1860"
+                "name": "Charmugria",
+                "nameEn": "Charmugria",
+                "code": "7901"
+              },
+              {
+                "name": "Habiganj",
+                "nameEn": "Habiganj",
+                "code": "7903"
+              },
+              {
+                "name": "Kulpaddi",
+                "nameEn": "Kulpaddi",
+                "code": "7902"
+              },
+              {
+                "name": "Madaripur Sadar",
+                "nameEn": "Madaripur Sadar",
+                "code": "7900"
+              },
+              {
+                "name": "Mustafapur",
+                "nameEn": "Mustafapur",
+                "code": "7904"
               }
             ]
           },
@@ -15701,72 +15410,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "কামরাইল",
                 "nameEn": "কামরাইল"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Gheor",
-                "nameEn": "Gheor",
-                "code": "1840"
-              }
-            ]
-          },
-          {
-            "name": "ঘিওর উপজেলা",
-            "nameEn": "Ghior",
-            "unions": [
-              {
-                "name": "হরিরামপুর",
-                "nameEn": "হরিরামপুর"
-              },
-              {
-                "name": "সুলতানপুর",
-                "nameEn": "সুলতানপুর"
-              },
-              {
-                "name": "ধনেশ্বরদি",
-                "nameEn": "ধনেশ্বরদি"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Baraigram",
-                "nameEn": "Baraigram",
-                "code": "6432"
-              },
-              {
-                "name": "Dayarampur",
-                "nameEn": "Dayarampur",
-                "code": "6431"
-              },
-              {
-                "name": "Harua",
-                "nameEn": "Harua",
-                "code": "6430"
-              }
-            ]
-          },
-          {
-            "name": "দৌলতপুর উপজেলা",
-            "nameEn": "Daulatpur",
-            "unions": [
-              {
-                "name": "মানিকগঞ্জ সদর",
-                "nameEn": "মানিকগঞ্জ সদর"
-              },
-              {
-                "name": "বেতিলা মিতরা",
-                "nameEn": "বেতিলা মিতরা"
-              },
-              {
-                "name": "খানবাড়ী",
-                "nameEn": "খানবাড়ী"
-              },
-              {
-                "name": "হাটিপাড়া",
-                "nameEn": "হাটিপাড়া"
               }
             ],
             "type": "upazila",
@@ -15799,6 +15442,62 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "ঘিওর উপজেলা",
+            "nameEn": "Ghior",
+            "unions": [
+              {
+                "name": "হরিরামপুর",
+                "nameEn": "হরিরামপুর"
+              },
+              {
+                "name": "সুলতানপুর",
+                "nameEn": "সুলতানপুর"
+              },
+              {
+                "name": "ধনেশ্বরদি",
+                "nameEn": "ধনেশ্বরদি"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Gheor",
+                "nameEn": "Gheor",
+                "code": "1840"
+              }
+            ]
+          },
+          {
+            "name": "দৌলতপুর উপজেলা",
+            "nameEn": "Daulatpur",
+            "unions": [
+              {
+                "name": "মানিকগঞ্জ সদর",
+                "nameEn": "মানিকগঞ্জ সদর"
+              },
+              {
+                "name": "বেতিলা মিতরা",
+                "nameEn": "বেতিলা মিতরা"
+              },
+              {
+                "name": "খানবাড়ী",
+                "nameEn": "খানবাড়ী"
+              },
+              {
+                "name": "হাটিপাড়া",
+                "nameEn": "হাটিপাড়া"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Doulatpur",
+                "nameEn": "Doulatpur",
+                "code": "1860"
+              }
+            ]
+          },
+          {
             "name": "শিবালয় উপজেলা",
             "nameEn": "Shivalaya",
             "unions": [
@@ -15813,37 +15512,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "নিমতা",
                 "nameEn": "নিমতা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Baliati",
-                "nameEn": "Baliati",
-                "code": "1811"
-              },
-              {
-                "name": "Saturia",
-                "nameEn": "Saturia",
-                "code": "1810"
-              }
-            ]
-          },
-          {
-            "name": "সাটুরিয়া উপজেলা",
-            "nameEn": "Saturia",
-            "unions": [
-              {
-                "name": "শিবালয়",
-                "nameEn": "শিবালয়"
-              },
-              {
-                "name": "আরুয়া",
-                "nameEn": "আরুয়া"
-              },
-              {
-                "name": "উলাইল",
-                "nameEn": "উলাইল"
               }
             ],
             "type": "upazila",
@@ -15867,6 +15535,37 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Uthli",
                 "nameEn": "Uthli",
                 "code": "1853"
+              }
+            ]
+          },
+          {
+            "name": "সাটুরিয়া উপজেলা",
+            "nameEn": "Saturia",
+            "unions": [
+              {
+                "name": "শিবালয়",
+                "nameEn": "শিবালয়"
+              },
+              {
+                "name": "আরুয়া",
+                "nameEn": "আরুয়া"
+              },
+              {
+                "name": "উলাইল",
+                "nameEn": "উলাইল"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Baliati",
+                "nameEn": "Baliati",
+                "code": "1811"
+              },
+              {
+                "name": "Saturia",
+                "nameEn": "Saturia",
+                "code": "1810"
               }
             ]
           },
@@ -16043,29 +15742,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Aricha",
-                "nameEn": "Aricha",
-                "code": "1851"
-              },
-              {
-                "name": "Shibaloy",
-                "nameEn": "Shibaloy",
-                "code": "1850"
-              },
-              {
-                "name": "Tewta",
-                "nameEn": "Tewta",
-                "code": "1852"
-              },
-              {
-                "name": "Uthli",
-                "nameEn": "Uthli",
-                "code": "1853"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "সাটুরিয়া পৌরসভা",
@@ -16413,49 +16090,49 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gouragonj",
-                "nameEn": "Gouragonj",
-                "code": "1334"
+                "name": "Baghra",
+                "nameEn": "Baghra",
+                "code": "1557"
               },
               {
-                "name": "Gouragonj",
-                "nameEn": "Gouragonj",
-                "code": "1534"
+                "name": "Barikhal",
+                "nameEn": "Barikhal",
+                "code": "1551"
               },
               {
-                "name": "Haldia SO",
-                "nameEn": "Haldia SO",
-                "code": "1532"
+                "name": "Bhaggyakul",
+                "nameEn": "Bhaggyakul",
+                "code": "1558"
               },
               {
-                "name": "Haridia",
-                "nameEn": "Haridia",
-                "code": "1333"
+                "name": "Hashara",
+                "nameEn": "Hashara",
+                "code": "1553"
               },
               {
-                "name": "Haridia DESO",
-                "nameEn": "Haridia DESO",
-                "code": "1533"
+                "name": "Kolapara",
+                "nameEn": "Kolapara",
+                "code": "1554"
               },
               {
-                "name": "Korhati",
-                "nameEn": "Korhati",
-                "code": "1531"
+                "name": "Kumarbhog",
+                "nameEn": "Kumarbhog",
+                "code": "1555"
               },
               {
-                "name": "Lohajang",
-                "nameEn": "Lohajang",
-                "code": "1530"
+                "name": "Mazpara",
+                "nameEn": "Mazpara",
+                "code": "1552"
               },
               {
-                "name": "Madini Mandal",
-                "nameEn": "Madini Mandal",
-                "code": "1335"
+                "name": "Srinagar",
+                "nameEn": "Srinagar",
+                "code": "1550"
               },
               {
-                "name": "Medini Mandal EDSO",
-                "nameEn": "Medini Mandal EDSO",
-                "code": "1535"
+                "name": "Vaggyakul SO",
+                "nameEn": "Vaggyakul SO",
+                "code": "1556"
               }
             ]
           },
@@ -16528,29 +16205,49 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ichapur",
-                "nameEn": "Ichapur",
-                "code": "1542"
+                "name": "Gouragonj",
+                "nameEn": "Gouragonj",
+                "code": "1334"
               },
               {
-                "name": "Kola",
-                "nameEn": "Kola",
-                "code": "1541"
+                "name": "Gouragonj",
+                "nameEn": "Gouragonj",
+                "code": "1534"
               },
               {
-                "name": "Malkha Nagar",
-                "nameEn": "Malkha Nagar",
-                "code": "1543"
+                "name": "Haldia SO",
+                "nameEn": "Haldia SO",
+                "code": "1532"
               },
               {
-                "name": "Shekher Nagar",
-                "nameEn": "Shekher Nagar",
-                "code": "1544"
+                "name": "Haridia",
+                "nameEn": "Haridia",
+                "code": "1333"
               },
               {
-                "name": "Sirajdikhan",
-                "nameEn": "Sirajdikhan",
-                "code": "1540"
+                "name": "Haridia DESO",
+                "nameEn": "Haridia DESO",
+                "code": "1533"
+              },
+              {
+                "name": "Korhati",
+                "nameEn": "Korhati",
+                "code": "1531"
+              },
+              {
+                "name": "Lohajang",
+                "nameEn": "Lohajang",
+                "code": "1530"
+              },
+              {
+                "name": "Madini Mandal",
+                "nameEn": "Madini Mandal",
+                "code": "1335"
+              },
+              {
+                "name": "Medini Mandal EDSO",
+                "nameEn": "Medini Mandal EDSO",
+                "code": "1535"
               }
             ]
           },
@@ -16573,76 +16270,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ভাগ্যকুল",
                 "nameEn": "ভাগ্যকুল"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Baghra",
-                "nameEn": "Baghra",
-                "code": "1557"
-              },
-              {
-                "name": "Barikhal",
-                "nameEn": "Barikhal",
-                "code": "1551"
-              },
-              {
-                "name": "Bhaggyakul",
-                "nameEn": "Bhaggyakul",
-                "code": "1558"
-              },
-              {
-                "name": "Hashara",
-                "nameEn": "Hashara",
-                "code": "1553"
-              },
-              {
-                "name": "Kolapara",
-                "nameEn": "Kolapara",
-                "code": "1554"
-              },
-              {
-                "name": "Kumarbhog",
-                "nameEn": "Kumarbhog",
-                "code": "1555"
-              },
-              {
-                "name": "Mazpara",
-                "nameEn": "Mazpara",
-                "code": "1552"
-              },
-              {
-                "name": "Srinagar",
-                "nameEn": "Srinagar",
-                "code": "1550"
-              },
-              {
-                "name": "Vaggyakul SO",
-                "nameEn": "Vaggyakul SO",
-                "code": "1556"
-              }
-            ]
-          },
-          {
-            "name": "গজারিয়া উপজেলা",
-            "nameEn": "Gazaria",
-            "unions": [
-              {
-                "name": "টঙ্গীবাড়ী",
-                "nameEn": "টঙ্গীবাড়ী"
-              },
-              {
-                "name": "ধীপুরা",
-                "nameEn": "ধীপুরা"
-              },
-              {
-                "name": "বজ্রযোগিনী",
-                "nameEn": "বজ্রযোগিনী"
-              },
-              {
-                "name": "আব্দুল্লাপুর",
-                "nameEn": "আব্দুল্লাপুর"
               }
             ],
             "type": "upazila",
@@ -16686,6 +16313,46 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Tangibari",
                 "nameEn": "Tangibari",
                 "code": "1520"
+              }
+            ]
+          },
+          {
+            "name": "গজারিয়া উপজেলা",
+            "nameEn": "Gazaria",
+            "unions": [
+              {
+                "name": "টঙ্গীবাড়ী",
+                "nameEn": "টঙ্গীবাড়ী"
+              },
+              {
+                "name": "ধীপুরা",
+                "nameEn": "ধীপুরা"
+              },
+              {
+                "name": "বজ্রযোগিনী",
+                "nameEn": "বজ্রযোগিনী"
+              },
+              {
+                "name": "আব্দুল্লাপুর",
+                "nameEn": "আব্দুল্লাপুর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Gajaria",
+                "nameEn": "Gajaria",
+                "code": "1510"
+              },
+              {
+                "name": "Hossendi",
+                "nameEn": "Hossendi",
+                "code": "1511"
+              },
+              {
+                "name": "Rasulpur",
+                "nameEn": "Rasulpur",
+                "code": "1512"
               }
             ]
           },
@@ -17431,14 +17098,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Araihazar",
-                "nameEn": "Araihazar",
-                "code": "1450"
-              },
-              {
-                "name": "Gopaldi",
-                "nameEn": "Gopaldi",
-                "code": "1451"
+                "name": "Narayanganj Sadar",
+                "nameEn": "Narayanganj Sadar",
+                "code": "1400"
               }
             ]
           },
@@ -17492,9 +17154,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Narayanganj Sadar",
-                "nameEn": "Narayanganj Sadar",
-                "code": "1400"
+                "name": "Araihazar",
+                "nameEn": "Araihazar",
+                "code": "1450"
+              },
+              {
+                "name": "Gopaldi",
+                "nameEn": "Gopaldi",
+                "code": "1451"
               }
             ]
           },
@@ -17964,64 +17631,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Belabo",
-                "nameEn": "Belabo",
-                "code": "1640"
-              }
-            ]
-          },
-          {
-            "name": "বেলাবো উপজেলা",
-            "nameEn": "Belabo",
-            "unions": [
-              {
-                "name": "মনোহরদী",
-                "nameEn": "মনোহরদী"
-              },
-              {
-                "name": "চরশিন্দুর",
-                "nameEn": "চরশিন্দুর"
-              },
-              {
-                "name": "মালিজোড়া",
-                "nameEn": "মালিজোড়া"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Hatirdia",
-                "nameEn": "Hatirdia",
-                "code": "1651"
-              },
-              {
-                "name": "Katabaria",
-                "nameEn": "Katabaria",
-                "code": "1652"
-              },
-              {
-                "name": "Monohordi",
-                "nameEn": "Monohordi",
-                "code": "1650"
-              }
-            ]
-          },
-          {
-            "name": "শিবপুর উপজেলা",
-            "nameEn": "Shibpur",
-            "unions": [
-              {
-                "name": "নরসিংদী সদর",
-                "nameEn": "নরসিংদী সদর"
-              },
-              {
-                "name": "করিমপুর",
-                "nameEn": "করিমপুর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Karimpur",
                 "nameEn": "Karimpur",
                 "code": "1605"
@@ -18054,6 +17663,54 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "বেলাবো উপজেলা",
+            "nameEn": "Belabo",
+            "unions": [
+              {
+                "name": "মনোহরদী",
+                "nameEn": "মনোহরদী"
+              },
+              {
+                "name": "চরশিন্দুর",
+                "nameEn": "চরশিন্দুর"
+              },
+              {
+                "name": "মালিজোড়া",
+                "nameEn": "মালিজোড়া"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Belabo",
+                "nameEn": "Belabo",
+                "code": "1640"
+              }
+            ]
+          },
+          {
+            "name": "শিবপুর উপজেলা",
+            "nameEn": "Shibpur",
+            "unions": [
+              {
+                "name": "নরসিংদী সদর",
+                "nameEn": "নরসিংদী সদর"
+              },
+              {
+                "name": "করিমপুর",
+                "nameEn": "করিমপুর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Shibpur",
+                "nameEn": "Shibpur",
+                "code": "1620"
+              }
+            ]
+          },
+          {
             "name": "মনোহরদী উপজেলা",
             "nameEn": "Monohardi",
             "unions": [
@@ -18073,24 +17730,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Char Sindhur",
-                "nameEn": "Char Sindhur",
-                "code": "1612"
+                "name": "Hatirdia",
+                "nameEn": "Hatirdia",
+                "code": "1651"
               },
               {
-                "name": "Ghorashal",
-                "nameEn": "Ghorashal",
-                "code": "1613"
+                "name": "Katabaria",
+                "nameEn": "Katabaria",
+                "code": "1652"
               },
               {
-                "name": "Ghorashal Urea Facto",
-                "nameEn": "Ghorashal Urea Facto",
-                "code": "1611"
-              },
-              {
-                "name": "Palash",
-                "nameEn": "Palash",
-                "code": "1610"
+                "name": "Monohordi",
+                "nameEn": "Monohordi",
+                "code": "1650"
               }
             ]
           },
@@ -18150,9 +17802,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Shibpur",
-                "nameEn": "Shibpur",
-                "code": "1620"
+                "name": "Char Sindhur",
+                "nameEn": "Char Sindhur",
+                "code": "1612"
+              },
+              {
+                "name": "Ghorashal",
+                "nameEn": "Ghorashal",
+                "code": "1613"
+              },
+              {
+                "name": "Ghorashal Urea Facto",
+                "nameEn": "Ghorashal Urea Facto",
+                "code": "1611"
+              },
+              {
+                "name": "Palash",
+                "nameEn": "Palash",
+                "code": "1610"
               }
             ]
           }
@@ -18309,19 +17976,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Goalanda",
-                "nameEn": "Goalanda",
-                "code": "7710"
+                "name": "Mrigibazar",
+                "nameEn": "Mrigibazar",
+                "code": "7723"
               },
               {
-                "name": "Khankhanapur",
-                "nameEn": "Khankhanapur",
-                "code": "7711"
+                "name": "Pangsha",
+                "nameEn": "Pangsha",
+                "code": "7720"
               },
               {
-                "name": "Rajbari Sadar",
-                "nameEn": "Rajbari Sadar",
-                "code": "7700"
+                "name": "Ramkol",
+                "nameEn": "Ramkol",
+                "code": "7721"
+              },
+              {
+                "name": "Ratandia",
+                "nameEn": "Ratandia",
+                "code": "7722"
               }
             ]
           },
@@ -18349,24 +18021,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Mrigibazar",
-                "nameEn": "Mrigibazar",
-                "code": "7723"
+                "name": "Baliakandi",
+                "nameEn": "Baliakandi",
+                "code": "7730"
               },
               {
-                "name": "Pangsha",
-                "nameEn": "Pangsha",
-                "code": "7720"
-              },
-              {
-                "name": "Ramkol",
-                "nameEn": "Ramkol",
-                "code": "7721"
-              },
-              {
-                "name": "Ratandia",
-                "nameEn": "Ratandia",
-                "code": "7722"
+                "name": "Nalia",
+                "nameEn": "Nalia",
+                "code": "7731"
               }
             ]
           },
@@ -18751,14 +18413,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "সিরাজপুর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Damudhya",
-                "nameEn": "Damudhya",
-                "code": "8040"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "নড়িয়া উপজেলা",
@@ -18771,58 +18426,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ইদিলপুর",
                 "nameEn": "ইদিলপুর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Gosairhat",
-                "nameEn": "Gosairhat",
-                "code": "8050"
-              }
-            ]
-          },
-          {
-            "name": "ভেদরগঞ্জ উপজেলা",
-            "nameEn": "Bhedarganj",
-            "unions": [
-              {
-                "name": "জাজিরা",
-                "nameEn": "জাজিরা"
-              },
-              {
-                "name": "বরিশাল",
-                "nameEn": "বরিশাল"
-              },
-              {
-                "name": "কুন্ডেরচর",
-                "nameEn": "কুন্ডেরচর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Jajira",
-                "nameEn": "Jajira",
-                "code": "8010"
-              }
-            ]
-          },
-          {
-            "name": "জাজিরা উপজেলা",
-            "nameEn": "Zanjira",
-            "unions": [
-              {
-                "name": "নড়িয়া",
-                "nameEn": "নড়িয়া"
-              },
-              {
-                "name": "ফতেজংগপুর",
-                "nameEn": "ফতেজংগপুর"
-              },
-              {
-                "name": "সখীপুর",
-                "nameEn": "সখীপুর"
               }
             ],
             "type": "upazila",
@@ -18855,6 +18458,58 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "ভেদরগঞ্জ উপজেলা",
+            "nameEn": "Bhedarganj",
+            "unions": [
+              {
+                "name": "জাজিরা",
+                "nameEn": "জাজিরা"
+              },
+              {
+                "name": "বরিশাল",
+                "nameEn": "বরিশাল"
+              },
+              {
+                "name": "কুন্ডেরচর",
+                "nameEn": "কুন্ডেরচর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Bhedorganj",
+                "nameEn": "Bhedorganj",
+                "code": "8030"
+              }
+            ]
+          },
+          {
+            "name": "জাজিরা উপজেলা",
+            "nameEn": "Zanjira",
+            "unions": [
+              {
+                "name": "নড়িয়া",
+                "nameEn": "নড়িয়া"
+              },
+              {
+                "name": "ফতেজংগপুর",
+                "nameEn": "ফতেজংগপুর"
+              },
+              {
+                "name": "সখীপুর",
+                "nameEn": "সখীপুর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Jajira",
+                "nameEn": "Jajira",
+                "code": "8010"
+              }
+            ]
+          },
+          {
             "name": "গোসাইরহাট উপজেলা",
             "nameEn": "Gosairhat",
             "unions": [
@@ -18874,19 +18529,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Angaria",
-                "nameEn": "Angaria",
-                "code": "8001"
-              },
-              {
-                "name": "Chikandi",
-                "nameEn": "Chikandi",
-                "code": "8002"
-              },
-              {
-                "name": "Shariatpur Sadar",
-                "nameEn": "Shariatpur Sadar",
-                "code": "8000"
+                "name": "Gosairhat",
+                "nameEn": "Gosairhat",
+                "code": "8050"
               }
             ]
           },
@@ -19280,109 +18925,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Basail",
-                "nameEn": "Basail",
-                "code": "1920"
-              }
-            ]
-          },
-          {
-            "name": "কালিহাতি উপজেলা",
-            "nameEn": "Kalihati",
-            "unions": [
-              {
-                "name": "ভূঞাপুর",
-                "nameEn": "ভূঞাপুর"
-              },
-              {
-                "name": "অলোয়া",
-                "nameEn": "অলোয়া"
-              },
-              {
-                "name": "ফলদা",
-                "nameEn": "ফলদা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bhuapur",
-                "nameEn": "Bhuapur",
-                "code": "1960"
-              }
-            ]
-          },
-          {
-            "name": "ঘাটাইল উপজেলা",
-            "nameEn": "Ghatail",
-            "unions": [
-              {
-                "name": "দেলদুয়ার",
-                "nameEn": "দেলদুয়ার"
-              },
-              {
-                "name": "পাথরাইল",
-                "nameEn": "পাথরাইল"
-              },
-              {
-                "name": "আটিয়া",
-                "nameEn": "আটিয়া"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Delduar",
-                "nameEn": "Delduar",
-                "code": "1910"
-              },
-              {
-                "name": "Elasin",
-                "nameEn": "Elasin",
-                "code": "1913"
-              },
-              {
-                "name": "Hinga Nagar",
-                "nameEn": "Hinga Nagar",
-                "code": "1914"
-              },
-              {
-                "name": "Jangalia",
-                "nameEn": "Jangalia",
-                "code": "1911"
-              },
-              {
-                "name": "Lowhati",
-                "nameEn": "Lowhati",
-                "code": "1915"
-              },
-              {
-                "name": "Patharail",
-                "nameEn": "Patharail",
-                "code": "1912"
-              }
-            ]
-          },
-          {
-            "name": "বাসাইল উপজেলা",
-            "nameEn": "Basail",
-            "unions": [
-              {
-                "name": "ধনবাড়ী",
-                "nameEn": "ধনবাড়ী"
-              },
-              {
-                "name": "বীরবাসন্দা",
-                "nameEn": "বীরবাসন্দা"
-              },
-              {
-                "name": "মুশুদ্দি",
-                "nameEn": "মুশুদ্দি"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Kagmari",
                 "nameEn": "Kagmari",
                 "code": "1901"
@@ -19410,24 +18952,81 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
-            "name": "গোপালপুর উপজেলা",
-            "nameEn": "Gopalpur",
+            "name": "কালিহাতি উপজেলা",
+            "nameEn": "Kalihati",
             "unions": [
               {
-                "name": "ঘাটাইল",
-                "nameEn": "ঘাটাইল"
+                "name": "ভূঞাপুর",
+                "nameEn": "ভূঞাপুর"
               },
               {
-                "name": "ডিঘলকান্দি",
-                "nameEn": "ডিঘলকান্দি"
+                "name": "অলোয়া",
+                "nameEn": "অলোয়া"
               },
               {
-                "name": "দেওহাটা",
-                "nameEn": "দেওহাটা"
+                "name": "ফলদা",
+                "nameEn": "ফলদা"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Ballabazar",
+                "nameEn": "Ballabazar",
+                "code": "1973"
               },
               {
-                "name": "রশিদপুর",
-                "nameEn": "রশিদপুর"
+                "name": "Elinga",
+                "nameEn": "Elinga",
+                "code": "1974"
+              },
+              {
+                "name": "Kalihati",
+                "nameEn": "Kalihati",
+                "code": "1970"
+              },
+              {
+                "name": "Nagarbari",
+                "nameEn": "Nagarbari",
+                "code": "1977"
+              },
+              {
+                "name": "Nagarbari SO",
+                "nameEn": "Nagarbari SO",
+                "code": "1976"
+              },
+              {
+                "name": "Nagbari",
+                "nameEn": "Nagbari",
+                "code": "1972"
+              },
+              {
+                "name": "Palisha",
+                "nameEn": "Palisha",
+                "code": "1975"
+              },
+              {
+                "name": "Rajafair",
+                "nameEn": "Rajafair",
+                "code": "1971"
+              }
+            ]
+          },
+          {
+            "name": "ঘাটাইল উপজেলা",
+            "nameEn": "Ghatail",
+            "unions": [
+              {
+                "name": "দেলদুয়ার",
+                "nameEn": "দেলদুয়ার"
+              },
+              {
+                "name": "পাথরাইল",
+                "nameEn": "পাথরাইল"
+              },
+              {
+                "name": "আটিয়া",
+                "nameEn": "আটিয়া"
               }
             ],
             "type": "upazila",
@@ -19460,16 +19059,50 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
-            "name": "মির্জাপুর উপজেলা",
-            "nameEn": "Mirzapur",
+            "name": "বাসাইল উপজেলা",
+            "nameEn": "Basail",
             "unions": [
               {
-                "name": "গোপালপুর",
-                "nameEn": "গোপালপুর"
+                "name": "ধনবাড়ী",
+                "nameEn": "ধনবাড়ী"
               },
               {
-                "name": "হাদিরা",
-                "nameEn": "হাদিরা"
+                "name": "বীরবাসন্দা",
+                "nameEn": "বীরবাসন্দা"
+              },
+              {
+                "name": "মুশুদ্দি",
+                "nameEn": "মুশুদ্দি"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Basail",
+                "nameEn": "Basail",
+                "code": "1920"
+              }
+            ]
+          },
+          {
+            "name": "গোপালপুর উপজেলা",
+            "nameEn": "Gopalpur",
+            "unions": [
+              {
+                "name": "ঘাটাইল",
+                "nameEn": "ঘাটাইল"
+              },
+              {
+                "name": "ডিঘলকান্দি",
+                "nameEn": "ডিঘলকান্দি"
+              },
+              {
+                "name": "দেওহাটা",
+                "nameEn": "দেওহাটা"
+              },
+              {
+                "name": "রশিদপুর",
+                "nameEn": "রশিদপুর"
               }
             ],
             "type": "upazila",
@@ -19488,6 +19121,53 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Jhowail",
                 "nameEn": "Jhowail",
                 "code": "1991"
+              }
+            ]
+          },
+          {
+            "name": "মির্জাপুর উপজেলা",
+            "nameEn": "Mirzapur",
+            "unions": [
+              {
+                "name": "গোপালপুর",
+                "nameEn": "গোপালপুর"
+              },
+              {
+                "name": "হাদিরা",
+                "nameEn": "হাদিরা"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Gorai",
+                "nameEn": "Gorai",
+                "code": "1941"
+              },
+              {
+                "name": "Jarmuki",
+                "nameEn": "Jarmuki",
+                "code": "1944"
+              },
+              {
+                "name": "M.C. College",
+                "nameEn": "M.C. College",
+                "code": "1942"
+              },
+              {
+                "name": "Mirzapur",
+                "nameEn": "Mirzapur",
+                "code": "1940"
+              },
+              {
+                "name": "Mohera",
+                "nameEn": "Mohera",
+                "code": "1945"
+              },
+              {
+                "name": "Warri paikpara",
+                "nameEn": "Warri paikpara",
+                "code": "1943"
               }
             ]
           },
@@ -19580,14 +19260,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dhobari",
-                "nameEn": "Dhobari",
-                "code": "1997"
+                "name": "Dhuburia",
+                "nameEn": "Dhuburia",
+                "code": "1937"
               },
               {
-                "name": "Madhupur",
-                "nameEn": "Madhupur",
-                "code": "1996"
+                "name": "Nagarpur",
+                "nameEn": "Nagarpur",
+                "code": "1936"
+              },
+              {
+                "name": "Salimabad",
+                "nameEn": "Salimabad",
+                "code": "1938"
               }
             ]
           },
@@ -19607,34 +19292,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gorai",
-                "nameEn": "Gorai",
-                "code": "1941"
+                "name": "Dhobari",
+                "nameEn": "Dhobari",
+                "code": "1997"
               },
               {
-                "name": "Jarmuki",
-                "nameEn": "Jarmuki",
-                "code": "1944"
-              },
-              {
-                "name": "M.C. College",
-                "nameEn": "M.C. College",
-                "code": "1942"
-              },
-              {
-                "name": "Mirzapur",
-                "nameEn": "Mirzapur",
-                "code": "1940"
-              },
-              {
-                "name": "Mohera",
-                "nameEn": "Mohera",
-                "code": "1945"
-              },
-              {
-                "name": "Warri paikpara",
-                "nameEn": "Warri paikpara",
-                "code": "1943"
+                "name": "Madhupur",
+                "nameEn": "Madhupur",
+                "code": "1996"
               }
             ]
           },
@@ -19658,19 +19323,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dhuburia",
-                "nameEn": "Dhuburia",
-                "code": "1937"
+                "name": "Kochua",
+                "nameEn": "Kochua",
+                "code": "1951"
               },
               {
-                "name": "Nagarpur",
-                "nameEn": "Nagarpur",
-                "code": "1936"
-              },
-              {
-                "name": "Salimabad",
-                "nameEn": "Salimabad",
-                "code": "1938"
+                "name": "Sakhipur",
+                "nameEn": "Sakhipur",
+                "code": "1950"
               }
             ]
           },
@@ -19690,14 +19350,34 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kochua",
-                "nameEn": "Kochua",
-                "code": "1951"
+                "name": "Delduar",
+                "nameEn": "Delduar",
+                "code": "1910"
               },
               {
-                "name": "Sakhipur",
-                "nameEn": "Sakhipur",
-                "code": "1950"
+                "name": "Elasin",
+                "nameEn": "Elasin",
+                "code": "1913"
+              },
+              {
+                "name": "Hinga Nagar",
+                "nameEn": "Hinga Nagar",
+                "code": "1914"
+              },
+              {
+                "name": "Jangalia",
+                "nameEn": "Jangalia",
+                "code": "1911"
+              },
+              {
+                "name": "Lowhati",
+                "nameEn": "Lowhati",
+                "code": "1915"
+              },
+              {
+                "name": "Patharail",
+                "nameEn": "Patharail",
+                "code": "1912"
               }
             ]
           },
@@ -20493,34 +20173,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Kagmari",
-                "nameEn": "Kagmari",
-                "code": "1901"
-              },
-              {
-                "name": "Korotia",
-                "nameEn": "Korotia",
-                "code": "1903"
-              },
-              {
-                "name": "Purabari",
-                "nameEn": "Purabari",
-                "code": "1904"
-              },
-              {
-                "name": "Santosh",
-                "nameEn": "Santosh",
-                "code": "1902"
-              },
-              {
-                "name": "Tangail Sadar",
-                "nameEn": "Tangail Sadar",
-                "code": "1900"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       }
@@ -20613,9 +20266,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Amtali",
-                "nameEn": "Amtali",
-                "code": "8710"
+                "name": "Barguna Sadar",
+                "nameEn": "Barguna Sadar",
+                "code": "8700"
+              },
+              {
+                "name": "Nali Bandar",
+                "nameEn": "Nali Bandar",
+                "code": "8701"
               }
             ]
           },
@@ -20639,9 +20297,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bamna",
-                "nameEn": "Bamna",
-                "code": "8730"
+                "name": "Amtali",
+                "nameEn": "Amtali",
+                "code": "8710"
               }
             ]
           },
@@ -20669,14 +20327,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Barguna Sadar",
-                "nameEn": "Barguna Sadar",
-                "code": "8700"
+                "name": "Betagi",
+                "nameEn": "Betagi",
+                "code": "8740"
               },
               {
-                "name": "Nali Bandar",
-                "nameEn": "Nali Bandar",
-                "code": "8701"
+                "name": "Darul Ulam",
+                "nameEn": "Darul Ulam",
+                "code": "8741"
               }
             ]
           },
@@ -20700,14 +20358,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Betagi",
-                "nameEn": "Betagi",
-                "code": "8740"
-              },
-              {
-                "name": "Darul Ulam",
-                "nameEn": "Darul Ulam",
-                "code": "8741"
+                "name": "Bamna",
+                "nameEn": "Bamna",
+                "code": "8730"
               }
             ]
           },
@@ -22268,14 +21921,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Borhanuddin UPO",
-                "nameEn": "Borhanuddin UPO",
-                "code": "8320"
+                "name": "Bhola Sadar",
+                "nameEn": "Bhola Sadar",
+                "code": "8300"
               },
               {
-                "name": "Mirzakalu",
-                "nameEn": "Mirzakalu",
-                "code": "8321"
+                "name": "Joynagar",
+                "nameEn": "Joynagar",
+                "code": "8301"
               }
             ]
           },
@@ -22437,14 +22090,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Borhanuddin UPO",
-                "nameEn": "Borhanuddin UPO",
-                "code": "8320"
+                "name": "Charfashion",
+                "nameEn": "Charfashion",
+                "code": "8340"
               },
               {
-                "name": "Mirzakalu",
-                "nameEn": "Mirzakalu",
-                "code": "8321"
+                "name": "Dularhat",
+                "nameEn": "Dularhat",
+                "code": "8341"
+              },
+              {
+                "name": "Keramatganj",
+                "nameEn": "Keramatganj",
+                "code": "8342"
               }
             ]
           },
@@ -22801,19 +22459,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Borhanuddin UPO",
-                "nameEn": "Borhanuddin UPO",
-                "code": "8320"
-              },
-              {
-                "name": "Mirzakalu",
-                "nameEn": "Mirzakalu",
-                "code": "8321"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       },
@@ -22911,37 +22557,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Borhanuddin UPO",
-                "nameEn": "Borhanuddin UPO",
-                "code": "8320"
-              },
-              {
-                "name": "Mirzakalu",
-                "nameEn": "Mirzakalu",
-                "code": "8321"
-              }
-            ]
-          },
-          {
-            "name": "কাঁঠালিয়া উপজেলা",
-            "nameEn": "Kathalia",
-            "unions": [
-              {
-                "name": "ঝালকাঠি সদর",
-                "nameEn": "ঝালকাঠি সদর"
-              },
-              {
-                "name": "কীর্তিপাশা",
-                "nameEn": "কীর্তিপাশা"
-              },
-              {
-                "name": "গাবখান",
-                "nameEn": "গাবখান"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Baukathi",
                 "nameEn": "Baukathi",
                 "code": "8402"
@@ -22969,24 +22584,20 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
-            "name": "নলছিটি উপজেলা",
-            "nameEn": "Nalchity",
+            "name": "কাঁঠালিয়া উপজেলা",
+            "nameEn": "Kathalia",
             "unions": [
               {
-                "name": "কাঠালিয়া",
-                "nameEn": "কাঠালিয়া"
+                "name": "ঝালকাঠি সদর",
+                "nameEn": "ঝালকাঠি সদর"
               },
               {
-                "name": "শওলজালিয়া",
-                "nameEn": "শওলজালিয়া"
+                "name": "কীর্তিপাশা",
+                "nameEn": "কীর্তিপাশা"
               },
               {
-                "name": "পাটিকেলঘাটা",
-                "nameEn": "পাটিকেলঘাটা"
-              },
-              {
-                "name": "আমুয়া",
-                "nameEn": "আমুয়া"
+                "name": "গাবখান",
+                "nameEn": "গাবখান"
               }
             ],
             "type": "upazila",
@@ -23014,6 +22625,41 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "নলছিটি উপজেলা",
+            "nameEn": "Nalchity",
+            "unions": [
+              {
+                "name": "কাঠালিয়া",
+                "nameEn": "কাঠালিয়া"
+              },
+              {
+                "name": "শওলজালিয়া",
+                "nameEn": "শওলজালিয়া"
+              },
+              {
+                "name": "পাটিকেলঘাটা",
+                "nameEn": "পাটিকেলঘাটা"
+              },
+              {
+                "name": "আমুয়া",
+                "nameEn": "আমুয়া"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Beerkathi",
+                "nameEn": "Beerkathi",
+                "code": "8421"
+              },
+              {
+                "name": "Nalchhiti",
+                "nameEn": "Nalchhiti",
+                "code": "8420"
+              }
+            ]
+          },
+          {
             "name": "রাজাপুর উপজেলা",
             "nameEn": "Rajapur",
             "unions": [
@@ -23037,14 +22683,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Beerkathi",
-                "nameEn": "Beerkathi",
-                "code": "8421"
-              },
-              {
-                "name": "Nalchhiti",
-                "nameEn": "Nalchhiti",
-                "code": "8420"
+                "name": "Rajapur",
+                "nameEn": "Rajapur",
+                "code": "8410"
               }
             ]
           },
@@ -23313,6 +22954,47 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
+                "name": "Dumkee",
+                "nameEn": "Dumkee",
+                "code": "8602"
+              },
+              {
+                "name": "Moukaran",
+                "nameEn": "Moukaran",
+                "code": "8601"
+              },
+              {
+                "name": "Patuakhali Sadar",
+                "nameEn": "Patuakhali Sadar",
+                "code": "8600"
+              },
+              {
+                "name": "Rahimabad",
+                "nameEn": "Rahimabad",
+                "code": "8603"
+              }
+            ]
+          },
+          {
+            "name": "বাউফল উপজেলা",
+            "nameEn": "Bauphal",
+            "unions": [
+              {
+                "name": "দশমিনা",
+                "nameEn": "দশমিনা"
+              },
+              {
+                "name": "চরবাংলা",
+                "nameEn": "চরবাংলা"
+              },
+              {
+                "name": "চরহরিণা",
+                "nameEn": "চরহরিণা"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
                 "name": "Bagabandar",
                 "nameEn": "Bagabandar",
                 "code": "8621"
@@ -23340,32 +23022,6 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
-            "name": "বাউফল উপজেলা",
-            "nameEn": "Bauphal",
-            "unions": [
-              {
-                "name": "দশমিনা",
-                "nameEn": "দশমিনা"
-              },
-              {
-                "name": "চরবাংলা",
-                "nameEn": "চরবাংলা"
-              },
-              {
-                "name": "চরহরিণা",
-                "nameEn": "চরহরিণা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Dashmina",
-                "nameEn": "Dashmina",
-                "code": "8630"
-              }
-            ]
-          },
-          {
             "name": "দশমিনা উপজেলা",
             "nameEn": "Dashmina",
             "unions": [
@@ -23385,24 +23041,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dumkee",
-                "nameEn": "Dumkee",
-                "code": "8602"
-              },
-              {
-                "name": "Moukaran",
-                "nameEn": "Moukaran",
-                "code": "8601"
-              },
-              {
-                "name": "Patuakhali Sadar",
-                "nameEn": "Patuakhali Sadar",
-                "code": "8600"
-              },
-              {
-                "name": "Rahimabad",
-                "nameEn": "Rahimabad",
-                "code": "8603"
+                "name": "Dashmina",
+                "nameEn": "Dashmina",
+                "code": "8630"
               }
             ]
           },
@@ -24286,24 +23927,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Darus Sunnat",
-                "nameEn": "Darus Sunnat",
-                "code": "8521"
+                "name": "Hularhat",
+                "nameEn": "Hularhat",
+                "code": "8501"
               },
               {
-                "name": "Jalabari",
-                "nameEn": "Jalabari",
-                "code": "8523"
+                "name": "Parerhat",
+                "nameEn": "Parerhat",
+                "code": "8502"
               },
               {
-                "name": "Kaurikhara",
-                "nameEn": "Kaurikhara",
-                "code": "8522"
-              },
-              {
-                "name": "Swarupkathi",
-                "nameEn": "Swarupkathi",
-                "code": "8520"
+                "name": "Pirojpur Sadar",
+                "nameEn": "Pirojpur Sadar",
+                "code": "8500"
               }
             ]
           },
@@ -24331,19 +23967,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Hularhat",
-                "nameEn": "Hularhat",
-                "code": "8501"
+                "name": "Darus Sunnat",
+                "nameEn": "Darus Sunnat",
+                "code": "8521"
               },
               {
-                "name": "Parerhat",
-                "nameEn": "Parerhat",
-                "code": "8502"
+                "name": "Jalabari",
+                "nameEn": "Jalabari",
+                "code": "8523"
               },
               {
-                "name": "Pirojpur Sadar",
-                "nameEn": "Pirojpur Sadar",
-                "code": "8500"
+                "name": "Kaurikhara",
+                "nameEn": "Kaurikhara",
+                "code": "8522"
+              },
+              {
+                "name": "Swarupkathi",
+                "nameEn": "Swarupkathi",
+                "code": "8520"
               }
             ]
           },
@@ -25039,39 +24680,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "পিংনা"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bausee",
-                "nameEn": "Bausee",
-                "code": "2052"
-              },
-              {
-                "name": "Gunerbari",
-                "nameEn": "Gunerbari",
-                "code": "2051"
-              },
-              {
-                "name": "Jagannath Ghat",
-                "nameEn": "Jagannath Ghat",
-                "code": "2053"
-              },
-              {
-                "name": "Jamuna Sar Karkhana",
-                "nameEn": "Jamuna Sar Karkhana",
-                "code": "2055"
-              },
-              {
-                "name": "Pingna",
-                "nameEn": "Pingna",
-                "code": "2054"
-              },
-              {
-                "name": "Shorishabari",
-                "nameEn": "Shorishabari",
-                "code": "2050"
-              }
-            ]
+            "type": "upazila"
           }
         ]
       },
@@ -25560,19 +25169,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Baikherhati",
-                "nameEn": "Baikherhati",
-                "code": "2401"
-              },
-              {
-                "name": "Netrakona Sadar",
-                "nameEn": "Netrakona Sadar",
-                "code": "2400"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "নেত্রকোনা সদর",
@@ -25661,9 +25258,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Susnng Durgapur",
-                "nameEn": "Susnng Durgapur",
-                "code": "2420"
+                "name": "Durgapur",
+                "nameEn": "Durgapur",
+                "code": "6240"
               }
             ]
           },
@@ -26095,9 +25692,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Birampur",
-                "nameEn": "Birampur",
-                "code": "5266"
+                "name": "Dinajpur Rajbari",
+                "nameEn": "Dinajpur Rajbari",
+                "code": "5201"
+              },
+              {
+                "name": "Dinajpur Sadar",
+                "nameEn": "Dinajpur Sadar",
+                "code": "5200"
               }
             ]
           },
@@ -26121,9 +25723,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Birganj",
-                "nameEn": "Birganj",
-                "code": "5220"
+                "name": "Birampur",
+                "nameEn": "Birampur",
+                "code": "5266"
               }
             ]
           },
@@ -26147,9 +25749,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Biral",
-                "nameEn": "Biral",
-                "code": "5210"
+                "name": "Birganj",
+                "nameEn": "Birganj",
+                "code": "5220"
               }
             ]
           },
@@ -26199,14 +25801,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chrirbandar",
-                "nameEn": "Chrirbandar",
-                "code": "5240"
-              },
-              {
-                "name": "Ranirbandar",
-                "nameEn": "Ranirbandar",
-                "code": "5241"
+                "name": "Phulbari",
+                "nameEn": "Phulbari",
+                "code": "5260"
               }
             ]
           },
@@ -26230,14 +25827,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dinajpur Rajbari",
-                "nameEn": "Dinajpur Rajbari",
-                "code": "5201"
+                "name": "Chrirbandar",
+                "nameEn": "Chrirbandar",
+                "code": "5240"
               },
               {
-                "name": "Dinajpur Sadar",
-                "nameEn": "Dinajpur Sadar",
-                "code": "5200"
+                "name": "Ranirbandar",
+                "nameEn": "Ranirbandar",
+                "code": "5241"
               }
             ]
           },
@@ -26261,9 +25858,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Phulbari",
-                "nameEn": "Phulbari",
-                "code": "5260"
+                "name": "Gorakghat",
+                "nameEn": "Gorakghat",
+                "code": "4710"
               }
             ]
           },
@@ -26287,9 +25884,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gorakghat",
-                "nameEn": "Gorakghat",
-                "code": "4710"
+                "name": "Dabiganj",
+                "nameEn": "Dabiganj",
+                "code": "5020"
               }
             ]
           },
@@ -26313,9 +25910,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dabiganj",
-                "nameEn": "Dabiganj",
-                "code": "5020"
+                "name": "Kahalu",
+                "nameEn": "Kahalu",
+                "code": "5870"
               }
             ]
           },
@@ -26339,9 +25936,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kahalu",
-                "nameEn": "Kahalu",
-                "code": "5870"
+                "name": "Khansama",
+                "nameEn": "Khansama",
+                "code": "5230"
+              },
+              {
+                "name": "Pakarhat",
+                "nameEn": "Pakarhat",
+                "code": "5231"
               }
             ]
           },
@@ -26360,29 +25962,6 @@ export const bangladeshAddresses: Division[] = [
               {
                 "name": "ভেলাবাড়ী",
                 "nameEn": "ভেলাবাড়ী"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Khansama",
-                "nameEn": "Khansama",
-                "code": "5230"
-              },
-              {
-                "name": "Pakarhat",
-                "nameEn": "Pakarhat",
-                "code": "5231"
-              }
-            ]
-          },
-          {
-            "name": "পার্বতীপুর",
-            "nameEn": "Parbatipur",
-            "unions": [
-              {
-                "name": "নবাবগঞ্জ সদর",
-                "nameEn": "Nawabganj Sadar"
               }
             ],
             "type": "upazila",
@@ -26420,6 +25999,24 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
+            "name": "পার্বতীপুর",
+            "nameEn": "Parbatipur",
+            "unions": [
+              {
+                "name": "নবাবগঞ্জ সদর",
+                "nameEn": "Nawabganj Sadar"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Parbatipur",
+                "nameEn": "Parbatipur",
+                "code": "5250"
+              }
+            ]
+          },
+          {
             "name": "বিরল",
             "nameEn": "Birol",
             "unions": [
@@ -26439,9 +26036,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Parbatipur",
-                "nameEn": "Parbatipur",
-                "code": "5250"
+                "name": "Biral",
+                "nameEn": "Biral",
+                "code": "5210"
               }
             ]
           },
@@ -26891,14 +26488,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Kahalu",
-                "nameEn": "Kahalu",
-                "code": "5870"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "খানসামা পৌরসভা",
@@ -27193,19 +26783,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মোল্লারচর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bharatkhali",
-                "nameEn": "Bharatkhali",
-                "code": "5761"
-              },
-              {
-                "name": "Phulchhari",
-                "nameEn": "Phulchhari",
-                "code": "5760"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "ফুলছড়ি উপজেলা",
@@ -27243,9 +26821,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gaibandha Sadar",
-                "nameEn": "Gaibandha Sadar",
-                "code": "5700"
+                "name": "Bharatkhali",
+                "nameEn": "Bharatkhali",
+                "code": "5761"
+              },
+              {
+                "name": "Phulchhari",
+                "nameEn": "Phulchhari",
+                "code": "5760"
               }
             ]
           },
@@ -28008,9 +27591,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhurungamari",
-                "nameEn": "Bhurungamari",
-                "code": "5670"
+                "name": "Kurigram Sadar",
+                "nameEn": "Kurigram Sadar",
+                "code": "5600"
+              },
+              {
+                "name": "Pandul",
+                "nameEn": "Pandul",
+                "code": "5601"
+              },
+              {
+                "name": "Phulbari",
+                "nameEn": "Phulbari",
+                "code": "5680"
               }
             ]
           },
@@ -28074,14 +27667,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chilmari",
-                "nameEn": "Chilmari",
-                "code": "5630"
+                "name": "Bazarhat",
+                "nameEn": "Bazarhat",
+                "code": "5621"
               },
               {
-                "name": "Jorgachh",
-                "nameEn": "Jorgachh",
-                "code": "5631"
+                "name": "Ulipur",
+                "nameEn": "Ulipur",
+                "code": "5620"
               }
             ]
           },
@@ -28105,9 +27698,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Phulbari",
-                "nameEn": "Phulbari",
-                "code": "5260"
+                "name": "Rajibpur",
+                "nameEn": "Rajibpur",
+                "code": "5650"
               }
             ]
           },
@@ -28143,19 +27736,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kurigram Sadar",
-                "nameEn": "Kurigram Sadar",
-                "code": "5600"
+                "name": "Chilmari",
+                "nameEn": "Chilmari",
+                "code": "5630"
               },
               {
-                "name": "Pandul",
-                "nameEn": "Pandul",
-                "code": "5601"
-              },
-              {
-                "name": "Phulbari",
-                "nameEn": "Phulbari",
-                "code": "5680"
+                "name": "Jorgachh",
+                "nameEn": "Jorgachh",
+                "code": "5631"
               }
             ]
           },
@@ -28261,14 +27849,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Nazimkhan",
-                "nameEn": "Nazimkhan",
-                "code": "5611"
-              },
-              {
-                "name": "Rajarhat",
-                "nameEn": "Rajarhat",
-                "code": "5610"
+                "name": "Phulbari",
+                "nameEn": "Phulbari",
+                "code": "5260"
               }
             ]
           },
@@ -28320,9 +27903,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Rajibpur",
-                "nameEn": "Rajibpur",
-                "code": "5650"
+                "name": "Bhurungamari",
+                "nameEn": "Bhurungamari",
+                "code": "5670"
               }
             ]
           },
@@ -28362,9 +27945,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Roumari",
-                "nameEn": "Roumari",
-                "code": "5640"
+                "name": "Nazimkhan",
+                "nameEn": "Nazimkhan",
+                "code": "5611"
+              },
+              {
+                "name": "Rajarhat",
+                "nameEn": "Rajarhat",
+                "code": "5610"
               }
             ]
           },
@@ -28400,14 +27988,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bazarhat",
-                "nameEn": "Bazarhat",
-                "code": "5621"
-              },
-              {
-                "name": "Ulipur",
-                "nameEn": "Ulipur",
-                "code": "5620"
+                "name": "Roumari",
+                "nameEn": "Roumari",
+                "code": "5640"
               }
             ]
           },
@@ -28936,9 +28519,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Aditmari",
-                "nameEn": "Aditmari",
-                "code": "5510"
+                "name": "Kulaghat SO",
+                "nameEn": "Kulaghat SO",
+                "code": "5502"
+              },
+              {
+                "name": "Lalmonirhat Sadar",
+                "nameEn": "Lalmonirhat Sadar",
+                "code": "5500"
+              },
+              {
+                "name": "Moghalhat",
+                "nameEn": "Moghalhat",
+                "code": "5501"
               }
             ]
           },
@@ -28982,9 +28575,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Hatibandha",
-                "nameEn": "Hatibandha",
-                "code": "5530"
+                "name": "Aditmari",
+                "nameEn": "Aditmari",
+                "code": "5510"
               }
             ]
           },
@@ -29089,19 +28682,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kulaghat SO",
-                "nameEn": "Kulaghat SO",
-                "code": "5502"
+                "name": "Baura",
+                "nameEn": "Baura",
+                "code": "5541"
               },
               {
-                "name": "Lalmonirhat Sadar",
-                "nameEn": "Lalmonirhat Sadar",
-                "code": "5500"
+                "name": "Burimari",
+                "nameEn": "Burimari",
+                "code": "5542"
               },
               {
-                "name": "Moghalhat",
-                "nameEn": "Moghalhat",
-                "code": "5501"
+                "name": "Patgram",
+                "nameEn": "Patgram",
+                "code": "5540"
               }
             ]
           },
@@ -29161,19 +28754,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baura",
-                "nameEn": "Baura",
-                "code": "5541"
-              },
-              {
-                "name": "Burimari",
-                "nameEn": "Burimari",
-                "code": "5542"
-              },
-              {
-                "name": "Patgram",
-                "nameEn": "Patgram",
-                "code": "5540"
+                "name": "Hatibandha",
+                "nameEn": "Hatibandha",
+                "code": "5530"
               }
             ]
           },
@@ -29531,14 +29114,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dimla",
-                "nameEn": "Dimla",
-                "code": "5350"
+                "name": "Nilphamari Sadar",
+                "nameEn": "Nilphamari Sadar",
+                "code": "5300"
               },
               {
-                "name": "Ghaga Kharibari",
-                "nameEn": "Ghaga Kharibari",
-                "code": "5351"
+                "name": "Nilphamari Sugar Mil",
+                "nameEn": "Nilphamari Sugar Mil",
+                "code": "5301"
               }
             ]
           },
@@ -29649,9 +29232,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jaldhaka",
-                "nameEn": "Jaldhaka",
-                "code": "5330"
+                "name": "Dimla",
+                "nameEn": "Dimla",
+                "code": "5350"
+              },
+              {
+                "name": "Ghaga Kharibari",
+                "nameEn": "Ghaga Kharibari",
+                "code": "5351"
               }
             ]
           },
@@ -29707,9 +29295,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kishoriganj",
-                "nameEn": "Kishoriganj",
-                "code": "5320"
+                "name": "Jaldhaka",
+                "nameEn": "Jaldhaka",
+                "code": "5330"
               }
             ]
           },
@@ -29754,19 +29342,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মাগুরা"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Nilphamari Sadar",
-                "nameEn": "Nilphamari Sadar",
-                "code": "5300"
-              },
-              {
-                "name": "Nilphamari Sugar Mil",
-                "nameEn": "Nilphamari Sugar Mil",
-                "code": "5301"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "সৈয়দপুর উপজেলা",
@@ -29793,19 +29369,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "খাতামধুপুর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Syedpur",
-                "nameEn": "Syedpur",
-                "code": "5310"
-              },
-              {
-                "name": "Syedpur Upashahar",
-                "nameEn": "Syedpur Upashahar",
-                "code": "5311"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "ডিমলা পৌরসভা",
@@ -30073,19 +29637,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Syedpur",
-                "nameEn": "Syedpur",
-                "code": "5310"
-              },
-              {
-                "name": "Syedpur Upashahar",
-                "nameEn": "Syedpur Upashahar",
-                "code": "5311"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       },
@@ -30245,9 +29797,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Boda",
-                "nameEn": "Boda",
-                "code": "5010"
+                "name": "Dabiganj",
+                "nameEn": "Dabiganj",
+                "code": "5020"
               }
             ]
           },
@@ -30287,9 +29839,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dabiganj",
-                "nameEn": "Dabiganj",
-                "code": "5020"
+                "name": "Tetulia",
+                "nameEn": "Tetulia",
+                "code": "5030"
               }
             ]
           },
@@ -30379,9 +29931,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Tetulia",
-                "nameEn": "Tetulia",
-                "code": "5030"
+                "name": "Boda",
+                "nameEn": "Boda",
+                "code": "5010"
               }
             ]
           },
@@ -30790,14 +30342,34 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Badarganj",
-                "nameEn": "Badarganj",
-                "code": "5430"
+                "name": "Alamnagar",
+                "nameEn": "Alamnagar",
+                "code": "5402"
               },
               {
-                "name": "Shyampur",
-                "nameEn": "Shyampur",
-                "code": "5431"
+                "name": "Mahiganj",
+                "nameEn": "Mahiganj",
+                "code": "5403"
+              },
+              {
+                "name": "Rangpur Cadet Colleg",
+                "nameEn": "Rangpur Cadet Colleg",
+                "code": "5404"
+              },
+              {
+                "name": "Rangpur Carmiecal Col",
+                "nameEn": "Rangpur Carmiecal Col",
+                "code": "5405"
+              },
+              {
+                "name": "Rangpur Sadar",
+                "nameEn": "Rangpur Sadar",
+                "code": "5400"
+              },
+              {
+                "name": "Rangpur Upa-Shahar",
+                "nameEn": "Rangpur Upa-Shahar",
+                "code": "5401"
               }
             ]
           },
@@ -30849,9 +30421,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gangachara",
-                "nameEn": "Gangachara",
-                "code": "5410"
+                "name": "Badarganj",
+                "nameEn": "Badarganj",
+                "code": "5430"
+              },
+              {
+                "name": "Shyampur",
+                "nameEn": "Shyampur",
+                "code": "5431"
               }
             ]
           },
@@ -30946,9 +30523,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Mithapukur",
-                "nameEn": "Mithapukur",
-                "code": "5460"
+                "name": "Haragachh",
+                "nameEn": "Haragachh",
+                "code": "5441"
+              },
+              {
+                "name": "Kaunia",
+                "nameEn": "Kaunia",
+                "code": "5440"
               }
             ]
           },
@@ -31028,9 +30610,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pirgachha",
-                "nameEn": "Pirgachha",
-                "code": "5450"
+                "name": "Mithapukur",
+                "nameEn": "Mithapukur",
+                "code": "5460"
               }
             ]
           },
@@ -31078,14 +30660,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pirganj",
-                "nameEn": "Pirganj",
-                "code": "5110"
-              },
-              {
-                "name": "Pirganj",
-                "nameEn": "Pirganj",
-                "code": "5470"
+                "name": "Pirgachha",
+                "nameEn": "Pirgachha",
+                "code": "5450"
               }
             ]
           },
@@ -31157,34 +30734,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Alamnagar",
-                "nameEn": "Alamnagar",
-                "code": "5402"
-              },
-              {
-                "name": "Mahiganj",
-                "nameEn": "Mahiganj",
-                "code": "5403"
-              },
-              {
-                "name": "Rangpur Cadet Colleg",
-                "nameEn": "Rangpur Cadet Colleg",
-                "code": "5404"
-              },
-              {
-                "name": "Rangpur Carmiecal Col",
-                "nameEn": "Rangpur Carmiecal Col",
-                "code": "5405"
-              },
-              {
-                "name": "Rangpur Sadar",
-                "nameEn": "Rangpur Sadar",
-                "code": "5400"
-              },
-              {
-                "name": "Rangpur Upa-Shahar",
-                "nameEn": "Rangpur Upa-Shahar",
-                "code": "5401"
+                "name": "Pirgachha",
+                "nameEn": "Pirgachha",
+                "code": "5450"
               }
             ]
           },
@@ -31750,14 +31302,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baliadangi",
-                "nameEn": "Baliadangi",
-                "code": "5140"
+                "name": "Ruhia",
+                "nameEn": "Ruhia",
+                "code": "5103"
               },
               {
-                "name": "Lahiri",
-                "nameEn": "Lahiri",
-                "code": "5141"
+                "name": "Shibganj",
+                "nameEn": "Shibganj",
+                "code": "5102"
+              },
+              {
+                "name": "Thakurgaon Road",
+                "nameEn": "Thakurgaon Road",
+                "code": "5101"
+              },
+              {
+                "name": "Thakurgaon Sadar",
+                "nameEn": "Thakurgaon Sadar",
+                "code": "5100"
               }
             ]
           },
@@ -31809,24 +31371,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ruhia",
-                "nameEn": "Ruhia",
-                "code": "5103"
+                "name": "Pirganj",
+                "nameEn": "Pirganj",
+                "code": "5110"
               },
               {
-                "name": "Shibganj",
-                "nameEn": "Shibganj",
-                "code": "5102"
-              },
-              {
-                "name": "Thakurgaon Road",
-                "nameEn": "Thakurgaon Road",
-                "code": "5101"
-              },
-              {
-                "name": "Thakurgaon Sadar",
-                "nameEn": "Thakurgaon Sadar",
-                "code": "5100"
+                "name": "Pirganj",
+                "nameEn": "Pirganj",
+                "code": "5470"
               }
             ]
           },
@@ -31870,14 +31422,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pirganj",
-                "nameEn": "Pirganj",
-                "code": "5110"
+                "name": "Baliadangi",
+                "nameEn": "Baliadangi",
+                "code": "5140"
               },
               {
-                "name": "Pirganj",
-                "nameEn": "Pirganj",
-                "code": "5470"
+                "name": "Lahiri",
+                "nameEn": "Lahiri",
+                "code": "5141"
               }
             ]
           },
@@ -32316,19 +31868,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-21"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Bogra Canttonment",
-                "nameEn": "Bogra Canttonment",
-                "code": "5801"
-              },
-              {
-                "name": "Bogra Sadar",
-                "nameEn": "Bogra Sadar",
-                "code": "5800"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "বগুড়া সদর",
@@ -32350,19 +31890,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Adamdighi",
-                "nameEn": "Adamdighi",
-                "code": "5890"
+                "name": "Bogra Canttonment",
+                "nameEn": "Bogra Canttonment",
+                "code": "5801"
               },
               {
-                "name": "Nasharatpur",
-                "nameEn": "Nasharatpur",
-                "code": "5892"
-              },
-              {
-                "name": "Santahar",
-                "nameEn": "Santahar",
-                "code": "5891"
+                "name": "Bogra Sadar",
+                "nameEn": "Bogra Sadar",
+                "code": "5800"
               }
             ]
           },
@@ -32581,14 +32116,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bogra Canttonment",
-                "nameEn": "Bogra Canttonment",
-                "code": "5801"
+                "name": "Chandaikona",
+                "nameEn": "Chandaikona",
+                "code": "5841"
               },
               {
-                "name": "Bogra Sadar",
-                "nameEn": "Bogra Sadar",
-                "code": "5800"
+                "name": "Palli Unnyan Accadem",
+                "nameEn": "Palli Unnyan Accadem",
+                "code": "5842"
+              },
+              {
+                "name": "Sherpur",
+                "nameEn": "Sherpur",
+                "code": "5840"
               }
             ]
           },
@@ -32608,19 +32148,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chandaikona",
-                "nameEn": "Chandaikona",
-                "code": "5841"
-              },
-              {
-                "name": "Palli Unnyan Accadem",
-                "nameEn": "Palli Unnyan Accadem",
-                "code": "5842"
-              },
-              {
-                "name": "Sherpur",
-                "nameEn": "Sherpur",
-                "code": "5840"
+                "name": "Shibganj",
+                "nameEn": "Shibganj",
+                "code": "5810"
               }
             ]
           },
@@ -32640,9 +32170,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Shibganj",
-                "nameEn": "Shibganj",
-                "code": "5810"
+                "name": "Sonatola",
+                "nameEn": "Sonatola",
+                "code": "5826"
               }
             ]
           },
@@ -32666,9 +32196,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Sonatola",
-                "nameEn": "Sonatola",
-                "code": "5826"
+                "name": "Bogra Canttonment",
+                "nameEn": "Bogra Canttonment",
+                "code": "5801"
+              },
+              {
+                "name": "Bogra Sadar",
+                "nameEn": "Bogra Sadar",
+                "code": "5800"
               }
             ]
           }
@@ -32719,29 +32254,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Amnura",
-                "nameEn": "Amnura",
-                "code": "6303"
-              },
-              {
-                "name": "Chapinawbganj Sadar",
-                "nameEn": "Chapinawbganj Sadar",
-                "code": "6300"
-              },
-              {
-                "name": "Rajarampur",
-                "nameEn": "Rajarampur",
-                "code": "6301"
-              },
-              {
-                "name": "Ramchandrapur",
-                "nameEn": "Ramchandrapur",
-                "code": "6302"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "চাঁপাইনবাবগঞ্জ সদর",
@@ -32763,9 +32276,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bholahat",
-                "nameEn": "Bholahat",
-                "code": "6330"
+                "name": "Amnura",
+                "nameEn": "Amnura",
+                "code": "6303"
+              },
+              {
+                "name": "Chapinawbganj Sadar",
+                "nameEn": "Chapinawbganj Sadar",
+                "code": "6300"
+              },
+              {
+                "name": "Rajarampur",
+                "nameEn": "Rajarampur",
+                "code": "6301"
+              },
+              {
+                "name": "Ramchandrapur",
+                "nameEn": "Ramchandrapur",
+                "code": "6302"
               }
             ]
           },
@@ -32812,14 +32340,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Mandumala",
-                "nameEn": "Mandumala",
-                "code": "6311"
-              },
-              {
-                "name": "Nachol",
-                "nameEn": "Nachol",
-                "code": "6310"
+                "name": "Shibganj",
+                "nameEn": "Shibganj",
+                "code": "5810"
               }
             ]
           },
@@ -32843,24 +32366,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Amnura",
-                "nameEn": "Amnura",
-                "code": "6303"
+                "name": "Mandumala",
+                "nameEn": "Mandumala",
+                "code": "6311"
               },
               {
-                "name": "Chapinawbganj Sadar",
-                "nameEn": "Chapinawbganj Sadar",
-                "code": "6300"
-              },
-              {
-                "name": "Rajarampur",
-                "nameEn": "Rajarampur",
-                "code": "6301"
-              },
-              {
-                "name": "Ramchandrapur",
-                "nameEn": "Ramchandrapur",
-                "code": "6302"
+                "name": "Nachol",
+                "nameEn": "Nachol",
+                "code": "6310"
               }
             ]
           },
@@ -32876,9 +32389,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Shibganj",
-                "nameEn": "Shibganj",
-                "code": "5810"
+                "name": "Bholahat",
+                "nameEn": "Bholahat",
+                "code": "6330"
               }
             ]
           }
@@ -32958,19 +32471,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Akklepur",
-                "nameEn": "Akklepur",
-                "code": "5940"
-              },
-              {
-                "name": "jamalganj",
-                "nameEn": "jamalganj",
-                "code": "5941"
-              },
-              {
-                "name": "Tilakpur",
-                "nameEn": "Tilakpur",
-                "code": "5942"
+                "name": "Joypurhat Sadar",
+                "nameEn": "Joypurhat Sadar",
+                "code": "5900"
               }
             ]
           },
@@ -32994,9 +32497,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Joypurhat Sadar",
-                "nameEn": "Joypurhat Sadar",
-                "code": "5900"
+                "name": "Panchbibi",
+                "nameEn": "Panchbibi",
+                "code": "5910"
               }
             ]
           },
@@ -33072,9 +32575,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Panchbibi",
-                "nameEn": "Panchbibi",
-                "code": "5910"
+                "name": "Akklepur",
+                "nameEn": "Akklepur",
+                "code": "5940"
+              },
+              {
+                "name": "jamalganj",
+                "nameEn": "jamalganj",
+                "code": "5941"
+              },
+              {
+                "name": "Tilakpur",
+                "nameEn": "Tilakpur",
+                "code": "5942"
               }
             ]
           },
@@ -33364,9 +32877,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Arpara",
-                "nameEn": "Arpara",
-                "code": "7620"
+                "name": "Naogaon Sadar",
+                "nameEn": "Naogaon Sadar",
+                "code": "6500"
               }
             ]
           },
@@ -33386,9 +32899,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Badalgachhi",
-                "nameEn": "Badalgachhi",
-                "code": "6570"
+                "name": "Patnitala",
+                "nameEn": "Patnitala",
+                "code": "6540"
               }
             ]
           },
@@ -33409,14 +32922,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "আড়ানগর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Dhamuirhat",
-                "nameEn": "Dhamuirhat",
-                "code": "6580"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "মহাদেবপুর",
@@ -33435,29 +32941,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "প্রাণপুর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Jamalpur",
-                "nameEn": "Jamalpur",
-                "code": "2011"
-              },
-              {
-                "name": "Mahmoodpur",
-                "nameEn": "Mahmoodpur",
-                "code": "2013"
-              },
-              {
-                "name": "Malancha",
-                "nameEn": "Malancha",
-                "code": "2012"
-              },
-              {
-                "name": "Malandah",
-                "nameEn": "Malandah",
-                "code": "2010"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "পরশা",
@@ -33476,14 +32960,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "ভীমপুর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Mahadebpur",
-                "nameEn": "Mahadebpur",
-                "code": "6530"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "সাপাহার",
@@ -33502,14 +32979,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "হাসাইগাড়ী"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Naogaon Sadar",
-                "nameEn": "Naogaon Sadar",
-                "code": "6500"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "বদলগাছী",
@@ -33554,14 +33024,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মহিষলুটি"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Patnitala",
-                "nameEn": "Patnitala",
-                "code": "6540"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "নিয়ামতপুর",
@@ -33583,9 +33046,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Naogaon Sadar",
-                "nameEn": "Naogaon Sadar",
-                "code": "6500"
+                "name": "Niamatpur",
+                "nameEn": "Niamatpur",
+                "code": "6520"
               }
             ]
           },
@@ -33606,19 +33069,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "মহিপুর"
               }
             ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Kashimpur",
-                "nameEn": "Kashimpur",
-                "code": "6591"
-              },
-              {
-                "name": "Raninagar",
-                "nameEn": "Raninagar",
-                "code": "6590"
-              }
-            ]
+            "type": "upazila"
           },
           {
             "name": "রাণীনগর",
@@ -33636,14 +33087,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Moduhil",
-                "nameEn": "Moduhil",
-                "code": "6561"
+                "name": "Kashimpur",
+                "nameEn": "Kashimpur",
+                "code": "6591"
               },
               {
-                "name": "Sapahar",
-                "nameEn": "Sapahar",
-                "code": "6560"
+                "name": "Raninagar",
+                "nameEn": "Raninagar",
+                "code": "6590"
               }
             ]
           },
@@ -33793,14 +33244,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Naogaon Sadar",
-                "nameEn": "Naogaon Sadar",
-                "code": "6500"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "ধামইরহাট পৌরসভা",
@@ -33843,14 +33287,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Dhamuirhat",
-                "nameEn": "Dhamuirhat",
-                "code": "6580"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "বদলগাছী পৌরসভা",
@@ -33943,29 +33380,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Jamalpur",
-                "nameEn": "Jamalpur",
-                "code": "2011"
-              },
-              {
-                "name": "Mahmoodpur",
-                "nameEn": "Mahmoodpur",
-                "code": "2013"
-              },
-              {
-                "name": "Malancha",
-                "nameEn": "Malancha",
-                "code": "2012"
-              },
-              {
-                "name": "Malandah",
-                "nameEn": "Malandah",
-                "code": "2010"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "আত্রাই পৌরসভা",
@@ -34008,14 +33423,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Arpara",
-                "nameEn": "Arpara",
-                "code": "7620"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "রাণীনগর পৌরসভা",
@@ -34367,19 +33775,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Lalitganj",
-                "nameEn": "Lalitganj",
-                "code": "6210"
-              },
-              {
-                "name": "Rajshahi Sugar Mills",
-                "nameEn": "Rajshahi Sugar Mills",
-                "code": "6211"
-              },
-              {
-                "name": "Shyampur",
-                "nameEn": "Shyampur",
-                "code": "6212"
+                "name": "Hatgurudaspur",
+                "nameEn": "Hatgurudaspur",
+                "code": "6440"
               }
             ]
           },
@@ -34403,14 +33801,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Hatbar Bazar",
-                "nameEn": "Hatbar Bazar",
-                "code": "7351"
+                "name": "Lalitganj",
+                "nameEn": "Lalitganj",
+                "code": "6210"
               },
               {
-                "name": "Naldanga",
-                "nameEn": "Naldanga",
-                "code": "7350"
+                "name": "Rajshahi Sugar Mills",
+                "nameEn": "Rajshahi Sugar Mills",
+                "code": "6211"
+              },
+              {
+                "name": "Shyampur",
+                "nameEn": "Shyampur",
+                "code": "6212"
               }
             ]
           },
@@ -34434,24 +33837,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baiddyabal Gharia",
-                "nameEn": "Baiddyabal Gharia",
-                "code": "6402"
-              },
-              {
-                "name": "Digapatia",
-                "nameEn": "Digapatia",
-                "code": "6401"
-              },
-              {
-                "name": "Madhnagar",
-                "nameEn": "Madhnagar",
-                "code": "6403"
-              },
-              {
-                "name": "Natore Sadar",
-                "nameEn": "Natore Sadar",
-                "code": "6400"
+                "name": "Singra",
+                "nameEn": "Singra",
+                "code": "6450"
               }
             ]
           },
@@ -34917,24 +34305,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bera",
-                "nameEn": "Bera",
-                "code": "6680"
+                "name": "Hamayetpur",
+                "nameEn": "Hamayetpur",
+                "code": "6602"
               },
               {
-                "name": "Kashinathpur",
-                "nameEn": "Kashinathpur",
-                "code": "6682"
+                "name": "Kaliko Cotton Mills",
+                "nameEn": "Kaliko Cotton Mills",
+                "code": "6601"
               },
               {
-                "name": "Nakalia",
-                "nameEn": "Nakalia",
-                "code": "6681"
-              },
-              {
-                "name": "Puran Bharenga",
-                "nameEn": "Puran Bharenga",
-                "code": "6683"
+                "name": "Pabna Sadar",
+                "nameEn": "Pabna Sadar",
+                "code": "6600"
               }
             ]
           },
@@ -34958,9 +34341,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bhangura",
-                "nameEn": "Bhangura",
-                "code": "6640"
+                "name": "Dhapari",
+                "nameEn": "Dhapari",
+                "code": "6621"
+              },
+              {
+                "name": "Ishwardi",
+                "nameEn": "Ishwardi",
+                "code": "6620"
+              },
+              {
+                "name": "Pakshi",
+                "nameEn": "Pakshi",
+                "code": "6622"
+              },
+              {
+                "name": "Rajapur",
+                "nameEn": "Rajapur",
+                "code": "6623"
               }
             ]
           },
@@ -35051,24 +34449,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dhapari",
-                "nameEn": "Dhapari",
-                "code": "6621"
+                "name": "Bera",
+                "nameEn": "Bera",
+                "code": "6680"
               },
               {
-                "name": "Ishwardi",
-                "nameEn": "Ishwardi",
-                "code": "6620"
+                "name": "Kashinathpur",
+                "nameEn": "Kashinathpur",
+                "code": "6682"
               },
               {
-                "name": "Pakshi",
-                "nameEn": "Pakshi",
-                "code": "6622"
+                "name": "Nakalia",
+                "nameEn": "Nakalia",
+                "code": "6681"
               },
               {
-                "name": "Rajapur",
-                "nameEn": "Rajapur",
-                "code": "6623"
+                "name": "Puran Bharenga",
+                "nameEn": "Puran Bharenga",
+                "code": "6683"
               }
             ]
           },
@@ -35855,6 +35253,32 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
+                "name": "Putia",
+                "nameEn": "Putia",
+                "code": "6260"
+              }
+            ]
+          },
+          {
+            "name": "পবা",
+            "nameEn": "Paba",
+            "unions": [
+              {
+                "name": "চারঘাট",
+                "nameEn": "চারঘাট"
+              },
+              {
+                "name": "সরদহ",
+                "nameEn": "সরদহ"
+              },
+              {
+                "name": "ভালুকগাছি",
+                "nameEn": "ভালুকগাছি"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
                 "name": "Binodpur Bazar",
                 "nameEn": "Binodpur Bazar",
                 "code": "6206"
@@ -35897,37 +35321,6 @@ export const bangladeshAddresses: Division[] = [
             ]
           },
           {
-            "name": "পবা",
-            "nameEn": "Paba",
-            "unions": [
-              {
-                "name": "চারঘাট",
-                "nameEn": "চারঘাট"
-              },
-              {
-                "name": "সরদহ",
-                "nameEn": "সরদহ"
-              },
-              {
-                "name": "ভালুকগাছি",
-                "nameEn": "ভালুকগাছি"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Charghat",
-                "nameEn": "Charghat",
-                "code": "6270"
-              },
-              {
-                "name": "Sarda",
-                "nameEn": "Sarda",
-                "code": "6271"
-              }
-            ]
-          },
-          {
             "name": "বাগমারা",
             "nameEn": "Bagmara",
             "unions": [
@@ -35943,9 +35336,44 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Durgapur",
-                "nameEn": "Durgapur",
-                "code": "6240"
+                "name": "Binodpur Bazar",
+                "nameEn": "Binodpur Bazar",
+                "code": "6206"
+              },
+              {
+                "name": "Ghuramara",
+                "nameEn": "Ghuramara",
+                "code": "6100"
+              },
+              {
+                "name": "Kazla",
+                "nameEn": "Kazla",
+                "code": "6204"
+              },
+              {
+                "name": "Rajshahi Canttonment",
+                "nameEn": "Rajshahi Canttonment",
+                "code": "6202"
+              },
+              {
+                "name": "Rajshahi Court",
+                "nameEn": "Rajshahi Court",
+                "code": "6201"
+              },
+              {
+                "name": "Rajshahi Sadar",
+                "nameEn": "Rajshahi Sadar",
+                "code": "6000"
+              },
+              {
+                "name": "Rajshahi University",
+                "nameEn": "Rajshahi University",
+                "code": "6205"
+              },
+              {
+                "name": "Sapura",
+                "nameEn": "Sapura",
+                "code": "6203"
               }
             ]
           },
@@ -35973,14 +35401,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Godagari",
-                "nameEn": "Godagari",
-                "code": "6290"
-              },
-              {
-                "name": "Premtoli",
-                "nameEn": "Premtoli",
-                "code": "6291"
+                "name": "Tanor",
+                "nameEn": "Tanor",
+                "code": "6230"
               }
             ]
           },
@@ -36030,44 +35453,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Binodpur Bazar",
-                "nameEn": "Binodpur Bazar",
-                "code": "6206"
+                "name": "Charghat",
+                "nameEn": "Charghat",
+                "code": "6270"
               },
               {
-                "name": "Ghuramara",
-                "nameEn": "Ghuramara",
-                "code": "6100"
-              },
-              {
-                "name": "Kazla",
-                "nameEn": "Kazla",
-                "code": "6204"
-              },
-              {
-                "name": "Rajshahi Canttonment",
-                "nameEn": "Rajshahi Canttonment",
-                "code": "6202"
-              },
-              {
-                "name": "Rajshahi Court",
-                "nameEn": "Rajshahi Court",
-                "code": "6201"
-              },
-              {
-                "name": "Rajshahi Sadar",
-                "nameEn": "Rajshahi Sadar",
-                "code": "6000"
-              },
-              {
-                "name": "Rajshahi University",
-                "nameEn": "Rajshahi University",
-                "code": "6205"
-              },
-              {
-                "name": "Sapura",
-                "nameEn": "Sapura",
-                "code": "6203"
+                "name": "Sarda",
+                "nameEn": "Sarda",
+                "code": "6271"
               }
             ]
           },
@@ -36768,29 +36161,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Belkuchi",
-                "nameEn": "Belkuchi",
-                "code": "6740"
+                "name": "Raipur",
+                "nameEn": "Raipur",
+                "code": "6701"
               },
               {
-                "name": "Enayetpur",
-                "nameEn": "Enayetpur",
-                "code": "6751"
+                "name": "Rashidabad",
+                "nameEn": "Rashidabad",
+                "code": "6702"
               },
               {
-                "name": "Rajapur",
-                "nameEn": "Rajapur",
-                "code": "6742"
-              },
-              {
-                "name": "Sohagpur",
-                "nameEn": "Sohagpur",
-                "code": "6741"
-              },
-              {
-                "name": "Sthal",
-                "nameEn": "Sthal",
-                "code": "6752"
+                "name": "Sirajganj Sadar",
+                "nameEn": "Sirajganj Sadar",
+                "code": "6700"
               }
             ]
           },
@@ -36810,19 +36193,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Raipur",
-                "nameEn": "Raipur",
-                "code": "6701"
+                "name": "Lahiri Mohanpur",
+                "nameEn": "Lahiri Mohanpur",
+                "code": "6762"
               },
               {
-                "name": "Rashidabad",
-                "nameEn": "Rashidabad",
-                "code": "6702"
+                "name": "Salap",
+                "nameEn": "Salap",
+                "code": "6763"
               },
               {
-                "name": "Sirajganj Sadar",
-                "nameEn": "Sirajganj Sadar",
-                "code": "6700"
+                "name": "Ullapara",
+                "nameEn": "Ullapara",
+                "code": "6760"
+              },
+              {
+                "name": "Ullapara R.S",
+                "nameEn": "Ullapara R.S",
+                "code": "6761"
               }
             ]
           },
@@ -36842,9 +36230,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Karimganj",
-                "nameEn": "Karimganj",
-                "code": "2310"
+                "name": "Gandail",
+                "nameEn": "Gandail",
+                "code": "6712"
+              },
+              {
+                "name": "Kazipur",
+                "nameEn": "Kazipur",
+                "code": "6710"
+              },
+              {
+                "name": "Shuvgachha",
+                "nameEn": "Shuvgachha",
+                "code": "6711"
               }
             ]
           },
@@ -36872,19 +36270,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gandail",
-                "nameEn": "Gandail",
-                "code": "6712"
-              },
-              {
-                "name": "Kazipur",
-                "nameEn": "Kazipur",
-                "code": "6710"
-              },
-              {
-                "name": "Shuvgachha",
-                "nameEn": "Shuvgachha",
-                "code": "6711"
+                "name": "Karimganj",
+                "nameEn": "Karimganj",
+                "code": "2310"
               }
             ]
           },
@@ -36940,24 +36328,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jamirta",
-                "nameEn": "Jamirta",
-                "code": "6772"
-              },
-              {
-                "name": "Kaijuri",
-                "nameEn": "Kaijuri",
-                "code": "6773"
-              },
-              {
-                "name": "Porjana",
-                "nameEn": "Porjana",
-                "code": "6771"
-              },
-              {
-                "name": "Shahjadpur",
-                "nameEn": "Shahjadpur",
-                "code": "6770"
+                "name": "Tarash",
+                "nameEn": "Tarash",
+                "code": "6780"
               }
             ]
           },
@@ -36981,19 +36354,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Raipur",
-                "nameEn": "Raipur",
-                "code": "6701"
+                "name": "Belkuchi",
+                "nameEn": "Belkuchi",
+                "code": "6740"
               },
               {
-                "name": "Rashidabad",
-                "nameEn": "Rashidabad",
-                "code": "6702"
+                "name": "Enayetpur",
+                "nameEn": "Enayetpur",
+                "code": "6751"
               },
               {
-                "name": "Sirajganj Sadar",
-                "nameEn": "Sirajganj Sadar",
-                "code": "6700"
+                "name": "Rajapur",
+                "nameEn": "Rajapur",
+                "code": "6742"
+              },
+              {
+                "name": "Sohagpur",
+                "nameEn": "Sohagpur",
+                "code": "6741"
+              },
+              {
+                "name": "Sthal",
+                "nameEn": "Sthal",
+                "code": "6752"
               }
             ]
           },
@@ -37017,9 +36400,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Tarash",
-                "nameEn": "Tarash",
-                "code": "6780"
+                "name": "Raipur",
+                "nameEn": "Raipur",
+                "code": "6701"
+              },
+              {
+                "name": "Rashidabad",
+                "nameEn": "Rashidabad",
+                "code": "6702"
+              },
+              {
+                "name": "Sirajganj Sadar",
+                "nameEn": "Sirajganj Sadar",
+                "code": "6700"
               }
             ]
           },
@@ -37039,24 +36432,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Lahiri Mohanpur",
-                "nameEn": "Lahiri Mohanpur",
-                "code": "6762"
+                "name": "Jamirta",
+                "nameEn": "Jamirta",
+                "code": "6772"
               },
               {
-                "name": "Salap",
-                "nameEn": "Salap",
-                "code": "6763"
+                "name": "Kaijuri",
+                "nameEn": "Kaijuri",
+                "code": "6773"
               },
               {
-                "name": "Ullapara",
-                "nameEn": "Ullapara",
-                "code": "6760"
+                "name": "Porjana",
+                "nameEn": "Porjana",
+                "code": "6771"
               },
               {
-                "name": "Ullapara R.S",
-                "nameEn": "Ullapara R.S",
-                "code": "6761"
+                "name": "Shahjadpur",
+                "nameEn": "Shahjadpur",
+                "code": "6770"
               }
             ]
           },
@@ -37516,29 +36909,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Lahiri Mohanpur",
-                "nameEn": "Lahiri Mohanpur",
-                "code": "6762"
-              },
-              {
-                "name": "Salap",
-                "nameEn": "Salap",
-                "code": "6763"
-              },
-              {
-                "name": "Ullapara",
-                "nameEn": "Ullapara",
-                "code": "6760"
-              },
-              {
-                "name": "Ullapara R.S",
-                "nameEn": "Ullapara R.S",
-                "code": "6761"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       }
@@ -37593,24 +36964,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Gopaya",
-                "nameEn": "Gopaya",
-                "code": "3302"
-              },
-              {
-                "name": "Hobiganj Sadar",
-                "nameEn": "Hobiganj Sadar",
-                "code": "3300"
-              },
-              {
-                "name": "Shaestaganj",
-                "nameEn": "Shaestaganj",
-                "code": "3301"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "হবিগঞ্জ সদর উপজেলা",
@@ -37652,9 +37006,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Azmireeganj",
-                "nameEn": "Azmireeganj",
-                "code": "3360"
+                "name": "Gopaya",
+                "nameEn": "Gopaya",
+                "code": "3302"
+              },
+              {
+                "name": "Hobiganj Sadar",
+                "nameEn": "Hobiganj Sadar",
+                "code": "3300"
+              },
+              {
+                "name": "Shaestaganj",
+                "nameEn": "Shaestaganj",
+                "code": "3301"
               }
             ]
           },
@@ -37686,9 +37050,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bahubal",
-                "nameEn": "Bahubal",
-                "code": "3310"
+                "name": "Azmireeganj",
+                "nameEn": "Azmireeganj",
+                "code": "3360"
               }
             ]
           },
@@ -37740,19 +37104,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baniachang",
-                "nameEn": "Baniachang",
-                "code": "3350"
+                "name": "Chandpurbagan",
+                "nameEn": "Chandpurbagan",
+                "code": "3321"
               },
               {
-                "name": "Jatrapasha",
-                "nameEn": "Jatrapasha",
-                "code": "3351"
+                "name": "Chunarughat",
+                "nameEn": "Chunarughat",
+                "code": "3320"
               },
               {
-                "name": "Kadirganj",
-                "nameEn": "Kadirganj",
-                "code": "3352"
+                "name": "Narapati",
+                "nameEn": "Narapati",
+                "code": "3322"
               }
             ]
           },
@@ -37816,19 +37180,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chandpurbagan",
-                "nameEn": "Chandpurbagan",
-                "code": "3321"
+                "name": "Digalbak",
+                "nameEn": "Digalbak",
+                "code": "3373"
               },
               {
-                "name": "Chunarughat",
-                "nameEn": "Chunarughat",
-                "code": "3320"
+                "name": "Golduba",
+                "nameEn": "Golduba",
+                "code": "3372"
               },
               {
-                "name": "Narapati",
-                "nameEn": "Narapati",
-                "code": "3322"
+                "name": "Goplarbazar",
+                "nameEn": "Goplarbazar",
+                "code": "3371"
+              },
+              {
+                "name": "Inathganj",
+                "nameEn": "Inathganj",
+                "code": "3374"
+              },
+              {
+                "name": "Nabiganj",
+                "nameEn": "Nabiganj",
+                "code": "3370"
               }
             ]
           },
@@ -37900,19 +37274,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Gopaya",
-                "nameEn": "Gopaya",
-                "code": "3302"
+                "name": "Baniachang",
+                "nameEn": "Baniachang",
+                "code": "3350"
               },
               {
-                "name": "Hobiganj Sadar",
-                "nameEn": "Hobiganj Sadar",
-                "code": "3300"
+                "name": "Jatrapasha",
+                "nameEn": "Jatrapasha",
+                "code": "3351"
               },
               {
-                "name": "Shaestaganj",
-                "nameEn": "Shaestaganj",
-                "code": "3301"
+                "name": "Kadirganj",
+                "nameEn": "Kadirganj",
+                "code": "3352"
               }
             ]
           },
@@ -37952,14 +37326,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Jhitka",
-                "nameEn": "Jhitka",
-                "code": "1831"
-              },
-              {
-                "name": "Lechhraganj",
-                "nameEn": "Lechhraganj",
-                "code": "1830"
+                "name": "Bahubal",
+                "nameEn": "Bahubal",
+                "code": "3310"
               }
             ]
           },
@@ -38068,29 +37437,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Digalbak",
-                "nameEn": "Digalbak",
-                "code": "3373"
+                "name": "Jhitka",
+                "nameEn": "Jhitka",
+                "code": "1831"
               },
               {
-                "name": "Golduba",
-                "nameEn": "Golduba",
-                "code": "3372"
-              },
-              {
-                "name": "Goplarbazar",
-                "nameEn": "Goplarbazar",
-                "code": "3371"
-              },
-              {
-                "name": "Inathganj",
-                "nameEn": "Inathganj",
-                "code": "3374"
-              },
-              {
-                "name": "Nabiganj",
-                "nameEn": "Nabiganj",
-                "code": "3370"
+                "name": "Lechhraganj",
+                "nameEn": "Lechhraganj",
+                "code": "1830"
               }
             ]
           },
@@ -38531,14 +37885,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Azmireeganj",
-                "nameEn": "Azmireeganj",
-                "code": "3360"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "শায়েস্তাগঞ্জ পৌরসভা",
@@ -38581,24 +37928,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Gopaya",
-                "nameEn": "Gopaya",
-                "code": "3302"
-              },
-              {
-                "name": "Hobiganj Sadar",
-                "nameEn": "Hobiganj Sadar",
-                "code": "3300"
-              },
-              {
-                "name": "Shaestaganj",
-                "nameEn": "Shaestaganj",
-                "code": "3301"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       },
@@ -38715,24 +38045,29 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baralekha",
-                "nameEn": "Baralekha",
-                "code": "3250"
+                "name": "Kamalganj",
+                "nameEn": "Kamalganj",
+                "code": "3220"
               },
               {
-                "name": "Dhakkhinbag",
-                "nameEn": "Dhakkhinbag",
-                "code": "3252"
+                "name": "Keramatnaga",
+                "nameEn": "Keramatnaga",
+                "code": "3221"
               },
               {
-                "name": "Juri",
-                "nameEn": "Juri",
-                "code": "3251"
+                "name": "Munshibazar",
+                "nameEn": "Munshibazar",
+                "code": "3224"
               },
               {
-                "name": "Purbashahabajpur",
-                "nameEn": "Purbashahabajpur",
-                "code": "3253"
+                "name": "Patrakhola",
+                "nameEn": "Patrakhola",
+                "code": "3222"
+              },
+              {
+                "name": "Shamsher Nagar",
+                "nameEn": "Shamsher Nagar",
+                "code": "3223"
               }
             ]
           },
@@ -38796,24 +38131,39 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baralekha",
-                "nameEn": "Baralekha",
-                "code": "3250"
+                "name": "Baramchal",
+                "nameEn": "Baramchal",
+                "code": "3237"
               },
               {
-                "name": "Dhakkhinbag",
-                "nameEn": "Dhakkhinbag",
-                "code": "3252"
+                "name": "Kajaldhara",
+                "nameEn": "Kajaldhara",
+                "code": "3234"
               },
               {
-                "name": "Juri",
-                "nameEn": "Juri",
-                "code": "3251"
+                "name": "Karimpur",
+                "nameEn": "Karimpur",
+                "code": "3235"
               },
               {
-                "name": "Purbashahabajpur",
-                "nameEn": "Purbashahabajpur",
-                "code": "3253"
+                "name": "Kulaura",
+                "nameEn": "Kulaura",
+                "code": "3230"
+              },
+              {
+                "name": "Langla",
+                "nameEn": "Langla",
+                "code": "3232"
+              },
+              {
+                "name": "Prithimpasha",
+                "nameEn": "Prithimpasha",
+                "code": "3233"
+              },
+              {
+                "name": "Tillagaon",
+                "nameEn": "Tillagaon",
+                "code": "3231"
               }
             ]
           },
@@ -38849,29 +38199,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Kamalganj",
-                "nameEn": "Kamalganj",
-                "code": "3220"
+                "name": "Baralekha",
+                "nameEn": "Baralekha",
+                "code": "3250"
               },
               {
-                "name": "Keramatnaga",
-                "nameEn": "Keramatnaga",
-                "code": "3221"
+                "name": "Dhakkhinbag",
+                "nameEn": "Dhakkhinbag",
+                "code": "3252"
               },
               {
-                "name": "Munshibazar",
-                "nameEn": "Munshibazar",
-                "code": "3224"
+                "name": "Juri",
+                "nameEn": "Juri",
+                "code": "3251"
               },
               {
-                "name": "Patrakhola",
-                "nameEn": "Patrakhola",
-                "code": "3222"
-              },
-              {
-                "name": "Shamsher Nagar",
-                "nameEn": "Shamsher Nagar",
-                "code": "3223"
+                "name": "Purbashahabajpur",
+                "nameEn": "Purbashahabajpur",
+                "code": "3253"
               }
             ]
           },
@@ -38923,39 +38268,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Baramchal",
-                "nameEn": "Baramchal",
-                "code": "3237"
+                "name": "Baralekha",
+                "nameEn": "Baralekha",
+                "code": "3250"
               },
               {
-                "name": "Kajaldhara",
-                "nameEn": "Kajaldhara",
-                "code": "3234"
+                "name": "Dhakkhinbag",
+                "nameEn": "Dhakkhinbag",
+                "code": "3252"
               },
               {
-                "name": "Karimpur",
-                "nameEn": "Karimpur",
-                "code": "3235"
+                "name": "Juri",
+                "nameEn": "Juri",
+                "code": "3251"
               },
               {
-                "name": "Kulaura",
-                "nameEn": "Kulaura",
-                "code": "3230"
-              },
-              {
-                "name": "Langla",
-                "nameEn": "Langla",
-                "code": "3232"
-              },
-              {
-                "name": "Prithimpasha",
-                "nameEn": "Prithimpasha",
-                "code": "3233"
-              },
-              {
-                "name": "Tillagaon",
-                "nameEn": "Tillagaon",
-                "code": "3231"
+                "name": "Purbashahabajpur",
+                "nameEn": "Purbashahabajpur",
+                "code": "3253"
               }
             ]
           },
@@ -39646,9 +38976,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Bishamsapur",
-                "nameEn": "Bishamsapur",
-                "code": "3010"
+                "name": "Pagla",
+                "nameEn": "Pagla",
+                "code": "3001"
+              },
+              {
+                "name": "Patharia",
+                "nameEn": "Patharia",
+                "code": "3002"
+              },
+              {
+                "name": "Sunamganj Sadar",
+                "nameEn": "Sunamganj Sadar",
+                "code": "3000"
               }
             ]
           },
@@ -39684,54 +39024,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Chhatak",
-                "nameEn": "Chhatak",
-                "code": "3080"
-              },
-              {
-                "name": "Chhatak Cement Facto",
-                "nameEn": "Chhatak Cement Facto",
-                "code": "3081"
-              },
-              {
-                "name": "Chhatak Paper Mills",
-                "nameEn": "Chhatak Paper Mills",
-                "code": "3082"
-              },
-              {
-                "name": "Chourangi Bazar",
-                "nameEn": "Chourangi Bazar",
-                "code": "3893"
-              },
-              {
-                "name": "Gabindaganj",
-                "nameEn": "Gabindaganj",
-                "code": "3083"
-              },
-              {
-                "name": "Gabindaganj Natun Ba",
-                "nameEn": "Gabindaganj Natun Ba",
-                "code": "3084"
-              },
-              {
-                "name": "Islamabad",
-                "nameEn": "Islamabad",
-                "code": "3088"
-              },
-              {
-                "name": "jahidpur",
-                "nameEn": "jahidpur",
-                "code": "3087"
-              },
-              {
-                "name": "Khurma",
-                "nameEn": "Khurma",
-                "code": "3085"
-              },
-              {
-                "name": "Moinpur",
-                "nameEn": "Moinpur",
-                "code": "3086"
+                "name": "Dharampasha",
+                "nameEn": "Dharampasha",
+                "code": "2450"
               }
             ]
           },
@@ -39811,19 +39106,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pagla",
-                "nameEn": "Pagla",
-                "code": "3001"
-              },
-              {
-                "name": "Patharia",
-                "nameEn": "Patharia",
-                "code": "3002"
-              },
-              {
-                "name": "Sunamganj Sadar",
-                "nameEn": "Sunamganj Sadar",
-                "code": "3000"
+                "name": "Tahirpur",
+                "nameEn": "Tahirpur",
+                "code": "3030"
               }
             ]
           },
@@ -39851,9 +39136,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Dharampasha",
-                "nameEn": "Dharampasha",
-                "code": "2450"
+                "name": "Pagla",
+                "nameEn": "Pagla",
+                "code": "3001"
+              },
+              {
+                "name": "Patharia",
+                "nameEn": "Patharia",
+                "code": "3002"
+              },
+              {
+                "name": "Sunamganj Sadar",
+                "nameEn": "Sunamganj Sadar",
+                "code": "3000"
               }
             ]
           },
@@ -39947,34 +39242,19 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Atuajan",
-                "nameEn": "Atuajan",
-                "code": "3062"
+                "name": "Pagla",
+                "nameEn": "Pagla",
+                "code": "3001"
               },
               {
-                "name": "Hasan Fatemapur",
-                "nameEn": "Hasan Fatemapur",
-                "code": "3063"
+                "name": "Patharia",
+                "nameEn": "Patharia",
+                "code": "3002"
               },
               {
-                "name": "Jagnnathpur",
-                "nameEn": "Jagnnathpur",
-                "code": "3060"
-              },
-              {
-                "name": "Rasulganj",
-                "nameEn": "Rasulganj",
-                "code": "3064"
-              },
-              {
-                "name": "Shiramsi",
-                "nameEn": "Shiramsi",
-                "code": "3065"
-              },
-              {
-                "name": "Syedpur",
-                "nameEn": "Syedpur",
-                "code": "3061"
+                "name": "Sunamganj Sadar",
+                "nameEn": "Sunamganj Sadar",
+                "code": "3000"
               }
             ]
           },
@@ -40018,19 +39298,34 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Pagla",
-                "nameEn": "Pagla",
-                "code": "3001"
+                "name": "Atuajan",
+                "nameEn": "Atuajan",
+                "code": "3062"
               },
               {
-                "name": "Patharia",
-                "nameEn": "Patharia",
-                "code": "3002"
+                "name": "Hasan Fatemapur",
+                "nameEn": "Hasan Fatemapur",
+                "code": "3063"
               },
               {
-                "name": "Sunamganj Sadar",
-                "nameEn": "Sunamganj Sadar",
-                "code": "3000"
+                "name": "Jagnnathpur",
+                "nameEn": "Jagnnathpur",
+                "code": "3060"
+              },
+              {
+                "name": "Rasulganj",
+                "nameEn": "Rasulganj",
+                "code": "3064"
+              },
+              {
+                "name": "Shiramsi",
+                "nameEn": "Shiramsi",
+                "code": "3065"
+              },
+              {
+                "name": "Syedpur",
+                "nameEn": "Syedpur",
+                "code": "3061"
               }
             ]
           },
@@ -40182,9 +39477,9 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Tahirpur",
-                "nameEn": "Tahirpur",
-                "code": "3030"
+                "name": "Bishamsapur",
+                "nameEn": "Bishamsapur",
+                "code": "3010"
               }
             ]
           },
@@ -40560,14 +39855,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Bishamsapur",
-                "nameEn": "Bishamsapur",
-                "code": "3010"
-              }
-            ]
+            "type": "municipality"
           },
           {
             "name": "ধর্মপাশা পৌরসভা",
@@ -40840,14 +40128,7 @@ export const bangladeshAddresses: Division[] = [
                 "nameEn": "Ward No-9"
               }
             ],
-            "type": "municipality",
-            "postOffices": [
-              {
-                "name": "Duara bazar",
-                "nameEn": "Duara bazar",
-                "code": "3070"
-              }
-            ]
+            "type": "municipality"
           }
         ]
       },
@@ -41082,272 +40363,6 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Balaganj",
-                "nameEn": "Balaganj",
-                "code": "3120"
-              },
-              {
-                "name": "Begumpur",
-                "nameEn": "Begumpur",
-                "code": "3125"
-              },
-              {
-                "name": "Brahman Shashon",
-                "nameEn": "Brahman Shashon",
-                "code": "3122"
-              },
-              {
-                "name": "Gaharpur",
-                "nameEn": "Gaharpur",
-                "code": "3128"
-              },
-              {
-                "name": "Goala Bazar",
-                "nameEn": "Goala Bazar",
-                "code": "3124"
-              },
-              {
-                "name": "Karua",
-                "nameEn": "Karua",
-                "code": "3121"
-              },
-              {
-                "name": "Kathal Khair",
-                "nameEn": "Kathal Khair",
-                "code": "3127"
-              },
-              {
-                "name": "Natun Bazar",
-                "nameEn": "Natun Bazar",
-                "code": "3129"
-              },
-              {
-                "name": "Omarpur",
-                "nameEn": "Omarpur",
-                "code": "3126"
-              },
-              {
-                "name": "Tajpur",
-                "nameEn": "Tajpur",
-                "code": "3123"
-              }
-            ]
-          },
-          {
-            "name": "বালাগঞ্জ উপজেলা",
-            "nameEn": "Balaganj",
-            "unions": [
-              {
-                "name": "পূর্ব পৈলনপুর ইউনিয়ন",
-                "nameEn": "পূর্ব পৈলনপুর"
-              },
-              {
-                "name": "বোয়ালজুড় ইউনিয়ন",
-                "nameEn": "বোয়ালজুড়"
-              },
-              {
-                "name": "দেওয়ানবাজার ইউনিয়ন",
-                "nameEn": "দেওয়ানবাজার"
-              },
-              {
-                "name": "পশ্চিম গৌরীপুর ইউনিয়ন",
-                "nameEn": "পশ্চিম গৌরীপুর"
-              },
-              {
-                "name": "বালাগঞ্জ ইউনিয়ন",
-                "nameEn": "বালাগঞ্জ"
-              },
-              {
-                "name": "পূর্ব গৌরীপুর ইউনিয়ন",
-                "nameEn": "পূর্ব গৌরীপুর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bianibazar",
-                "nameEn": "Bianibazar",
-                "code": "3170"
-              },
-              {
-                "name": "Churkai",
-                "nameEn": "Churkai",
-                "code": "3175"
-              },
-              {
-                "name": "jaldup",
-                "nameEn": "jaldup",
-                "code": "3171"
-              },
-              {
-                "name": "Kurar bazar",
-                "nameEn": "Kurar bazar",
-                "code": "3173"
-              },
-              {
-                "name": "Mathiura",
-                "nameEn": "Mathiura",
-                "code": "3172"
-              },
-              {
-                "name": "Salia bazar",
-                "nameEn": "Salia bazar",
-                "code": "3174"
-              }
-            ]
-          },
-          {
-            "name": "বিয়ানীবাজার উপজেলা",
-            "nameEn": "Beanibazar",
-            "unions": [
-              {
-                "name": "আলীনগর ইউনিয়ন",
-                "nameEn": "আলীনগর"
-              },
-              {
-                "name": "কুড়ারবাজার ইউনিয়ন",
-                "nameEn": "কুড়ারবাজার"
-              },
-              {
-                "name": "চরখাই ইউনিয়ন",
-                "nameEn": "চরখাই"
-              },
-              {
-                "name": "দুবাগ ইউনিয়ন",
-                "nameEn": "দুবাগ"
-              },
-              {
-                "name": "মাথিউরা ইউনিয়ন",
-                "nameEn": "মাথিউরা"
-              },
-              {
-                "name": "তিলপাড়া ইউনিয়ন",
-                "nameEn": "তিলপাড়া"
-              },
-              {
-                "name": "মুড়িয়া ইউনিয়ন",
-                "nameEn": "মুড়িয়া"
-              },
-              {
-                "name": "মোল্লাপুর ইউনিয়ন",
-                "nameEn": "মোল্লাপুর"
-              },
-              {
-                "name": "লাউতা ইউনিয়ন",
-                "nameEn": "লাউতা"
-              },
-              {
-                "name": "শেওলা ইউনিয়ন",
-                "nameEn": "শেওলা"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Bishwanath",
-                "nameEn": "Bishwanath",
-                "code": "3130"
-              },
-              {
-                "name": "Dashghar",
-                "nameEn": "Dashghar",
-                "code": "3131"
-              },
-              {
-                "name": "Deokalas",
-                "nameEn": "Deokalas",
-                "code": "3133"
-              },
-              {
-                "name": "Doulathpur",
-                "nameEn": "Doulathpur",
-                "code": "3132"
-              },
-              {
-                "name": "Singer kanch",
-                "nameEn": "Singer kanch",
-                "code": "3134"
-              }
-            ]
-          },
-          {
-            "name": "বিশ্বনাথ উপজেলা",
-            "nameEn": "Biswanath",
-            "unions": [
-              {
-                "name": "লামাকাজী ইউনিয়ন",
-                "nameEn": "লামাকাজী"
-              },
-              {
-                "name": "খাজাঞ্চী ইউনিয়ন",
-                "nameEn": "খাজাঞ্চী"
-              },
-              {
-                "name": "অলংকারী ইউনিয়ন",
-                "nameEn": "অলংকারী"
-              },
-              {
-                "name": "রামপাশা ইউনিয়ন",
-                "nameEn": "রামপাশা"
-              },
-              {
-                "name": "দৌলতপুর ইউনিয়ন",
-                "nameEn": "দৌলতপুর"
-              },
-              {
-                "name": "বিশ্বনাথ ইউনিয়ন",
-                "nameEn": "বিশ্বনাথ"
-              },
-              {
-                "name": "দেওকলস ইউনিয়ন",
-                "nameEn": "দেওকলস"
-              },
-              {
-                "name": "দশঘর ইউনিয়ন",
-                "nameEn": "দশঘর"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
-                "name": "Kompanyganj",
-                "nameEn": "Kompanyganj",
-                "code": "3140"
-              }
-            ]
-          },
-          {
-            "name": "কোম্পানীগঞ্জ উপজেলা",
-            "nameEn": "Companiganj",
-            "unions": [
-              {
-                "name": "ইসলামপুর পশ্চিম ইউনিয়ন",
-                "nameEn": "ইসলামপুর পশ্চিম"
-              },
-              {
-                "name": "ইসলামপুর পূর্ব ইউনিয়ন",
-                "nameEn": "ইসলামপুর পূর্ব"
-              },
-              {
-                "name": "তেলিখাল ইউনিয়ন",
-                "nameEn": "তেলিখাল"
-              },
-              {
-                "name": "ইছাকলস ইউনিয়ন",
-                "nameEn": "ইছাকলস"
-              },
-              {
-                "name": "উত্তর রণিখাই ইউনিয়ন",
-                "nameEn": "উত্তর রণিখাই"
-              },
-              {
-                "name": "দক্ষিণ রণিখাই ইউনিয়ন",
-                "nameEn": "দক্ষিণ রণিখাই"
-              }
-            ],
-            "type": "upazila",
-            "postOffices": [
-              {
                 "name": "Birahimpur",
                 "nameEn": "Birahimpur",
                 "code": "3106"
@@ -41416,6 +40431,272 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Sylhet Cadet Col",
                 "nameEn": "Sylhet Cadet Col",
                 "code": "3101"
+              }
+            ]
+          },
+          {
+            "name": "বালাগঞ্জ উপজেলা",
+            "nameEn": "Balaganj",
+            "unions": [
+              {
+                "name": "পূর্ব পৈলনপুর ইউনিয়ন",
+                "nameEn": "পূর্ব পৈলনপুর"
+              },
+              {
+                "name": "বোয়ালজুড় ইউনিয়ন",
+                "nameEn": "বোয়ালজুড়"
+              },
+              {
+                "name": "দেওয়ানবাজার ইউনিয়ন",
+                "nameEn": "দেওয়ানবাজার"
+              },
+              {
+                "name": "পশ্চিম গৌরীপুর ইউনিয়ন",
+                "nameEn": "পশ্চিম গৌরীপুর"
+              },
+              {
+                "name": "বালাগঞ্জ ইউনিয়ন",
+                "nameEn": "বালাগঞ্জ"
+              },
+              {
+                "name": "পূর্ব গৌরীপুর ইউনিয়ন",
+                "nameEn": "পূর্ব গৌরীপুর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Balaganj",
+                "nameEn": "Balaganj",
+                "code": "3120"
+              },
+              {
+                "name": "Begumpur",
+                "nameEn": "Begumpur",
+                "code": "3125"
+              },
+              {
+                "name": "Brahman Shashon",
+                "nameEn": "Brahman Shashon",
+                "code": "3122"
+              },
+              {
+                "name": "Gaharpur",
+                "nameEn": "Gaharpur",
+                "code": "3128"
+              },
+              {
+                "name": "Goala Bazar",
+                "nameEn": "Goala Bazar",
+                "code": "3124"
+              },
+              {
+                "name": "Karua",
+                "nameEn": "Karua",
+                "code": "3121"
+              },
+              {
+                "name": "Kathal Khair",
+                "nameEn": "Kathal Khair",
+                "code": "3127"
+              },
+              {
+                "name": "Natun Bazar",
+                "nameEn": "Natun Bazar",
+                "code": "3129"
+              },
+              {
+                "name": "Omarpur",
+                "nameEn": "Omarpur",
+                "code": "3126"
+              },
+              {
+                "name": "Tajpur",
+                "nameEn": "Tajpur",
+                "code": "3123"
+              }
+            ]
+          },
+          {
+            "name": "বিয়ানীবাজার উপজেলা",
+            "nameEn": "Beanibazar",
+            "unions": [
+              {
+                "name": "আলীনগর ইউনিয়ন",
+                "nameEn": "আলীনগর"
+              },
+              {
+                "name": "কুড়ারবাজার ইউনিয়ন",
+                "nameEn": "কুড়ারবাজার"
+              },
+              {
+                "name": "চরখাই ইউনিয়ন",
+                "nameEn": "চরখাই"
+              },
+              {
+                "name": "দুবাগ ইউনিয়ন",
+                "nameEn": "দুবাগ"
+              },
+              {
+                "name": "মাথিউরা ইউনিয়ন",
+                "nameEn": "মাথিউরা"
+              },
+              {
+                "name": "তিলপাড়া ইউনিয়ন",
+                "nameEn": "তিলপাড়া"
+              },
+              {
+                "name": "মুড়িয়া ইউনিয়ন",
+                "nameEn": "মুড়িয়া"
+              },
+              {
+                "name": "মোল্লাপুর ইউনিয়ন",
+                "nameEn": "মোল্লাপুর"
+              },
+              {
+                "name": "লাউতা ইউনিয়ন",
+                "nameEn": "লাউতা"
+              },
+              {
+                "name": "শেওলা ইউনিয়ন",
+                "nameEn": "শেওলা"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Bianibazar",
+                "nameEn": "Bianibazar",
+                "code": "3170"
+              },
+              {
+                "name": "Churkai",
+                "nameEn": "Churkai",
+                "code": "3175"
+              },
+              {
+                "name": "jaldup",
+                "nameEn": "jaldup",
+                "code": "3171"
+              },
+              {
+                "name": "Kurar bazar",
+                "nameEn": "Kurar bazar",
+                "code": "3173"
+              },
+              {
+                "name": "Mathiura",
+                "nameEn": "Mathiura",
+                "code": "3172"
+              },
+              {
+                "name": "Salia bazar",
+                "nameEn": "Salia bazar",
+                "code": "3174"
+              }
+            ]
+          },
+          {
+            "name": "বিশ্বনাথ উপজেলা",
+            "nameEn": "Biswanath",
+            "unions": [
+              {
+                "name": "লামাকাজী ইউনিয়ন",
+                "nameEn": "লামাকাজী"
+              },
+              {
+                "name": "খাজাঞ্চী ইউনিয়ন",
+                "nameEn": "খাজাঞ্চী"
+              },
+              {
+                "name": "অলংকারী ইউনিয়ন",
+                "nameEn": "অলংকারী"
+              },
+              {
+                "name": "রামপাশা ইউনিয়ন",
+                "nameEn": "রামপাশা"
+              },
+              {
+                "name": "দৌলতপুর ইউনিয়ন",
+                "nameEn": "দৌলতপুর"
+              },
+              {
+                "name": "বিশ্বনাথ ইউনিয়ন",
+                "nameEn": "বিশ্বনাথ"
+              },
+              {
+                "name": "দেওকলস ইউনিয়ন",
+                "nameEn": "দেওকলস"
+              },
+              {
+                "name": "দশঘর ইউনিয়ন",
+                "nameEn": "দশঘর"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Bishwanath",
+                "nameEn": "Bishwanath",
+                "code": "3130"
+              },
+              {
+                "name": "Dashghar",
+                "nameEn": "Dashghar",
+                "code": "3131"
+              },
+              {
+                "name": "Deokalas",
+                "nameEn": "Deokalas",
+                "code": "3133"
+              },
+              {
+                "name": "Doulathpur",
+                "nameEn": "Doulathpur",
+                "code": "3132"
+              },
+              {
+                "name": "Singer kanch",
+                "nameEn": "Singer kanch",
+                "code": "3134"
+              }
+            ]
+          },
+          {
+            "name": "কোম্পানীগঞ্জ উপজেলা",
+            "nameEn": "Companiganj",
+            "unions": [
+              {
+                "name": "ইসলামপুর পশ্চিম ইউনিয়ন",
+                "nameEn": "ইসলামপুর পশ্চিম"
+              },
+              {
+                "name": "ইসলামপুর পূর্ব ইউনিয়ন",
+                "nameEn": "ইসলামপুর পূর্ব"
+              },
+              {
+                "name": "তেলিখাল ইউনিয়ন",
+                "nameEn": "তেলিখাল"
+              },
+              {
+                "name": "ইছাকলস ইউনিয়ন",
+                "nameEn": "ইছাকলস"
+              },
+              {
+                "name": "উত্তর রণিখাই ইউনিয়ন",
+                "nameEn": "উত্তর রণিখাই"
+              },
+              {
+                "name": "দক্ষিণ রণিখাই ইউনিয়ন",
+                "nameEn": "দক্ষিণ রণিখাই"
+              }
+            ],
+            "type": "upazila",
+            "postOffices": [
+              {
+                "name": "Kompanyganj",
+                "nameEn": "Kompanyganj",
+                "code": "3140"
               }
             ]
           },
@@ -41744,14 +41025,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ghoraghat",
-                "nameEn": "Ghoraghat",
-                "code": "5291"
+                "name": "Ichhamati",
+                "nameEn": "Ichhamati",
+                "code": "3191"
               },
               {
-                "name": "Osmanpur",
-                "nameEn": "Osmanpur",
-                "code": "5290"
+                "name": "Jakiganj",
+                "nameEn": "Jakiganj",
+                "code": "3190"
               }
             ]
           },
@@ -41914,14 +41195,14 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "Ichhamati",
-                "nameEn": "Ichhamati",
-                "code": "3191"
+                "name": "Ghoraghat",
+                "nameEn": "Ghoraghat",
+                "code": "5291"
               },
               {
-                "name": "Jakiganj",
-                "nameEn": "Jakiganj",
-                "code": "3190"
+                "name": "Osmanpur",
+                "nameEn": "Osmanpur",
+                "code": "5290"
               }
             ]
           },
