@@ -11,9 +11,10 @@ export interface Permission {
 }
 
 export const usePermissions = () => {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
 
-  const { data: permissions = [], isLoading } = useQuery({
+  // Role-based permissions
+  const { data: rolePermissions = [], isLoading: roleLoading } = useQuery({
     queryKey: ['role-permissions', role],
     queryFn: async () => {
       if (!role) return [];
@@ -27,11 +28,40 @@ export const usePermissions = () => {
     enabled: !!role,
   });
 
+  // User-specific permissions (override role permissions)
+  const { data: userPermissions = [], isLoading: userLoading } = useQuery({
+    queryKey: ['user-permissions', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('menu_path, can_view, can_add, can_edit, can_delete')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      return data as Permission[];
+    },
+    enabled: !!user?.id,
+  });
+
+  const isLoading = roleLoading || userLoading;
+
   const hasPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    // Admin role has full access by default
     if (role === 'admin') return true;
 
-    const perm = permissions.find(p => p.menu_path === menuPath);
+    // Check user-level permissions first (higher priority)
+    const userPerm = userPermissions.find(p => p.menu_path === menuPath);
+    if (userPerm) {
+      switch (action) {
+        case 'view': return userPerm.can_view;
+        case 'add': return userPerm.can_add;
+        case 'edit': return userPerm.can_edit;
+        case 'delete': return userPerm.can_delete;
+        default: return false;
+      }
+    }
+
+    // Fall back to role-level permissions
+    const perm = rolePermissions.find(p => p.menu_path === menuPath);
     if (!perm) return false;
 
     switch (action) {
@@ -48,5 +78,5 @@ export const usePermissions = () => {
   const canEdit = (menuPath: string) => hasPermission(menuPath, 'edit');
   const canDelete = (menuPath: string) => hasPermission(menuPath, 'delete');
 
-  return { permissions, isLoading, hasPermission, canView, canAdd, canEdit, canDelete, role };
+  return { permissions: rolePermissions, userPermissions, isLoading, hasPermission, canView, canAdd, canEdit, canDelete, role };
 };

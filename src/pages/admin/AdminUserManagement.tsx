@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useMenuSettings } from '@/hooks/useMenuSettings';
 
 interface UserItem {
   id: string;
@@ -19,6 +21,32 @@ interface UserItem {
   full_name: string;
   created_at: string;
 }
+
+interface UserPerm {
+  menu_path: string;
+  can_view: boolean;
+  can_add: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+}
+
+const MENU_PATHS = [
+  { path: '/admin/students', label_bn: 'ছাত্র ব্যবস্থাপনা', label_en: 'Students' },
+  { path: '/admin/staff', label_bn: 'স্টাফ/শিক্ষক', label_en: 'Staff/Teacher' },
+  { path: '/admin/divisions', label_bn: 'বিভাগ ও শ্রেণী', label_en: 'Divisions' },
+  { path: '/admin/subjects', label_bn: 'বিষয়সমূহ', label_en: 'Subjects' },
+  { path: '/admin/results', label_bn: 'ফলাফল', label_en: 'Results' },
+  { path: '/admin/notices', label_bn: 'নোটিশ', label_en: 'Notices' },
+  { path: '/admin/fees', label_bn: 'ফি', label_en: 'Fees' },
+  { path: '/admin/expenses', label_bn: 'খরচ', label_en: 'Expenses' },
+  { path: '/admin/donors', label_bn: 'দাতা', label_en: 'Donors' },
+  { path: '/admin/attendance', label_bn: 'হাজিরা', label_en: 'Attendance' },
+  { path: '/admin/salary', label_bn: 'বেতন', label_en: 'Salary' },
+  { path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts' },
+  { path: '/admin/reports', label_bn: 'রিপোর্ট', label_en: 'Reports' },
+  { path: '/admin/website', label_bn: 'ওয়েবসাইট', label_en: 'Website' },
+  { path: '/admin/posts', label_bn: 'পোস্ট', label_en: 'Posts' },
+];
 
 const AdminUserManagement = () => {
   const { language } = useLanguage();
@@ -30,12 +58,19 @@ const AdminUserManagement = () => {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  // Form
+  // Create form
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Permission dialog
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [permUser, setPermUser] = useState<UserItem | null>(null);
+  const [permLoading, setPermLoading] = useState(false);
+  const [permSaving, setPermSaving] = useState(false);
+  const [userPerms, setUserPerms] = useState<UserPerm[]>([]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -45,7 +80,7 @@ const AdminUserManagement = () => {
       });
       if (error) throw error;
       setUsers(data?.users || []);
-    } catch (err: any) {
+    } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
     }
     setLoading(false);
@@ -96,6 +131,85 @@ const AdminUserManagement = () => {
       toast.error(bn ? 'ডিলিট ব্যর্থ' : 'Delete failed');
     }
     setDeleting(null);
+  };
+
+  // Permission functions
+  const openPermDialog = async (user: UserItem) => {
+    setPermUser(user);
+    setPermDialogOpen(true);
+    setPermLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('menu_path, can_view, can_add, can_edit, can_delete')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      // Merge with all menu paths
+      const merged = MENU_PATHS.map(mp => {
+        const existing = (data || []).find((d: any) => d.menu_path === mp.path);
+        return {
+          menu_path: mp.path,
+          can_view: existing?.can_view ?? false,
+          can_add: existing?.can_add ?? false,
+          can_edit: existing?.can_edit ?? false,
+          can_delete: existing?.can_delete ?? false,
+        };
+      });
+      setUserPerms(merged);
+    } catch {
+      toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    }
+    setPermLoading(false);
+  };
+
+  const togglePerm = (menuPath: string, field: keyof UserPerm) => {
+    setUserPerms(prev => prev.map(p => {
+      if (p.menu_path !== menuPath) return p;
+      return { ...p, [field]: !(p as any)[field] };
+    }));
+  };
+
+  const toggleAllForPath = (menuPath: string) => {
+    setUserPerms(prev => prev.map(p => {
+      if (p.menu_path !== menuPath) return p;
+      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete;
+      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn };
+    }));
+  };
+
+  const savePermissions = async () => {
+    if (!permUser) return;
+    setPermSaving(true);
+    try {
+      // Delete existing
+      await supabase.from('user_permissions').delete().eq('user_id', permUser.id);
+
+      // Insert non-empty ones
+      const toInsert = userPerms
+        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete)
+        .map(p => ({
+          user_id: permUser.id,
+          menu_path: p.menu_path,
+          can_view: p.can_view,
+          can_add: p.can_add,
+          can_edit: p.can_edit,
+          can_delete: p.can_delete,
+        }));
+
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('user_permissions').insert(toInsert);
+        if (error) throw error;
+      }
+
+      toast.success(bn ? '✅ পারমিশন সেভ হয়েছে!' : '✅ Permissions saved!');
+      setPermDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'পারমিশন সেভ ব্যর্থ' : 'Failed to save permissions'));
+    }
+    setPermSaving(false);
   };
 
   const roleBadge = (r: string) => {
@@ -174,8 +288,8 @@ const AdminUserManagement = () => {
           <AlertTriangle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
           <p className="text-muted-foreground">
             {bn
-              ? 'এখানে তৈরি করা ইউজাররা সরাসরি লগইন করতে পারবে। তাদের ইমেইল ভেরিফাই করার প্রয়োজন নেই।'
-              : 'Users created here can log in immediately. No email verification needed.'}
+              ? 'এখানে তৈরি করা ইউজাররা সরাসরি লগইন করতে পারবে। প্রতিটি ইউজারের জন্য আলাদা পারমিশন সেট করতে 🔑 বাটনে ক্লিক করুন।'
+              : 'Users created here can log in immediately. Click the 🔑 button to set individual permissions for each user.'}
           </p>
         </div>
 
@@ -197,7 +311,7 @@ const AdminUserManagement = () => {
                   <TableHead>{bn ? 'ইমেইল' : 'Email'}</TableHead>
                   <TableHead>{bn ? 'রোল' : 'Role'}</TableHead>
                   <TableHead>{bn ? 'তৈরির তারিখ' : 'Created'}</TableHead>
-                  <TableHead className="w-16"></TableHead>
+                  <TableHead className="w-24 text-center">{bn ? 'অ্যাকশন' : 'Actions'}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -210,15 +324,28 @@ const AdminUserManagement = () => {
                       {new Date(u.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US')}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(u.id)}
-                        disabled={deleting === u.id}
-                      >
-                        {deleting === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        {u.role !== 'admin' && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={() => openPermDialog(u)}
+                            title={bn ? 'পারমিশন সেট করুন' : 'Set Permissions'}
+                          >
+                            <KeyRound className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(u.id)}
+                          disabled={deleting === u.id}
+                        >
+                          {deleting === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -226,6 +353,85 @@ const AdminUserManagement = () => {
             </Table>
           )}
         </div>
+
+        {/* Permission Dialog */}
+        <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
+          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-primary" />
+                {bn ? 'ব্যক্তিগত পারমিশন' : 'Individual Permissions'}
+                {permUser && (
+                  <Badge variant="outline" className="ml-2 font-normal">
+                    {permUser.full_name || permUser.email}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            {permLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  {bn
+                    ? 'এখানে সেট করা পারমিশন রোল-ভিত্তিক পারমিশনের উপরে প্রযোজ্য হবে (ওভাররাইড)।'
+                    : 'Permissions set here will override role-based permissions for this user.'}
+                </p>
+
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
+                        <TableHead className="text-center w-20">{bn ? 'দেখা' : 'View'}</TableHead>
+                        <TableHead className="text-center w-20">{bn ? 'যোগ' : 'Add'}</TableHead>
+                        <TableHead className="text-center w-20">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
+                        <TableHead className="text-center w-20">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-20">{bn ? 'সব' : 'All'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {userPerms.map(perm => {
+                        const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
+                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                        return (
+                          <TableRow key={perm.menu_path}>
+                            <TableCell className="font-medium text-sm">
+                              {bn ? menuInfo?.label_bn : menuInfo?.label_en}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_view} onCheckedChange={() => togglePerm(perm.menu_path, 'can_view')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_add} onCheckedChange={() => togglePerm(perm.menu_path, 'can_add')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_edit} onCheckedChange={() => togglePerm(perm.menu_path, 'can_edit')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_delete} onCheckedChange={() => togglePerm(perm.menu_path, 'can_delete')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <Button onClick={savePermissions} disabled={permSaving} className="w-full btn-primary-gradient">
+                  {permSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
