@@ -11,6 +11,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useOtpService } from '@/hooks/useOtpService';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 
+const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
+  <div className="relative">
+    <Input className="bg-background pr-10" type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
+    <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+      {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+    </button>
+  </div>
+);
+
 const AdminProfile = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -258,15 +267,6 @@ const AdminProfile = () => {
     setConfirmPassword('');
     setPwCountdown(0);
   };
-
-  const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
-    <div className="relative">
-      <Input className="bg-background pr-10" type={show ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
-      <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-        {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-      </button>
-    </div>
-  );
 
   return (
     <AdminLayout>
