@@ -68,12 +68,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
   }
 
-  // Non-admin on admin routes
+  // Non-admin on admin routes — redirect to staff dashboard
   if (isAdminRoute) {
-    // Always-allowed paths (dashboard, profile)
-    const isAlwaysAllowed = ALWAYS_ALLOWED.some(p => path === p || path.startsWith(p + '/'));
-    if (isAlwaysAllowed) {
+    // Only /admin/profile is allowed for non-admins (own profile)
+    if (path === '/admin/profile' || path.startsWith('/admin/profile/')) {
       return <>{children}</>;
+    }
+
+    // The main /admin dashboard is NOT allowed for non-admins
+    if (path === '/admin') {
+      return <Navigate to="/staff-dashboard" replace />;
     }
 
     if (accessControl?.accessMap) {
