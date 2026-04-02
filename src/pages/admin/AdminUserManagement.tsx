@@ -122,7 +122,7 @@ const AdminUserManagement = () => {
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=create', {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
         body: { email: email.trim(), password, role, full_name: fullName.trim() },
       });
       if (error || !data?.success) {
