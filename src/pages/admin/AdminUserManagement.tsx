@@ -309,7 +309,70 @@ const AdminUserManagement = () => {
     }
   };
 
-  // Permission functions
+  // Role permission functions
+  const openRolePermDialog = async (role: CustomRole) => {
+    setRolePermRole(role);
+    setRolePermDialogOpen(true);
+    setRolePermLoading(true);
+    try {
+      const { data, error } = await supabase.from('role_permissions').select('*').eq('role', role.name);
+      if (error) throw error;
+      const merged = MENU_PATHS.map(mp => {
+        const existing = (data || []).find((d: any) => d.menu_path === mp.path);
+        return {
+          menu_path: mp.path,
+          can_view: existing?.can_view ?? false,
+          can_add: existing?.can_add ?? false,
+          can_edit: existing?.can_edit ?? false,
+          can_delete: existing?.can_delete ?? false,
+        };
+      });
+      setRolePerms(merged);
+    } catch {
+      toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    }
+    setRolePermLoading(false);
+  };
+
+  const toggleRolePerm = (menuPath: string, field: string) => {
+    setRolePerms(prev => prev.map(p => p.menu_path !== menuPath ? p : { ...p, [field]: !(p as any)[field] }));
+  };
+
+  const toggleAllRolePerms = (menuPath: string) => {
+    setRolePerms(prev => prev.map(p => {
+      if (p.menu_path !== menuPath) return p;
+      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete;
+      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn };
+    }));
+  };
+
+  const saveRolePermissions = async () => {
+    if (!rolePermRole) return;
+    setRolePermSaving(true);
+    try {
+      await supabase.from('role_permissions').delete().eq('role', rolePermRole.name);
+      const toInsert = rolePerms
+        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete)
+        .map(p => ({
+          role: rolePermRole.name,
+          menu_path: p.menu_path,
+          can_view: p.can_view,
+          can_add: p.can_add,
+          can_edit: p.can_edit,
+          can_delete: p.can_delete,
+        }));
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('role_permissions').insert(toInsert);
+        if (error) throw error;
+      }
+      toast.success(bn ? '✅ রোল পারমিশন সেভ হয়েছে!' : '✅ Role permissions saved!');
+      setRolePermDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'পারমিশন সেভ ব্যর্থ' : 'Failed to save permissions'));
+    }
+    setRolePermSaving(false);
+  };
+
   const openPermDialog = async (user: UserItem) => {
     setPermUser(user);
     setPermDialogOpen(true);
