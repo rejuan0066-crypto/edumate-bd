@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const getGrade = (avg: number) => {
   if (avg >= 80) return { grade: 'A+', gpa: '5.00' };
@@ -24,6 +25,7 @@ const AdminResults = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/results', 'results');
+  const { canAddItem, canEditItem } = usePagePermissions('/admin/results');
   const [examYear, setExamYear] = useState('2026');
   const [examSession, setExamSession] = useState('');
   const [examType, setExamType] = useState('');

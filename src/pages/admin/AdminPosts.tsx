@@ -4,6 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -68,6 +69,7 @@ const AdminPosts = () => {
   const bn = language === 'bn';
   const qc = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/posts', 'posts');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/posts');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -207,9 +209,11 @@ const AdminPosts = () => {
           <h1 className="text-2xl font-bold text-foreground">
             {bn ? 'পোস্ট ম্যানেজমেন্ট' : 'Post Management'}
           </h1>
-          <Button onClick={() => { setForm(emptyForm); setEditId(null); setDialogOpen(true); }}>
-            <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন পোস্ট' : 'New Post'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => { setForm(emptyForm); setEditId(null); setDialogOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন পোস্ট' : 'New Post'}
+            </Button>
+          )}
         </div>
 
         {/* Filters */}

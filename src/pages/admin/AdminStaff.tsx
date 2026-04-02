@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ const AdminStaff = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { checkApproval } = useApprovalCheck('/admin/staff', 'staff');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/staff');
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -109,9 +111,11 @@ const AdminStaff = () => {
             <h1 className="text-2xl font-display font-bold text-foreground">{t('staff')}</h1>
             <p className="text-sm text-muted-foreground">{bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`}</p>
           </div>
-          <Button onClick={() => navigate('/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
-            <Plus className="w-4 h-4" /> {t('addNew')}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => navigate('/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
+              <Plus className="w-4 h-4" /> {t('addNew')}
+            </Button>
+          )}
         </div>
 
         <div className="card-elevated p-4">
@@ -178,8 +182,12 @@ const AdminStaff = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
-                        <button onClick={() => navigate(`/admin/staff/edit/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                        {canEditItem && (
+                          <button onClick={() => navigate(`/admin/staff/edit/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
+                        )}
+                        {canDeleteItem && (
+                          <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                        )}
                       </td>
                     </tr>
                   ))}

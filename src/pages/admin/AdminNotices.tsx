@@ -9,11 +9,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const AdminNotices = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/notices', 'notices');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/notices');
   const [filter, setFilter] = useState<string>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -87,7 +89,7 @@ const AdminNotices = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-display font-bold text-foreground">{language === 'bn' ? 'নোটিশ ব্যবস্থাপনা' : 'Notice Management'}</h1>
-          <Button onClick={() => setShowAdd(!showAdd)} className="btn-primary-gradient"><Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন নোটিশ' : 'New Notice'}</Button>
+          {canAddItem && <Button onClick={() => setShowAdd(!showAdd)} className="btn-primary-gradient"><Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন নোটিশ' : 'New Notice'}</Button>}
         </div>
 
         {showAdd && (
@@ -132,13 +134,15 @@ const AdminNotices = () => {
                     <span className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleDateString('bn-BD')}</span>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    {!n.is_published && (
+                    {canEditItem && !n.is_published && (
                       <button onClick={() => updateStatusMutation.mutate({ id: n.id, is_published: true })} className="p-2 rounded-lg hover:bg-success/10 text-success" title="Publish"><Check className="w-4 h-4" /></button>
                     )}
-                    {n.is_published && (
+                    {canEditItem && n.is_published && (
                       <button onClick={() => updateStatusMutation.mutate({ id: n.id, is_published: false })} className="p-2 rounded-lg hover:bg-warning/10 text-warning" title="Unpublish"><RotateCcw className="w-4 h-4" /></button>
                     )}
-                    <button onClick={() => deleteMutation.mutate(n.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                    {canDeleteItem && (
+                      <button onClick={() => deleteMutation.mutate(n.id)} className="p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
+                    )}
                   </div>
                 </div>
               </div>
