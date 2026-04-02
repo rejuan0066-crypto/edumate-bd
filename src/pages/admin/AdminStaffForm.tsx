@@ -89,6 +89,10 @@ const AdminStaffForm = () => {
   const [salary, setSalary] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
   const [mobile, setMobile] = useState('');
   const [mobileCode, setMobileCode] = useState('+880');
   const [employmentType, setEmploymentType] = useState('');
