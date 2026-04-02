@@ -7,6 +7,7 @@ export interface AuthContextType {
   session: Session | null;
   loading: boolean;
   role: string | null;
+  userStatus: string | null; // 'pending' | 'approved'
   signIn: (email: string, password: string) => Promise<{ error: unknown }>;
   signOut: () => Promise<void>;
 }
@@ -18,15 +19,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<string | null>(null);
+  const [userStatus, setUserStatus] = useState<string | null>(null);
 
-  const fetchRole = async (userId: string) => {
-    const { data } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
+  const fetchRoleAndStatus = async (userId: string) => {
+    // Fetch role and profile status in parallel
+    const [roleResult, profileResult] = await Promise.all([
+      supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle(),
+      supabase.from('profiles').select('status').eq('id', userId).maybeSingle(),
+    ]);
 
-    setRole(data?.role ?? null);
+    setRole(roleResult.data?.role ?? null);
+    setUserStatus(profileResult.data?.status ?? 'pending');
     setLoading(false);
   };
 
@@ -39,10 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (nextSession?.user) {
         queueMicrotask(() => {
-          void fetchRole(nextSession.user.id);
+          void fetchRoleAndStatus(nextSession.user.id);
         });
       } else {
         setRole(null);
+        setUserStatus(null);
         setLoading(false);
       }
     });
@@ -52,9 +56,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentSession?.user ?? null);
 
       if (currentSession?.user) {
-        void fetchRole(currentSession.user.id);
+        void fetchRoleAndStatus(currentSession.user.id);
       } else {
         setRole(null);
+        setUserStatus(null);
         setLoading(false);
       }
     });
@@ -68,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       session,
       loading,
       role,
+      userStatus,
       signIn: async (email: string, password: string) => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         return { error };
@@ -77,9 +83,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setSession(null);
         setRole(null);
+        setUserStatus(null);
       },
     }),
-    [user, session, loading, role]
+    [user, session, loading, role, userStatus]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
