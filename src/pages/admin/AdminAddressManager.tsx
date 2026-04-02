@@ -179,7 +179,7 @@ const AdminAddressManager = () => {
   });
 
   const getLevelLabel = (level: string) => {
-    const l = LEVELS.find(lv => lv.value === level);
+    const l = levels.find(lv => lv.key === level);
     return bn ? l?.label_bn : l?.label;
   };
 
