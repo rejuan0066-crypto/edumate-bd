@@ -25,6 +25,8 @@ const AdminApiVerification = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetConfirmInput, setResetConfirmInput] = useState('');
 
   // Form state
   const [apiUrl, setApiUrl] = useState('');
@@ -51,7 +53,6 @@ const AdminApiVerification = () => {
 
   const handleUnlock = () => {
     if (!config) return;
-    // First time setup - no password set yet
     if (!config.master_password) {
       setUnlocked(true);
       return;
@@ -61,6 +62,27 @@ const AdminApiVerification = () => {
       setMasterInput('');
     } else {
       toast.error(bn ? 'ভুল পাসওয়ার্ড' : 'Wrong password');
+    }
+  };
+
+  const handleForgotReset = async () => {
+    if (resetConfirmInput !== 'RESET') {
+      toast.error(bn ? 'অনুগ্রহ করে RESET টাইপ করুন' : 'Please type RESET to confirm');
+      return;
+    }
+    if (!config?.id) return;
+    const { error } = await supabase
+      .from('api_verification_config')
+      .update({ master_password: '', updated_at: new Date().toISOString() })
+      .eq('id', config.id);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(bn ? 'পাসওয়ার্ড রিসেট হয়েছে। নতুন পাসওয়ার্ড সেট করুন।' : 'Password reset. Please set a new password.');
+      setForgotMode(false);
+      setResetConfirmInput('');
+      setUnlocked(true);
+      queryClient.invalidateQueries({ queryKey: ['api-verification-config'] });
     }
   };
 
@@ -210,7 +232,31 @@ const AdminApiVerification = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {config?.master_password ? (
+              {forgotMode ? (
+                <div className="space-y-4">
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <p className="text-sm text-destructive font-medium mb-1">
+                      {bn ? '⚠️ সতর্কতা' : '⚠️ Warning'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {bn ? 'পাসওয়ার্ড রিসেট করলে পুরাতন পাসওয়ার্ড মুছে যাবে। নিশ্চিত করতে নিচে RESET টাইপ করুন।' : 'Resetting will remove the old password. Type RESET below to confirm.'}
+                    </p>
+                  </div>
+                  <Input
+                    value={resetConfirmInput}
+                    onChange={e => setResetConfirmInput(e.target.value)}
+                    placeholder={bn ? 'RESET টাইপ করুন' : 'Type RESET'}
+                    className="font-mono text-center tracking-widest"
+                    onKeyDown={e => e.key === 'Enter' && handleForgotReset()}
+                  />
+                  <Button className="w-full" variant="destructive" onClick={handleForgotReset}>
+                    {bn ? 'পাসওয়ার্ড রিসেট করুন' : 'Reset Password'}
+                  </Button>
+                  <Button className="w-full" variant="ghost" onClick={() => { setForgotMode(false); setResetConfirmInput(''); }}>
+                    {bn ? 'বাতিল' : 'Cancel'}
+                  </Button>
+                </div>
+              ) : config?.master_password ? (
                 <div className="space-y-4">
                   <div className="relative">
                     <Input
@@ -232,6 +278,13 @@ const AdminApiVerification = () => {
                   <Button className="w-full btn-primary-gradient" onClick={handleUnlock}>
                     <Shield className="w-4 h-4 mr-2" />{bn ? 'আনলক করুন' : 'Unlock'}
                   </Button>
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(true)}
+                    className="w-full text-sm text-primary hover:underline"
+                  >
+                    {bn ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?'}
+                  </button>
                 </div>
               ) : (
                 <Button className="w-full btn-primary-gradient" onClick={handleUnlock}>
