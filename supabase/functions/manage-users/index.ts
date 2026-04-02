@@ -146,6 +146,42 @@ Deno.serve(async (req) => {
       });
     }
 
+    // UPDATE ROLE
+    if (action === "update_role") {
+      const { user_id: targetUserId, role: newRole, base_role } = body;
+      if (!targetUserId || !newRole) {
+        return new Response(JSON.stringify({ error: "user_id and role are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent changing own role
+      if (targetUserId === userId) {
+        return new Response(JSON.stringify({ error: "Cannot change your own role" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // The actual role in user_roles must be one of the enum values (admin, staff, teacher)
+      const actualRole = base_role || (newRole === 'admin' ? 'admin' : newRole === 'teacher' ? 'teacher' : 'staff');
+
+      // Update role
+      const { error: updateError } = await supabaseAdmin
+        .from("user_roles")
+        .update({ role: actualRole })
+        .eq("user_id", targetUserId);
+
+      if (updateError) {
+        return new Response(JSON.stringify({ error: "Failed to update role: " + updateError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // DELETE user
     if (action === "delete") {
       const { user_id } = body;
