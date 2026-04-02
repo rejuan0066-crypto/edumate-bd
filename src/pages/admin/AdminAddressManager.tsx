@@ -13,14 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { bangladeshAddresses } from '@/data/bangladeshAddresses';
 import SearchableSelect from '@/components/SearchableSelect';
-
-const LEVELS = [
-  { value: 'division', label: 'Division', label_bn: 'বিভাগ' },
-  { value: 'district', label: 'District', label_bn: 'জেলা' },
-  { value: 'upazila', label: 'Upazila', label_bn: 'উপজেলা' },
-  { value: 'union', label: 'Union', label_bn: 'ইউনিয়ন' },
-  { value: 'post_office', label: 'Post Office', label_bn: 'পোস্ট অফিস' },
-];
+import AddressLevelManager, { useAddressLevels } from '@/components/admin/AddressLevelManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const SUB_TYPES = [
   { value: 'upazila', label: 'Upazila', label_bn: 'উপজেলা' },
