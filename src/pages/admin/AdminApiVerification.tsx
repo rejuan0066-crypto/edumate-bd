@@ -33,6 +33,7 @@ const AdminApiVerification = () => {
   const [apiKey, setApiKey] = useState('');
   const [isEnabled, setIsEnabled] = useState(false);
   const [newMasterPassword, setNewMasterPassword] = useState('');
+  const [confirmMasterPassword, setConfirmMasterPassword] = useState('');
   const [studentMappings, setStudentMappings] = useState<Array<{ apiKey: string; formField: string }>>([]);
   const [staffMappings, setStaffMappings] = useState<Array<{ apiKey: string; formField: string }>>([]);
   const [saving, setSaving] = useState(false);
@@ -105,6 +106,11 @@ const AdminApiVerification = () => {
     };
 
     if (newMasterPassword.trim()) {
+      if (newMasterPassword !== confirmMasterPassword) {
+        toast.error(bn ? 'নতুন পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড মিলছে না' : 'New password and confirm password do not match');
+        setSaving(false);
+        return;
+      }
       updateData.master_password = newMasterPassword.trim();
     }
 
@@ -424,6 +430,21 @@ const AdminApiVerification = () => {
                   {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+            </div>
+            <div>
+              <Label>{bn ? 'কনফার্ম নতুন পাসওয়ার্ড' : 'Confirm New Password'}</Label>
+              <div className="relative mt-1">
+                <Input
+                  className="bg-background pr-10"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={confirmMasterPassword}
+                  onChange={e => setConfirmMasterPassword(e.target.value)}
+                  placeholder={bn ? 'নতুন পাসওয়ার্ড আবার দিন' : 'Re-enter new password'}
+                />
+              </div>
+              {newMasterPassword && confirmMasterPassword && newMasterPassword !== confirmMasterPassword && (
+                <p className="text-xs text-destructive mt-1">{bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'}</p>
+              )}
             </div>
           </CardContent>
         </Card>
