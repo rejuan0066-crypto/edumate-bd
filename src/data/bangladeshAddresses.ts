@@ -1013,7 +1013,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Kaliganj",
             "unions": [
               {
-                "name": "Kaliganj সদর",
+                "name": "কালীগঞ্জ সদর",
                 "nameEn": "Kaliganj Sadar"
               }
             ],
@@ -2596,7 +2596,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Lohagara",
             "unions": [
               {
-                "name": "Lohagara সদর",
+                "name": "লোহাগাড়া সদর",
                 "nameEn": "Lohagara Sadar"
               }
             ],
@@ -2834,7 +2834,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Kaliganj",
             "unions": [
               {
-                "name": "Kaliganj সদর",
+                "name": "কালীগঞ্জ সদর",
                 "nameEn": "Kaliganj Sadar"
               }
             ],
@@ -4200,7 +4200,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Lohagara",
             "unions": [
               {
-                "name": "Lohagara সদর",
+                "name": "লোহাগাড়া সদর",
                 "nameEn": "Lohagara Sadar"
               }
             ],
@@ -4586,7 +4586,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Ukhiya",
             "unions": [
               {
-                "name": "Ukhiya সদর",
+                "name": "উখিয়া সদর",
                 "nameEn": "Ukhiya Sadar"
               }
             ],
@@ -8190,7 +8190,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Kaliganj",
             "unions": [
               {
-                "name": "Kaliganj সদর",
+                "name": "কালীগঞ্জ সদর",
                 "nameEn": "Kaliganj Sadar"
               }
             ],
@@ -8224,7 +8224,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Sreepur",
             "unions": [
               {
-                "name": "Sreepur সদর",
+                "name": "শ্রীপুর সদর",
                 "nameEn": "Sreepur Sadar"
               }
             ],
@@ -16456,7 +16456,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Nawabganj",
             "unions": [
               {
-                "name": "Nawabganj সদর",
+                "name": "নবাবগঞ্জ সদর",
                 "nameEn": "Nawabganj Sadar"
               }
             ],
@@ -21550,7 +21550,7 @@ export const bangladeshAddresses: Division[] = [
             "nameEn": "Shibganj",
             "unions": [
               {
-                "name": "Shibganj সদর",
+                "name": "শিবগঞ্জ সদর",
                 "nameEn": "Shibganj Sadar"
               }
             ],
