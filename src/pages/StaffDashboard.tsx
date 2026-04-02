@@ -198,29 +198,20 @@ const StaffDashboard = () => {
           </Card>
         )}
 
-        <Tabs defaultValue={hasStaff ? 'profile' : 'basic-profile'} className="space-y-4">
-          <TabsList className={`w-full grid h-auto ${hasStaff ? 'grid-cols-4' : 'grid-cols-2'}`}>
-            {hasStaff ? (
-              <>
-                <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
-                </TabsTrigger>
-                <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-                  <Wallet className="h-4 w-4" />
-                  <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
-                </TabsTrigger>
-                <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-                  <CalendarDays className="h-4 w-4" />
-                  <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
-                </TabsTrigger>
-              </>
-            ) : (
-              <TabsTrigger value="basic-profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
-              </TabsTrigger>
-            )}
+        <Tabs defaultValue="profile" className="space-y-4">
+          <TabsList className="w-full grid h-auto grid-cols-4">
+            <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
+            </TabsTrigger>
+            <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+              <Wallet className="h-4 w-4" />
+              <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
+            </TabsTrigger>
+            <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
+            </TabsTrigger>
             <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
