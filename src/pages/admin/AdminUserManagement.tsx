@@ -102,7 +102,7 @@ const AdminUserManagement = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=list', {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
         method: 'GET',
       });
       if (error) throw error;
@@ -122,8 +122,8 @@ const AdminUserManagement = () => {
 
     setCreating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=create', {
-        body: { email: email.trim(), password, role, full_name: fullName.trim() },
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'create', email: email.trim(), password, role, full_name: fullName.trim() },
       });
       if (error || !data?.success) {
         toast.error(data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user'));
@@ -144,8 +144,8 @@ const AdminUserManagement = () => {
     if (!confirm(bn ? 'এই ইউজার ডিলিট করতে চান?' : 'Delete this user?')) return;
     setDeleting(userId);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=delete', {
-        body: { user_id: userId },
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'delete', user_id: userId },
       });
       if (error || !data?.success) {
         toast.error(data?.error || error?.message || (bn ? 'ডিলিট ব্যর্থ' : 'Delete failed'));
