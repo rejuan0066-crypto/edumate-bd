@@ -250,6 +250,33 @@ Deno.serve(async (req) => {
       });
     }
 
+    // APPROVE / REJECT user status
+    if (action === "update_status") {
+      const { user_id: targetUserId, status } = body;
+      if (!targetUserId || !status) {
+        return new Response(JSON.stringify({ error: "user_id and status are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!['pending', 'approved'].includes(status)) {
+        return new Response(JSON.stringify({ error: "status must be 'pending' or 'approved'" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { error: statusError } = await supabaseAdmin
+        .from("profiles")
+        .update({ status })
+        .eq("id", targetUserId);
+      if (statusError) {
+        return new Response(JSON.stringify({ error: statusError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
