@@ -7,6 +7,7 @@ import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap } 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 
 const AdminDivisions = () => {
   const { language } = useLanguage();
