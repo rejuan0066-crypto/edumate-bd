@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ const AdminStaff = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { checkApproval } = useApprovalCheck('/admin/staff', 'staff');
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -42,6 +44,8 @@ const AdminStaff = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const staff = staffList.find((s: any) => s.id === id);
+      if (await checkApproval('delete', { id, name_bn: staff?.name_bn }, id, `কর্মী মুছুন: ${staff?.name_bn}`)) return;
       const { error } = await supabase.from('staff').delete().eq('id', id);
       if (error) throw error;
     },

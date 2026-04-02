@@ -8,6 +8,7 @@ import { Plus, Pencil, Trash2, Loader2, CalendarDays } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog';
@@ -22,6 +23,7 @@ import {
 const AdminAcademicSessions = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/academic-sessions', 'academic_sessions');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -42,11 +44,14 @@ const AdminAcademicSessions = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error(language === 'bn' ? 'সেশনের নাম দিন' : 'Enter session name');
+      const payload = { name: name.trim(), is_active: isActive };
       if (editId) {
-        const { error } = await supabase.from('academic_sessions').update({ name: name.trim(), is_active: isActive }).eq('id', editId);
+        if (await checkApproval('edit', payload, editId, `সেশন সম্পাদনা: ${name.trim()}`)) return;
+        const { error } = await supabase.from('academic_sessions').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('academic_sessions').insert({ name: name.trim(), is_active: isActive });
+        if (await checkApproval('add', payload, undefined, `সেশন যোগ: ${name.trim()}`)) return;
+        const { error } = await supabase.from('academic_sessions').insert(payload);
         if (error) throw error;
       }
     },
@@ -60,6 +65,8 @@ const AdminAcademicSessions = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const session = sessions.find((s: any) => s.id === id);
+      if (await checkApproval('delete', { id, name: session?.name }, id, `সেশন মুছুন: ${session?.name}`)) return;
       const { error } = await supabase.from('academic_sessions').delete().eq('id', id);
       if (error) throw error;
     },
@@ -72,6 +79,7 @@ const AdminAcademicSessions = () => {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      if (await checkApproval('edit', { id, is_active: active }, id, `সেশন ${active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}`)) return;
       const { error } = await supabase.from('academic_sessions').update({ is_active: active }).eq('id', id);
       if (error) throw error;
     },

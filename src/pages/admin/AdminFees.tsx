@@ -8,12 +8,14 @@ import { CreditCard, Printer, CheckCircle, Clock, Loader2, Plus } from 'lucide-r
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 
 type FeeTab = 'admission' | 'monthly' | 'exam';
 
 const AdminFees = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/fees', 'fee_payments');
   const [tab, setTab] = useState<FeeTab>('monthly');
   const [selectedDivision, setSelectedDivision] = useState('');
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -66,7 +68,7 @@ const AdminFees = () => {
   const payMutation = useMutation({
     mutationFn: async () => {
       if (!selectedStudent || !paidAmount || !selectedFeeType) throw new Error('Fill all fields');
-      const { error } = await supabase.from('fee_payments').insert({
+      const payload = {
         student_id: selectedStudent,
         fee_type_id: selectedFeeType,
         amount: parseFloat(paidAmount),
@@ -75,7 +77,9 @@ const AdminFees = () => {
         year: new Date().getFullYear(),
         status: 'paid',
         paid_at: new Date().toISOString(),
-      });
+      };
+      if (await checkApproval('add', payload, undefined, `ফি পরিশোধ: ৳${paidAmount}`)) return;
+      const { error } = await supabase.from('fee_payments').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {

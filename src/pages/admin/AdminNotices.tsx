@@ -8,10 +8,12 @@ import { Plus, Check, X, Edit, RotateCcw, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 
 const AdminNotices = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/notices', 'notices');
   const [filter, setFilter] = useState<string>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -28,14 +30,16 @@ const AdminNotices = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notices').insert({
+      const payload = {
         title: newTitle.trim(),
         title_bn: newTitle.trim(),
         content: newContent.trim() || null,
         content_bn: newContent.trim() || null,
         category: 'general',
         is_published: false,
-      });
+      };
+      if (await checkApproval('add', payload, undefined, `নোটিশ যোগ: ${newTitle.trim()}`)) return;
+      const { error } = await supabase.from('notices').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -48,6 +52,7 @@ const AdminNotices = () => {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, is_published }: { id: string; is_published: boolean }) => {
+      if (await checkApproval('edit', { id, is_published }, id, `নোটিশ ${is_published ? 'প্রকাশ' : 'অপ্রকাশিত'}`)) return;
       const { error } = await supabase.from('notices').update({
         is_published,
         published_at: is_published ? new Date().toISOString() : null,
@@ -63,6 +68,8 @@ const AdminNotices = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const notice = notices.find((n: any) => n.id === id);
+      if (await checkApproval('delete', { id, title: notice?.title }, id, `নোটিশ মুছুন: ${notice?.title}`)) return;
       const { error } = await supabase.from('notices').delete().eq('id', id);
       if (error) throw error;
     },

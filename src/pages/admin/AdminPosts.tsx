@@ -3,6 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,6 +67,7 @@ const AdminPosts = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/posts', 'posts');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -99,9 +101,11 @@ const AdminPosts = () => {
         attachments: f.attachments as any,
       };
       if (f.id) {
+        if (await checkApproval('edit', payload, f.id, `পোস্ট সম্পাদনা: ${f.title}`)) return;
         const { error } = await supabase.from('posts').update(payload).eq('id', f.id);
         if (error) throw error;
       } else {
+        if (await checkApproval('add', payload, undefined, `পোস্ট যোগ: ${f.title}`)) return;
         const { error } = await supabase.from('posts').insert(payload);
         if (error) throw error;
       }
@@ -116,6 +120,8 @@ const AdminPosts = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const post = posts.find((p: any) => p.id === id);
+      if (await checkApproval('delete', { id, title: post?.title }, id, `পোস্ট মুছুন: ${post?.title}`)) return;
       const { error } = await supabase.from('posts').delete().eq('id', id);
       if (error) throw error;
     },

@@ -8,12 +8,14 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 
 const AdminStudents = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -63,6 +65,7 @@ const AdminStudents = () => {
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (await checkApproval('edit', { id, approval_status: status }, id, `ছাত্র স্ট্যাটাস: ${status}`)) return;
       const { error } = await supabase.from('students').update({ approval_status: status, status: status === 'approved' ? 'active' : status === 'rejected' ? 'inactive' : 'active' } as any).eq('id', id);
       if (error) throw error;
     },
@@ -75,6 +78,8 @@ const AdminStudents = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const student = students.find((s: any) => s.id === id);
+      if (await checkApproval('delete', { id, name_bn: student?.name_bn, student_id: student?.student_id }, id, `ছাত্র মুছুন: ${student?.name_bn}`)) return;
       const { error } = await supabase.from('students').delete().eq('id', id);
       if (error) throw error;
     },

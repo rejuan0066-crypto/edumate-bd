@@ -7,10 +7,13 @@ import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap } 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 
 const AdminDivisions = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval: checkDivApproval } = useApprovalCheck('/admin/divisions', 'divisions');
+  const { checkApproval: checkClassApproval } = useApprovalCheck('/admin/divisions', 'classes');
   const [selectedDiv, setSelectedDiv] = useState<string | null>(null);
   const [newDivName, setNewDivName] = useState('');
   const [newDivNameEn, setNewDivNameEn] = useState('');
@@ -46,11 +49,9 @@ const AdminDivisions = () => {
 
   const addDivMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('divisions').insert({
-        name_bn: newDivName.trim(),
-        name: newDivNameEn.trim() || newDivName.trim(),
-        sort_order: divisions.length,
-      });
+      const payload = { name_bn: newDivName.trim(), name: newDivNameEn.trim() || newDivName.trim(), sort_order: divisions.length };
+      if (await checkDivApproval('add', payload, undefined, `বিভাগ যোগ: ${newDivName.trim()}`)) return;
+      const { error } = await supabase.from('divisions').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -64,6 +65,8 @@ const AdminDivisions = () => {
 
   const deleteDivMutation = useMutation({
     mutationFn: async (id: string) => {
+      const div = divisions.find(d => d.id === id);
+      if (await checkDivApproval('delete', { id, name_bn: div?.name_bn }, id, `বিভাগ মুছুন: ${div?.name_bn}`)) return;
       const { error } = await supabase.from('divisions').delete().eq('id', id);
       if (error) throw error;
     },
@@ -77,12 +80,9 @@ const AdminDivisions = () => {
 
   const addClassMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('classes' as any).insert({
-        division_id: selectedDiv,
-        name_bn: newClassName.trim(),
-        name: newClassNameEn.trim() || newClassName.trim(),
-        sort_order: classes.length,
-      } as any);
+      const payload = { division_id: selectedDiv, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), sort_order: classes.length };
+      if (await checkClassApproval('add', payload, undefined, `শ্রেণী যোগ: ${newClassName.trim()}`)) return;
+      const { error } = await supabase.from('classes' as any).insert(payload as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -96,6 +96,8 @@ const AdminDivisions = () => {
 
   const deleteClassMutation = useMutation({
     mutationFn: async (id: string) => {
+      const cls = classes.find((c: any) => c.id === id);
+      if (await checkClassApproval('delete', { id, name_bn: cls?.name_bn }, id, `শ্রেণী মুছুন: ${cls?.name_bn}`)) return;
       const { error } = await supabase.from('classes' as any).delete().eq('id', id);
       if (error) throw error;
     },
