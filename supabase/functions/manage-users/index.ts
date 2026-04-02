@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
     if (action === "create") {
       const { email, password, role, full_name } = body;
 
-      if (!email || !password || !role) {
-        return new Response(JSON.stringify({ error: "email, password, and role are required" }), {
+      if (!email || !password) {
+        return new Response(JSON.stringify({ error: "email and password are required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -118,18 +118,20 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Assign role
-      const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-        user_id: newUser.user.id,
-        role,
-      });
-
-      if (roleError) {
-        // Cleanup: delete the created user if role assignment fails
-        await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-        return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Assign role only if provided
+      if (role) {
+        const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
+          user_id: newUser.user.id,
+          role,
         });
+
+        if (roleError) {
+          // Cleanup: delete the created user if role assignment fails
+          await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+          return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       // Update profile name
@@ -152,9 +154,9 @@ Deno.serve(async (req) => {
 
     // UPDATE ROLE
     if (action === "update_role") {
-      const { user_id: targetUserId, role: newRole, base_role } = body;
-      if (!targetUserId || !newRole) {
-        return new Response(JSON.stringify({ error: "user_id and role are required" }), {
+      const { user_id: targetUserId, role: newRole, base_role, remove_role } = body;
+      if (!targetUserId) {
+        return new Response(JSON.stringify({ error: "user_id is required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -166,19 +168,51 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Remove role entirely
+      if (remove_role) {
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!newRole) {
+        return new Response(JSON.stringify({ error: "role is required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // The actual role in user_roles must be one of the enum values (admin, staff, teacher)
       const actualRole = base_role || (newRole === 'admin' ? 'admin' : newRole === 'teacher' ? 'teacher' : 'staff');
 
-      // Update role
-      const { error: updateError } = await supabaseAdmin
+      // Upsert role (insert if not exists, update if exists)
+      const { data: existingRole } = await supabaseAdmin
         .from("user_roles")
-        .update({ role: actualRole })
-        .eq("user_id", targetUserId);
+        .select("id")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
 
-      if (updateError) {
-        return new Response(JSON.stringify({ error: "Failed to update role: " + updateError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (existingRole) {
+        const { error: updateError } = await supabaseAdmin
+          .from("user_roles")
+          .update({ role: actualRole })
+          .eq("user_id", targetUserId);
+
+        if (updateError) {
+          return new Response(JSON.stringify({ error: "Failed to update role: " + updateError.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        const { error: insertError } = await supabaseAdmin
+          .from("user_roles")
+          .insert({ user_id: targetUserId, role: actualRole });
+
+        if (insertError) {
+          return new Response(JSON.stringify({ error: "Failed to assign role: " + insertError.message }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true }), {

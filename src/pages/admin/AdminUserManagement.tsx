@@ -530,12 +530,15 @@ const AdminUserManagement = () => {
                       </div>
                     </div>
                     <div>
-                      <Label>{bn ? 'রোল' : 'Role'} *</Label>
+                      <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
                       <Select value={role} onValueChange={setRole}>
                         <SelectTrigger className="mt-1">
-                          <SelectValue placeholder={bn ? 'রোল সিলেক্ট করুন' : 'Select role'} />
+                          <SelectValue placeholder={bn ? 'রোল সিলেক্ট করুন (ঐচ্ছিক)' : 'Select role (optional)'} />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="none">
+                            {bn ? '🚫 রোল ছাড়া (শুধু পারমিশন)' : '🚫 No role (permission only)'}
+                          </SelectItem>
                           {customRoles.filter(r => r.is_active).map(r => (
                             <SelectItem key={r.name} value={r.name}>
                               {bn ? r.name_bn : r.name} {r.is_system ? '' : `(${r.base_role})`}
@@ -543,6 +546,11 @@ const AdminUserManagement = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {(role === '' || role === 'none') && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {bn ? '⚠️ রোল ছাড়া ইউজার শুধু ব্যক্তিগত পারমিশন দিয়ে অ্যাক্সেস পাবে' : '⚠️ User without role will only access via individual permissions'}
+                        </p>
+                      )}
                     </div>
                     <Button onClick={handleCreate} disabled={creating} className="w-full btn-primary-gradient">
                       {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
