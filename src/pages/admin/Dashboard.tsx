@@ -32,6 +32,7 @@ const Dashboard = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: canViewStats,
   });
 
   const { data: staff = [] } = useQuery({
@@ -41,6 +42,7 @@ const Dashboard = () => {
       if (error) throw error;
       return data || [];
     },
+    enabled: canViewStats,
   });
 
   const { data: divisions = [] } = useQuery({
