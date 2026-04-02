@@ -80,10 +80,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return <>{children}</>;
     }
 
-    // Admin-only paths → block immediately
-    const isAdminOnly = ADMIN_ONLY.some(p => path === p || path.startsWith(p + '/'));
-    if (isAdminOnly) {
-      return <Navigate to="/staff-dashboard" replace />;
+    // Check role-based access
+    const ac = accessControl ?? { accessMap: null, paths: DEFAULT_ADMIN_ONLY_PATHS };
+    const matchedPath = ALL_PATHS_LIST.find(p => path === p || path.startsWith(p + '/'));
+
+    if (matchedPath) {
+      if (ac.accessMap) {
+        // New format: check per-role access
+        const roleAccess = ac.accessMap[matchedPath];
+        const userBaseRole = role as string; // 'teacher' | 'staff'
+        if (!roleAccess || !roleAccess[userBaseRole]) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+      } else {
+        // Old format: just admin-only paths
+        const isAdminOnly = ac.paths.some(p => path === p || path.startsWith(p + '/'));
+        if (isAdminOnly) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+      }
     }
 
     // For all other admin paths, check if user has view permission
