@@ -422,11 +422,14 @@ const AdminUserManagement = () => {
                     <TableHeader>
                       <TableRow className="bg-muted/50">
                         <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
-                        <TableHead className="text-center w-20">{bn ? 'দেখা' : 'View'}</TableHead>
-                        <TableHead className="text-center w-20">{bn ? 'যোগ' : 'Add'}</TableHead>
-                        <TableHead className="text-center w-20">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
-                        <TableHead className="text-center w-20">{bn ? 'মুছুন' : 'Delete'}</TableHead>
-                        <TableHead className="text-center w-20">{bn ? 'সব' : 'All'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'দেখা' : 'View'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
+                        <TableHead className="text-center w-20">
+                          <span className="text-yellow-600">{bn ? 'অনুমোদন' : 'Approval'}</span>
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
