@@ -21,17 +21,37 @@ const StaffDashboard = () => {
   const bn = language === 'bn';
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
 
-  // Get staff record linked to current user
+  // Get staff record linked to current user — auto-create if missing
   const { data: staffRecord, isLoading: staffLoading } = useQuery({
     queryKey: ['my-staff-record', user?.id],
     queryFn: async () => {
+      // First try to find existing staff record
       const { data, error } = await supabase
         .from('staff')
         .select('*')
         .eq('user_id', user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      
+      if (data) return data;
+
+      // No staff record found — auto-create via edge function
+      const { data: result, error: fnError } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'ensure_staff' },
+      });
+      
+      if (fnError || !result?.success) {
+        console.error('Failed to auto-create staff profile:', fnError || result?.error);
+        return null;
+      }
+
+      // Re-fetch the newly created staff record
+      const { data: newData } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      return newData;
     },
     enabled: !!user?.id,
   });
