@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AdmissionForm from '@/components/admission/AdmissionForm';
 
