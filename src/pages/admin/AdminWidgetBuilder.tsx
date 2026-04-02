@@ -161,9 +161,9 @@ const AdminWidgetBuilder = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={addWidget}>
+            {canAddItem && <Button variant="outline" size="sm" onClick={addWidget}>
               <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন উইজেট' : 'New Widget'}
-            </Button>
+            </Button>}
             <Button size="sm" onClick={handleSave} disabled={saveWidgets.isPending}>
               <Save className="w-4 h-4 mr-1" />
               {saveWidgets.isPending ? (bn ? 'সেভ হচ্ছে...' : 'Saving...') : (bn ? 'সেভ করুন' : 'Save')}
