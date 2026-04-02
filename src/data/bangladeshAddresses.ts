@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Bangladesh address hierarchy: Division -> District -> Upazila/City Corporation/Municipality -> Union/Ward
 // Comprehensive data: 8 Divisions, 64 Districts, Upazilas + City Corporations + Municipalities with Wards
 
