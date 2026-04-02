@@ -13,7 +13,7 @@ const ALWAYS_ALLOWED = [
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, role } = useAuth();
-  const { canView, isLoading: permLoading } = usePermissions();
+  const { canView, hasUserPermission, isLoading: permLoading } = usePermissions();
   const location = useLocation();
 
   // Load dynamic access control from website_settings
@@ -59,7 +59,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
   }
 
-  // Non-admin on admin routes: DEFAULT IS BLOCK
+  // Non-admin on admin routes
   if (isAdminRoute) {
     // Always-allowed paths (dashboard, profile)
     const isAlwaysAllowed = ALWAYS_ALLOWED.some(p => path === p || path.startsWith(p + '/'));
@@ -67,39 +67,39 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return <>{children}</>;
     }
 
-    // For non-admin users: check access control first, then permissions
     if (accessControl?.accessMap) {
       // New format: check per-role access map
       const roleAccess = accessControl.accessMap[path];
       const userBaseRole = role as string;
       const roleAllowed = roleAccess && roleAccess[userBaseRole];
       
-      if (!roleAllowed) {
-        // Role not allowed by access control - check individual user_permissions
+      if (roleAllowed) {
+        // Role explicitly allowed by access control - check view permission
         if (!canView(path)) {
           return <Navigate to="/staff-dashboard" replace />;
         }
-      }
-      // Role allowed by access control - still check view permission
-      if (!canView(path)) {
-        return <Navigate to="/staff-dashboard" replace />;
+      } else {
+        // Role NOT allowed - only individual user_permissions can override
+        if (!hasUserPermission(path, 'view')) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
       }
     } else if (accessControl?.paths) {
-      // Old format: paths listed = admin-only, non-admin BLOCKED
+      // Old format: all listed paths are admin-only
       const isAdminOnly = accessControl.paths.some(p => path === p || path.startsWith(p + '/'));
       if (isAdminOnly) {
-        // Check if user has individual user_permissions override
+        // Admin-only path: only individual user_permissions can override (NOT role_permissions)
+        if (!hasUserPermission(path, 'view')) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+      } else {
+        // Not in admin-only list - check normal view permission
         if (!canView(path)) {
           return <Navigate to="/staff-dashboard" replace />;
         }
       }
     } else {
-      // No access control data loaded - block ALL admin routes for non-admin
-      return <Navigate to="/staff-dashboard" replace />;
-    }
-
-    // Final safety: if no explicit view permission, block
-    if (!canView(path)) {
+      // No access control data - block all admin routes for non-admin
       return <Navigate to="/staff-dashboard" replace />;
     }
   }
