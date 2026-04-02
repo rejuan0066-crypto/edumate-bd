@@ -290,7 +290,7 @@ const AdminAddressManager = () => {
                   <Select value={formLevel} onValueChange={v => { setFormLevel(v); setSelDivision(''); setSelDistrict(''); setSelUpazila(''); }}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {LEVELS.map(l => <SelectItem key={l.value} value={l.value}>{bn ? l.label_bn : l.label}</SelectItem>)}
+                      {levels.map(l => <SelectItem key={l.key} value={l.key}>{bn ? l.label_bn : l.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
