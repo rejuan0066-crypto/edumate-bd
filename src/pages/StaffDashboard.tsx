@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import LanguageToggle from '@/components/LanguageToggle';
 import {
   User, Wallet, CalendarDays, Bell, LogOut, GraduationCap,
-  Phone, MapPin, Briefcase, Calendar, Clock, CheckCircle, XCircle
+  Phone, MapPin, Briefcase, Calendar, Clock, Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -25,7 +25,6 @@ const StaffDashboard = () => {
   const { data: staffRecord, isLoading: staffLoading } = useQuery({
     queryKey: ['my-staff-record', user?.id],
     queryFn: async () => {
-      // First try to find existing staff record
       const { data, error } = await supabase
         .from('staff')
         .select('*')
@@ -35,37 +34,39 @@ const StaffDashboard = () => {
       
       if (data) return data;
 
-      // No staff record found — auto-create via edge function
-      const { data: result, error: fnError } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'ensure_staff' },
-      });
-      
-      if (fnError || !result?.success) {
-        console.error('Failed to auto-create staff profile:', fnError || result?.error);
-        return null;
+      // No staff record — try auto-create once
+      try {
+        const { data: result } = await supabase.functions.invoke('manage-users', {
+          body: { action: 'ensure_staff' },
+        });
+        
+        if (result?.success) {
+          const { data: newData } = await supabase
+            .from('staff')
+            .select('*')
+            .eq('user_id', user!.id)
+            .maybeSingle();
+          return newData;
+        }
+      } catch (e) {
+        console.error('Auto-create staff failed:', e);
       }
-
-      // Re-fetch the newly created staff record
-      const { data: newData } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('user_id', user!.id)
-        .maybeSingle();
-      return newData;
+      return null;
     },
     enabled: !!user?.id,
+    retry: 1,
+    staleTime: 30000,
   });
 
   // Get profile as fallback
   const { data: profileRecord } = useQuery({
     queryKey: ['my-profile', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user!.id)
         .maybeSingle();
-      if (error) throw error;
       return data;
     },
     enabled: !!user?.id,
@@ -148,6 +149,20 @@ const StaffDashboard = () => {
     return <Badge variant={l.variant}>{bn ? l.bn : l.en}</Badge>;
   };
 
+  // Loading state
+  if (staffLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Display name from staff or profile fallback
+  const displayName = staffRecord?.name_bn || staffRecord?.name_en || profileRecord?.full_name || user?.email || '';
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,17 +199,28 @@ const StaffDashboard = () => {
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-6">
 
-        <Tabs defaultValue="profile" className="space-y-4">
+        {/* Warning if no staff record */}
+        {!staffRecord && (
+          <Card className="mb-4 border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20">
+            <CardContent className="p-4 text-sm text-yellow-800 dark:text-yellow-300">
+              {bn
+                ? 'আপনার স্টাফ প্রোফাইল এখনো তৈরি হয়নি। অ্যাডমিনের সাথে যোগাযোগ করুন। আপাতত আপনার বেসিক তথ্য ও নোটিশ দেখতে পারবেন।'
+                : 'Your staff profile has not been created yet. Please contact admin. You can view basic info and notices for now.'}
+            </CardContent>
+          </Card>
+        )}
+
+        <Tabs defaultValue={staffRecord ? "profile" : "notices"} className="space-y-4">
           <TabsList className="w-full grid h-auto grid-cols-4">
             <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
             </TabsTrigger>
-            <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
               <Wallet className="h-4 w-4" />
               <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
             </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
               <CalendarDays className="h-4 w-4" />
               <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
             </TabsTrigger>
@@ -204,181 +230,180 @@ const StaffDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-
           {/* Profile Tab */}
           <TabsContent value="profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {bn ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row gap-6">
-                    {staffRecord.photo_url && (
-                      <img
-                        src={staffRecord.photo_url}
-                        alt=""
-                        className="w-28 h-28 rounded-lg object-cover border"
-                      />
-                    )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                      {[
-                        { icon: User, label: bn ? 'নাম (বাংলা)' : 'Name (Bangla)', value: staffRecord.name_bn },
-                        { icon: User, label: bn ? 'নাম (ইংরেজি)' : 'Name (English)', value: staffRecord.name_en },
-                        { icon: Phone, label: bn ? 'ফোন' : 'Phone', value: staffRecord.phone },
-                        { icon: Briefcase, label: bn ? 'পদবি' : 'Designation', value: staffRecord.designation },
-                        { icon: Briefcase, label: bn ? 'বিভাগ' : 'Department', value: staffRecord.department },
-                        { icon: Calendar, label: bn ? 'যোগদানের তারিখ' : 'Joining Date', value: staffRecord.joining_date },
-                        { icon: MapPin, label: bn ? 'ঠিকানা' : 'Address', value: staffRecord.address },
-                        { icon: User, label: bn ? 'জাতীয় পরিচয়পত্র' : 'NID', value: staffRecord.nid },
-                        { icon: Briefcase, label: bn ? 'কর্মসংস্থান ধরন' : 'Employment Type', value: staffRecord.employment_type },
-                        { icon: User, label: bn ? 'ধর্ম' : 'Religion', value: staffRecord.religion },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <item.icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-xs text-muted-foreground">{item.label}</p>
-                            <p className="text-sm font-medium text-foreground">{item.value || '—'}</p>
-                          </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  {bn ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-6">
+                  {staffRecord?.photo_url && (
+                    <img
+                      src={staffRecord.photo_url}
+                      alt=""
+                      className="w-28 h-28 rounded-lg object-cover border"
+                    />
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    {[
+                      { icon: User, label: bn ? 'নাম (বাংলা)' : 'Name (Bangla)', value: staffRecord?.name_bn || profileRecord?.full_name },
+                      { icon: User, label: bn ? 'নাম (ইংরেজি)' : 'Name (English)', value: staffRecord?.name_en },
+                      { icon: Phone, label: bn ? 'ফোন' : 'Phone', value: staffRecord?.phone || profileRecord?.phone },
+                      { icon: Briefcase, label: bn ? 'পদবি' : 'Designation', value: staffRecord?.designation },
+                      { icon: Briefcase, label: bn ? 'বিভাগ' : 'Department', value: staffRecord?.department },
+                      { icon: Calendar, label: bn ? 'যোগদানের তারিখ' : 'Joining Date', value: staffRecord?.joining_date },
+                      { icon: MapPin, label: bn ? 'ঠিকানা' : 'Address', value: staffRecord?.address },
+                      { icon: User, label: bn ? 'জাতীয় পরিচয়পত্র' : 'NID', value: staffRecord?.nid },
+                      { icon: Briefcase, label: bn ? 'কর্মসংস্থান ধরন' : 'Employment Type', value: staffRecord?.employment_type },
+                      { icon: User, label: bn ? 'ধর্ম' : 'Religion', value: staffRecord?.religion },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <item.icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">{item.label}</p>
+                          <p className="text-sm font-medium text-foreground">{item.value || '—'}</p>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Salary Tab */}
           <TabsContent value="salary">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wallet className="h-5 w-5" />
-                    {bn ? 'বেতন স্লিপ' : 'Salary Slips'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {salaryRecords.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      {bn ? 'কোনো বেতন রেকর্ড পাওয়া যায়নি' : 'No salary records found'}
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {salaryRecords.map(record => (
-                        <Card key={record.id} className="border">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <h3 className="font-semibold text-foreground">{record.month_year}</h3>
-                              <Badge variant={record.status === 'paid' ? 'default' : 'secondary'}>
-                                {record.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'পেন্ডিং' : 'Pending')}
-                              </Badge>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="h-5 w-5" />
+                  {bn ? 'বেতন স্লিপ' : 'Salary Slips'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {salaryRecords.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    {bn ? 'কোনো বেতন রেকর্ড পাওয়া যায়নি' : 'No salary records found'}
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {salaryRecords.map(record => (
+                      <Card key={record.id} className="border">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-foreground">{record.month_year}</h3>
+                            <Badge variant={record.status === 'paid' ? 'default' : 'secondary'}>
+                              {record.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'পেন্ডিং' : 'Pending')}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'মূল বেতন' : 'Base Salary'}</p>
+                              <p className="font-medium">৳{record.base_salary}</p>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'মূল বেতন' : 'Base Salary'}</p>
-                                <p className="font-medium">৳{record.base_salary}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'বোনাস' : 'Bonus'}</p>
-                                <p className="font-medium">৳{record.bonus || 0}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</p>
-                                <p className="font-medium">৳{record.overtime || 0}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</p>
-                                <p className="font-medium text-destructive">-৳{record.late_deduction || 0}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'}</p>
-                                <p className="font-medium text-destructive">-৳{record.absence_deduction || 0}</p>
-                              </div>
-                              <div>
-                                <p className="text-muted-foreground text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Deductions'}</p>
-                                <p className="font-medium text-destructive">-৳{(record.advance_deduction || 0) + (record.other_deduction || 0)}</p>
-                              </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'বোনাস' : 'Bonus'}</p>
+                              <p className="font-medium">৳{record.bonus || 0}</p>
                             </div>
-                            <div className="mt-3 pt-3 border-t flex items-center justify-between">
-                              <span className="text-sm font-semibold">{bn ? 'নিট বেতন' : 'Net Salary'}</span>
-                              <span className="text-lg font-bold text-primary">৳{record.net_salary}</span>
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</p>
+                              <p className="font-medium">৳{record.overtime || 0}</p>
                             </div>
-                            {record.remarks && (
-                              <p className="text-xs text-muted-foreground mt-2">{bn ? 'মন্তব্য' : 'Remarks'}: {record.remarks}</p>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</p>
+                              <p className="font-medium text-destructive">-৳{record.late_deduction || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'}</p>
+                              <p className="font-medium text-destructive">-৳{record.absence_deduction || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Deductions'}</p>
+                              <p className="font-medium text-destructive">-৳{(record.advance_deduction || 0) + (record.other_deduction || 0)}</p>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                            <span className="text-sm font-semibold">{bn ? 'নিট বেতন' : 'Net Salary'}</span>
+                            <span className="text-lg font-bold text-primary">৳{record.net_salary}</span>
+                          </div>
+                          {record.remarks && (
+                            <p className="text-xs text-muted-foreground mt-2">{bn ? 'মন্তব্য' : 'Remarks'}: {record.remarks}</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Attendance Tab */}
           <TabsContent value="attendance">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <CardTitle className="flex items-center gap-2">
-                      <CalendarDays className="h-5 w-5" />
-                      {bn ? 'হাজিরা রিপোর্ট' : 'Attendance Report'}
-                    </CardTitle>
-                    <input
-                      type="month"
-                      value={selectedMonth}
-                      onChange={e => setSelectedMonth(e.target.value)}
-                      className="border rounded-md px-3 py-1.5 text-sm bg-background"
-                    />
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <CardTitle className="flex items-center gap-2">
+                    <CalendarDays className="h-5 w-5" />
+                    {bn ? 'হাজিরা রিপোর্ট' : 'Attendance Report'}
+                  </CardTitle>
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={e => setSelectedMonth(e.target.value)}
+                    className="border rounded-md px-3 py-1.5 text-sm bg-background"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">{presentDays}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'উপস্থিত' : 'Present'}</p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-400">{presentDays}</p>
-                      <p className="text-xs text-muted-foreground">{bn ? 'উপস্থিত' : 'Present'}</p>
-                    </div>
-                    <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-red-700 dark:text-red-400">{absentDays}</p>
-                      <p className="text-xs text-muted-foreground">{bn ? 'অনুপস্থিত' : 'Absent'}</p>
-                    </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{lateDays}</p>
-                      <p className="text-xs text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</p>
-                    </div>
+                  <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-red-700 dark:text-red-400">{absentDays}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'অনুপস্থিত' : 'Absent'}</p>
                   </div>
+                  <div className="bg-yellow-50 dark:bg-yellow-950/30 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{lateDays}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</p>
+                  </div>
+                </div>
 
-                  {attendanceRecords.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">
-                      {bn ? 'এই মাসের কোনো হাজিরা রেকর্ড নেই' : 'No attendance records for this month'}
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
-                          <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
-                          <TableHead>{bn ? 'চেক-ইন' : 'Check In'}</TableHead>
-                          <TableHead>{bn ? 'চেক-আউট' : 'Check Out'}</TableHead>
+                {attendanceRecords.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    {bn ? 'এই মাসের কোনো হাজিরা রেকর্ড নেই' : 'No attendance records for this month'}
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
+                        <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
+                        <TableHead>{bn ? 'চেক-ইন' : 'Check In'}</TableHead>
+                        <TableHead>{bn ? 'চেক-আউট' : 'Check Out'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attendanceRecords.map(record => (
+                        <TableRow key={record.id}>
+                          <TableCell className="font-medium">{record.attendance_date}</TableCell>
+                          <TableCell>{statusBadge(record.status)}</TableCell>
+                          <TableCell>{record.check_in_time || '—'}</TableCell>
+                          <TableCell>{record.check_out_time || '—'}</TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {attendanceRecords.map(record => (
-                          <TableRow key={record.id}>
-                            <TableCell className="font-medium">{record.attendance_date}</TableCell>
-                            <TableCell>{statusBadge(record.status)}</TableCell>
-                            <TableCell>{record.check_in_time || '—'}</TableCell>
-                            <TableCell>{record.check_out_time || '—'}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* Notices Tab */}
           <TabsContent value="notices">
