@@ -201,9 +201,11 @@ const AdminDivisions = () => {
                             <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
                           </div>
                         </div>
-                        <button onClick={() => deleteClassMutation.mutate(c.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDeleteItem && (
+                          <button onClick={() => deleteClassMutation.mutate(c.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                     {classes.length === 0 && (
