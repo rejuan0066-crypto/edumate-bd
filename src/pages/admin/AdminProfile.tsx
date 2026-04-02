@@ -38,6 +38,11 @@ const AdminProfile = () => {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [usePwOtp, setUsePwOtp] = useState(false);
+  const [pwStep, setPwStep] = useState<'form' | 'otp' | 'done'>('form');
+  const [pwOtpCode, setPwOtpCode] = useState('');
+  const [pwCountdown, setPwCountdown] = useState(0);
+  const pwTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
