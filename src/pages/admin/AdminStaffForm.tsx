@@ -801,6 +801,7 @@ const AdminStaffForm = () => {
                     <p className="text-xs text-amber-600 mt-1">{bn ? 'সাবমিটের সময় ইমেইল যাচাই করা হবে' : 'Email will be verified on submit'}</p>
                   )}
                 </div>
+                <div>
                   <Label>{bn ? 'চাকরির ধরন' : 'Employment Type'} <span className="text-destructive">*</span></Label>
                   <Select value={employmentType} onValueChange={setEmploymentType}>
                     <SelectTrigger className={`bg-background mt-1 ${fieldErrors['employment_type'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
