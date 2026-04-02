@@ -28,7 +28,10 @@ interface UserPerm {
   can_add: boolean;
   can_edit: boolean;
   can_delete: boolean;
-  requires_approval: boolean;
+  approval_view: boolean;
+  approval_add: boolean;
+  approval_edit: boolean;
+  approval_delete: boolean;
 }
 
 const MENU_PATHS = [
@@ -180,7 +183,10 @@ const AdminUserManagement = () => {
           can_add: existing?.can_add ?? false,
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
-          requires_approval: existing?.requires_approval ?? false,
+          approval_view: existing?.approval_view ?? false,
+          approval_add: existing?.approval_add ?? false,
+          approval_edit: existing?.approval_edit ?? false,
+          approval_delete: existing?.approval_delete ?? false,
         };
       });
       setUserPerms(merged);
@@ -205,10 +211,10 @@ const AdminUserManagement = () => {
     }));
   };
 
-  const toggleApproval = (menuPath: string) => {
+  const toggleApproval = (menuPath: string, field: 'approval_view' | 'approval_add' | 'approval_edit' | 'approval_delete') => {
     setUserPerms(prev => prev.map(p => {
       if (p.menu_path !== menuPath) return p;
-      return { ...p, requires_approval: !p.requires_approval };
+      return { ...p, [field]: !(p as any)[field] };
     }));
   };
 
@@ -233,7 +239,13 @@ const AdminUserManagement = () => {
 
       const toInsertWithApproval = toInsert.map(p => {
         const perm = userPerms.find(up => up.menu_path === p.menu_path);
-        return { ...p, requires_approval: perm?.requires_approval ?? false };
+        return {
+          ...p,
+          approval_view: perm?.approval_view ?? false,
+          approval_add: perm?.approval_add ?? false,
+          approval_edit: perm?.approval_edit ?? false,
+          approval_delete: perm?.approval_delete ?? false,
+        };
       });
 
       if (toInsertWithApproval.length > 0) {
@@ -393,7 +405,7 @@ const AdminUserManagement = () => {
 
         {/* Permission Dialog */}
         <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
-          <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <KeyRound className="w-5 h-5 text-primary" />
@@ -428,8 +440,14 @@ const AdminUserManagement = () => {
                         <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
-                        <TableHead className="text-center w-20">
-                          <span className="text-yellow-600">{bn ? 'অনুমোদন' : 'Approval'}</span>
+                        <TableHead className="text-center w-20" colSpan={4}>
+                          <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
+                          <div className="flex justify-center gap-2 mt-1 text-xs text-muted-foreground font-normal">
+                            <span className="w-10 text-center">{bn ? 'দেখা' : 'V'}</span>
+                            <span className="w-10 text-center">{bn ? 'যোগ' : 'A'}</span>
+                            <span className="w-10 text-center">{bn ? 'সম্পা.' : 'E'}</span>
+                            <span className="w-10 text-center">{bn ? 'মুছুন' : 'D'}</span>
+                          </div>
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -457,14 +475,19 @@ const AdminUserManagement = () => {
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
                             </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox
-                                checked={perm.requires_approval}
-                                onCheckedChange={() => toggleApproval(perm.menu_path)}
-                                className="border-yellow-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
-                                disabled={!perm.can_view && !perm.can_add && !perm.can_edit && !perm.can_delete}
-                              />
-                            </TableCell>
+                            {(['approval_view', 'approval_add', 'approval_edit', 'approval_delete'] as const).map((af, i) => {
+                              const relatedPerm = (['can_view', 'can_add', 'can_edit', 'can_delete'] as const)[i];
+                              return (
+                                <TableCell key={af} className="text-center">
+                                  <Checkbox
+                                    checked={perm[af]}
+                                    onCheckedChange={() => toggleApproval(perm.menu_path, af)}
+                                    className="border-yellow-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
+                                    disabled={!perm[relatedPerm]}
+                                  />
+                                </TableCell>
+                              );
+                            })}
                           </TableRow>
                         );
                       })}

@@ -31,10 +31,16 @@ export const useApprovalWorkflow = () => {
   });
 
   // Check if action requires approval for a specific menu path
-  const needsApproval = (menuPath: string): boolean => {
+  const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (role === 'admin') return false;
     const perm = userPermissions.find((p: any) => p.menu_path === menuPath);
-    return perm?.requires_approval ?? false;
+    if (!perm) return false;
+    if (action) {
+      const field = `approval_${action}`;
+      return perm[field] ?? false;
+    }
+    // If no action specified, check if any approval is required
+    return perm.approval_view || perm.approval_add || perm.approval_edit || perm.approval_delete || false;
   };
 
   // Submit an action for approval

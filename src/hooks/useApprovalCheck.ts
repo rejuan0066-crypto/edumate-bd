@@ -17,7 +17,7 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
     targetId?: string,
     description?: string
   ): Promise<boolean> => {
-    if (!needsApproval(menuPath)) return false;
+    if (!needsApproval(menuPath, actionType)) return false;
 
     const success = await submitForApproval({
       actionType,
@@ -41,5 +41,5 @@ export const useApprovalCheck = (menuPath: string, targetTable: string) => {
     return true;
   };
 
-  return { checkApproval, needsApproval: () => needsApproval(menuPath) };
+  return { checkApproval, needsApproval: (action?: 'view' | 'add' | 'edit' | 'delete') => needsApproval(menuPath, action) };
 };

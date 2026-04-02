@@ -78,10 +78,14 @@ export const usePermissions = () => {
   const canEdit = (menuPath: string) => hasPermission(menuPath, 'edit');
   const canDelete = (menuPath: string) => hasPermission(menuPath, 'delete');
 
-  const requiresApproval = (menuPath: string): boolean => {
+  const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (role === 'admin') return false;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
-    return (userPerm as any)?.requires_approval ?? false;
+    if (!userPerm) return false;
+    if (action) {
+      return (userPerm as any)?.[`approval_${action}`] ?? false;
+    }
+    return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
   };
 
   return { permissions: rolePermissions, userPermissions, isLoading, hasPermission, canView, canAdd, canEdit, canDelete, requiresApproval, role };
