@@ -490,6 +490,10 @@ const AdminUserManagement = () => {
               <Tag className="w-4 h-4" />
               {bn ? 'রোল ব্যবস্থাপনা' : 'Roles'}
             </TabsTrigger>
+            <TabsTrigger value="access" className="gap-1.5">
+              <Shield className="w-4 h-4" />
+              {bn ? 'অ্যাক্সেস কন্ট্রোল' : 'Access Control'}
+            </TabsTrigger>
           </TabsList>
 
           {/* ===== USERS TAB ===== */}
