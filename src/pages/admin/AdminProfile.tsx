@@ -38,6 +38,11 @@ const AdminProfile = () => {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [usePwOtp, setUsePwOtp] = useState(false);
+  const [pwStep, setPwStep] = useState<'form' | 'otp' | 'done'>('form');
+  const [pwOtpCode, setPwOtpCode] = useState('');
+  const [pwCountdown, setPwCountdown] = useState(0);
+  const pwTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -64,6 +69,21 @@ const AdminProfile = () => {
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [countdown]);
+
+  // PW Countdown timer
+  useEffect(() => {
+    if (pwCountdown <= 0) {
+      if (pwTimerRef.current) clearInterval(pwTimerRef.current);
+      return;
+    }
+    pwTimerRef.current = setInterval(() => {
+      setPwCountdown(prev => {
+        if (prev <= 1) { if (pwTimerRef.current) clearInterval(pwTimerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (pwTimerRef.current) clearInterval(pwTimerRef.current); };
+  }, [pwCountdown]);
 
   // ─── Email Change: Direct (password only) ───
   const handleDirectEmailChange = useCallback(async () => {
@@ -154,12 +174,16 @@ const AdminProfile = () => {
     setCountdown(0);
   };
 
-  // ─── Password Change ───
-  const handleChangePassword = useCallback(async () => {
-    if (!currentPassword.trim()) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড দিন' : 'Enter current password'); return; }
-    if (newPassword.length < 6) { toast.error(bn ? 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে' : 'New password must be at least 6 characters'); return; }
-    if (newPassword !== confirmPassword) { toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return; }
+  // ─── Password Change: validate common fields ───
+  const validatePwFields = () => {
+    if (!currentPassword.trim()) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড দিন' : 'Enter current password'); return false; }
+    if (newPassword.length < 6) { toast.error(bn ? 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে' : 'New password must be at least 6 characters'); return false; }
+    if (newPassword !== confirmPassword) { toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return false; }
+    return true;
+  };
 
+  const handleChangePassword = useCallback(async () => {
+    if (!validatePwFields()) return;
     setChangingPassword(true);
     try {
       const { data, error } = await supabase.functions.invoke('change-password', {
@@ -171,10 +195,7 @@ const AdminProfile = () => {
         return;
       }
       toast.success(bn ? '✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!' : '✅ Password changed successfully!');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      // Re-login with new password
+      setPwStep('done');
       setTimeout(async () => {
         await supabase.auth.signInWithPassword({ email: currentEmail, password: newPassword });
       }, 1000);
@@ -183,6 +204,60 @@ const AdminProfile = () => {
     }
     setChangingPassword(false);
   }, [currentPassword, newPassword, confirmPassword, currentEmail, bn]);
+
+  // ─── Password Change: OTP flow ───
+  const handlePwSendOtp = useCallback(async () => {
+    if (!validatePwFields()) return;
+    // Verify current password first
+    setChangingPassword(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword.trim() });
+    if (signInError) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড ভুল' : 'Current password incorrect'); setChangingPassword(false); return; }
+
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    setChangingPassword(false);
+    if (result.success) {
+      setPwStep('otp');
+      setPwCountdown(60);
+      toast.success(bn ? `${currentEmail} এ OTP কোড পাঠানো হয়েছে` : `OTP sent to ${currentEmail}`);
+    }
+  }, [currentPassword, newPassword, confirmPassword, currentEmail, bn, sendOtp]);
+
+  const handlePwResendOtp = useCallback(async () => {
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    if (result.success) { setPwCountdown(60); setPwOtpCode(''); toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent'); }
+  }, [currentEmail, bn, sendOtp]);
+
+  const handlePwVerifyAndChange = useCallback(async () => {
+    if (pwOtpCode.length !== 6) { toast.error(bn ? '৬ ডিজিটের কোড দিন' : 'Enter 6-digit code'); return; }
+    setChangingPassword(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('change-password', {
+        body: { current_password: currentPassword.trim(), new_password: newPassword, otp_code: pwOtpCode },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || error?.message || (bn ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password change failed'));
+        setChangingPassword(false);
+        return;
+      }
+      setPwStep('done');
+      toast.success(bn ? '✅ পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!' : '✅ Password changed successfully!');
+      setTimeout(async () => {
+        await supabase.auth.signInWithPassword({ email: currentEmail, password: newPassword });
+      }, 1000);
+    } catch {
+      toast.error(bn ? 'পাসওয়ার্ড পরিবর্তন ব্যর্থ' : 'Password change failed');
+    }
+    setChangingPassword(false);
+  }, [pwOtpCode, currentPassword, newPassword, currentEmail, bn]);
+
+  const handlePwReset = () => {
+    setPwStep('form');
+    setPwOtpCode('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPwCountdown(0);
+  };
 
   const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
     <div className="relative">
@@ -306,28 +381,96 @@ const AdminProfile = () => {
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
             <Lock className="w-5 h-5 text-primary" /> {bn ? 'পাসওয়ার্ড পরিবর্তন' : 'Change Password'}
           </h3>
-          <div className="space-y-4">
-            <div>
-              <Label>{bn ? 'বর্তমান পাসওয়ার্ড' : 'Current Password'}</Label>
-              <div className="mt-1">
-                <PasswordInput value={currentPassword} onChange={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} placeholder={bn ? 'বর্তমান পাসওয়ার্ড' : 'Current password'} />
+
+          {pwStep === 'form' && (
+            <div className="space-y-4">
+              {/* OTP toggle */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
+                <Switch checked={usePwOtp} onCheckedChange={setUsePwOtp} />
+                <div>
+                  <p className="text-sm font-medium">{bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {usePwOtp
+                      ? (bn ? 'ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to your email')
+                      : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only')}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label>{bn ? 'বর্তমান পাসওয়ার্ড' : 'Current Password'}</Label>
+                <div className="mt-1">
+                  <PasswordInput value={currentPassword} onChange={setCurrentPassword} show={showCurrentPw} onToggle={() => setShowCurrentPw(!showCurrentPw)} placeholder={bn ? 'বর্তমান পাসওয়ার্ড' : 'Current password'} />
+                </div>
+              </div>
+              <div>
+                <Label>{bn ? 'নতুন পাসওয়ার্ড' : 'New Password'}</Label>
+                <div className="mt-1">
+                  <PasswordInput value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder={bn ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New password (min 6 chars)'} />
+                </div>
+              </div>
+              <div>
+                <Label>{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
+                <Input className="mt-1 bg-background" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={bn ? 'আবার নতুন পাসওয়ার্ড দিন' : 'Re-enter new password'} />
+              </div>
+
+              {usePwOtp ? (
+                <Button onClick={handlePwSendOtp} disabled={changingPassword || sending} className="btn-primary-gradient">
+                  {(changingPassword || sending) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  {bn ? 'OTP কোড পাঠান' : 'Send OTP Code'}
+                </Button>
+              ) : (
+                <Button onClick={handleChangePassword} disabled={changingPassword} className="btn-primary-gradient">
+                  {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+                  {bn ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Change Password'}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {pwStep === 'otp' && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-foreground">{bn ? 'OTP কোড যাচাই করুন' : 'Verify OTP Code'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {bn ? `${currentEmail} এ পাঠানো ৬ ডিজিটের কোড দিন।` : `Enter the 6-digit code sent to ${currentEmail}.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-center py-2">
+                <InputOTP maxLength={6} value={pwOtpCode} onChange={setPwOtpCode}>
+                  <InputOTPGroup>
+                    {[0,1,2,3,4,5].map(i => <InputOTPSlot key={i} index={i} />)}
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button onClick={handlePwVerifyAndChange} disabled={changingPassword || pwOtpCode.length !== 6} className="btn-primary-gradient">
+                  {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  {bn ? 'যাচাই ও পরিবর্তন' : 'Verify & Change'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={handlePwResendOtp} disabled={pwCountdown > 0 || sending} className="gap-2">
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  {pwCountdown > 0 ? `${pwCountdown}s` : (bn ? 'আবার পাঠান' : 'Resend')}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handlePwReset}>{bn ? 'বাতিল' : 'Cancel'}</Button>
               </div>
             </div>
-            <div>
-              <Label>{bn ? 'নতুন পাসওয়ার্ড' : 'New Password'}</Label>
-              <div className="mt-1">
-                <PasswordInput value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder={bn ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New password (min 6 chars)'} />
+          )}
+
+          {pwStep === 'done' && (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-primary mx-auto" />
+                <p className="font-semibold text-foreground">{bn ? 'পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে!' : 'Password Changed Successfully!'}</p>
               </div>
+              <Button variant="outline" onClick={handlePwReset}>{bn ? 'ঠিক আছে' : 'OK'}</Button>
             </div>
-            <div>
-              <Label>{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
-              <Input className="mt-1 bg-background" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={bn ? 'আবার নতুন পাসওয়ার্ড দিন' : 'Re-enter new password'} />
-            </div>
-            <Button onClick={handleChangePassword} disabled={changingPassword} className="btn-primary-gradient">
-              {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-              {bn ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Change Password'}
-            </Button>
-          </div>
+          )}
         </div>
       </div>
     </AdminLayout>
