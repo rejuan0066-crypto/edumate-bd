@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const AdminNotices = () => {
   const { language } = useLanguage();
