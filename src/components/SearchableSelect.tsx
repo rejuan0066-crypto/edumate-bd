@@ -1,0 +1,133 @@
+import { useState, useRef, useEffect } from 'react';
+import { Check, ChevronDown, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  group?: string;
+}
+
+interface SearchableSelectProps {
+  options: SelectOption[];
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  disabled?: boolean;
+  className?: string;
+  groups?: { key: string; label: string }[];
+}
+
+const SearchableSelect = ({
+  options,
+  value,
+  onValueChange,
+  placeholder = 'Select...',
+  searchPlaceholder = 'Search...',
+  disabled,
+  className,
+  groups,
+}: SearchableSelectProps) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      setSearch('');
+    }
+  }, [open]);
+
+  const filtered = search
+    ? options.filter(o =>
+        o.label.toLowerCase().includes(search.toLowerCase()) ||
+        o.value.toLowerCase().includes(search.toLowerCase())
+      )
+    : options;
+
+  const selectedLabel = options.find(o => o.value === value)?.label;
+
+  const renderOptions = () => {
+    if (groups && groups.length > 0) {
+      return groups.map(g => {
+        const groupOptions = filtered.filter(o => o.group === g.key);
+        if (groupOptions.length === 0) return null;
+        return (
+          <div key={g.key}>
+            <div className="px-2 py-1.5 text-xs font-bold text-primary select-none">{g.label}</div>
+            {groupOptions.map(o => (
+              <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={() => { onValueChange(o.value); setOpen(false); }} />
+            ))}
+          </div>
+        );
+      });
+    }
+    return filtered.map(o => (
+      <OptionItem key={o.value} option={o} selected={value === o.value} onSelect={() => { onValueChange(o.value); setOpen(false); }} />
+    ));
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild disabled={disabled}>
+        <button
+          type="button"
+          className={cn(
+            'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            !selectedLabel && 'text-muted-foreground',
+            className
+          )}
+        >
+          <span className="truncate">{selectedLabel || placeholder}</span>
+          <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+        <div className="flex items-center border-b px-2">
+          <Search className="h-4 w-4 shrink-0 opacity-50" />
+          <Input
+            ref={inputRef}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            className="h-9 border-0 shadow-none focus-visible:ring-0 text-sm"
+          />
+        </div>
+        <div className="max-h-60 overflow-y-auto p-1">
+          {filtered.length === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              কোনো ফলাফল নেই
+            </div>
+          ) : (
+            renderOptions()
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const OptionItem = ({ option, selected, onSelect }: { option: SelectOption; selected: boolean; onSelect: () => void }) => (
+  <button
+    type="button"
+    onClick={onSelect}
+    className={cn(
+      'relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+      selected && 'bg-accent'
+    )}
+  >
+    {selected && (
+      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+        <Check className="h-4 w-4" />
+      </span>
+    )}
+    {option.label}
+  </button>
+);
+
+export default SearchableSelect;
