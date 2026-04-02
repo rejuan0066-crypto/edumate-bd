@@ -13,6 +13,7 @@ import { useApiVerificationConfig } from '@/hooks/useApiVerification';
 import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, Shield, Key, Link2, MapPin, Lock, Eye, EyeOff, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const AdminApiVerification = () => {
   const { language } = useLanguage();

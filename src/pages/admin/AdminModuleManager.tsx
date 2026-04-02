@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 import {
   LayoutDashboard, Users, UserCog, Layers, CreditCard, Receipt,
   FileText, Bell, Heart, BookOpen, ClipboardCheck, Wallet,

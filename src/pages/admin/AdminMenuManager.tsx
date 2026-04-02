@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const ICON_OPTIONS = [
   'LayoutDashboard', 'Users', 'UserCog', 'BookOpen', 'FileText', 'Bell',

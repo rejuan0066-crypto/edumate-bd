@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Palette, Type, Layout, RotateCcw, Save, Eye } from 'lucide-react';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const ColorPreview = ({ hue, sat, light, label }: { hue: number; sat: number; light: number; label: string }) => (
   <div className="flex items-center gap-3">

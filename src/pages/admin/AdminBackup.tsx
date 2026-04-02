@@ -15,6 +15,7 @@ import {
   Database, Download, FileJson, FileSpreadsheet, HardDrive,
   Loader2, AlertCircle, Clock, Upload, RotateCcw, CheckCircle2, XCircle, ShieldAlert
 } from 'lucide-react';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const TABLES = [
   { key: 'students', labelBn: 'শিক্ষার্থী', labelEn: 'Students', icon: '🎓' },
