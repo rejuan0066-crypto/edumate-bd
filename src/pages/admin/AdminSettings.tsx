@@ -35,6 +35,22 @@ const AdminSettings = () => {
   const [emailjsSaving, setEmailjsSaving] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
 
+  // SMTP config
+  const [smtp, setSmtp] = useState({
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_username: '',
+    smtp_password: '',
+    from_email: '',
+    from_name: '',
+    is_enabled: false,
+    use_tls: true,
+  });
+  const [smtpLoading, setSmtpLoading] = useState(true);
+  const [smtpSaving, setSmtpSaving] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [smtpTesting, setSmtpTesting] = useState(false);
+
   useEffect(() => {
     loadEmailjsConfig();
   }, []);
