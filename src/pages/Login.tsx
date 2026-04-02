@@ -27,10 +27,10 @@ const Login = () => {
   }
 
   if (user) {
-    if (role === 'staff' || role === 'teacher') {
-      return <Navigate to="/staff-dashboard" replace />;
+    if (role === 'admin') {
+      return <Navigate to="/admin" replace />;
     }
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/staff-dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
