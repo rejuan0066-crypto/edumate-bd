@@ -76,16 +76,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return <Navigate to="/staff-dashboard" replace />;
     }
 
+    // Check if user has ANY permission (role-based OR individual) to view this path
+    const hasAccess = canView(path) || hasUserPermission(path, 'view');
+
     if (accessControl?.accessMap) {
       const roleAccess = accessControl.accessMap[path];
       const userBaseRole = role as string;
       const roleAllowed = roleAccess && roleAccess[userBaseRole];
       
       if (roleAllowed) {
-        if (!canView(path)) {
+        // Role is allowed by access control — check role or individual permissions
+        if (!hasAccess) {
           return <Navigate to="/staff-dashboard" replace />;
         }
       } else {
+        // Role not allowed by access control — only individual permission can override
         if (!hasUserPermission(path, 'view')) {
           return <Navigate to="/staff-dashboard" replace />;
         }
@@ -97,12 +102,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           return <Navigate to="/staff-dashboard" replace />;
         }
       } else {
-        if (!canView(path)) {
+        if (!hasAccess) {
           return <Navigate to="/staff-dashboard" replace />;
         }
       }
     } else {
-      return <Navigate to="/staff-dashboard" replace />;
+      // No access control configured — allow if user has any permission
+      if (!hasAccess) {
+        return <Navigate to="/staff-dashboard" replace />;
+      }
     }
   }
 
