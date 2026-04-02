@@ -472,7 +472,7 @@ const AdminFormBuilder = () => {
             <TabsContent value="forms" className="mt-4">
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
-              <DropdownMenu>
+              {canAddItem && <DropdownMenu>
                <DropdownMenuTrigger asChild>
                  <Button><Plus className="h-4 w-4 mr-1" /> {bn ? 'নতুন ফর্ম' : 'New Form'} <ChevronDown className="h-4 w-4 ml-1" /></Button>
                </DropdownMenuTrigger>
