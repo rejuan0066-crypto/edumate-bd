@@ -23,6 +23,7 @@ const getGrade = (avg: number) => {
 const AdminResults = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/results', 'results');
   const [examYear, setExamYear] = useState('2026');
   const [examSession, setExamSession] = useState('');
   const [examType, setExamType] = useState('');
