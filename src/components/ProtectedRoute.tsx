@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
 
   // Load dynamic access control from website_settings
-  const { data: accessControl } = useQuery({
+  const { data: accessControl, isLoading: acLoading } = useQuery({
     queryKey: ['admin-only-paths'],
     queryFn: async () => {
       const { data } = await supabase
@@ -54,11 +54,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         .maybeSingle();
       if (data?.value) {
         const val = data.value as any;
-        // New format with per-role access map
         if (val.access_map && typeof val.access_map === 'object') {
           return { accessMap: val.access_map as Record<string, Record<string, boolean>>, paths: val.paths as string[] || [] };
         }
-        // Old format: just admin-only paths
         if (Array.isArray(val.paths)) {
           return { accessMap: null, paths: val.paths as string[] };
         }
