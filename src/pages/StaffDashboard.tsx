@@ -205,55 +205,9 @@ const StaffDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Basic Profile Tab (no staff record) */}
-          {!hasStaff && (
-            <TabsContent value="basic-profile">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    {bn ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex items-start gap-2">
-                      <User className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{bn ? 'নাম' : 'Name'}</p>
-                        <p className="text-sm font-medium text-foreground">{profileRecord?.full_name || '—'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{bn ? 'ফোন' : 'Phone'}</p>
-                        <p className="text-sm font-medium text-foreground">{profileRecord?.phone || '—'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{bn ? 'ইমেইল' : 'Email'}</p>
-                        <p className="text-sm font-medium text-foreground">{user?.email || '—'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Briefcase className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">{bn ? 'রোল' : 'Role'}</p>
-                        <Badge variant="outline">{role || '—'}</Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
 
-          {/* Full Profile Tab (with staff record) */}
-          {hasStaff && (
-            <TabsContent value="profile">
+          {/* Profile Tab */}
+          <TabsContent value="profile">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
