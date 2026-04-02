@@ -89,7 +89,7 @@ const AdminNotices = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-display font-bold text-foreground">{language === 'bn' ? 'নোটিশ ব্যবস্থাপনা' : 'Notice Management'}</h1>
-          <Button onClick={() => setShowAdd(!showAdd)} className="btn-primary-gradient"><Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন নোটিশ' : 'New Notice'}</Button>
+          {canAddItem && <Button onClick={() => setShowAdd(!showAdd)} className="btn-primary-gradient"><Plus className="w-4 h-4 mr-1" /> {language === 'bn' ? 'নতুন নোটিশ' : 'New Notice'}</Button>}
         </div>
 
         {showAdd && (
