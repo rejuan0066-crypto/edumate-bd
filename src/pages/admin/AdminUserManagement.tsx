@@ -501,7 +501,7 @@ const AdminUserManagement = () => {
           {/* ===== USERS TAB ===== */}
           <TabsContent value="users" className="space-y-4">
             <div className="flex justify-end">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              {canAddItem && <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="btn-primary-gradient gap-2">
                     <Plus className="w-4 h-4" /> {bn ? 'নতুন ইউজার' : 'New User'}
