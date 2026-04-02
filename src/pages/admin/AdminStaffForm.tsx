@@ -11,13 +11,14 @@ import PhotoUpload from '@/components/PhotoUpload';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -88,6 +89,10 @@ const AdminStaffForm = () => {
   const [salary, setSalary] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
   const [mobile, setMobile] = useState('');
   const [mobileCode, setMobileCode] = useState('+880');
   const [employmentType, setEmploymentType] = useState('');
@@ -380,6 +385,7 @@ const AdminStaffForm = () => {
         name_en: fullName,
         designation: desigLabel,
         phone: mobile ? `${mobileCode}${mobile}` : null,
+        email: staffEmail || null,
         department: designation?.includes('teacher') ? 'শিক্ষা বিভাগ' : 'প্রশাসন',
         address: formatAddress(permanentAddr) || null,
         salary: salary ? parseFloat(salary) : null,
@@ -457,7 +463,24 @@ const AdminStaffForm = () => {
       toast.error(Object.values(errors)[0]);
       return;
     }
+
+    // If email is provided and not verified (and not edit mode), require OTP verification
+    if (staffEmail.trim() && !emailVerified && !isEditMode) {
+      setPendingSave(true);
+      setShowOtpDialog(true);
+      return;
+    }
+
     saveMutation.mutate();
+  };
+
+  const handleOtpVerified = () => {
+    setEmailVerified(true);
+    setShowOtpDialog(false);
+    if (pendingSave) {
+      setPendingSave(false);
+      saveMutation.mutate();
+    }
   };
 
   const handleApproverSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -762,6 +785,22 @@ const AdminStaffForm = () => {
                   <FieldError field="last_name" />
                 </div>
                 <PhoneInput label={bn ? 'মোবাইল' : 'Mobile'} required value={mobile} countryCode={mobileCode} onChange={(p, c) => { setMobile(p); setMobileCode(c); }} />
+                <div>
+                  <Label className="flex items-center gap-2">
+                    <Mail className="w-4 h-4" /> {bn ? 'ইমেইল' : 'Email'}
+                    {emailVerified && <CheckCircle className="w-4 h-4 text-primary" />}
+                  </Label>
+                  <Input
+                    type="email"
+                    className="bg-background mt-1"
+                    value={staffEmail}
+                    onChange={(e) => { setStaffEmail(e.target.value); setEmailVerified(false); }}
+                    placeholder={bn ? 'ইমেইল এড্রেস (ঐচ্ছিক)' : 'Email address (optional)'}
+                  />
+                  {staffEmail && !emailVerified && !isEditMode && (
+                    <p className="text-xs text-destructive mt-1">{bn ? 'সাবমিটের সময় ইমেইল যাচাই করা হবে' : 'Email will be verified on submit'}</p>
+                  )}
+                </div>
                 <div>
                   <Label>{bn ? 'চাকরির ধরন' : 'Employment Type'} <span className="text-destructive">*</span></Label>
                   <Select value={employmentType} onValueChange={setEmploymentType}>
@@ -1259,6 +1298,21 @@ const AdminStaffForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Email OTP Verification */}
+      <OtpVerificationDialog
+        open={showOtpDialog}
+        onOpenChange={(val) => {
+          setShowOtpDialog(val);
+          if (!val) setPendingSave(false);
+        }}
+        email={staffEmail}
+        purpose="email_verification"
+        recipientName={`${firstName} ${lastName}`.trim()}
+        onVerified={handleOtpVerified}
+        title={bn ? 'ইমেইল যাচাইকরণ' : 'Email Verification'}
+        description={bn ? `${staffEmail} এ একটি যাচাইকরণ কোড পাঠানো হয়েছে` : `A verification code has been sent to ${staffEmail}`}
+      />
     </AdminLayout>
   );
 };

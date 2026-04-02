@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { GraduationCap, Lock, User, Loader2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
+import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 import { toast } from 'sonner';
 
 const Login = () => {
@@ -15,6 +16,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   if (authLoading) {
     return (
@@ -85,7 +87,13 @@ const Login = () => {
             />
           </div>
           <div className="text-right">
-            <a href="#" className="text-sm text-primary hover:underline">{t('forgotPassword')}</a>
+            <button
+              type="button"
+              onClick={() => setForgotOpen(true)}
+              className="text-sm text-primary hover:underline"
+            >
+              {t('forgotPassword')}
+            </button>
           </div>
           <Button type="submit" className="btn-primary-gradient w-full py-5 text-base" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -93,13 +101,14 @@ const Login = () => {
           </Button>
         </form>
 
-
         <div className="mt-6 text-center">
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
             ← {language === 'bn' ? 'হোমে ফিরুন' : 'Back to Home'}
           </Link>
         </div>
       </div>
+
+      <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
     </div>
   );
 };

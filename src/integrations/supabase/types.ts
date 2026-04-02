@@ -583,6 +583,39 @@ export type Database = {
         }
         Relationships: []
       }
+      emailjs_config: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean
+          otp_expiry_minutes: number
+          public_key: string
+          service_id: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          otp_expiry_minutes?: number
+          public_key?: string
+          service_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          otp_expiry_minutes?: number
+          public_key?: string
+          service_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exams: {
         Row: {
           created_at: string | null
@@ -1237,6 +1270,42 @@ export type Database = {
           title_bn?: string | null
           type?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          is_used: boolean
+          max_attempts: number
+          purpose: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          is_used?: boolean
+          max_attempts?: number
+          purpose?: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          max_attempts?: number
+          purpose?: string
         }
         Relationships: []
       }
