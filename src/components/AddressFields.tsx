@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import SearchableSelect, { type SelectOption } from '@/components/SearchableSelect';
-import { bangladeshAddresses, type District, type Upazila, type Union, type PostOffice } from '@/data/bangladeshAddresses';
+import { useMergedAddressData } from '@/hooks/useAddressData';
 
 export interface AddressData {
   division: string;
@@ -24,39 +24,13 @@ interface AddressFieldsProps {
 const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [upazilas, setUpazilas] = useState<Upazila[]>([]);
-  const [unions, setUnions] = useState<Union[]>([]);
-  const [postOffices, setPostOffices] = useState<PostOffice[]>([]);
+  const { getDivisions, getDistricts, getUpazilas, getUnions, getPostOffices } = useMergedAddressData();
 
-  useEffect(() => {
-    if (value.division) {
-      const div = bangladeshAddresses.find(d => d.nameEn === value.division);
-      setDistricts(div?.districts || []);
-    } else {
-      setDistricts([]);
-    }
-  }, [value.division]);
-
-  useEffect(() => {
-    if (value.district) {
-      const dist = districts.find(d => d.nameEn === value.district);
-      setUpazilas(dist?.upazilas || []);
-    } else {
-      setUpazilas([]);
-    }
-  }, [value.district, districts]);
-
-  useEffect(() => {
-    if (value.upazila) {
-      const upz = upazilas.find(u => u.nameEn === value.upazila);
-      setUnions(upz?.unions || []);
-      setPostOffices(upz?.postOffices || []);
-    } else {
-      setUnions([]);
-      setPostOffices([]);
-    }
-  }, [value.upazila, upazilas]);
+  const divisions = getDivisions();
+  const districts = value.division ? getDistricts(value.division) : [];
+  const upazilas = value.division && value.district ? getUpazilas(value.division, value.district) : [];
+  const unions = value.division && value.district && value.upazila ? getUnions(value.division, value.district, value.upazila) : [];
+  const postOffices = value.division && value.district && value.upazila ? getPostOffices(value.division, value.district, value.upazila) : [];
 
   const update = (field: keyof AddressData, val: string) => {
     const newData = { ...value, [field]: val };
@@ -66,7 +40,7 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
     onChange(newData);
   };
 
-  const divisionOptions: SelectOption[] = bangladeshAddresses.map(d => ({
+  const divisionOptions: SelectOption[] = divisions.map(d => ({
     value: d.nameEn, label: bn ? d.name : d.nameEn,
   }));
 
