@@ -35,6 +35,9 @@ const AdminSettings = () => {
   const [emailjsLoading, setEmailjsLoading] = useState(true);
   const [emailjsSaving, setEmailjsSaving] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
+  const [emailjsTesting, setEmailjsTesting] = useState(false);
+  const [testEmailDialog, setTestEmailDialog] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
 
   // SMTP config
   const [smtp, setSmtp] = useState({
