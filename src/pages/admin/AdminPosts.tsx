@@ -67,6 +67,7 @@ const AdminPosts = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/posts', 'posts');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
