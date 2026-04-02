@@ -11,13 +11,14 @@ import PhotoUpload from '@/components/PhotoUpload';
 import CardVerifySection from '@/components/CardVerifySection';
 import { useApiVerificationEnabled } from '@/hooks/useApiVerification';
 import { useState, useRef, useEffect } from 'react';
-import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon } from 'lucide-react';
+import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, Download, FileText, X, CalendarIcon, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
