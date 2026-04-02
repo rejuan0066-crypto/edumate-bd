@@ -475,14 +475,19 @@ const AdminUserManagement = () => {
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
                             </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox
-                                checked={perm.requires_approval}
-                                onCheckedChange={() => toggleApproval(perm.menu_path)}
-                                className="border-yellow-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
-                                disabled={!perm.can_view && !perm.can_add && !perm.can_edit && !perm.can_delete}
-                              />
-                            </TableCell>
+                            {(['approval_view', 'approval_add', 'approval_edit', 'approval_delete'] as const).map((af, i) => {
+                              const relatedPerm = (['can_view', 'can_add', 'can_edit', 'can_delete'] as const)[i];
+                              return (
+                                <TableCell key={af} className="text-center">
+                                  <Checkbox
+                                    checked={perm[af]}
+                                    onCheckedChange={() => toggleApproval(perm.menu_path, af)}
+                                    className="border-yellow-500 data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
+                                    disabled={!perm[relatedPerm]}
+                                  />
+                                </TableCell>
+                              );
+                            })}
                           </TableRow>
                         );
                       })}
