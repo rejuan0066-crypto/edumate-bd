@@ -13,6 +13,7 @@ import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 const AdminNotices = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/notices', 'notices');
   const [filter, setFilter] = useState<string>('all');
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState('');
