@@ -11465,34 +11465,24 @@ export const bangladeshAddresses: Division[] = [
             "type": "upazila",
             "postOffices": [
               {
-                "name": "banigram",
-                "nameEn": "banigram",
-                "code": "3164"
+                "name": "Barfa",
+                "nameEn": "Barfa",
+                "code": "8102"
               },
               {
-                "name": "Chandanpur",
-                "nameEn": "Chandanpur",
-                "code": "3165"
+                "name": "Chandradighalia",
+                "nameEn": "Chandradighalia",
+                "code": "8013"
               },
               {
-                "name": "Dakkhin Bhadashore",
-                "nameEn": "Dakkhin Bhadashore",
-                "code": "3162"
+                "name": "Gopalganj Sadar",
+                "nameEn": "Gopalganj Sadar",
+                "code": "8100"
               },
               {
-                "name": "Dhaka Dakkhin",
-                "nameEn": "Dhaka Dakkhin",
-                "code": "3161"
-              },
-              {
-                "name": "Gopalgannj",
-                "nameEn": "Gopalgannj",
-                "code": "3160"
-              },
-              {
-                "name": "Ranaping",
-                "nameEn": "Ranaping",
-                "code": "3163"
+                "name": "Ulpur",
+                "nameEn": "Ulpur",
+                "code": "8101"
               }
             ]
           },
