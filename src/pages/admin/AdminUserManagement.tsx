@@ -440,8 +440,14 @@ const AdminUserManagement = () => {
                         <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
-                        <TableHead className="text-center w-20">
-                          <span className="text-yellow-600">{bn ? 'অনুমোদন' : 'Approval'}</span>
+                        <TableHead className="text-center w-20" colSpan={4}>
+                          <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
+                          <div className="flex justify-center gap-2 mt-1 text-xs text-muted-foreground font-normal">
+                            <span className="w-10 text-center">{bn ? 'দেখা' : 'V'}</span>
+                            <span className="w-10 text-center">{bn ? 'যোগ' : 'A'}</span>
+                            <span className="w-10 text-center">{bn ? 'সম্পা.' : 'E'}</span>
+                            <span className="w-10 text-center">{bn ? 'মুছুন' : 'D'}</span>
+                          </div>
                         </TableHead>
                       </TableRow>
                     </TableHeader>
