@@ -122,6 +122,13 @@ const AdminUserManagement = () => {
   const [roleBaseRole, setRoleBaseRole] = useState('staff');
   const [roleSaving, setRoleSaving] = useState(false);
 
+  // Role permission dialog
+  const [rolePermDialogOpen, setRolePermDialogOpen] = useState(false);
+  const [rolePermRole, setRolePermRole] = useState<CustomRole | null>(null);
+  const [rolePermLoading, setRolePermLoading] = useState(false);
+  const [rolePermSaving, setRolePermSaving] = useState(false);
+  const [rolePerms, setRolePerms] = useState<{ menu_path: string; can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean }[]>([]);
+
   // Permission dialog
   const [permDialogOpen, setPermDialogOpen] = useState(false);
   const [permUser, setPermUser] = useState<UserItem | null>(null);
@@ -265,20 +272,30 @@ const AdminUserManagement = () => {
     }
     setRoleSaving(true);
     try {
-      const payload = {
-        name: roleName.trim().toLowerCase(),
-        name_bn: roleNameBn.trim(),
-        description: roleDesc.trim() || null,
-        description_bn: roleDescBn.trim() || null,
-        base_role: roleBaseRole,
-      };
-
-      if (editingRole) {
-        const { error } = await supabase.from('custom_roles').update(payload).eq('id', editingRole.id);
+      if (editingRole?.is_system) {
+        // System roles: only update display info
+        const { error } = await supabase.from('custom_roles').update({
+          name_bn: roleNameBn.trim(),
+          description: roleDesc.trim() || null,
+          description_bn: roleDescBn.trim() || null,
+        }).eq('id', editingRole.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('custom_roles').insert(payload);
-        if (error) throw error;
+        const payload = {
+          name: roleName.trim().toLowerCase(),
+          name_bn: roleNameBn.trim(),
+          description: roleDesc.trim() || null,
+          description_bn: roleDescBn.trim() || null,
+          base_role: roleBaseRole,
+        };
+
+        if (editingRole) {
+          const { error } = await supabase.from('custom_roles').update(payload).eq('id', editingRole.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('custom_roles').insert(payload);
+          if (error) throw error;
+        }
       }
 
       toast.success(bn ? 'রোল সেভ হয়েছে' : 'Role saved');
@@ -302,7 +319,70 @@ const AdminUserManagement = () => {
     }
   };
 
-  // Permission functions
+  // Role permission functions
+  const openRolePermDialog = async (role: CustomRole) => {
+    setRolePermRole(role);
+    setRolePermDialogOpen(true);
+    setRolePermLoading(true);
+    try {
+      const { data, error } = await supabase.from('role_permissions').select('*').eq('role', role.name);
+      if (error) throw error;
+      const merged = MENU_PATHS.map(mp => {
+        const existing = (data || []).find((d: any) => d.menu_path === mp.path);
+        return {
+          menu_path: mp.path,
+          can_view: existing?.can_view ?? false,
+          can_add: existing?.can_add ?? false,
+          can_edit: existing?.can_edit ?? false,
+          can_delete: existing?.can_delete ?? false,
+        };
+      });
+      setRolePerms(merged);
+    } catch {
+      toast.error(bn ? 'পারমিশন লোড ব্যর্থ' : 'Failed to load permissions');
+    }
+    setRolePermLoading(false);
+  };
+
+  const toggleRolePerm = (menuPath: string, field: string) => {
+    setRolePerms(prev => prev.map(p => p.menu_path !== menuPath ? p : { ...p, [field]: !(p as any)[field] }));
+  };
+
+  const toggleAllRolePerms = (menuPath: string) => {
+    setRolePerms(prev => prev.map(p => {
+      if (p.menu_path !== menuPath) return p;
+      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete;
+      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn };
+    }));
+  };
+
+  const saveRolePermissions = async () => {
+    if (!rolePermRole) return;
+    setRolePermSaving(true);
+    try {
+      await supabase.from('role_permissions').delete().eq('role', rolePermRole.name);
+      const toInsert = rolePerms
+        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete)
+        .map(p => ({
+          role: rolePermRole.name,
+          menu_path: p.menu_path,
+          can_view: p.can_view,
+          can_add: p.can_add,
+          can_edit: p.can_edit,
+          can_delete: p.can_delete,
+        }));
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from('role_permissions').insert(toInsert);
+        if (error) throw error;
+      }
+      toast.success(bn ? '✅ রোল পারমিশন সেভ হয়েছে!' : '✅ Role permissions saved!');
+      setRolePermDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'পারমিশন সেভ ব্যর্থ' : 'Failed to save permissions'));
+    }
+    setRolePermSaving(false);
+  };
+
   const openPermDialog = async (user: UserItem) => {
     setPermUser(user);
     setPermDialogOpen(true);
@@ -602,8 +682,17 @@ const AdminUserManagement = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => openRoleDialog(r)} disabled={r.is_system}>
+                            <Button size="icon" variant="ghost" onClick={() => openRoleDialog(r)} title={bn ? 'এডিট' : 'Edit'}>
                               <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-primary hover:text-primary hover:bg-primary/10"
+                              onClick={() => openRolePermDialog(r)}
+                              title={bn ? 'পারমিশন সেট করুন' : 'Set Permissions'}
+                            >
+                              <KeyRound className="w-4 h-4" />
                             </Button>
                             {!r.is_system && (
                               <Button
@@ -677,29 +766,36 @@ const AdminUserManagement = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} *</Label>
-                  <Input className="mt-1" value={roleName} onChange={e => setRoleName(e.target.value)} placeholder="e.g. accountant" />
+                  <Input className="mt-1" value={roleName} onChange={e => setRoleName(e.target.value)} placeholder="e.g. accountant" disabled={editingRole?.is_system} />
                 </div>
                 <div>
                   <Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</Label>
                   <Input className="mt-1" value={roleNameBn} onChange={e => setRoleNameBn(e.target.value)} placeholder="যেমন: হিসাবরক্ষক" />
                 </div>
               </div>
-              <div>
-                <Label>{bn ? 'বেস রোল' : 'Base Role'} *</Label>
-                <Select value={roleBaseRole} onValueChange={setRoleBaseRole}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
-                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                    <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {bn ? 'বেস রোল নির্ধারণ করে ইউজার সিস্টেমে কোন লেভেলের অ্যাক্সেস পাবে।' : 'Base role determines the system-level access.'}
+              {!editingRole?.is_system && (
+                <div>
+                  <Label>{bn ? 'বেস রোল' : 'Base Role'} *</Label>
+                  <Select value={roleBaseRole} onValueChange={setRoleBaseRole}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                      <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                      <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bn ? 'বেস রোল নির্ধারণ করে ইউজার সিস্টেমে কোন লেভেলের অ্যাক্সেস পাবে।' : 'Base role determines the system-level access.'}
+                  </p>
+                </div>
+              )}
+              {editingRole?.is_system && (
+                <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                  {bn ? '⚠️ সিস্টেম রোলের নাম ও বেস রোল পরিবর্তন করা যায় না। শুধু বাংলা নাম ও বিবরণ পরিবর্তন করতে পারবেন।' : '⚠️ System role name & base role cannot be changed. You can edit the Bangla name and description.'}
                 </p>
-              </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>{bn ? 'বিবরণ (ইংরেজি)' : 'Description (EN)'}</Label>
@@ -812,6 +908,85 @@ const AdminUserManagement = () => {
 
                 <Button onClick={savePermissions} disabled={permSaving} className="w-full btn-primary-gradient">
                   {permSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Role Permission Dialog */}
+        <Dialog open={rolePermDialogOpen} onOpenChange={setRolePermDialogOpen}>
+          <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-primary" />
+                {bn ? 'রোল পারমিশন' : 'Role Permissions'}
+                {rolePermRole && (
+                  <Badge variant="outline" className="ml-2 font-normal">
+                    {bn ? rolePermRole.name_bn : rolePermRole.name}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            {rolePermLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-4 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  {bn
+                    ? 'এই রোলের ইউজাররা কোন কোন মেনু/ফিচারে কী কী করতে পারবে তা নির্ধারণ করুন।'
+                    : 'Set what users with this role can do on each menu/feature.'}
+                </p>
+
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="min-w-[140px]">{bn ? 'মেনু' : 'Menu'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'দেখা' : 'View'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rolePerms.map(perm => {
+                        const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
+                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                        return (
+                          <TableRow key={perm.menu_path}>
+                            <TableCell className="font-medium text-sm">
+                              {bn ? menuInfo?.label_bn : menuInfo?.label_en}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_view} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_view')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_add} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_add')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_edit} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_edit')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={perm.can_delete} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_delete')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox checked={allOn} onCheckedChange={() => toggleAllRolePerms(perm.menu_path)} />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <Button onClick={saveRolePermissions} disabled={rolePermSaving} className="w-full btn-primary-gradient">
+                  {rolePermSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
                   {bn ? 'পারমিশন সেভ করুন' : 'Save Permissions'}
                 </Button>
               </div>
