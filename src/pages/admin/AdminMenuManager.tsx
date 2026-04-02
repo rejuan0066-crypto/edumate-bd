@@ -178,7 +178,7 @@ const AdminMenuManager = () => {
             {canEditItem && <Button size="sm" onClick={handleSave} disabled={saveMenuConfig.isPending}>
               <Save className="w-4 h-4 mr-1" />
               {saveMenuConfig.isPending ? (bn ? 'সেভ হচ্ছে...' : 'Saving...') : (bn ? 'সেভ করুন' : 'Save')}
-            </Button>
+            </Button>}
           </div>
         </div>
 

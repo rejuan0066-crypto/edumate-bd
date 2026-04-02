@@ -561,7 +561,7 @@ const AdminUserManagement = () => {
                     </Button>
                   </div>
                 </DialogContent>
-              </Dialog>
+              </Dialog>}
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 flex items-start gap-3 text-sm">
