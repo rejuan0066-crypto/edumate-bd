@@ -246,10 +246,10 @@ const AdminModuleManager = () => {
                     <code className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{mod.menu_path}</code>
                     <div className="flex gap-1">
                       {mod.is_system && <Badge variant="secondary" className="text-[10px]">{bn ? 'সিস্টেম' : 'System'}</Badge>}
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(mod)}>
+                      {canEditItem && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(mod)}>
                         <Edit2 className="h-3.5 w-3.5" />
-                      </Button>
-                      {!mod.is_system && (
+                      </Button>}
+                      {canDeleteItem && !mod.is_system && (
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
                           onClick={() => { if (confirm(bn ? 'মডিউলটি মুছে ফেলতে চান?' : 'Delete this module?')) deleteMutation.mutate(mod.id); }}>
                           <Trash2 className="h-3.5 w-3.5" />

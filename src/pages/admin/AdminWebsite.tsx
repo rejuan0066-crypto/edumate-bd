@@ -324,9 +324,9 @@ const AdminWebsite = () => {
             <Button variant="outline" size="sm" onClick={() => window.open('/', '_blank')}>
               <Eye className="w-4 h-4 mr-1" /> {language === 'bn' ? 'প্রিভিউ' : 'Preview'}
             </Button>
-            <Button className="btn-primary-gradient" size="sm" onClick={saveAll} disabled={saving}>
+            {canEditItem && <Button className="btn-primary-gradient" size="sm" onClick={saveAll} disabled={saving}>
               <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সব সংরক্ষণ' : 'Save All'}
-            </Button>
+            </Button>}
           </div>
         </div>
 

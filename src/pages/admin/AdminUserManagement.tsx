@@ -627,7 +627,7 @@ const AdminUserManagement = () => {
                               </Button>
                             )}
                             {/* Delete */}
-                            <Button
+                            {canDeleteItem && <Button
                               size="icon"
                               variant="ghost"
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -635,7 +635,7 @@ const AdminUserManagement = () => {
                               disabled={deleting === u.id}
                             >
                               {deleting === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                            </Button>
+                            </Button>}
                           </div>
                         </TableCell>
                       </TableRow>

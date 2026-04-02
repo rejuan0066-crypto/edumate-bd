@@ -90,7 +90,7 @@ const AdminThemeCustomizer = () => {
               <RotateCcw className="w-4 h-4 mr-1" />
               {bn ? 'রিসেট' : 'Reset'}
             </Button>
-            <Button size="sm" onClick={handleSave} disabled={saveTheme.isPending}>
+            {canEditItem && <Button size="sm" onClick={handleSave} disabled={saveTheme.isPending}>
               <Save className="w-4 h-4 mr-1" />
               {saveTheme.isPending ? (bn ? 'সেভ হচ্ছে...' : 'Saving...') : (bn ? 'সেভ করুন' : 'Save')}
             </Button>
