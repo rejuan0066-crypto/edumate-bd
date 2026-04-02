@@ -788,7 +788,7 @@ const AdminStaffForm = () => {
                 <div>
                   <Label className="flex items-center gap-2">
                     <Mail className="w-4 h-4" /> {bn ? 'ইমেইল' : 'Email'}
-                    {emailVerified && <CheckCircle className="w-4 h-4 text-green-500" />}
+                    {emailVerified && <CheckCircle className="w-4 h-4 text-primary" />}
                   </Label>
                   <Input
                     type="email"
