@@ -14,12 +14,13 @@ import { toast } from 'sonner';
 const Login = () => {
   const { t, language } = useLanguage();
   const { signIn, user, loading: authLoading, role, userStatus } = useAuth();
+  const { hasUserPermission, isLoading: permLoading } = usePermissions();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  if (authLoading) {
+  if (authLoading || permLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -35,6 +36,10 @@ const Login = () => {
     // Pending users go to waiting page
     if (userStatus === 'pending') {
       return <Navigate to="/waiting-approval" replace />;
+    }
+    // If user has individual permission for /admin, redirect there
+    if (hasUserPermission('/admin', 'view')) {
+      return <Navigate to="/admin" replace />;
     }
     // Approved staff/teacher go to staff dashboard
     return <Navigate to="/staff-dashboard" replace />;
