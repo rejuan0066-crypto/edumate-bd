@@ -309,6 +309,9 @@ const AdminApiVerification = () => {
   return (
     <AdminLayout>
       <div className="max-w-3xl mx-auto space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <ArrowLeft className="w-4 h-4 mr-1" />{bn ? 'পিছনে যান' : 'Go Back'}
+        </Button>
         {/* Service Toggle */}
         <Card>
           <CardContent className="pt-6">
