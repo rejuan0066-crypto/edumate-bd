@@ -1298,6 +1298,21 @@ const AdminStaffForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Email OTP Verification */}
+      <OtpVerificationDialog
+        open={showOtpDialog}
+        onOpenChange={(val) => {
+          setShowOtpDialog(val);
+          if (!val) setPendingSave(false);
+        }}
+        email={staffEmail}
+        purpose="email_verification"
+        recipientName={`${firstName} ${lastName}`.trim()}
+        onVerified={handleOtpVerified}
+        title={bn ? 'ইমেইল যাচাইকরণ' : 'Email Verification'}
+        description={bn ? `${staffEmail} এ একটি যাচাইকরণ কোড পাঠানো হয়েছে` : `A verification code has been sent to ${staffEmail}`}
+      />
     </AdminLayout>
   );
 };
