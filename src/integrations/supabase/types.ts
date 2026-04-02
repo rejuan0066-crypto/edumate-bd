@@ -2091,6 +2091,10 @@ export type Database = {
       }
       user_permissions: {
         Row: {
+          approval_add: boolean
+          approval_delete: boolean
+          approval_edit: boolean
+          approval_view: boolean
           can_add: boolean
           can_delete: boolean
           can_edit: boolean
@@ -2098,11 +2102,14 @@ export type Database = {
           created_at: string | null
           id: string
           menu_path: string
-          requires_approval: boolean
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          approval_add?: boolean
+          approval_delete?: boolean
+          approval_edit?: boolean
+          approval_view?: boolean
           can_add?: boolean
           can_delete?: boolean
           can_edit?: boolean
@@ -2110,11 +2117,14 @@ export type Database = {
           created_at?: string | null
           id?: string
           menu_path: string
-          requires_approval?: boolean
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          approval_add?: boolean
+          approval_delete?: boolean
+          approval_edit?: boolean
+          approval_view?: boolean
           can_add?: boolean
           can_delete?: boolean
           can_edit?: boolean
@@ -2122,7 +2132,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           menu_path?: string
-          requires_approval?: boolean
           updated_at?: string | null
           user_id?: string
         }
