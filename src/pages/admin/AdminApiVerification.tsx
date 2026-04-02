@@ -11,12 +11,14 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useApiVerificationConfig } from '@/hooks/useApiVerification';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Shield, Key, Link2, MapPin, Lock, Eye, EyeOff, Plus, Trash2, Save } from 'lucide-react';
+import { Loader2, Shield, Key, Link2, MapPin, Lock, Eye, EyeOff, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminApiVerification = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: config, isLoading } = useApiVerificationConfig();
 
   // Password gate
@@ -307,6 +309,9 @@ const AdminApiVerification = () => {
   return (
     <AdminLayout>
       <div className="max-w-3xl mx-auto space-y-6">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+          <ArrowLeft className="w-4 h-4 mr-1" />{bn ? 'পিছনে যান' : 'Go Back'}
+        </Button>
         {/* Service Toggle */}
         <Card>
           <CardContent className="pt-6">
