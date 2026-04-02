@@ -187,17 +187,19 @@ const AdminSettings = () => {
     setEmailjsTesting(true);
     try {
       const { default: emailjsLib } = await import('@emailjs/browser');
+      emailjsLib.init(emailjs.public_key);
       await emailjsLib.send(
         emailjs.service_id,
         emailjs.template_id,
         {
           to_email: testEmail,
+          email: testEmail,
+          reply_to: testEmail,
           to_name: 'Test User',
           otp_code: '123456',
           expiry_minutes: emailjs.otp_expiry_minutes,
           purpose: 'Test Email',
-        },
-        emailjs.public_key
+        }
       );
       toast.success(bn ? `✅ টেস্ট ইমেইল পাঠানো হয়েছে: ${testEmail}` : `✅ Test email sent to: ${testEmail}`);
       setTestEmailDialog(false);
