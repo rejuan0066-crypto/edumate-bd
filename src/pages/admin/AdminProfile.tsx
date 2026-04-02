@@ -175,7 +175,7 @@ const AdminProfile = () => {
 
           {/* Step indicator */}
           <div className="flex items-center gap-2 mb-6 text-sm">
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${step === 'form' ? 'bg-primary/10 text-primary font-semibold' : step !== 'form' ? 'bg-muted text-muted-foreground' : ''}`}>
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${step === 'form' ? 'bg-primary/10 text-primary font-semibold' : 'bg-muted text-muted-foreground'}`}>
               <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
               {bn ? 'তথ্য' : 'Info'}
             </div>
