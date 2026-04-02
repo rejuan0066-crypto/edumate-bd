@@ -105,6 +105,11 @@ const AdminApiVerification = () => {
     };
 
     if (newMasterPassword.trim()) {
+      if (newMasterPassword !== confirmMasterPassword) {
+        toast.error(bn ? 'নতুন পাসওয়ার্ড ও কনফার্ম পাসওয়ার্ড মিলছে না' : 'New password and confirm password do not match');
+        setSaving(false);
+        return;
+      }
       updateData.master_password = newMasterPassword.trim();
     }
 
