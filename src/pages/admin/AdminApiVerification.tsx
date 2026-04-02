@@ -277,25 +277,50 @@ const AdminApiVerification = () => {
             <CardContent>
               {forgotMode ? (
                 <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                    <p className="text-sm text-destructive font-medium mb-1">
-                      {bn ? '⚠️ সতর্কতা' : '⚠️ Warning'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {bn ? 'পাসওয়ার্ড রিসেট করলে পুরাতন পাসওয়ার্ড মুছে যাবে। নিশ্চিত করতে নিচে RESET টাইপ করুন।' : 'Resetting will remove the old password. Type RESET below to confirm.'}
-                    </p>
-                  </div>
-                  <Input
-                    value={resetConfirmInput}
-                    onChange={e => setResetConfirmInput(e.target.value)}
-                    placeholder={bn ? 'RESET টাইপ করুন' : 'Type RESET'}
-                    className="font-mono text-center tracking-widest"
-                    onKeyDown={e => e.key === 'Enter' && handleForgotReset()}
-                  />
-                  <Button className="w-full" variant="destructive" onClick={handleForgotReset}>
-                    {bn ? 'পাসওয়ার্ড রিসেট করুন' : 'Reset Password'}
-                  </Button>
-                  <Button className="w-full" variant="ghost" onClick={() => { setForgotMode(false); setResetConfirmInput(''); }}>
+                  {!otpSent ? (
+                    <>
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                        <p className="text-sm text-foreground font-medium mb-1">
+                          {bn ? '📧 ইমেইল ভেরিফিকেশন' : '📧 Email Verification'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {bn ? 'আপনার লগইন ইমেইলে একটি ভেরিফিকেশন কোড পাঠানো হবে।' : 'A verification code will be sent to your login email.'}
+                        </p>
+                      </div>
+                      <Button className="w-full btn-primary-gradient" onClick={handleSendOtp} disabled={sendingOtp}>
+                        {sendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Shield className="w-4 h-4 mr-2" />}
+                        {bn ? 'কোড পাঠান' : 'Send Code'}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                        <p className="text-sm text-green-700 dark:text-green-400 font-medium mb-1">
+                          {bn ? '✅ কোড পাঠানো হয়েছে' : '✅ Code Sent'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {bn ? `${adminEmail} এ ভেরিফিকেশন কোড পাঠানো হয়েছে।` : `Verification code sent to ${adminEmail}.`}
+                        </p>
+                      </div>
+                      <Input
+                        value={otpCode}
+                        onChange={e => setOtpCode(e.target.value)}
+                        placeholder={bn ? '৬ ডিজিট কোড' : '6-digit code'}
+                        className="font-mono text-center tracking-widest text-lg"
+                        maxLength={6}
+                        onKeyDown={e => e.key === 'Enter' && handleVerifyAndReset()}
+                      />
+                      <Button className="w-full btn-primary-gradient" onClick={handleVerifyAndReset}>
+                        <Shield className="w-4 h-4 mr-2" />
+                        {bn ? 'ভেরিফাই ও রিসেট করুন' : 'Verify & Reset'}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full" onClick={handleSendOtp} disabled={sendingOtp}>
+                        {sendingOtp ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {bn ? 'আবার কোড পাঠান' : 'Resend Code'}
+                      </Button>
+                    </>
+                  )}
+                  <Button className="w-full" variant="ghost" onClick={() => { setForgotMode(false); setOtpSent(false); setOtpCode(''); }}>
                     {bn ? 'বাতিল' : 'Cancel'}
                   </Button>
                 </div>
