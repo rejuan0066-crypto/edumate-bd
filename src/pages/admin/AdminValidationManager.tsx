@@ -224,7 +224,7 @@ const AdminValidationManager = () => {
               {bn ? 'ফিল্ড-লেভেল ও বিজনেস লজিক ভ্যালিডেশন যোগ, এডিট ও নিয়ন্ত্রণ করুন' : 'Add, edit and control field-level & business logic validations'}
             </p>
           </div>
-          <Button onClick={() => { setRuleData({ ...emptyRule, sort_order: rules.length }); setEditingId(null); setDialogOpen(true); }}>
+          {canAddItem && <Button onClick={() => { setRuleData({ ...emptyRule, sort_order: rules.length }); setEditingId(null); setDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-1" /> {bn ? 'নতুন রুল' : 'New Rule'}
           </Button>
         </div>
