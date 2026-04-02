@@ -78,6 +78,20 @@ export const usePermissions = () => {
   const canEdit = (menuPath: string) => hasPermission(menuPath, 'edit');
   const canDelete = (menuPath: string) => hasPermission(menuPath, 'delete');
 
+  // Check ONLY individual user_permissions (ignoring role_permissions)
+  const hasUserPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
+    if (role === 'admin') return true;
+    const userPerm = userPermissions.find(p => p.menu_path === menuPath);
+    if (!userPerm) return false;
+    switch (action) {
+      case 'view': return userPerm.can_view;
+      case 'add': return userPerm.can_add;
+      case 'edit': return userPerm.can_edit;
+      case 'delete': return userPerm.can_delete;
+      default: return false;
+    }
+  };
+
   const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (role === 'admin') return false;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
@@ -88,5 +102,5 @@ export const usePermissions = () => {
     return (userPerm as any)?.approval_view || (userPerm as any)?.approval_add || (userPerm as any)?.approval_edit || (userPerm as any)?.approval_delete || false;
   };
 
-  return { permissions: rolePermissions, userPermissions, isLoading, hasPermission, canView, canAdd, canEdit, canDelete, requiresApproval, role };
+  return { permissions: rolePermissions, userPermissions, isLoading, hasPermission, hasUserPermission, canView, canAdd, canEdit, canDelete, requiresApproval, role };
 };
