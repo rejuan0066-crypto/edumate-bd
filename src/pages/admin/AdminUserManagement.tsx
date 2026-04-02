@@ -102,7 +102,7 @@ const AdminUserManagement = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=list', {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
         method: 'GET',
       });
       if (error) throw error;
