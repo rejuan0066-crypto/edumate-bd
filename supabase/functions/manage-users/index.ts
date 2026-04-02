@@ -134,6 +134,11 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Link to staff record if staff_id provided
+      if (body.staff_id) {
+        await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
+      }
+
       return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
