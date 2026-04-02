@@ -79,6 +79,7 @@ const AdminAcademicSessions = () => {
 
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      if (await checkApproval('edit', { id, is_active: active }, id, `সেশন ${active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}`)) return;
       const { error } = await supabase.from('academic_sessions').update({ is_active: active }).eq('id', id);
       if (error) throw error;
     },

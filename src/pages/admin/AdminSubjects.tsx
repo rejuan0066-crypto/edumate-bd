@@ -8,10 +8,12 @@ import { Plus, Trash2, BookOpen, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 
 const AdminSubjects = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/subjects', 'subjects');
   const [newName, setNewName] = useState('');
   const [newNameEn, setNewNameEn] = useState('');
   const [newCode, setNewCode] = useState('');
@@ -38,12 +40,14 @@ const AdminSubjects = () => {
 
   const addMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('subjects').insert({
+      const payload = {
         name_bn: newName.trim(),
         name: newNameEn.trim() || newName.trim(),
         code: newCode.trim() || null,
         division_id: newDivision || null,
-      });
+      };
+      if (await checkApproval('add', payload, undefined, `বিষয় যোগ: ${newName.trim()}`)) return;
+      const { error } = await supabase.from('subjects').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -56,6 +60,8 @@ const AdminSubjects = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
+      const subject = subjects.find((s: any) => s.id === id);
+      if (await checkApproval('delete', { id, name_bn: subject?.name_bn }, id, `বিষয় মুছুন: ${subject?.name_bn}`)) return;
       const { error } = await supabase.from('subjects').delete().eq('id', id);
       if (error) throw error;
     },
