@@ -122,6 +122,13 @@ const AdminUserManagement = () => {
   const [roleBaseRole, setRoleBaseRole] = useState('staff');
   const [roleSaving, setRoleSaving] = useState(false);
 
+  // Role permission dialog
+  const [rolePermDialogOpen, setRolePermDialogOpen] = useState(false);
+  const [rolePermRole, setRolePermRole] = useState<CustomRole | null>(null);
+  const [rolePermLoading, setRolePermLoading] = useState(false);
+  const [rolePermSaving, setRolePermSaving] = useState(false);
+  const [rolePerms, setRolePerms] = useState<{ menu_path: string; can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean }[]>([]);
+
   // Permission dialog
   const [permDialogOpen, setPermDialogOpen] = useState(false);
   const [permUser, setPermUser] = useState<UserItem | null>(null);
