@@ -123,7 +123,7 @@ const AdminUserManagement = () => {
     setCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { email: email.trim(), password, role, full_name: fullName.trim() },
+        body: { action: 'create', email: email.trim(), password, role, full_name: fullName.trim() },
       });
       if (error || !data?.success) {
         toast.error(data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user'));
