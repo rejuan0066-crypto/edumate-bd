@@ -101,12 +101,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const matchedPath = ALL_PATHS_LIST.find(p => path === p || path.startsWith(p + '/'));
 
     if (matchedPath) {
+      // Users without a role → check individual user_permissions only
+      if (!role) {
+        if (!canView(matchedPath)) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+        return <>{children}</>;
+      }
+
       if (ac.accessMap) {
         // New format: check per-role access
         const roleAccess = ac.accessMap[matchedPath];
-        const userBaseRole = role as string; // 'teacher' | 'staff'
+        const userBaseRole = role as string;
         if (!roleAccess || !roleAccess[userBaseRole]) {
-          return <Navigate to="/staff-dashboard" replace />;
+          // Role doesn't have access via access control, but check individual permissions
+          if (!canView(matchedPath)) {
+            return <Navigate to="/staff-dashboard" replace />;
+          }
         }
       } else {
         // Old format: just admin-only paths
