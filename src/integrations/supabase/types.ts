@@ -1309,6 +1309,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_actions: {
+        Row: {
+          action_type: string
+          admin_note: string | null
+          created_at: string | null
+          id: string
+          menu_path: string
+          payload: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_id: string | null
+          target_table: string
+          updated_at: string | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          action_type?: string
+          admin_note?: string | null
+          created_at?: string | null
+          id?: string
+          menu_path: string
+          payload?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id?: string | null
+          target_table: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_note?: string | null
+          created_at?: string | null
+          id?: string
+          menu_path?: string
+          payload?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id?: string | null
+          target_table?: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       post_comments: {
         Row: {
           comment_text: string
@@ -2044,6 +2098,7 @@ export type Database = {
           created_at: string | null
           id: string
           menu_path: string
+          requires_approval: boolean
           updated_at: string | null
           user_id: string
         }
@@ -2055,6 +2110,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           menu_path: string
+          requires_approval?: boolean
           updated_at?: string | null
           user_id: string
         }
@@ -2066,6 +2122,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           menu_path?: string
+          requires_approval?: boolean
           updated_at?: string | null
           user_id?: string
         }
