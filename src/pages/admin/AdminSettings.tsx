@@ -53,6 +53,7 @@ const AdminSettings = () => {
 
   useEffect(() => {
     loadEmailjsConfig();
+    loadSmtpConfig();
   }, []);
 
   const loadEmailjsConfig = async () => {
