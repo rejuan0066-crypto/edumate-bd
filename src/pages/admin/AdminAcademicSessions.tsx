@@ -148,10 +148,10 @@ const AdminAcademicSessions = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
+                        {canEditItem && <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
                           <Pencil className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
+                        </Button>}
+                        {canDeleteItem && <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                               <Trash2 className="w-4 h-4" />
