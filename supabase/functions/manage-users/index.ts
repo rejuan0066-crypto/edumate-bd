@@ -25,18 +25,20 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Verify caller is admin
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-    if (userError || !user) {
+    // Verify caller using JWT claims (more reliable than getUser for edge functions)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const userId = claimsData.claims.sub;
 
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
 
@@ -154,7 +156,7 @@ Deno.serve(async (req) => {
       }
 
       // Prevent self-deletion
-      if (user_id === user.id) {
+      if (user_id === userId) {
         return new Response(JSON.stringify({ error: "Cannot delete your own account" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
