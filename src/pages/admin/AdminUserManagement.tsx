@@ -144,7 +144,7 @@ const AdminUserManagement = () => {
     if (!confirm(bn ? 'এই ইউজার ডিলিট করতে চান?' : 'Delete this user?')) return;
     setDeleting(userId);
     try {
-      const { data, error } = await supabase.functions.invoke('manage-users?action=delete', {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
         body: { user_id: userId },
       });
       if (error || !data?.success) {
