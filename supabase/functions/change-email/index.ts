@@ -19,10 +19,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { new_email, otp_code } = await req.json();
+    const { new_email, otp_code, skip_otp, current_password } = await req.json();
 
-    if (!new_email || !otp_code) {
-      return new Response(JSON.stringify({ error: "new_email and otp_code are required" }), {
+    if (!new_email) {
+      return new Response(JSON.stringify({ error: "new_email is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -59,61 +59,87 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify OTP for the new email
-    const { data: otpRecord } = await supabaseAdmin
-      .from("otp_codes")
-      .select("*")
-      .eq("email", new_email)
-      .eq("purpose", "email_verification")
-      .eq("is_used", false)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // Mode: skip_otp (password-only verification)
+    if (skip_otp) {
+      if (!current_password) {
+        return new Response(JSON.stringify({ error: "current_password is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-    if (!otpRecord) {
-      return new Response(JSON.stringify({ error: "No valid OTP found. Please request a new code." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      // Verify password by trying to sign in
+      const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+      const { error: signInError } = await anonClient.auth.signInWithPassword({
+        email: user.email!,
+        password: current_password,
       });
-    }
 
-    // Check expiry
-    if (new Date(otpRecord.expires_at) < new Date()) {
+      if (signInError) {
+        return new Response(JSON.stringify({ error: "Incorrect password" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else {
+      // Mode: OTP verification
+      if (!otp_code) {
+        return new Response(JSON.stringify({ error: "otp_code is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: otpRecord } = await supabaseAdmin
+        .from("otp_codes")
+        .select("*")
+        .eq("email", new_email)
+        .eq("purpose", "email_verification")
+        .eq("is_used", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!otpRecord) {
+        return new Response(JSON.stringify({ error: "No valid OTP found." }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (new Date(otpRecord.expires_at) < new Date()) {
+        await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
+        return new Response(JSON.stringify({ error: "OTP has expired" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (otpRecord.attempts >= otpRecord.max_attempts) {
+        await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
+        return new Response(JSON.stringify({ error: "Maximum attempts exceeded" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await supabaseAdmin
+        .from("otp_codes")
+        .update({ attempts: otpRecord.attempts + 1 })
+        .eq("id", otpRecord.id);
+
+      if (otpRecord.code !== otp_code) {
+        const remaining = otpRecord.max_attempts - otpRecord.attempts - 1;
+        return new Response(JSON.stringify({ error: `Invalid code. ${remaining} attempts remaining.` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-      return new Response(JSON.stringify({ error: "OTP has expired" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
-    // Check attempts
-    if (otpRecord.attempts >= otpRecord.max_attempts) {
-      await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-      return new Response(JSON.stringify({ error: "Maximum attempts exceeded" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Increment attempts
-    await supabaseAdmin
-      .from("otp_codes")
-      .update({ attempts: otpRecord.attempts + 1 })
-      .eq("id", otpRecord.id);
-
-    // Verify code
-    if (otpRecord.code !== otp_code) {
-      const remaining = otpRecord.max_attempts - otpRecord.attempts - 1;
-      return new Response(JSON.stringify({ error: `Invalid code. ${remaining} attempts remaining.` }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Mark OTP as used
-    await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-
-    // Update user email using admin API (bypasses confirmation)
+    // Update user email
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
       email: new_email,
       email_confirm: true,
