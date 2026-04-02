@@ -906,8 +906,8 @@ const AdminExpenses = () => {
                           </TableCell>
                           <TableCell className="text-right font-medium">৳{formatNum(Number(e.amount))}</TableCell>
                           <TableCell className="flex gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => openEditExpense(e)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            {canEditItem && <Button variant="ghost" size="icon" onClick={() => openEditExpense(e)}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>}
+                            {canDeleteItem && <Button variant="ghost" size="icon" onClick={() => { setDeleteConfirmId(e.id); setDeleteConfirmType('expense'); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                           </TableCell>
                         </TableRow>
                       ))}
