@@ -36,6 +36,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const { validate, validateAll } = useValidationRules('student');
+  const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const { fields: configFields, isLoaded, isFieldActive, getField, getFieldsBySection, getCustomFields, sections } = useAdmissionFormConfig();
 
   // Form state

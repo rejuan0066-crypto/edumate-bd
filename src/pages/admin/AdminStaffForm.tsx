@@ -57,6 +57,7 @@ const AdminStaffForm = () => {
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
   const { validate, validateAll } = useValidationRules('staff');
+  const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const printRef = useRef<HTMLDivElement>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
