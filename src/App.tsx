@@ -56,6 +56,7 @@ import AdminSalary from "./pages/admin/AdminSalary";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
 import AdminAcademicSessions from "./pages/admin/AdminAcademicSessions";
+import AdminAddressManager from "./pages/admin/AdminAddressManager";
 import PostsPage from "./pages/PostsPage";
 import NotFound from "./pages/NotFound";
 
