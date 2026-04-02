@@ -211,10 +211,10 @@ const AdminUserManagement = () => {
     }));
   };
 
-  const toggleApproval = (menuPath: string) => {
+  const toggleApproval = (menuPath: string, field: 'approval_view' | 'approval_add' | 'approval_edit' | 'approval_delete') => {
     setUserPerms(prev => prev.map(p => {
       if (p.menu_path !== menuPath) return p;
-      return { ...p, requires_approval: !p.requires_approval };
+      return { ...p, [field]: !(p as any)[field] };
     }));
   };
 
