@@ -20,6 +20,7 @@ export interface District {
 export interface Upazila {
   name: string;
   nameEn: string;
+  type?: 'upazila' | 'city_corporation' | 'municipality';
   unions: Union[];
 }
 
@@ -77,7 +78,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বাগেরহাট সদর উপজেলা",
@@ -111,7 +113,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দেবহাটা",
                 "nameEn": "দেবহাটা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কচুয়া উপজেলা",
@@ -129,7 +132,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালাইচাপড়া",
                 "nameEn": "কালাইচাপড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চিতলমারী উপজেলা",
@@ -155,7 +159,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুকুন্দকাটি",
                 "nameEn": "মুকুন্দকাটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফকিরহাট উপজেলা",
@@ -173,7 +178,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোয়ালবাথান",
                 "nameEn": "গোয়ালবাথান"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোংলা উপজেলা",
@@ -199,7 +205,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পানগুছি",
                 "nameEn": "পানগুছি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোড়েলগঞ্জ উপজেলা",
@@ -221,7 +228,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুন্দরবন",
                 "nameEn": "সুন্দরবন"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোল্লাহাট উপজেলা",
@@ -247,7 +255,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নিশানবাড়িয়া",
                 "nameEn": "নিশানবাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রামপাল উপজেলা",
@@ -273,7 +282,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হুরকা",
                 "nameEn": "হুরকা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শরণখোলা উপজেলা",
@@ -295,7 +305,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাউথখালী",
                 "nameEn": "সাউথখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Mongla পৌরসভা",
@@ -337,7 +348,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Morrelganj পৌরসভা",
@@ -379,7 +391,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Fakirhat পৌরসভা",
@@ -421,7 +434,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -469,7 +483,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "চুয়াডাঙ্গা সদর উপজেলা",
@@ -491,7 +506,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খাসকররা",
                 "nameEn": "খাসকররা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আলমডাঙ্গা উপজেলা",
@@ -517,7 +533,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তুতপাড়া",
                 "nameEn": "তুতপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জীবননগর উপজেলা",
@@ -543,7 +560,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নতিপোতা",
                 "nameEn": "নতিপোতা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দামুড়হুদা উপজেলা",
@@ -565,7 +583,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোহাম্মদনগর",
                 "nameEn": "মোহাম্মদনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Alamdanga পৌরসভা",
@@ -607,7 +626,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Damurhuda পৌরসভা",
@@ -649,7 +669,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -697,7 +718,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "যশোর সদর উপজেলা",
@@ -719,7 +741,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুন্দরপুর",
                 "nameEn": "সুন্দরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "অভয়নগর উপজেলা",
@@ -741,7 +764,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সতুজান",
                 "nameEn": "সতুজান"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কেশবপুর উপজেলা",
@@ -763,7 +787,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "স্বরূপদাহ",
                 "nameEn": "স্বরূপদাহ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চৌগাছা উপজেলা",
@@ -785,7 +810,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফতেহপুর",
                 "nameEn": "ফতেহপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঝিকরগাছা উপজেলা",
@@ -807,7 +833,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাগুরা",
                 "nameEn": "মাগুরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাঘারপাড়া উপজেলা",
@@ -833,7 +860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মঙ্গলকোট",
                 "nameEn": "মঙ্গলকোট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মনিরামপুর উপজেলা",
@@ -855,7 +883,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শংকরপুর",
                 "nameEn": "শংকরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শার্শা উপজেলা",
@@ -877,7 +906,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নাভারণ",
                 "nameEn": "নাভারণ"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -925,7 +955,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ঝিনাইদহ সদর উপজেলা",
@@ -947,7 +978,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রতনপুর",
                 "nameEn": "রতনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
@@ -973,7 +1005,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দুধসর",
                 "nameEn": "দুধসর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কোটচাঁদপুর উপজেলা",
@@ -983,7 +1016,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Kaliganj সদর",
                 "nameEn": "Kaliganj Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মহেশপুর উপজেলা",
@@ -1005,7 +1039,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুখপুকুরিয়া",
                 "nameEn": "সুখপুকুরিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শৈলকুপা উপজেলা",
@@ -1023,7 +1058,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফতেহপুর",
                 "nameEn": "ফতেহপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হরিণাকুন্ডু উপজেলা",
@@ -1045,7 +1081,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আওতাপাড়া",
                 "nameEn": "আওতাপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kaliganj পৌরসভা",
@@ -1087,7 +1124,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shailkupa পৌরসভা",
@@ -1129,7 +1167,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Maheshpur পৌরসভা",
@@ -1171,7 +1210,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -1307,7 +1347,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-31",
                 "nameEn": "Ward No-31"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "কয়রা উপজেলা",
@@ -1333,7 +1374,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জলমা",
                 "nameEn": "জলমা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ডুমুরিয়া উপজেলা",
@@ -1359,7 +1401,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুতারখালি",
                 "nameEn": "সুতারখালি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তেরখাদা উপজেলা",
@@ -1381,7 +1424,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আড়ংঘাটা",
                 "nameEn": "আড়ংঘাটা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দাকোপ উপজেলা",
@@ -1407,7 +1451,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কৈলাশগঞ্জ",
                 "nameEn": "কৈলাশগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দিঘলিয়া উপজেলা",
@@ -1425,7 +1470,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাগালী",
                 "nameEn": "বাগালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাইকগাছা উপজেলা",
@@ -1443,7 +1489,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গড়ইখালী",
                 "nameEn": "গড়ইখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলতলা উপজেলা",
@@ -1461,7 +1508,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দামোদর",
                 "nameEn": "দামোদর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বটিয়াঘাটা উপজেলা",
@@ -1479,7 +1527,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আইচগাতি",
                 "nameEn": "আইচগাতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রূপসা উপজেলা",
@@ -1497,7 +1546,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সচিদানন্দপুর",
                 "nameEn": "সচিদানন্দপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Phultala পৌরসভা",
@@ -1539,7 +1589,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dumuria পৌরসভা",
@@ -1581,7 +1632,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Paikgachha পৌরসভা",
@@ -1623,7 +1675,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Batiaghata পৌরসভা",
@@ -1665,7 +1718,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -1737,7 +1791,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-15",
                 "nameEn": "Ward No-15"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "কুষ্টিয়া সদর উপজেলা",
@@ -1759,7 +1814,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোহনপুর",
                 "nameEn": "মোহনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কুমারখালী উপজেলা",
@@ -1785,7 +1841,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফুলতলা",
                 "nameEn": "ফুলতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "খোকসা উপজেলা",
@@ -1803,7 +1860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুমারখালী",
                 "nameEn": "কুমারখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দৌলতপুর উপজেলা",
@@ -1825,7 +1883,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শিলাইদহ",
                 "nameEn": "শিলাইদহ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভেড়ামারা উপজেলা",
@@ -1851,7 +1910,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মজমপুর",
                 "nameEn": "মজমপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মিরপুর উপজেলা",
@@ -1869,7 +1929,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পোড়াদহ",
                 "nameEn": "পোড়াদহ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kumarkhali পৌরসভা",
@@ -1911,7 +1972,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mirpur পৌরসভা",
@@ -1953,7 +2015,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bheramara পৌরসভা",
@@ -1995,7 +2058,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -2043,7 +2107,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "মাগুরা সদর উপজেলা",
@@ -2065,7 +2130,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাজরাপুর",
                 "nameEn": "হাজরাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোহাম্মদপুর উপজেলা",
@@ -2083,7 +2149,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রায়পুর",
                 "nameEn": "রায়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শালিখা উপজেলা",
@@ -2101,7 +2168,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুনাগাতি",
                 "nameEn": "বুনাগাতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্রীপুর উপজেলা",
@@ -2119,7 +2187,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোপীনাথপুর",
                 "nameEn": "গোপীনাথপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Mohammadpur পৌরসভা",
@@ -2161,7 +2230,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shalikha পৌরসভা",
@@ -2203,7 +2273,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sreepur পৌরসভা",
@@ -2245,7 +2316,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -2293,7 +2365,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "মেহেরপুর সদর উপজেলা",
@@ -2315,7 +2388,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাথুরাপুর",
                 "nameEn": "মাথুরাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গাংনী উপজেলা",
@@ -2337,7 +2411,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুতুবপুর",
                 "nameEn": "কুতুবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মুজিবনগর উপজেলা",
@@ -2355,7 +2430,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মহেন্দ্রপুর",
                 "nameEn": "মহেন্দ্রপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Gangni পৌরসভা",
@@ -2397,7 +2473,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mujibnagar পৌরসভা",
@@ -2439,7 +2516,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -2487,7 +2565,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নড়াইল সদর উপজেলা",
@@ -2509,7 +2588,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হামিদপুর",
                 "nameEn": "হামিদপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালিয়া উপজেলা",
@@ -2519,7 +2599,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Lohagara সদর",
                 "nameEn": "Lohagara Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লোহাগড়া উপজেলা",
@@ -2541,7 +2622,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালিয়া",
                 "nameEn": "কালিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Lohagara পৌরসভা",
@@ -2583,7 +2665,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalia পৌরসভা",
@@ -2625,7 +2708,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -2673,7 +2757,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "সাতক্ষীরা সদর উপজেলা",
@@ -2695,7 +2780,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কদমতলা",
                 "nameEn": "কদমতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আশাশুনি উপজেলা",
@@ -2717,7 +2803,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সখিপুর",
                 "nameEn": "সখিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কলারোয়া উপজেলা",
@@ -2739,7 +2826,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কেড়াগাছি",
                 "nameEn": "কেড়াগাছি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
@@ -2749,7 +2837,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Kaliganj সদর",
                 "nameEn": "Kaliganj Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তালা উপজেলা",
@@ -2771,7 +2860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ব্রহ্মরাজপুর",
                 "nameEn": "ব্রহ্মরাজপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দেবহাটা উপজেলা",
@@ -2797,7 +2887,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুন্দরবন",
                 "nameEn": "সুন্দরবন"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্যামনগর উপজেলা",
@@ -2819,7 +2910,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাগুরা",
                 "nameEn": "মাগুরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kalaroa পৌরসভা",
@@ -2861,7 +2953,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tala পৌরসভা",
@@ -2903,7 +2996,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shyamnagar পৌরসভা",
@@ -2945,7 +3039,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Debhata পৌরসভা",
@@ -2987,7 +3082,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -3053,7 +3149,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-12",
                 "nameEn": "Ward No-12"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ব্রাহ্মণবাড়িয়া সদর উপজেলা",
@@ -3075,7 +3172,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দেবগ্রাম",
                 "nameEn": "দেবগ্রাম"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নবীনগর উপজেলা",
@@ -3097,7 +3195,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আড়াইবাড়ী",
                 "nameEn": "আড়াইবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আশুগঞ্জ উপজেলা",
@@ -3115,7 +3214,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুটি",
                 "nameEn": "কুটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আখাউড়া উপজেলা",
@@ -3141,7 +3241,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দরিকান্দী",
                 "nameEn": "দরিকান্দী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কসবা উপজেলা",
@@ -3163,7 +3264,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হরষপুর",
                 "nameEn": "হরষপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিজয়নগর উপজেলা",
@@ -3185,7 +3287,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুল্লাপাথর",
                 "nameEn": "কুল্লাপাথর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সরাইল উপজেলা",
@@ -3211,7 +3314,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রতনপুর",
                 "nameEn": "রতনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাসিরনগর উপজেলা",
@@ -3233,7 +3337,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হরিপুর",
                 "nameEn": "হরিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাঞ্ছারামপুর উপজেলা",
@@ -3255,7 +3360,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শাহজাদাপুর",
                 "nameEn": "শাহজাদাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -3303,7 +3409,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বান্দরবন সদর",
@@ -3321,7 +3428,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নয়াপাটং",
                 "nameEn": "নয়াপাটং"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আলীকদম",
@@ -3343,7 +3451,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুয়ালক",
                 "nameEn": "সুয়ালক"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "থানচি",
@@ -3365,7 +3474,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গজালিয়া",
                 "nameEn": "গজালিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাইক্ষ্যংছড়ি",
@@ -3383,7 +3493,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দোছড়ি",
                 "nameEn": "দোছড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রুমা",
@@ -3401,7 +3512,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আলেখ্যং",
                 "nameEn": "আলেখ্যং"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রোয়াংছড়ি",
@@ -3423,7 +3535,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাইন্দু",
                 "nameEn": "পাইন্দু"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লামা",
@@ -3445,7 +3558,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রেমাক্রী প্রাংসা",
                 "nameEn": "রেমাক্রী প্রাংসা"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -3493,7 +3607,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "চাঁদপুর সদর",
@@ -3519,7 +3634,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মতলব",
                 "nameEn": "মতলব"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফরিদগঞ্জ",
@@ -3541,7 +3657,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সালামাবাদ",
                 "nameEn": "সালামাবাদ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাজীগঞ্জ",
@@ -3563,7 +3680,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আলগী",
                 "nameEn": "আলগী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাইমচর",
@@ -3581,7 +3699,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাকিলা",
                 "nameEn": "বাকিলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শাহরাস্তি",
@@ -3599,7 +3718,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোয়ালবাথান",
                 "nameEn": "গোয়ালবাথান"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শাহরাস্তি",
@@ -3617,7 +3737,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নয়নপুর",
                 "nameEn": "নয়নপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Hajiganj পৌরসভা",
@@ -3659,7 +3780,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shahrasti পৌরসভা",
@@ -3701,7 +3823,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Matlab পৌরসভা",
@@ -3743,7 +3866,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -3919,7 +4043,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-41",
                 "nameEn": "Ward No-41"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "আনোয়ারা উপজেলা",
@@ -3941,7 +4066,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাইলধর",
                 "nameEn": "হাইলধর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কর্ণফুলি উপজেলা",
@@ -3959,7 +4085,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সমিতিরহাট",
                 "nameEn": "সমিতিরহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চন্দনাইশ উপজেলা",
@@ -3981,7 +4108,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পোপাদিয়া",
                 "nameEn": "পোপাদিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পটিয়া উপজেলা",
@@ -3999,7 +4127,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাশিমপুর",
                 "nameEn": "হাশিমপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফটিকছড়ি উপজেলা",
@@ -4017,7 +4146,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাহাড়তলী",
                 "nameEn": "পাহাড়তলী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাঁশখালী উপজেলা",
@@ -4043,7 +4173,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফতেয়াবাদ",
                 "nameEn": "ফতেয়াবাদ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বোয়ালখালী উপজেলা",
@@ -4061,7 +4192,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জুলদা",
                 "nameEn": "জুলদা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মীরসরাই উপজেলা",
@@ -4071,7 +4203,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Lohagara সদর",
                 "nameEn": "Lohagara Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাউজান উপজেলা",
@@ -4097,7 +4230,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "করেরহাট",
                 "nameEn": "করেরহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাঙ্গুনিয়া উপজেলা",
@@ -4119,7 +4253,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শোভনদণ্ডী",
                 "nameEn": "শোভনদণ্ডী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লোহাগাড়া উপজেলা",
@@ -4145,7 +4280,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মরিয়মনগর",
                 "nameEn": "মরিয়মনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সন্দ্বীপ উপজেলা",
@@ -4163,7 +4299,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গহিরা",
                 "nameEn": "গহিরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাতকানিয়া উপজেলা",
@@ -4189,7 +4326,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সারিকাইত",
                 "nameEn": "সারিকাইত"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সীতাকুণ্ড উপজেলা",
@@ -4215,7 +4353,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাদার্শা",
                 "nameEn": "মাদার্শা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাটহাজারী উপজেলা",
@@ -4241,7 +4380,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাড়বকুন্ড",
                 "nameEn": "বাড়বকুন্ড"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -4289,7 +4429,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "কক্সবাজার সদর",
@@ -4307,7 +4448,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঢেমুশিয়া",
                 "nameEn": "ঢেমুশিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "উখিয়া",
@@ -4325,7 +4467,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ইদগাঁও",
                 "nameEn": "ইদগাঁও"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কুতুবদিয়া",
@@ -4347,7 +4490,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লেমশীখালী",
                 "nameEn": "লেমশীখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চকরিয়া",
@@ -4365,7 +4509,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাতারবাড়ী",
                 "nameEn": "মাতারবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "টেকনাফ",
@@ -4387,7 +4532,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তাতাপাং",
                 "nameEn": "তাতাপাং"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পেকুয়া",
@@ -4409,7 +4555,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খুনিয়াপালং",
                 "nameEn": "খুনিয়াপালং"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মহেশখালী",
@@ -4431,7 +4578,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাহারছড়া",
                 "nameEn": "বাহারছড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রামু",
@@ -4441,7 +4589,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Ukhiya সদর",
                 "nameEn": "Ukhiya Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -4561,7 +4710,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-27",
                 "nameEn": "Ward No-27"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "বরুড়া উপজেলা",
@@ -4583,7 +4733,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আদরা",
                 "nameEn": "আদরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ব্রাহ্মনপাড়া উপজেলা",
@@ -4605,7 +4756,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শশীদল",
                 "nameEn": "শশীদল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বুড়িচং উপজেলা",
@@ -4623,7 +4775,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাজাপুর",
                 "nameEn": "রাজাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চান্দিনা উপজেলা",
@@ -4645,7 +4798,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাইজখার",
                 "nameEn": "মাইজখার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চৌদ্দগ্রাম উপজেলা",
@@ -4663,7 +4817,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জগন্নাথপুর",
                 "nameEn": "জগন্নাথপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কুমিল্লা- সদর",
@@ -4681,7 +4836,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিজয়পুর",
                 "nameEn": "বিজয়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সদর দক্ষিন উপজেলা",
@@ -4699,7 +4855,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালিকাপুর",
                 "nameEn": "কালিকাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দাউদকান্দি উপজেলা",
@@ -4721,7 +4878,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুন্দরপুর",
                 "nameEn": "সুন্দরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দেবিদ্বার উপজেলা",
@@ -4743,7 +4901,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধামতি",
                 "nameEn": "ধামতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হোমনা উপজেলা",
@@ -4765,7 +4924,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আশরাফপুর",
                 "nameEn": "আশরাফপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লাকসাম উপজেলা",
@@ -4783,7 +4943,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাচুয়া",
                 "nameEn": "কাচুয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লালমাই উপজেলা",
@@ -4801,7 +4962,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাশীনাথপুর",
                 "nameEn": "কাশীনাথপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মেঘনা উপজেলা",
@@ -4823,7 +4985,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রামচন্দ্রপুর",
                 "nameEn": "রামচন্দ্রপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মনোহরগঞ্জ উপজেলা",
@@ -4841,7 +5004,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খিলা",
                 "nameEn": "খিলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মুরাদনগর উপজেলা",
@@ -4863,7 +5027,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাহাড়পুর",
                 "nameEn": "পাহাড়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাঙ্গলকোট উপজেলা",
@@ -4885,7 +5050,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাতবাড়িয়া",
                 "nameEn": "সাতবাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তিতাস উপজেলা",
@@ -4907,7 +5073,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হোমনা",
                 "nameEn": "হোমনা"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -4955,7 +5122,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ফেনী সদর",
@@ -4973,7 +5141,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শুভপুর",
                 "nameEn": "শুভপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দাগনভূঁইয়া",
@@ -4995,7 +5164,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রসুলপুর",
                 "nameEn": "রসুলপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সোনাগাজী",
@@ -5017,7 +5187,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরচান্দিয়া",
                 "nameEn": "চরচান্দিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ছাগলনাইয়া",
@@ -5039,7 +5210,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আনন্দপুর",
                 "nameEn": "আনন্দপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পরশুরাম",
@@ -5057,7 +5229,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাদবপুর",
                 "nameEn": "মাদবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলগাজী",
@@ -5079,7 +5252,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরচান্দিয়া",
                 "nameEn": "চরচান্দিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Daganbhuiyan পৌরসভা",
@@ -5121,7 +5295,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sonagazi পৌরসভা",
@@ -5163,7 +5338,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chhagalnaiya পৌরসভা",
@@ -5205,7 +5381,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Parshuram পৌরসভা",
@@ -5247,7 +5424,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -5295,7 +5473,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "খাগড়াছড়ি সদর উপজেলা",
@@ -5317,7 +5496,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কবাখালী",
                 "nameEn": "কবাখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পানছড়ি উপজেলা",
@@ -5335,7 +5515,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বোয়ালখালী",
                 "nameEn": "বোয়ালখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পানছড়ি উপজেলা",
@@ -5349,7 +5530,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পেরাছড়া",
                 "nameEn": "পেরাছড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মহালছড়ি উপজেলা",
@@ -5363,7 +5545,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দুল্যাতলী",
                 "nameEn": "দুল্যাতলী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মাটিরাঙ্গা উপজেলা",
@@ -5377,7 +5560,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কায়ংঘাট",
                 "nameEn": "কায়ংঘাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মানিকছড়ি উপজেলা",
@@ -5391,7 +5575,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাটনাতলী",
                 "nameEn": "বাটনাতলী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রামগড় উপজেলা",
@@ -5413,7 +5598,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বেলছড়ি",
                 "nameEn": "বেলছড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লক্ষীছড়ি উপজেলা",
@@ -5431,7 +5617,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চেংমী",
                 "nameEn": "চেংমী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গুইমারা উপজেলা",
@@ -5449,7 +5636,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাফছড়ি",
                 "nameEn": "হাফছড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -5497,7 +5685,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "লক্ষ্মীপুর",
@@ -5515,7 +5704,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাটারী",
                 "nameEn": "পাটারী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রায়পুর",
@@ -5533,7 +5723,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাজিরহাট",
                 "nameEn": "হাজিরহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রামগঞ্জ",
@@ -5551,7 +5742,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নোয়াবাদ",
                 "nameEn": "নোয়াবাদ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রামগতি",
@@ -5573,7 +5765,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাঞ্চনপুর",
                 "nameEn": "কাঞ্চনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কমলনগর",
@@ -5595,7 +5788,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরলরেন্স",
                 "nameEn": "চরলরেন্স"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -5643,7 +5837,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বেগমগঞ্জ",
@@ -5665,7 +5860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সোনাইমুড়ী",
                 "nameEn": "সোনাইমুড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চাটখিল",
@@ -5687,7 +5883,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রশিদপুর",
                 "nameEn": "রশিদপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কোম্পানীগঞ্জ",
@@ -5705,7 +5902,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরএলাহী",
                 "nameEn": "চরএলাহী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাতিয়া",
@@ -5727,7 +5925,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুখচর",
                 "nameEn": "সুখচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কবিরহাট",
@@ -5741,7 +5940,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রামনারায়ণপুর",
                 "nameEn": "রামনারায়ণপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নোয়াখালী সদর",
@@ -5763,7 +5963,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিনোদপুর",
                 "nameEn": "বিনোদপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সেনবাগ",
@@ -5777,7 +5978,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আরজনগর",
                 "nameEn": "আরজনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সোনাইমুড়ী",
@@ -5799,7 +6001,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরবাটা",
                 "nameEn": "চরবাটা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সুবর্ণচর",
@@ -5817,7 +6020,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরওয়াপদা",
                 "nameEn": "চরওয়াপদা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Begumganj পৌরসভা",
@@ -5859,7 +6063,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Senbagh পৌরসভা",
@@ -5901,7 +6106,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chatkhil পৌরসভা",
@@ -5943,7 +6149,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Companiganj পৌরসভা",
@@ -5985,7 +6192,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Hatiya পৌরসভা",
@@ -6027,7 +6235,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -6075,7 +6284,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "রাঙ্গামাটি সদর",
@@ -6093,7 +6303,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মারিশ্যা",
                 "nameEn": "মারিশ্যা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নানিয়ারচর",
@@ -6111,7 +6322,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শুভলং",
                 "nameEn": "শুভলং"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লংগদু",
@@ -6125,7 +6337,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফারুয়া",
                 "nameEn": "ফারুয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাঘাইছড়ি",
@@ -6139,7 +6352,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বনযোগীছড়া",
                 "nameEn": "বনযোগীছড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বরকল",
@@ -6161,7 +6375,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাইখালী",
                 "nameEn": "রাইখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জুরাছড়ি",
@@ -6175,7 +6390,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঘিলাছড়ি",
                 "nameEn": "ঘিলাছড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিলাইছড়ি",
@@ -6193,7 +6409,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বগাচাটর",
                 "nameEn": "বগাচাটর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাজস্থলী",
@@ -6207,7 +6424,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুড়িঘাট",
                 "nameEn": "বুড়িঘাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাপ্তাই",
@@ -6221,7 +6439,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গাইন্দ্যা",
                 "nameEn": "গাইন্দ্যা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাউখালী",
@@ -6239,7 +6458,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুতুকছড়ি",
                 "nameEn": "কুতুকছড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kaptai পৌরসভা",
@@ -6281,7 +6501,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Langadu পৌরসভা",
@@ -6323,7 +6544,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -6641,7 +6863,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-75",
                 "nameEn": "Ward No-75"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "ঢাকা উত্তর সিটি কর্পোরেশন",
@@ -6863,7 +7086,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-54",
                 "nameEn": "Ward No-54"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "সাভার উপজেলা",
@@ -6889,7 +7113,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাংসার",
                 "nameEn": "সাংসার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধামরাই উপজেলা",
@@ -6911,7 +7136,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুয়াপুর",
                 "nameEn": "সুয়াপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দোহার উপজেলা",
@@ -6937,7 +7163,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তেঘরিয়া",
                 "nameEn": "তেঘরিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কেরানীগঞ্জ উপজেলা",
@@ -6955,7 +7182,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালাকোপা",
                 "nameEn": "কালাকোপা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নবাবগঞ্জ উপজেলা",
@@ -6985,7 +7213,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তেঁতুলঝরা",
                 "nameEn": "তেঁতুলঝরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Savar পৌরসভা",
@@ -7027,7 +7256,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dhamrai পৌরসভা",
@@ -7069,7 +7299,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Keraniganj পৌরসভা",
@@ -7111,7 +7342,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nawabganj পৌরসভা",
@@ -7153,7 +7385,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dohar পৌরসভা",
@@ -7195,7 +7428,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -7267,7 +7501,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-15",
                 "nameEn": "Ward No-15"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ফরিদপুর সদর উপজেলা",
@@ -7289,7 +7524,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তাগরবন্দ",
                 "nameEn": "তাগরবন্দ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বোয়ালমারী উপজেলা",
@@ -7311,7 +7547,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কদমবাড়ী",
                 "nameEn": "কদমবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আলফাডাঙ্গা উপজেলা",
@@ -7333,7 +7570,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রূপাপাত",
                 "nameEn": "রূপাপাত"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মধুখালী উপজেলা",
@@ -7347,7 +7585,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরনয়ানগর",
                 "nameEn": "চরনয়ানগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভাঙ্গা উপজেলা",
@@ -7365,7 +7604,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঢাকা-বারিশাল মহাসড়ক",
                 "nameEn": "ঢাকা-বারিশাল মহাসড়ক"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নগরকান্দা উপজেলা",
@@ -7383,7 +7623,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কামারখালী",
                 "nameEn": "কামারখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চরভদ্রাসন উপজেলা",
@@ -7405,7 +7646,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তালমা",
                 "nameEn": "তালমা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সদরপুর উপজেলা",
@@ -7427,7 +7669,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাদবরেড়",
                 "nameEn": "মাদবরেড়"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সালথা উপজেলা",
@@ -7445,7 +7688,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিলামচি",
                 "nameEn": "বিলামচি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bhanga পৌরসভা",
@@ -7487,7 +7731,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Boalmari পৌরসভা",
@@ -7529,7 +7774,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Madhukhali পৌরসভা",
@@ -7571,7 +7817,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nagarkanda পৌরসভা",
@@ -7613,7 +7860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sadarpur পৌরসভা",
@@ -7655,7 +7903,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -7895,7 +8144,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-57",
                 "nameEn": "Ward No-57"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "গাজীপুর সদর উপজেলা",
@@ -7913,7 +8163,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাস্তারবাড়ী",
                 "nameEn": "মাস্তারবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালিয়াকৈর উপজেলা",
@@ -7931,7 +8182,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চন্দ্রা",
                 "nameEn": "চন্দ্রা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
@@ -7941,7 +8193,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Kaliganj সদর",
                 "nameEn": "Kaliganj Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাপাসিয়া উপজেলা",
@@ -7963,7 +8216,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চান্দপুর",
                 "nameEn": "চান্দপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্রীপুর উপজেলা",
@@ -7973,7 +8227,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Sreepur সদর",
                 "nameEn": "Sreepur Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kaliakair পৌরসভা",
@@ -8015,7 +8270,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kaliganj পৌরসভা",
@@ -8057,7 +8313,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kapasia পৌরসভা",
@@ -8099,7 +8356,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sreepur পৌরসভা",
@@ -8141,7 +8399,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tongi পৌরসভা",
@@ -8183,7 +8442,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -8231,7 +8491,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "গোপালগঞ্জ সদর উপজেলা",
@@ -8253,7 +8514,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "উলপুর",
                 "nameEn": "উলপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মুকসুদপুর উপজেলা",
@@ -8271,7 +8533,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাজাইল",
                 "nameEn": "সাজাইল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাশিয়ানী উপজেলা",
@@ -8289,7 +8552,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাধাগঞ্জ",
                 "nameEn": "রাধাগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কোটালীপাড়া উপজেলা",
@@ -8311,7 +8575,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কান্দি",
                 "nameEn": "কান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "টুঙ্গিপাড়া উপজেলা",
@@ -8333,7 +8598,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বর্ণি",
                 "nameEn": "বর্ণি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kashiani পৌরসভা",
@@ -8375,7 +8641,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kotalipara পৌরসভা",
@@ -8417,7 +8684,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tungipara পৌরসভা",
@@ -8459,7 +8727,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Muksudpur পৌরসভা",
@@ -8501,7 +8770,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -8549,7 +8819,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "কিশোরগঞ্জ সদর উপজেলা",
@@ -8567,7 +8838,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালিকাপ্রসাদ",
                 "nameEn": "কালিকাপ্রসাদ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "অষ্টগ্রাম উপজেলা",
@@ -8589,7 +8861,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পোগলদিঘী",
                 "nameEn": "পোগলদিঘী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ইটনা উপজেলা",
@@ -8599,7 +8872,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভৈরব",
                 "nameEn": "ভৈরব"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "করিমগঞ্জ উপজেলা",
@@ -8617,7 +8891,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রতনপুর",
                 "nameEn": "রতনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কটিয়াদি উপজেলা",
@@ -8635,7 +8910,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রায়পুর",
                 "nameEn": "রায়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কুলিয়ারচর উপজেলা",
@@ -8653,7 +8929,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জাওয়ার",
                 "nameEn": "জাওয়ার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তাড়াইল উপজেলা",
@@ -8671,7 +8948,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ইছাপুরা",
                 "nameEn": "ইছাপুরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নিকলী উপজেলা",
@@ -8689,7 +8967,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চামড়াগাতি",
                 "nameEn": "চামড়াগাতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাকুন্দিয়া উপজেলা",
@@ -8707,7 +8986,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভৈরবপুর",
                 "nameEn": "ভৈরবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাজিতপুর উপজেলা",
@@ -8721,7 +9001,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঘোড়াউতরা",
                 "nameEn": "ঘোড়াউতরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভৈরব উপজেলা",
@@ -8739,7 +9020,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জাওয়ার",
                 "nameEn": "জাওয়ার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মিঠামইন উপজেলা",
@@ -8757,7 +9039,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "এগারসিন্ধুর",
                 "nameEn": "এগারসিন্ধুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হোসেনপুর উপজেলা",
@@ -8775,7 +9058,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোপদিঘী",
                 "nameEn": "গোপদিঘী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bhairab পৌরসভা",
@@ -8817,7 +9101,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bajitpur পৌরসভা",
@@ -8859,7 +9144,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kuliarchar পৌরসভা",
@@ -8901,7 +9187,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Pakundia পৌরসভা",
@@ -8943,7 +9230,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Hossainpur পৌরসভা",
@@ -8985,7 +9273,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Katiadi পৌরসভা",
@@ -9027,7 +9316,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -9075,7 +9365,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "মাদারীপুর সদর উপজেলা",
@@ -9097,7 +9388,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাহেবরামপুর",
                 "nameEn": "সাহেবরামপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শিবচর উপজেলা",
@@ -9115,7 +9407,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বারহামন্ডল",
                 "nameEn": "বারহামন্ডল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালকিনী উপজেলা",
@@ -9137,7 +9430,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাজৈর",
                 "nameEn": "রাজৈর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাজৈর উপজেলা",
@@ -9159,7 +9453,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বান্দেরকোলা",
                 "nameEn": "বান্দেরকোলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Rajoir পৌরসভা",
@@ -9201,7 +9496,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shibchar পৌরসভা",
@@ -9243,7 +9539,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalkini পৌরসভা",
@@ -9285,7 +9582,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -9333,7 +9631,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "মাদারীপুর সদর উপজেলা",
@@ -9359,7 +9658,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফুলতলা",
                 "nameEn": "ফুলতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মানিকগঞ্জ সদর উপজেলা",
@@ -9381,7 +9681,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কামরাইল",
                 "nameEn": "কামরাইল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঘিওর উপজেলা",
@@ -9399,7 +9700,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধনেশ্বরদি",
                 "nameEn": "ধনেশ্বরদি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দৌলতপুর উপজেলা",
@@ -9421,7 +9723,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাটিপাড়া",
                 "nameEn": "হাটিপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শিবালয় উপজেলা",
@@ -9439,7 +9742,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নিমতা",
                 "nameEn": "নিমতা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাটুরিয়া উপজেলা",
@@ -9457,7 +9761,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "উলাইল",
                 "nameEn": "উলাইল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সিঙ্গাইর উপজেলা",
@@ -9479,7 +9784,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জামশা",
                 "nameEn": "জামশা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হরিরামপুর উপজেলা",
@@ -9493,7 +9799,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুলতানপুর",
                 "nameEn": "সুলতানপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Singair পৌরসভা",
@@ -9535,7 +9842,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shibalaya পৌরসভা",
@@ -9577,7 +9885,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Saturia পৌরসভা",
@@ -9619,7 +9928,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Harirampur পৌরসভা",
@@ -9661,7 +9971,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ghior পৌরসভা",
@@ -9703,7 +10014,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Daulatpur পৌরসভা",
@@ -9745,7 +10057,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -9793,7 +10106,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "মুন্সিগঞ্জ সদর উপজেলা",
@@ -9815,7 +10129,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ইমামপুর",
                 "nameEn": "ইমামপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্রীনগর সদর উপজেলা",
@@ -9833,7 +10148,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মেদিনীমণ্ডল",
                 "nameEn": "মেদিনীমণ্ডল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সিরাজদীখান উপজেলা",
@@ -9855,7 +10171,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রামপাল",
                 "nameEn": "রামপাল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লৌহজং উপজেলা",
@@ -9877,7 +10194,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কলমা",
                 "nameEn": "কলমা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "টঙ্গীবাড়ী উপজেলা",
@@ -9899,7 +10217,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভাগ্যকুল",
                 "nameEn": "ভাগ্যকুল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গজারিয়া উপজেলা",
@@ -9921,7 +10240,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আব্দুল্লাপুর",
                 "nameEn": "আব্দুল্লাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Tongibari পৌরসভা",
@@ -9963,7 +10283,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sreenagar পৌরসভা",
@@ -10005,7 +10326,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sirajdikhan পৌরসভা",
@@ -10047,7 +10369,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gazaria পৌরসভা",
@@ -10089,7 +10412,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Lohajang পৌরসভা",
@@ -10131,7 +10455,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -10251,7 +10576,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-27",
                 "nameEn": "Ward No-27"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "আড়াইহাজার পৌরসভা",
@@ -10293,7 +10619,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বন্দর পৌরসভা",
@@ -10335,7 +10662,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "সোনারগাঁও পৌরসভা",
@@ -10377,7 +10705,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নারায়ণগঞ্জ সদর উপজেলা",
@@ -10399,7 +10728,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফতুল্লা",
                 "nameEn": "ফতুল্লা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বন্দর উপজেলা",
@@ -10409,7 +10739,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বন্দর",
                 "nameEn": "বন্দর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আড়াইহাজার উপজেলা",
@@ -10419,7 +10750,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নারায়ণগঞ্জ সদর",
                 "nameEn": "নারায়ণগঞ্জ সদর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রূপগঞ্জ উপজেলা",
@@ -10441,7 +10773,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাঞ্চন",
                 "nameEn": "কাঞ্চন"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সোনারগাঁও উপজেলা",
@@ -10463,7 +10796,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোগরাপাড়া",
                 "nameEn": "মোগরাপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Araihazar পৌরসভা",
@@ -10505,7 +10839,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bandar পৌরসভা",
@@ -10547,7 +10882,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sonargaon পৌরসভা",
@@ -10589,7 +10925,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Rupganj পৌরসভা",
@@ -10631,7 +10968,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -10679,7 +11017,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নরসিংদী সদর উপজেলা",
@@ -10697,7 +11036,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নরসিংদী",
                 "nameEn": "নরসিংদী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বেলাবো উপজেলা",
@@ -10715,7 +11055,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মালিজোড়া",
                 "nameEn": "মালিজোড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শিবপুর উপজেলা",
@@ -10729,7 +11070,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "করিমপুর",
                 "nameEn": "করিমপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মনোহরদী উপজেলা",
@@ -10747,7 +11089,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গজারিয়া",
                 "nameEn": "গজারিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রায়পুরা উপজেলা",
@@ -10765,7 +11108,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুসাপুর",
                 "nameEn": "মুসাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পলাশ উপজেলা",
@@ -10783,7 +11127,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাদেকপুর",
                 "nameEn": "সাদেকপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -10831,7 +11176,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "রাজবাড়ি সদর উপজেলা",
@@ -10853,7 +11199,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জামালপুর",
                 "nameEn": "জামালপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোয়ালন্দ উপজেলা",
@@ -10867,7 +11214,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ডৌলতদিয়া",
                 "nameEn": "ডৌলতদিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাংশা উপজেলা",
@@ -10885,7 +11233,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাজবাড়ী",
                 "nameEn": "মাজবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বালিয়াকান্দি উপজেলা",
@@ -10907,7 +11256,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কৃষ্ণপুর",
                 "nameEn": "কৃষ্ণপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালুখালী উপজেলা",
@@ -10925,7 +11275,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বসন্তপুর",
                 "nameEn": "বসন্তপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Goalanda পৌরসভা",
@@ -10967,7 +11318,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Pangsha পৌরসভা",
@@ -11009,7 +11361,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Baliakandi পৌরসভা",
@@ -11051,7 +11404,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalukhali পৌরসভা",
@@ -11093,7 +11447,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -11141,7 +11496,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "শরিয়তপুর সদর উপজেলা",
@@ -11159,7 +11515,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাচিপুর",
                 "nameEn": "কাচিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ডামুড্যা উপজেলা",
@@ -11173,7 +11530,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সিরাজপুর",
                 "nameEn": "সিরাজপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নড়িয়া উপজেলা",
@@ -11187,7 +11545,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ইদিলপুর",
                 "nameEn": "ইদিলপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভেদরগঞ্জ উপজেলা",
@@ -11205,7 +11564,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুন্ডেরচর",
                 "nameEn": "কুন্ডেরচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জাজিরা উপজেলা",
@@ -11223,7 +11583,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সখীপুর",
                 "nameEn": "সখীপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোসাইরহাট উপজেলা",
@@ -11241,7 +11602,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মহিষারা",
                 "nameEn": "মহিষারা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Gosairhat পৌরসভা",
@@ -11283,7 +11645,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Naria পৌরসভা",
@@ -11325,7 +11688,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Zanjira পৌরসভা",
@@ -11367,7 +11731,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bhedarganj পৌরসভা",
@@ -11409,7 +11774,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Damudya পৌরসভা",
@@ -11451,7 +11817,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -11523,7 +11890,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-15",
                 "nameEn": "Ward No-15"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "টাঙ্গাইল সদর উপজেলা",
@@ -11541,7 +11909,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাশিল",
                 "nameEn": "কাশিল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালিহাতি উপজেলা",
@@ -11559,7 +11928,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফলদা",
                 "nameEn": "ফলদা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঘাটাইল উপজেলা",
@@ -11577,7 +11947,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আটিয়া",
                 "nameEn": "আটিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাসাইল উপজেলা",
@@ -11595,7 +11966,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুশুদ্দি",
                 "nameEn": "মুশুদ্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোপালপুর উপজেলা",
@@ -11617,7 +11989,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রশিদপুর",
                 "nameEn": "রশিদপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মির্জাপুর উপজেলা",
@@ -11631,7 +12004,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাদিরা",
                 "nameEn": "হাদিরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভূঞাপুর উপজেলা",
@@ -11653,7 +12027,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শহজানী",
                 "nameEn": "শহজানী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাগরপুর উপজেলা",
@@ -11675,7 +12050,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মীরজাপুর",
                 "nameEn": "মীরজাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মধুপুর উপজেলা",
@@ -11689,7 +12065,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ারী",
                 "nameEn": "ওয়ারী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সখিপুর উপজেলা",
@@ -11707,7 +12084,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধুবড়িয়া",
                 "nameEn": "ধুবড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দেলদুয়ার উপজেলা",
@@ -11721,7 +12099,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাকড়াজান",
                 "nameEn": "কাকড়াজান"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধনবাড়ী উপজেলা",
@@ -11739,7 +12118,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঠেগারপুর",
                 "nameEn": "ঠেগারপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Mirzapur পৌরসভা",
@@ -11781,7 +12161,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gopalpur পৌরসভা",
@@ -11823,7 +12204,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sakhipur পৌরসভা",
@@ -11865,7 +12247,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Madhupur পৌরসভা",
@@ -11907,7 +12290,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ghatail পৌরসভা",
@@ -11949,7 +12333,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalihati পৌরসভা",
@@ -11991,7 +12376,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nagarpur পৌরসভা",
@@ -12033,7 +12419,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Basail পৌরসভা",
@@ -12075,7 +12462,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Delduar পৌরসভা",
@@ -12117,7 +12505,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bhuapur পৌরসভা",
@@ -12159,7 +12548,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dhanbari পৌরসভা",
@@ -12201,7 +12591,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Elenga পৌরসভা",
@@ -12243,7 +12634,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -12297,7 +12689,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বরগুনা সদর",
@@ -12319,7 +12712,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চাওরা",
                 "nameEn": "চাওরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আমতলী",
@@ -12337,7 +12731,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ডাউকাঠি",
                 "nameEn": "ডাউকাঠি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বেতাগী",
@@ -12359,7 +12754,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফুলঝুরি",
                 "nameEn": "ফুলঝুরি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বামনা",
@@ -12377,7 +12773,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুড়িরচর",
                 "nameEn": "বুড়িরচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাথরঘাটা",
@@ -12399,7 +12796,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গুলিশাখালী",
                 "nameEn": "গুলিশাখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তালতলী",
@@ -12417,7 +12815,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নিশানবাড়িয়া",
                 "nameEn": "নিশানবাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Amtali পৌরসভা",
@@ -12459,7 +12858,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Betagi পৌরসভা",
@@ -12501,7 +12901,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bamna পৌরসভা",
@@ -12543,7 +12944,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Patharghata পৌরসভা",
@@ -12585,7 +12987,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -12717,7 +13120,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-30",
                 "nameEn": "Ward No-30"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "বরিশাল সদর",
@@ -12739,7 +13143,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরকাউয়া",
                 "nameEn": "চরকাউয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গৌরনদী",
@@ -12761,7 +13166,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরআমদ্দি",
                 "nameEn": "চরআমদ্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মুলাদী",
@@ -12783,7 +13189,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সফিপুর",
                 "nameEn": "সফিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মেহেন্দিগঞ্জ",
@@ -12805,7 +13212,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিদ্যানন্দকাটি",
                 "nameEn": "বিদ্যানন্দকাটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাবুগঞ্জ",
@@ -12827,7 +13235,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাধবকাটি",
                 "nameEn": "মাধবকাটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হিজলা",
@@ -12849,7 +13258,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মেহেন্দীগঞ্জ",
                 "nameEn": "মেহেন্দীগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "উজিরপুর",
@@ -12867,7 +13277,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাতলা",
                 "nameEn": "সাতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাকেরগঞ্জ",
@@ -12889,7 +13300,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দাড়িয়ালচর",
                 "nameEn": "দাড়িয়ালচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আগৈলঝাড়া",
@@ -12911,7 +13323,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রত্নপুর",
                 "nameEn": "রত্নপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বানারীপাড়া",
@@ -12933,7 +13346,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চাখার",
                 "nameEn": "চাখার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bakerganj পৌরসভা",
@@ -12975,7 +13389,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Babuganj পৌরসভা",
@@ -13017,7 +13432,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Banaripara পৌরসভা",
@@ -13059,7 +13475,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gournadi পৌরসভা",
@@ -13101,7 +13518,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Agailjhara পৌরসভা",
@@ -13143,7 +13561,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Muladi পৌরসভা",
@@ -13185,7 +13604,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mehendiganj পৌরসভা",
@@ -13227,7 +13647,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Hizla পৌরসভা",
@@ -13269,7 +13690,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Wazirpur পৌরসভা",
@@ -13311,7 +13733,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -13359,7 +13782,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ভোলা সদর",
@@ -13381,7 +13805,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দেনায়েতপুর",
                 "nameEn": "দেনায়েতপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বোরহান উদ্দিন",
@@ -13399,7 +13824,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আশ্বাদনগর",
                 "nameEn": "আশ্বাদনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দৌলতখান",
@@ -13421,7 +13847,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরখলিফা",
                 "nameEn": "চরখলিফা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লালমোহন",
@@ -13443,7 +13870,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাতারহাট",
                 "nameEn": "পাতারহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তজুমদ্দিন",
@@ -13457,7 +13885,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাকুচিয়া",
                 "nameEn": "সাকুচিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চরফ্যাশন",
@@ -13475,7 +13904,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শশীভূষণ",
                 "nameEn": "শশীভূষণ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মনপুরা",
@@ -13489,7 +13919,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাকুচিয়া",
                 "nameEn": "সাকুচিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Borhanuddin পৌরসভা",
@@ -13531,7 +13962,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Charfassion পৌরসভা",
@@ -13573,7 +14005,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Daulatkhan পৌরসভা",
@@ -13615,7 +14048,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Lalmohan পৌরসভা",
@@ -13657,7 +14091,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tazumuddin পৌরসভা",
@@ -13699,7 +14134,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Manpura পৌরসভা",
@@ -13741,7 +14177,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -13789,7 +14226,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ঝালকাঠি সদর উপজেলা",
@@ -13807,7 +14245,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শশীভূষণ",
                 "nameEn": "শশীভূষণ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাঁঠালিয়া উপজেলা",
@@ -13825,7 +14264,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গাবখান",
                 "nameEn": "গাবখান"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নলছিটি উপজেলা",
@@ -13847,7 +14287,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আমুয়া",
                 "nameEn": "আমুয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাজাপুর উপজেলা",
@@ -13869,7 +14310,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দামোদর",
                 "nameEn": "দামোদর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Kathalia পৌরসভা",
@@ -13911,7 +14353,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nalchity পৌরসভা",
@@ -13953,7 +14396,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Rajapur পৌরসভা",
@@ -13995,7 +14439,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -14043,7 +14488,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "পটুয়াখালী সদর উপজেলা",
@@ -14065,7 +14511,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কেশবপুর",
                 "nameEn": "কেশবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাউফল উপজেলা",
@@ -14083,7 +14530,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরহরিণা",
                 "nameEn": "চরহরিণা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দশমিনা উপজেলা",
@@ -14101,7 +14549,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুরাদিয়া",
                 "nameEn": "মুরাদিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গলাচিপা উপজেলা",
@@ -14123,7 +14572,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পানপট্টি",
                 "nameEn": "পানপট্টি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কলাপাড়া উপজেলা",
@@ -14145,7 +14595,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লতাচাপলী",
                 "nameEn": "লতাচাপলী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মির্জাগঞ্জ উপজেলা",
@@ -14159,7 +14610,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাদারবুনিয়া",
                 "nameEn": "মাদারবুনিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দুমকি উপজেলা",
@@ -14181,7 +14633,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মির্জাগঞ্জ",
                 "nameEn": "মির্জাগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাঙ্গাবালী উপজেলা",
@@ -14199,7 +14652,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চরসাপেলা",
                 "nameEn": "চরসাপেলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Galachipa পৌরসভা",
@@ -14241,7 +14695,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dashmina পৌরসভা",
@@ -14283,7 +14738,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalapara পৌরসভা",
@@ -14325,7 +14781,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mirzaganj পৌরসভা",
@@ -14367,7 +14824,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dumki পৌরসভা",
@@ -14409,7 +14867,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bauphal পৌরসভা",
@@ -14451,7 +14910,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Rangabali পৌরসভা",
@@ -14493,7 +14953,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -14541,7 +15002,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ভান্ডারিয়া উপজেলা",
@@ -14563,7 +15025,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধোপাখালী",
                 "nameEn": "ধোপাখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাউখালী উপজেলা",
@@ -14581,7 +15044,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শিয়ালকাঠি",
                 "nameEn": "শিয়ালকাঠি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মঠবাড়িয়া উপজেলা",
@@ -14599,7 +15063,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গুলিশাখালী",
                 "nameEn": "গুলিশাখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাজিরপুর উপজেলা",
@@ -14621,7 +15086,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মালিখালী",
                 "nameEn": "মালিখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পিরোজপুর সদর উপজেলা",
@@ -14643,7 +15109,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বারোইপাড়া",
                 "nameEn": "বারোইপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নেছারাবাদ উপজেলা",
@@ -14665,7 +15132,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কদমতলা",
                 "nameEn": "কদমতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ইন্দুরকানী উপজেলা",
@@ -14683,7 +15151,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দুর্গাপাশা",
                 "nameEn": "দুর্গাপাশা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bhandaria পৌরসভা",
@@ -14725,7 +15194,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kawkhali পৌরসভা",
@@ -14767,7 +15237,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mathbaria পৌরসভা",
@@ -14809,7 +15280,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nazirpur পৌরসভা",
@@ -14851,7 +15323,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nesarabad পৌরসভা",
@@ -14893,7 +15366,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Indurkani পৌরসভা",
@@ -14935,7 +15409,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -14989,7 +15464,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "জামালপুর সদর উপজেলা",
@@ -15007,7 +15483,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রানাগাছা",
                 "nameEn": "রানাগাছা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বকশীগঞ্জ উপজেলা",
@@ -15021,7 +15498,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মেরুরচর",
                 "nameEn": "মেরুরচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দেওয়ানগঞ্জ উপজেলা",
@@ -15035,7 +15513,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাহাদুরাবাদ",
                 "nameEn": "বাহাদুরাবাদ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ইসলামপুর উপজেলা",
@@ -15049,7 +15528,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গৈরহাটা",
                 "nameEn": "গৈরহাটা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মাদারগঞ্জ উপজেলা",
@@ -15063,7 +15543,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গুনারীতলা",
                 "nameEn": "গুনারীতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মেলান্দহ উপজেলা",
@@ -15077,7 +15558,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নান্দিনা",
                 "nameEn": "নান্দিনা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সরিষাবাড়ি উপজেলা",
@@ -15091,7 +15573,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পিংনা",
                 "nameEn": "পিংনা"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -15187,7 +15670,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-21",
                 "nameEn": "Ward No-21"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "ময়মনসিংহ সদর",
@@ -15197,7 +15681,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ময়মনসিংহ সদর সদর",
                 "nameEn": "ময়মনসিংহ সদর Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলবাড়িয়া",
@@ -15207,7 +15692,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফুলবাড়িয়া সদর",
                 "nameEn": "ফুলবাড়িয়া Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ত্রিশাল",
@@ -15225,7 +15711,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বলিপাড়া",
                 "nameEn": "বলিপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভালুকা",
@@ -15239,7 +15726,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাজৈ",
                 "nameEn": "রাজৈ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মুক্তাগাছা",
@@ -15253,7 +15741,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মানকোণা",
                 "nameEn": "মানকোণা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধোবাউড়া",
@@ -15263,7 +15752,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধোবাউড়া সদর",
                 "nameEn": "ধোবাউড়া Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলপুর",
@@ -15277,7 +15767,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বৈরাটী",
                 "nameEn": "বৈরাটী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হালুয়াঘাট",
@@ -15287,7 +15778,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হালুয়াঘাট সদর",
                 "nameEn": "হালুয়াঘাট Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গৌরীপুর",
@@ -15301,7 +15793,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শিবগঞ্জ",
                 "nameEn": "শিবগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গফরগাঁও",
@@ -15315,7 +15808,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দুর্গাপুর",
                 "nameEn": "দুর্গাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঈশ্বরগঞ্জ",
@@ -15329,7 +15823,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সোহাগী",
                 "nameEn": "সোহাগী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নান্দাইল",
@@ -15343,7 +15838,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুসুল্লী",
                 "nameEn": "মুসুল্লী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তারাকান্দা",
@@ -15357,7 +15853,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাকনী",
                 "nameEn": "কাকনী"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -15405,7 +15902,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নেত্রকোনা সদর",
@@ -15419,7 +15917,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুক্তিজোধা",
                 "nameEn": "মুক্তিজোধা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আটপাড়া",
@@ -15433,7 +15932,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চান্দগাজী",
                 "nameEn": "চান্দগাজী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বারহাট্টা",
@@ -15447,7 +15947,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চিলারচর",
                 "nameEn": "চিলারচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দুর্গাপুর",
@@ -15461,7 +15962,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিরিশিরি",
                 "nameEn": "বিরিশিরি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "খালিয়াজুড়ি",
@@ -15475,7 +15977,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মেনকীফান্দি",
                 "nameEn": "মেনকীফান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কলমাকান্দা",
@@ -15489,7 +15992,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খর্ণিয়া",
                 "nameEn": "খর্ণিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কেন্দুয়া",
@@ -15503,7 +16007,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মশিয়ালহাটি",
                 "nameEn": "মশিয়ালহাটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মদন",
@@ -15517,7 +16022,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চন্দ্রনগর",
                 "nameEn": "চন্দ্রনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোহনগঞ্জ",
@@ -15531,7 +16037,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গাগলাজুর",
                 "nameEn": "গাগলাজুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পূর্বধলা",
@@ -15545,7 +16052,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিরাটী",
                 "nameEn": "বিরাটী"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -15593,7 +16101,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "শেরপুর সদর",
@@ -15607,7 +16116,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খরমপুর",
                 "nameEn": "খরমপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঝিনাইগাতী",
@@ -15621,7 +16131,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাতিবান্দা",
                 "nameEn": "হাতিবান্দা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নকলা",
@@ -15635,7 +16146,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গণেশপুর",
                 "nameEn": "গণেশপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নালিতাবাড়ী",
@@ -15649,7 +16161,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কলমাকান্দা",
                 "nameEn": "কলমাকান্দা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্রীবরদী",
@@ -15663,7 +16176,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রঘুনাথপুর",
                 "nameEn": "রঘুনাথপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       }
@@ -15729,7 +16243,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-12",
                 "nameEn": "Ward No-12"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "দিনাজপুর সদর",
@@ -15743,7 +16258,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কালোরহাট",
                 "nameEn": "কালোরহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিরামপুর",
@@ -15761,7 +16277,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোহনপুর",
                 "nameEn": "মোহনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বীরগঞ্জ",
@@ -15779,7 +16296,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফুলবাড়ী",
                 "nameEn": "ফুলবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বোচাগঞ্জ",
@@ -15797,7 +16315,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোবিন্দপুর",
                 "nameEn": "গোবিন্দপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলবাড়ী",
@@ -15815,7 +16334,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আউলিয়াপুর",
                 "nameEn": "আউলিয়াপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চিরিরবন্দর",
@@ -15833,7 +16353,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আউলিয়াপুর",
                 "nameEn": "আউলিয়াপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঘোড়াঘাট",
@@ -15851,7 +16372,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খয়েরবাড়ী",
                 "nameEn": "খয়েরবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাকিমপুর",
@@ -15869,7 +16391,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সিংড়া",
                 "nameEn": "সিংড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাহারোল",
@@ -15887,7 +16410,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আনতাহার",
                 "nameEn": "আনতাহার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "খানসামা",
@@ -15905,7 +16429,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মুন্সীপাড়া",
                 "nameEn": "মুন্সীপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নবাবগঞ্জ",
@@ -15923,7 +16448,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভেলাবাড়ী",
                 "nameEn": "ভেলাবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পার্বতীপুর",
@@ -15933,7 +16459,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Nawabganj সদর",
                 "nameEn": "Nawabganj Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিরল",
@@ -15951,7 +16478,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোমিনপুর",
                 "nameEn": "মোমিনপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Birampur পৌরসভা",
@@ -15993,7 +16521,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Birganj পৌরসভা",
@@ -16035,7 +16564,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Biral পৌরসভা",
@@ -16077,7 +16607,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bochaganj পৌরসভা",
@@ -16119,7 +16650,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chirirbandar পৌরসভা",
@@ -16161,7 +16693,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Fulbari পৌরসভা",
@@ -16203,7 +16736,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ghoraghat পৌরসভা",
@@ -16245,7 +16779,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Hakimpur পৌরসভা",
@@ -16287,7 +16822,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kaharole পৌরসভা",
@@ -16329,7 +16865,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Khansama পৌরসভা",
@@ -16371,7 +16908,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nawabganj পৌরসভা",
@@ -16413,7 +16951,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Parbatipur পৌরসভা",
@@ -16455,7 +16994,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -16503,7 +17043,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "লক্ষ্মীপুর উপজেলা",
@@ -16561,7 +17102,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোল্লারচর",
                 "nameEn": "মোল্লারচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলছড়ি উপজেলা",
@@ -16595,7 +17137,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফজলুপুর",
                 "nameEn": "ফজলুপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোবিন্দগঞ্জ উপজেলা",
@@ -16669,7 +17212,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শালমারা",
                 "nameEn": "শালমারা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পলাশবাড়ী উপজেলা",
@@ -16711,7 +17255,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হরিনাথপুর",
                 "nameEn": "হরিনাথপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাদুল্লাপুর উপজেলা",
@@ -16761,7 +17306,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খোর্দ্দকোমরপুর",
                 "nameEn": "খোর্দ্দকোমরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাঘাটা উপজেলা",
@@ -16807,7 +17353,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বোনারপাড়া",
                 "nameEn": "বোনারপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সুন্দরগঞ্জ উপজেলা",
@@ -16873,7 +17420,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হরিপুর",
                 "nameEn": "হরিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Fulchhari পৌরসভা",
@@ -16915,7 +17463,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gobindaganj পৌরসভা",
@@ -16957,7 +17506,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Palashbari পৌরসভা",
@@ -16999,7 +17549,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sadullapur পৌরসভা",
@@ -17041,7 +17592,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Saghata পৌরসভা",
@@ -17083,7 +17635,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sundarganj পৌরসভা",
@@ -17125,7 +17678,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -17173,7 +17727,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "কুড়িগ্রাম সদর উপজেলা",
@@ -17211,7 +17766,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হোলাখানা",
                 "nameEn": "হোলাখানা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "উলিপুর উপজেলা",
@@ -17269,7 +17825,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "থেতরাই ইউনিয়ন",
                 "nameEn": "থেতরাই"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চর রাজিবপুর",
@@ -17287,7 +17844,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোহনগঞ্জ ইউনিয়ন",
                 "nameEn": "মোহনগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চিলমারী উপজেলা",
@@ -17317,7 +17875,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাণীগঞ্জ ইউনিয়ন",
                 "nameEn": "রাণীগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাগেশ্বরী উপজেলা",
@@ -17379,7 +17938,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নারায়ণপুর ইউনিয়ন",
                 "nameEn": "নারায়ণপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফুলবাড়ী উপজেলা",
@@ -17409,7 +17969,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শিমুলবাড়ী ইউনিয়ন",
                 "nameEn": "শিমুলবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভুরুঙ্গামারী উপজেলা",
@@ -17455,7 +18016,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বঙ্গসোনাহাট ইউনিয়ন",
                 "nameEn": "বঙ্গসোনাহাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাজারহাট উপজেলা",
@@ -17489,7 +18051,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নজিমখাঁন ইউনিয়ন",
                 "nameEn": "নজিমখাঁন"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রৌমারী উপজেলা",
@@ -17519,7 +18082,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চর শৌলমারী ইউনিয়ন",
                 "nameEn": "চর শৌলমারী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bhurungamari পৌরসভা",
@@ -17561,7 +18125,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Char Rajibpur পৌরসভা",
@@ -17603,7 +18168,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chilmari পৌরসভা",
@@ -17645,7 +18211,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nageshwari পৌরসভা",
@@ -17687,7 +18254,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Phulbari পৌরসভা",
@@ -17729,7 +18297,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Rajarhat পৌরসভা",
@@ -17771,7 +18340,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Raumari পৌরসভা",
@@ -17813,7 +18383,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ulipur পৌরসভা",
@@ -17855,7 +18426,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -17903,7 +18475,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "লালমনিরহাট সদর উপজেলা",
@@ -17945,7 +18518,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বড়বাড়ি",
                 "nameEn": "বড়বাড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আদিতমারী উপজেলা",
@@ -17983,7 +18557,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শরপুকুর",
                 "nameEn": "শরপুকুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালীগঞ্জ উপজেলা",
@@ -18021,7 +18596,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মদাতি",
                 "nameEn": "মদাতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাটগ্রাম উপজেলা",
@@ -18059,7 +18635,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুড়িমারী",
                 "nameEn": "বুড়িমারী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হাতীবান্ধা উপজেলা",
@@ -18113,7 +18690,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফকিরপাড়া",
                 "nameEn": "ফকিরপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Aditmari পৌরসভা",
@@ -18155,7 +18733,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Hatibandha পৌরসভা",
@@ -18197,7 +18776,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kaliganj পৌরসভা",
@@ -18239,7 +18819,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Patgram পৌরসভা",
@@ -18281,7 +18862,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -18329,7 +18911,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নীলফামারী সদর উপজেলা",
@@ -18395,7 +18978,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লক্ষীচাপ",
                 "nameEn": "লক্ষীচাপ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ডোমার উপজেলা",
@@ -18441,7 +19025,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোমনাতি",
                 "nameEn": "গোমনাতি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ডিমলা উপজেলা",
@@ -18487,7 +19072,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পূর্ব ছাতনাই",
                 "nameEn": "পূর্ব ছাতনাই"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জলঢাকা উপজেলা",
@@ -18537,7 +19123,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কৈমারী",
                 "nameEn": "কৈমারী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কিশোরগঞ্জ উপজেলা",
@@ -18579,7 +19166,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাগুরা",
                 "nameEn": "মাগুরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সৈয়দপুর উপজেলা",
@@ -18605,7 +19193,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খাতামধুপুর",
                 "nameEn": "খাতামধুপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Dimla পৌরসভা",
@@ -18647,7 +19236,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Domar পৌরসভা",
@@ -18689,7 +19279,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Jaldhaka পৌরসভা",
@@ -18731,7 +19322,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kishoreganj পৌরসভা",
@@ -18773,7 +19365,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Saidpur পৌরসভা",
@@ -18815,7 +19408,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -18863,7 +19457,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "পঞ্চগড় সদর উপজেলা",
@@ -18909,7 +19504,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গরিনাবাড়ী",
                 "nameEn": "গরিনাবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দেবীগঞ্জ উপজেলা",
@@ -18955,7 +19551,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চেংঠী হাজরাডাঙ্গা",
                 "nameEn": "চেংঠী হাজরাডাঙ্গা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তেতুলিয়া উপজেলা",
@@ -18989,7 +19586,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দেবনগর",
                 "nameEn": "দেবনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আটোয়ারী উপজেলা",
@@ -19019,7 +19617,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধামোর",
                 "nameEn": "ধামোর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বোদা উপজেলা",
@@ -19065,7 +19664,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাঁচপীর",
                 "nameEn": "পাঁচপীর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Atwari পৌরসভা",
@@ -19107,7 +19707,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Boda পৌরসভা",
@@ -19149,7 +19750,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Debiganj পৌরসভা",
@@ -19191,7 +19793,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tetulia পৌরসভা",
@@ -19233,7 +19836,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -19377,7 +19981,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-33",
                 "nameEn": "Ward No-33"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "রংপুর সদর উপজেলা",
@@ -19403,7 +20008,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খলেয়া",
                 "nameEn": "খলেয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বদরগঞ্জ উপজেলা",
@@ -19449,7 +20055,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লোহানীপাড়া",
                 "nameEn": "লোহানীপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গংগাচড়া উপজেলা",
@@ -19495,7 +20102,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নোহালী",
                 "nameEn": "নোহালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাউনিয়া উপজেলা",
@@ -19525,7 +20133,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "টেপামধুপুর",
                 "nameEn": "টেপামধুপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মিঠাপুকুর উপজেলা",
@@ -19599,7 +20208,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লতিফপুর",
                 "nameEn": "লতিফপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পীরগাছা উপজেলা",
@@ -19641,7 +20251,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কান্দি ইউনিয়ন",
                 "nameEn": "কান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পীরগাছা উপজেলা",
@@ -19707,7 +20318,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাবিলপুর ইউনিয়ন",
                 "nameEn": "কাবিলপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তারাগঞ্জ উপজেলা",
@@ -19733,7 +20345,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সয়ার",
                 "nameEn": "সয়ার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Badarganj পৌরসভা",
@@ -19775,7 +20388,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gangachara পৌরসভা",
@@ -19817,7 +20431,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kaunia পৌরসভা",
@@ -19859,7 +20474,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mithapukur পৌরসভা",
@@ -19901,7 +20517,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Pirgachha পৌরসভা",
@@ -19943,7 +20560,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Pirganj পৌরসভা",
@@ -19985,7 +20603,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Taraganj পৌরসভা",
@@ -20027,7 +20646,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -20075,7 +20695,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "ঠাকুরগাঁও সদর উপজেলা",
@@ -20165,7 +20786,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঢোলার হাট",
                 "nameEn": "ঢোলার হাট"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পীরগঞ্জ উপজেলা",
@@ -20211,7 +20833,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বৈরচুনা",
                 "nameEn": "বৈরচুনা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বালিয়াডাঙ্গী উপজেলা",
@@ -20249,7 +20872,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বড়বাড়ি ইউনিয়ন",
                 "nameEn": "বড়বাড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রানীশংকৈল উপজেলা",
@@ -20287,7 +20911,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নন্দুয়ার ইউনিয়ন",
                 "nameEn": "নন্দুয়ার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "হরিপুর উপজেলা",
@@ -20317,7 +20942,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভাতুরিয়া ইউনিয়ন",
                 "nameEn": "ভাতুরিয়া ইউনিয়ন"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Baliadangi পৌরসভা",
@@ -20359,7 +20985,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Haripur পৌরসভা",
@@ -20401,7 +21028,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Pirganj পৌরসভা",
@@ -20443,7 +21071,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ranisankail পৌরসভা",
@@ -20485,7 +21114,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -20587,7 +21217,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-21",
                 "nameEn": "Ward No-21"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "বগুড়া সদর",
@@ -20605,7 +21236,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নশরতপুর",
                 "nameEn": "নশরতপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আদমদিঘী",
@@ -20623,7 +21255,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সেউজগাড়ী",
                 "nameEn": "সেউজগাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধুনট",
@@ -20637,7 +21270,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোসাইবাড়ী",
                 "nameEn": "গোসাইবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধুপচাঁচিয়া",
@@ -20651,7 +21285,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তালোড়া",
                 "nameEn": "তালোড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গাবতলী",
@@ -20669,7 +21304,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মহাস্থানগড়",
                 "nameEn": "মহাস্থানগড়"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাহালু",
@@ -20687,7 +21323,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাম্মামকুণ্ড",
                 "nameEn": "হাম্মামকুণ্ড"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নন্দীগ্রাম",
@@ -20705,7 +21342,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভাদুরিয়া",
                 "nameEn": "ভাদুরিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সারিয়াকান্দি",
@@ -20723,7 +21361,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুতুবপুর",
                 "nameEn": "কুতুবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শেরপুর",
@@ -20737,7 +21376,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আমরুল",
                 "nameEn": "আমরুল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শিবগঞ্জ",
@@ -20751,7 +21391,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "খামারকান্দি",
                 "nameEn": "খামারকান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সোনাতলা",
@@ -20765,7 +21406,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মোকামতলা",
                 "nameEn": "মোকামতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শাজাহানপুর",
@@ -20783,7 +21425,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাকুল্লা",
                 "nameEn": "পাকুল্লা"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -20831,7 +21474,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "চাঁপাইনবাবগঞ্জ সদর",
@@ -20849,7 +21493,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জামবাড়িয়া",
                 "nameEn": "জামবাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোমস্তাপুর",
@@ -20863,7 +21508,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাধানগর",
                 "nameEn": "রাধানগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শিবগঞ্জ",
@@ -20877,7 +21523,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নেজামপুর",
                 "nameEn": "নেজামপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নাচোল",
@@ -20895,7 +21542,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোমতানগর",
                 "nameEn": "গোমতানগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভোলাহাট",
@@ -20905,7 +21553,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "Shibganj সদর",
                 "nameEn": "Shibganj Sadar"
               }
-            ]
+            ],
+            "type": "upazila"
           }
         ]
       },
@@ -20953,7 +21602,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "জয়পুরহাট সদর",
@@ -20971,7 +21621,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রায়পুর",
                 "nameEn": "রায়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পাঁচবিবি",
@@ -20989,7 +21640,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধলাহারা",
                 "nameEn": "ধলাহারা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কালাই",
@@ -21007,7 +21659,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাধবপুর",
                 "nameEn": "মাধবপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ক্ষেতলাল",
@@ -21025,7 +21678,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মামুদপুর",
                 "nameEn": "মামুদপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আক্কেলপুর",
@@ -21043,7 +21697,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুসুম্বা",
                 "nameEn": "কুসুম্বা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Akkelpur পৌরসভা",
@@ -21085,7 +21740,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kalai পৌরসভা",
@@ -21127,7 +21783,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Khetlal পৌরসভা",
@@ -21169,7 +21826,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Panchbibi পৌরসভা",
@@ -21211,7 +21869,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -21259,7 +21918,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নওগাঁ সদর",
@@ -21277,7 +21937,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বাণগ্রাম",
                 "nameEn": "বাণগ্রাম"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পত্নীতলা",
@@ -21291,7 +21952,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আধাইপুর",
                 "nameEn": "আধাইপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধামইরহাট",
@@ -21309,7 +21971,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আড়ানগর",
                 "nameEn": "আড়ানগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মহাদেবপুর",
@@ -21327,7 +21990,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "প্রাণপুর",
                 "nameEn": "প্রাণপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পরশা",
@@ -21345,7 +22009,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভীমপুর",
                 "nameEn": "ভীমপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাপাহার",
@@ -21363,7 +22028,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাসাইগাড়ী",
                 "nameEn": "হাসাইগাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বদলগাছী",
@@ -21381,7 +22047,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চাঁইপুর",
                 "nameEn": "চাঁইপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মান্দা",
@@ -21399,7 +22066,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মহিষলুটি",
                 "nameEn": "মহিষলুটি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নিয়ামতপুর",
@@ -21417,7 +22085,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পত্নীতলা",
                 "nameEn": "পত্নীতলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আত্রাই",
@@ -21435,7 +22104,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মহিপুর",
                 "nameEn": "মহিপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাণীনগর",
@@ -21449,7 +22119,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ঐতিহাসিক পাহাড়পুর",
                 "nameEn": "ঐতিহাসিক পাহাড়পুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Patnitala পৌরসভা",
@@ -21491,7 +22162,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sapahar পৌরসভা",
@@ -21533,7 +22205,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Porsha পৌরসভা",
@@ -21575,7 +22248,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dhamoirhat পৌরসভা",
@@ -21617,7 +22291,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Badalgachhi পৌরসভা",
@@ -21659,7 +22334,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Manda পৌরসভা",
@@ -21701,7 +22377,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Atrai পৌরসভা",
@@ -21743,7 +22420,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Raninagar পৌরসভা",
@@ -21785,7 +22463,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mahadebpur পৌরসভা",
@@ -21827,7 +22506,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Niamatpur পৌরসভা",
@@ -21869,7 +22549,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -21917,7 +22598,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "নাটোর সদর",
@@ -21935,7 +22617,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জামবাড়িয়া",
                 "nameEn": "জামবাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাগাতিপাড়া",
@@ -21953,7 +22636,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "জোনাইল",
                 "nameEn": "জোনাইল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বড়াইগ্রাম",
@@ -21971,7 +22655,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাঁচুপুর",
                 "nameEn": "পাঁচুপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গুরুদাসপুর",
@@ -21985,7 +22670,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "আরবাব",
                 "nameEn": "আরবাব"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লালপুর",
@@ -22003,7 +22689,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ময়দানদিঘী",
                 "nameEn": "ময়দানদিঘী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সিংড়া",
@@ -22021,7 +22708,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লক্ষ্মীকোল",
                 "nameEn": "লক্ষ্মীকোল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নলডাঙ্গা",
@@ -22043,7 +22731,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তাজপুর",
                 "nameEn": "তাজপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bagatipara পৌরসভা",
@@ -22085,7 +22774,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Baraigram পৌরসভা",
@@ -22127,7 +22817,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gurudaspur পৌরসভা",
@@ -22169,7 +22860,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Lalpur পৌরসভা",
@@ -22211,7 +22903,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Singra পৌরসভা",
@@ -22253,7 +22946,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -22325,7 +23019,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-15",
                 "nameEn": "Ward No-15"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "পাবনা সদর",
@@ -22339,7 +23034,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "একদন্ত",
                 "nameEn": "একদন্ত"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আটঘরিয়া",
@@ -22357,7 +23053,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধলারচর",
                 "nameEn": "ধলারচর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ঈশ্বরদী",
@@ -22375,7 +23072,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দিলপাশার",
                 "nameEn": "দিলপাশার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চাটমোহর",
@@ -22393,7 +23091,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মথুরাপুর",
                 "nameEn": "মথুরাপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফরিদপুর",
@@ -22407,7 +23106,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বিলমাড়িয়া",
                 "nameEn": "বিলমাড়িয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বেড়া",
@@ -22429,7 +23129,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাকশী",
                 "nameEn": "পাকশী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ভাঙ্গুড়া",
@@ -22447,7 +23148,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাটখালী",
                 "nameEn": "হাটখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সাঁথিয়া",
@@ -22465,7 +23167,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ধুলাউড়ি",
                 "nameEn": "ধুলাউড়ি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সুজানগর",
@@ -22483,7 +23186,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাগরকান্দি",
                 "nameEn": "সাগরকান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Atgharia পৌরসভা",
@@ -22525,7 +23229,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bera পৌরসভা",
@@ -22567,7 +23272,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bhangura পৌরসভা",
@@ -22609,7 +23315,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chatmohar পৌরসভা",
@@ -22651,7 +23358,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Faridpur পৌরসভা",
@@ -22693,7 +23401,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ishwardi পৌরসভা",
@@ -22735,7 +23444,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Santhia পৌরসভা",
@@ -22777,7 +23487,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sujanagar পৌরসভা",
@@ -22819,7 +23530,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -22951,7 +23663,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-30",
                 "nameEn": "Ward No-30"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "বাঘা",
@@ -22969,7 +23682,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মনিগ্রাম",
                 "nameEn": "মনিগ্রাম"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পুঠিয়া",
@@ -22991,7 +23705,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তাহেরপুর",
                 "nameEn": "তাহেরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "পবা",
@@ -23009,7 +23724,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভালুকগাছি",
                 "nameEn": "ভালুকগাছি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাগমারা",
@@ -23023,7 +23739,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গ্রামবাংলা",
                 "nameEn": "গ্রামবাংলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তানোর",
@@ -23045,7 +23762,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দেওপাড়া",
                 "nameEn": "দেওপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মোহনপুর",
@@ -23059,7 +23777,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নওহাটা",
                 "nameEn": "নওহাটা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চারঘাট",
@@ -23081,7 +23800,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নওদাপাড়া",
                 "nameEn": "নওদাপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোদাগাড়ী",
@@ -23099,7 +23819,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভারতখালী",
                 "nameEn": "ভারতখালী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দূর্গাপুর",
@@ -23117,7 +23838,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "তালন্দ",
                 "nameEn": "তালন্দ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Bagha পৌরসভা",
@@ -23159,7 +23881,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bagmara পৌরসভা",
@@ -23201,7 +23924,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Charghat পৌরসভা",
@@ -23243,7 +23967,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Durgapur পৌরসভা",
@@ -23285,7 +24010,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Godagari পৌরসভা",
@@ -23327,7 +24053,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Mohanpur পৌরসভা",
@@ -23369,7 +24096,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Paba পৌরসভা",
@@ -23411,7 +24139,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Puthia পৌরসভা",
@@ -23453,7 +24182,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tanore পৌরসভা",
@@ -23495,7 +24225,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -23567,7 +24298,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-15",
                 "nameEn": "Ward No-15"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "সিরাজগঞ্জ সদর",
@@ -23585,7 +24317,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দুবিলা",
                 "nameEn": "দুবিলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "উল্লাপাড়া",
@@ -23599,7 +24332,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "স্তম্ভপুর",
                 "nameEn": "স্তম্ভপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কাজীপুর",
@@ -23613,7 +24347,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শেরপুর",
                 "nameEn": "শেরপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কামারখন্দ",
@@ -23635,7 +24370,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "নাটুয়ারপাড়া",
                 "nameEn": "নাটুয়ারপাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চৌহালি",
@@ -23649,7 +24385,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সোনাখাড়া",
                 "nameEn": "সোনাখাড়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তাড়াশ",
@@ -23667,7 +24404,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পোতাজিয়া",
                 "nameEn": "পোতাজিয়া"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বেলকুচি",
@@ -23685,7 +24423,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রতনকান্দি",
                 "nameEn": "রতনকান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রায়গঞ্জ",
@@ -23703,7 +24442,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মাঝাইল",
                 "nameEn": "মাঝাইল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শাহজাদপুর",
@@ -23717,7 +24457,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সলঙ্গা",
                 "nameEn": "সলঙ্গা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Belkuchi পৌরসভা",
@@ -23759,7 +24500,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Chauhali পৌরসভা",
@@ -23801,7 +24543,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kamarkhanda পৌরসভা",
@@ -23843,7 +24586,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kazipur পৌরসভা",
@@ -23885,7 +24629,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Raiganj পৌরসভা",
@@ -23927,7 +24672,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shahjadpur পৌরসভা",
@@ -23969,7 +24715,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tarash পৌরসভা",
@@ -24011,7 +24758,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ullahpara পৌরসভা",
@@ -24053,7 +24801,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
@@ -24107,7 +24856,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "হবিগঞ্জ সদর উপজেলা",
@@ -24145,7 +24895,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লস্করপুর ইউনিয়ন",
                 "nameEn": "লস্করপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "আজমিরীগঞ্জ উপজেলা",
@@ -24171,7 +24922,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কাকাইলছেও ইউনিয়ন",
                 "nameEn": "কাকাইলছেও"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "চুনারুঘাট উপজেলা",
@@ -24217,7 +24969,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মিরাশী ইউনিয়ন",
                 "nameEn": "মিরাশী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "নবীগঞ্জ উপজেলা",
@@ -24275,7 +25028,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পানিউমদা ইউনিয়ন",
                 "nameEn": "পানিউমদা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বানিয়াচং উপজেলা",
@@ -24341,7 +25095,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পৈলারকান্দি ইউনিয়ন",
                 "nameEn": "পৈলারকান্দি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বাহুবল উপজেলা",
@@ -24375,7 +25130,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভাদেশ্বর ইউনিয়ন",
                 "nameEn": "ভাদেশ্বর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মাধবপুর উপজেলা",
@@ -24425,7 +25181,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুল্লা ইউনিয়ন",
                 "nameEn": "বুল্লা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "লাখাই উপজেলা",
@@ -24455,7 +25212,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বুল্লা ইউনিয়ন",
                 "nameEn": "বুল্লা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শায়েস্তাগঞ্জ উপজেলা",
@@ -24473,7 +25231,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ব্রাহ্মনডোরা ইউনিয়ন",
                 "nameEn": "ব্রাহ্মনডোরা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Chunarughat পৌরসভা",
@@ -24515,7 +25274,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bahubal পৌরসভা",
@@ -24557,7 +25317,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Nabiganj পৌরসভা",
@@ -24599,7 +25360,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Baniachong পৌরসভা",
@@ -24641,7 +25403,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Lakhai পৌরসভা",
@@ -24683,7 +25446,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Madhabpur পৌরসভা",
@@ -24725,7 +25489,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Ajmiriganj পৌরসভা",
@@ -24767,7 +25532,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Shaistaganj পৌরসভা",
@@ -24809,7 +25575,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -24857,7 +25624,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "কমলগঞ্জ উপজেলা",
@@ -24899,7 +25667,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ইসলামপুর",
                 "nameEn": "ইসলামপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কুলাউড়া উপজেলা",
@@ -24957,7 +25726,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কর্মধা",
                 "nameEn": "কর্মধা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জুড়ী উপজেলা",
@@ -24987,7 +25757,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গোয়ালবাড়ী",
                 "nameEn": "গোয়ালবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বড়লেখা উপজেলা",
@@ -25033,7 +25804,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দক্ষিণভাগ দক্ষিণ",
                 "nameEn": "দক্ষিণভাগ দক্ষিণ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মৌলভীবাজার সদর",
@@ -25087,7 +25859,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "গিয়াসনগর",
                 "nameEn": "গিয়াসনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "রাজনগর উপজেলা",
@@ -25125,7 +25898,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মনসুরনগর",
                 "nameEn": "মনসুরনগর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শ্রীমঙ্গল উপজেলা",
@@ -25167,7 +25941,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সাতগাঁও",
                 "nameEn": "সাতগাঁও"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Sreemangal পৌরসভা",
@@ -25209,7 +25984,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kamalganj পৌরসভা",
@@ -25251,7 +26027,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kulaura পৌরসভা",
@@ -25293,7 +26070,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Rajnagar পৌরসভা",
@@ -25335,7 +26113,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Barlekha পৌরসভা",
@@ -25377,7 +26156,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Juri পৌরসভা",
@@ -25419,7 +26199,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -25467,7 +26248,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "জামালগঞ্জ",
@@ -25493,7 +26275,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফেনারবাক",
                 "nameEn": "ফেনারবাক"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ধর্মপাশা",
@@ -25523,7 +26306,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দঃ",
                 "nameEn": "দঃ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "মধ্যনগর",
@@ -25545,7 +26329,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বংশীকুন্ডা(উঃ)",
                 "nameEn": "বংশীকুন্ডা(উঃ)"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "তাহিরপুর",
@@ -25579,7 +26364,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "বালিজুরী",
                 "nameEn": "বালিজুরী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শাল্লা",
@@ -25601,7 +26387,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শাল্লা",
                 "nameEn": "শাল্লা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "শান্তিগঞ্জ",
@@ -25639,7 +26426,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দরগাপাশা",
                 "nameEn": "দরগাপাশা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দিরাই",
@@ -25681,7 +26469,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কুলঞ্জ",
                 "nameEn": "কুলঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জগন্নাথপুর",
@@ -25719,7 +26508,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পাইলগাঁও ইউপি",
                 "nameEn": "পাইলগাঁও ইউপি"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "সুনামগঞ্জ",
@@ -25761,7 +26551,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "লক্ষণশ্রী",
                 "nameEn": "লক্ষণশ্রী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দোয়ারাবাজার",
@@ -25803,7 +26594,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "সুরমা",
                 "nameEn": "সুরমা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিশ্বম্ভরপুর",
@@ -25829,7 +26621,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ফতেপুর",
                 "nameEn": "ফতেপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ছাতক",
@@ -25887,7 +26680,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ভাতগাও",
                 "nameEn": "ভাতগাও"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Chhatak পৌরসভা",
@@ -25929,7 +26723,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Jagannathpur পৌরসভা",
@@ -25971,7 +26766,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Tahirpur পৌরসভা",
@@ -26013,7 +26809,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bishwamvarpur পৌরসভা",
@@ -26055,7 +26852,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dharmapasha পৌরসভা",
@@ -26097,7 +26895,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Jamalganj পৌরসভা",
@@ -26139,7 +26938,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Derai পৌরসভা",
@@ -26181,7 +26981,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Sulla পৌরসভা",
@@ -26223,7 +27024,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Dowarabazar পৌরসভা",
@@ -26265,7 +27067,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       },
@@ -26385,7 +27188,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-27",
                 "nameEn": "Ward No-27"
               }
-            ]
+            ],
+            "type": "city_corporation"
           },
           {
             "name": "সিলেট সদর উপজেলা",
@@ -26423,7 +27227,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "হাটখোলা ইউনিয়ন",
                 "nameEn": "হাটখোলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বালাগঞ্জ উপজেলা",
@@ -26453,7 +27258,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "পূর্ব গৌরীপুর ইউনিয়ন",
                 "nameEn": "পূর্ব গৌরীপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিয়ানীবাজার উপজেলা",
@@ -26499,7 +27305,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শেওলা ইউনিয়ন",
                 "nameEn": "শেওলা"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "বিশ্বনাথ উপজেলা",
@@ -26537,7 +27344,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দশঘর ইউনিয়ন",
                 "nameEn": "দশঘর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কোম্পানীগঞ্জ উপজেলা",
@@ -26567,7 +27375,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দক্ষিণ রণিখাই ইউনিয়ন",
                 "nameEn": "দক্ষিণ রণিখাই"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ফেঞ্চুগঞ্জ উপজেলা",
@@ -26593,7 +27402,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "উত্তর ফেঞ্চুগঞ্জ ইউনিয়ন",
                 "nameEn": "উত্তর ফেঞ্চুগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোলাপগঞ্জ উপজেলা",
@@ -26639,7 +27449,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "শরীফগঞ্জ ইউনিয়ন",
                 "nameEn": "শরীফগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "গোয়াইনঘাট উপজেলা",
@@ -26681,7 +27492,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ডৌবাড়ী ইউনিয়ন",
                 "nameEn": "ডৌবাড়ী"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জৈন্তাপুর উপজেলা",
@@ -26711,7 +27523,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "চিকনাগুল ইউনিয়ন",
                 "nameEn": "চিকনাগুল"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "কানাইঘাট উপজেলা",
@@ -26753,7 +27566,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "রাজাগঞ্জ ইউনিয়ন",
                 "nameEn": "রাজাগঞ্জ"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "জকিগঞ্জ উপজেলা",
@@ -26795,7 +27609,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "মানিকপুর ইউনিয়ন",
                 "nameEn": "মানিকপুর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "দক্ষিণ সুরমা উপজেলা",
@@ -26841,7 +27656,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "কামালবাজার ইউনিয়ন",
                 "nameEn": "কামালবাজার"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "ওসমানীনগর উপজেলা",
@@ -26879,7 +27695,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "দয়ামীর ইউনিয়ন",
                 "nameEn": "দয়ামীর"
               }
-            ]
+            ],
+            "type": "upazila"
           },
           {
             "name": "Beanibazar পৌরসভা",
@@ -26921,7 +27738,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Bishwanath পৌরসভা",
@@ -26963,7 +27781,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Companiganj পৌরসভা",
@@ -27005,7 +27824,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Golapganj পৌরসভা",
@@ -27047,7 +27867,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Gowainghat পৌরসভা",
@@ -27089,7 +27910,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Jaintiapur পৌরসভা",
@@ -27131,7 +27953,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Kanaighat পৌরসভা",
@@ -27173,7 +27996,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Zakiganj পৌরসভা",
@@ -27215,7 +28039,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Balaganj পৌরসভা",
@@ -27257,7 +28082,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Fenchuganj পৌরসভা",
@@ -27299,7 +28125,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           },
           {
             "name": "Osmaninagar পৌরসভা",
@@ -27341,7 +28168,8 @@ export const bangladeshAddresses: Division[] = [
                 "name": "ওয়ার্ড নং-9",
                 "nameEn": "Ward No-9"
               }
-            ]
+            ],
+            "type": "municipality"
           }
         ]
       }
