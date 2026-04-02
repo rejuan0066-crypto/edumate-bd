@@ -230,8 +230,13 @@ const AdminUserManagement = () => {
           can_delete: p.can_delete,
         }));
 
-      if (toInsert.length > 0) {
-        const { error } = await supabase.from('user_permissions').insert(toInsert);
+      const toInsertWithApproval = toInsert.map(p => {
+        const perm = userPerms.find(up => up.menu_path === p.menu_path);
+        return { ...p, requires_approval: perm?.requires_approval ?? false };
+      });
+
+      if (toInsertWithApproval.length > 0) {
+        const { error } = await supabase.from('user_permissions').insert(toInsertWithApproval);
         if (error) throw error;
       }
 
