@@ -179,6 +179,7 @@ const AdminUserManagement = () => {
           can_add: existing?.can_add ?? false,
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
+          requires_approval: existing?.requires_approval ?? false,
         };
       });
       setUserPerms(merged);
