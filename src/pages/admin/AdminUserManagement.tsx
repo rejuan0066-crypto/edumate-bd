@@ -22,6 +22,7 @@ interface UserItem {
   email: string;
   role: string;
   full_name: string;
+  status: string;
   created_at: string;
 }
 
