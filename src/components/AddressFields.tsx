@@ -100,6 +100,7 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
 
   const placeholder = bn ? 'নির্বাচন করুন' : 'Select';
   const searchPh = bn ? 'টাইপ করে খুঁজুন...' : 'Type to search...';
+  const addLabel = bn ? 'যোগ করুন' : 'Add';
 
   return (
     <div>
@@ -114,6 +115,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
             placeholder={placeholder}
             searchPlaceholder={searchPh}
             disabled={disabled}
+            allowCustom
+            customLabel={addLabel}
             className="mt-1"
           />
         </div>
@@ -126,6 +129,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
             placeholder={placeholder}
             searchPlaceholder={searchPh}
             disabled={disabled || !value.division}
+            allowCustom
+            customLabel={addLabel}
             className="mt-1"
           />
         </div>
@@ -139,6 +144,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
             searchPlaceholder={searchPh}
             disabled={disabled || !value.district}
             groups={upazilaGroups}
+            allowCustom
+            customLabel={addLabel}
             className="mt-1"
           />
         </div>
@@ -151,6 +158,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
             placeholder={placeholder}
             searchPlaceholder={searchPh}
             disabled={disabled || !value.upazila}
+            allowCustom
+            customLabel={addLabel}
             className="mt-1"
           />
         </div>
@@ -164,6 +173,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
               placeholder={placeholder}
               searchPlaceholder={searchPh}
               disabled={disabled || !value.upazila}
+              allowCustom
+              customLabel={addLabel}
               className="mt-1"
             />
           ) : (

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
+import { Check, ChevronDown, Search, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ interface SearchableSelectProps {
   disabled?: boolean;
   className?: string;
   groups?: { key: string; label: string }[];
+  allowCustom?: boolean;
+  customLabel?: string;
 }
 
 const SearchableSelect = ({
@@ -30,6 +32,8 @@ const SearchableSelect = ({
   disabled,
   className,
   groups,
+  allowCustom = false,
+  customLabel = 'Add',
 }: SearchableSelectProps) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -50,7 +54,14 @@ const SearchableSelect = ({
       )
     : options;
 
-  const selectedLabel = options.find(o => o.value === value)?.label;
+  const selectedLabel = options.find(o => o.value === value)?.label || (value && !options.find(o => o.value === value) ? value : undefined);
+
+  const showAddCustom = allowCustom && search.trim().length > 0 && !options.some(o => o.label.toLowerCase() === search.trim().toLowerCase() || o.value.toLowerCase() === search.trim().toLowerCase());
+
+  const handleAddCustom = () => {
+    onValueChange(search.trim());
+    setOpen(false);
+  };
 
   const renderOptions = () => {
     if (groups && groups.length > 0) {
@@ -99,7 +110,17 @@ const SearchableSelect = ({
           />
         </div>
         <div className="max-h-60 overflow-y-auto p-1">
-          {filtered.length === 0 ? (
+          {showAddCustom && (
+            <button
+              type="button"
+              onClick={handleAddCustom}
+              className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-3 pr-2 text-sm outline-none hover:bg-primary/10 hover:text-primary text-primary font-medium gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {customLabel}: "{search.trim()}"
+            </button>
+          )}
+          {filtered.length === 0 && !showAddCustom ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
               কোনো ফলাফল নেই
             </div>
