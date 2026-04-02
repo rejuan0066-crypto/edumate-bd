@@ -22,13 +22,29 @@ const DEFAULT_ADMIN_ONLY_PATHS = [
   '/admin/academic-sessions',
 ];
 
+// All admin paths for matching
+const ALL_PATHS_LIST = [
+  '/admin/settings', '/admin/user-management', '/admin/permissions',
+  '/admin/module-manager', '/admin/theme', '/admin/menu-manager',
+  '/admin/widget-builder', '/admin/backup', '/admin/website',
+  '/admin/form-builder', '/admin/formula-builder', '/admin/validation-manager',
+  '/admin/api-verification', '/admin/address-manager', '/admin/prayer-calendar',
+  '/admin/guardian-notify', '/admin/approvals', '/admin/designations',
+  '/admin/academic-sessions', '/admin/students', '/admin/staff',
+  '/admin/divisions', '/admin/subjects', '/admin/results',
+  '/admin/notices', '/admin/fees', '/admin/fee-receipts',
+  '/admin/expenses', '/admin/donors', '/admin/attendance',
+  '/admin/salary', '/admin/reports', '/admin/posts',
+  '/admin/resign-letters', '/admin/joining-letters', '/admin/admission-letters',
+];
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, role } = useAuth();
   const { canView, isLoading: permLoading } = usePermissions();
   const location = useLocation();
 
-  // Load dynamic admin-only paths from website_settings
-  const { data: adminOnlyPaths } = useQuery({
+  // Load dynamic access control from website_settings
+  const { data: accessControl } = useQuery({
     queryKey: ['admin-only-paths'],
     queryFn: async () => {
       const { data } = await supabase
@@ -36,15 +52,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         .select('value')
         .eq('key', 'admin_only_paths')
         .maybeSingle();
-      if (data?.value && Array.isArray((data.value as any)?.paths)) {
-        return (data.value as any).paths as string[];
+      if (data?.value) {
+        const val = data.value as any;
+        // New format with per-role access map
+        if (val.access_map && typeof val.access_map === 'object') {
+          return { accessMap: val.access_map as Record<string, Record<string, boolean>>, paths: val.paths as string[] || [] };
+        }
+        // Old format: just admin-only paths
+        if (Array.isArray(val.paths)) {
+          return { accessMap: null, paths: val.paths as string[] };
+        }
       }
-      return DEFAULT_ADMIN_ONLY_PATHS;
+      return { accessMap: null, paths: DEFAULT_ADMIN_ONLY_PATHS };
     },
     staleTime: 60000,
   });
-
-  const ADMIN_ONLY = adminOnlyPaths ?? DEFAULT_ADMIN_ONLY_PATHS;
 
   if (loading || permLoading) {
     return (
@@ -74,10 +96,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return <>{children}</>;
     }
 
-    // Admin-only paths → block immediately
-    const isAdminOnly = ADMIN_ONLY.some(p => path === p || path.startsWith(p + '/'));
-    if (isAdminOnly) {
-      return <Navigate to="/staff-dashboard" replace />;
+    // Check role-based access
+    const ac = accessControl ?? { accessMap: null, paths: DEFAULT_ADMIN_ONLY_PATHS };
+    const matchedPath = ALL_PATHS_LIST.find(p => path === p || path.startsWith(p + '/'));
+
+    if (matchedPath) {
+      if (ac.accessMap) {
+        // New format: check per-role access
+        const roleAccess = ac.accessMap[matchedPath];
+        const userBaseRole = role as string; // 'teacher' | 'staff'
+        if (!roleAccess || !roleAccess[userBaseRole]) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+      } else {
+        // Old format: just admin-only paths
+        const isAdminOnly = ac.paths.some(p => path === p || path.startsWith(p + '/'));
+        if (isAdminOnly) {
+          return <Navigate to="/staff-dashboard" replace />;
+        }
+      }
     }
 
     // For all other admin paths, check if user has view permission
