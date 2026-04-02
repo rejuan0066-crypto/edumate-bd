@@ -291,8 +291,8 @@ const AdminProfile = () => {
           {/* Done */}
           {step === 'done' && (
             <div className="space-y-4">
-              <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-center space-y-2">
-                <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto" />
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-primary mx-auto" />
                 <p className="font-semibold text-foreground">{bn ? 'ইমেইল সফলভাবে পরিবর্তন হয়েছে!' : 'Email Changed Successfully!'}</p>
                 <p className="text-sm text-muted-foreground">{bn ? `নতুন ইমেইল: ${currentEmail}` : `New email: ${currentEmail}`}</p>
               </div>
