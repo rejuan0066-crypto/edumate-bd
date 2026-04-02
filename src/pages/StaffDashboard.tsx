@@ -252,8 +252,7 @@ const StaffDashboard = () => {
             </TabsContent>
 
           {/* Salary Tab */}
-          {hasStaff && (
-            <TabsContent value="salary">
+          <TabsContent value="salary">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
