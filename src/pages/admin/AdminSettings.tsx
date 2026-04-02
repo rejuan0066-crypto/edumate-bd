@@ -565,6 +565,39 @@ const AdminSettings = () => {
           <Save className="w-4 h-4 mr-2" /> {bn ? 'সকল সেটিংস সংরক্ষণ করুন' : 'Save All Settings'}
         </Button>
       </div>
+
+      {/* Test Email Dialog */}
+      <Dialog open={testEmailDialog} onOpenChange={setTestEmailDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              {bn ? 'EmailJS টেস্ট ইমেইল পাঠান' : 'Send EmailJS Test Email'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {bn 
+                ? 'একটি টেস্ট OTP ইমেইল (কোড: 123456) পাঠানো হবে। ইমেইল আসলে EmailJS সঠিকভাবে কাজ করছে।'
+                : 'A test OTP email (code: 123456) will be sent. If received, EmailJS is working correctly.'}
+            </p>
+            <div>
+              <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
+              <Input
+                className="mt-1"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder={bn ? 'আপনার ইমেইল দিন' : 'Enter your email'}
+              />
+            </div>
+            <Button onClick={testEmailjs} disabled={emailjsTesting} className="w-full btn-primary-gradient">
+              {emailjsTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {bn ? 'টেস্ট ইমেইল পাঠান' : 'Send Test Email'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
