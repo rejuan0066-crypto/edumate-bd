@@ -130,6 +130,39 @@ export type Database = {
           },
         ]
       }
+      api_verification_config: {
+        Row: {
+          api_key: string
+          api_url: string
+          created_at: string | null
+          field_mappings: Json
+          id: string
+          is_enabled: boolean
+          master_password: string
+          updated_at: string | null
+        }
+        Insert: {
+          api_key?: string
+          api_url?: string
+          created_at?: string | null
+          field_mappings?: Json
+          id?: string
+          is_enabled?: boolean
+          master_password?: string
+          updated_at?: string | null
+        }
+        Update: {
+          api_key?: string
+          api_url?: string
+          created_at?: string | null
+          field_mappings?: Json
+          id?: string
+          is_enabled?: boolean
+          master_password?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           attendance_date: string
