@@ -198,6 +198,24 @@ const AdminUserManagement = () => {
     setCreating(false);
   };
 
+  const handleStatusChange = async (userId: string, status: 'pending' | 'approved') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'update_status', user_id: userId, status },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || (bn ? 'স্ট্যাটাস পরিবর্তন ব্যর্থ' : 'Failed to update status'));
+        return;
+      }
+      toast.success(status === 'approved'
+        ? (bn ? '✅ ইউজার অনুমোদিত হয়েছে' : '✅ User approved')
+        : (bn ? '⏸️ ইউজার স্থগিত করা হয়েছে' : '⏸️ User suspended'));
+      fetchUsers();
+    } catch {
+      toast.error(bn ? 'স্ট্যাটাস পরিবর্তন ব্যর্থ' : 'Failed to update status');
+    }
+  };
+
   const handleDelete = async (userId: string) => {
     if (!confirm(bn ? 'এই ইউজার ডিলিট করতে চান?' : 'Delete this user?')) return;
     setDeleting(userId);
