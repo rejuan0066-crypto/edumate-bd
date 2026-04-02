@@ -38,6 +38,54 @@ export type Database = {
         }
         Relationships: []
       }
+      address_custom: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          level: string
+          name: string
+          name_en: string
+          original_name_en: string | null
+          parent_path: string | null
+          post_code: string | null
+          sort_order: number | null
+          sub_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: string
+          name: string
+          name_en: string
+          original_name_en?: string | null
+          parent_path?: string | null
+          post_code?: string | null
+          sort_order?: number | null
+          sub_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          level?: string
+          name?: string
+          name_en?: string
+          original_name_en?: string | null
+          parent_path?: string | null
+          post_code?: string | null
+          sort_order?: number | null
+          sub_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       attendance_records: {
         Row: {
           attendance_date: string
