@@ -27,6 +27,7 @@ const AdminAddressManager = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/address-manager');
   const { data: levels = [] } = useAddressLevels();
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
