@@ -182,8 +182,12 @@ const AdminStaff = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right flex items-center justify-end gap-1">
-                        <button onClick={() => navigate(`/admin/staff/edit/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                        {canEditItem && (
+                          <button onClick={() => navigate(`/admin/staff/edit/${s.id}`)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
+                        )}
+                        {canDeleteItem && (
+                          <button onClick={() => setDeleteId(s.id)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-destructive" title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-4 h-4" /></button>
+                        )}
                       </td>
                     </tr>
                   ))}
