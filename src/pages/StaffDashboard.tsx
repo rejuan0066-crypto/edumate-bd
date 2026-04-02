@@ -317,11 +317,9 @@ const StaffDashboard = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-          )}
 
           {/* Attendance Tab */}
-          {hasStaff && (
-            <TabsContent value="attendance">
+          <TabsContent value="attendance">
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between flex-wrap gap-3">
