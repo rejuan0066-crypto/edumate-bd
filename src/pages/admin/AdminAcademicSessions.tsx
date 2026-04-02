@@ -44,11 +44,14 @@ const AdminAcademicSessions = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error(language === 'bn' ? 'সেশনের নাম দিন' : 'Enter session name');
+      const payload = { name: name.trim(), is_active: isActive };
       if (editId) {
-        const { error } = await supabase.from('academic_sessions').update({ name: name.trim(), is_active: isActive }).eq('id', editId);
+        if (await checkApproval('edit', payload, editId, `সেশন সম্পাদনা: ${name.trim()}`)) return;
+        const { error } = await supabase.from('academic_sessions').update(payload).eq('id', editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('academic_sessions').insert({ name: name.trim(), is_active: isActive });
+        if (await checkApproval('add', payload, undefined, `সেশন যোগ: ${name.trim()}`)) return;
+        const { error } = await supabase.from('academic_sessions').insert(payload);
         if (error) throw error;
       }
     },
