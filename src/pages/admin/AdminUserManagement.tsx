@@ -239,7 +239,13 @@ const AdminUserManagement = () => {
 
       const toInsertWithApproval = toInsert.map(p => {
         const perm = userPerms.find(up => up.menu_path === p.menu_path);
-        return { ...p, requires_approval: perm?.requires_approval ?? false };
+        return {
+          ...p,
+          approval_view: perm?.approval_view ?? false,
+          approval_add: perm?.approval_add ?? false,
+          approval_edit: perm?.approval_edit ?? false,
+          approval_delete: perm?.approval_delete ?? false,
+        };
       });
 
       if (toInsertWithApproval.length > 0) {
