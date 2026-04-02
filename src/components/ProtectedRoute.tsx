@@ -66,7 +66,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     staleTime: 60000,
   });
 
-  if (loading || permLoading) {
+  if (loading || permLoading || acLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
