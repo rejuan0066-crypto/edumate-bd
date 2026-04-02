@@ -145,7 +145,7 @@ const AdminUserManagement = () => {
     setDeleting(userId);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { user_id: userId },
+        body: { action: 'delete', user_id: userId },
       });
       if (error || !data?.success) {
         toast.error(data?.error || error?.message || (bn ? 'ডিলিট ব্যর্থ' : 'Delete failed'));
