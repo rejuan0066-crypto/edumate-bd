@@ -29,9 +29,14 @@ export const useOtpService = () => {
         return { success: false };
       }
 
+      // If sent via SMTP, no client-side email needed
+      if (data.method === 'smtp') {
+        return { success: true, expiryMinutes: data.expiry_minutes };
+      }
+
+      // EmailJS path - send from client side
       const { otp_code, emailjs: config, expiry_minutes } = data;
 
-      // Send email via EmailJS from client side
       await emailjs.send(
         config.service_id,
         config.template_id,

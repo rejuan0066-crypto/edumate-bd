@@ -35,8 +35,25 @@ const AdminSettings = () => {
   const [emailjsSaving, setEmailjsSaving] = useState(false);
   const [showPublicKey, setShowPublicKey] = useState(false);
 
+  // SMTP config
+  const [smtp, setSmtp] = useState({
+    smtp_host: '',
+    smtp_port: 587,
+    smtp_username: '',
+    smtp_password: '',
+    from_email: '',
+    from_name: '',
+    is_enabled: false,
+    use_tls: true,
+  });
+  const [smtpLoading, setSmtpLoading] = useState(true);
+  const [smtpSaving, setSmtpSaving] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [smtpTesting, setSmtpTesting] = useState(false);
+
   useEffect(() => {
     loadEmailjsConfig();
+    loadSmtpConfig();
   }, []);
 
   const loadEmailjsConfig = async () => {
@@ -84,6 +101,77 @@ const AdminSettings = () => {
     }
   };
 
+  const loadSmtpConfig = async () => {
+    const { data } = await supabase
+      .from('smtp_config')
+      .select('*')
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      setSmtp({
+        smtp_host: data.smtp_host,
+        smtp_port: data.smtp_port,
+        smtp_username: data.smtp_username,
+        smtp_password: data.smtp_password,
+        from_email: data.from_email,
+        from_name: data.from_name,
+        is_enabled: data.is_enabled,
+        use_tls: data.use_tls,
+      });
+      if (data.is_enabled) setEmailProvider('custom_domain');
+    }
+    setSmtpLoading(false);
+  };
+
+  const saveSmtpConfig = async () => {
+    setSmtpSaving(true);
+    const { data: existing } = await supabase
+      .from('smtp_config')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await supabase
+        .from('smtp_config')
+        .update({ ...smtp, updated_at: new Date().toISOString() })
+        .eq('id', existing.id));
+    } else {
+      ({ error } = await supabase.from('smtp_config').insert(smtp));
+    }
+
+    setSmtpSaving(false);
+    if (error) {
+      toast.error(bn ? 'সংরক্ষণ ব্যর্থ' : 'Failed to save');
+    } else {
+      toast.success(bn ? 'SMTP সেটিংস সংরক্ষিত' : 'SMTP settings saved');
+    }
+  };
+
+  const testSmtpConnection = async () => {
+    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.from_email) {
+      toast.error(bn ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all required fields');
+      return;
+    }
+    setSmtpTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-smtp', {
+        body: { ...smtp },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(bn ? 'SMTP সংযোগ সফল!' : 'SMTP connection successful!');
+      } else {
+        toast.error(data?.error || (bn ? 'সংযোগ ব্যর্থ' : 'Connection failed'));
+      }
+    } catch {
+      toast.error(bn ? 'SMTP টেস্ট ব্যর্থ' : 'SMTP test failed');
+    }
+    setSmtpTesting(false);
+  };
+
+
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-3xl">
@@ -123,65 +211,155 @@ const AdminSettings = () => {
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold text-foreground">{bn ? 'কাস্টম ডোমেইন' : 'Custom Domain'}</span>
+                <span className="text-sm font-bold text-foreground">{bn ? 'কাস্টম SMTP ডোমেইন' : 'Custom SMTP Domain'}</span>
                 {emailProvider === 'custom_domain' && <CheckCircle2 className="w-4 h-4 text-primary" />}
               </div>
-              <p className="text-xs text-muted-foreground">{bn ? 'পেইড — নিজের ডোমেইন থেকে ইমেইল' : 'Paid — Send from your own domain'}</p>
-              <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-medium">
-                {bn ? 'আপগ্রেড' : 'Upgrade'}
+              <p className="text-xs text-muted-foreground">{bn ? 'নিজের ডোমেইন থেকে ইমেইল পাঠান' : 'Send emails from your own domain'}</p>
+              <span className="inline-block mt-2 text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                {bn ? 'প্রো' : 'Pro'}
               </span>
             </button>
           </div>
-
-          {emailProvider === 'custom_domain' && (
-            <div className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/20 space-y-3">
-              <div className="flex items-start gap-3">
-                <Globe className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    {bn ? 'কাস্টম ইমেইল ডোমেইন সেটআপ' : 'Custom Email Domain Setup'}
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {bn
-                      ? 'আপনার নিজের ডোমেইন (যেমন: notify@yourdomain.com) থেকে প্রফেশনাল ইমেইল পাঠান। এতে ইমেইল ডেলিভারি ভালো হয়, ব্র্যান্ডিং থাকে এবং দৈনিক সীমা নেই।'
-                      : 'Send professional emails from your own domain (e.g., notify@yourdomain.com). Better deliverability, branding, and no daily limits.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2 pl-8">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <ArrowRight className="w-3 h-3 text-primary" />
-                  <span>{bn ? 'একটি ডোমেইন কিনুন বা বিদ্যমান ডোমেইন ব্যবহার করুন' : 'Buy a domain or use an existing one'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <ArrowRight className="w-3 h-3 text-primary" />
-                  <span>{bn ? 'DNS সেটআপ করুন (স্বয়ংক্রিয় গাইড দেওয়া হবে)' : 'Set up DNS (guided automatically)'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <ArrowRight className="w-3 h-3 text-primary" />
-                  <span>{bn ? 'সিস্টেম স্বয়ংক্রিয়ভাবে আপডেট হবে' : 'System updates automatically'}</span>
-                </div>
-              </div>
-
-              <Button
-                className="w-full btn-primary-gradient"
-                onClick={() => window.open('https://id-preview--8564078b-79b9-40ef-8f5b-8322e217d011.lovable.app/admin/settings', '_self')}
-              >
-                <Globe className="w-4 h-4 mr-2" />
-                {bn ? 'ইমেইল ডোমেইন সেটআপ শুরু করুন' : 'Start Email Domain Setup'}
-              </Button>
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                <AlertCircle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">
-                  {bn
-                    ? 'কাস্টম ডোমেইন সেটআপ করতে চ্যাটে AI অ্যাসিস্ট্যান্টকে বলুন "ইমেইল ডোমেইন সেটআপ করুন"। সে আপনাকে ধাপে ধাপে সাহায্য করবে।'
-                    : 'To set up a custom domain, tell the AI Assistant in chat: "Set up email domain". It will guide you step by step.'}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Custom SMTP Configuration */}
+        {emailProvider === 'custom_domain' && (
+          <div className="card-elevated p-5">
+            <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
+              <Globe className="w-5 h-5 text-primary" /> {bn ? 'SMTP কনফিগারেশন' : 'SMTP Configuration'}
+            </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              {bn
+                ? 'আপনার ইমেইল প্রোভাইডারের SMTP সেটিংস দিন (যেমন: Gmail, Zoho, Outlook, বা যেকোনো কাস্টম ডোমেইন)।'
+                : 'Enter your email provider SMTP settings (e.g., Gmail, Zoho, Outlook, or any custom domain).'}
+            </p>
+
+            {smtpLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{bn ? 'SMTP সক্রিয়' : 'SMTP Enabled'}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'কাস্টম SMTP দিয়ে ইমেইল পাঠানো চালু/বন্ধ' : 'Enable/disable custom SMTP emails'}</p>
+                  </div>
+                  <Switch
+                    checked={smtp.is_enabled}
+                    onCheckedChange={(v) => setSmtp({ ...smtp, is_enabled: v })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'SMTP হোস্ট' : 'SMTP Host'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className="mt-1 bg-background"
+                      value={smtp.smtp_host}
+                      onChange={(e) => setSmtp({ ...smtp, smtp_host: e.target.value })}
+                      placeholder="smtp.gmail.com"
+                    />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'SMTP পোর্ট' : 'SMTP Port'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      type="number"
+                      className="mt-1 bg-background"
+                      value={smtp.smtp_port}
+                      onChange={(e) => setSmtp({ ...smtp, smtp_port: parseInt(e.target.value) || 587 })}
+                      placeholder="587"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'SMTP ইউজারনেম' : 'SMTP Username'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className="mt-1 bg-background"
+                      value={smtp.smtp_username}
+                      onChange={(e) => setSmtp({ ...smtp, smtp_username: e.target.value })}
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'SMTP পাসওয়ার্ড' : 'SMTP Password'} <span className="text-destructive">*</span></Label>
+                    <div className="relative mt-1">
+                      <Input
+                        className="bg-background pr-10"
+                        type={showSmtpPassword ? 'text' : 'password'}
+                        value={smtp.smtp_password}
+                        onChange={(e) => setSmtp({ ...smtp, smtp_password: e.target.value })}
+                        placeholder={bn ? 'অ্যাপ পাসওয়ার্ড ব্যবহার করুন' : 'Use app password'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showSmtpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{bn ? 'প্রেরকের ইমেইল' : 'From Email'} <span className="text-destructive">*</span></Label>
+                    <Input
+                      className="mt-1 bg-background"
+                      value={smtp.from_email}
+                      onChange={(e) => setSmtp({ ...smtp, from_email: e.target.value })}
+                      placeholder="noreply@yourdomain.com"
+                    />
+                  </div>
+                  <div>
+                    <Label>{bn ? 'প্রেরকের নাম' : 'From Name'}</Label>
+                    <Input
+                      className="mt-1 bg-background"
+                      value={smtp.from_name}
+                      onChange={(e) => setSmtp({ ...smtp, from_name: e.target.value })}
+                      placeholder={bn ? 'আপনার প্রতিষ্ঠানের নাম' : 'Your Institution Name'}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{bn ? 'TLS/SSL ব্যবহার করুন' : 'Use TLS/SSL'}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'নিরাপদ সংযোগ (সাধারণত চালু রাখুন)' : 'Secure connection (usually keep on)'}</p>
+                  </div>
+                  <Switch
+                    checked={smtp.use_tls}
+                    onCheckedChange={(v) => setSmtp({ ...smtp, use_tls: v })}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={saveSmtpConfig} disabled={smtpSaving} className="btn-primary-gradient flex-1">
+                    {smtpSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                    {bn ? 'SMTP সেটিংস সংরক্ষণ' : 'Save SMTP Settings'}
+                  </Button>
+                  <Button onClick={testSmtpConnection} disabled={smtpTesting} variant="outline">
+                    {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
+                    {bn ? 'টেস্ট' : 'Test'}
+                  </Button>
+                </div>
+
+                <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground space-y-2">
+                  <p className="font-medium text-foreground">{bn ? 'সাধারণ SMTP সেটিংস:' : 'Common SMTP Settings:'}</p>
+                  <div className="space-y-1">
+                    <p><span className="font-medium">Gmail:</span> smtp.gmail.com : 587 (TLS) — {bn ? 'অ্যাপ পাসওয়ার্ড প্রয়োজন' : 'App password required'}</p>
+                    <p><span className="font-medium">Zoho:</span> smtp.zoho.com : 587 (TLS)</p>
+                    <p><span className="font-medium">Outlook:</span> smtp.office365.com : 587 (TLS)</p>
+                    <p><span className="font-medium">Yahoo:</span> smtp.mail.yahoo.com : 587 (TLS)</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* EmailJS Configuration */}
         <div className="card-elevated p-5">
