@@ -18,6 +18,7 @@ const AdminApiVerification = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: config, isLoading } = useApiVerificationConfig();
 
   // Password gate
