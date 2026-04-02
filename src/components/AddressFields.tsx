@@ -173,6 +173,8 @@ const AddressFields = ({ label, value, onChange, disabled }: AddressFieldsProps)
               placeholder={placeholder}
               searchPlaceholder={searchPh}
               disabled={disabled || !value.upazila}
+              allowCustom
+              customLabel={addLabel}
               className="mt-1"
             />
           ) : (
