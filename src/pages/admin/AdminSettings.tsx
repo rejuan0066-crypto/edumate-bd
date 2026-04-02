@@ -21,8 +21,12 @@ const AdminSettings = () => {
     maintenanceMode: false,
   });
 
+  return (
+    <AdminLayout>
+      <div className="space-y-6 max-w-3xl">
+        <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'সেটিংস' : 'Settings'}</h1>
 
-
+        {/* Security */}
         <div className="card-elevated p-5">
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Shield className="w-5 h-5 text-primary" /> {bn ? 'নিরাপত্তা' : 'Security'}</h3>
           <div className="space-y-4">
