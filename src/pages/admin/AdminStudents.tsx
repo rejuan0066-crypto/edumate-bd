@@ -144,9 +144,11 @@ const AdminStudents = () => {
             <h1 className="text-2xl font-display font-bold text-foreground">{t('students')}</h1>
             <p className="text-sm text-muted-foreground">{bn ? `মোট ${filtered.length} জন ছাত্র` : `Total ${filtered.length} students`}</p>
           </div>
-          <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient flex items-center gap-2">
-            <Plus className="w-4 h-4" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
-          </Button>
+          {canAddItem && (
+            <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient flex items-center gap-2">
+              <Plus className="w-4 h-4" /> {bn ? 'নতুন ভর্তি' : 'New Admission'}
+            </Button>
+          )}
         </div>
 
         <div className="card-elevated p-4">
