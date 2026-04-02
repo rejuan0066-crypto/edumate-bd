@@ -148,7 +148,6 @@ const StaffDashboard = () => {
     return <Badge variant={l.variant}>{bn ? l.bn : l.en}</Badge>;
   };
 
-  const hasStaff = !!staffRecord;
 
   return (
     <div className="min-h-screen bg-background">
