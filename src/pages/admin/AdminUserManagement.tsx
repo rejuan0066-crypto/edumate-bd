@@ -169,11 +169,10 @@ const AdminUserManagement = () => {
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!password || password.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
-    if (!role) { toast.error(bn ? 'রোল সিলেক্ট করুন' : 'Select a role'); return; }
 
-    // Find the base role for custom roles
-    const customRole = customRoles.find(r => r.name === role);
-    const actualRole = customRole?.base_role || role;
+    // Find the base role for custom roles (role can be empty for permission-only users)
+    const customRole = role ? customRoles.find(r => r.name === role) : null;
+    const actualRole = role ? (customRole?.base_role || role) : '';
 
     setCreating(true);
     try {
