@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
@@ -41,6 +43,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
+        // Keep loading true until role is fetched
+        setLoading(true);
         queueMicrotask(() => {
           void fetchRoleAndStatus(nextSession.user.id);
         });
@@ -52,6 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     void supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (initialSessionHandled) return;
+      initialSessionHandled = true;
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
 
