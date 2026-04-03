@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "admin")
+      .in("role", ["admin", "super_admin"])
       .maybeSingle();
 
     if (!roleData) {
@@ -47,6 +47,8 @@ Deno.serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const callerIsSuperAdmin = roleData.role === 'super_admin';
 
     const url = new URL(req.url);
     let action = url.searchParams.get("action");
