@@ -256,24 +256,33 @@ const StaffDashboard = () => {
         )}
 
         <Tabs defaultValue={staffRecord ? "profile" : "notices"} className="space-y-4">
-          <TabsList className="w-full grid h-auto grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Scrollable tab list for core + permitted module tabs */}
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-auto min-w-full">
+              <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
+                <Wallet className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="my-attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
+              </TabsTrigger>
+              {permittedModules.map(mod => (
+                <TabsTrigger key={mod.key} value={`module-${mod.key}`} className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                  <mod.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{bn ? mod.labelBn : mod.labelEn}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
