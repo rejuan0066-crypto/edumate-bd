@@ -1402,6 +1402,59 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          fee_type: string
+          id: string
+          notes: string | null
+          payer_name: string | null
+          payer_phone: string | null
+          payment_method: string | null
+          status: string
+          student_id: string | null
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          fee_type: string
+          id?: string
+          notes?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_method?: string | null
+          status?: string
+          student_id?: string | null
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee_type?: string
+          id?: string
+          notes?: string | null
+          payer_name?: string | null
+          payer_phone?: string | null
+          payment_method?: string | null
+          status?: string
+          student_id?: string | null
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pending_actions: {
         Row: {
           action_type: string
