@@ -69,6 +69,8 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         studentQuery = studentQuery.eq('class_id', selectedClass);
       } else if (searchType === 'session_roll' && rollNumber) {
         studentQuery = studentQuery.eq('roll_number', rollNumber.trim());
+      } else if (searchType === 'session_reg' && regNumber) {
+        studentQuery = studentQuery.eq('student_id', regNumber.trim());
       }
 
       const { data: students, error: studErr } = await studentQuery.order('roll_number');
