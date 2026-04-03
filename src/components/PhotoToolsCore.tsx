@@ -433,11 +433,15 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
   const isShowingResult = !!resultUrl && !showOriginal;
   const isCropMode = activeTab === 'crop';
   const isInteractiveCropMode = isCropMode && !isShowingResult;
+  const isBgRemoveResult = activeTab === 'bg-remove' && isShowingResult;
   const displayUrl = isShowingResult ? resultUrl : preview;
+  const previewBackground = isBgRemoveResult
+    ? 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.92) 100%), repeating-conic-gradient(hsl(var(--foreground) / 0.12) 0% 25%, hsl(var(--background)) 0% 50%) 50% / 18px 18px'
+    : 'repeating-conic-gradient(hsl(var(--muted) / 0.5) 0% 25%, transparent 0% 50%) 50% / 20px 20px';
 
   return (
     <div className="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
-      style={{ background: 'repeating-conic-gradient(hsl(var(--muted)/0.5) 0% 25%, transparent 0% 50%) 50% / 20px 20px' }}
+      style={{ background: previewBackground }}
     >
       <div
         className={`relative ${isInteractiveCropMode ? 'cursor-crosshair' : ''}`}
@@ -454,6 +458,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
           alt="Preview"
           onLoad={imgLoaded}
           className="max-w-full max-h-[45vh] lg:max-h-[55vh] object-contain select-none pointer-events-none"
+          style={isBgRemoveResult ? { filter: 'drop-shadow(0 1px 1px hsl(var(--foreground) / 0.18)) drop-shadow(0 0 10px hsl(var(--foreground) / 0.08))' } : undefined}
           draggable={false}
         />
         {isInteractiveCropMode && cropBox.w > 0 && cropBox.h > 0 && (
