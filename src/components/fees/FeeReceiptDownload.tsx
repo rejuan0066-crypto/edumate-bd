@@ -46,7 +46,6 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
     },
   });
 
-  // Count how many fields are filled
   const filledCount = [selectedSession, selectedClass, rollNumber.trim(), regNumber.trim()].filter(Boolean).length;
   const hasSession = !!selectedSession;
   const hasSecondField = !!(selectedClass || rollNumber.trim() || regNumber.trim());
@@ -156,7 +155,6 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         {bn ? 'রিসিট ডাউনলোড' : 'Receipt Download'}
       </h3>
 
-      {/* Status filter */}
       <div className="flex gap-2">
         <button onClick={() => setStatusFilter('pending')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${statusFilter === 'pending' ? 'bg-amber-500 text-white' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
@@ -172,7 +170,6 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         {bn ? 'সেশন আবশ্যক + নিচের যেকোনো একটি ফিল্ড দিন (ক্লাস / রোল / রেজিস্ট্রেশন)' : 'Session required + any one field below (Class / Roll / Registration)'}
       </p>
 
-      {/* All fields in one form */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'সেশন *' : 'Session *'}</label>
@@ -233,30 +230,124 @@ const feeTypeLabels: Record<string, { bn: string; en: string }> = {
   exam_fee: { bn: 'পরীক্ষা ফি', en: 'Exam Fee' },
 };
 
-function printReceipt(params: PrintReceiptParams) {
-  const { payments, studentMap, sessionName, className, institution, collectorName, approverName, statusFilter, bn } = params;
-
-  const totalAmount = payments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+function buildSingleReceipt(
+  p: any,
+  student: any,
+  copyLabel: string,
+  params: PrintReceiptParams,
+  index: number
+) {
+  const { sessionName, institution, collectorName, approverName, statusFilter, bn } = params;
   const statusLabel = statusFilter === 'pending'
-    ? (bn ? 'পেন্ডিং (অনুমোদনের অপেক্ষায়)' : 'Pending (Awaiting Approval)')
-    : (bn ? 'পেইড (অনুমোদিত)' : 'Paid (Approved)');
-
+    ? (bn ? 'পেন্ডিং' : 'Pending')
+    : (bn ? 'পেইড' : 'Paid');
   const statusColor = statusFilter === 'pending' ? '#f59e0b' : '#22c55e';
+  const feeLabel = bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type);
+  const qrData = encodeURIComponent(`TXN:${p.transaction_id}|AMT:${p.amount}|STU:${student?.student_id || ''}`);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrData}`;
+  const instName = institution?.name || '';
+  const watermarkText = instName;
 
-  const rows = payments.map((p: any, i: number) => {
+  return `
+    <div class="receipt-card">
+      <div class="watermark">${watermarkText}</div>
+      <div class="copy-label ${statusFilter === 'pending' ? 'copy-pending' : 'copy-paid'}">${copyLabel}</div>
+      
+      <div class="receipt-header">
+        ${institution?.logo_url ? `<img src="${institution.logo_url}" class="inst-logo" />` : ''}
+        <div class="inst-info">
+          <div class="inst-name">${instName}</div>
+          ${institution?.name_en ? `<div class="inst-name-en">${institution.name_en}</div>` : ''}
+          <div class="inst-addr">${institution?.address || ''} ${institution?.phone ? `| ${institution.phone}` : ''}</div>
+        </div>
+      </div>
+      
+      <div class="receipt-title">${bn ? 'ফি রিসিট' : 'Fee Receipt'}</div>
+      
+      <div class="receipt-body">
+        <div class="info-grid">
+          <div class="info-row">
+            <span class="info-label">${bn ? 'নাম' : 'Name'}:</span>
+            <span class="info-value">${student?.name_bn || '-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'আইডি' : 'ID'}:</span>
+            <span class="info-value">${student?.student_id || '-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'রোল' : 'Roll'}:</span>
+            <span class="info-value">${student?.roll_number || '-'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'সেশন' : 'Session'}:</span>
+            <span class="info-value">${sessionName}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'ফি ধরন' : 'Fee Type'}:</span>
+            <span class="info-value">${feeLabel}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'পরিমাণ' : 'Amount'}:</span>
+            <span class="info-value amount-value">৳ ${p.amount}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'ট্রানজেকশন' : 'TXN'}:</span>
+            <span class="info-value txn-value">${p.transaction_id}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'তারিখ' : 'Date'}:</span>
+            <span class="info-value">${new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD')}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">${bn ? 'স্ট্যাটাস' : 'Status'}:</span>
+            <span class="info-value" style="color:${statusColor};font-weight:700">${statusLabel}</span>
+          </div>
+        </div>
+        <div class="qr-section">
+          <img src="${qrUrl}" class="qr-img" alt="QR" />
+        </div>
+      </div>
+      
+      <div class="receipt-footer">
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <div class="sig-label">${bn ? 'আদায়কারী' : 'Collector'}</div>
+          <div class="sig-name">${collectorName}</div>
+        </div>
+        ${statusFilter === 'success' ? `
+        <div class="sig-box">
+          <div class="sig-line"></div>
+          <div class="sig-label">${bn ? 'গ্রহণকারী' : 'Approver'}</div>
+          <div class="sig-name">${approverName || (bn ? 'এডমিন' : 'Admin')}</div>
+        </div>` : ''}
+      </div>
+    </div>`;
+}
+
+function printReceipt(params: PrintReceiptParams) {
+  const { payments, studentMap, bn } = params;
+
+  // Build receipt pairs (student copy + office copy) for each payment
+  const receiptPairs = payments.map((p: any, i: number) => {
     const student = studentMap.get(p.student_id);
-    return `<tr>
-      <td style="padding:8px;border:1px solid #ddd;text-align:center">${i + 1}</td>
-      <td style="padding:8px;border:1px solid #ddd">${student?.name_bn || '-'}</td>
-      <td style="padding:8px;border:1px solid #ddd;text-align:center">${student?.roll_number || '-'}</td>
-      <td style="padding:8px;border:1px solid #ddd">${bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type)}</td>
-      <td style="padding:8px;border:1px solid #ddd;text-align:right;font-weight:bold">৳ ${p.amount}</td>
-      <td style="padding:8px;border:1px solid #ddd;text-align:center;font-size:11px">${p.transaction_id}</td>
-      <td style="padding:8px;border:1px solid #ddd;text-align:center">
-        <span style="color:${statusColor};font-weight:bold">${statusLabel}</span>
-      </td>
-    </tr>`;
-  }).join('');
+    const studentCopy = buildSingleReceipt(p, student, bn ? 'ছাত্র কপি' : 'Student Copy', params, i);
+    const officeCopy = buildSingleReceipt(p, student, bn ? 'অফিস কপি' : 'Office Copy', params, i);
+    return { studentCopy, officeCopy };
+  });
+
+  // Group into pages of 3 receipts each
+  const pages: string[] = [];
+  for (let i = 0; i < receiptPairs.length; i += 3) {
+    const chunk = receiptPairs.slice(i, i + 3);
+    const rows = chunk.map(pair => `
+      <div class="receipt-row">
+        ${pair.officeCopy}
+        <div class="cut-line-v"></div>
+        ${pair.studentCopy}
+      </div>
+    `).join('<div class="cut-line-h"></div>');
+    pages.push(`<div class="page">${rows}</div>`);
+  }
 
   const html = `<!DOCTYPE html>
 <html><head>
@@ -265,86 +356,112 @@ function printReceipt(params: PrintReceiptParams) {
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Noto Sans Bengali', sans-serif; padding: 30px; color: #1a1a1a; }
-  .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-  .header h1 { font-size: 22px; margin-bottom: 4px; }
-  .header p { font-size: 13px; color: #555; }
-  .meta { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 13px; flex-wrap: wrap; gap: 8px; }
-  .meta-item { }
-  .meta-item strong { color: #333; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-  th { padding: 10px 8px; border: 1px solid #ddd; background: #f5f5f5; text-align: left; font-weight: 600; }
-  .total-row { background: #f0f9ff; }
-  .total-row td { font-weight: bold; font-size: 15px; }
-  .signatures { display: flex; justify-content: space-between; margin-top: 60px; padding-top: 10px; }
-  .sig-box { text-align: center; width: 200px; }
-  .sig-line { border-top: 1px solid #333; padding-top: 8px; font-size: 13px; font-weight: 600; }
-  .sig-name { font-size: 12px; color: #555; margin-top: 4px; }
+  body { font-family: 'Noto Sans Bengali', sans-serif; color: #1a1a1a; background: #fff; }
+  
+  .page {
+    width: 210mm; min-height: 297mm; padding: 5mm;
+    display: flex; flex-direction: column; justify-content: flex-start;
+    page-break-after: always;
+  }
+  .page:last-child { page-break-after: auto; }
+  
+  .receipt-row {
+    display: flex; flex: 1; max-height: 95mm;
+  }
+  
+  .receipt-card {
+    flex: 1; padding: 4mm 5mm; position: relative; overflow: hidden;
+    border: 1px solid #ccc;
+  }
+  
+  .watermark {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 28px; font-weight: 700; color: rgba(0,0,0,0.04);
+    white-space: nowrap; pointer-events: none; z-index: 0;
+    letter-spacing: 4px;
+  }
+  
+  .copy-label {
+    position: absolute; top: 2mm; right: 3mm;
+    font-size: 8px; font-weight: 700; padding: 1px 6px;
+    border-radius: 3px; z-index: 1;
+  }
+  .copy-pending { background: #fef3c7; color: #92400e; }
+  .copy-paid { background: #dcfce7; color: #166534; }
+  
+  .receipt-header {
+    display: flex; align-items: center; gap: 3mm;
+    border-bottom: 1.5px solid #333; padding-bottom: 2mm; margin-bottom: 2mm;
+    position: relative; z-index: 1;
+  }
+  .inst-logo { height: 28px; width: auto; }
+  .inst-info { flex: 1; }
+  .inst-name { font-size: 12px; font-weight: 700; line-height: 1.2; }
+  .inst-name-en { font-size: 9px; color: #555; }
+  .inst-addr { font-size: 8px; color: #666; line-height: 1.3; }
+  
+  .receipt-title {
+    text-align: center; font-size: 11px; font-weight: 700;
+    margin: 1.5mm 0; color: #333; position: relative; z-index: 1;
+    text-decoration: underline;
+  }
+  
+  .receipt-body {
+    display: flex; gap: 3mm; position: relative; z-index: 1;
+  }
+  
+  .info-grid { flex: 1; }
+  .info-row {
+    display: flex; font-size: 9px; line-height: 1.6;
+    border-bottom: 0.5px dotted #ddd;
+  }
+  .info-label { width: 55px; font-weight: 600; color: #555; flex-shrink: 0; }
+  .info-value { flex: 1; color: #111; }
+  .amount-value { font-weight: 700; font-size: 11px; color: #000; }
+  .txn-value { font-size: 7.5px; font-family: monospace; }
+  
+  .qr-section {
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .qr-img { width: 55px; height: 55px; }
+  
+  .receipt-footer {
+    display: flex; justify-content: space-between;
+    margin-top: auto; padding-top: 5mm;
+    position: relative; z-index: 1;
+  }
+  .sig-box { text-align: center; width: 35mm; }
+  .sig-line { border-top: 0.8px solid #333; margin-bottom: 1px; }
+  .sig-label { font-size: 7.5px; font-weight: 600; color: #555; }
+  .sig-name { font-size: 7px; color: #888; }
+  
+  .cut-line-v {
+    width: 0; border-left: 1px dashed #aaa; margin: 2mm 0;
+  }
+  .cut-line-h {
+    height: 0; border-top: 1px dashed #aaa; margin: 0 2mm;
+  }
+  
   @media print {
-    body { padding: 15px; }
-    @page { margin: 15mm; }
+    body { padding: 0; }
+    @page { size: A4; margin: 0; }
+    .page { padding: 5mm; }
+  }
+  
+  @media screen {
+    body { background: #f0f0f0; padding: 20px; }
+    .page {
+      background: white; margin: 0 auto 20px; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
   }
 </style>
 </head><body>
-<div class="header">
-  ${institution?.logo_url ? `<img src="${institution.logo_url}" style="height:60px;margin-bottom:8px" />` : ''}
-  <h1>${institution?.name || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h1>
-  ${institution?.name_en ? `<p style="font-size:14px;font-weight:600;color:#333;margin-bottom:2px">${institution.name_en}</p>` : ''}
-  <p>${institution?.address || ''}</p>
-  ${institution?.phone ? `<p>${bn ? 'ফোন' : 'Phone'}: ${institution.phone}</p>` : ''}
-  ${institution?.email ? `<p>${bn ? 'ইমেইল' : 'Email'}: ${institution.email}</p>` : ''}
-  ${institution?.other_info ? `<p style="font-size:11px;color:#777;margin-top:4px">${institution.other_info}</p>` : ''}
-</div>
-
-<h2 style="text-align:center;margin-bottom:15px;font-size:18px;color:#333">
-  ${bn ? 'ফি সংগ্রহ রিসিট' : 'Fee Collection Receipt'}
-  <span style="display:block;font-size:13px;color:${statusColor};margin-top:4px">(${statusLabel})</span>
-</h2>
-
-<div class="meta">
-  <div class="meta-item"><strong>${bn ? 'সেশন' : 'Session'}:</strong> ${sessionName}</div>
-  ${className ? `<div class="meta-item"><strong>${bn ? 'ক্লাস' : 'Class'}:</strong> ${className}</div>` : ''}
-  <div class="meta-item"><strong>${bn ? 'তারিখ' : 'Date'}:</strong> ${new Date().toLocaleDateString('bn-BD')}</div>
-  <div class="meta-item"><strong>${bn ? 'আদায়কারী' : 'Collector'}:</strong> ${collectorName}</div>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th style="width:40px;text-align:center">${bn ? 'ক্র.' : '#'}</th>
-      <th>${bn ? 'ছাত্রের নাম' : 'Student Name'}</th>
-      <th style="text-align:center">${bn ? 'রোল' : 'Roll'}</th>
-      <th>${bn ? 'ফি ধরন' : 'Fee Type'}</th>
-      <th style="text-align:right">${bn ? 'পরিমাণ' : 'Amount'}</th>
-      <th style="text-align:center">${bn ? 'ট্রানজেকশন' : 'Transaction'}</th>
-      <th style="text-align:center">${bn ? 'স্ট্যাটাস' : 'Status'}</th>
-    </tr>
-  </thead>
-  <tbody>
-    ${rows}
-    <tr class="total-row">
-      <td colspan="4" style="padding:10px 8px;border:1px solid #ddd;text-align:right">${bn ? 'মোট' : 'Total'}</td>
-      <td style="padding:10px 8px;border:1px solid #ddd;text-align:right;font-size:16px">৳ ${totalAmount}</td>
-      <td colspan="2" style="padding:10px 8px;border:1px solid #ddd;text-align:center">${bn ? 'মোট আদায়' : 'Total Collected'}: ${payments.length} ${bn ? 'জন' : 'students'}</td>
-    </tr>
-  </tbody>
-</table>
-
-<div class="signatures">
-  <div class="sig-box">
-    <div class="sig-line">${bn ? 'আদায়কারীর স্বাক্ষর' : 'Collector Signature'}</div>
-    <div class="sig-name">${collectorName}</div>
-  </div>
-  ${statusFilter === 'success' ? `
-  <div class="sig-box">
-    <div class="sig-line">${bn ? 'গ্রহণকারীর স্বাক্ষর (অনুমোদনকারী)' : 'Approver Signature'}</div>
-    <div class="sig-name">${approverName || (bn ? 'এডমিন' : 'Admin')}</div>
-  </div>
-  ` : ''}
-</div>
-
+${pages.join('')}
 <script>
-  document.fonts.ready.then(() => { setTimeout(() => window.print(), 500); });
+  document.fonts.ready.then(() => { setTimeout(() => window.print(), 800); });
 </script>
 </body></html>`;
 
