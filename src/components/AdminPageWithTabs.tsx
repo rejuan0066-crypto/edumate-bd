@@ -45,6 +45,7 @@ const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   '/admin/api-verification': lazy(() => import('@/pages/admin/AdminApiVerification')),
   '/admin/user-management': lazy(() => import('@/pages/admin/AdminUserManagement')),
   '/admin/approvals': lazy(() => import('@/pages/admin/AdminApprovals')),
+  '/admin/payments': lazy(() => import('@/pages/admin/AdminPayments')),
   '/admin/settings': lazy(() => import('@/pages/admin/AdminSettings')),
   '/admin/website': lazy(() => import('@/pages/admin/AdminWebsite')),
 };
