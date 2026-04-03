@@ -523,7 +523,11 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeTab === 'bg-remove' ? `no-bg-${Date.now()}.png` : activeTab === 'crop' ? 'cropped.png' : 'resized.jpg';
+    a.download = activeTab === 'bg-remove'
+      ? `no-bg-${Date.now()}.png`
+      : activeTab === 'crop'
+        ? 'cropped.png'
+        : `resized.${result?.format || 'jpg'}`;
     a.click();
   };
 
