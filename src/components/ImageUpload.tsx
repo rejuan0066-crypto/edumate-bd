@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Crop } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ImageCropDialog from '@/components/ImageCropDialog';
 
 interface ImageUploadProps {
   value: string;
@@ -12,11 +13,35 @@ interface ImageUploadProps {
   label?: string;
   className?: string;
   aspectRatio?: string;
+  enableCrop?: boolean;
+  cropShape?: 'square' | 'circle';
+  cropOutputSize?: number;
 }
 
-const ImageUpload = ({ value, onChange, folder = 'general', label, className = '', aspectRatio = 'aspect-square' }: ImageUploadProps) => {
+const ImageUpload = ({ value, onChange, folder = 'general', label, className = '', aspectRatio = 'aspect-square', enableCrop = false, cropShape = 'square', cropOutputSize = 256 }: ImageUploadProps) => {
   const { language } = useLanguage();
   const [uploading, setUploading] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [rawImageSrc, setRawImageSrc] = useState('');
+  const [pendingFile, setPendingFile] = useState<{ name: string; type: string } | null>(null);
+
+  const uploadBlob = async (blob: Blob, fileName: string, contentType: string) => {
+    setUploading(true);
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('website-assets')
+        .upload(fileName, blob, { upsert: true, contentType });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
+      onChange(data.publicUrl);
+      toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
+    } catch (err: any) {
+      toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
+    }
+    setUploading(false);
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -32,33 +57,45 @@ const ImageUpload = ({ value, onChange, folder = 'general', label, className = '
       return;
     }
 
+    if (enableCrop) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setRawImageSrc(reader.result as string);
+        setPendingFile({ name: file.name, type: file.type });
+        setCropOpen(true);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
+    // Direct upload without crop
     setUploading(true);
     try {
       const ext = file.name.split('.').pop()?.toLowerCase();
       const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('website-assets')
-        .upload(fileName, file, { 
-          upsert: true,
-          contentType: file.type,
-        });
+        .upload(fileName, file, { upsert: true, contentType: file.type });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('website-assets')
-        .getPublicUrl(fileName);
-
+      const { data } = supabase.storage.from('website-assets').getPublicUrl(fileName);
       onChange(data.publicUrl);
       toast.success(language === 'bn' ? 'ছবি আপলোড সফল!' : 'Image uploaded!');
     } catch (err: any) {
       toast.error(err.message || (language === 'bn' ? 'আপলোড ব্যর্থ' : 'Upload failed'));
     }
     setUploading(false);
+  };
+
+  const handleCrop = async (blob: Blob) => {
+    setCropOpen(false);
+    const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+    await uploadBlob(blob, fileName, 'image/png');
+    setRawImageSrc('');
+    setPendingFile(null);
   };
 
   return (
@@ -91,6 +128,17 @@ const ImageUpload = ({ value, onChange, folder = 'general', label, className = '
           </label>
         )}
       </div>
+
+      {enableCrop && (
+        <ImageCropDialog
+          open={cropOpen}
+          onOpenChange={setCropOpen}
+          imageSrc={rawImageSrc}
+          onCrop={handleCrop}
+          shape={cropShape}
+          outputSize={cropOutputSize}
+        />
+      )}
     </div>
   );
 };

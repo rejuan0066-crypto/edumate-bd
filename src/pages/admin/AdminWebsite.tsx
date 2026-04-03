@@ -420,6 +420,9 @@ const AdminWebsite = () => {
                     onChange={(url) => updateField('logo_url', url)}
                     folder="logo"
                     aspectRatio="aspect-square w-24"
+                    enableCrop
+                    cropShape={form.logo_shape === 'circle' ? 'circle' : 'square'}
+                    cropOutputSize={512}
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
@@ -442,6 +445,9 @@ const AdminWebsite = () => {
                     onChange={(url) => updateField('favicon_url', url)}
                     folder="logo"
                     aspectRatio="aspect-square w-20"
+                    enableCrop
+                    cropShape={form.favicon_shape === 'circle' ? 'circle' : 'square'}
+                    cropOutputSize={256}
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
@@ -464,6 +470,9 @@ const AdminWebsite = () => {
                     onChange={(url) => updateField('loader_logo_url', url)}
                     folder="logo"
                     aspectRatio="aspect-square w-20"
+                    enableCrop
+                    cropShape={form.loader_logo_shape === 'circle' ? 'circle' : 'square'}
+                    cropOutputSize={512}
                   />
                   <div className="flex gap-1 mt-2">
                     {(['square', 'rounded', 'circle'] as const).map(s => (
