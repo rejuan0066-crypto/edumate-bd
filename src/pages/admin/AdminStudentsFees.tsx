@@ -241,6 +241,25 @@ const AdminStudentsFees = () => {
                 </Select>
               </div>
 
+              {/* Payment Method */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  {bn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'} <span className="text-destructive">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setPaymentMethod('cash')}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${paymentMethod === 'cash' ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}>
+                    <Banknote className="w-5 h-5" />
+                    {bn ? 'ক্যাশ পেমেন্ট' : 'Cash Payment'}
+                  </button>
+                  <button onClick={() => setPaymentMethod('online')}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${paymentMethod === 'online' ? 'border-primary bg-primary/5 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/40'}`}>
+                    <Globe className="w-5 h-5" />
+                    {bn ? 'অনলাইন পেমেন্ট' : 'Online Payment'}
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-foreground mb-1 block">
                   {bn ? 'পরিমাণ (৳)' : 'Amount (৳)'} <span className="text-destructive">*</span>
