@@ -30,7 +30,7 @@ import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminResults from "./pages/admin/AdminResults";
 import AdminNotices from "./pages/admin/AdminNotices";
-import AdminFees from "./pages/admin/AdminFees";
+import AdminStudentsFees from "./pages/admin/AdminStudentsFees";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminExpenses from "./pages/admin/AdminExpenses";
