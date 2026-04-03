@@ -484,7 +484,7 @@ const AdminMenuManager = () => {
                 <CardTitle className="text-base flex items-center gap-2">
                   {bn ? 'সাইডবার মেনু আইটেম' : 'Sidebar Menu Items'}
                   <span className="text-xs font-normal text-muted-foreground">
-                    ({bn ? '→ সাব-মেনুতে সরান, ← মূল মেনুতে ফেরান' : '→ Move to sub-menu, ← Promote to main'})
+                    ({bn ? '→ সাব-মেনু, ← মূল মেনু, ▦ ট্যাব' : '→ Sub-menu, ← Main, ▦ Tab'})
                   </span>
                 </CardTitle>
                 {canEditItem && (
