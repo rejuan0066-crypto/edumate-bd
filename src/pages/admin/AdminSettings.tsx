@@ -528,7 +528,9 @@ const AdminSettings = () => {
               </div>
             </div>
           )}
+        </div>
             </div>
+
           </TabsContent>
 
           <TabsContent value="payment" className="mt-6">
