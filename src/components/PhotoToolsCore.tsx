@@ -562,19 +562,36 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
           )}
         </div>
 
-        {/* Result info bar */}
-        {hasResult && (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-border/30 bg-card/70 backdrop-blur-xl">
-            <div className="flex items-center gap-3 text-xs">
-              {result && activeTab !== 'bg-remove' && (
-                <>
-                  <span className="text-muted-foreground">{result.w}×{result.h}px • {formatSize(result.size)}</span>
-                  <span className={`font-semibold px-2 py-0.5 rounded-md ${result.size < originalInfo.size ? 'bg-green-500/10 text-green-600' : 'bg-orange-500/10 text-orange-500'}`}>
-                    {result.size < originalInfo.size ? `↓ ${Math.round((1 - result.size / originalInfo.size) * 100)}%` : `↑ ${Math.round((result.size / originalInfo.size - 1) * 100)}%`}
-                  </span>
-                </>
-              )}
+        {/* File size info bar - always visible */}
+        <div className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-border/30 bg-card/70 backdrop-blur-xl">
+          <div className="flex flex-col gap-1 text-xs">
+            {/* Original size */}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="inline-block w-2 h-2 rounded-full bg-blue-500" />
+              <span>{language === 'bn' ? 'মূল:' : 'Original:'} {originalInfo.width}×{originalInfo.height}px • <strong>{formatSize(originalInfo.size)}</strong></span>
             </div>
+            {/* Result size */}
+            {result && activeTab !== 'bg-remove' && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-foreground font-medium">
+                  {language === 'bn' ? 'আউটপুট:' : 'Output:'} {result.w}×{result.h}px • <strong>{formatSize(result.size)}</strong>
+                </span>
+                <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${result.size < originalInfo.size ? 'bg-green-500/15 text-green-600' : 'bg-orange-500/15 text-orange-500'}`}>
+                  {result.size < originalInfo.size
+                    ? `↓ ${Math.round((1 - result.size / originalInfo.size) * 100)}% ${language === 'bn' ? 'কমেছে' : 'smaller'}`
+                    : `↑ ${Math.round((result.size / originalInfo.size - 1) * 100)}% ${language === 'bn' ? 'বেড়েছে' : 'larger'}`}
+                </span>
+              </div>
+            )}
+            {activeTab === 'bg-remove' && bgResult && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-foreground font-medium">{language === 'bn' ? 'ব্যাকগ্রাউন্ড রিমুভ সম্পন্ন' : 'Background removed'}</span>
+              </div>
+            )}
+          </div>
+          {hasResult && (
             <Button
               size="sm"
               onClick={download}
@@ -583,8 +600,8 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
               <Download className="w-3.5 h-3.5 mr-1.5" />
               {language === 'bn' ? 'ডাউনলোড' : 'Download'}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ─── Right: Sidebar Controls ─── */}
