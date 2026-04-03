@@ -52,8 +52,40 @@ const AdminApprovals = () => {
     },
   });
 
+  // Execute the approved action on the target table
+  const executeApprovedAction = async (action: any) => {
+    const { action_type, target_table, target_id, payload } = action;
+    // Remove internal fields from payload
+    const cleanPayload = { ...payload };
+    delete cleanPayload._description;
+
+    try {
+      if (action_type === 'add') {
+        const { error } = await supabase.from(target_table).insert(cleanPayload as any);
+        if (error) throw error;
+      } else if (action_type === 'edit' && target_id) {
+        const { error } = await supabase.from(target_table).update(cleanPayload as any).eq('id', target_id);
+        if (error) throw error;
+      } else if (action_type === 'delete' && target_id) {
+        const { error } = await supabase.from(target_table).delete().eq('id', target_id);
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      console.error('Failed to execute approved action:', err);
+      throw new Error(bn ? 'ডাটা আপডেট করতে ব্যর্থ: ' + err.message : 'Failed to update data: ' + err.message);
+    }
+  };
+
   const approveMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => {
+      // If approving, execute the actual action first
+      if (status === 'approved') {
+        const action = actions.find((a: any) => a.id === id) || detailAction;
+        if (action) {
+          await executeApprovedAction(action);
+        }
+      }
+
       const { error } = await supabase
         .from('pending_actions')
         .update({
@@ -68,15 +100,17 @@ const AdminApprovals = () => {
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['pending-actions'] });
+      queryClient.invalidateQueries({ queryKey: ['fee_payments'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
       toast.success(
         status === 'approved'
-          ? (bn ? '✅ অনুমোদিত হয়েছে!' : '✅ Approved!')
+          ? (bn ? '✅ অনুমোদিত ও কার্যকর হয়েছে!' : '✅ Approved & executed!')
           : (bn ? '❌ প্রত্যাখ্যান করা হয়েছে' : '❌ Rejected')
       );
       setDetailAction(null);
       setAdminNote('');
     },
-    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error occurred'),
+    onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
 
   const pendingCount = actions.filter(a => a.status === 'pending').length;
