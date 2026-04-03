@@ -38,12 +38,19 @@ const DashboardInstitutionCard = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      console.log('Save institution - existing:', !!institution, 'form:', form);
       if (institution) {
         const { error } = await supabase.from('institutions').update(form).eq('id', institution.id);
-        if (error) throw error;
+        if (error) {
+          console.error('Institution update error:', error);
+          throw error;
+        }
       } else {
         const { error } = await supabase.from('institutions').insert({ ...form, is_default: true });
-        if (error) throw error;
+        if (error) {
+          console.error('Institution insert error:', error);
+          throw error;
+        }
       }
     },
     onSuccess: () => {
@@ -51,7 +58,10 @@ const DashboardInstitutionCard = () => {
       setEditing(false);
       toast.success(language === 'bn' ? 'প্রতিষ্ঠানের তথ্য সংরক্ষিত' : 'Institution info saved');
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      console.error('Institution save failed:', e);
+      toast.error(e.message || (language === 'bn' ? 'সংরক্ষণ ব্যর্থ' : 'Save failed'));
+    },
   });
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
