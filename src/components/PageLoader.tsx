@@ -3,7 +3,7 @@ import { BookOpen } from 'lucide-react';
 
 const PageLoader = () => {
   const { settings } = useWebsiteSettings();
-  const loaderLogo = settings.favicon_url || settings.logo_url;
+  const loaderLogo = settings.loader_logo_url || settings.favicon_url || settings.logo_url;
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background">
