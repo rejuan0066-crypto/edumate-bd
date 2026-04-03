@@ -95,6 +95,7 @@ const App = () => (
               <Route path="/donation" element={<DonationPage />} />
               <Route path="/fee-payment" element={<ProtectedRoute><FeePaymentPage /></ProtectedRoute>} />
               <Route path="/posts" element={<PostsPage />} />
+              <Route path="/photo-tools" element={<PhotoToolsPage />} />
               <Route path="/staff-dashboard" element={<ProtectedRoute><StaffDashboard /></ProtectedRoute>} />
               <Route path="/waiting-approval" element={<WaitingApproval />} />
               <Route path="/login" element={<Login />} />
