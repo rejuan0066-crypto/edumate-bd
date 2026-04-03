@@ -245,7 +245,7 @@ interface PrintReceiptParams {
   approverName: string;
   statusFilter: 'pending' | 'success';
   bn: boolean;
-  searchType: 'session_class' | 'session_roll';
+  searchType: 'session_class' | 'session_roll' | 'session_reg';
 }
 
 const feeTypeLabels: Record<string, { bn: string; en: string }> = {
