@@ -128,6 +128,7 @@ const AdminStudentsFees = () => {
     setStep('form');
     setFeeType('');
     setAmount('');
+    setPaymentMethod('cash');
     setTransactionId('');
     setFoundStudent(null);
     setRegNo('');
