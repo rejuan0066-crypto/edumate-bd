@@ -845,7 +845,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
             <CropControls language={language} cropW={cropW} cropH={cropH} canCrop={!!(cropData && cropData.w >= 5)} onCrop={doCrop} hasResult={!!result} onRecrop={() => { setResult(null); setCropData(null); setCropW(0); setCropH(0); setShowOriginal(false); }} />
           )}
           {activeTab === 'bg-remove' && (
-            <BgRemoveControls language={language} processing={processing} onRemove={removeBg} downloadFormat={bgDownloadFormat} onFormatChange={setBgDownloadFormat} bgResult={bgResult} onDownload={downloadBgResult} />
+            <BgRemoveControls language={language} processing={processing} onRemove={removeBg} downloadFormat={bgDownloadFormat} onFormatChange={setBgDownloadFormat} bgResult={bgResult} onDownload={downloadBgResult} mode={bgMode} onModeChange={setBgMode} />
           )}
         </div>
       </div>
