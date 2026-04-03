@@ -31,7 +31,7 @@ const AdminStaff = () => {
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [accEmail, setAccEmail] = useState('');
   const [accPassword, setAccPassword] = useState('');
-  const [accRole, setAccRole] = useState('staff');
+  const [accRole, setAccRole] = useState('none');
   const [accCreating, setAccCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
