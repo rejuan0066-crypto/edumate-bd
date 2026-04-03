@@ -75,19 +75,53 @@ export const DEFAULT_MENU_CONFIG: MenuConfig = {
   public: DEFAULT_PUBLIC,
 };
 
+// Collect all IDs (top-level + nested children) from the saved menu
+const collectAllIds = (items: MenuItemConfig[]): Set<string> => {
+  const ids = new Set<string>();
+  for (const item of items) {
+    ids.add(item.id);
+    if (item.children) {
+      for (const child of item.children) {
+        ids.add(child.id);
+      }
+    }
+  }
+  return ids;
+};
+
 // Merge saved menu with defaults so newly added default items appear automatically
 const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]): MenuItemConfig[] => {
-  const savedIds = new Set(saved.map(i => i.id));
-  const missing = defaults.filter(d => !savedIds.has(d.id));
-  if (missing.length === 0) return saved;
+  const savedIds = collectAllIds(saved);
+  // Also collect child IDs from defaults to check
+  const missingTopLevel = defaults.filter(d => !savedIds.has(d.id));
+  // Check for missing children in existing parents
+  const merged = saved.map(item => {
+    const defaultItem = defaults.find(d => d.id === item.id);
+    if (defaultItem?.children && defaultItem.children.length > 0) {
+      const existingChildIds = new Set((item.children || []).map(c => c.id));
+      const missingChildren = defaultItem.children.filter(dc => !existingChildIds.has(dc.id) && !savedIds.has(dc.id));
+      if (missingChildren.length > 0) {
+        const existingChildren = item.children || [];
+        const maxChildOrder = Math.max(...existingChildren.map(c => c.sort_order), -1);
+        return {
+          ...item,
+          children: [
+            ...existingChildren,
+            ...missingChildren.map((mc, idx) => ({ ...mc, sort_order: maxChildOrder + 1 + idx })),
+          ],
+        };
+      }
+    }
+    return item;
+  });
 
-  // Insert missing items at the end, preserving their default sort_order offset
-  const maxOrder = Math.max(...saved.map(i => i.sort_order), -1);
-  const merged = [
-    ...saved,
-    ...missing.map((m, idx) => ({ ...m, sort_order: maxOrder + 1 + idx })),
+  if (missingTopLevel.length === 0) return merged;
+
+  const maxOrder = Math.max(...merged.map(i => i.sort_order), -1);
+  return [
+    ...merged,
+    ...missingTopLevel.map((m, idx) => ({ ...m, sort_order: maxOrder + 1 + idx })),
   ];
-  return merged;
 };
 
 export const useMenuSettings = () => {

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput } from 'lucide-react';
+import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -36,6 +36,11 @@ interface MoveToSubMenuState {
   itemIndex: number | null;
 }
 
+interface AddMenuDialogState {
+  open: boolean;
+  type: 'sidebar' | 'public';
+}
+
 const AdminMenuManager = () => {
   const { language } = useLanguage();
   const { menuConfig, saveMenuConfig } = useMenuSettings();
@@ -46,6 +51,8 @@ const AdminMenuManager = () => {
   const [editForm, setEditForm] = useState({ label_bn: '', label_en: '', icon: '' });
   const [moveDialog, setMoveDialog] = useState<MoveToSubMenuState>({ open: false, itemIndex: null });
   const [selectedParent, setSelectedParent] = useState<string>('');
+  const [addDialog, setAddDialog] = useState<AddMenuDialogState>({ open: false, type: 'sidebar' });
+  const [newItem, setNewItem] = useState({ id: '', path: '', label_bn: '', label_en: '', icon: 'FileBox' });
 
   const bn = language === 'bn';
 
@@ -170,6 +177,55 @@ const AdminMenuManager = () => {
     });
   };
 
+  // Add a new menu item
+  const addNewMenuItem = () => {
+    if (!newItem.id || !newItem.path || !newItem.label_bn || !newItem.label_en) {
+      toast.error(bn ? 'সব ফিল্ড পূরণ করুন' : 'Fill all fields');
+      return;
+    }
+    const menuItem: MenuItemConfig = {
+      id: newItem.id,
+      path: newItem.path,
+      label_bn: newItem.label_bn,
+      label_en: newItem.label_en,
+      icon: newItem.icon || 'FileBox',
+      visible: true,
+      sort_order: 0,
+    };
+    if (addDialog.type === 'sidebar') {
+      setSidebar(prev => {
+        const maxOrder = Math.max(...prev.map(i => i.sort_order), -1);
+        return [...prev, { ...menuItem, sort_order: maxOrder + 1 }];
+      });
+    } else {
+      setPublicMenu(prev => {
+        const maxOrder = Math.max(...prev.map(i => i.sort_order), -1);
+        return [...prev, { ...menuItem, sort_order: maxOrder + 1 }];
+      });
+    }
+    setAddDialog({ open: false, type: 'sidebar' });
+    setNewItem({ id: '', path: '', label_bn: '', label_en: '', icon: 'FileBox' });
+    toast.success(bn ? 'মেনু আইটেম যোগ হয়েছে' : 'Menu item added');
+  };
+
+  // Delete a menu item
+  const deleteMenuItem = (list: MenuItemConfig[], setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>, index: number, isChild: boolean, parentIdx?: number) => {
+    if (isChild && parentIdx !== undefined) {
+      setList(prev => {
+        const newList = [...prev];
+        const parent = { ...newList[parentIdx] };
+        const children = [...(parent.children || [])];
+        children.splice(index, 1);
+        parent.children = children.length > 0 ? children : undefined;
+        newList[parentIdx] = parent;
+        return newList;
+      });
+    } else {
+      setList(prev => prev.filter((_, i) => i !== index).map((item, i) => ({ ...item, sort_order: i })));
+    }
+    toast.success(bn ? 'মেনু আইটেম মুছে ফেলা হয়েছে' : 'Menu item deleted');
+  };
+
   const MenuItemRow = ({ item, index, list, setList, type, isChild = false, parentIdx }: {
     item: MenuItemConfig; index: number; list: MenuItemConfig[];
     setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>;
@@ -260,6 +316,15 @@ const AdminMenuManager = () => {
             </button>
           </>
         )}
+
+        {/* Delete */}
+        <button
+          onClick={() => deleteMenuItem(list, setList, index, isChild || false, parentIdx)}
+          className="p-1.5 rounded hover:bg-destructive/10"
+          title={bn ? 'মুছুন' : 'Delete'}
+        >
+          <Trash2 className="w-3.5 h-3.5 text-destructive/70" />
+        </button>
       </div>
     </div>
   );
@@ -295,13 +360,18 @@ const AdminMenuManager = () => {
 
           <TabsContent value="sidebar" className="mt-4">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   {bn ? 'সাইডবার মেনু আইটেম' : 'Sidebar Menu Items'}
                   <span className="text-xs font-normal text-muted-foreground">
                     ({bn ? '→ সাব-মেনুতে সরান, ← মূল মেনুতে ফেরান' : '→ Move to sub-menu, ← Promote to main'})
                   </span>
                 </CardTitle>
+                {canEditItem && (
+                  <Button size="sm" variant="outline" onClick={() => { setAddDialog({ open: true, type: 'sidebar' }); setNewItem({ id: '', path: '', label_bn: '', label_en: '', icon: 'FileBox' }); }}>
+                    <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন মেনু' : 'Add Menu'}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-2">
                 {sidebar.map((item, idx) => (
@@ -322,8 +392,13 @@ const AdminMenuManager = () => {
 
           <TabsContent value="public" className="mt-4">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">{bn ? 'পাবলিক ওয়েবসাইট মেনু' : 'Public Website Menu'}</CardTitle>
+                {canEditItem && (
+                  <Button size="sm" variant="outline" onClick={() => { setAddDialog({ open: true, type: 'public' }); setNewItem({ id: '', path: '', label_bn: '', label_en: '', icon: '' }); }}>
+                    <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন মেনু' : 'Add Menu'}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-2">
                 {publicMenu.map((item, idx) => (
@@ -421,6 +496,76 @@ const AdminMenuManager = () => {
             <Button onClick={moveToSubMenu} disabled={!selectedParent}>
               <ArrowRight className="w-4 h-4 mr-1" />
               {bn ? 'সরান' : 'Move'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Menu Item Dialog */}
+      <Dialog open={addDialog.open} onOpenChange={open => !open && setAddDialog({ open: false, type: 'sidebar' })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5" />
+              {bn ? 'নতুন মেনু আইটেম যোগ করুন' : 'Add New Menu Item'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>{bn ? 'আইডি (ইউনিক)' : 'ID (unique)'}</Label>
+                <Input
+                  value={newItem.id}
+                  onChange={e => {
+                    const id = e.target.value.toLowerCase().replace(/\s+/g, '-');
+                    setNewItem(prev => ({ ...prev, id, path: id ? `/admin/${id}` : '' }));
+                  }}
+                  placeholder="e.g. my-menu"
+                />
+              </div>
+              <div>
+                <Label>{bn ? 'পাথ' : 'Path'}</Label>
+                <Input
+                  value={newItem.path}
+                  onChange={e => setNewItem(prev => ({ ...prev, path: e.target.value }))}
+                  placeholder="/admin/my-menu"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>{bn ? 'বাংলা নাম' : 'Bengali Name'}</Label>
+              <Input value={newItem.label_bn} onChange={e => setNewItem(prev => ({ ...prev, label_bn: e.target.value }))} placeholder={bn ? 'মেনু নাম' : 'Menu name in Bengali'} />
+            </div>
+            <div>
+              <Label>{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+              <Input value={newItem.label_en} onChange={e => setNewItem(prev => ({ ...prev, label_en: e.target.value }))} placeholder="Menu name in English" />
+            </div>
+            {addDialog.type === 'sidebar' && (
+              <div>
+                <Label>{bn ? 'আইকন' : 'Icon'}</Label>
+                <div className="flex flex-wrap gap-2 mt-2 max-h-32 overflow-y-auto p-2 border rounded-lg">
+                  {ICON_OPTIONS.map(icon => (
+                    <button
+                      key={icon}
+                      onClick={() => setNewItem(prev => ({ ...prev, icon }))}
+                      className={`px-3 py-1.5 text-xs rounded-md border transition-all ${
+                        newItem.icon === icon ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border hover:bg-muted'
+                      }`}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddDialog({ open: false, type: 'sidebar' })}>
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button onClick={addNewMenuItem}>
+              <Plus className="w-4 h-4 mr-1" />
+              {bn ? 'যোগ করুন' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
