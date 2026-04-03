@@ -60,7 +60,7 @@ const Login = () => {
 
   const loginLogo = settings.favicon_url || settings.logo_url;
   const showLogo = settings.login_show_logo !== false;
-  const logoShapeClass = settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none';
+  const faviconShapeClass = settings.favicon_shape === 'circle' ? 'rounded-full' : settings.favicon_shape === 'rounded' ? 'rounded-xl' : 'rounded-none';
   const showName = settings.login_show_institution_name !== false;
   const welcomeMsg = language === 'bn'
     ? (settings.login_welcome_bn || 'মাদরাসা ম্যানেজমেন্ট')
