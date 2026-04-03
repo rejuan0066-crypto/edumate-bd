@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { isAdminRole } from '@/lib/roles';
 
 interface UserItem {
   id: string;
