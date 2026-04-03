@@ -245,6 +245,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   phone: '01749842401',
   email: 'info@subhania.edu.bd',
   logo_url: '',
+  favicon_url: '',
   hero_title_bn: 'ইসলামিক শিক্ষার আলোকবর্তিকা',
   hero_title_en: 'Beacon of Islamic Education',
   hero_subtitle_bn: 'কুরআন ও সুন্নাহর আলোকে আদর্শ মানুষ গড়ার প্রত্যয়ে প্রতিষ্ঠিত',

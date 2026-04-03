@@ -3,13 +3,14 @@ import { BookOpen } from 'lucide-react';
 
 const PageLoader = () => {
   const { settings } = useWebsiteSettings();
+  const loaderLogo = settings.favicon_url || settings.logo_url;
 
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4 animate-fade-in">
-        {settings.logo_url ? (
+        {loaderLogo ? (
           <img
-            src={settings.logo_url}
+            src={loaderLogo}
             alt="Logo"
             className="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover animate-pulse"
           />

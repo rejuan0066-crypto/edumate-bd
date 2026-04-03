@@ -4,15 +4,17 @@ import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 const DynamicFavicon = () => {
   const { settings } = useWebsiteSettings();
 
+  const faviconSrc = settings.favicon_url || settings.logo_url;
+
   useEffect(() => {
-    if (settings.logo_url) {
+    if (faviconSrc) {
       const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
       if (link) {
-        link.href = settings.logo_url;
+        link.href = faviconSrc;
         link.type = 'image/png';
       }
     }
-  }, [settings.logo_url]);
+  }, [faviconSrc]);
 
   return null;
 };
