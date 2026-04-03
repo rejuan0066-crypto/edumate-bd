@@ -450,20 +450,31 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
         if (format === 'png') {
           blob = await makeBlob();
         } else {
-          const qualitySteps = Array.from(new Set([quality, 80, 70, 60, 50, 40, 30, 20, 10]))
-            .filter((value) => value <= quality)
-            .sort((a, b) => b - a);
-
-          for (const step of qualitySteps) {
-            blob = await makeBlob(step / 100);
-            if (blob && blob.size < originalInfo.size) break;
+          // Try user-requested quality first, then progressively lower
+          let q = quality / 100;
+          blob = await makeBlob(q);
+          
+          // If still bigger than original, keep lowering quality
+          while (blob && blob.size >= originalInfo.size && q > 0.1) {
+            q -= 0.1;
+            blob = await makeBlob(Math.max(0.05, q));
           }
         }
 
         if (blob) {
           setResult({ url: URL.createObjectURL(blob), size: blob.size, w: width, h: height, format });
           setShowOriginal(false);
-          toast.success(language === 'bn' ? `রিসাইজ সফল! (${formatSize(blob.size)})` : `Resized! (${formatSize(blob.size)})`);
+          const saved = originalInfo.size - blob.size;
+          const pct = Math.round((1 - blob.size / originalInfo.size) * 100);
+          if (saved > 0) {
+            toast.success(language === 'bn' 
+              ? `✅ ${formatSize(originalInfo.size)} → ${formatSize(blob.size)} (${pct}% কমেছে)` 
+              : `✅ ${formatSize(originalInfo.size)} → ${formatSize(blob.size)} (${pct}% smaller)`);
+          } else {
+            toast.info(language === 'bn'
+              ? `আউটপুট: ${formatSize(blob.size)} — সাইজ বাড়তে পারে PNG বা বড় ডাইমেনশনে`
+              : `Output: ${formatSize(blob.size)} — Size may increase with PNG or larger dimensions`);
+          }
         } else {
           toast.error(language === 'bn' ? 'প্রসেস ব্যর্থ হয়েছে' : 'Processing failed');
         }
@@ -478,7 +489,8 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
       toast.error(language === 'bn' ? 'ছবি লোড ব্যর্থ' : 'Image load failed');
       setProcessing(false);
     };
-    img.src = preview;
+    // Use object URL instead of base64 for better canvas encoding
+    img.src = previewObjUrl || preview;
   };
 
   // ── Crop logic (preserved) ──
