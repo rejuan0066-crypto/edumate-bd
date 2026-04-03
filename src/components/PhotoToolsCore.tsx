@@ -500,13 +500,13 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [cropH, setCropH] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
 
-  const handleFile = (f: File, src: string) => {
-    setPreview(src);
+  const handleFile = (f: File) => {
     const objUrl = URL.createObjectURL(f);
+    setPreview(objUrl);
     setPreviewObjUrl(objUrl);
     const img = new window.Image();
     img.onload = () => setOriginalInfo({ width: img.width, height: img.height, size: f.size });
-    img.src = src;
+    img.src = objUrl;
   };
 
   const reset = () => {
