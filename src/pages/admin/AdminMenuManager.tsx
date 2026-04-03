@@ -177,6 +177,55 @@ const AdminMenuManager = () => {
     });
   };
 
+  // Add a new menu item
+  const addNewMenuItem = () => {
+    if (!newItem.id || !newItem.path || !newItem.label_bn || !newItem.label_en) {
+      toast.error(bn ? 'সব ফিল্ড পূরণ করুন' : 'Fill all fields');
+      return;
+    }
+    const menuItem: MenuItemConfig = {
+      id: newItem.id,
+      path: newItem.path,
+      label_bn: newItem.label_bn,
+      label_en: newItem.label_en,
+      icon: newItem.icon || 'FileBox',
+      visible: true,
+      sort_order: 0,
+    };
+    if (addDialog.type === 'sidebar') {
+      setSidebar(prev => {
+        const maxOrder = Math.max(...prev.map(i => i.sort_order), -1);
+        return [...prev, { ...menuItem, sort_order: maxOrder + 1 }];
+      });
+    } else {
+      setPublicMenu(prev => {
+        const maxOrder = Math.max(...prev.map(i => i.sort_order), -1);
+        return [...prev, { ...menuItem, sort_order: maxOrder + 1 }];
+      });
+    }
+    setAddDialog({ open: false, type: 'sidebar' });
+    setNewItem({ id: '', path: '', label_bn: '', label_en: '', icon: 'FileBox' });
+    toast.success(bn ? 'মেনু আইটেম যোগ হয়েছে' : 'Menu item added');
+  };
+
+  // Delete a menu item
+  const deleteMenuItem = (list: MenuItemConfig[], setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>, index: number, isChild: boolean, parentIdx?: number) => {
+    if (isChild && parentIdx !== undefined) {
+      setList(prev => {
+        const newList = [...prev];
+        const parent = { ...newList[parentIdx] };
+        const children = [...(parent.children || [])];
+        children.splice(index, 1);
+        parent.children = children.length > 0 ? children : undefined;
+        newList[parentIdx] = parent;
+        return newList;
+      });
+    } else {
+      setList(prev => prev.filter((_, i) => i !== index).map((item, i) => ({ ...item, sort_order: i })));
+    }
+    toast.success(bn ? 'মেনু আইটেম মুছে ফেলা হয়েছে' : 'Menu item deleted');
+  };
+
   const MenuItemRow = ({ item, index, list, setList, type, isChild = false, parentIdx }: {
     item: MenuItemConfig; index: number; list: MenuItemConfig[];
     setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>;
