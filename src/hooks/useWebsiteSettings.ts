@@ -178,6 +178,7 @@ export interface WebsiteSettings {
   email: string;
   logo_url: string;
   favicon_url: string;
+  loader_logo_url: string;
   hero_title_bn: string;
   hero_title_en: string;
   hero_subtitle_bn: string;
