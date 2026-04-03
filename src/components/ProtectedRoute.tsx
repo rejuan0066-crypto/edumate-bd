@@ -4,6 +4,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { isAdminRole } from '@/lib/roles';
 
 // No always-allowed admin paths for non-admins except profile
 
@@ -48,7 +49,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   // Pending users must go to waiting-approval page
-  if (userStatus === 'pending' && role !== 'admin') {
+  if (userStatus === 'pending' && !isAdminRole(role)) {
     const path = location.pathname;
     if (path !== '/waiting-approval') {
       return <Navigate to="/waiting-approval" replace />;
@@ -59,8 +60,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const path = location.pathname;
   const isAdminRoute = path.startsWith('/admin');
 
-  // Admin has full access
-  if (role === 'admin') {
+  // Admin/Super Admin has full access
+  if (isAdminRole(role)) {
     return <>{children}</>;
   }
 

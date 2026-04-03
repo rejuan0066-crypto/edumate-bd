@@ -1,5 +1,6 @@
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 
 /**
  * Hook for page-level permission checks.
@@ -10,8 +11,8 @@ export const usePagePermissions = (menuPath: string) => {
   const { role } = useAuth();
   const { canView, canAdd, canEdit, canDelete, isLoading } = usePermissions();
 
-  // Admin has full access
-  if (role === 'admin') {
+  // Admin/Super Admin has full access
+  if (isAdminRole(role)) {
     return {
       canViewPage: true,
       canAddItem: true,

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { isAdminRole } from '@/lib/roles';
 
 export interface Permission {
   menu_path: string;
@@ -46,7 +47,7 @@ export const usePermissions = () => {
   const isLoading = roleLoading || userLoading;
 
   const hasPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    if (role === 'admin') return true;
+    if (isAdminRole(role)) return true;
 
     // Check user-level permissions first (higher priority)
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
@@ -80,7 +81,7 @@ export const usePermissions = () => {
 
   // Check ONLY individual user_permissions (ignoring role_permissions)
   const hasUserPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    if (role === 'admin') return true;
+    if (isAdminRole(role)) return true;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
     if (!userPerm) return false;
     switch (action) {
@@ -93,7 +94,7 @@ export const usePermissions = () => {
   };
 
   const requiresApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    if (role === 'admin') return false;
+    if (isAdminRole(role)) return false;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
     if (!userPerm) return false;
     if (action) {

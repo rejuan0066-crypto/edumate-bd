@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .eq("role", "admin")
+      .in("role", ["admin", "super_admin"])
       .maybeSingle();
 
     if (!roleData) {
@@ -47,6 +47,8 @@ Deno.serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const callerIsSuperAdmin = roleData.role === 'super_admin';
 
     const url = new URL(req.url);
     let action = url.searchParams.get("action");
@@ -188,6 +190,14 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Protect super_admin from role changes by non-super_admin
+      const { data: targetRole } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", targetUserId).maybeSingle();
+      if (targetRole?.role === 'super_admin' && !callerIsSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Cannot modify super admin role" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Remove role entirely
       if (remove_role) {
         await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
@@ -253,6 +263,14 @@ Deno.serve(async (req) => {
       if (user_id === userId) {
         return new Response(JSON.stringify({ error: "Cannot delete your own account" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Protect super_admin from deletion by non-super_admin
+      const { data: targetRole2 } = await supabaseAdmin.from("user_roles").select("role").eq("user_id", user_id).maybeSingle();
+      if (targetRole2?.role === 'super_admin' && !callerIsSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Cannot delete super admin" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 

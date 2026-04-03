@@ -3,6 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
+import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -19,7 +20,7 @@ const Dashboard = () => {
   const { language } = useLanguage();
   const { role } = useAuth();
   const { hasPermission } = usePermissions();
-  const isAdmin = role === 'admin';
+  const isAdmin = isAdminRole(role);
   const canViewStats = isAdmin || hasPermission('/admin', 'view');
   const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff' | 'donors'; filters: Record<string, any> }>({
     open: false, title: '', table: 'students', filters: {},

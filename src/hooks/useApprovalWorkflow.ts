@@ -32,7 +32,7 @@ export const useApprovalWorkflow = () => {
 
   // Check if action requires approval for a specific menu path
   const needsApproval = (menuPath: string, action?: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    if (role === 'admin') return false;
+    if (role === 'admin' || role === 'super_admin') return false;
     const perm = userPermissions.find((p: any) => p.menu_path === menuPath);
     if (!perm) return false;
     if (action) {
