@@ -368,6 +368,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [cropData, setCropData] = useState<{ x: number; y: number; w: number; h: number; scale: number } | null>(null);
   const [cropW, setCropW] = useState(0);
   const [cropH, setCropH] = useState(0);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const handleFile = (f: File, src: string) => {
     setPreview(src);
