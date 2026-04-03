@@ -102,13 +102,31 @@ const SmsGatewaySettings = () => {
       toast.error(bn ? 'ফোন নম্বর দিন' : 'Enter phone number');
       return;
     }
+    if (!existingId) {
+      toast.error(bn ? 'আগে সেটিংস সংরক্ষণ করুন' : 'Save settings first');
+      return;
+    }
     setTesting(true);
-    // Placeholder for test - just show success since actual sending needs backend
-    setTimeout(() => {
-      toast.info(bn ? 'SMS টেস্ট ফিচার শীঘ্রই আসছে' : 'SMS test feature coming soon');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-sms', {
+        body: {
+          phone: testPhone,
+          message: bn ? 'এটি একটি টেস্ট SMS। আপনার SMS গেটওয়ে সফলভাবে কনফিগার হয়েছে।' : 'This is a test SMS. Your SMS gateway is configured successfully.',
+        },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success(bn ? 'টেস্ট SMS সফলভাবে পাঠানো হয়েছে!' : 'Test SMS sent successfully!');
+      } else {
+        toast.error(bn ? 'SMS পাঠানো ব্যর্থ: ' + (data?.error || 'Unknown error') : 'SMS failed: ' + (data?.error || 'Unknown error'));
+      }
+    } catch (err: any) {
+      toast.error(bn ? 'SMS পাঠানো ব্যর্থ' : 'Failed to send SMS');
+      console.error('Test SMS error:', err);
+    } finally {
       setTesting(false);
       setTestDialog(false);
-    }, 1000);
+    }
   };
 
   const currentProvider = PROVIDERS.find(p => p.id === selectedProvider) || PROVIDERS[4];
