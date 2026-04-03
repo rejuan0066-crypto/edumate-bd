@@ -443,7 +443,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     <div className="flex flex-col lg:flex-row gap-4 min-h-[60vh]">
       {/* ─── Left: Canvas ─── */}
       <div className="flex-1 flex flex-col gap-3">
-        <div className="relative flex-1 min-h-[250px] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
+        <div className="relative flex-1 min-h-[180px] max-h-[42vh] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
           {processing && <ProcessingOverlay language={language} />}
           <CanvasPreview
             preview={preview}
