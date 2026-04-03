@@ -91,9 +91,9 @@ const Login = () => {
         <div className="text-center mb-8">
           {showLogo && (
             loginLogo ? (
-              <img src={loginLogo} alt="Logo" className="w-16 h-16 rounded-full object-cover mx-auto mb-4 border-2 border-primary/20" />
+              <img src={loginLogo} alt="Logo" className={`w-16 h-16 ${logoShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`} />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
+              <div className={`w-16 h-16 ${logoShapeClass} bg-primary mx-auto mb-4 flex items-center justify-center`}>
                 <GraduationCap className="w-9 h-9 text-primary-foreground" />
               </div>
             )

@@ -119,9 +119,9 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
               {settings.logo_url ? (
-                <img src={settings.logo_url} alt="Logo" className={`${logoSize} rounded-full object-cover`} />
+                <img src={settings.logo_url} alt="Logo" className={`${logoSize} ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
               ) : (
-                <div className={`${logoSize} rounded-full bg-primary flex items-center justify-center`}>
+                <div className={`${logoSize} ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
                   <GraduationCap className="w-7 h-7 text-primary-foreground" />
                 </div>
               )}
