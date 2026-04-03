@@ -3,6 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
+import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import LanguageToggle from './LanguageToggle';
@@ -36,12 +38,22 @@ const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { t, language } = useLanguage();
-  const { signOut } = useAuth();
+  const { signOut, role } = useAuth();
+  const { canView, hasUserPermission } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const { menuConfig } = useMenuSettings();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const isAdmin = isAdminRole(role);
+
+  // Check if user can see a menu path
+  const canAccessPath = (path: string): boolean => {
+    if (isAdmin) return true;
+    if (path === '/admin' || path === '/admin/profile') return true;
+    return canView(path) || hasUserPermission(path, 'view');
+  };
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
@@ -91,20 +103,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     children?: { path: string; label: string; icon: any }[];
   };
 
-  // Convert MenuItemConfig to MenuItem using dynamic config
+  // Convert MenuItemConfig to MenuItem using dynamic config, filtering by permission
   const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
     path: cfg.path,
     label: language === 'bn' ? cfg.label_bn : cfg.label_en,
     icon: getIcon(cfg.icon),
-    children: cfg.children?.filter(c => c.visible).map(c => ({
-      path: c.path,
-      label: language === 'bn' ? c.label_bn : c.label_en,
-      icon: getIcon(c.icon),
-    })),
+    children: cfg.children
+      ?.filter(c => c.visible && canAccessPath(c.path))
+      .map(c => ({
+        path: c.path,
+        label: language === 'bn' ? c.label_bn : c.label_en,
+        icon: getIcon(c.icon),
+      })),
   });
 
   const baseMenuItems: MenuItem[] = menuConfig.sidebar
-    .filter(item => item.visible)
+    .filter(item => item.visible && canAccessPath(item.path))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 

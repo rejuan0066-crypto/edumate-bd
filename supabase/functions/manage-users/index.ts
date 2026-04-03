@@ -35,6 +35,90 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub as string;
 
+    const url = new URL(req.url);
+    let action = url.searchParams.get("action");
+
+    // Parse body early for POST to check action
+    let body: any = {};
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+      body = await req.json();
+      if (!action && body.action) {
+        action = body.action;
+      }
+    }
+
+    // ENSURE STAFF — allowed for any authenticated user (no admin check)
+    if (action === "ensure_staff") {
+      // Try finding by user_id first
+      const { data: existingStaff } = await supabaseAdmin
+        .from("staff")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingStaff) {
+        return new Response(JSON.stringify({ success: true, staff_id: existingStaff.id, already_exists: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Try matching by email and auto-link
+      const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+      const userEmail = authUser?.email;
+
+      if (userEmail) {
+        const { data: staffByEmail } = await supabaseAdmin
+          .from("staff")
+          .select("id")
+          .eq("email", userEmail)
+          .is("user_id", null)
+          .maybeSingle();
+
+        if (staffByEmail) {
+          await supabaseAdmin.from("staff").update({ user_id: userId }).eq("id", staffByEmail.id);
+          return new Response(JSON.stringify({ success: true, staff_id: staffByEmail.id, linked_by_email: true }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Auto-create new staff record
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const { data: userRoleData } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const userRole = userRoleData?.role || 'staff';
+
+      const { data: newStaff, error: staffError } = await supabaseAdmin.from("staff").insert({
+        user_id: userId,
+        name_bn: profile?.full_name || userEmail?.split('@')[0] || 'Unknown',
+        name_en: profile?.full_name || '',
+        email: userEmail || '',
+        phone: profile?.phone || '',
+        department: userRole === 'teacher' ? 'teaching' : 'general',
+        status: 'active',
+      }).select('id').single();
+
+      if (staffError) {
+        return new Response(JSON.stringify({ error: "Failed to create staff profile: " + staffError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, staff_id: newStaff.id, created: true }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // All other actions require admin role
     const { data: roleData } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -49,9 +133,6 @@ Deno.serve(async (req) => {
     }
 
     const callerIsSuperAdmin = roleData.role === 'super_admin';
-
-    const url = new URL(req.url);
-    let action = url.searchParams.get("action");
 
     // LIST users
     if (req.method === "GET" && !action) {
@@ -85,12 +166,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    
-    // Allow action from body if not in URL params
-    if (!action && body.action) {
-      action = body.action;
-    }
+    // body already parsed above
 
     // CREATE user
     if (action === "create") {
@@ -352,56 +428,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ENSURE STAFF - auto-create staff record for logged-in user
-    if (action === "ensure_staff") {
-      const { data: existingStaff } = await supabaseAdmin
-        .from("staff")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (existingStaff) {
-        return new Response(JSON.stringify({ success: true, staff_id: existingStaff.id, already_exists: true }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", userId)
-        .maybeSingle();
-      
-      const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
-      
-      const { data: roleData } = await supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      const userRole = roleData?.role || 'staff';
-
-      const { data: newStaff, error: staffError } = await supabaseAdmin.from("staff").insert({
-        user_id: userId,
-        name_bn: profile?.full_name || authUser?.email?.split('@')[0] || 'Unknown',
-        name_en: profile?.full_name || '',
-        email: authUser?.email || '',
-        phone: profile?.phone || '',
-        department: userRole === 'teacher' ? 'teaching' : 'general',
-        status: 'active',
-      }).select('id').single();
-
-      if (staffError) {
-        return new Response(JSON.stringify({ error: "Failed to create staff profile: " + staffError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      return new Response(JSON.stringify({ success: true, staff_id: newStaff.id, created: true }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // ensure_staff is handled above (before admin check)
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
