@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,11 +10,51 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LanguageToggle from '@/components/LanguageToggle';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   User, Wallet, CalendarDays, Bell, LogOut, GraduationCap,
-  Phone, MapPin, Briefcase, Calendar, Clock, Loader2
+  Phone, MapPin, Briefcase, Calendar, Clock, Loader2,
+  Users, BookOpen, CreditCard, FileText, BarChart3,
+  type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+// Lazy-load admin modules for staff with permissions
+const AdminStudents = lazy(() => import('@/pages/admin/AdminStudents'));
+const AdminStaff = lazy(() => import('@/pages/admin/AdminStaff'));
+const AdminDivisions = lazy(() => import('@/pages/admin/AdminDivisions'));
+const AdminSubjects = lazy(() => import('@/pages/admin/AdminSubjects'));
+const AdminResults = lazy(() => import('@/pages/admin/AdminResults'));
+const AdminNotices = lazy(() => import('@/pages/admin/AdminNotices'));
+const AdminFees = lazy(() => import('@/pages/admin/AdminFees'));
+const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
+const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
+const AdminDonors = lazy(() => import('@/pages/admin/AdminDonors'));
+const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
+
+// Staff-accessible module definitions
+interface StaffModule {
+  key: string;
+  menuPath: string;
+  labelBn: string;
+  labelEn: string;
+  icon: LucideIcon;
+  component: React.LazyExoticComponent<React.ComponentType>;
+}
+
+const STAFF_MODULES: StaffModule[] = [
+  { key: 'students', menuPath: '/admin/students', labelBn: 'ছাত্র ব্যবস্থাপনা', labelEn: 'Students', icon: Users, component: AdminStudents },
+  { key: 'staff', menuPath: '/admin/staff', labelBn: 'শিক্ষক/স্টাফ', labelEn: 'Staff', icon: Users, component: AdminStaff },
+  { key: 'divisions', menuPath: '/admin/divisions', labelBn: 'বিভাগ', labelEn: 'Divisions', icon: BookOpen, component: AdminDivisions },
+  { key: 'subjects', menuPath: '/admin/subjects', labelBn: 'বিষয়', labelEn: 'Subjects', icon: BookOpen, component: AdminSubjects },
+  { key: 'results', menuPath: '/admin/results', labelBn: 'ফলাফল', labelEn: 'Results', icon: FileText, component: AdminResults },
+  { key: 'notices', menuPath: '/admin/notices', labelBn: 'নোটিশ', labelEn: 'Notices', icon: Bell, component: AdminNotices },
+  { key: 'fees', menuPath: '/admin/fees', labelBn: 'ফি', labelEn: 'Fees', icon: CreditCard, component: AdminFees },
+  { key: 'attendance', menuPath: '/admin/attendance', labelBn: 'হাজিরা ব্যবস্থাপনা', labelEn: 'Attendance Mgmt', icon: CalendarDays, component: AdminAttendance },
+  { key: 'expenses', menuPath: '/admin/expenses', labelBn: 'খরচ', labelEn: 'Expenses', icon: Wallet, component: AdminExpenses },
+  { key: 'donors', menuPath: '/admin/donors', labelBn: 'দাতা', labelEn: 'Donors', icon: Users, component: AdminDonors },
+  { key: 'reports', menuPath: '/admin/reports', labelBn: 'রিপোর্ট', labelEn: 'Reports', icon: BarChart3, component: AdminReports },
+];
 
 const StaffDashboard = () => {
   const { language } = useLanguage();
