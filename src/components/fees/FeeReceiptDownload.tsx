@@ -3,6 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Download, FileText, Loader2 } from 'lucide-react';
@@ -173,59 +174,77 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         </button>
       </div>
 
-      {/* Search type */}
-      <div className="flex gap-2 flex-wrap">
-        <button onClick={() => setSearchType('session_class')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${searchType === 'session_class' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-          {bn ? 'সেশন + ক্লাস' : 'Session + Class'}
-        </button>
-        <button onClick={() => setSearchType('session_roll')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${searchType === 'session_roll' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-          {bn ? 'সেশন + রোল' : 'Session + Roll'}
-        </button>
-        <button onClick={() => setSearchType('session_reg')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${searchType === 'session_reg' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-          {bn ? 'সেশন + রেজিস্ট্রেশন' : 'Session + Registration'}
-        </button>
-      </div>
+      {/* Search type tabs */}
+      <Tabs value={searchType} onValueChange={(v) => setSearchType(v as any)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="session_class">{bn ? 'সেশন + ক্লাস' : 'Session + Class'}</TabsTrigger>
+          <TabsTrigger value="session_roll">{bn ? 'সেশন + রোল' : 'Session + Roll'}</TabsTrigger>
+          <TabsTrigger value="session_reg">{bn ? 'সেশন + রেজি.' : 'Session + Reg.'}</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'সেশন' : 'Session'}</label>
-          <Select value={selectedSession} onValueChange={setSelectedSession}>
-            <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-            <SelectContent>
-              {sessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+        <TabsContent value="session_class" className="mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'সেশন' : 'Session'}</label>
+              <Select value={selectedSession} onValueChange={setSelectedSession}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'ক্লাস' : 'Class'}</label>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name_bn} ({c.divisions?.name_bn || ''})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </TabsContent>
 
-        {searchType === 'session_class' ? (
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'ক্লাস' : 'Class'}</label>
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-              <SelectContent>
-                {classes.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name_bn} ({c.divisions?.name_bn || ''})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <TabsContent value="session_roll" className="mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'সেশন' : 'Session'}</label>
+              <Select value={selectedSession} onValueChange={setSelectedSession}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'রোল নম্বর' : 'Roll Number'}</label>
+              <Input className="bg-background" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} placeholder={bn ? 'রোল' : 'Roll'} />
+            </div>
           </div>
-        ) : searchType === 'session_roll' ? (
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'রোল নম্বর' : 'Roll Number'}</label>
-            <Input className="bg-background" value={rollNumber} onChange={(e) => setRollNumber(e.target.value)} placeholder={bn ? 'রোল' : 'Roll'} />
+        </TabsContent>
+
+        <TabsContent value="session_reg" className="mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'সেশন' : 'Session'}</label>
+              <Select value={selectedSession} onValueChange={setSelectedSession}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration No'}</label>
+              <Input className="bg-background" value={regNumber} onChange={(e) => setRegNumber(e.target.value)} placeholder={bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration No'} />
+            </div>
           </div>
-        ) : (
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration No'}</label>
-            <Input className="bg-background" value={regNumber} onChange={(e) => setRegNumber(e.target.value)} placeholder={bn ? 'রেজিস্ট্রেশন নম্বর' : 'Registration No'} />
-          </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <Button onClick={handleDownload} disabled={loading} className="btn-primary-gradient w-full">
         {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
