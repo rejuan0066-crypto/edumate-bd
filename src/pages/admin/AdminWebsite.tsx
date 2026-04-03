@@ -1273,9 +1273,9 @@ const AdminWebsite = () => {
                       category_bn: 'প্রতিষ্ঠান তথ্য',
                       category_en: 'Institution Info',
                       icon: <Globe className="w-4 h-4" />,
-                      keys: ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url', 'favicon_url'],
-                      labels_bn: ['বাংলা নাম', 'ইংরেজি নাম', 'ঠিকানা', 'ফোন', 'ইমেইল', 'লোগো', 'ফেভিকন লোগো'],
-                      labels_en: ['Bangla Name', 'English Name', 'Address', 'Phone', 'Email', 'Logo', 'Favicon Logo'],
+                      keys: ['institution_name', 'institution_name_en', 'address', 'phone', 'email', 'logo_url', 'favicon_url', 'loader_logo_url'],
+                      labels_bn: ['বাংলা নাম', 'ইংরেজি নাম', 'ঠিকানা', 'ফোন', 'ইমেইল', 'লোগো', 'ফেভিকন', 'লোডার লোগো'],
+                      labels_en: ['Bangla Name', 'English Name', 'Address', 'Phone', 'Email', 'Logo', 'Favicon', 'Loader Logo'],
                     },
                     {
                       category_bn: 'হিরো ব্যানার',
