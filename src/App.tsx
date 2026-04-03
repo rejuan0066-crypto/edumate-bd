@@ -114,7 +114,7 @@ const App = () => (
               <Route path="/admin/subjects" element={<ProtectedRoute><ModuleGuard menuPath="/admin/subjects"><AdminSubjects /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/results" element={<ProtectedRoute><ModuleGuard menuPath="/admin/results"><AdminResults /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/notices" element={<ProtectedRoute><ModuleGuard menuPath="/admin/notices"><AdminNotices /></ModuleGuard></ProtectedRoute>} />
-              <Route path="/admin/fees" element={<ProtectedRoute><ModuleGuard menuPath="/admin/fees"><AdminFees /></ModuleGuard></ProtectedRoute>} />
+              <Route path="/admin/students-fees" element={<ProtectedRoute><ModuleGuard menuPath="/admin/students-fees"><AdminStudentsFees /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/website" element={<ProtectedRoute><AdminWebsite /></ProtectedRoute>} />
               <Route path="/admin/expenses" element={<ProtectedRoute><ModuleGuard menuPath="/admin/expenses"><AdminExpenses /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/donors" element={<ProtectedRoute><ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard></ProtectedRoute>} />
