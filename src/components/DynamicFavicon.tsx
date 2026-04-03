@@ -1,22 +1,40 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 
+const CACHE_KEY = 'cached_favicon_url';
+
 const DynamicFavicon = () => {
-  const { settings } = useWebsiteSettings();
+  const { settings, isLoading } = useWebsiteSettings();
+  const [applied, setApplied] = useState(false);
+
+  // Apply cached favicon immediately on mount (before DB loads)
+  useEffect(() => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached && !applied) {
+      applyFavicon(cached);
+    }
+  }, []);
 
   const faviconSrc = settings.favicon_url || settings.logo_url;
 
+  // Update when settings load from DB
   useEffect(() => {
-    if (faviconSrc) {
-      const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
-      if (link) {
-        link.href = faviconSrc;
-        link.type = 'image/png';
-      }
+    if (!isLoading && faviconSrc) {
+      applyFavicon(faviconSrc);
+      localStorage.setItem(CACHE_KEY, faviconSrc);
+      setApplied(true);
     }
-  }, [faviconSrc]);
+  }, [isLoading, faviconSrc]);
 
   return null;
 };
+
+function applyFavicon(src: string) {
+  const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
+  if (link) {
+    link.href = src;
+    link.type = 'image/png';
+  }
+}
 
 export default DynamicFavicon;
