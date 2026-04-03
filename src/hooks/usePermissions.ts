@@ -46,12 +46,18 @@ export const usePermissions = () => {
 
   const isLoading = roleLoading || userLoading;
 
+  // If user has ANY user_permissions entries, those become the sole authority
+  // (no fallback to role permissions). This ensures the individual permission
+  // modal is the complete source of truth when configured.
+  const hasUserOverrides = userPermissions.length > 0;
+
   const hasPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
     if (isAdminRole(role)) return true;
 
-    // Check user-level permissions first (higher priority)
-    const userPerm = userPermissions.find(p => p.menu_path === menuPath);
-    if (userPerm) {
+    // If user has individual permissions set, ONLY use those (no role fallback)
+    if (hasUserOverrides) {
+      const userPerm = userPermissions.find(p => p.menu_path === menuPath);
+      if (!userPerm) return false; // Not in user perms = no access
       switch (action) {
         case 'view': return userPerm.can_view;
         case 'add': return userPerm.can_add;
@@ -61,7 +67,7 @@ export const usePermissions = () => {
       }
     }
 
-    // Fall back to role-level permissions
+    // No user overrides — use role-level permissions
     const perm = rolePermissions.find(p => p.menu_path === menuPath);
     if (!perm) return false;
 
