@@ -40,7 +40,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Remove the background from this image completely. Make the background fully transparent. Keep the main subject intact with clean edges. Output only the image with transparent background.",
+                text: "Remove the background from this image with professional precision. CRITICAL RULES: 1) Make the background FULLY TRANSPARENT (alpha=0). 2) Keep the foreground subject COMPLETELY INTACT - preserve ALL original colors, textures, and details of the subject WITHOUT any color bleeding or mixing. 3) Create SHARP, CLEAN edges around the subject with anti-aliasing but NO color fringing or halo artifacts. 4) Do NOT alter, tint, or desaturate any foreground pixels. 5) Hair, fur, and fine details should be preserved with natural-looking edges. 6) Output ONLY the processed image with transparent background as PNG.",
               },
               {
                 type: "image_url",
