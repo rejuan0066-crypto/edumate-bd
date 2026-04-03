@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
