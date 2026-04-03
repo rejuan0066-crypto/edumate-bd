@@ -53,9 +53,9 @@ const ImageUploadArea = ({ onFile, language }: { onFile: (f: File, src: string) 
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[40vh]">
       <label
-        className={`flex flex-col items-center justify-center w-full max-w-xl py-20 px-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all duration-300 ${
+        className={`flex flex-col items-center justify-center w-full max-w-xl py-12 px-8 border-2 border-dashed rounded-3xl cursor-pointer transition-all duration-300 ${
           dragOver
             ? 'border-primary bg-primary/5 scale-[1.02] shadow-lg shadow-primary/10'
             : 'border-border/40 bg-card/50 backdrop-blur-sm hover:border-primary/40 hover:bg-card/80 hover:shadow-lg'
@@ -315,7 +315,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
           src={displayUrl}
           alt="Preview"
           onLoad={imgLoaded}
-          className="max-w-full max-h-[30vh] lg:max-h-[38vh] object-contain select-none"
+          className="max-w-full max-h-[22vh] lg:max-h-[28vh] object-contain select-none"
           draggable={false}
         />
         {isCropMode && cropBox.w > 0 && cropBox.h > 0 && (
@@ -440,10 +440,10 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   if (!preview) return <ImageUploadArea onFile={handleFile} language={language} />;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 min-h-[60vh]">
+    <div className="flex flex-col lg:flex-row gap-4 min-h-[40vh]">
       {/* ─── Left: Canvas ─── */}
       <div className="flex-1 flex flex-col gap-3">
-        <div className="relative flex-1 min-h-[180px] max-h-[42vh] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
+        <div className="relative flex-1 min-h-[140px] max-h-[32vh] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
           {processing && <ProcessingOverlay language={language} />}
           <CanvasPreview
             preview={preview}
@@ -498,7 +498,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
         </div>
 
         {/* Controls (scrollable on desktop) */}
-        <div className="flex-1 overflow-y-auto lg:max-h-[calc(50vh-60px)] pr-0.5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto lg:max-h-[calc(60vh-60px)] pr-0.5 custom-scrollbar">
           {activeTab === 'resize' && (
             <ResizeControls originalInfo={originalInfo} language={language} onProcess={processResize} processing={processing} />
           )}
