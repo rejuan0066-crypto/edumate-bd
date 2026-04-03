@@ -33,14 +33,14 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
+        model: "google/gemini-3-pro-image-preview",
         messages: [
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Remove the background from this image with professional precision. CRITICAL RULES: 1) Make the background FULLY TRANSPARENT (alpha=0). 2) Keep the foreground subject COMPLETELY INTACT - preserve ALL original colors, textures, and details of the subject WITHOUT any color bleeding or mixing. 3) Create SHARP, CLEAN edges around the subject with anti-aliasing but NO color fringing or halo artifacts. 4) Do NOT alter, tint, or desaturate any foreground pixels. 5) Hair, fur, and fine details should be preserved with natural-looking edges. 6) Output ONLY the processed image with transparent background as PNG.",
+                text: "Perform a high-precision background removal on this exact image. NON-NEGOTIABLE RULES: 1) Remove ONLY the true outer/background area and make it fully transparent (alpha=0). 2) Preserve the ENTIRE foreground subject exactly as-is, including all white, off-white, cream, beige, gold, pale gray, and low-contrast regions that belong to the subject. 3) If any part is ambiguous, prefer keeping the pixel rather than deleting subject detail. 4) Do not let foreground colors blend into the transparent background. 5) Preserve original color, opacity, texture, ornament, shadows, and edge shape of the subject; no tint shift, desaturation, erosion, or glow. 6) Avoid halos, cut edges, holes, missing borders, or semi-transparent fringing. 7) Keep thin outlines, decorative borders, and subtle light details fully intact. 8) Return only a clean PNG of the same subject with transparent background.",
               },
               {
                 type: "image_url",
