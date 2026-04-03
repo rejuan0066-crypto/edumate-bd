@@ -55,7 +55,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'prayer-calendar', path: '/admin/prayer-calendar', label_bn: 'নামাজ ও ক্যালেন্ডার', label_en: 'Prayer & Calendar', icon: 'Clock', visible: true, sort_order: 23 },
   { id: 'salary', path: '/admin/salary', label_bn: 'বেতন ব্যবস্থাপনা', label_en: 'Salary Management', icon: 'Wallet', visible: true, sort_order: 24 },
   { id: 'user-management', path: '/admin/user-management', label_bn: 'ইউজার ম্যানেজমেন্ট', label_en: 'User Management', icon: 'UserPlus', visible: true, sort_order: 25 },
-  { id: 'settings', path: '/admin/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: 'Settings', visible: true, sort_order: 26 },
+  { id: 'photo-tools', path: '/admin/photo-tools', label_bn: 'ফটো টুলস', label_en: 'Photo Tools', icon: 'Camera', visible: true, sort_order: 26 },
+  { id: 'settings', path: '/admin/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: 'Settings', visible: true, sort_order: 27 },
 ];
 
 const DEFAULT_PUBLIC: MenuItemConfig[] = [
