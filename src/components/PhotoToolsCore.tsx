@@ -30,15 +30,13 @@ const ProcessingOverlay = ({ language }: { language: string }) => (
 );
 
 // ─── Image Upload Area ───
-const ImageUploadArea = ({ onFile, language }: { onFile: (f: File, src: string) => void; language: string }) => {
+const ImageUploadArea = ({ onFile, language }: { onFile: (f: File) => void; language: string }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Only image files'); return; }
-    const reader = new FileReader();
-    reader.onload = () => onFile(file, reader.result as string);
-    reader.readAsDataURL(file);
+    onFile(file);
   };
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
