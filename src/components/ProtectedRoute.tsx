@@ -60,52 +60,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const path = location.pathname;
   const isAdminRoute = path.startsWith('/admin');
 
-  // Admin/Super Admin has full access
+  // Admin/Super Admin has full access everywhere
   if (isAdminRole(role)) {
     return <>{children}</>;
   }
 
-  // Non-admin on admin routes
+  // STRICT: Non-admin users can NEVER access /admin routes — redirect to staff dashboard
   if (isAdminRoute) {
-    // /admin/profile is always allowed for non-admins (own profile)
-    if (path === '/admin/profile' || path.startsWith('/admin/profile/')) {
-      return <>{children}</>;
-    }
-
-    // Check if user has ANY permission (role-based OR individual) to view this path
-    const hasAccess = canView(path) || hasUserPermission(path, 'view');
-
-    if (accessControl?.accessMap) {
-      const roleAccess = accessControl.accessMap[path];
-      const userBaseRole = role as string;
-      const roleAllowed = roleAccess && roleAccess[userBaseRole];
-      
-      if (roleAllowed) {
-        if (!hasAccess) {
-          return <Navigate to="/staff-dashboard" replace />;
-        }
-      } else {
-        if (!hasUserPermission(path, 'view')) {
-          return <Navigate to="/staff-dashboard" replace />;
-        }
-      }
-    } else if (accessControl?.paths) {
-      const isAdminOnly = accessControl.paths.some(p => path === p || path.startsWith(p + '/'));
-      if (isAdminOnly) {
-        if (!hasUserPermission(path, 'view')) {
-          return <Navigate to="/staff-dashboard" replace />;
-        }
-      } else {
-        if (!hasAccess) {
-          return <Navigate to="/staff-dashboard" replace />;
-        }
-      }
-    } else {
-      // No access control configured — allow if user has any permission
-      if (!hasAccess) {
-        return <Navigate to="/staff-dashboard" replace />;
-      }
-    }
+    return <Navigate to="/staff-dashboard" replace />;
   }
 
   return <>{children}</>;
