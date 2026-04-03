@@ -311,11 +311,19 @@ const AdminMenuManager = () => {
     setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>;
     type: 'sidebar' | 'public'; isChild?: boolean; parentIdx?: number;
   }) => (
-    <div className={`flex items-center gap-2 py-2 px-3 rounded-lg border border-border bg-card ${!item.visible ? 'opacity-50' : ''} ${isChild ? 'ml-8' : ''}`}>
+    <div className={`flex items-center gap-2 py-2 px-3 rounded-lg border ${item.tab_of ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'} ${!item.visible ? 'opacity-50' : ''} ${isChild ? 'ml-8' : ''}`}>
       <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{bn ? item.label_bn : item.label_en}</p>
-        <p className="text-xs text-muted-foreground">{item.path}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium text-foreground truncate">{bn ? item.label_bn : item.label_en}</p>
+          {item.tab_of && (
+            <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
+              <LayoutPanelTop className="w-3 h-3" />
+              {bn ? 'ট্যাব' : 'Tab'}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">{item.path}{item.tab_of ? ` → ${item.tab_of}` : ''}</p>
       </div>
       {type === 'sidebar' && item.icon && (
         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{item.icon}</span>
