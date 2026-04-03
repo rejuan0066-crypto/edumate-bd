@@ -357,7 +357,39 @@ const AdminMenuManager = () => {
           {item.visible ? <Eye className="w-3.5 h-3.5 text-primary" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
         </button>
 
-        {type === 'sidebar' && !isChild && (
+        {/* Tab / Sub-menu controls for sidebar items */}
+        {type === 'sidebar' && (
+          <>
+            {/* Move to tab or remove tab */}
+            {item.tab_of ? (
+              <button
+                onClick={() => removeTabOf(item.id, isChild ? (parentIdx ?? null) : null, isChild ? index : null)}
+                className="p-1.5 rounded hover:bg-muted"
+                title={bn ? 'ট্যাব থেকে সরান' : 'Remove from tab'}
+              >
+                <Undo2 className="w-3.5 h-3.5 text-primary" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setTabDialog({
+                    open: true,
+                    itemId: item.id,
+                    parentIdx: isChild ? (parentIdx ?? null) : null,
+                    childIdx: isChild ? index : null,
+                  });
+                  setSelectedTabParent('');
+                }}
+                className="p-1.5 rounded hover:bg-muted"
+                title={bn ? 'ট্যাব হিসেবে সরান' : 'Move to tab'}
+              >
+                <LayoutPanelTop className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </>
+        )}
+
+        {type === 'sidebar' && !isChild && !item.tab_of && (
           <>
             {/* Move to sub-menu */}
             <button
