@@ -103,20 +103,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     children?: { path: string; label: string; icon: any }[];
   };
 
-  // Convert MenuItemConfig to MenuItem using dynamic config
+  // Convert MenuItemConfig to MenuItem using dynamic config, filtering by permission
   const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
     path: cfg.path,
     label: language === 'bn' ? cfg.label_bn : cfg.label_en,
     icon: getIcon(cfg.icon),
-    children: cfg.children?.filter(c => c.visible).map(c => ({
-      path: c.path,
-      label: language === 'bn' ? c.label_bn : c.label_en,
-      icon: getIcon(c.icon),
-    })),
+    children: cfg.children
+      ?.filter(c => c.visible && canAccessPath(c.path))
+      .map(c => ({
+        path: c.path,
+        label: language === 'bn' ? c.label_bn : c.label_en,
+        icon: getIcon(c.icon),
+      })),
   });
 
   const baseMenuItems: MenuItem[] = menuConfig.sidebar
-    .filter(item => item.visible)
+    .filter(item => item.visible && canAccessPath(item.path))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 
