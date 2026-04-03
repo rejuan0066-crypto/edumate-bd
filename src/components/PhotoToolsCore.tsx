@@ -498,7 +498,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
         </div>
 
         {/* Controls (scrollable on desktop) */}
-        <div className="flex-1 overflow-y-auto lg:max-h-[calc(50vh-60px)] pr-0.5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto lg:max-h-[calc(60vh-60px)] pr-0.5 custom-scrollbar">
           {activeTab === 'resize' && (
             <ResizeControls originalInfo={originalInfo} language={language} onProcess={processResize} processing={processing} />
           )}
