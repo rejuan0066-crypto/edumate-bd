@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput, Plus, Trash2 } from 'lucide-react';
+import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput, Plus, Trash2, LayoutPanelTop, Undo2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
