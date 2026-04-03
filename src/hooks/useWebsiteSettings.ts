@@ -372,6 +372,15 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     { id: 'routines', label_bn: 'রুটিনসমূহ', label_en: 'Routines', path: '/about', icon: 'List', visible: true, sort_order: 5 },
     { id: 'results', label_bn: 'পরীক্ষাসমূহের ফলাফল', label_en: 'Exam Results', path: '/result', icon: 'Award', visible: true, sort_order: 6 },
   ],
+  login_bg_image_url: '',
+  login_bg_color: '',
+  login_show_logo: true,
+  login_show_institution_name: true,
+  login_welcome_bn: 'মাদরাসা ম্যানেজমেন্ট',
+  login_welcome_en: 'Madrasa Management',
+  login_form_bg_color: '',
+  login_form_border_radius: 12,
+  login_form_shadow: true,
 };
 
 export const useWebsiteSettings = () => {
