@@ -110,12 +110,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   // Convert MenuItemConfig to MenuItem using dynamic config, filtering by permission
+  // Also filter out items that are configured as tabs of another page
   const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
     path: cfg.path,
     label: language === 'bn' ? cfg.label_bn : cfg.label_en,
     icon: getIcon(cfg.icon),
     children: cfg.children
-      ?.filter(c => c.visible && canAccessPath(c.path))
+      ?.filter(c => c.visible && !c.tab_of && canAccessPath(c.path))
       .map(c => ({
         path: c.path,
         label: language === 'bn' ? c.label_bn : c.label_en,
