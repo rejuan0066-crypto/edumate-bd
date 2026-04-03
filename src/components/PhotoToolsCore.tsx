@@ -118,6 +118,15 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
   const onW = (v: number) => { setWidth(v); if (keepRatio && originalInfo.width) setHeight(Math.round((v / originalInfo.width) * originalInfo.height)); };
   const onH = (v: number) => { setHeight(v); if (keepRatio && originalInfo.height) setWidth(Math.round((v / originalInfo.height) * originalInfo.width)); };
 
+  // Live estimated file size
+  const pixelRatio = (width * height) / (originalInfo.width * originalInfo.height || 1);
+  const qualityFactor = format === 'png' ? 1 : quality / 100;
+  const formatFactor = format === 'webp' ? 0.65 : format === 'jpeg' ? 0.85 : 1.2;
+  const estimatedSize = Math.round(originalInfo.size * pixelRatio * qualityFactor * formatFactor);
+  const sizeDiff = originalInfo.size - estimatedSize;
+  const sizePct = originalInfo.size > 0 ? Math.round((Math.abs(sizeDiff) / originalInfo.size) * 100) : 0;
+  const isSizeSmaller = sizeDiff > 0;
+
   const presets = [
     { l: '50%', f: .5 }, { l: '75%', f: .75 }, { l: '150%', f: 1.5 },
     { l: '256px', s: 256 }, { l: '512px', s: 512 }, { l: '1024px', s: 1024 },
@@ -129,6 +138,25 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ImageIcon className="w-3.5 h-3.5" />
         <span>{originalInfo.width}×{originalInfo.height} • {formatSize(originalInfo.size)}</span>
+      </div>
+
+      {/* Live Size Estimation */}
+      <div className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-xs font-medium transition-all duration-300 ${
+        isSizeSmaller
+          ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
+          : 'border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400'
+      }`}>
+        <div className="flex items-center gap-2">
+          <span>{isSizeSmaller ? '📉' : '📈'}</span>
+          <span>
+            {language === 'bn' ? 'আনুমানিক:' : 'Est:'} <strong>{formatSize(estimatedSize)}</strong>
+          </span>
+        </div>
+        <span className="font-bold">
+          {isSizeSmaller
+            ? `↓ ${sizePct}% ${language === 'bn' ? 'কমবে' : 'smaller'}`
+            : `↑ ${sizePct}% ${language === 'bn' ? 'বাড়বে' : 'larger'}`}
+        </span>
       </div>
 
       {/* Dimensions */}
