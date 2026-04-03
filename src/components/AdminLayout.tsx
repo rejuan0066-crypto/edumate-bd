@@ -28,7 +28,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Receipt, ReceiptText, FileSignature, FilePlus, FileCheck, Tag,
   Wrench, Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3,
   KeyRound, Palette, ListOrdered, UserCircle, FileBox, Home,
-  Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid, HardDrive, MessageSquare, Wallet, UserPlus,
+  Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid, HardDrive, MessageSquare, Wallet, UserPlus, Camera,
 };
 
 const MENU_SCROLL_STORAGE_KEYS = {
