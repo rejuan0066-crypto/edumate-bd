@@ -427,14 +427,33 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const processResize = (width: number, height: number, quality: number, format: 'jpeg' | 'png' | 'webp') => {
     setProcessing(true);
     const img = new window.Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const c = document.createElement('canvas'); c.width = width; c.height = height;
-      const ctx = c.getContext('2d')!; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, width, height);
-      c.toBlob(blob => {
-        if (blob) setResult({ url: URL.createObjectURL(blob), size: blob.size, w: width, h: height });
+      try {
+        const c = document.createElement('canvas'); c.width = width; c.height = height;
+        const ctx = c.getContext('2d')!; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+        const mimeType = `image/${format}`;
+        const q = format === 'png' ? undefined : quality / 100;
+        c.toBlob(blob => {
+          if (blob) {
+            setResult({ url: URL.createObjectURL(blob), size: blob.size, w: width, h: height });
+            setShowOriginal(false);
+            toast.success(language === 'bn' ? `রিসাইজ সফল! (${formatSize(blob.size)})` : `Resized! (${formatSize(blob.size)})`);
+          } else {
+            toast.error(language === 'bn' ? 'প্রসেস ব্যর্থ হয়েছে' : 'Processing failed');
+          }
+          setProcessing(false);
+        }, mimeType, q);
+      } catch (err) {
+        console.error('Resize error:', err);
+        toast.error(language === 'bn' ? 'প্রসেস ব্যর্থ হয়েছে' : 'Processing failed');
         setProcessing(false);
-      }, `image/${format}`, format === 'png' ? undefined : quality / 100);
+      }
+    };
+    img.onerror = () => {
+      toast.error(language === 'bn' ? 'ছবি লোড ব্যর্থ' : 'Image load failed');
+      setProcessing(false);
     };
     img.src = preview;
   };
