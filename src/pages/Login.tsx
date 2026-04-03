@@ -80,7 +80,9 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
       {!settings.login_bg_image_url && <div className="islamic-pattern absolute inset-0" />}
-      {settings.login_bg_image_url && <div className="absolute inset-0 bg-black/40" />}
+      {settings.login_bg_image_url && (
+        <div className="absolute inset-0 bg-black/40" style={{ backdropFilter: settings.login_bg_blur ? `blur(${settings.login_bg_blur}px)` : undefined }} />
+      )}
       <div className="absolute top-4 right-4 z-10">
         <LanguageToggle />
       </div>
@@ -97,7 +99,9 @@ const Login = () => {
           )}
           {showName && (
             <h1 className="text-xl font-display font-bold text-foreground">
-              {language === 'bn' ? settings.institution_name : settings.institution_name_en}
+              {language === 'bn'
+                ? (settings.login_institution_name_bn || settings.institution_name)
+                : (settings.login_institution_name_en || settings.institution_name_en)}
             </h1>
           )}
           <p className="text-lg font-semibold text-foreground mt-1">{welcomeMsg}</p>

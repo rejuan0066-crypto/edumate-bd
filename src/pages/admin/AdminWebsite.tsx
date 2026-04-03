@@ -1458,7 +1458,16 @@ const AdminWebsite = () => {
                     <Input className="bg-background mt-1" type="color" value={form.login_bg_color || '#1a5e3a'} onChange={e => updateField('login_bg_color', e.target.value)} />
                   </div>
                 </div>
-                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_bg_image_url', 'login_bg_color'])} disabled={saving}>
+                {form.login_bg_image_url && (
+                  <div>
+                    <Label>{language === 'bn' ? 'ব্যাকগ্রাউন্ড ব্লার (px)' : 'Background Blur (px)'}</Label>
+                    <div className="flex items-center gap-3 mt-1">
+                      <Input className="bg-background w-24" type="number" min={0} max={30} value={form.login_bg_blur ?? 0} onChange={e => updateField('login_bg_blur', Number(e.target.value))} />
+                      <span className="text-xs text-muted-foreground">{form.login_bg_blur ?? 0}px</span>
+                    </div>
+                  </div>
+                )}
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_bg_image_url', 'login_bg_color', 'login_bg_blur'])} disabled={saving}>
                   <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'ব্যাকগ্রাউন্ড সেভ' : 'Save Background'}
                 </Button>
               </div>
@@ -1478,7 +1487,21 @@ const AdminWebsite = () => {
                     <Label>{language === 'bn' ? 'প্রতিষ্ঠানের নাম দেখান' : 'Show Institution Name'}</Label>
                   </div>
                 </div>
-                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_show_logo', 'login_show_institution_name'])} disabled={saving}>
+                {form.login_show_institution_name && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label>{language === 'bn' ? 'প্রতিষ্ঠানের নাম (বাংলা) - লগইনে' : 'Institution Name (Bangla) - Login'}</Label>
+                      <Input className="bg-background mt-1" value={form.login_institution_name_bn} onChange={e => updateField('login_institution_name_bn', e.target.value)} placeholder={settings.institution_name} />
+                      <p className="text-xs text-muted-foreground mt-1">{language === 'bn' ? 'খালি রাখলে মূল নাম দেখাবে' : 'Leave empty to use main name'}</p>
+                    </div>
+                    <div>
+                      <Label>{language === 'bn' ? 'প্রতিষ্ঠানের নাম (ইংরেজি) - লগইনে' : 'Institution Name (English) - Login'}</Label>
+                      <Input className="bg-background mt-1" value={form.login_institution_name_en} onChange={e => updateField('login_institution_name_en', e.target.value)} placeholder={settings.institution_name_en} />
+                      <p className="text-xs text-muted-foreground mt-1">{language === 'bn' ? 'খালি রাখলে মূল নাম দেখাবে' : 'Leave empty to use main name'}</p>
+                    </div>
+                  </div>
+                )}
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_show_logo', 'login_show_institution_name', 'login_institution_name_bn', 'login_institution_name_en'])} disabled={saving}>
                   <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'সেভ' : 'Save'}
                 </Button>
               </div>
