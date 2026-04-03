@@ -257,6 +257,7 @@ const AdminStaff = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="none">{bn ? '🚫 রোল ছাড়া (ঐচ্ছিক)' : '🚫 No Role (Optional)'}</SelectItem>
                       <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
                       <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
                     </SelectContent>
