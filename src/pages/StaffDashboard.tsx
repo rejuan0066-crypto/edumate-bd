@@ -27,7 +27,7 @@ const AdminDivisions = lazy(() => import('@/pages/admin/AdminDivisions'));
 const AdminSubjects = lazy(() => import('@/pages/admin/AdminSubjects'));
 const AdminResults = lazy(() => import('@/pages/admin/AdminResults'));
 const AdminNotices = lazy(() => import('@/pages/admin/AdminNotices'));
-const AdminFees = lazy(() => import('@/pages/admin/AdminFees'));
+const AdminStudentsFees = lazy(() => import('@/pages/admin/AdminStudentsFees'));
 const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
 const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
 const AdminDonors = lazy(() => import('@/pages/admin/AdminDonors'));
