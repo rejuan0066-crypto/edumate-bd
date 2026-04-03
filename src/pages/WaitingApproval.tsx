@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Clock, LogOut, RefreshCw } from 'lucide-react';
 import LanguageToggle from '@/components/LanguageToggle';
 import { Navigate } from 'react-router-dom';
+import { isAdminRole } from '@/lib/roles';
 
 const WaitingApproval = () => {
   const { language } = useLanguage();
-  const { user, signOut, loading, userStatus } = useAuth();
+  const { user, signOut, loading, userStatus, role } = useAuth();
   const bn = language === 'bn';
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (userStatus === 'approved') return <Navigate to="/staff-dashboard" replace />;
+  if (userStatus === 'approved' || isAdminRole(role)) return <Navigate to={isAdminRole(role) ? '/admin' : '/staff-dashboard'} replace />;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
