@@ -84,7 +84,7 @@ const AdminStaff = () => {
           action: 'create',
           email: accEmail.trim(),
           password: accPassword,
-          role: accRole,
+          role: accRole === 'none' ? undefined : accRole,
           full_name: selectedStaff?.name_bn || selectedStaff?.name_en || '',
           staff_id: selectedStaff?.id,
         },
