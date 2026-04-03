@@ -425,8 +425,8 @@ const AdminWebsite = () => {
                   <Label>{language === 'bn' ? 'লোডার লোগো (পেজ লোডিং)' : 'Loader Logo (Page Loading)'}</Label>
                   <p className="text-xs text-muted-foreground mb-1">{language === 'bn' ? 'পেজ লোড হওয়ার সময় আলাদা লোগো দেখাতে আপলোড করুন। না দিলে ফেভিকন বা মূল লোগো ব্যবহৃত হবে।' : 'Separate logo for page loader. Falls back to favicon or main logo.'}</p>
                   <ImageUpload
-                    value={(form as any).loader_logo_url || ''}
-                    onChange={(url) => updateField('loader_logo_url' as any, url)}
+                    value={form.loader_logo_url || ''}
+                    onChange={(url) => updateField('loader_logo_url', url)}
                     folder="logo"
                     className="mt-1"
                     aspectRatio="aspect-square w-24"
