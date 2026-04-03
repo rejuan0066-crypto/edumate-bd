@@ -136,7 +136,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   const baseMenuItems: MenuItem[] = menuConfig.sidebar
-    .filter(item => item.visible && canAccessParent(item))
+    .filter(item => item.visible && !item.tab_of && canAccessParent(item))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 
