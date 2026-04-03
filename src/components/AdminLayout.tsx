@@ -1,4 +1,5 @@
 import { ReactNode, useRef, useState } from 'react';
+import AdminPageWithTabs from './AdminPageWithTabs';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useIsEmbedded } from '@/contexts/EmbeddedContext';
 import { useQuery } from '@tanstack/react-query';
@@ -110,12 +111,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   // Convert MenuItemConfig to MenuItem using dynamic config, filtering by permission
+  // Also filter out items that are configured as tabs of another page
   const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
     path: cfg.path,
     label: language === 'bn' ? cfg.label_bn : cfg.label_en,
     icon: getIcon(cfg.icon),
     children: cfg.children
-      ?.filter(c => c.visible && canAccessPath(c.path))
+      ?.filter(c => c.visible && !c.tab_of && canAccessPath(c.path))
       .map(c => ({
         path: c.path,
         label: language === 'bn' ? c.label_bn : c.label_en,
@@ -135,7 +137,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   };
 
   const baseMenuItems: MenuItem[] = menuConfig.sidebar
-    .filter(item => item.visible && canAccessParent(item))
+    .filter(item => item.visible && !item.tab_of && canAccessParent(item))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 
@@ -309,7 +311,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6">
+          <AdminPageWithTabs>{children}</AdminPageWithTabs>
+        </main>
       </div>
     </div>
   );

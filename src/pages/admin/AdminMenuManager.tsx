@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput, Plus, Trash2 } from 'lucide-react';
+import { Save, RotateCcw, GripVertical, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, ArrowRight, ArrowLeft, FolderInput, Plus, Trash2, LayoutPanelTop, Undo2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -36,6 +36,13 @@ interface MoveToSubMenuState {
   itemIndex: number | null;
 }
 
+interface MoveToTabState {
+  open: boolean;
+  itemId: string | null;
+  parentIdx: number | null; // null = top-level, otherwise index in sidebar
+  childIdx: number | null;
+}
+
 interface AddMenuDialogState {
   open: boolean;
   type: 'sidebar' | 'public';
@@ -53,6 +60,8 @@ const AdminMenuManager = () => {
   const [selectedParent, setSelectedParent] = useState<string>('');
   const [addDialog, setAddDialog] = useState<AddMenuDialogState>({ open: false, type: 'sidebar' });
   const [newItem, setNewItem] = useState({ id: '', path: '', label_bn: '', label_en: '', icon: 'FileBox' });
+  const [tabDialog, setTabDialog] = useState<MoveToTabState>({ open: false, itemId: null, parentIdx: null, childIdx: null });
+  const [selectedTabParent, setSelectedTabParent] = useState<string>('');
 
   const bn = language === 'bn';
 
@@ -226,16 +235,95 @@ const AdminMenuManager = () => {
     toast.success(bn ? 'মেনু আইটেম মুছে ফেলা হয়েছে' : 'Menu item deleted');
   };
 
+  // Move item to become a tab of another page
+  const moveToTab = () => {
+    if (!selectedTabParent) return;
+    setSidebar(prev => {
+      return prev.map((item, idx) => {
+        // Top-level item
+        if (tabDialog.parentIdx === null && item.id === tabDialog.itemId) {
+          return { ...item, tab_of: selectedTabParent };
+        }
+        // Child item
+        if (tabDialog.parentIdx !== null && idx === tabDialog.parentIdx && item.children) {
+          return {
+            ...item,
+            children: item.children.map((child, cidx) => {
+              if (cidx === tabDialog.childIdx) {
+                return { ...child, tab_of: selectedTabParent };
+              }
+              return child;
+            }),
+          };
+        }
+        return item;
+      });
+    });
+    setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null });
+    setSelectedTabParent('');
+    toast.success(bn ? 'ট্যাব হিসেবে সেট করা হয়েছে' : 'Set as tab');
+  };
+
+  // Remove tab_of from an item
+  const removeTabOf = (itemId: string, parentIdx: number | null, childIdx: number | null) => {
+    setSidebar(prev => {
+      return prev.map((item, idx) => {
+        if (parentIdx === null && item.id === itemId) {
+          const { tab_of, ...rest } = item;
+          return rest as MenuItemConfig;
+        }
+        if (parentIdx !== null && idx === parentIdx && item.children) {
+          return {
+            ...item,
+            children: item.children.map((child, cidx) => {
+              if (cidx === childIdx) {
+                const { tab_of, ...rest } = child;
+                return rest as MenuItemConfig;
+              }
+              return child;
+            }),
+          };
+        }
+        return item;
+      });
+    });
+    toast.success(bn ? 'ট্যাব থেকে সরানো হয়েছে' : 'Removed from tab');
+  };
+
+  // Get all possible tab parent paths (pages that exist)
+  const getTabParentOptions = (excludeId: string): { path: string; label: string }[] => {
+    const options: { path: string; label: string }[] = [];
+    sidebar.forEach(item => {
+      if (item.id !== excludeId && !item.tab_of) {
+        options.push({ path: item.path, label: bn ? item.label_bn : item.label_en });
+      }
+      item.children?.forEach(child => {
+        if (child.id !== excludeId && !child.tab_of) {
+          options.push({ path: child.path, label: bn ? child.label_bn : child.label_en });
+        }
+      });
+    });
+    return options;
+  };
+
   const MenuItemRow = ({ item, index, list, setList, type, isChild = false, parentIdx }: {
     item: MenuItemConfig; index: number; list: MenuItemConfig[];
     setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>;
     type: 'sidebar' | 'public'; isChild?: boolean; parentIdx?: number;
   }) => (
-    <div className={`flex items-center gap-2 py-2 px-3 rounded-lg border border-border bg-card ${!item.visible ? 'opacity-50' : ''} ${isChild ? 'ml-8' : ''}`}>
+    <div className={`flex items-center gap-2 py-2 px-3 rounded-lg border ${item.tab_of ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'} ${!item.visible ? 'opacity-50' : ''} ${isChild ? 'ml-8' : ''}`}>
       <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{bn ? item.label_bn : item.label_en}</p>
-        <p className="text-xs text-muted-foreground">{item.path}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium text-foreground truncate">{bn ? item.label_bn : item.label_en}</p>
+          {item.tab_of && (
+            <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded-full shrink-0 flex items-center gap-0.5">
+              <LayoutPanelTop className="w-3 h-3" />
+              {bn ? 'ট্যাব' : 'Tab'}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">{item.path}{item.tab_of ? ` → ${item.tab_of}` : ''}</p>
       </div>
       {type === 'sidebar' && item.icon && (
         <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{item.icon}</span>
@@ -269,7 +357,39 @@ const AdminMenuManager = () => {
           {item.visible ? <Eye className="w-3.5 h-3.5 text-primary" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />}
         </button>
 
-        {type === 'sidebar' && !isChild && (
+        {/* Tab / Sub-menu controls for sidebar items */}
+        {type === 'sidebar' && (
+          <>
+            {/* Move to tab or remove tab */}
+            {item.tab_of ? (
+              <button
+                onClick={() => removeTabOf(item.id, isChild ? (parentIdx ?? null) : null, isChild ? index : null)}
+                className="p-1.5 rounded hover:bg-muted"
+                title={bn ? 'ট্যাব থেকে সরান' : 'Remove from tab'}
+              >
+                <Undo2 className="w-3.5 h-3.5 text-primary" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setTabDialog({
+                    open: true,
+                    itemId: item.id,
+                    parentIdx: isChild ? (parentIdx ?? null) : null,
+                    childIdx: isChild ? index : null,
+                  });
+                  setSelectedTabParent('');
+                }}
+                className="p-1.5 rounded hover:bg-muted"
+                title={bn ? 'ট্যাব হিসেবে সরান' : 'Move to tab'}
+              >
+                <LayoutPanelTop className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </>
+        )}
+
+        {type === 'sidebar' && !isChild && !item.tab_of && (
           <>
             {/* Move to sub-menu */}
             <button
@@ -364,7 +484,7 @@ const AdminMenuManager = () => {
                 <CardTitle className="text-base flex items-center gap-2">
                   {bn ? 'সাইডবার মেনু আইটেম' : 'Sidebar Menu Items'}
                   <span className="text-xs font-normal text-muted-foreground">
-                    ({bn ? '→ সাব-মেনুতে সরান, ← মূল মেনুতে ফেরান' : '→ Move to sub-menu, ← Promote to main'})
+                    ({bn ? '→ সাব-মেনু, ← মূল মেনু, ▦ ট্যাব' : '→ Sub-menu, ← Main, ▦ Tab'})
                   </span>
                 </CardTitle>
                 {canEditItem && (
@@ -566,6 +686,61 @@ const AdminMenuManager = () => {
             <Button onClick={addNewMenuItem}>
               <Plus className="w-4 h-4 mr-1" />
               {bn ? 'যোগ করুন' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move to Tab Dialog */}
+      <Dialog open={tabDialog.open} onOpenChange={open => !open && setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutPanelTop className="w-5 h-5" />
+              {bn ? 'ট্যাব হিসেবে সরান' : 'Move to Tab'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {tabDialog.itemId && (
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <p className="text-sm font-medium">{bn ? 'আইটেম:' : 'Item:'}</p>
+                <p className="text-sm text-primary font-semibold mt-1">
+                  {(() => {
+                    const item = sidebar.find(i => i.id === tabDialog.itemId) ||
+                      sidebar.flatMap(i => i.children || []).find(i => i.id === tabDialog.itemId);
+                    return item ? (bn ? item.label_bn : item.label_en) : '';
+                  })()}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label>{bn ? 'কোন পেজের ট্যাব হিসেবে দেখাবে?' : 'Show as tab on which page?'}</Label>
+              <Select value={selectedTabParent} onValueChange={setSelectedTabParent}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={bn ? 'পেজ বাছুন...' : 'Choose page...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getTabParentOptions(tabDialog.itemId || '').map(opt => (
+                    <SelectItem key={opt.path} value={opt.path}>
+                      {opt.label} ({opt.path})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'এটি সাইডবার থেকে সরে যাবে এবং নির্বাচিত পেজে ট্যাব হিসেবে দেখাবে।'
+                : 'This will be removed from the sidebar and shown as a tab on the selected page.'}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null })}>
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button onClick={moveToTab} disabled={!selectedTabParent}>
+              <LayoutPanelTop className="w-4 h-4 mr-1" />
+              {bn ? 'ট্যাব করুন' : 'Set as Tab'}
             </Button>
           </DialogFooter>
         </DialogContent>

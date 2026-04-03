@@ -11,6 +11,7 @@ export interface MenuItemConfig {
   visible: boolean;
   sort_order: number;
   children?: MenuItemConfig[];
+  tab_of?: string; // path of the parent page this item is a tab of
 }
 
 export interface MenuConfig {
