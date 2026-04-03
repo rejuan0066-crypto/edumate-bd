@@ -75,6 +75,21 @@ export const DEFAULT_MENU_CONFIG: MenuConfig = {
   public: DEFAULT_PUBLIC,
 };
 
+// Merge saved menu with defaults so newly added default items appear automatically
+const mergeWithDefaults = (saved: MenuItemConfig[], defaults: MenuItemConfig[]): MenuItemConfig[] => {
+  const savedIds = new Set(saved.map(i => i.id));
+  const missing = defaults.filter(d => !savedIds.has(d.id));
+  if (missing.length === 0) return saved;
+
+  // Insert missing items at the end, preserving their default sort_order offset
+  const maxOrder = Math.max(...saved.map(i => i.sort_order), -1);
+  const merged = [
+    ...saved,
+    ...missing.map((m, idx) => ({ ...m, sort_order: maxOrder + 1 + idx })),
+  ];
+  return merged;
+};
+
 export const useMenuSettings = () => {
   const queryClient = useQueryClient();
 
@@ -91,10 +106,10 @@ export const useMenuSettings = () => {
       const result = { ...DEFAULT_MENU_CONFIG };
       data?.forEach(row => {
         if (row.key === 'sidebar_menu' && row.value) {
-          result.sidebar = row.value as unknown as MenuItemConfig[];
+          result.sidebar = mergeWithDefaults(row.value as unknown as MenuItemConfig[], DEFAULT_SIDEBAR);
         }
         if (row.key === 'public_menu' && row.value) {
-          result.public = row.value as unknown as MenuItemConfig[];
+          result.public = mergeWithDefaults(row.value as unknown as MenuItemConfig[], DEFAULT_PUBLIC);
         }
       });
       return result;
