@@ -123,8 +123,19 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       })),
   });
 
+  // A parent menu is visible if: user can access its path directly, OR any child is accessible
+  const canAccessParent = (item: MenuItemConfig): boolean => {
+    if (isAdmin) return true;
+    if (canAccessPath(item.path)) return true;
+    // Show parent if any child is accessible
+    if (item.children && item.children.length > 0) {
+      return item.children.some(c => c.visible && canAccessPath(c.path));
+    }
+    return false;
+  };
+
   const baseMenuItems: MenuItem[] = menuConfig.sidebar
-    .filter(item => item.visible && canAccessPath(item.path))
+    .filter(item => item.visible && canAccessParent(item))
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 
