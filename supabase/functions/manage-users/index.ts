@@ -166,12 +166,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    
-    // Allow action from body if not in URL params
-    if (!action && body.action) {
-      action = body.action;
-    }
+    // body already parsed above
 
     // CREATE user
     if (action === "create") {
