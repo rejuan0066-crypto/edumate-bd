@@ -61,7 +61,7 @@ const MENU_PATHS = [
   { path: '/admin/subjects', label_bn: 'বিষয়সমূহ', label_en: 'Subjects' },
   { path: '/admin/results', label_bn: 'ফলাফল', label_en: 'Results' },
   { path: '/admin/notices', label_bn: 'নোটিশ', label_en: 'Notices' },
-  { path: '/admin/fees', label_bn: 'ফি', label_en: 'Fees' },
+  { path: '/admin/students-fees', label_bn: 'ছাত্র ফি', label_en: 'Student Fees' },
   { path: '/admin/fee-receipts', label_bn: 'ফি রসিদ', label_en: 'Fee Receipts' },
   { path: '/admin/expenses', label_bn: 'খরচ ব্যবস্থাপনা', label_en: 'Expenses' },
   { path: '/admin/donors', label_bn: 'দাতা তালিকা', label_en: 'Donors' },

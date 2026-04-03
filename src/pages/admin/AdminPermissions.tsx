@@ -22,7 +22,7 @@ const MENU_ITEMS = [
   { path: '/admin/admission-letters', label: 'Admission Letters', label_bn: 'ভর্তি পত্র' },
   { path: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
   { path: '/admin/notices', label: 'Notice', label_bn: 'নোটিশ' },
-  { path: '/admin/fees', label: 'Fees', label_bn: 'ফি' },
+  { path: '/admin/students-fees', label: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/expenses', label: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
   { path: '/admin/website', label: 'Website Control', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ' },
   { path: '/admin/designations', label: 'Designations', label_bn: 'পদবি' },

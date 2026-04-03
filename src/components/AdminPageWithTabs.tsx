@@ -16,7 +16,7 @@ const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   '/admin/subjects': lazy(() => import('@/pages/admin/AdminSubjects')),
   '/admin/results': lazy(() => import('@/pages/admin/AdminResults')),
   '/admin/notices': lazy(() => import('@/pages/admin/AdminNotices')),
-  '/admin/fees': lazy(() => import('@/pages/admin/AdminFees')),
+  '/admin/students-fees': lazy(() => import('@/pages/admin/AdminStudentsFees')),
   '/admin/expenses': lazy(() => import('@/pages/admin/AdminExpenses')),
   '/admin/donors': lazy(() => import('@/pages/admin/AdminDonors')),
   '/admin/profile': lazy(() => import('@/pages/admin/AdminProfile')),

@@ -32,7 +32,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/subjects', label_en: 'Subjects', label_bn: 'বিষয়সমূহ' },
   { path: '/admin/results', label_en: 'Results', label_bn: 'ফলাফল' },
   { path: '/admin/notices', label_en: 'Notices', label_bn: 'নোটিশ' },
-  { path: '/admin/fees', label_en: 'Fees', label_bn: 'ফি' },
+  { path: '/admin/students-fees', label_en: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/fee-receipts', label_en: 'Fee Receipts', label_bn: 'ফি রসিদ' },
   { path: '/admin/expenses', label_en: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
   { path: '/admin/donors', label_en: 'Donors', label_bn: 'দাতা তালিকা' },

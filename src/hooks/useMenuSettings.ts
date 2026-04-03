@@ -34,7 +34,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   { id: 'admission-letters', path: '/admin/admission-letters', label_bn: 'ভর্তি পত্র', label_en: 'Admission Letters', icon: 'FileCheck', visible: true, sort_order: 8 },
   { id: 'results', path: '/admin/results', label_bn: 'ফলাফল', label_en: 'Results', icon: 'FileText', visible: true, sort_order: 9 },
   { id: 'notices', path: '/admin/notices', label_bn: 'নোটিশ (অনুমোদন)', label_en: 'Notice (Approval)', icon: 'Bell', visible: true, sort_order: 10 },
-  { id: 'fees', path: '/admin/fees', label_bn: 'ফি (অনুমোদন)', label_en: 'Fees (Approval)', icon: 'CreditCard', visible: true, sort_order: 11 },
+  { id: 'fees', path: '/admin/students-fees', label_bn: 'ছাত্র ফি', label_en: 'Student Fees', icon: 'CreditCard', visible: true, sort_order: 11 },
   { id: 'expenses', path: '/admin/expenses', label_bn: 'খরচ ব্যবস্থাপনা', label_en: 'Expenses', icon: 'Receipt', visible: true, sort_order: 12 },
   { id: 'website', path: '/admin/website', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ', label_en: 'Website Control', icon: 'Globe', visible: true, sort_order: 13 },
   { id: 'designations', path: '/admin/designations', label_bn: 'পদবি তৈরি', label_en: 'Designations', icon: 'Tag', visible: true, sort_order: 14 },

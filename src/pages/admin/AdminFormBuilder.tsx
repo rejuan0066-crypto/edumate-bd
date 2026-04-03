@@ -86,7 +86,7 @@ const ADMIN_MENUS = [
   { value: '/admin/fee-receipts', label: 'Fee Receipts', label_bn: 'ফি রসিদ' },
   { value: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
   { value: '/admin/notices', label: 'Notice', label_bn: 'নোটিশ' },
-  { value: '/admin/fees', label: 'Fees', label_bn: 'ফি' },
+  { value: '/admin/students-fees', label: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { value: '/admin/expenses', label: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
   { value: '/admin/website', label: 'Website Control', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ' },
   { value: '/admin/designations', label: 'Designations', label_bn: 'পদবি তৈরি' },
