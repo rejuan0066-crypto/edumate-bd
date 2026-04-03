@@ -300,9 +300,8 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
   }, []);
 
   const getImageRelativeCoords = (e: React.MouseEvent) => {
-    const img = imgRef.current;
-    if (!img) return { x: 0, y: 0 };
-    const rect = img.getBoundingClientRect();
+    // Use the wrapper div (e.currentTarget) since img has pointer-events-none
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(e.clientX - rect.left, rect.width)),
       y: Math.max(0, Math.min(e.clientY - rect.top, rect.height)),
@@ -311,6 +310,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (activeTab !== 'crop' || (resultUrl && !showOriginal)) return;
+    e.preventDefault();
     const { x, y } = getImageRelativeCoords(e);
     setDragging(true);
     setDragStart({ x, y });
@@ -319,6 +319,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!dragging || activeTab !== 'crop' || (resultUrl && !showOriginal)) return;
+    e.preventDefault();
     const { x, y } = getImageRelativeCoords(e);
     const newBox = { x: Math.min(dragStart.x, x), y: Math.min(dragStart.y, y), w: Math.abs(x - dragStart.x), h: Math.abs(y - dragStart.y) };
     setCropBox(newBox);
@@ -342,18 +343,20 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
       style={{ background: 'repeating-conic-gradient(hsl(var(--muted)/0.5) 0% 25%, transparent 0% 50%) 50% / 20px 20px' }}
     >
       <div
-        className={`relative inline-block ${isInteractiveCropMode ? 'cursor-crosshair' : ''}`}
+        className={`relative ${isInteractiveCropMode ? 'cursor-crosshair' : ''}`}
+        style={{ display: 'inline-block', userSelect: 'none' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => setDragging(false)}
+        onMouseLeave={() => { if (dragging) { setDragging(false); onCropData({ ...cropBox, scale: displayScale }); } }}
+        onDragStart={e => e.preventDefault()}
       >
         <img
           ref={imgRef}
           src={displayUrl}
           alt="Preview"
           onLoad={imgLoaded}
-          className="max-w-full max-h-[45vh] lg:max-h-[55vh] object-contain select-none"
+          className="max-w-full max-h-[45vh] lg:max-h-[55vh] object-contain select-none pointer-events-none"
           draggable={false}
         />
         {isInteractiveCropMode && cropBox.w > 0 && cropBox.h > 0 && (
