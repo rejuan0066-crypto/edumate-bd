@@ -690,6 +690,61 @@ const AdminMenuManager = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Move to Tab Dialog */}
+      <Dialog open={tabDialog.open} onOpenChange={open => !open && setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LayoutPanelTop className="w-5 h-5" />
+              {bn ? 'ট্যাব হিসেবে সরান' : 'Move to Tab'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {tabDialog.itemId && (
+              <div className="p-3 rounded-lg bg-muted/50 border">
+                <p className="text-sm font-medium">{bn ? 'আইটেম:' : 'Item:'}</p>
+                <p className="text-sm text-primary font-semibold mt-1">
+                  {(() => {
+                    const item = sidebar.find(i => i.id === tabDialog.itemId) ||
+                      sidebar.flatMap(i => i.children || []).find(i => i.id === tabDialog.itemId);
+                    return item ? (bn ? item.label_bn : item.label_en) : '';
+                  })()}
+                </p>
+              </div>
+            )}
+            <div>
+              <Label>{bn ? 'কোন পেজের ট্যাব হিসেবে দেখাবে?' : 'Show as tab on which page?'}</Label>
+              <Select value={selectedTabParent} onValueChange={setSelectedTabParent}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder={bn ? 'পেজ বাছুন...' : 'Choose page...'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {getTabParentOptions(tabDialog.itemId || '').map(opt => (
+                    <SelectItem key={opt.path} value={opt.path}>
+                      {opt.label} ({opt.path})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'এটি সাইডবার থেকে সরে যাবে এবং নির্বাচিত পেজে ট্যাব হিসেবে দেখাবে।'
+                : 'This will be removed from the sidebar and shown as a tab on the selected page.'}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null })}>
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button onClick={moveToTab} disabled={!selectedTabParent}>
+              <LayoutPanelTop className="w-4 h-4 mr-1" />
+              {bn ? 'ট্যাব করুন' : 'Set as Tab'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
