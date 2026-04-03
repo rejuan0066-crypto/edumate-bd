@@ -30,15 +30,13 @@ const ProcessingOverlay = ({ language }: { language: string }) => (
 );
 
 // ─── Image Upload Area ───
-const ImageUploadArea = ({ onFile, language }: { onFile: (f: File, src: string) => void; language: string }) => {
+const ImageUploadArea = ({ onFile, language }: { onFile: (f: File) => void; language: string }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith('image/')) { toast.error('Only image files'); return; }
-    const reader = new FileReader();
-    reader.onload = () => onFile(file, reader.result as string);
-    reader.readAsDataURL(file);
+    onFile(file);
   };
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -502,13 +500,13 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [cropH, setCropH] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
 
-  const handleFile = (f: File, src: string) => {
-    setPreview(src);
+  const handleFile = (f: File) => {
     const objUrl = URL.createObjectURL(f);
+    setPreview(objUrl);
     setPreviewObjUrl(objUrl);
     const img = new window.Image();
     img.onload = () => setOriginalInfo({ width: img.width, height: img.height, size: f.size });
-    img.src = src;
+    img.src = objUrl;
   };
 
   const reset = () => {
