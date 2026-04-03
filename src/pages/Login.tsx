@@ -60,7 +60,7 @@ const Login = () => {
 
   const loginLogo = settings.favicon_url || settings.logo_url;
   const showLogo = settings.login_show_logo !== false;
-  const logoShapeClass = settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none';
+  const faviconShapeClass = settings.favicon_shape === 'circle' ? 'rounded-full' : settings.favicon_shape === 'rounded' ? 'rounded-xl' : 'rounded-none';
   const showName = settings.login_show_institution_name !== false;
   const welcomeMsg = language === 'bn'
     ? (settings.login_welcome_bn || 'মাদরাসা ম্যানেজমেন্ট')
@@ -91,9 +91,9 @@ const Login = () => {
         <div className="text-center mb-8">
           {showLogo && (
             loginLogo ? (
-              <img src={loginLogo} alt="Logo" className={`w-16 h-16 ${logoShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`} />
+              <img src={loginLogo} alt="Logo" className={`w-16 h-16 ${faviconShapeClass} object-cover mx-auto mb-4 border-2 border-primary/20`} />
             ) : (
-              <div className={`w-16 h-16 ${logoShapeClass} bg-primary mx-auto mb-4 flex items-center justify-center`}>
+              <div className={`w-16 h-16 ${faviconShapeClass} bg-primary mx-auto mb-4 flex items-center justify-center`}>
                 <GraduationCap className="w-9 h-9 text-primary-foreground" />
               </div>
             )

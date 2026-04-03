@@ -12,7 +12,7 @@ const PageLoader = () => {
           <img
             src={loaderLogo}
             alt="Logo"
-            className={`w-20 h-20 md:w-28 md:h-28 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover animate-pulse`}
+            className={`w-20 h-20 md:w-28 md:h-28 ${settings.loader_logo_shape === 'circle' ? 'rounded-full' : settings.loader_logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover animate-pulse`}
           />
         ) : (
           <div className="w-20 h-20 md:w-28 md:h-28 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">

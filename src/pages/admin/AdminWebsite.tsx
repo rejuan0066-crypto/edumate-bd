@@ -411,32 +411,8 @@ const AdminWebsite = () => {
               <hr className="my-4 border-border" />
 
               <h4 className="text-sm font-semibold text-foreground mb-3">{language === 'bn' ? 'লোগো ও ব্র্যান্ডিং' : 'Logo & Branding'}</h4>
-              {/* Shape selector */}
-              <div className="mb-4">
-                <Label className="mb-2 block">{language === 'bn' ? 'লোগো শেইপ' : 'Logo Shape'}</Label>
-                <div className="flex gap-3">
-                  {([
-                    { value: 'square', label_bn: 'স্কয়ার', label_en: 'Square', cls: 'rounded-none' },
-                    { value: 'rounded', label_bn: 'রাউন্ড', label_en: 'Rounded', cls: 'rounded-xl' },
-                    { value: 'circle', label_bn: 'সার্কেল', label_en: 'Circle', cls: 'rounded-full' },
-                  ] as const).map(opt => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => updateField('logo_shape', opt.value)}
-                      className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition-colors ${form.logo_shape === opt.value ? 'border-primary bg-primary/10' : 'border-border'}`}
-                    >
-                      <div className={`w-10 h-10 bg-muted ${opt.cls} border border-border`} />
-                      <span className="text-xs">{language === 'bn' ? opt.label_bn : opt.label_en}</span>
-                    </button>
-                  ))}
-                </div>
-                <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['logo_shape'])} disabled={saving}>
-                  <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'শেইপ সেভ' : 'Save Shape'}
-                </Button>
-              </div>
-
               <div className="grid grid-cols-3 gap-4">
+                {/* Main Logo */}
                 <div className="flex flex-col items-center">
                   <Label className="mb-1 text-center">{language === 'bn' ? 'মূল লোগো' : 'Main Logo'}</Label>
                   <ImageUpload
@@ -445,10 +421,19 @@ const AdminWebsite = () => {
                     folder="logo"
                     aspectRatio="aspect-square w-24"
                   />
-                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['logo_url'])} disabled={saving}>
+                  <div className="flex gap-1 mt-2">
+                    {(['square', 'rounded', 'circle'] as const).map(s => (
+                      <button key={s} type="button" onClick={() => updateField('logo_shape', s)}
+                        className={`p-1 border rounded ${form.logo_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                        <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['logo_url', 'logo_shape'])} disabled={saving}>
                     <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'সেভ' : 'Save'}
                   </Button>
                 </div>
+                {/* Favicon */}
                 <div className="flex flex-col items-center">
                   <Label className="mb-1 text-center">{language === 'bn' ? 'ফেভিকন' : 'Favicon'}</Label>
                   <p className="text-[10px] text-muted-foreground text-center mb-1">{language === 'bn' ? 'ব্রাউজার ট্যাব' : 'Browser Tab'}</p>
@@ -458,10 +443,19 @@ const AdminWebsite = () => {
                     folder="logo"
                     aspectRatio="aspect-square w-20"
                   />
-                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['favicon_url'])} disabled={saving}>
+                  <div className="flex gap-1 mt-2">
+                    {(['square', 'rounded', 'circle'] as const).map(s => (
+                      <button key={s} type="button" onClick={() => updateField('favicon_shape', s)}
+                        className={`p-1 border rounded ${form.favicon_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                        <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['favicon_url', 'favicon_shape'])} disabled={saving}>
                     <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'সেভ' : 'Save'}
                   </Button>
                 </div>
+                {/* Loader Logo */}
                 <div className="flex flex-col items-center">
                   <Label className="mb-1 text-center">{language === 'bn' ? 'লোডার লোগো' : 'Loader Logo'}</Label>
                   <p className="text-[10px] text-muted-foreground text-center mb-1">{language === 'bn' ? 'পেজ লোডিং' : 'Page Loading'}</p>
@@ -471,7 +465,15 @@ const AdminWebsite = () => {
                     folder="logo"
                     aspectRatio="aspect-square w-20"
                   />
-                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['loader_logo_url'])} disabled={saving}>
+                  <div className="flex gap-1 mt-2">
+                    {(['square', 'rounded', 'circle'] as const).map(s => (
+                      <button key={s} type="button" onClick={() => updateField('loader_logo_shape', s)}
+                        className={`p-1 border rounded ${form.loader_logo_shape === s ? 'border-primary bg-primary/10' : 'border-border'}`}>
+                        <div className={`w-6 h-6 bg-muted border border-border ${s === 'circle' ? 'rounded-full' : s === 'rounded' ? 'rounded-lg' : 'rounded-none'}`} />
+                      </button>
+                    ))}
+                  </div>
+                  <Button size="sm" variant="outline" className="mt-2 text-xs" onClick={() => saveSection(['loader_logo_url', 'loader_logo_shape'])} disabled={saving}>
                     <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'সেভ' : 'Save'}
                   </Button>
                 </div>

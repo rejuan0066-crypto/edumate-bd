@@ -250,6 +250,8 @@ export interface WebsiteSettings {
   login_institution_name_bn: string;
   login_institution_name_en: string;
   logo_shape: 'square' | 'rounded' | 'circle';
+  favicon_shape: 'square' | 'rounded' | 'circle';
+  loader_logo_shape: 'square' | 'rounded' | 'circle';
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -389,6 +391,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   login_institution_name_bn: '',
   login_institution_name_en: '',
   logo_shape: 'square',
+  favicon_shape: 'square',
+  loader_logo_shape: 'square',
 };
 
 export const useWebsiteSettings = () => {
