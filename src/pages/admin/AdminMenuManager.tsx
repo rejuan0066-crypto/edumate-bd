@@ -235,6 +235,77 @@ const AdminMenuManager = () => {
     toast.success(bn ? 'মেনু আইটেম মুছে ফেলা হয়েছে' : 'Menu item deleted');
   };
 
+  // Move item to become a tab of another page
+  const moveToTab = () => {
+    if (!selectedTabParent) return;
+    setSidebar(prev => {
+      return prev.map((item, idx) => {
+        // Top-level item
+        if (tabDialog.parentIdx === null && item.id === tabDialog.itemId) {
+          return { ...item, tab_of: selectedTabParent };
+        }
+        // Child item
+        if (tabDialog.parentIdx !== null && idx === tabDialog.parentIdx && item.children) {
+          return {
+            ...item,
+            children: item.children.map((child, cidx) => {
+              if (cidx === tabDialog.childIdx) {
+                return { ...child, tab_of: selectedTabParent };
+              }
+              return child;
+            }),
+          };
+        }
+        return item;
+      });
+    });
+    setTabDialog({ open: false, itemId: null, parentIdx: null, childIdx: null });
+    setSelectedTabParent('');
+    toast.success(bn ? 'ট্যাব হিসেবে সেট করা হয়েছে' : 'Set as tab');
+  };
+
+  // Remove tab_of from an item
+  const removeTabOf = (itemId: string, parentIdx: number | null, childIdx: number | null) => {
+    setSidebar(prev => {
+      return prev.map((item, idx) => {
+        if (parentIdx === null && item.id === itemId) {
+          const { tab_of, ...rest } = item;
+          return rest as MenuItemConfig;
+        }
+        if (parentIdx !== null && idx === parentIdx && item.children) {
+          return {
+            ...item,
+            children: item.children.map((child, cidx) => {
+              if (cidx === childIdx) {
+                const { tab_of, ...rest } = child;
+                return rest as MenuItemConfig;
+              }
+              return child;
+            }),
+          };
+        }
+        return item;
+      });
+    });
+    toast.success(bn ? 'ট্যাব থেকে সরানো হয়েছে' : 'Removed from tab');
+  };
+
+  // Get all possible tab parent paths (pages that exist)
+  const getTabParentOptions = (excludeId: string): { path: string; label: string }[] => {
+    const options: { path: string; label: string }[] = [];
+    sidebar.forEach(item => {
+      if (item.id !== excludeId && !item.tab_of) {
+        options.push({ path: item.path, label: bn ? item.label_bn : item.label_en });
+      }
+      item.children?.forEach(child => {
+        if (child.id !== excludeId && !child.tab_of) {
+          options.push({ path: child.path, label: bn ? child.label_bn : child.label_en });
+        }
+      });
+    });
+    return options;
+  };
+
   const MenuItemRow = ({ item, index, list, setList, type, isChild = false, parentIdx }: {
     item: MenuItemConfig; index: number; list: MenuItemConfig[];
     setList: React.Dispatch<React.SetStateAction<MenuItemConfig[]>>;
