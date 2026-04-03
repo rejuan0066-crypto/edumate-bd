@@ -39,12 +39,6 @@ const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const isEmbedded = useIsEmbedded();
-
-  // When embedded in StaffDashboard, skip the entire admin layout shell
-  if (isEmbedded) {
-    return <>{children}</>;
-  }
-
   const { t, language } = useLanguage();
   const { signOut, role } = useAuth();
   const { canView, hasUserPermission } = usePermissions();
@@ -53,6 +47,13 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const { menuConfig } = useMenuSettings();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
+
+  // When embedded in StaffDashboard, skip the entire admin layout shell
+  if (isEmbedded) {
+    return <>{children}</>;
+  }
 
   const isAdmin = isAdminRole(role);
 
@@ -62,9 +63,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     if (path === '/admin' || path === '/admin/profile') return true;
     return canView(path) || hasUserPermission(path, 'view');
   };
-
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
 
   const toggleGroup = (key: string) => {
     setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
