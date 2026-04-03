@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Download, Loader2, RotateCw, Trash2, Crop, Eraser, Maximize, Lock, Unlock, RulerIcon, MoveVertical, MoveHorizontal, ImageIcon, RefreshCw, Sparkles } from 'lucide-react';
+import { Upload, Download, Loader2, RotateCw, Trash2, Crop, Eraser, Maximize, Lock, Unlock, RulerIcon, MoveVertical, MoveHorizontal, ImageIcon, RefreshCw, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -250,17 +250,19 @@ const BgRemoveControls = ({ language, processing, onRemove }: {
 );
 
 // ─── Canvas Preview (with crop support) ───
-const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: {
+const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, showOriginal }: {
   preview: string;
   resultUrl: string | null;
   activeTab: string;
   language: string;
   onCropData: (data: { x: number; y: number; w: number; h: number; scale: number }) => void;
+  showOriginal: boolean;
 }) => {
   const [cropBox, setCropBox] = useState({ x: 0, y: 0, w: 0, h: 0 });
   const [dragging, setDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [displayScale, setDisplayScale] = useState(1);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const imgLoaded = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const el = e.currentTarget;
@@ -270,10 +272,19 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
     setCropBox({ x: 0, y: 0, w: 0, h: 0 });
   }, []);
 
+  const getImageRelativeCoords = (e: React.MouseEvent) => {
+    const img = imgRef.current;
+    if (!img) return { x: 0, y: 0 };
+    const rect = img.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(e.clientX - rect.left, rect.width)),
+      y: Math.max(0, Math.min(e.clientY - rect.top, rect.height)),
+    };
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     if (activeTab !== 'crop') return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    const { x, y } = getImageRelativeCoords(e);
     setDragging(true);
     setDragStart({ x, y });
     setCropBox({ x, y, w: 0, h: 0 });
@@ -281,9 +292,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!dragging || activeTab !== 'crop') return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+    const { x, y } = getImageRelativeCoords(e);
     const newBox = { x: Math.min(dragStart.x, x), y: Math.min(dragStart.y, y), w: Math.abs(x - dragStart.x), h: Math.abs(y - dragStart.y) };
     setCropBox(newBox);
     onCropData({ ...newBox, scale: displayScale });
@@ -296,9 +305,8 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
     }
   };
 
-  const showResult = resultUrl && activeTab !== 'crop';
   const isCropMode = activeTab === 'crop';
-  const displayUrl = showResult ? resultUrl : preview;
+  const displayUrl = (showOriginal || !resultUrl || isCropMode) ? preview : resultUrl;
 
   return (
     <div className="relative w-full h-full flex items-center justify-center rounded-2xl overflow-hidden"
@@ -312,10 +320,11 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
         onMouseLeave={() => setDragging(false)}
       >
         <img
+          ref={imgRef}
           src={displayUrl}
           alt="Preview"
           onLoad={imgLoaded}
-          className="max-w-full max-h-[22vh] lg:max-h-[28vh] object-contain select-none"
+          className="max-w-full max-h-[45vh] lg:max-h-[55vh] object-contain select-none"
           draggable={false}
         />
         {isCropMode && cropBox.w > 0 && cropBox.h > 0 && (
@@ -329,7 +338,6 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
                 boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
               }}
             >
-              {/* Corner handles */}
               <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white rounded-full shadow" />
               <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white rounded-full shadow" />
               <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white rounded-full shadow" />
@@ -338,6 +346,13 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
           </>
         )}
       </div>
+
+      {/* Preview label */}
+      {resultUrl && !isCropMode && (
+        <div className="absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-medium bg-background/80 backdrop-blur-sm border border-border/30 text-muted-foreground">
+          {showOriginal ? (language === 'bn' ? '🔵 মূল ছবি' : '🔵 Original') : (language === 'bn' ? '🟢 ফলাফল' : '🟢 Result')}
+        </div>
+      )}
     </div>
   );
 };
@@ -353,6 +368,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [cropData, setCropData] = useState<{ x: number; y: number; w: number; h: number; scale: number } | null>(null);
   const [cropW, setCropW] = useState(0);
   const [cropH, setCropH] = useState(0);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   const handleFile = (f: File, src: string) => {
     setPreview(src);
@@ -443,7 +459,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     <div className="flex flex-col lg:flex-row gap-4 min-h-[40vh]">
       {/* ─── Left: Canvas ─── */}
       <div className="flex-1 flex flex-col gap-3">
-        <div className="relative flex-1 min-h-[140px] max-h-[32vh] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
+        <div className="relative flex-1 min-h-[200px] rounded-2xl border border-border/30 bg-card/40 backdrop-blur-sm overflow-hidden lg:sticky lg:top-4">
           {processing && <ProcessingOverlay language={language} />}
           <CanvasPreview
             preview={preview}
@@ -451,7 +467,18 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
             activeTab={activeTab}
             language={language}
             onCropData={handleCropData}
+            showOriginal={showOriginal}
           />
+          {/* Preview toggle button */}
+          {hasResult && activeTab !== 'crop' && (
+            <button
+              onClick={() => setShowOriginal(!showOriginal)}
+              className="absolute bottom-2 right-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-background/80 backdrop-blur-sm border border-border/30 text-foreground hover:bg-background/95 transition-all duration-200 shadow-sm"
+            >
+              {showOriginal ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              {showOriginal ? (language === 'bn' ? 'ফলাফল দেখুন' : 'Show Result') : (language === 'bn' ? 'মূল ছবি দেখুন' : 'Show Original')}
+            </button>
+          )}
         </div>
 
         {/* Result info bar */}
