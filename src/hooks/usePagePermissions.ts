@@ -1,5 +1,6 @@
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 
 /**
  * Hook for page-level permission checks.
