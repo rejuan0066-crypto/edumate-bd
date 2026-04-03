@@ -347,8 +347,10 @@ const CropControls = ({ language, cropW, cropH, canCrop, onCrop, hasResult, onRe
 );
 
 // ─── BG Remove Controls ───
-const BgRemoveControls = ({ language, processing, onRemove }: {
+const BgRemoveControls = ({ language, processing, onRemove, downloadFormat, onFormatChange, bgResult, onDownload }: {
   language: string; processing: boolean; onRemove: () => void;
+  downloadFormat: string; onFormatChange: (f: string) => void;
+  bgResult: string | null; onDownload: () => void;
 }) => (
   <div className="space-y-4">
     <GlassPanel>
@@ -356,13 +358,39 @@ const BgRemoveControls = ({ language, processing, onRemove }: {
         {language === 'bn' ? 'ব্যাকগ্রাউন্ড রিমুভ' : 'Background Removal'}
       </Label>
       <p className="text-xs text-muted-foreground">
-        {language === 'bn' ? 'AI ব্যবহার করে ছবির ব্যাকগ্রাউন্ড মুছে ফেলুন। ট্রান্সপারেন্ট PNG তৈরি হবে।' : 'AI-powered background removal. Creates a transparent PNG output.'}
+        {language === 'bn' ? 'AI ব্যবহার করে ছবির ব্যাকগ্রাউন্ড মুছে ফেলুন।' : 'AI-powered background removal.'}
       </p>
     </GlassPanel>
     <Button className="w-full h-10 text-sm font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-md shadow-primary/20" onClick={onRemove} disabled={processing}>
       {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eraser className="w-4 h-4 mr-2" />}
       {language === 'bn' ? (processing ? 'AI প্রসেসিং... (১০-৩০s)' : 'ব্যাকগ্রাউন্ড রিমুভ') : (processing ? 'AI Processing...' : 'Remove Background')}
     </Button>
+    {bgResult && (
+      <GlassPanel>
+        <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
+          {language === 'bn' ? 'ডাউনলোড ফরম্যাট' : 'Download Format'}
+        </Label>
+        <div className="flex gap-1.5 mb-3">
+          {['png', 'jpeg', 'webp', 'svg'].map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => onFormatChange(fmt)}
+              className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-all duration-200 ${
+                downloadFormat === fmt
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted/40 text-muted-foreground hover:bg-muted/70'
+              }`}
+            >
+              {fmt.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <Button className="w-full h-9 text-xs font-semibold rounded-xl bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white shadow-md shadow-green-600/20" onClick={onDownload}>
+          <Download className="w-3.5 h-3.5 mr-1.5" />
+          {language === 'bn' ? `${downloadFormat.toUpperCase()} ডাউনলোড` : `Download ${downloadFormat.toUpperCase()}`}
+        </Button>
+      </GlassPanel>
+    )}
   </div>
 );
 
@@ -504,6 +532,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
   const [cropW, setCropW] = useState(0);
   const [cropH, setCropH] = useState(0);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [bgDownloadFormat, setBgDownloadFormat] = useState('png');
 
   const handleFile = (f: File) => {
     const objUrl = URL.createObjectURL(f);
@@ -643,16 +672,50 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
     setProcessing(false);
   };
 
+  const downloadBgResult = () => {
+    if (!bgResult) return;
+    const fmt = bgDownloadFormat;
+    if (fmt === 'png') {
+      const a = document.createElement('a'); a.href = bgResult; a.download = `no-bg-${Date.now()}.png`; a.click();
+      return;
+    }
+    // Convert base64 PNG to other formats via canvas
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext('2d')!;
+      if (fmt === 'jpeg') { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+      ctx.drawImage(img, 0, 0);
+      if (fmt === 'svg') {
+        const dataUrl = canvas.toDataURL('image/png');
+        const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" width="${img.width}" height="${img.height}"><image href="${dataUrl}" width="${img.width}" height="${img.height}"/></svg>`;
+        const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = `no-bg-${Date.now()}.svg`; a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const mime = fmt === 'jpeg' ? 'image/jpeg' : 'image/webp';
+        canvas.toBlob(blob => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = `no-bg-${Date.now()}.${fmt === 'jpeg' ? 'jpg' : fmt}`; a.click();
+          URL.revokeObjectURL(url);
+        }, mime, 0.95);
+      }
+    };
+    img.src = bgResult;
+  };
+
   const download = () => {
-    const url = activeTab === 'bg-remove' ? bgResult : result?.url;
+    if (activeTab === 'bg-remove') { downloadBgResult(); return; }
+    const url = result?.url;
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeTab === 'bg-remove'
-      ? `no-bg-${Date.now()}.png`
-      : activeTab === 'crop'
-        ? 'cropped.png'
-        : `resized.${result?.format || 'jpg'}`;
+    a.download = activeTab === 'crop'
+      ? 'cropped.png'
+      : `resized.${result?.format || 'jpg'}`;
     a.click();
   };
 
@@ -756,7 +819,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
             <CropControls language={language} cropW={cropW} cropH={cropH} canCrop={!!(cropData && cropData.w >= 5)} onCrop={doCrop} hasResult={!!result} onRecrop={() => { setResult(null); setCropData(null); setCropW(0); setCropH(0); setShowOriginal(false); }} />
           )}
           {activeTab === 'bg-remove' && (
-            <BgRemoveControls language={language} processing={processing} onRemove={removeBg} />
+            <BgRemoveControls language={language} processing={processing} onRemove={removeBg} downloadFormat={bgDownloadFormat} onFormatChange={setBgDownloadFormat} bgResult={bgResult} onDownload={downloadBgResult} />
           )}
         </div>
       </div>
