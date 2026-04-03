@@ -138,7 +138,11 @@ const AdminFeeReceipts = () => {
         <div class="header">
           <div class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
           <div class="inst-name">${institution?.name || 'প্রতিষ্ঠানের নাম'}</div>
+          ${institution?.name_en ? `<div style="font-size:14px;font-weight:600;color:#333;margin-bottom:2px">${institution.name_en}</div>` : ''}
           <div class="inst-addr">${institution?.address || ''}</div>
+          ${institution?.email ? `<div class="inst-addr">${language === 'bn' ? 'ইমেইল' : 'Email'}: ${institution.email}</div>` : ''}
+          ${institution?.phone ? `<div class="inst-addr">${language === 'bn' ? 'ফোন' : 'Phone'}: ${institution.phone}</div>` : ''}
+          ${institution?.other_info ? `<div class="inst-addr" style="margin-top:2px">${institution.other_info}</div>` : ''}
           <div class="receipt-label">Payment Receipt</div>
         </div>
         <div class="section">
