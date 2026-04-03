@@ -89,24 +89,30 @@ const AdminStudentsFees = () => {
       if (!feeType || !foundStudent || !amount) throw new Error('All fields are required');
       const txnId = generateTransactionId();
       setTransactionId(txnId);
+      const isCash = paymentMethod === 'cash';
       const { error } = await supabase.from('payments').insert({
         fee_type: feeType,
         amount: parseFloat(amount),
         transaction_id: txnId,
-        status: 'pending',
+        status: isCash ? 'success' : 'pending',
         student_id: foundStudent.id,
         payer_name: foundStudent.name_bn,
-        notes: `Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}`,
+        payment_method: isCash ? 'cash' : 'online',
+        notes: `Reg: ${foundStudent.registration_no || ''}, Roll: ${foundStudent.roll_number || ''}${isCash ? ' | Cash Payment' : ''}`,
       });
       if (error) throw error;
       return txnId;
     },
     onSuccess: (txnId) => {
       setStep('done');
-      toast.success(bn ? 'পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে' : 'Payment saved successfully');
-      setTimeout(() => {
-        window.open(`https://payment-gateway.example.com/pay?txn=${txnId}&amount=${amount}`, '_blank');
-      }, 1500);
+      if (paymentMethod === 'cash') {
+        toast.success(bn ? 'ক্যাশ পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে' : 'Cash payment saved successfully');
+      } else {
+        toast.success(bn ? 'পেমেন্ট সফলভাবে সংরক্ষিত হয়েছে' : 'Payment saved successfully');
+        setTimeout(() => {
+          window.open(`https://payment-gateway.example.com/pay?txn=${txnId}&amount=${amount}`, '_blank');
+        }, 1500);
+      }
     },
     onError: (e: any) => toast.error(e.message || 'Error saving payment'),
   });
