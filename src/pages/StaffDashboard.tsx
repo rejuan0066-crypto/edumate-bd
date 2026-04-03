@@ -59,8 +59,12 @@ const STAFF_MODULES: StaffModule[] = [
 const StaffDashboard = () => {
   const { language } = useLanguage();
   const { user, signOut, role } = useAuth();
+  const { canView, hasUserPermission } = usePermissions();
   const bn = language === 'bn';
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+
+  // Determine which modules this staff can access based on permissions
+  const permittedModules = STAFF_MODULES.filter(m => canView(m.menuPath) || hasUserPermission(m.menuPath, 'view'));
 
   // Get staff record linked to current user — auto-create if missing
   const { data: staffRecord, isLoading: staffLoading } = useQuery({
