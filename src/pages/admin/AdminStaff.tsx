@@ -68,7 +68,7 @@ const AdminStaff = () => {
     setSelectedStaff(staff);
     setAccEmail(staff.email || '');
     setAccPassword('');
-    setAccRole('staff');
+    setAccRole('none');
     setShowPassword(false);
     setAccountDialogOpen(true);
   };
