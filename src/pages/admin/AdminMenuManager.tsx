@@ -392,8 +392,13 @@ const AdminMenuManager = () => {
 
           <TabsContent value="public" className="mt-4">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">{bn ? 'পাবলিক ওয়েবসাইট মেনু' : 'Public Website Menu'}</CardTitle>
+                {canEditItem && (
+                  <Button size="sm" variant="outline" onClick={() => { setAddDialog({ open: true, type: 'public' }); setNewItem({ id: '', path: '', label_bn: '', label_en: '', icon: '' }); }}>
+                    <Plus className="w-4 h-4 mr-1" /> {bn ? 'নতুন মেনু' : 'Add Menu'}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent className="space-y-2">
                 {publicMenu.map((item, idx) => (
