@@ -320,6 +320,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData, sh
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!dragging || activeTab !== 'crop' || (resultUrl && !showOriginal)) return;
+    e.preventDefault();
     const { x, y } = getImageRelativeCoords(e);
     const newBox = { x: Math.min(dragStart.x, x), y: Math.min(dragStart.y, y), w: Math.abs(x - dragStart.x), h: Math.abs(y - dragStart.y) };
     setCropBox(newBox);
