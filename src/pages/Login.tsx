@@ -11,11 +11,13 @@ import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
 import { toast } from 'sonner';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 
 const Login = () => {
   const { t, language } = useLanguage();
   const { signIn, user, loading: authLoading, role, userStatus } = useAuth();
   const { hasUserPermission, isLoading: permLoading } = usePermissions();
+  const { settings } = useWebsiteSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,19 +32,15 @@ const Login = () => {
   }
 
   if (user) {
-    // Admin always goes to admin panel
     if (isAdminRole(role)) {
       return <Navigate to="/admin" replace />;
     }
-    // Pending users go to waiting page
     if (userStatus === 'pending') {
       return <Navigate to="/waiting-approval" replace />;
     }
-    // If user has individual permission for /admin, redirect there
     if (hasUserPermission('/admin', 'view')) {
       return <Navigate to="/admin" replace />;
     }
-    // Approved staff/teacher go to staff dashboard
     return <Navigate to="/staff-dashboard" replace />;
   }
 
@@ -60,20 +58,49 @@ const Login = () => {
     }
   };
 
+  const loginLogo = settings.favicon_url || settings.logo_url;
+  const showLogo = settings.login_show_logo !== false;
+  const showName = settings.login_show_institution_name !== false;
+  const welcomeMsg = language === 'bn'
+    ? (settings.login_welcome_bn || 'মাদরাসা ম্যানেজমেন্ট')
+    : (settings.login_welcome_en || 'Madrasa Management');
+
+  const bgStyle: React.CSSProperties = settings.login_bg_image_url
+    ? { backgroundImage: `url(${settings.login_bg_image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : settings.login_bg_color
+      ? { background: settings.login_bg_color }
+      : { background: 'var(--gradient-hero)' };
+
+  const formStyle: React.CSSProperties = {
+    ...(settings.login_form_bg_color ? { backgroundColor: settings.login_form_bg_color } : {}),
+    borderRadius: `${settings.login_form_border_radius ?? 12}px`,
+    ...(settings.login_form_shadow === false ? { boxShadow: 'none' } : {}),
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative" style={{ background: 'var(--gradient-hero)' }}>
-      <div className="islamic-pattern absolute inset-0" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
+      {!settings.login_bg_image_url && <div className="islamic-pattern absolute inset-0" />}
+      {settings.login_bg_image_url && <div className="absolute inset-0 bg-black/40" />}
       <div className="absolute top-4 right-4 z-10">
         <LanguageToggle />
       </div>
-      <div className="card-elevated w-full max-w-md p-8 relative z-10">
+      <div className="card-elevated w-full max-w-md p-8 relative z-10" style={formStyle}>
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
-            <GraduationCap className="w-9 h-9 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            {language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট' : 'Madrasa Management'}
-          </h1>
+          {showLogo && (
+            loginLogo ? (
+              <img src={loginLogo} alt="Logo" className="w-16 h-16 rounded-full object-cover mx-auto mb-4 border-2 border-primary/20" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-primary mx-auto mb-4 flex items-center justify-center">
+                <GraduationCap className="w-9 h-9 text-primary-foreground" />
+              </div>
+            )
+          )}
+          {showName && (
+            <h1 className="text-xl font-display font-bold text-foreground">
+              {language === 'bn' ? settings.institution_name : settings.institution_name_en}
+            </h1>
+          )}
+          <p className="text-lg font-semibold text-foreground mt-1">{welcomeMsg}</p>
           <p className="text-sm text-muted-foreground mt-1">{t('signIn')}</p>
         </div>
 

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
-import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal } from 'lucide-react';
+import { Globe, Save, Image, Type, Layout, BarChart3, Plus, Trash2, Eye, ImageIcon, Share2, PanelTop, PanelBottom, Navigation, Menu, RefreshCw, CheckCircle, AlertCircle, Database, FileText, ChevronUp, ChevronDown, EyeOff, Link2, List, SlidersHorizontal, LogIn } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import WebsitePageBuilder from '@/components/admin/WebsitePageBuilder';
@@ -370,6 +370,9 @@ const AdminWebsite = () => {
             </TabsTrigger>
             <TabsTrigger value="form-settings" className="text-xs py-2 px-2.5">
               <SlidersHorizontal className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'ফর্ম সেটিংস' : 'Form Settings'}
+            </TabsTrigger>
+            <TabsTrigger value="login-page" className="text-xs py-2 px-2.5">
+              <LogIn className="w-3.5 h-3.5 mr-1" /> {language === 'bn' ? 'লগইন পেইজ' : 'Login Page'}
             </TabsTrigger>
           </TabsList>
 
@@ -1427,6 +1430,103 @@ const AdminWebsite = () => {
           {/* Form Settings Tab */}
           <TabsContent value="form-settings">
             <FormSettingsTab language={language} />
+          </TabsContent>
+
+          {/* Login Page Tab */}
+          <TabsContent value="login-page">
+            <div className="card-elevated p-5 space-y-5">
+              <h3 className="font-display font-bold text-foreground">
+                {language === 'bn' ? 'লগইন পেইজ কাস্টমাইজেশন' : 'Login Page Customization'}
+              </h3>
+
+              {/* Background */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">{language === 'bn' ? 'ব্যাকগ্রাউন্ড' : 'Background'}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'ব্যাকগ্রাউন্ড ইমেজ' : 'Background Image'}</Label>
+                    <ImageUpload
+                      value={form.login_bg_image_url}
+                      onChange={(url) => updateField('login_bg_image_url', url)}
+                      folder="login"
+                      className="mt-1"
+                      aspectRatio="aspect-video w-full max-w-xs"
+                    />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'ব্যাকগ্রাউন্ড কালার (ইমেজ না থাকলে)' : 'Background Color (if no image)'}</Label>
+                    <Input className="bg-background mt-1" type="color" value={form.login_bg_color || '#1a5e3a'} onChange={e => updateField('login_bg_color', e.target.value)} />
+                  </div>
+                </div>
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_bg_image_url', 'login_bg_color'])} disabled={saving}>
+                  <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'ব্যাকগ্রাউন্ড সেভ' : 'Save Background'}
+                </Button>
+              </div>
+
+              <hr className="border-border" />
+
+              {/* Logo & Institution */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">{language === 'bn' ? 'লোগো ও প্রতিষ্ঠানের নাম' : 'Logo & Institution Name'}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <Switch checked={form.login_show_logo} onCheckedChange={(v) => updateField('login_show_logo', v)} />
+                    <Label>{language === 'bn' ? 'লোগো দেখান' : 'Show Logo'}</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch checked={form.login_show_institution_name} onCheckedChange={(v) => updateField('login_show_institution_name', v)} />
+                    <Label>{language === 'bn' ? 'প্রতিষ্ঠানের নাম দেখান' : 'Show Institution Name'}</Label>
+                  </div>
+                </div>
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_show_logo', 'login_show_institution_name'])} disabled={saving}>
+                  <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'সেভ' : 'Save'}
+                </Button>
+              </div>
+
+              <hr className="border-border" />
+
+              {/* Welcome Message */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">{language === 'bn' ? 'স্বাগতম মেসেজ' : 'Welcome Message'}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'বাংলা মেসেজ' : 'Bangla Message'}</Label>
+                    <Input className="bg-background mt-1" value={form.login_welcome_bn} onChange={e => updateField('login_welcome_bn', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'ইংরেজি মেসেজ' : 'English Message'}</Label>
+                    <Input className="bg-background mt-1" value={form.login_welcome_en} onChange={e => updateField('login_welcome_en', e.target.value)} />
+                  </div>
+                </div>
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_welcome_bn', 'login_welcome_en'])} disabled={saving}>
+                  <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'মেসেজ সেভ' : 'Save Message'}
+                </Button>
+              </div>
+
+              <hr className="border-border" />
+
+              {/* Form Style */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">{language === 'bn' ? 'ফর্ম স্টাইল' : 'Form Style'}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'ফর্ম ব্যাকগ্রাউন্ড কালার' : 'Form Background Color'}</Label>
+                    <Input className="bg-background mt-1" type="color" value={form.login_form_bg_color || '#ffffff'} onChange={e => updateField('login_form_bg_color', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'বর্ডার রেডিয়াস (px)' : 'Border Radius (px)'}</Label>
+                    <Input className="bg-background mt-1" type="number" min={0} max={50} value={form.login_form_border_radius} onChange={e => updateField('login_form_border_radius', Number(e.target.value))} />
+                  </div>
+                  <div className="flex items-center gap-3 pt-5">
+                    <Switch checked={form.login_form_shadow} onCheckedChange={(v) => updateField('login_form_shadow', v)} />
+                    <Label>{language === 'bn' ? 'শ্যাডো' : 'Shadow'}</Label>
+                  </div>
+                </div>
+                <Button size="sm" className="btn-primary-gradient" onClick={() => saveSection(['login_form_bg_color', 'login_form_border_radius', 'login_form_shadow'])} disabled={saving}>
+                  <Save className="w-3 h-3 mr-1" /> {language === 'bn' ? 'স্টাইল সেভ' : 'Save Style'}
+                </Button>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
