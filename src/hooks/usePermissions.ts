@@ -81,7 +81,7 @@ export const usePermissions = () => {
 
   // Check ONLY individual user_permissions (ignoring role_permissions)
   const hasUserPermission = (menuPath: string, action: 'view' | 'add' | 'edit' | 'delete'): boolean => {
-    if (role === 'admin') return true;
+    if (isAdminRole(role)) return true;
     const userPerm = userPermissions.find(p => p.menu_path === menuPath);
     if (!userPerm) return false;
     switch (action) {
