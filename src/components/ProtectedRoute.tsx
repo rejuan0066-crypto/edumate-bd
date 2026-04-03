@@ -1,8 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { isAdminRole } from '@/lib/roles';
 
