@@ -315,7 +315,7 @@ const CanvasPreview = ({ preview, resultUrl, activeTab, language, onCropData }: 
           src={displayUrl}
           alt="Preview"
           onLoad={imgLoaded}
-          className="max-w-full max-h-[30vh] lg:max-h-[38vh] object-contain select-none"
+          className="max-w-full max-h-[22vh] lg:max-h-[28vh] object-contain select-none"
           draggable={false}
         />
         {isCropMode && cropBox.w > 0 && cropBox.h > 0 && (
