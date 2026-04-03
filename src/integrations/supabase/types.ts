@@ -1354,6 +1354,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_gateway_config: {
+        Row: {
+          api_key: string
+          api_secret: string
+          api_url: string
+          callback_url: string
+          created_at: string
+          extra_config: Json | null
+          id: string
+          is_enabled: boolean
+          is_sandbox: boolean
+          merchant_id: string
+          provider: string
+          provider_name: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string
+          api_secret?: string
+          api_url?: string
+          callback_url?: string
+          created_at?: string
+          extra_config?: Json | null
+          id?: string
+          is_enabled?: boolean
+          is_sandbox?: boolean
+          merchant_id?: string
+          provider?: string
+          provider_name?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          api_secret?: string
+          api_url?: string
+          callback_url?: string
+          created_at?: string
+          extra_config?: Json | null
+          id?: string
+          is_enabled?: boolean
+          is_sandbox?: boolean
+          merchant_id?: string
+          provider?: string
+          provider_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pending_actions: {
         Row: {
           action_type: string
@@ -1751,6 +1799,48 @@ export type Database = {
           setting_key?: string
           setting_value?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sms_gateway_config: {
+        Row: {
+          api_key: string
+          api_secret: string
+          api_url: string
+          created_at: string
+          extra_config: Json | null
+          id: string
+          is_enabled: boolean
+          provider: string
+          provider_name: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string
+          api_secret?: string
+          api_url?: string
+          created_at?: string
+          extra_config?: Json | null
+          id?: string
+          is_enabled?: boolean
+          provider?: string
+          provider_name?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          api_secret?: string
+          api_url?: string
+          created_at?: string
+          extra_config?: Json | null
+          id?: string
+          is_enabled?: boolean
+          provider?: string
+          provider_name?: string
+          sender_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
