@@ -80,7 +80,9 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative" style={bgStyle}>
       {!settings.login_bg_image_url && <div className="islamic-pattern absolute inset-0" />}
-      {settings.login_bg_image_url && <div className="absolute inset-0 bg-black/40" />}
+      {settings.login_bg_image_url && (
+        <div className="absolute inset-0 bg-black/40" style={{ backdropFilter: settings.login_bg_blur ? `blur(${settings.login_bg_blur}px)` : undefined }} />
+      )}
       <div className="absolute top-4 right-4 z-10">
         <LanguageToggle />
       </div>
