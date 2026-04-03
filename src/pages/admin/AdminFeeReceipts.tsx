@@ -246,11 +246,26 @@ const AdminFeeReceipts = () => {
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-success to-success/80 flex items-center justify-center mx-auto mb-4 shadow-lg">
                     <CheckCircle2 className="w-7 h-7 text-success-foreground" />
                   </div>
+                  {institution?.logo_url && (
+                    <img src={institution.logo_url} alt="Logo" className="h-10 mx-auto mb-2 object-contain" />
+                  )}
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <Building2 className="w-4 h-4 text-muted-foreground" />
                     <h2 className="text-lg font-bold text-foreground">{institution?.name || 'প্রতিষ্ঠান'}</h2>
                   </div>
+                  {institution?.name_en && (
+                    <p className="text-sm font-semibold text-foreground/80">{institution.name_en}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">{institution?.address || ''}</p>
+                  {institution?.phone && (
+                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'ফোন' : 'Phone'}: {institution.phone}</p>
+                  )}
+                  {institution?.email && (
+                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'ইমেইল' : 'Email'}: {institution.email}</p>
+                  )}
+                  {institution?.other_info && (
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">{institution.other_info}</p>
+                  )}
                   <p className="text-[11px] uppercase tracking-[3px] text-muted-foreground/60 mt-3 font-medium">
                     {language === 'bn' ? 'পেমেন্ট রসিদ' : 'Payment Receipt'}
                   </p>
