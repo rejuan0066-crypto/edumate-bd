@@ -246,6 +246,9 @@ export interface WebsiteSettings {
   login_form_bg_color: string;
   login_form_border_radius: number;
   login_form_shadow: boolean;
+  login_bg_blur: number;
+  login_institution_name_bn: string;
+  login_institution_name_en: string;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
