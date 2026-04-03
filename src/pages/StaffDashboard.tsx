@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,17 +10,61 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import LanguageToggle from '@/components/LanguageToggle';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import {
   User, Wallet, CalendarDays, Bell, LogOut, GraduationCap,
-  Phone, MapPin, Briefcase, Calendar, Clock, Loader2
+  Phone, MapPin, Briefcase, Calendar, Clock, Loader2,
+  Users, BookOpen, CreditCard, FileText, BarChart3,
+  type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+// Lazy-load admin modules for staff with permissions
+const AdminStudents = lazy(() => import('@/pages/admin/AdminStudents'));
+const AdminStaff = lazy(() => import('@/pages/admin/AdminStaff'));
+const AdminDivisions = lazy(() => import('@/pages/admin/AdminDivisions'));
+const AdminSubjects = lazy(() => import('@/pages/admin/AdminSubjects'));
+const AdminResults = lazy(() => import('@/pages/admin/AdminResults'));
+const AdminNotices = lazy(() => import('@/pages/admin/AdminNotices'));
+const AdminFees = lazy(() => import('@/pages/admin/AdminFees'));
+const AdminAttendance = lazy(() => import('@/pages/admin/AdminAttendance'));
+const AdminExpenses = lazy(() => import('@/pages/admin/AdminExpenses'));
+const AdminDonors = lazy(() => import('@/pages/admin/AdminDonors'));
+const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
+
+// Staff-accessible module definitions
+interface StaffModule {
+  key: string;
+  menuPath: string;
+  labelBn: string;
+  labelEn: string;
+  icon: LucideIcon;
+  component: React.LazyExoticComponent<React.ComponentType>;
+}
+
+const STAFF_MODULES: StaffModule[] = [
+  { key: 'students', menuPath: '/admin/students', labelBn: 'ছাত্র ব্যবস্থাপনা', labelEn: 'Students', icon: Users, component: AdminStudents },
+  { key: 'staff', menuPath: '/admin/staff', labelBn: 'শিক্ষক/স্টাফ', labelEn: 'Staff', icon: Users, component: AdminStaff },
+  { key: 'divisions', menuPath: '/admin/divisions', labelBn: 'বিভাগ', labelEn: 'Divisions', icon: BookOpen, component: AdminDivisions },
+  { key: 'subjects', menuPath: '/admin/subjects', labelBn: 'বিষয়', labelEn: 'Subjects', icon: BookOpen, component: AdminSubjects },
+  { key: 'results', menuPath: '/admin/results', labelBn: 'ফলাফল', labelEn: 'Results', icon: FileText, component: AdminResults },
+  { key: 'notices', menuPath: '/admin/notices', labelBn: 'নোটিশ', labelEn: 'Notices', icon: Bell, component: AdminNotices },
+  { key: 'fees', menuPath: '/admin/fees', labelBn: 'ফি', labelEn: 'Fees', icon: CreditCard, component: AdminFees },
+  { key: 'attendance', menuPath: '/admin/attendance', labelBn: 'হাজিরা ব্যবস্থাপনা', labelEn: 'Attendance Mgmt', icon: CalendarDays, component: AdminAttendance },
+  { key: 'expenses', menuPath: '/admin/expenses', labelBn: 'খরচ', labelEn: 'Expenses', icon: Wallet, component: AdminExpenses },
+  { key: 'donors', menuPath: '/admin/donors', labelBn: 'দাতা', labelEn: 'Donors', icon: Users, component: AdminDonors },
+  { key: 'reports', menuPath: '/admin/reports', labelBn: 'রিপোর্ট', labelEn: 'Reports', icon: BarChart3, component: AdminReports },
+];
 
 const StaffDashboard = () => {
   const { language } = useLanguage();
   const { user, signOut, role } = useAuth();
+  const { canView, hasUserPermission } = usePermissions();
   const bn = language === 'bn';
   const [selectedMonth, setSelectedMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+
+  // Determine which modules this staff can access based on permissions
+  const permittedModules = STAFF_MODULES.filter(m => canView(m.menuPath) || hasUserPermission(m.menuPath, 'view'));
 
   // Get staff record linked to current user — auto-create if missing
   const { data: staffRecord, isLoading: staffLoading } = useQuery({
@@ -211,24 +256,33 @@ const StaffDashboard = () => {
         )}
 
         <Tabs defaultValue={staffRecord ? "profile" : "notices"} className="space-y-4">
-          <TabsList className="w-full grid h-auto grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm" disabled={!staffRecord}>
-              <CalendarDays className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
-            </TabsTrigger>
-            <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm">
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Scrollable tab list for core + permitted module tabs */}
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-auto min-w-full">
+              <TabsTrigger value="profile" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="salary" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
+                <Wallet className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'বেতন' : 'Salary'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="my-attendance" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3" disabled={!staffRecord}>
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'হাজিরা' : 'Attendance'}</span>
+              </TabsTrigger>
+              <TabsTrigger value="notices" className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
+              </TabsTrigger>
+              {permittedModules.map(mod => (
+                <TabsTrigger key={mod.key} value={`module-${mod.key}`} className="flex items-center gap-1.5 py-2 text-xs sm:text-sm px-3">
+                  <mod.icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{bn ? mod.labelBn : mod.labelEn}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
@@ -343,7 +397,7 @@ const StaffDashboard = () => {
           </TabsContent>
 
           {/* Attendance Tab */}
-          <TabsContent value="attendance">
+          <TabsContent value="my-attendance">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between flex-wrap gap-3">
@@ -456,6 +510,20 @@ const StaffDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
+          {/* Permission-based module tabs */}
+          {permittedModules.map(mod => (
+            <TabsContent key={mod.key} value={`module-${mod.key}`}>
+              <ErrorBoundary>
+                <Suspense fallback={
+                  <div className="min-h-[200px] flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                }>
+                  <mod.component />
+                </Suspense>
+              </ErrorBoundary>
+            </TabsContent>
+          ))}
         </Tabs>
       </main>
     </div>
