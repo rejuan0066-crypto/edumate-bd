@@ -206,26 +206,46 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
 };
 
 // ─── Crop Controls ───
-const CropControls = ({ language, cropW, cropH, canCrop, onCrop }: {
-  language: string; cropW: number; cropH: number; canCrop: boolean; onCrop: () => void;
+const CropControls = ({ language, cropW, cropH, canCrop, onCrop, hasResult, onRecrop }: {
+  language: string; cropW: number; cropH: number; canCrop: boolean; onCrop: () => void; hasResult: boolean; onRecrop: () => void;
 }) => (
   <div className="space-y-4">
     <GlassPanel>
       <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
         {language === 'bn' ? 'ক্রপ এরিয়া' : 'Crop Area'}
       </Label>
-      <p className="text-xs text-muted-foreground mb-3">
-        {language === 'bn' ? 'ছবির উপর ড্র্যাগ করে ক্রপ এরিয়া সিলেক্ট করুন' : 'Drag on the image to select crop area'}
-      </p>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
-        <RulerIcon className="w-3.5 h-3.5" />
-        <span>{language === 'bn' ? 'সাইজ:' : 'Size:'} {cropW}×{cropH}px</span>
-      </div>
+      {hasResult ? (
+        <div className="space-y-2">
+          <p className="text-xs text-green-600 font-medium">
+            ✅ {language === 'bn' ? 'ক্রপ সফল হয়েছে!' : 'Crop successful!'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {language === 'bn' ? 'নতুন করে ক্রপ করতে নিচের বাটনে ক্লিক করুন' : 'Click below to crop again'}
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground mb-3">
+            {language === 'bn' ? 'ছবির উপর ড্র্যাগ করে ক্রপ এরিয়া সিলেক্ট করুন' : 'Drag on the image to select crop area'}
+          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2">
+            <RulerIcon className="w-3.5 h-3.5" />
+            <span>{language === 'bn' ? 'সাইজ:' : 'Size:'} {cropW}×{cropH}px</span>
+          </div>
+        </>
+      )}
     </GlassPanel>
-    <Button className="w-full h-10 text-sm font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-md shadow-primary/20" onClick={onCrop} disabled={!canCrop}>
-      <Crop className="w-4 h-4 mr-2" />
-      {language === 'bn' ? 'ক্রপ করুন' : 'Crop Image'}
-    </Button>
+    {hasResult ? (
+      <Button className="w-full h-10 text-sm font-semibold rounded-xl" variant="outline" onClick={onRecrop}>
+        <RefreshCw className="w-4 h-4 mr-2" />
+        {language === 'bn' ? 'আবার ক্রপ করুন' : 'Crop Again'}
+      </Button>
+    ) : (
+      <Button className="w-full h-10 text-sm font-semibold rounded-xl bg-primary hover:bg-primary/90 shadow-md shadow-primary/20" onClick={onCrop} disabled={!canCrop}>
+        <Crop className="w-4 h-4 mr-2" />
+        {language === 'bn' ? 'ক্রপ করুন' : 'Crop Image'}
+      </Button>
+    )}
   </div>
 );
 
@@ -545,7 +565,7 @@ export const PhotoToolsCore = ({ language, onReset: externalReset }: { language:
             <ResizeControls originalInfo={originalInfo} language={language} onProcess={processResize} processing={processing} />
           )}
           {activeTab === 'crop' && (
-            <CropControls language={language} cropW={cropW} cropH={cropH} canCrop={!!(cropData && cropData.w >= 5)} onCrop={doCrop} />
+            <CropControls language={language} cropW={cropW} cropH={cropH} canCrop={!!(cropData && cropData.w >= 5)} onCrop={doCrop} hasResult={!!result} onRecrop={() => { setResult(null); setCropData(null); setCropW(0); setCropH(0); setShowOriginal(false); }} />
           )}
           {activeTab === 'bg-remove' && (
             <BgRemoveControls language={language} processing={processing} onRemove={removeBg} />
