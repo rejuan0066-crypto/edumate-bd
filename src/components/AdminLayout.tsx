@@ -18,7 +18,7 @@ import {
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
   Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette,
   ListOrdered, Home, Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid,
-  HardDrive, MessageSquare, Wallet, UserPlus,
+  HardDrive, MessageSquare, Wallet, UserPlus, Camera,
   type LucideIcon
 } from 'lucide-react';
 
