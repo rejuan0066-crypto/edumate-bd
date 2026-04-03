@@ -289,8 +289,11 @@ function printReceipt(params: PrintReceiptParams) {
 <div class="header">
   ${institution?.logo_url ? `<img src="${institution.logo_url}" style="height:60px;margin-bottom:8px" />` : ''}
   <h1>${institution?.name || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h1>
+  ${institution?.name_en ? `<p style="font-size:14px;font-weight:600;color:#333;margin-bottom:2px">${institution.name_en}</p>` : ''}
   <p>${institution?.address || ''}</p>
   ${institution?.phone ? `<p>${bn ? 'ফোন' : 'Phone'}: ${institution.phone}</p>` : ''}
+  ${institution?.email ? `<p>${bn ? 'ইমেইল' : 'Email'}: ${institution.email}</p>` : ''}
+  ${institution?.other_info ? `<p style="font-size:11px;color:#777;margin-top:4px">${institution.other_info}</p>` : ''}
 </div>
 
 <h2 style="text-align:center;margin-bottom:15px;font-size:18px;color:#333">
