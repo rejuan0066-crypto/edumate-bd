@@ -47,6 +47,8 @@ const AdminDonors = () => {
     receiptSerial: '',
     date: '',
     paymentMethod: '',
+    transactionId: '',
+    paymentTimestamp: '',
   });
 
   const updateField = (key: string, value: string) => setForm(p => ({ ...p, [key]: value }));
@@ -62,9 +64,9 @@ const AdminDonors = () => {
 
   const getReceiptData = (): DonationReceiptData => ({
     ...form,
-    transactionId: '',
-    gatewayTrxId: '',
-    paymentTimestamp: '',
+    transactionId: form.transactionId,
+    gatewayTrxId: form.transactionId,
+    paymentTimestamp: form.paymentTimestamp,
     collectorName: '',
     approverName: '',
     institutionName: institution?.name || 'মডেল মাদরাসা',
@@ -98,7 +100,7 @@ const AdminDonors = () => {
   };
 
   const handleReset = () => {
-    setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', receiptSerial: '', date: '', paymentMethod: '' });
+    setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', receiptSerial: '', date: '', paymentMethod: '', transactionId: '', paymentTimestamp: '' });
     toast.info(bn ? 'ফর্ম রিসেট হয়েছে' : 'Form reset');
   };
 
@@ -177,6 +179,18 @@ const AdminDonors = () => {
               <Label className="text-xs">{bn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}</Label>
               <Input className="h-8 text-sm" value={form.paymentMethod} onChange={(e) => updateField('paymentMethod', e.target.value)} placeholder={bn ? 'bKash / নগদ / ব্যাংক' : 'bKash / Cash / Bank'} />
             </div>
+            {form.donationType === 'অনলাইন' && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs">{bn ? 'ট্রানজেকশন আইডি' : 'Transaction ID'}</Label>
+                  <Input className="h-8 text-sm" value={form.transactionId} onChange={(e) => updateField('transactionId', e.target.value)} placeholder={bn ? 'TrxID' : 'TrxID'} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{bn ? 'ট্রানজেকশন তারিখ/সময়' : 'Transaction Date/Time'}</Label>
+                  <Input className="h-8 text-sm" type="datetime-local" value={form.paymentTimestamp} onChange={(e) => updateField('paymentTimestamp', e.target.value)} />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Preview */}
