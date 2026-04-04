@@ -165,19 +165,14 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   .page { width: 210mm; min-height: auto; padding: 6mm 10mm; display: flex; flex-direction: column; page-break-after: always; overflow: hidden; position: relative; }
   .page:last-child { page-break-after: auto; }
 
-  /* MODE 1: Single - 2 stacked compact A5-landscape style */
-  .mode-single { justify-content: flex-start; gap: 0; }
-  .mode-single .receipt-card { width: 100%; max-width: 190mm; height: auto; margin: 0 auto; }
-  .mode-single .cut-h { 
-    border: none; margin: 3mm 0; position: relative; display: flex; align-items: center; justify-content: center;
+  /* MODE 1: Single - 2 side-by-side copies */
+  .mode-single { flex-direction: row; justify-content: center; align-items: flex-start; gap: 0; }
+  .mode-single .receipt-card { width: 50%; height: auto; }
+  .mode-single .cut-v { 
+    width: 0; border-left: 1.5px dashed #aaa; position: relative; align-self: stretch;
   }
-  .mode-single .cut-h::before {
-    content: ''; position: absolute; top: 50%; left: 0; right: 0;
-    border-top: 1.5px dashed #999;
-  }
-  .mode-single .cut-h::after {
-    content: '✂'; position: relative; z-index: 1; background: #fff; padding: 0 6px;
-    font-size: 11px; color: #999; letter-spacing: 1px;
+  .mode-single .cut-v::after {
+    content: '✂'; position: absolute; top: 4px; left: -7px; font-size: 10px; color: #999; background: #fff; padding: 2px 0;
   }
 
   /* MODE 2: Bulk - 3×2 grid */
@@ -285,7 +280,7 @@ export function buildSingleStudentPrintHtml(receiptData: ReceiptData, style?: Re
 
   const page = `<div class="page mode-single">
     ${officeCopy}
-    <div class="cut-h"></div>
+    <div class="cut-v"></div>
     ${studentCopy}
   </div>`;
 
