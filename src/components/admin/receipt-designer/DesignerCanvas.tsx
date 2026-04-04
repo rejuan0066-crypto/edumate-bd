@@ -71,7 +71,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       borderColor: el.borderColor,
       borderWidth: el.borderWidth ? el.borderWidth * scale : 0,
       borderStyle: el.borderWidth ? 'solid' : 'none',
-      overflow: 'hidden',
+      overflow: isSelected ? 'visible' : 'hidden',
       userSelect: 'none',
       zIndex: isSelected ? 10 : 1,
       opacity: el.opacity !== undefined ? el.opacity : 1,
