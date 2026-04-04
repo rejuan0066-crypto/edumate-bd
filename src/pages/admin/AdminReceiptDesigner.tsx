@@ -26,10 +26,10 @@ const AdminReceiptDesigner = () => {
             {bn ? 'রিসিট ডিজাইনার' : 'Receipt Designer'}
           </h1>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {tabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${tab === t.key ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
               {bn ? t.bn : t.en}
             </button>
           ))}

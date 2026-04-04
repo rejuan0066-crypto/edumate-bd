@@ -230,14 +230,14 @@ const AdminFormulaBuilder = () => {
 
         {/* Tabs & Search */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-            <TabsList>
-              <TabsTrigger value="all">{bn ? 'সকল' : 'All'}</TabsTrigger>
-              {MODULE_OPTIONS.map(mod => (
-                <TabsTrigger key={mod.value} value={mod.value}>{bn ? mod.label_bn : mod.label}</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <div className="flex flex-wrap gap-2">
+            {[{ value: 'all', label: 'All', label_bn: 'সকল' }, ...MODULE_OPTIONS].map(mod => (
+              <button key={mod.value} onClick={() => setActiveTab(mod.value)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === mod.value ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
+                {bn ? mod.label_bn : mod.label}
+              </button>
+            ))}
+          </div>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input className="pl-9" placeholder={bn ? 'খুঁজুন...' : 'Search...'} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />

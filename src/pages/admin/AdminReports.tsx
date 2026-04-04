@@ -359,25 +359,20 @@ const AdminReports = () => {
         </div>
 
         {/* Charts Tabs */}
-        <Tabs defaultValue="income-expense" onValueChange={setActiveTab}>
-          <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="income-expense">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              {bn ? 'আয় vs ব্যয়' : 'Income vs Expense'}
-            </TabsTrigger>
-            <TabsTrigger value="fee">
-              <CreditCard className="h-3.5 w-3.5 mr-1" />
-              {bn ? 'ফি রিপোর্ট' : 'Fee Report'}
-            </TabsTrigger>
-            <TabsTrigger value="students">
-              <Users className="h-3.5 w-3.5 mr-1" />
-              {bn ? 'ছাত্র বিশ্লেষণ' : 'Student Analysis'}
-            </TabsTrigger>
-            <TabsTrigger value="attendance">
-              <CalendarDays className="h-3.5 w-3.5 mr-1" />
-              {bn ? 'অ্যাটেন্ডেন্স' : 'Attendance'}
-            </TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {[
+              { key: 'income-expense', icon: BarChart3, bn: 'আয় vs ব্যয়', en: 'Income vs Expense' },
+              { key: 'fee', icon: CreditCard, bn: 'ফি রিপোর্ট', en: 'Fee Report' },
+              { key: 'students', icon: Users, bn: 'ছাত্র বিশ্লেষণ', en: 'Student Analysis' },
+              { key: 'attendance', icon: CalendarDays, bn: 'অ্যাটেন্ডেন্স', en: 'Attendance' },
+            ].map(t => (
+              <button key={t.key} onClick={() => setActiveTab(t.key)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === t.key ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
+                <t.icon className="w-4 h-4" />{bn ? t.bn : t.en}
+              </button>
+            ))}
+          </div>
 
           {/* Income vs Expense */}
           <TabsContent value="income-expense" className="space-y-4">

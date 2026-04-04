@@ -105,14 +105,18 @@ const AdminPageWithTabs = ({ children }: Props) => {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="mb-4 flex-wrap h-auto gap-1">
-        <TabsTrigger value="main">{mainLabel}</TabsTrigger>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <button onClick={() => setActiveTab('main')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === 'main' ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
+          {mainLabel}
+        </button>
         {tabItems.map(tab => (
-          <TabsTrigger key={tab.id} value={tab.id}>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === tab.id ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
             {bn ? tab.label_bn : tab.label_en}
-          </TabsTrigger>
+          </button>
         ))}
-      </TabsList>
+      </div>
 
       <TabsContent value="main" className="mt-0">
         {children}
