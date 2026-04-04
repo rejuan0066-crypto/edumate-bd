@@ -109,8 +109,27 @@ const ReceiptDesignerMain = () => {
     toast.info(bn ? 'ডিফল্ট ডিজাইনে রিসেট হয়েছে' : 'Reset to default design');
   };
 
+  const getInstitutionData = () => ({
+    institution_name: institution?.name || '',
+    institution_address: institution?.address || '',
+    phone: institution?.phone || '',
+    logo_url: institution?.logo_url || '',
+    student_name: '',
+    student_id: '',
+    roll_no: '',
+    amount: '',
+    fee_type: '',
+    date: '',
+    receipt_no: '',
+    transaction_id: '',
+    status: '',
+    collector_name: '',
+    approver_name: '',
+    address: '',
+  });
+
   const handleDownloadBlank = () => {
-    const printHtml = generatePrintHtml(config, null, bn);
+    const printHtml = generatePrintHtml(config, getInstitutionData(), bn);
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(printHtml);
@@ -122,7 +141,7 @@ const ReceiptDesignerMain = () => {
   const handleDownloadBlankPdf = async () => {
     setPdfLoading(true);
     try {
-      const printHtml = generatePrintHtml(config, null, bn);
+      const printHtml = generatePrintHtml(config, getInstitutionData(), bn);
       await downloadReceiptAsPdf(printHtml, `blank-receipt-${Date.now()}.pdf`);
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (e: any) {
