@@ -34,7 +34,7 @@ const AdminSubjects = () => {
   const { data: subjects = [], isLoading } = useQuery({
     queryKey: ['subjects'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('subjects').select('*, divisions(name, name_bn)').order('name_bn');
+      const { data, error } = await supabase.from('subjects').select('*, classes(name, name_bn, divisions(name, name_bn))').order('name_bn');
       if (error) throw error;
       return data;
     },
