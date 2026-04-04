@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
-import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,13 +14,21 @@ const AdminDivisions = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const { checkApproval: checkDivApproval } = useApprovalCheck('/admin/divisions', 'divisions');
-  const { canAddItem, canDeleteItem } = usePagePermissions('/admin/divisions');
+  const { canAddItem, canDeleteItem, canEditItem } = usePagePermissions('/admin/divisions');
   const { checkApproval: checkClassApproval } = useApprovalCheck('/admin/divisions', 'classes');
   const [selectedDiv, setSelectedDiv] = useState<string | null>(null);
   const [newDivName, setNewDivName] = useState('');
   const [newDivNameEn, setNewDivNameEn] = useState('');
   const [newClassName, setNewClassName] = useState('');
   const [newClassNameEn, setNewClassNameEn] = useState('');
+
+  // Edit states
+  const [editingDivId, setEditingDivId] = useState<string | null>(null);
+  const [editDivName, setEditDivName] = useState('');
+  const [editDivNameEn, setEditDivNameEn] = useState('');
+  const [editingClassId, setEditingClassId] = useState<string | null>(null);
+  const [editClassName, setEditClassName] = useState('');
+  const [editClassNameEn, setEditClassNameEn] = useState('');
 
   const { data: divisions = [], isLoading } = useQuery({
     queryKey: ['divisions'],
@@ -80,6 +88,20 @@ const AdminDivisions = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
+  const editDivMutation = useMutation({
+    mutationFn: async ({ id, name_bn, name }: { id: string; name_bn: string; name: string }) => {
+      if (await checkDivApproval('edit', { id, name_bn, name }, id, `বিভাগ সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('divisions').update({ name_bn, name }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['divisions'] });
+      setEditingDivId(null);
+      toast.success(language === 'bn' ? 'বিভাগ আপডেট হয়েছে' : 'Division updated');
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
   const addClassMutation = useMutation({
     mutationFn: async () => {
       const payload = { division_id: selectedDiv, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), sort_order: classes.length };
@@ -110,7 +132,33 @@ const AdminDivisions = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
+  const editClassMutation = useMutation({
+    mutationFn: async ({ id, name_bn, name }: { id: string; name_bn: string; name: string }) => {
+      if (await checkClassApproval('edit', { id, name_bn, name }, id, `শ্রেণী সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('classes' as any).update({ name_bn, name } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['classes', selectedDiv] });
+      setEditingClassId(null);
+      toast.success(language === 'bn' ? 'শ্রেণী আপডেট হয়েছে' : 'Class updated');
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
   const selected = divisions.find(d => d.id === selectedDiv);
+
+  const startEditDiv = (d: any) => {
+    setEditingDivId(d.id);
+    setEditDivName(d.name_bn);
+    setEditDivNameEn(d.name);
+  };
+
+  const startEditClass = (c: any) => {
+    setEditingClassId(c.id);
+    setEditClassName(c.name_bn);
+    setEditClassNameEn(c.name);
+  };
 
   return (
     <AdminLayout>
@@ -141,19 +189,31 @@ const AdminDivisions = () => {
               <div className="space-y-2">
                 {divisions.map(d => (
                   <div key={d.id}
-                    onClick={() => setSelectedDiv(d.id)}
+                    onClick={() => { if (editingDivId !== d.id) setSelectedDiv(d.id); }}
                     className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${selectedDiv === d.id ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50 hover:bg-secondary'}`}>
-                    <div className="flex items-center gap-3">
-                      <Layers className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{language === 'bn' ? d.name_bn : d.name}</p>
-                        <p className="text-xs text-muted-foreground">{d.description || ''}</p>
+                    {editingDivId === d.id ? (
+                      <div className="flex items-center gap-2 flex-1 mr-2" onClick={e => e.stopPropagation()}>
+                        <Input value={editDivName} onChange={e => setEditDivName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
+                        <Input value={editDivNameEn} onChange={e => setEditDivNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
+                        <button onClick={() => { if (!editDivName.trim()) return; editDivMutation.mutate({ id: d.id, name_bn: editDivName.trim(), name: editDivNameEn.trim() || editDivName.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                        <button onClick={() => setEditingDivId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {canDeleteItem && <button onClick={(e) => { e.stopPropagation(); deleteDivMutation.mutate(d.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <Layers className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{language === 'bn' ? d.name_bn : d.name}</p>
+                            <p className="text-xs text-muted-foreground">{d.description || ''}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {canEditItem && <button onClick={(e) => { e.stopPropagation(); startEditDiv(d); }} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>}
+                          {canDeleteItem && <button onClick={(e) => { e.stopPropagation(); deleteDivMutation.mutate(d.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      </>
+                    )}
                   </div>
                 ))}
                 {divisions.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">{language === 'bn' ? 'কোনো বিভাগ নেই' : 'No divisions yet'}</p>}
@@ -194,17 +254,31 @@ const AdminDivisions = () => {
                   <div className="space-y-2">
                     {classes.map((c: any) => (
                       <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                        <div className="flex items-center gap-3">
-                          <BookOpen className="w-4 h-4 text-primary" />
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
-                            <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
+                        {editingClassId === c.id ? (
+                          <div className="flex items-center gap-2 flex-1 mr-2">
+                            <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
+                            <Input value={editClassNameEn} onChange={e => setEditClassNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
+                            <button onClick={() => { if (!editClassName.trim()) return; editClassMutation.mutate({ id: c.id, name_bn: editClassName.trim(), name: editClassNameEn.trim() || editClassName.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                            <button onClick={() => setEditingClassId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                           </div>
-                        </div>
-                        {canDeleteItem && (
-                          <button onClick={() => deleteClassMutation.mutate(c.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-3">
+                              <BookOpen className="w-4 h-4 text-primary" />
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
+                                <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {canEditItem && <button onClick={() => startEditClass(c)} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>}
+                              {canDeleteItem && (
+                                <button onClick={() => deleteClassMutation.mutate(c.id)} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
                     ))}
