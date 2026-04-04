@@ -73,10 +73,10 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
       <div class="receipt-header" style="background:linear-gradient(135deg, ${pc} 0%, ${pc}dd 100%);">
         ${data.logoUrl ? `<img src="${data.logoUrl}" class="header-logo" />` : '<div class="header-logo-placeholder"></div>'}
         <div class="header-center">
-          <div class="inst-name-bn" style="font-size:${12 * fs}px">${data.institutionName}</div>
-          ${data.institutionNameEn ? `<div class="inst-name-en" style="font-size:${7.5 * fs}px">${data.institutionNameEn}</div>` : ''}
-          <div class="inst-detail" style="font-size:${6 * fs}px">${data.institutionAddress}</div>
-          ${data.institutionPhone ? `<div class="inst-detail" style="font-size:${6 * fs}px">যোগাযোগ: ${data.institutionPhone}</div>` : ''}
+          <div class="inst-name-bn" style="font-size:${10 * fs}px">${data.institutionName}</div>
+          ${data.institutionNameEn ? `<div class="inst-name-en" style="font-size:${6.5 * fs}px">${data.institutionNameEn}</div>` : ''}
+          <div class="inst-detail" style="font-size:${5.5 * fs}px">${data.institutionAddress}</div>
+          ${data.institutionPhone ? `<div class="inst-detail" style="font-size:${5.5 * fs}px">যোগাযোগ: ${data.institutionPhone}</div>` : ''}
         </div>
         ${data.logoUrl ? `<img src="${data.logoUrl}" class="header-logo" />` : '<div class="header-logo-placeholder"></div>'}
       </div>
@@ -84,49 +84,49 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
       <!-- Title Row -->
       <div class="title-row">
         <div class="serial-box">
-          <span class="serial-label" style="font-size:${7 * fs}px">ক্রমিক নং:</span>
-          <span class="serial-val" style="font-size:${7 * fs}px;font-weight:700;color:${pc}">${data.receiptSerial || data.transactionId.slice(-6)}</span>
+          <span class="serial-label" style="font-size:${6 * fs}px">ক্রমিক নং:</span>
+          <span class="serial-val" style="font-size:${6 * fs}px;font-weight:700;color:${pc}">${data.receiptSerial || data.transactionId.slice(-6)}</span>
         </div>
-        <div class="title-capsule" style="background:${pc};font-size:${10 * fs}px">${style.receiptTitle || 'রশিদ বই'}</div>
+        <div class="title-capsule" style="background:${pc};font-size:${8.5 * fs}px">${style.receiptTitle || 'রশিদ বই'}</div>
         <div class="date-box">
-          <span class="date-label" style="font-size:${7 * fs}px">তারিখ:</span>
-          <span class="date-val" style="font-size:${7 * fs}px">${data.date}</span>
+          <span class="date-label" style="font-size:${6 * fs}px">তারিখ:</span>
+          <span class="date-val" style="font-size:${6 * fs}px">${data.date}</span>
         </div>
       </div>
 
       <!-- TrxID & Timestamp Row -->
       ${(style.showTrxId !== false && data.gatewayTrxId) || (style.showTimestamp !== false && data.paymentTimestamp) ? `
       <div class="trx-row">
-        ${style.showTrxId !== false && data.gatewayTrxId ? `<span class="trx-item" style="font-size:${6 * fs}px">TrxID: <strong>${data.gatewayTrxId}</strong></span>` : ''}
-        ${style.showTimestamp !== false && data.paymentTimestamp ? `<span class="trx-item" style="font-size:${6 * fs}px">সময়: ${data.paymentTimestamp}</span>` : ''}
+        ${style.showTrxId !== false && data.gatewayTrxId ? `<span class="trx-item" style="font-size:${5.5 * fs}px">TrxID: <strong>${data.gatewayTrxId}</strong></span>` : ''}
+        ${style.showTimestamp !== false && data.paymentTimestamp ? `<span class="trx-item" style="font-size:${5.5 * fs}px">সময়: ${data.paymentTimestamp}</span>` : ''}
       </div>` : ''}
 
       <!-- Form Fields -->
       <div class="form-body">
         <div class="form-row">
-          <span class="field-label" style="font-size:${8 * fs}px">নাম:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.studentName}</span></div>
+          <span class="field-label" style="font-size:${7 * fs}px">নাম:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.studentName}</span></div>
         </div>
         <div class="form-row">
-          <span class="field-label" style="font-size:${8 * fs}px">আইডি / রোল:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.studentId || data.rollNumber ? [data.studentId, data.rollNumber ? 'রোল: ' + data.rollNumber : ''].filter(Boolean).join(' | ') : ''}</span></div>
+          <span class="field-label" style="font-size:${7 * fs}px">আইডি / রোল:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.studentId || data.rollNumber ? [data.studentId, data.rollNumber ? 'রোল: ' + data.rollNumber : ''].filter(Boolean).join(' | ') : ''}</span></div>
         </div>
         <div class="form-row">
-          <span class="field-label" style="font-size:${8 * fs}px">ক্লাস / সেশন:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.className || data.sessionName ? [data.className, data.sessionName].filter(Boolean).join(' | ') : ''}</span></div>
+          <span class="field-label" style="font-size:${7 * fs}px">ক্লাস / সেশন:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.className || data.sessionName ? [data.className, data.sessionName].filter(Boolean).join(' | ') : ''}</span></div>
         </div>
         <div class="form-row">
-          <span class="field-label" style="font-size:${8 * fs}px">বাবদ:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.feeType}</span></div>
+          <span class="field-label" style="font-size:${7 * fs}px">বাবদ:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.feeType}</span></div>
         </div>
         <div class="form-row-split">
           <div class="form-row half">
-            <span class="field-label" style="font-size:${8 * fs}px">টাকা:</span>
-            <div class="field-input amt"><span class="field-value amt-val" style="font-size:${9 * fs}px">৳ ${data.amount}</span></div>
+            <span class="field-label" style="font-size:${7 * fs}px">টাকা:</span>
+            <div class="field-input amt"><span class="field-value amt-val" style="font-size:${7.5 * fs}px">৳ ${data.amount}</span></div>
           </div>
           <div class="form-row half">
-            <span class="field-label" style="font-size:${8 * fs}px">স্ট্যাটাস:</span>
-            <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px;color:${data.statusColor};font-weight:700">${data.status}</span></div>
+            <span class="field-label" style="font-size:${7 * fs}px">স্ট্যাটাস:</span>
+            <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px;color:${data.statusColor};font-weight:700">${data.status}</span></div>
           </div>
         </div>
         ${style.showQr !== false ? `
@@ -139,23 +139,22 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
       <div class="sig-footer">
         <div class="sig-block">
           <div class="sig-line" style="border-color:${pc}"></div>
-          <div class="sig-title" style="font-size:${6.5 * fs}px">আদায়কারী স্বাক্ষর</div>
-          <div class="sig-name" style="font-size:${5.5 * fs}px">${data.collectorName}</div>
+          <div class="sig-title" style="font-size:${5.5 * fs}px">আদায়কারী স্বাক্ষর</div>
+          <div class="sig-name" style="font-size:${5 * fs}px">${data.collectorName}</div>
         </div>
         ${data.approverName ? `
         <div class="sig-block">
           <div class="sig-line" style="border-color:${pc}"></div>
-          <div class="sig-title" style="font-size:${6.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
-          <div class="sig-name" style="font-size:${5.5 * fs}px">${data.approverName}</div>
+          <div class="sig-title" style="font-size:${5.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
+          <div class="sig-name" style="font-size:${5 * fs}px">${data.approverName}</div>
         </div>` : `
         <div class="sig-block">
           <div class="sig-line" style="border-color:${pc}"></div>
-          <div class="sig-title" style="font-size:${6.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
+          <div class="sig-title" style="font-size:${5.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
         </div>`}
       </div>
     </div>`;
 }
-
 function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   const pc = style.primaryColor || '#1a5c2e';
   return `
