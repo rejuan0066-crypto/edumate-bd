@@ -280,7 +280,7 @@ export function buildSingleStudentPrintHtml(receiptData: ReceiptData, style?: Re
 
   const page = `<div class="page mode-single">
     ${officeCopy}
-    <div class="cut-h"></div>
+    <div class="cut-v"></div>
     ${studentCopy}
   </div>`;
 
