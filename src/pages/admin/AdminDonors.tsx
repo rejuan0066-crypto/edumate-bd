@@ -5,38 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useReceiptSettings } from '@/hooks/useReceiptSettings';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { buildDonationReceiptHtml, DonationReceiptData, ReceiptStyleConfig } from '@/components/fees/receiptPrintLayouts';
-import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
-import { Heart, Eye, Download, Loader2, RotateCcw } from 'lucide-react';
+import { Heart, Loader2, CheckCircle, Clock, Printer, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const DEFAULT_STYLE: ReceiptStyleConfig = {
-  primaryColor: '#1a5c2e',
-  fontSize: 100,
-  receiptTitle: 'দানের রশিদ',
-  showWatermark: true,
-  showQr: true,
-  showTrxId: true,
-  showTimestamp: true,
-};
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const AdminDonors = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { settings } = useReceiptSettings();
+  const queryClient = useQueryClient();
+  const { checkApproval } = useApprovalCheck('/admin/donors', 'donors');
+  const { canAddItem, canEditItem } = usePagePermissions('/admin/donors');
 
-  const { data: institution } = useQuery({
-    queryKey: ['institution_donation'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
-  });
-
-  const [pdfLoading, setPdfLoading] = useState(false);
   const [form, setForm] = useState({
     donorName: '',
     donorPhone: '',
@@ -44,121 +26,96 @@ const AdminDonors = () => {
     donationAmount: '',
     donationType: '',
     purpose: '',
-    receiptSerial: '',
-    date: '',
-    paymentMethod: '',
-    transactionId: '',
-    paymentTimestamp: '',
+    donationDate: '',
   });
+  const [showList, setShowList] = useState(false);
+  const [listType, setListType] = useState<'active' | 'all'>('active');
 
   const updateField = (key: string, value: string) => setForm(p => ({ ...p, [key]: value }));
 
-  const getStyle = (): ReceiptStyleConfig => {
-    const defaultSetting = settings?.find((s: any) => s.is_default);
-    if (defaultSetting) {
-      const dc = defaultSetting.design_config as any;
-      if (dc?.primaryColor) return { ...dc, receiptTitle: 'দানের রশিদ' } as ReceiptStyleConfig;
-    }
-    return DEFAULT_STYLE;
-  };
-
-  const getReceiptData = (): DonationReceiptData => ({
-    ...form,
-    transactionId: form.transactionId,
-    gatewayTrxId: form.transactionId,
-    paymentTimestamp: form.paymentTimestamp,
-    collectorName: '',
-    approverName: '',
-    institutionName: institution?.name || 'মডেল মাদরাসা',
-    institutionNameEn: institution?.name_en || 'MODEL MADRASA',
-    institutionAddress: institution?.address || 'ঢাকা, বাংলাদেশ',
-    institutionPhone: institution?.phone || '',
-    institutionEmail: institution?.email || '',
-    institutionOtherInfo: institution?.other_info || '',
-    logoUrl: institution?.logo_url || '',
-    bn: true,
+  const { data: donations = [] } = useQuery({
+    queryKey: ['donors'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('donors').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const getPreviewHtml = () => buildDonationReceiptHtml(getReceiptData(), getStyle());
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      if (!form.donorName || !form.donationAmount) throw new Error(bn ? 'দাতার নাম ও পরিমাণ আবশ্যক' : 'Donor name and amount required');
 
-  const handlePreview = () => {
-    const html = getPreviewHtml();
-    const win = window.open('', '_blank');
-    if (win) { win.document.write(html); win.document.close(); }
-  };
+      const payload = {
+        name_bn: form.donorName,
+        phone: form.donorPhone || null,
+        address: form.donorAddress || null,
+        donation_amount: parseFloat(form.donationAmount),
+        donation_type: form.donationType || 'one-time',
+        purpose: form.purpose || null,
+        donation_date: form.donationDate || new Date().toISOString().split('T')[0],
+        status: 'active',
+      };
 
-  const handleDownloadPdf = async () => {
-    setPdfLoading(true);
-    try {
-      await downloadReceiptAsPdf(getPreviewHtml(), `donation-receipt-${Date.now()}.pdf`);
-      toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
-    } catch (e: any) {
-      toast.error(e.message || 'PDF error');
-    } finally {
-      setPdfLoading(false);
-    }
-  };
+      if (await checkApproval('add', payload, undefined, `দান: ৳${form.donationAmount}`)) return;
 
-  const handleReset = () => {
-    setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', receiptSerial: '', date: '', paymentMethod: '', transactionId: '', paymentTimestamp: '' });
-    toast.info(bn ? 'ফর্ম রিসেট হয়েছে' : 'Form reset');
-  };
+      const { error } = await supabase.from('donors').insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['donors'] });
+      setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', donationDate: '' });
+      toast.success(bn ? 'দান রেকর্ড সফল' : 'Donation recorded');
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
 
-  const previewSrc = `data:text/html;charset=utf-8,${encodeURIComponent(getPreviewHtml().replace(/<script>.*?<\/script>/gs, ''))}`;
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('donors').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['donors'] });
+      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const activeDonations = donations.filter((d: any) => d.status === 'active');
+  const totalAmount = activeDonations.reduce((sum: number, d: any) => sum + (d.donation_amount || 0), 0);
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <Heart className="w-6 h-6 text-primary" />
-          <h1 className="text-xl font-display font-bold text-foreground">
-            {bn ? 'দানের রশিদ' : 'Donation Receipt'}
-          </h1>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {bn ? 'দাতার তথ্য পূরণ করুন এবং রশিদ প্রিভিউ বা ডাউনলোড করুন।' : 'Fill donor info and preview or download the receipt.'}
-        </p>
+          {bn ? 'দান ব্যবস্থাপনা' : 'Donation Management'}
+        </h1>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleReset}><RotateCcw className="w-4 h-4 mr-1" />{bn ? 'রিসেট' : 'Reset'}</Button>
-          <Button variant="outline" size="sm" onClick={handlePreview}><Eye className="w-4 h-4 mr-1" />{bn ? 'প্রিভিউ' : 'Preview'}</Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={pdfLoading}>
-            {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
-            PDF
-          </Button>
-        </div>
-
-        {/* Main layout */}
-        <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 'calc(100vh - 300px)' }}>
-          {/* Form Panel */}
-          <div className="w-full lg:w-80 flex-shrink-0 space-y-3 card-elevated p-4 rounded-lg">
-            <h3 className="font-display font-semibold text-sm text-foreground">{bn ? 'দাতার তথ্য' : 'Donor Information'}</h3>
-
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'ক্রমিক নং' : 'Serial No'}</Label>
-              <Input className="h-8 text-sm" value={form.receiptSerial} onChange={(e) => updateField('receiptSerial', e.target.value)} />
+        {/* Payment Form */}
+        <div className="card-elevated p-5">
+          <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
+            <Heart className="w-5 h-5 text-primary" />
+            {bn ? 'দান রেকর্ড করুন' : 'Record Donation'}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'দাতার নাম' : 'Donor Name'}</Label>
+              <Input className="bg-background mt-1" value={form.donorName} onChange={(e) => updateField('donorName', e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'তারিখ' : 'Date'}</Label>
-              <Input className="h-8 text-sm" type="date" value={form.date} onChange={(e) => updateField('date', e.target.value)} />
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'মোবাইল' : 'Phone'}</Label>
+              <Input className="bg-background mt-1" value={form.donorPhone} onChange={(e) => updateField('donorPhone', e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'দাতার নাম' : 'Donor Name'}</Label>
-              <Input className="h-8 text-sm" value={form.donorName} onChange={(e) => updateField('donorName', e.target.value)} />
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'ঠিকানা' : 'Address'}</Label>
+              <Input className="bg-background mt-1" value={form.donorAddress} onChange={(e) => updateField('donorAddress', e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'মোবাইল' : 'Phone'}</Label>
-              <Input className="h-8 text-sm" value={form.donorPhone} onChange={(e) => updateField('donorPhone', e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'ঠিকানা' : 'Address'}</Label>
-              <Input className="h-8 text-sm" value={form.donorAddress} onChange={(e) => updateField('donorAddress', e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'দানের ধরন' : 'Donation Type'}</Label>
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'দানের ধরন' : 'Donation Type'}</Label>
               <Select value={form.donationType} onValueChange={(v) => updateField('donationType', v)}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="নগদ">{bn ? 'নগদ' : 'Cash'}</SelectItem>
                   <SelectItem value="চেক">{bn ? 'চেক' : 'Cheque'}</SelectItem>
@@ -167,43 +124,86 @@ const AdminDonors = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'উদ্দেশ্য / বাবদ' : 'Purpose'}</Label>
-              <Input className="h-8 text-sm" value={form.purpose} onChange={(e) => updateField('purpose', e.target.value)} placeholder={bn ? 'মসজিদ নির্মাণ, শিক্ষা তহবিল...' : 'Building fund, education...'} />
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'উদ্দেশ্য / বাবদ' : 'Purpose'}</Label>
+              <Input className="bg-background mt-1" value={form.purpose} onChange={(e) => updateField('purpose', e.target.value)} placeholder={bn ? 'মসজিদ নির্মাণ...' : 'Building fund...'} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'টাকার পরিমাণ' : 'Amount'}</Label>
-              <Input className="h-8 text-sm" type="number" value={form.donationAmount} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'তারিখ' : 'Date'}</Label>
+              <Input type="date" className="bg-background mt-1" value={form.donationDate} onChange={(e) => updateField('donationDate', e.target.value)} />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{bn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}</Label>
-              <Input className="h-8 text-sm" value={form.paymentMethod} onChange={(e) => updateField('paymentMethod', e.target.value)} placeholder={bn ? 'bKash / নগদ / ব্যাংক' : 'bKash / Cash / Bank'} />
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'টাকার পরিমাণ' : 'Amount'}</Label>
+              <Input type="number" className="bg-background mt-1" value={form.donationAmount} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
             </div>
-            {form.donationType === 'অনলাইন' && (
+          </div>
+          <Button onClick={() => payMutation.mutate()} className="btn-primary-gradient mt-4" disabled={payMutation.isPending}>
+            {payMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            {bn ? 'রেকর্ড করুন' : 'Record'}
+          </Button>
+        </div>
+
+        {/* Donation List */}
+        <div className="card-elevated p-5">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <h3 className="font-display font-bold text-foreground">{bn ? 'দান তালিকা' : 'Donation List'}</h3>
+            <button onClick={() => { setListType('active'); setShowList(true); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${listType === 'active' && showList ? 'bg-success text-success-foreground' : 'bg-success/10 text-success'}`}>
+              <CheckCircle className="w-3 h-3 inline mr-1" /> {bn ? 'সক্রিয়' : 'Active'} ({activeDonations.length})
+            </button>
+            <button onClick={() => { setListType('all'); setShowList(true); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${listType === 'all' && showList ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
+              <Clock className="w-3 h-3 inline mr-1" /> {bn ? 'সকল' : 'All'} ({donations.length})
+            </button>
+            {showList && (
               <>
-                <div className="space-y-1">
-                  <Label className="text-xs">{bn ? 'ট্রানজেকশন আইডি' : 'Transaction ID'}</Label>
-                  <Input className="h-8 text-sm" value={form.transactionId} onChange={(e) => updateField('transactionId', e.target.value)} placeholder={bn ? 'TrxID' : 'TrxID'} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{bn ? 'ট্রানজেকশন তারিখ/সময়' : 'Transaction Date/Time'}</Label>
-                  <Input className="h-8 text-sm" type="datetime-local" value={form.paymentTimestamp} onChange={(e) => updateField('paymentTimestamp', e.target.value)} />
-                </div>
+                <span className="text-sm font-bold text-foreground ml-auto">
+                  {bn ? 'মোট:' : 'Total:'} ৳{totalAmount.toLocaleString()}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => window.print()}>
+                  <Printer className="w-4 h-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
+                </Button>
               </>
             )}
           </div>
 
-          {/* Preview */}
-          <div className="flex-1 bg-muted/30 rounded-lg overflow-hidden border" style={{ minHeight: 500 }}>
-            <iframe
-              key={JSON.stringify(form)}
-              src={previewSrc}
-              className="w-full h-full border-0"
-              style={{ minHeight: 500 }}
-              title="Donation Receipt Preview"
-              sandbox="allow-same-origin"
-            />
-          </div>
+          {showList && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'দাতার নাম' : 'Donor'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'মোবাইল' : 'Phone'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'ধরন' : 'Type'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'উদ্দেশ্য' : 'Purpose'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'পরিমাণ' : 'Amount'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'তারিখ' : 'Date'}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(listType === 'active' ? activeDonations : donations).map((d: any) => (
+                    <tr key={d.id} className="hover:bg-secondary/30">
+                      <td className="px-4 py-3 font-medium text-foreground">{d.name_bn || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{d.phone || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{d.donation_type || '-'}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{d.purpose || '-'}</td>
+                      <td className="px-4 py-3 font-bold text-foreground">৳ {d.donation_amount || 0}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{d.donation_date || '-'}</td>
+                      <td className="px-4 py-3">
+                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(d.id)}>
+                          <Trash2 className="w-3 h-3 text-destructive" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {(listType === 'active' ? activeDonations : donations).length === 0 && (
+                    <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো রেকর্ড নেই' : 'No records'}</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>
