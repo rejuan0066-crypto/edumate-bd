@@ -57,153 +57,152 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
   const hasSecondField = !!(selectedClass || rollNumber.trim() || regNumber.trim());
   const canDownload = hasSession && hasSecondField;
 
-  const handleDownload = async () => {
+  const fetchReceiptData = async () => {
     if (!selectedSession) {
       toast.error(bn ? 'সেশন নির্বাচন করুন' : 'Select session');
-      return;
+      return null;
     }
     if (!hasSecondField) {
       toast.error(bn ? 'ক্লাস / রোল / রেজিস্ট্রেশন এর যেকোনো একটি দিন' : 'Provide class, roll, or registration');
-      return;
+      return null;
     }
 
-    setLoading(true);
-    try {
-      const session = sessions.find((s: any) => s.id === selectedSession);
-      const sessionName = session?.name || '';
+    const session = sessions.find((s: any) => s.id === selectedSession);
+    const sessionName = session?.name || '';
 
-      let studentQuery = supabase
-        .from('students')
-        .select('*, divisions(name_bn, name), classes(name_bn, name)')
-        .eq('status', 'active')
-        .eq('admission_session', sessionName);
+    let studentQuery = supabase
+      .from('students')
+      .select('*, divisions(name_bn, name), classes(name_bn, name)')
+      .eq('status', 'active')
+      .eq('admission_session', sessionName);
 
-      if (selectedClass) studentQuery = studentQuery.eq('class_id', selectedClass);
-      if (rollNumber.trim()) studentQuery = studentQuery.eq('roll_number', rollNumber.trim());
-      if (regNumber.trim()) studentQuery = studentQuery.eq('student_id', regNumber.trim());
+    if (selectedClass) studentQuery = studentQuery.eq('class_id', selectedClass);
+    if (rollNumber.trim()) studentQuery = studentQuery.eq('roll_number', rollNumber.trim());
+    if (regNumber.trim()) studentQuery = studentQuery.eq('student_id', regNumber.trim());
 
-      const { data: students, error: studErr } = await studentQuery.order('roll_number');
-      if (studErr) throw studErr;
-      if (!students || students.length === 0) {
-        toast.error(bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found');
-        return;
-      }
+    const { data: students, error: studErr } = await studentQuery.order('roll_number');
+    if (studErr) throw studErr;
+    if (!students || students.length === 0) {
+      toast.error(bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found');
+      return null;
+    }
 
-      const studentIds = students.map((s: any) => s.id);
-      const { data: payments, error: payErr } = await supabase
-        .from('payments')
-        .select('*')
-        .in('student_id', studentIds)
-        .eq('status', statusFilter)
-        .order('created_at', { ascending: false });
-      if (payErr) throw payErr;
+    const studentIds = students.map((s: any) => s.id);
+    const { data: payments, error: payErr } = await supabase
+      .from('payments')
+      .select('*')
+      .in('student_id', studentIds)
+      .eq('status', statusFilter)
+      .order('created_at', { ascending: false });
+    if (payErr) throw payErr;
 
-      if (!payments || payments.length === 0) {
-        toast.error(bn ? 'কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি' : 'No payment records found');
-        return;
-      }
+    if (!payments || payments.length === 0) {
+      toast.error(bn ? 'কোনো পেমেন্ট রেকর্ড পাওয়া যায়নি' : 'No payment records found');
+      return null;
+    }
 
-      let approverName = '';
-      if (statusFilter === 'success') {
-        const { data: approvals } = await supabase
-          .from('pending_actions')
-          .select('payload, reviewed_by, user_name')
-          .eq('status', 'approved')
-          .eq('target_table', 'payments');
+    let approverName = '';
+    if (statusFilter === 'success') {
+      const { data: approvals } = await supabase
+        .from('pending_actions')
+        .select('payload, reviewed_by, user_name')
+        .eq('status', 'approved')
+        .eq('target_table', 'payments');
 
-        if (approvals && approvals.length > 0) {
-          const reviewerIds = [...new Set(approvals.map((a: any) => a.reviewed_by).filter(Boolean))];
-          if (reviewerIds.length > 0) {
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('id, full_name')
-              .in('id', reviewerIds);
-            if (profiles && profiles.length > 0) {
-              approverName = profiles[0].full_name || '';
-            }
+      if (approvals && approvals.length > 0) {
+        const reviewerIds = [...new Set(approvals.map((a: any) => a.reviewed_by).filter(Boolean))];
+        if (reviewerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', reviewerIds);
+          if (profiles && profiles.length > 0) {
+            approverName = profiles[0].full_name || '';
           }
         }
       }
+    }
 
-      const studentMap = new Map(students.map((s: any) => [s.id, s]));
+    const studentMap = new Map(students.map((s: any) => [s.id, s]));
+    const className = selectedClass
+      ? classes.find((c: any) => c.id === selectedClass)?.name_bn || ''
+      : '';
 
-      const getCollectorFromNotes = (notes: string) => {
-        const match = notes?.match(/আদায়কারী: (.+?)(?:\||$)/);
-        return match ? match[1].trim() : collectorName;
+    return { payments, studentMap, sessionName, className, approverName };
+  };
+
+  const getCollectorFromNotes = (notes: string) => {
+    const match = notes?.match(/আদায়কারী: (.+?)(?:\||$)/);
+    return match ? match[1].trim() : collectorName;
+  };
+
+  const buildReceiptHtml = (data: any) => {
+    const { payments, studentMap, sessionName, className, approverName } = data;
+    const savedDesign = defaultSetting?.design_config as unknown as ReceiptDesignConfig | undefined;
+
+    if (savedDesign && savedDesign.elements && savedDesign.elements.length > 0) {
+      const dataMap: Record<string, string> = {
+        student_name: (studentMap.get(payments[0].student_id))?.name_bn || '-',
+        student_id: (studentMap.get(payments[0].student_id))?.student_id || '-',
+        roll_no: (studentMap.get(payments[0].student_id))?.roll_number || '-',
+        class_name: className,
+        session: sessionName,
+        fee_type: bn ? (feeTypeLabels[payments[0].fee_type]?.bn || payments[0].fee_type) : (feeTypeLabels[payments[0].fee_type]?.en || payments[0].fee_type),
+        amount: `৳ ${payments[0].amount}`,
+        transaction_id: payments[0].transaction_id,
+        date: new Date(payments[0].created_at || Date.now()).toLocaleDateString('bn-BD'),
+        status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
+        payment_method: payments[0].payment_method || 'Cash',
+        collector_name: getCollectorFromNotes(payments[0].notes || ''),
+        approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
+        institution_name: institution?.name || '',
+        institution_address: institution?.address || '',
+        phone: institution?.phone || '',
+        logo_url: institution?.logo_url || '',
       };
+      return { type: 'custom' as const, html: generatePrintHtml(savedDesign, dataMap, bn) };
+    }
+    return {
+      type: 'builtin' as const,
+      params: {
+        payments, studentMap, sessionName, className, institution,
+        collectorName: getCollectorFromNotes(payments[0]?.notes || ''),
+        approverName, statusFilter, bn,
+      }
+    };
+  };
 
-      const className = selectedClass
-        ? classes.find((c: any) => c.id === selectedClass)?.name_bn || ''
-        : '';
+  const handleDownload = async (mode: 'print' | 'pdf') => {
+    const setLoad = mode === 'pdf' ? setPdfLoading : setLoading;
+    setLoad(true);
+    try {
+      const data = await fetchReceiptData();
+      if (!data) return;
 
-      // Use saved receipt design if available
-      const savedDesign = defaultSetting?.design_config as unknown as ReceiptDesignConfig | undefined;
-      if (savedDesign && savedDesign.elements && savedDesign.elements.length > 0) {
-        // Print using custom design for each payment
-        const allPages: string[] = [];
-        payments.forEach((p: any) => {
-          const student = studentMap.get(p.student_id);
-          const dataMap: Record<string, string> = {
-            student_name: student?.name_bn || '-',
-            student_id: student?.student_id || '-',
-            roll_no: student?.roll_number || '-',
-            class_name: className,
-            session: sessionName,
-            fee_type: bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type),
-            amount: `৳ ${p.amount}`,
-            transaction_id: p.transaction_id,
-            date: new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD'),
-            status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
-            payment_method: p.payment_method || 'Cash',
-            collector_name: getCollectorFromNotes(p.notes || ''),
-            approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
-            institution_name: institution?.name || '',
-            institution_address: institution?.address || '',
-            phone: institution?.phone || '',
-            logo_url: institution?.logo_url || '',
-          };
-          allPages.push(generatePrintHtml(savedDesign, dataMap, bn));
-        });
-        // Open the first one (combined approach)
-        const html = generatePrintHtml(savedDesign, {
-          student_name: (studentMap.get(payments[0].student_id))?.name_bn || '-',
-          student_id: (studentMap.get(payments[0].student_id))?.student_id || '-',
-          roll_no: (studentMap.get(payments[0].student_id))?.roll_number || '-',
-          class_name: className,
-          session: sessionName,
-          fee_type: bn ? (feeTypeLabels[payments[0].fee_type]?.bn || payments[0].fee_type) : (feeTypeLabels[payments[0].fee_type]?.en || payments[0].fee_type),
-          amount: `৳ ${payments[0].amount}`,
-          transaction_id: payments[0].transaction_id,
-          date: new Date(payments[0].created_at || Date.now()).toLocaleDateString('bn-BD'),
-          status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
-          payment_method: payments[0].payment_method || 'Cash',
-          collector_name: getCollectorFromNotes(payments[0].notes || ''),
-          approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
-          institution_name: institution?.name || '',
-          institution_address: institution?.address || '',
-          phone: institution?.phone || '',
-          logo_url: institution?.logo_url || '',
-        }, bn);
-        const win = window.open('', '_blank');
-        if (win) { win.document.write(html); win.document.close(); }
+      const result = buildReceiptHtml(data);
+
+      if (mode === 'pdf') {
+        if (result.type === 'custom') {
+          await downloadReceiptAsPdf(result.html, `receipt-${Date.now()}.pdf`);
+          toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+        } else {
+          // For builtin, generate html first then convert
+          const html = generateBuiltinHtml(result.params);
+          await downloadReceiptAsPdf(html, `receipt-${Date.now()}.pdf`);
+          toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+        }
       } else {
-        // Fallback to built-in receipt layout
-        printReceipt({
-          payments,
-          studentMap,
-          sessionName,
-          className,
-          institution,
-          collectorName: getCollectorFromNotes(payments[0]?.notes || ''),
-          approverName,
-          statusFilter,
-          bn,
-        });
+        if (result.type === 'custom') {
+          const win = window.open('', '_blank');
+          if (win) { win.document.write(result.html); win.document.close(); }
+        } else {
+          printReceipt(result.params);
+        }
       }
     } catch (e: any) {
       toast.error(e.message || 'Error');
     } finally {
-      setLoading(false);
+      setLoad(false);
     }
   };
 
