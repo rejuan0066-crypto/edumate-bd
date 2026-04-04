@@ -209,6 +209,10 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   .serial-val, .date-val { color: #111; }
   .title-capsule { color: #fff; font-weight: 700; text-align: center; padding: 1px 14px; border-radius: 10px; white-space: nowrap; }
 
+  .trx-row { display: flex; justify-content: center; gap: 4mm; padding: 0 3mm; position: relative; z-index: 1; }
+  .trx-item { color: #666; font-family: monospace, 'Noto Sans Bengali', sans-serif; }
+  .trx-item strong { color: #333; }
+
   /* Form body */
   .form-body { flex: 1; padding: 1.5mm 3mm; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1mm; }
   .form-row { display: flex; align-items: center; gap: 1.5mm; }
