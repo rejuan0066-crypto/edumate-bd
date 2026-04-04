@@ -46,7 +46,7 @@ const AdminSubjects = () => {
         name_bn: newName.trim(),
         name: newNameEn.trim() || newName.trim(),
         code: newCode.trim() || null,
-        division_id: newDivision || null,
+        class_id: newClass || null,
       };
       if (await checkApproval('add', payload, undefined, `বিষয় যোগ: ${newName.trim()}`)) return;
       const { error } = await supabase.from('subjects').insert(payload);
