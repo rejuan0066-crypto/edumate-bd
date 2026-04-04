@@ -189,8 +189,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </div>
           {(sidebarOpen || mobile) && (
             <div className="overflow-hidden flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-sidebar-foreground truncate">মাদরাসা ম্যানেজমেন্ট</h2>
-              <p className="text-xs text-sidebar-foreground/60">Admin Panel</p>
+              <h2 className="text-sm font-bold text-sidebar-foreground truncate">{language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট' : 'Madrasa Management'}</h2>
+              <p className="text-xs text-sidebar-foreground/60">{language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel'}</p>
             </div>
           )}
           {mobile && (
@@ -278,7 +278,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
             >
               <LogOut className="w-5 h-5" />
-              <span>লগআউট</span>
+              <span>{language === 'bn' ? 'লগআউট' : 'Logout'}</span>
             </button>
           </div>
         )}

@@ -137,9 +137,9 @@ const DashboardInstitutionCard = () => {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <h2 className="text-xl font-display font-bold text-foreground">{institution?.name || 'প্রতিষ্ঠানের নাম'}</h2>
+        <h2 className="text-xl font-display font-bold text-foreground">{institution?.name || (language === 'bn' ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h2>
         <p className="text-sm text-muted-foreground truncate">
-          {[institution?.address, institution?.phone, institution?.email].filter(Boolean).join(' | ') || 'ঠিকানা, ফোন, ইমেইল'}
+          {[institution?.address, institution?.phone, institution?.email].filter(Boolean).join(' | ') || (language === 'bn' ? 'ঠিকানা, ফোন, ইমেইল' : 'Address, Phone, Email')}
         </p>
         {institution?.other_info && <p className="text-xs text-muted-foreground mt-0.5">{institution.other_info}</p>}
       </div>

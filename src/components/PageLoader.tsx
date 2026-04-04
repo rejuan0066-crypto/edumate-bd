@@ -1,4 +1,5 @@
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -7,6 +8,7 @@ const CACHE_SHAPE_KEY = 'cached_loader_logo_shape';
 
 const PageLoader = () => {
   const { settings, isLoading } = useWebsiteSettings();
+  const { language } = useLanguage();
   
   // Use cached logo immediately to avoid flash of default
   const [cachedLogo] = useState(() => localStorage.getItem(CACHE_KEY) || '');
@@ -41,7 +43,7 @@ const PageLoader = () => {
           </div>
         )}
         <p className="text-sm text-muted-foreground font-bengali tracking-wide animate-pulse">
-          লোড হচ্ছে...
+          {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
         </p>
       </div>
     </div>
