@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useReceiptSettings, ReceiptDesignConfig } from '@/hooks/useReceiptSettings';
 import { generatePrintHtml } from '@/components/admin/receipt-designer/ReceiptDesignerMain';
 import { Link } from 'react-router-dom';
+import { buildSingleStudentPrintHtml, buildBulkClassPrintHtml, ReceiptData } from './receiptPrintLayouts';
 
 interface Props {
   collectorName: string;
