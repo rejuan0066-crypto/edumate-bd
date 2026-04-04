@@ -179,6 +179,18 @@ const AdminDonors = () => {
               <Label className="text-xs">{bn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}</Label>
               <Input className="h-8 text-sm" value={form.paymentMethod} onChange={(e) => updateField('paymentMethod', e.target.value)} placeholder={bn ? 'bKash / নগদ / ব্যাংক' : 'bKash / Cash / Bank'} />
             </div>
+            {form.donationType === 'অনলাইন' && (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs">{bn ? 'ট্রানজেকশন আইডি' : 'Transaction ID'}</Label>
+                  <Input className="h-8 text-sm" value={form.transactionId} onChange={(e) => updateField('transactionId', e.target.value)} placeholder={bn ? 'TrxID' : 'TrxID'} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{bn ? 'ট্রানজেকশন তারিখ/সময়' : 'Transaction Date/Time'}</Label>
+                  <Input className="h-8 text-sm" type="datetime-local" value={form.paymentTimestamp} onChange={(e) => updateField('paymentTimestamp', e.target.value)} />
+                </div>
+              </>
+            )}
           </div>
 
           {/* Preview */}
