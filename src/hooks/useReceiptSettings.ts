@@ -277,5 +277,18 @@ export function useReceiptSettings() {
     },
   });
 
-  return { settings, defaultSetting, isLoading, saveMutation };
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('receipt_settings')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipt_settings'] });
+    },
+  });
+
+  return { settings, defaultSetting, isLoading, saveMutation, deleteMutation };
 }

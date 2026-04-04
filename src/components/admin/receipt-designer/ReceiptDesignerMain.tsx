@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useReceiptSettings, DEFAULT_DESIGN, GREEN_CAPSULE_PRESET, ReceiptDesignConfig, ReceiptElement } from '@/hooks/useReceiptSettings';
 import DesignerCanvas from './DesignerCanvas';
 import DesignerToolbar from './DesignerToolbar';
-import { Save, Loader2, RotateCcw, FileDown, Plus, Download } from 'lucide-react';
+import { Save, Loader2, RotateCcw, FileDown, Plus, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,7 @@ const cloneConfig = (preset: ReceiptDesignConfig): ReceiptDesignConfig => ({
 const ReceiptDesignerMain = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { settings, isLoading, saveMutation } = useReceiptSettings();
+  const { settings, isLoading, saveMutation, deleteMutation } = useReceiptSettings();
 
   const { data: institution } = useQuery({
     queryKey: ['institution_designer'],
@@ -185,6 +185,26 @@ const ReceiptDesignerMain = () => {
         <Button variant="outline" size="sm" onClick={() => { setSelectedSettingId(''); setName('Green Capsule Receipt'); setNameBn('গ্রিন ক্যাপসুল রিসিট'); setConfig(cloneConfig(GREEN_CAPSULE_PRESET)); setSelectedId(null); }}>
           <Plus className="w-4 h-4 mr-1" />{bn ? 'নতুন' : 'New'}
         </Button>
+        {selectedSettingId && (
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10"
+            disabled={deleteMutation.isPending}
+            onClick={async () => {
+              if (!confirm(bn ? 'এই ডিজাইন ডিলিট করতে চান?' : 'Delete this design?')) return;
+              try {
+                await deleteMutation.mutateAsync(selectedSettingId);
+                setSelectedSettingId('');
+                setName('Green Capsule Receipt');
+                setNameBn('গ্রিন ক্যাপসুল রিসিট');
+                setConfig(cloneConfig(GREEN_CAPSULE_PRESET));
+                toast.success(bn ? 'ডিজাইন ডিলিট হয়েছে' : 'Design deleted');
+              } catch (e: any) {
+                toast.error(e.message);
+              }
+            }}>
+            {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Trash2 className="w-4 h-4 mr-1" />}
+            {bn ? 'ডিলিট' : 'Delete'}
+          </Button>
+        )}
         <Button onClick={handleSave} disabled={saveMutation.isPending} className="btn-primary-gradient">
           {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
           {bn ? 'সেভ করুন' : 'Save'}
