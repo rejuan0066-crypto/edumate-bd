@@ -69,7 +69,7 @@ const AdminDonors = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['donors'] });
-      setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', donationDate: '' });
+      setForm({ donorName: '', donorPhone: '', donorAddress: '', donationAmount: '', donationType: '', purpose: '', donationDate: '', transactionId: '', paymentGateway: '' });
       toast.success(bn ? 'দান রেকর্ড সফল' : 'Donation recorded');
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
