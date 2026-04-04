@@ -218,12 +218,12 @@ const AdminStudentsFees = () => {
     setSelectedSession('');
   };
 
-  return (
-    <AdminLayout>
+  const feeCollectionContent = (
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-primary" />
           {bn ? 'ছাত্র ফি পরিশোধ' : 'Student Fee Payment'}
+        </h1>
         </h1>
 
         {step === 'form' && (
