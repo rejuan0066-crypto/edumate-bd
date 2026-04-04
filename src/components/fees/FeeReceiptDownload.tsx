@@ -8,9 +8,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Download, FileText, Loader2, Palette, Printer } from 'lucide-react';
 import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { toast } from 'sonner';
-import { useReceiptSettings, ReceiptDesignConfig } from '@/hooks/useReceiptSettings';
-import { generatePrintHtml } from '@/components/admin/receipt-designer/ReceiptDesignerMain';
+import { useReceiptSettings } from '@/hooks/useReceiptSettings';
 import { Link } from 'react-router-dom';
+import { buildSingleStudentPrintHtml, buildBulkClassPrintHtml, ReceiptData } from './receiptPrintLayouts';
 
 interface Props {
   collectorName: string;
@@ -136,40 +136,52 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
     return match ? match[1].trim() : collectorName;
   };
 
-  const buildReceiptHtml = (data: any) => {
-    const { payments, studentMap, sessionName, className, approverName } = data;
-    const savedDesign = defaultSetting?.design_config as unknown as ReceiptDesignConfig | undefined;
+  const isSingleStudent = !!(rollNumber.trim() || regNumber.trim());
+  const isBulkClass = !!selectedClass && !rollNumber.trim() && !regNumber.trim();
 
-    if (savedDesign && savedDesign.elements && savedDesign.elements.length > 0) {
-      const dataMap: Record<string, string> = {
-        student_name: (studentMap.get(payments[0].student_id))?.name_bn || '-',
-        student_id: (studentMap.get(payments[0].student_id))?.student_id || '-',
-        roll_no: (studentMap.get(payments[0].student_id))?.roll_number || '-',
-        class_name: className,
-        session: sessionName,
-        fee_type: bn ? (feeTypeLabels[payments[0].fee_type]?.bn || payments[0].fee_type) : (feeTypeLabels[payments[0].fee_type]?.en || payments[0].fee_type),
-        amount: `৳ ${payments[0].amount}`,
-        transaction_id: payments[0].transaction_id,
-        date: new Date(payments[0].created_at || Date.now()).toLocaleDateString('bn-BD'),
-        status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
-        payment_method: payments[0].payment_method || 'Cash',
-        collector_name: getCollectorFromNotes(payments[0].notes || ''),
-        approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
-        institution_name: institution?.name || '',
-        institution_address: institution?.address || '',
-        phone: institution?.phone || '',
-        logo_url: institution?.logo_url || '',
-      };
-      return { type: 'custom' as const, html: generatePrintHtml(savedDesign, dataMap, bn) };
-    }
-    return {
-      type: 'builtin' as const,
-      params: {
-        payments, studentMap, sessionName, className, institution,
-        collectorName: getCollectorFromNotes(payments[0]?.notes || ''),
-        approverName, statusFilter, bn,
-      }
-    };
+  const buildReceiptDataList = (data: any): ReceiptData[] => {
+    const { payments, studentMap, sessionName, className, approverName } = data;
+    
+    // Group payments by student
+    const studentPayments = new Map<string, any[]>();
+    payments.forEach((p: any) => {
+      const list = studentPayments.get(p.student_id) || [];
+      list.push(p);
+      studentPayments.set(p.student_id, list);
+    });
+
+    const receiptList: ReceiptData[] = [];
+    studentPayments.forEach((payList, studentId) => {
+      const student = studentMap.get(studentId);
+      if (!student) return;
+      payList.forEach((p: any) => {
+        receiptList.push({
+          studentName: student?.name_bn || '-',
+          studentId: student?.student_id || '-',
+          rollNumber: student?.roll_number || '-',
+          className: student?.classes?.name_bn || className || '-',
+          sessionName,
+          feeType: bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type),
+          amount: String(p.amount),
+          transactionId: p.transaction_id,
+          date: new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD'),
+          status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
+          statusColor: statusFilter === 'pending' ? '#f59e0b' : '#22c55e',
+          paymentMethod: p.payment_method || 'Cash',
+          collectorName: getCollectorFromNotes(p.notes || ''),
+          approverName: statusFilter === 'success' ? (approverName || (bn ? 'এডমিন' : 'Admin')) : '',
+          institutionName: institution?.name || '',
+          institutionNameEn: institution?.name_en || '',
+          institutionAddress: institution?.address || '',
+          institutionPhone: institution?.phone || '',
+          institutionEmail: institution?.email || '',
+          institutionOtherInfo: institution?.other_info || '',
+          logoUrl: institution?.logo_url || '',
+          bn,
+        });
+      });
+    });
+    return receiptList;
   };
 
   const handleDownload = async (mode: 'print' | 'pdf') => {
@@ -179,24 +191,27 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       const data = await fetchReceiptData();
       if (!data) return;
 
-      const result = buildReceiptHtml(data);
+      const receiptList = buildReceiptDataList(data);
+      if (receiptList.length === 0) {
+        toast.error(bn ? 'কোনো রিসিট তৈরি হয়নি' : 'No receipts generated');
+        return;
+      }
+
+      let html: string;
+      if (receiptList.length === 1 || isSingleStudent) {
+        // Mode 1: Single student → 2 copies (Office + Student) on 1 A4
+        html = buildSingleStudentPrintHtml(receiptList[0]);
+      } else {
+        // Mode 2: Bulk class → 6 receipts per A4 (3 students × 2 copies)
+        html = buildBulkClassPrintHtml(receiptList);
+      }
 
       if (mode === 'pdf') {
-        if (result.type === 'custom') {
-          await downloadReceiptAsPdf(result.html, `receipt-${Date.now()}.pdf`);
-          toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
-        } else {
-          const html = buildPrintReceiptHtml(result.params);
-          await downloadReceiptAsPdf(html, `receipt-${Date.now()}.pdf`);
-          toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
-        }
+        await downloadReceiptAsPdf(html, `receipt-${Date.now()}.pdf`);
+        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
       } else {
-        if (result.type === 'custom') {
-          const win = window.open('', '_blank');
-          if (win) { win.document.write(result.html); win.document.close(); }
-        } else {
-          printReceipt(result.params);
-        }
+        const win = window.open('', '_blank');
+        if (win) { win.document.write(html); win.document.close(); }
       }
     } catch (e: any) {
       toast.error(e.message || 'Error');
@@ -280,198 +295,10 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
   );
 };
 
-interface PrintReceiptParams {
-  payments: any[];
-  studentMap: Map<string, any>;
-  sessionName: string;
-  className: string;
-  institution: any;
-  collectorName: string;
-  approverName: string;
-  statusFilter: 'pending' | 'success';
-  bn: boolean;
-}
-
 const feeTypeLabels: Record<string, { bn: string; en: string }> = {
   admission_fee: { bn: 'ভর্তি ফি', en: 'Admission Fee' },
   monthly_fee: { bn: 'মাসিক ফি', en: 'Monthly Fee' },
   exam_fee: { bn: 'পরীক্ষা ফি', en: 'Exam Fee' },
 };
-
-function buildSingleReceipt(
-  p: any,
-  student: any,
-  copyLabel: string,
-  params: PrintReceiptParams,
-  index: number
-) {
-  const { sessionName, institution, collectorName, approverName, statusFilter, bn } = params;
-  const statusLabel = statusFilter === 'pending'
-    ? (bn ? 'পেন্ডিং' : 'Pending')
-    : (bn ? 'পেইড' : 'Paid');
-  const statusColor = statusFilter === 'pending' ? '#f59e0b' : '#22c55e';
-  const feeLabel = bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type);
-  const qrData = encodeURIComponent(`TXN:${p.transaction_id}|AMT:${p.amount}|STU:${student?.student_id || ''}`);
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrData}`;
-  const instName = institution?.name || '';
-  const watermarkText = instName;
-
-  return `
-    <div class="receipt-card">
-      <div class="watermark">${watermarkText}</div>
-      <div class="copy-label ${statusFilter === 'pending' ? 'copy-pending' : 'copy-paid'}">${copyLabel}</div>
-      
-      <div class="receipt-header">
-        ${institution?.logo_url ? `<img src="${institution.logo_url}" class="inst-logo" />` : ''}
-        <div class="inst-info">
-          <div class="inst-name">${instName}</div>
-          ${institution?.name_en ? `<div class="inst-name-en">${institution.name_en}</div>` : ''}
-          <div class="inst-addr">${institution?.address || ''} ${institution?.phone ? `| ${institution.phone}` : ''}</div>
-        </div>
-      </div>
-      
-      <div class="receipt-title">${bn ? 'ফি রিসিট' : 'Fee Receipt'}</div>
-      
-      <div class="receipt-body">
-        <div class="info-grid">
-          <div class="info-row">
-            <span class="info-label">${bn ? 'নাম' : 'Name'}:</span>
-            <span class="info-value">${student?.name_bn || '-'}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'আইডি' : 'ID'}:</span>
-            <span class="info-value">${student?.student_id || '-'}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'রোল' : 'Roll'}:</span>
-            <span class="info-value">${student?.roll_number || '-'}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'সেশন' : 'Session'}:</span>
-            <span class="info-value">${sessionName}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'ফি ধরন' : 'Fee Type'}:</span>
-            <span class="info-value">${feeLabel}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'পরিমাণ' : 'Amount'}:</span>
-            <span class="info-value amount-value">৳ ${p.amount}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'ট্রানজেকশন' : 'TXN'}:</span>
-            <span class="info-value txn-value">${p.transaction_id}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'তারিখ' : 'Date'}:</span>
-            <span class="info-value">${new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD')}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">${bn ? 'স্ট্যাটাস' : 'Status'}:</span>
-            <span class="info-value" style="color:${statusColor};font-weight:700">${statusLabel}</span>
-          </div>
-        </div>
-        <div class="qr-section">
-          <img src="${qrUrl}" class="qr-img" alt="QR" />
-        </div>
-      </div>
-      
-      <div class="receipt-footer">
-        <div class="sig-box">
-          <div class="sig-line"></div>
-          <div class="sig-label">${bn ? 'আদায়কারী' : 'Collector'}</div>
-          <div class="sig-name">${collectorName}</div>
-        </div>
-        ${statusFilter === 'success' ? `
-        <div class="sig-box">
-          <div class="sig-line"></div>
-          <div class="sig-label">${bn ? 'গ্রহণকারী' : 'Approver'}</div>
-          <div class="sig-name">${approverName || (bn ? 'এডমিন' : 'Admin')}</div>
-        </div>` : ''}
-      </div>
-    </div>`;
-}
-
-function buildPrintReceiptHtml(params: PrintReceiptParams): string {
-  const { payments, studentMap, bn } = params;
-
-  const receiptPairs = payments.map((p: any, i: number) => {
-    const student = studentMap.get(p.student_id);
-    const studentCopy = buildSingleReceipt(p, student, bn ? 'ছাত্র কপি' : 'Student Copy', params, i);
-    const officeCopy = buildSingleReceipt(p, student, bn ? 'অফিস কপি' : 'Office Copy', params, i);
-    return { studentCopy, officeCopy };
-  });
-
-  const pages: string[] = [];
-  for (let i = 0; i < receiptPairs.length; i += 3) {
-    const chunk = receiptPairs.slice(i, i + 3);
-    const rows = chunk.map(pair => `
-      <div class="receipt-row">
-        ${pair.officeCopy}
-        <div class="cut-line-v"></div>
-        ${pair.studentCopy}
-      </div>
-    `).join('<div class="cut-line-h"></div>');
-    pages.push(`<div class="page">${rows}</div>`);
-  }
-
-  return `<!DOCTYPE html>
-<html><head>
-<meta charset="UTF-8">
-<title>${bn ? 'ফি রিসিট' : 'Fee Receipt'}</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Noto Sans Bengali', sans-serif; color: #1a1a1a; background: #fff; }
-  .page { width: 210mm; min-height: 297mm; padding: 5mm; display: flex; flex-direction: column; justify-content: flex-start; page-break-after: always; }
-  .page:last-child { page-break-after: auto; }
-  .receipt-row { display: flex; flex: 1; max-height: 95mm; }
-  .receipt-card { flex: 1; padding: 4mm 5mm; position: relative; overflow: hidden; border: 1px solid #ccc; }
-  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 28px; font-weight: 700; color: rgba(0,0,0,0.04); white-space: nowrap; pointer-events: none; z-index: 0; letter-spacing: 4px; }
-  .copy-label { position: absolute; top: 2mm; right: 3mm; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 3px; z-index: 1; }
-  .copy-pending { background: #fef3c7; color: #92400e; }
-  .copy-paid { background: #dcfce7; color: #166534; }
-  .receipt-header { display: flex; align-items: center; gap: 3mm; border-bottom: 1.5px solid #333; padding-bottom: 2mm; margin-bottom: 2mm; position: relative; z-index: 1; }
-  .inst-logo { height: 28px; width: auto; }
-  .inst-info { flex: 1; }
-  .inst-name { font-size: 12px; font-weight: 700; line-height: 1.2; }
-  .inst-name-en { font-size: 9px; color: #555; }
-  .inst-addr { font-size: 8px; color: #666; line-height: 1.3; }
-  .receipt-title { text-align: center; font-size: 11px; font-weight: 700; margin: 1.5mm 0; color: #333; position: relative; z-index: 1; text-decoration: underline; }
-  .receipt-body { display: flex; gap: 3mm; position: relative; z-index: 1; }
-  .info-grid { flex: 1; }
-  .info-row { display: flex; font-size: 9px; line-height: 1.6; border-bottom: 0.5px dotted #ddd; }
-  .info-label { width: 55px; font-weight: 600; color: #555; flex-shrink: 0; }
-  .info-value { flex: 1; color: #111; }
-  .amount-value { font-weight: 700; font-size: 11px; color: #000; }
-  .txn-value { font-size: 7.5px; font-family: monospace; }
-  .qr-section { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .qr-img { width: 55px; height: 55px; }
-  .receipt-footer { display: flex; justify-content: space-between; margin-top: auto; padding-top: 5mm; position: relative; z-index: 1; }
-  .sig-box { text-align: center; width: 35mm; }
-  .sig-line { border-top: 0.8px solid #333; margin-bottom: 1px; }
-  .sig-label { font-size: 7.5px; font-weight: 600; color: #555; }
-  .sig-name { font-size: 7px; color: #888; }
-  .cut-line-v { width: 0; border-left: 1px dashed #aaa; margin: 2mm 0; }
-  .cut-line-h { height: 0; border-top: 1px dashed #aaa; margin: 0 2mm; }
-  @media print { body { padding: 0; } @page { size: A4; margin: 0; } .page { padding: 5mm; } }
-  @media screen { body { background: #f0f0f0; padding: 20px; } .page { background: white; margin: 0 auto 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); } }
-</style>
-</head><body>
-${pages.join('')}
-<script>
-  document.fonts.ready.then(() => { setTimeout(() => window.print(), 800); });
-</script>
-</body></html>`;
-}
-
-function printReceipt(params: PrintReceiptParams) {
-  const html = buildPrintReceiptHtml(params);
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  }
-}
 
 export default FeeReceiptDownload;
