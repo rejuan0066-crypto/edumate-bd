@@ -15,6 +15,8 @@ export interface ReceiptData {
   amount: string;
   transactionId: string;
   receiptSerial: string;
+  gatewayTrxId: string;
+  paymentTimestamp: string;
   date: string;
   status: string;
   statusColor: string;
@@ -37,6 +39,8 @@ export interface ReceiptStyleConfig {
   receiptTitle: string;
   showWatermark: boolean;
   showQr: boolean;
+  showTrxId: boolean;
+  showTimestamp: boolean;
 }
 
 const DEFAULT_STYLE: ReceiptStyleConfig = {
@@ -45,6 +49,8 @@ const DEFAULT_STYLE: ReceiptStyleConfig = {
   receiptTitle: 'রশিদ বই',
   showWatermark: true,
   showQr: true,
+  showTrxId: true,
+  showTimestamp: true,
 };
 
 function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleConfig = DEFAULT_STYLE): string {
@@ -87,6 +93,13 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
           <span class="date-val" style="font-size:${7 * fs}px">${data.date}</span>
         </div>
       </div>
+
+      <!-- TrxID & Timestamp Row -->
+      ${(style.showTrxId !== false && data.gatewayTrxId) || (style.showTimestamp !== false && data.paymentTimestamp) ? `
+      <div class="trx-row">
+        ${style.showTrxId !== false && data.gatewayTrxId ? `<span class="trx-item" style="font-size:${6 * fs}px">TrxID: <strong>${data.gatewayTrxId}</strong></span>` : ''}
+        ${style.showTimestamp !== false && data.paymentTimestamp ? `<span class="trx-item" style="font-size:${6 * fs}px">সময়: ${data.paymentTimestamp}</span>` : ''}
+      </div>` : ''}
 
       <!-- Form Fields -->
       <div class="form-body">
@@ -195,6 +208,10 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   .serial-label, .date-label { font-weight: 600; color: #555; }
   .serial-val, .date-val { color: #111; }
   .title-capsule { color: #fff; font-weight: 700; text-align: center; padding: 1px 14px; border-radius: 10px; white-space: nowrap; }
+
+  .trx-row { display: flex; justify-content: center; gap: 4mm; padding: 0 3mm; position: relative; z-index: 1; }
+  .trx-item { color: #666; font-family: monospace, 'Noto Sans Bengali', sans-serif; }
+  .trx-item strong { color: #333; }
 
   /* Form body */
   .form-body { flex: 1; padding: 1.5mm 3mm; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 1mm; }

@@ -156,6 +156,7 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       if (!student) return;
       payList.forEach((p: any) => {
         const serialMatch = p.notes?.match(/Serial: (SL-\d{4}-\d{4})/);
+        const createdAt = new Date(p.created_at || Date.now());
         receiptList.push({
           studentName: student?.name_bn || '-',
           studentId: student?.student_id || '-',
@@ -166,7 +167,9 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
           amount: String(p.amount),
           transactionId: p.transaction_id,
           receiptSerial: serialMatch ? serialMatch[1] : (p.transaction_id || ''),
-          date: new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD'),
+          gatewayTrxId: p.payment_method && p.payment_method !== 'Cash' ? (p.transaction_id || '') : '',
+          paymentTimestamp: p.status === 'success' ? createdAt.toLocaleString('bn-BD', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : '',
+          date: createdAt.toLocaleDateString('bn-BD'),
           status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
           statusColor: statusFilter === 'pending' ? '#f59e0b' : '#22c55e',
           paymentMethod: p.payment_method || 'Cash',
