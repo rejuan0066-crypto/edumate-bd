@@ -43,7 +43,7 @@ const PageLoader = () => {
           </div>
         )}
         <p className="text-sm text-muted-foreground font-bengali tracking-wide animate-pulse">
-          লোড হচ্ছে...
+          {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
         </p>
       </div>
     </div>
