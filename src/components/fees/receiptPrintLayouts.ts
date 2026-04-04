@@ -88,10 +88,9 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
           <span class="serial-label" style="font-size:${6 * fs}px">ক্রমিক নং:</span>
           <span class="serial-val" style="font-size:${6 * fs}px;font-weight:700;color:${pc}">${data.receiptSerial || data.transactionId.slice(-6)}</span>
         </div>
-        <div class="title-capsule" style="background:${pc};font-size:${8.5 * fs}px">${style.receiptTitle || 'রশিদ বই'}</div>
-        <div class="date-box">
-          <span class="date-label" style="font-size:${6 * fs}px">তারিখ:</span>
-          <span class="date-val" style="font-size:${6 * fs}px">${data.date}</span>
+        <div class="title-date-group">
+          <div class="title-capsule" style="background:${pc};font-size:${8.5 * fs}px">${style.receiptTitle || 'রশিদ বই'}</div>
+          <div class="date-dotted" style="font-size:${6 * fs}px">তারিখ:<span class="date-dots">${data.date || '......./............./...............'}</span></div>
         </div>
       </div>
 
@@ -208,9 +207,9 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   /* Title row */
   .title-row { display: flex; align-items: center; justify-content: space-between; padding: 1mm 2.5mm 0; position: relative; z-index: 1; }
   .serial-box { display: flex; align-items: center; gap: 0.5mm; }
-  .date-box { display: flex; align-items: center; gap: 0.5mm; margin-right: auto; margin-left: 2mm; }
-  .serial-label, .date-label { font-weight: 600; color: #555; }
-  .serial-val, .date-val { color: #111; }
+  .title-date-group { display: flex; align-items: center; gap: 3mm; }
+  .date-dotted { font-weight: 600; color: #555; white-space: nowrap; }
+  .date-dots { margin-left: 1mm; color: #111; letter-spacing: 0.5px; }
   .title-capsule { color: #fff; font-weight: 700; text-align: center; padding: 0.5px 12px; border-radius: 8px; white-space: nowrap; }
 
   .trx-row { display: flex; justify-content: center; gap: 3mm; padding: 0 2.5mm; position: relative; z-index: 1; }
