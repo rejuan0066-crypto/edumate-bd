@@ -19,6 +19,7 @@ const AdminDonors = () => {
   const { checkApproval } = useApprovalCheck('/admin/donors', 'donors');
   const { canAddItem, canEditItem } = usePagePermissions('/admin/donors');
 
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'online'>('cash');
   const [form, setForm] = useState({
     donorName: '',
     donorPhone: '',
@@ -27,6 +28,8 @@ const AdminDonors = () => {
     donationType: '',
     purpose: '',
     donationDate: '',
+    transactionId: '',
+    paymentGateway: '',
   });
   const [showList, setShowList] = useState(false);
   const [listType, setListType] = useState<'active' | 'all'>('active');
