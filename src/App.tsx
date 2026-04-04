@@ -150,6 +150,7 @@ const App = () => (
               <Route path="/admin/photo-tools" element={<ProtectedRoute><AdminPhotoTools /></ProtectedRoute>} />
               <Route path="/admin/payments" element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
               <Route path="/admin/receipt-designer" element={<ProtectedRoute><AdminReceiptDesigner /></ProtectedRoute>} />
+              <Route path="/admin/exam-sessions" element={<ProtectedRoute><ModuleGuard menuPath="/admin/exam-sessions"><AdminExamSessions /></ModuleGuard></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
