@@ -1,4 +1,5 @@
 import AdminLayout from '@/components/AdminLayout';
+import TabContainer from '@/components/TabContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -136,9 +137,8 @@ const AdminStudents = () => {
     return fallback || '-';
   };
 
-  return (
-    <AdminLayout>
-      <div className="space-y-6">
+  const studentListContent = (
+    <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">{t('students')}</h1>
@@ -266,7 +266,6 @@ const AdminStudents = () => {
             </div>
           )}
         </div>
-      </div>
 
       {/* Dynamic Admission Form */}
       <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
@@ -328,6 +327,40 @@ const AdminStudents = () => {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+
+  return (
+    <AdminLayout>
+      <TabContainer
+        tabs={[
+          {
+            id: 'list',
+            label: bn ? 'ছাত্র তালিকা' : 'Student List',
+            icon: Eye,
+            content: studentListContent,
+          },
+          ...(canAddItem ? [{
+            id: 'admission',
+            label: bn ? 'নতুন ভর্তি' : 'New Admission',
+            icon: Plus,
+            content: (
+              <div className="space-y-4">
+                <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+                  <Plus className="w-6 h-6 text-primary" />
+                  {bn ? 'নতুন ভর্তি ফর্ম' : 'New Admission Form'}
+                </h1>
+                <p className="text-muted-foreground text-sm">{bn ? 'নতুন ছাত্র ভর্তি করতে নিচের বাটনে ক্লিক করুন' : 'Click below to open the admission form'}</p>
+                <Button onClick={() => setShowAdd(true)} className="btn-primary-gradient">
+                  <Plus className="w-4 h-4 mr-2" /> {bn ? 'ভর্তি ফর্ম খুলুন' : 'Open Admission Form'}
+                </Button>
+                <AdmissionForm open={showAdd} onOpenChange={(o) => { setShowAdd(o); if (!o) setEditStudent(null); }} editStudent={editStudent} />
+              </div>
+            ),
+          }] : []),
+        ]}
+        paramKey="tab"
+      />
     </AdminLayout>
   );
 };

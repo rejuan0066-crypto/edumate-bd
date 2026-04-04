@@ -1,10 +1,11 @@
 import AdminLayout from '@/components/AdminLayout';
+import TabContainer from '@/components/TabContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
-import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings } from 'lucide-react';
+import { lazy, Suspense, useState } from 'react';
+import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
+import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
 type FeeType = 'admission_fee' | 'monthly_fee' | 'exam_fee';
 type PaymentMethod = 'cash' | 'online';
@@ -213,8 +218,7 @@ const AdminStudentsFees = () => {
     setSelectedSession('');
   };
 
-  return (
-    <AdminLayout>
+  const feeCollectionContent = (
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-primary" />
@@ -484,6 +488,35 @@ const AdminStudentsFees = () => {
         {/* Receipt Download Section */}
         <FeeReceiptDownload collectorName={collectorName} />
       </div>
+  );
+
+  return (
+    <AdminLayout>
+      <TabContainer
+        tabs={[
+          {
+            id: 'collection',
+            label: bn ? 'ফি আদায়' : 'Fee Collection',
+            icon: CreditCard,
+            content: feeCollectionContent,
+          },
+          {
+            id: 'dashboard',
+            label: bn ? 'পেমেন্ট ড্যাশবোর্ড' : 'Payment Dashboard',
+            icon: BarChart3,
+            content: (
+              <ErrorBoundary>
+                <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+                  <EmbeddedProvider>
+                    <LazyPaymentDashboard />
+                  </EmbeddedProvider>
+                </Suspense>
+              </ErrorBoundary>
+            ),
+          },
+        ]}
+        paramKey="tab"
+      />
     </AdminLayout>
   );
 };
