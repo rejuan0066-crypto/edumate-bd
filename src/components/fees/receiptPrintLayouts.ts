@@ -235,9 +235,9 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   .qr-title-img { width: 28px; height: 28px; }
 
   /* Signatures */
-  .sig-footer { display: flex; justify-content: space-between; padding: 0 2.5mm 1.5mm; margin-top: auto; position: relative; z-index: 1; }
-  .sig-block { text-align: center; width: 32%; }
-  .sig-line { border-top: 0.8px solid; margin-bottom: 0.3mm; }
+  .sig-footer { display: flex; justify-content: space-between; padding: 0 4mm 2mm; margin-top: auto; padding-top: 10mm; position: relative; z-index: 1; }
+  .sig-block { text-align: center; width: 35%; }
+  .sig-line { border-top: 1px dashed; margin-bottom: 0.5mm; }
   .sig-title { font-weight: 600; color: #555; }
   .sig-name { color: #888; }
 
