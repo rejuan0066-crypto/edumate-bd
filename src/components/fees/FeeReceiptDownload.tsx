@@ -135,7 +135,7 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         : '';
 
       // Use saved receipt design if available
-      const savedDesign = defaultSetting?.design_config as ReceiptDesignConfig | undefined;
+      const savedDesign = defaultSetting?.design_config as unknown as ReceiptDesignConfig | undefined;
       if (savedDesign && savedDesign.elements && savedDesign.elements.length > 0) {
         // Print using custom design for each payment
         const allPages: string[] = [];
