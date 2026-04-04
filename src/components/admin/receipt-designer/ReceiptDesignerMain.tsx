@@ -9,6 +9,8 @@ import DesignerToolbar from './DesignerToolbar';
 import { Save, Loader2, RotateCcw, FileDown, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const ReceiptDesignerMain = () => {
   const { language } = useLanguage();
