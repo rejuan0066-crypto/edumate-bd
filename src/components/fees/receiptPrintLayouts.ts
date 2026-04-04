@@ -130,10 +130,6 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
             <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px;color:${data.statusColor};font-weight:700">${data.status}</span></div>
           </div>
         </div>
-        ${style.showQr !== false ? `
-        <div class="qr-corner">
-          <img src="${qrUrl}" class="qr-img" alt="QR" />
-        </div>` : ''}
       </div>
 
       <!-- Signatures -->
