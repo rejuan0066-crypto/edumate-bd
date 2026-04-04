@@ -17,6 +17,14 @@ const ReceiptDesignerMain = () => {
   const bn = language === 'bn';
   const { settings, isLoading, saveMutation } = useReceiptSettings();
 
+  const { data: institution } = useQuery({
+    queryKey: ['institution_designer'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+  });
+
   const [selectedSettingId, setSelectedSettingId] = useState<string>('');
   const [name, setName] = useState('Default Receipt');
   const [nameBn, setNameBn] = useState('ডিফল্ট রিসিট');
