@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useReceiptSettings, DEFAULT_DESIGN, ReceiptDesignConfig, ReceiptElement } from '@/hooks/useReceiptSettings';
 import DesignerCanvas from './DesignerCanvas';
 import DesignerToolbar from './DesignerToolbar';
-import { Save, Loader2, RotateCcw, FileDown, Plus } from 'lucide-react';
+import { Save, Loader2, RotateCcw, FileDown, Plus, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 
 const ReceiptDesignerMain = () => {
   const { language } = useLanguage();
@@ -107,6 +108,20 @@ const ReceiptDesignerMain = () => {
     }
   };
 
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const handleDownloadBlankPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const printHtml = generatePrintHtml(config, null, bn);
+      await downloadReceiptAsPdf(printHtml, `blank-receipt-${Date.now()}.pdf`);
+      toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+    } catch (e: any) {
+      toast.error(e.message || 'PDF error');
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   const selectedElement = selectedId ? config.elements.find(el => el.id === selectedId) || null : null;
 
   return (
@@ -129,7 +144,11 @@ const ReceiptDesignerMain = () => {
         <Input className="h-9 w-40" placeholder={bn ? 'নাম (বাংলা)' : 'Name (BN)'} value={nameBn} onChange={(e) => setNameBn(e.target.value)} />
 
         <Button variant="outline" size="sm" onClick={handleReset}><RotateCcw className="w-4 h-4 mr-1" />{bn ? 'রিসেট' : 'Reset'}</Button>
-        <Button variant="outline" size="sm" onClick={handleDownloadBlank}><FileDown className="w-4 h-4 mr-1" />{bn ? 'ব্ল্যাংক প্রিন্ট' : 'Print Blank'}</Button>
+        <Button variant="outline" size="sm" onClick={handleDownloadBlank}><FileDown className="w-4 h-4 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}</Button>
+        <Button variant="outline" size="sm" onClick={handleDownloadBlankPdf} disabled={pdfLoading}>
+          {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
+          {bn ? 'PDF ডাউনলোড' : 'PDF Download'}
+        </Button>
         <Button variant="outline" size="sm" onClick={() => { setSelectedSettingId(''); setName(''); setNameBn(''); setConfig({ ...DEFAULT_DESIGN }); }}>
           <Plus className="w-4 h-4 mr-1" />{bn ? 'নতুন' : 'New'}
         </Button>
