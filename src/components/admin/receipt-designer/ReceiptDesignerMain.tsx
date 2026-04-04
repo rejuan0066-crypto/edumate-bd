@@ -214,7 +214,8 @@ function generatePrintHtml(config: ReceiptDesignConfig, data: any, bn: boolean):
   const renderElements = (elements: ReceiptElement[], copyLabel: string) => {
     return elements.map(el => {
       const fontFam = el.fontFamily === 'bengali' ? "'Noto Sans Bengali',sans-serif" : el.fontFamily === 'monospace' ? 'monospace' : 'sans-serif';
-      const baseStyle = `position:absolute;left:${el.x * scale}px;top:${el.y * scale}px;width:${el.width * scale}px;height:${el.height * scale}px;font-size:${(el.fontSize || 10) * scale}px;font-weight:${el.fontWeight || 'normal'};font-style:${el.fontStyle || 'normal'};text-align:${el.textAlign || 'left'};color:${el.color || '#000'};font-family:${fontFam};display:flex;align-items:center;overflow:hidden;line-height:1.2;opacity:${el.opacity ?? 1};`;
+      const justify = el.textAlign === 'center' ? 'center' : el.textAlign === 'right' ? 'flex-end' : 'flex-start';
+      const baseStyle = `position:absolute;left:${el.x * scale}px;top:${el.y * scale}px;width:${el.width * scale}px;height:${el.height * scale}px;font-size:${(el.fontSize || 10) * scale}px;font-weight:${el.fontWeight || 'normal'};font-style:${el.fontStyle || 'normal'};text-align:${el.textAlign || 'left'};color:${el.color || '#000'};font-family:${fontFam};display:flex;align-items:center;justify-content:${justify};overflow:hidden;line-height:1.2;opacity:${el.opacity ?? 1};padding:0 ${2 * scale}px;`;
 
       let content = el.content || el.placeholder || '';
       if (data) {
