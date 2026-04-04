@@ -175,7 +175,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onClick={() => onSelect(null)}
+        onClick={(e) => { if (e.target === e.currentTarget) onSelect(null); }}
       >
         {config.elements.map(renderElement)}
       </div>
