@@ -1,4 +1,5 @@
 import AdminLayout from '@/components/AdminLayout';
+import TabContainer from '@/components/TabContainer';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
