@@ -69,6 +69,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import WaitingApproval from "./pages/WaitingApproval";
 import AdminApprovals from "./pages/admin/AdminApprovals";
 import AdminPayments from "./pages/admin/AdminPayments";
+import AdminReceiptDesigner from "./pages/admin/AdminReceiptDesigner";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
 import BackButton from "./components/BackButton";
@@ -147,6 +148,7 @@ const App = () => (
               <Route path="/admin/approvals" element={<ProtectedRoute><AdminApprovals /></ProtectedRoute>} />
               <Route path="/admin/photo-tools" element={<ProtectedRoute><AdminPhotoTools /></ProtectedRoute>} />
               <Route path="/admin/payments" element={<ProtectedRoute><AdminPayments /></ProtectedRoute>} />
+              <Route path="/admin/receipt-designer" element={<ProtectedRoute><AdminReceiptDesigner /></ProtectedRoute>} />
               <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

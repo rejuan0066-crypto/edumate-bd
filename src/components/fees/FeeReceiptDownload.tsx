@@ -5,8 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { Download, FileText, Loader2 } from 'lucide-react';
+import { Download, FileText, Loader2, Palette } from 'lucide-react';
 import { toast } from 'sonner';
+import { useReceiptSettings, ReceiptDesignConfig } from '@/hooks/useReceiptSettings';
+import { generatePrintHtml } from '@/components/admin/receipt-designer/ReceiptDesignerMain';
+import { Link } from 'react-router-dom';
 
 interface Props {
   collectorName: string;
@@ -15,6 +18,7 @@ interface Props {
 const FeeReceiptDownload = ({ collectorName }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { defaultSetting } = useReceiptSettings();
   const [selectedSession, setSelectedSession] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [rollNumber, setRollNumber] = useState('');
@@ -130,17 +134,70 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         ? classes.find((c: any) => c.id === selectedClass)?.name_bn || ''
         : '';
 
-      printReceipt({
-        payments,
-        studentMap,
-        sessionName,
-        className,
-        institution,
-        collectorName: getCollectorFromNotes(payments[0]?.notes || ''),
-        approverName,
-        statusFilter,
-        bn,
-      });
+      // Use saved receipt design if available
+      const savedDesign = defaultSetting?.design_config as unknown as ReceiptDesignConfig | undefined;
+      if (savedDesign && savedDesign.elements && savedDesign.elements.length > 0) {
+        // Print using custom design for each payment
+        const allPages: string[] = [];
+        payments.forEach((p: any) => {
+          const student = studentMap.get(p.student_id);
+          const dataMap: Record<string, string> = {
+            student_name: student?.name_bn || '-',
+            student_id: student?.student_id || '-',
+            roll_no: student?.roll_number || '-',
+            class_name: className,
+            session: sessionName,
+            fee_type: bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type),
+            amount: `৳ ${p.amount}`,
+            transaction_id: p.transaction_id,
+            date: new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD'),
+            status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
+            payment_method: p.payment_method || 'Cash',
+            collector_name: getCollectorFromNotes(p.notes || ''),
+            approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
+            institution_name: institution?.name || '',
+            institution_address: institution?.address || '',
+            phone: institution?.phone || '',
+            logo_url: institution?.logo_url || '',
+          };
+          allPages.push(generatePrintHtml(savedDesign, dataMap, bn));
+        });
+        // Open the first one (combined approach)
+        const html = generatePrintHtml(savedDesign, {
+          student_name: (studentMap.get(payments[0].student_id))?.name_bn || '-',
+          student_id: (studentMap.get(payments[0].student_id))?.student_id || '-',
+          roll_no: (studentMap.get(payments[0].student_id))?.roll_number || '-',
+          class_name: className,
+          session: sessionName,
+          fee_type: bn ? (feeTypeLabels[payments[0].fee_type]?.bn || payments[0].fee_type) : (feeTypeLabels[payments[0].fee_type]?.en || payments[0].fee_type),
+          amount: `৳ ${payments[0].amount}`,
+          transaction_id: payments[0].transaction_id,
+          date: new Date(payments[0].created_at || Date.now()).toLocaleDateString('bn-BD'),
+          status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
+          payment_method: payments[0].payment_method || 'Cash',
+          collector_name: getCollectorFromNotes(payments[0].notes || ''),
+          approver_name: approverName || (bn ? 'এডমিন' : 'Admin'),
+          institution_name: institution?.name || '',
+          institution_address: institution?.address || '',
+          phone: institution?.phone || '',
+          logo_url: institution?.logo_url || '',
+        }, bn);
+        const win = window.open('', '_blank');
+        if (win) { win.document.write(html); win.document.close(); }
+      } else {
+        // Fallback to built-in receipt layout
+        printReceipt({
+          payments,
+          studentMap,
+          sessionName,
+          className,
+          institution,
+          collectorName: getCollectorFromNotes(payments[0]?.notes || ''),
+          approverName,
+          statusFilter,
+          bn,
+        });
+      }
     } catch (e: any) {
       toast.error(e.message || 'Error');
     } finally {
@@ -204,10 +261,17 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
         </div>
       </div>
 
-      <Button onClick={handleDownload} disabled={loading || !canDownload} className="btn-primary-gradient w-full">
-        {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-        {bn ? 'রিসিট ডাউনলোড করুন' : 'Download Receipt'}
-      </Button>
+      <div className="flex gap-2">
+        <Button onClick={handleDownload} disabled={loading || !canDownload} className="btn-primary-gradient flex-1">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+          {bn ? 'রিসিট ডাউনলোড করুন' : 'Download Receipt'}
+        </Button>
+        <Link to="/admin/receipt-designer">
+          <Button variant="outline" size="icon" title={bn ? 'রিসিট ডিজাইনার' : 'Receipt Designer'}>
+            <Palette className="w-4 h-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

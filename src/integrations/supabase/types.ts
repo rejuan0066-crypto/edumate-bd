@@ -1648,6 +1648,42 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_settings: {
+        Row: {
+          created_at: string | null
+          design_config: Json
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          name: string
+          name_bn: string
+          paper_size: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          design_config?: Json
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          name_bn?: string
+          paper_size?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          design_config?: Json
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          name?: string
+          name_bn?: string
+          paper_size?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       results: {
         Row: {
           created_at: string | null
