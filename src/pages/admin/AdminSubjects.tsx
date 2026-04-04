@@ -54,7 +54,7 @@ const AdminSubjects = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subjects'] });
-      setNewName(''); setNewNameEn(''); setNewCode(''); setNewDivision('');
+      setNewName(''); setNewNameEn(''); setNewCode(''); setNewClass('');
       toast.success(language === 'bn' ? 'বিষয় যোগ হয়েছে' : 'Subject added');
     },
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
