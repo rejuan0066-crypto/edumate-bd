@@ -22,10 +22,10 @@ const AdminSubjects = () => {
   const [newClass, setNewClass] = useState('');
   const [filterClass, setFilterClass] = useState('all');
 
-  const { data: divisions = [] } = useQuery({
-    queryKey: ['divisions'],
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      const { data, error } = await supabase.from('classes').select('*, divisions(name, name_bn)').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
     },
