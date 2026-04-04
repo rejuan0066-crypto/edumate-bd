@@ -98,15 +98,32 @@ const AdminDonors = () => {
           {bn ? 'দান ব্যবস্থাপনা' : 'Donation Management'}
         </h1>
 
+        {/* Payment Method Toggle */}
+        <div className="flex gap-3">
+          <button onClick={() => setPaymentMethod('cash')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${paymentMethod === 'cash' ? 'bg-success/10 border-success text-success' : 'bg-background border-border text-muted-foreground hover:border-success/50'}`}>
+            <Banknote className="w-5 h-5" />
+            {bn ? 'ক্যাশ পেমেন্ট' : 'Cash Payment'}
+          </button>
+          <button onClick={() => setPaymentMethod('online')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${paymentMethod === 'online' ? 'bg-primary/10 border-primary text-primary' : 'bg-background border-border text-muted-foreground hover:border-primary/50'}`}>
+            <Globe className="w-5 h-5" />
+            {bn ? 'অনলাইন পেমেন্ট' : 'Online Payment'}
+          </button>
+        </div>
+
         {/* Payment Form */}
         <div className="card-elevated p-5">
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
             <Heart className="w-5 h-5 text-primary" />
             {bn ? 'দান রেকর্ড করুন' : 'Record Donation'}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${paymentMethod === 'cash' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>
+              {paymentMethod === 'cash' ? (bn ? 'ক্যাশ' : 'Cash') : (bn ? 'অনলাইন' : 'Online')}
+            </span>
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <Label className="text-sm font-medium text-foreground">{bn ? 'দাতার নাম' : 'Donor Name'}</Label>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'দাতার নাম' : 'Donor Name'} *</Label>
               <Input className="bg-background mt-1" value={form.donorName} onChange={(e) => updateField('donorName', e.target.value)} />
             </div>
             <div>
@@ -138,13 +155,34 @@ const AdminDonors = () => {
               <Input type="date" className="bg-background mt-1" value={form.donationDate} onChange={(e) => updateField('donationDate', e.target.value)} />
             </div>
             <div>
-              <Label className="text-sm font-medium text-foreground">{bn ? 'টাকার পরিমাণ' : 'Amount'}</Label>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'টাকার পরিমাণ' : 'Amount'} *</Label>
               <Input type="number" className="bg-background mt-1" value={form.donationAmount} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
             </div>
+            {paymentMethod === 'online' && (
+              <>
+                <div>
+                  <Label className="text-sm font-medium text-foreground">{bn ? 'ট্রানজেকশন আইডি' : 'Transaction ID'} *</Label>
+                  <Input className="bg-background mt-1" value={form.transactionId} onChange={(e) => updateField('transactionId', e.target.value)} placeholder="TrxID" />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground">{bn ? 'গেটওয়ে / মাধ্যম' : 'Gateway'}</Label>
+                  <Select value={form.paymentGateway} onValueChange={(v) => updateField('paymentGateway', v)}>
+                    <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bKash">bKash</SelectItem>
+                      <SelectItem value="Nagad">Nagad</SelectItem>
+                      <SelectItem value="Rocket">Rocket</SelectItem>
+                      <SelectItem value="Bank">Bank Transfer</SelectItem>
+                      <SelectItem value="Other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           <Button onClick={() => payMutation.mutate()} className="btn-primary-gradient mt-4" disabled={payMutation.isPending}>
             {payMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-            {bn ? 'রেকর্ড করুন' : 'Record'}
+            {paymentMethod === 'cash' ? (bn ? 'ক্যাশ রেকর্ড করুন' : 'Record Cash') : (bn ? 'অনলাইন রেকর্ড করুন' : 'Record Online')}
           </Button>
         </div>
 
