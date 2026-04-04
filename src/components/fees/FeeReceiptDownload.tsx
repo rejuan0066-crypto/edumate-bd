@@ -155,7 +155,34 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       const student = studentMap.get(studentId);
       if (!student) return;
       payList.forEach((p: any) => {
+        const serialMatch = p.notes?.match(/Serial: (SL-\d{4}-\d{4})/);
         receiptList.push({
+          ...{
+          studentName: student?.name_bn || '-',
+          studentId: student?.student_id || '-',
+          rollNumber: student?.roll_number || '-',
+          className: student?.classes?.name_bn || className || '-',
+          sessionName,
+          feeType: bn ? (feeTypeLabels[p.fee_type]?.bn || p.fee_type) : (feeTypeLabels[p.fee_type]?.en || p.fee_type),
+          amount: String(p.amount),
+          transactionId: p.transaction_id,
+          receiptSerial: serialMatch ? serialMatch[1] : (p.transaction_id || ''),
+          date: new Date(p.created_at || Date.now()).toLocaleDateString('bn-BD'),
+          status: statusFilter === 'pending' ? (bn ? 'পেন্ডিং' : 'Pending') : (bn ? 'পেইড' : 'Paid'),
+          statusColor: statusFilter === 'pending' ? '#f59e0b' : '#22c55e',
+          paymentMethod: p.payment_method || 'Cash',
+          collectorName: getCollectorFromNotes(p.notes || ''),
+          approverName: statusFilter === 'success' ? (approverName || (bn ? 'এডমিন' : 'Admin')) : '',
+          institutionName: institution?.name || '',
+          institutionNameEn: institution?.name_en || '',
+          institutionAddress: institution?.address || '',
+          institutionPhone: institution?.phone || '',
+          institutionEmail: institution?.email || '',
+          institutionOtherInfo: institution?.other_info || '',
+          logoUrl: institution?.logo_url || '',
+          bn,
+          },
+        });
           studentName: student?.name_bn || '-',
           studentId: student?.student_id || '-',
           rollNumber: student?.roll_number || '-',

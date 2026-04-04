@@ -63,6 +63,7 @@ const ReceiptDesignerMain = () => {
     feeType: '',
     amount: '',
     transactionId: '______',
+    receiptSerial: '',
     date: '',
     status: '',
     statusColor: '#22c55e',
