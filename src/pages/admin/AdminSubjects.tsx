@@ -74,7 +74,7 @@ const AdminSubjects = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
-  const filtered = filterDivision === 'all' ? subjects : subjects.filter((s: any) => s.division_id === filterDivision);
+  const filtered = filterClass === 'all' ? subjects : subjects.filter((s: any) => s.class_id === filterClass);
 
   return (
     <AdminLayout>
