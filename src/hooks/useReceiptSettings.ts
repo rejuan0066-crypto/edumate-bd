@@ -132,8 +132,68 @@ export const DEFAULT_DESIGN: ReceiptDesignConfig = {
   ],
 };
 
+// Green Capsule Premium Design
+export const GREEN_CAPSULE_PRESET: ReceiptDesignConfig = {
+  paperSize: 'a4_3up',
+  receiptWidth: 280,
+  receiptHeight: 180,
+  bgColor: '#ffffff',
+  borderColor: '#1a5c2e',
+  borderWidth: 2,
+  receiptsPerPage: 3,
+  showCutLines: true,
+  duplicateCopy: true,
+  elements: [
+    // Green gradient header band
+    { id: 'header_band', type: 'shape', x: 0, y: 0, width: 280, height: 40, shapeType: 'rect', bgColor: '#1a5c2e', borderWidth: 0, borderColor: '#1a5c2e', borderRadius: 0 },
+    // Logo left
+    { id: 'logo_left', type: 'logo', x: 4, y: 4, width: 30, height: 32, content: '' },
+    // Logo right
+    { id: 'logo_right', type: 'logo', x: 246, y: 4, width: 30, height: 32, content: '' },
+    // Institution name Bengali
+    { id: 'inst_name_bn', type: 'text', x: 38, y: 3, width: 204, height: 14, content: '{institution_name}', fontSize: 11, fontWeight: 'bold', color: '#ffffff', textAlign: 'center', fontFamily: 'bengali' },
+    // Institution name English
+    { id: 'inst_name_en', type: 'text', x: 38, y: 16, width: 204, height: 9, content: 'INSTITUTION NAME', fontSize: 6.5, fontWeight: 'bold', color: '#d1fae5', textAlign: 'center', fontFamily: 'sans-serif' },
+    // Address & Phone
+    { id: 'inst_addr', type: 'text', x: 38, y: 24, width: 204, height: 8, content: '{institution_address}', fontSize: 5.5, color: '#bbf7d0', textAlign: 'center', fontFamily: 'bengali' },
+    { id: 'inst_phone', type: 'text', x: 38, y: 31, width: 204, height: 7, content: 'যোগাযোগ: {phone}', fontSize: 5.5, color: '#bbf7d0', textAlign: 'center', fontFamily: 'bengali' },
+    // Title capsule
+    { id: 'title_capsule_bg', type: 'shape', x: 105, y: 43, width: 70, height: 12, shapeType: 'rect', bgColor: '#1a5c2e', borderWidth: 0, borderColor: '#1a5c2e', borderRadius: 6 },
+    { id: 'title_capsule_text', type: 'text', x: 105, y: 43, width: 70, height: 12, content: 'ফি রিসিট', fontSize: 8, fontWeight: 'bold', color: '#ffffff', textAlign: 'center', fontFamily: 'bengali' },
+    // Watermark logo
+    { id: 'watermark', type: 'logo', x: 110, y: 75, width: 60, height: 60, content: '', opacity: 0.06 },
+    // Info fields
+    { id: 'name_lbl', type: 'text', x: 8, y: 58, width: 38, height: 11, content: 'নাম:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'name_val', type: 'placeholder', x: 48, y: 58, width: 120, height: 11, placeholder: '{student_name}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'id_lbl', type: 'text', x: 8, y: 70, width: 38, height: 11, content: 'আইডি:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'id_val', type: 'placeholder', x: 48, y: 70, width: 120, height: 11, placeholder: '{student_id}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'roll_lbl', type: 'text', x: 8, y: 82, width: 38, height: 11, content: 'রোল:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'roll_val', type: 'placeholder', x: 48, y: 82, width: 120, height: 11, placeholder: '{roll_no}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'class_lbl', type: 'text', x: 8, y: 94, width: 38, height: 11, content: 'ক্লাস:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'class_val', type: 'placeholder', x: 48, y: 94, width: 120, height: 11, placeholder: '{class_name}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'fee_lbl', type: 'text', x: 8, y: 106, width: 38, height: 11, content: 'ফি ধরন:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'fee_val', type: 'placeholder', x: 48, y: 106, width: 120, height: 11, placeholder: '{fee_type}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'amt_lbl', type: 'text', x: 8, y: 118, width: 38, height: 12, content: 'পরিমাণ:', fontSize: 9, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'amt_val', type: 'placeholder', x: 48, y: 118, width: 120, height: 12, placeholder: '{amount}', fontSize: 10, fontWeight: 'bold', color: '#1a5c2e', fontFamily: 'bengali' },
+    { id: 'txn_lbl', type: 'text', x: 8, y: 131, width: 38, height: 10, content: 'TXN:', fontSize: 7, fontWeight: 'bold', color: '#555555', textAlign: 'right' },
+    { id: 'txn_val', type: 'placeholder', x: 48, y: 131, width: 130, height: 10, placeholder: '{transaction_id}', fontSize: 6, color: '#111111' },
+    { id: 'date_lbl', type: 'text', x: 8, y: 142, width: 38, height: 11, content: 'তারিখ:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'date_val', type: 'placeholder', x: 48, y: 142, width: 120, height: 11, placeholder: '{date}', fontSize: 8, color: '#111111', fontFamily: 'bengali' },
+    { id: 'status_lbl', type: 'text', x: 8, y: 154, width: 38, height: 11, content: 'স্ট্যাটাস:', fontSize: 8, fontWeight: 'bold', color: '#555555', fontFamily: 'bengali', textAlign: 'right' },
+    { id: 'status_val', type: 'placeholder', x: 48, y: 154, width: 120, height: 11, placeholder: '{status}', fontSize: 8, fontWeight: 'bold', color: '#22c55e', fontFamily: 'bengali' },
+    // QR Code
+    { id: 'qr', type: 'qr', x: 224, y: 58, width: 46, height: 46, content: '' },
+    // Signature area
+    { id: 'sig1_line', type: 'line', x: 8, y: 168, width: 55, height: 1, color: '#1a5c2e', borderWidth: 1 },
+    { id: 'sig1_text', type: 'text', x: 8, y: 170, width: 55, height: 8, content: 'আদায়কারী', fontSize: 6, color: '#666666', textAlign: 'center', fontFamily: 'bengali' },
+    { id: 'sig2_line', type: 'line', x: 210, y: 168, width: 60, height: 1, color: '#1a5c2e', borderWidth: 1 },
+    { id: 'sig2_text', type: 'text', x: 210, y: 170, width: 60, height: 8, content: 'অনুমোদনকারী', fontSize: 6, color: '#666666', textAlign: 'center', fontFamily: 'bengali' },
+  ],
+};
+
 export const PRESET_TEMPLATES: { key: string; label: string; labelBn: string; config: ReceiptDesignConfig }[] = [
   { key: 'default', label: 'Simple Receipt', labelBn: 'সিম্পল রিসিট', config: DEFAULT_DESIGN },
+  { key: 'green_capsule', label: 'Green Capsule Premium', labelBn: 'গ্রিন ক্যাপসুল প্রিমিয়াম', config: GREEN_CAPSULE_PRESET },
   { key: 'bengali_book', label: 'Bengali Receipt Book', labelBn: 'বাংলা রশিদ বই', config: BENGALI_RECEIPT_PRESET },
 ];
 
