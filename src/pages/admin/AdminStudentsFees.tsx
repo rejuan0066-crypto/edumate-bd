@@ -13,6 +13,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
+import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
 type FeeType = 'admission_fee' | 'monthly_fee' | 'exam_fee';
 type PaymentMethod = 'cash' | 'online';
