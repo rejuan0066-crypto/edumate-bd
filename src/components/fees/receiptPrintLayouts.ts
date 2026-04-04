@@ -87,12 +87,12 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
           <span class="serial-label" style="font-size:${6 * fs}px">ক্রমিক নং:</span>
           <span class="serial-val" style="font-size:${6 * fs}px;font-weight:700;color:${pc}">${data.receiptSerial || data.transactionId.slice(-6)}</span>
         </div>
+        ${style.showQr !== false ? `<div class="qr-title-box"><img src="${qrUrl}" class="qr-title-img" alt="QR" /></div>` : ''}
         <div class="title-capsule" style="background:${pc};font-size:${8.5 * fs}px">${style.receiptTitle || 'রশিদ বই'}</div>
-        ${style.showQr !== false ? `<div class="qr-title-box"><img src="${qrUrl}" class="qr-title-img" alt="QR" /></div>` : `
         <div class="date-box">
           <span class="date-label" style="font-size:${6 * fs}px">তারিখ:</span>
           <span class="date-val" style="font-size:${6 * fs}px">${data.date}</span>
-        </div>`}
+        </div>
       </div>
 
       <!-- TrxID & Timestamp Row -->
