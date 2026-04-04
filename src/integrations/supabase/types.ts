@@ -661,6 +661,132 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_session_classes: {
+        Row: {
+          class_id: string
+          created_at: string | null
+          exam_session_id: string
+          id: string
+          student_count: number | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string | null
+          exam_session_id: string
+          id?: string
+          student_count?: number | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string | null
+          exam_session_id?: string
+          id?: string
+          student_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_session_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_session_classes_exam_session_id_fkey"
+            columns: ["exam_session_id"]
+            isOneToOne: false
+            referencedRelation: "exam_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_session_students: {
+        Row: {
+          class_id: string
+          created_at: string | null
+          exam_session_id: string
+          id: string
+          student_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string | null
+          exam_session_id: string
+          id?: string
+          student_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string | null
+          exam_session_id?: string
+          id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_session_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_session_students_exam_session_id_fkey"
+            columns: ["exam_session_id"]
+            isOneToOne: false
+            referencedRelation: "exam_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_session_students_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_sessions: {
+        Row: {
+          academic_session_id: string
+          created_at: string | null
+          exam_type: string
+          id: string
+          is_active: boolean | null
+          name: string
+          name_bn: string
+          updated_at: string | null
+        }
+        Insert: {
+          academic_session_id: string
+          created_at?: string | null
+          exam_type?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          name_bn: string
+          updated_at?: string | null
+        }
+        Update: {
+          academic_session_id?: string
+          created_at?: string | null
+          exam_type?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          name_bn?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_sessions_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exams: {
         Row: {
           created_at: string | null
