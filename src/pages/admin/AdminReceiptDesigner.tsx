@@ -1,11 +1,21 @@
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ReceiptDesignerMain from '@/components/admin/receipt-designer/ReceiptDesignerMain';
+import DonationReceiptDesigner from '@/components/admin/receipt-designer/DonationReceiptDesigner';
 import { Receipt } from 'lucide-react';
+import { useState } from 'react';
+
+type DesignerTab = 'fee' | 'donation';
 
 const AdminReceiptDesigner = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const [tab, setTab] = useState<DesignerTab>('fee');
+
+  const tabs: { key: DesignerTab; bn: string; en: string }[] = [
+    { key: 'fee', bn: 'ফি রশিদ', en: 'Fee Receipt' },
+    { key: 'donation', bn: 'দানের রশিদ', en: 'Donation Receipt' },
+  ];
 
   return (
     <AdminLayout>
@@ -16,10 +26,16 @@ const AdminReceiptDesigner = () => {
             {bn ? 'রিসিট ডিজাইনার' : 'Receipt Designer'}
           </h1>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {bn ? 'আপনার ফি রিসিটের লেআউট ড্র্যাগ-এন্ড-ড্রপ দিয়ে কাস্টমাইজ করুন। সেভ করলে সব জায়গায় এই ডিজাইন প্রয়োগ হবে।' : 'Customize your fee receipt layout with drag-and-drop. Once saved, this design will be applied everywhere.'}
-        </p>
-        <ReceiptDesignerMain />
+        <div className="flex gap-2 flex-wrap">
+          {tabs.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
+              {bn ? t.bn : t.en}
+            </button>
+          ))}
+        </div>
+        {tab === 'fee' && <ReceiptDesignerMain />}
+        {tab === 'donation' && <DonationReceiptDesigner />}
       </div>
     </AdminLayout>
   );
