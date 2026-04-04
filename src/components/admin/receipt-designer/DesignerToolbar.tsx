@@ -27,7 +27,7 @@ const DesignerToolbar = ({ config, selectedElement, onConfigChange, onUpdateElem
   return (
     <ScrollArea className="w-72 border-r bg-card flex-shrink-0 h-full">
       <div className="p-3 space-y-3">
-        <Accordion type="multiple" defaultValue={['paper', 'add', 'selected']}>
+        <Accordion type="multiple" defaultValue={['presets', 'paper', 'add', 'selected']}>
           {/* Preset Templates */}
           <AccordionItem value="presets">
             <AccordionTrigger className="text-sm font-semibold py-2">

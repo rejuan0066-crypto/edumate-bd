@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, forwardRef } from 'react';
+import type { Ref } from 'react';
 import { ReceiptElement, ReceiptDesignConfig } from '@/hooks/useReceiptSettings';
 
 interface Props {
@@ -9,10 +10,24 @@ interface Props {
   scale?: number;
 }
 
-const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale = 2 }: Props) => {
-  const canvasRef = useRef<HTMLDivElement>(null);
+const assignRef = (ref: Ref<HTMLDivElement> | undefined, node: HTMLDivElement | null) => {
+  if (!ref) return;
+  if (typeof ref === 'function') {
+    ref(node);
+    return;
+  }
+  ref.current = node;
+};
+
+const DesignerCanvas = forwardRef<HTMLDivElement, Props>(({ config, selectedId, onSelect, onUpdateElement, scale = 2 }, ref) => {
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const [dragging, setDragging] = useState<{ id: string; startX: number; startY: number; elX: number; elY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startX: number; startY: number; elW: number; elH: number } | null>(null);
+
+  const setCanvasNode = useCallback((node: HTMLDivElement | null) => {
+    canvasRef.current = node;
+    assignRef(ref, node);
+  }, [ref]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent, el: ReceiptElement) => {
     e.stopPropagation();
@@ -56,7 +71,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       fontSize: (el.fontSize || 10) * scale,
       fontWeight: el.fontWeight || 'normal',
       fontStyle: el.fontStyle || 'normal',
-      textAlign: (el.textAlign as any) || 'left',
+      textAlign: (el.textAlign as React.CSSProperties['textAlign']) || 'left',
       color: el.color || '#000',
       fontFamily: el.fontFamily === 'bengali' ? "'Noto Sans Bengali', sans-serif" : el.fontFamily === 'monospace' ? 'monospace' : 'sans-serif',
       lineHeight: 1.2,
@@ -166,7 +181,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
   return (
     <div className="flex-1 overflow-auto bg-muted/30 p-4 flex items-start justify-center">
       <div
-        ref={canvasRef}
+        ref={setCanvasNode}
         className="relative bg-white shadow-lg"
         style={{
           width: config.receiptWidth * scale,
@@ -183,6 +198,8 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       </div>
     </div>
   );
-};
+});
+
+DesignerCanvas.displayName = 'DesignerCanvas';
 
 export default DesignerCanvas;

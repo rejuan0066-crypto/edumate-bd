@@ -9,7 +9,6 @@ export async function downloadReceiptAsPdf(
   htmlContent: string,
   filename: string = 'receipt.pdf'
 ): Promise<void> {
-  // Remove the auto-print script from the HTML
   const cleanHtml = htmlContent
     .replace(/<script>[\s\S]*?<\/script>/gi, '')
     .replace(/@media\s+screen\s*\{[^}]*\{[^}]*\}[^}]*\}/g, '');
@@ -19,9 +18,20 @@ export async function downloadReceiptAsPdf(
     iframe.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:794px;height:1123px;border:none;';
     document.body.appendChild(iframe);
 
+    let hasCaptured = false;
+    let isCleanedUp = false;
+
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    };
+
     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
     if (!iframeDoc) {
-      document.body.removeChild(iframe);
+      cleanup();
       reject(new Error('Could not access iframe'));
       return;
     }
@@ -30,15 +40,31 @@ export async function downloadReceiptAsPdf(
     iframeDoc.write(cleanHtml);
     iframeDoc.close();
 
-    // Wait for fonts to load then capture
     const captureAndDownload = async () => {
+      if (hasCaptured) return;
+      hasCaptured = true;
+
       try {
-        // Wait for fonts
         if (iframe.contentWindow?.document?.fonts) {
           await iframe.contentWindow.document.fonts.ready;
         }
-        // Extra delay for images/fonts
-        await new Promise(r => setTimeout(r, 1500));
+
+        const images = Array.from(iframeDoc.images || []);
+        await Promise.all(
+          images.map(
+            (img) =>
+              new Promise<void>((resolveImage) => {
+                if (img.complete) {
+                  resolveImage();
+                  return;
+                }
+                img.onload = () => resolveImage();
+                img.onerror = () => resolveImage();
+              })
+          )
+        );
+
+        await new Promise((r) => setTimeout(r, 500));
 
         const pages = iframeDoc.querySelectorAll('.page');
         const targets = pages.length > 0 ? Array.from(pages) : [iframeDoc.body];
@@ -71,12 +97,16 @@ export async function downloadReceiptAsPdf(
       } catch (err) {
         reject(err);
       } finally {
-        document.body.removeChild(iframe);
+        cleanup();
       }
     };
 
-    iframe.onload = () => captureAndDownload();
-    // Fallback if onload doesn't fire
-    setTimeout(() => captureAndDownload(), 3000);
+    iframe.onload = () => {
+      void captureAndDownload();
+    };
+
+    setTimeout(() => {
+      void captureAndDownload();
+    }, 3000);
   });
 }
