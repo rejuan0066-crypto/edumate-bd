@@ -103,11 +103,11 @@ const AdminSubjects = () => {
         <div className="card-elevated p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-display font-bold text-foreground">{language === 'bn' ? 'বিষয় তালিকা' : 'Subject List'}</h3>
-            <Select value={filterDivision} onValueChange={setFilterDivision}>
+            <Select value={filterClass} onValueChange={setFilterClass}>
               <SelectTrigger className="bg-background w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{language === 'bn' ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
-                {divisions.map(d => <SelectItem key={d.id} value={d.id}>{language === 'bn' ? d.name_bn : d.name}</SelectItem>)}
+                <SelectItem value="all">{language === 'bn' ? 'সকল ক্লাস' : 'All Classes'}</SelectItem>
+                {classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{language === 'bn' ? `${c.name_bn} (${c.divisions?.name_bn || ''})` : `${c.name} (${c.divisions?.name || ''})`}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
