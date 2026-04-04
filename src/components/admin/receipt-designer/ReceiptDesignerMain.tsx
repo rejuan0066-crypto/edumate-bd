@@ -20,6 +20,8 @@ const DEFAULT_STYLE: ReceiptStyleConfig = {
   receiptTitle: 'রশিদ বই',
   showWatermark: true,
   showQr: true,
+  showTrxId: true,
+  showTimestamp: true,
 };
 
 const ReceiptDesignerMain = () => {
