@@ -228,9 +228,9 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   .field-value { color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .amt-val { font-weight: 700; color: ${pc}; }
 
-  /* QR corner */
-  .qr-corner { position: absolute; bottom: 0; right: 2.5mm; z-index: 2; }
-  .qr-img { width: 30px; height: 30px; }
+  /* QR in title row */
+  .qr-title-box { display: flex; align-items: center; justify-content: center; }
+  .qr-title-img { width: 28px; height: 28px; }
 
   /* Signatures */
   .sig-footer { display: flex; justify-content: space-between; padding: 0 2.5mm 1.5mm; margin-top: auto; position: relative; z-index: 1; }
