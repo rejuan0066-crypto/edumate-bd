@@ -359,7 +359,7 @@ const AdminReports = () => {
         </div>
 
         {/* Charts Tabs */}
-        <Tabs defaultValue="income-expense" onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-wrap gap-2 mb-4">
             {[
               { key: 'income-expense', icon: BarChart3, bn: 'আয় vs ব্যয়', en: 'Income vs Expense' },
