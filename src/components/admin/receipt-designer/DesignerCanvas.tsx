@@ -58,7 +58,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       fontStyle: el.fontStyle || 'normal',
       textAlign: (el.textAlign as any) || 'left',
       color: el.color || '#000',
-      fontFamily: el.fontFamily === 'bengali' ? "'Noto Sans Bengali', sans-serif" : 'sans-serif',
+      fontFamily: el.fontFamily === 'bengali' ? "'Noto Sans Bengali', sans-serif" : el.fontFamily === 'monospace' ? 'monospace' : 'sans-serif',
       lineHeight: 1.2,
       display: 'flex',
       alignItems: 'center',
@@ -74,6 +74,7 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       overflow: 'hidden',
       userSelect: 'none',
       zIndex: isSelected ? 10 : 1,
+      opacity: el.opacity !== undefined ? el.opacity : 1,
     };
 
     let content: React.ReactNode = null;
@@ -85,6 +86,21 @@ const DesignerCanvas = ({ config, selectedId, onSelect, onUpdateElement, scale =
       case 'placeholder':
         content = <span className="whitespace-nowrap text-primary/70 italic">{el.placeholder}</span>;
         break;
+      case 'field': {
+        const labelWidth = 28;
+        const inputStyle: React.CSSProperties = el.lineStyle === 'rounded-fill'
+          ? { background: '#f0f0f0', borderRadius: 10 * scale, height: '80%', flex: 1, border: `${scale}px solid ${el.borderColor || '#ddd'}` }
+          : { borderBottom: `${scale}px ${el.lineStyle || 'solid'} ${el.borderColor || '#333'}`, flex: 1, height: '80%' };
+        content = (
+          <div className="flex items-center w-full h-full gap-1" style={{ fontSize: (el.fontSize || 8) * scale }}>
+            <span className="whitespace-nowrap font-semibold" style={{ width: labelWidth * scale, flexShrink: 0 }}>{el.fieldLabel || ''}</span>
+            <div style={inputStyle} className="flex items-center px-1">
+              <span className="text-muted-foreground/60 italic text-[0.85em] whitespace-nowrap">{el.placeholder || ''}</span>
+            </div>
+          </div>
+        );
+        break;
+      }
       case 'logo':
         content = (
           <div className="w-full h-full bg-muted/30 flex items-center justify-center border border-dashed border-muted-foreground/30 rounded">

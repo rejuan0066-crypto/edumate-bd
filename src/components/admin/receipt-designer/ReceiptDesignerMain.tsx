@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useReceiptSettings, DEFAULT_DESIGN, ReceiptDesignConfig, ReceiptElement } from '@/hooks/useReceiptSettings';
 import DesignerCanvas from './DesignerCanvas';
 import DesignerToolbar from './DesignerToolbar';
-import { Save, Loader2, RotateCcw, FileDown, Plus, Receipt } from 'lucide-react';
+import { Save, Loader2, RotateCcw, FileDown, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ReceiptDesignerMain = () => {
@@ -21,7 +21,6 @@ const ReceiptDesignerMain = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isDefault, setIsDefault] = useState(true);
 
-  // Load selected setting
   const loadSetting = useCallback((id: string) => {
     const s = settings?.find((s: any) => s.id === id);
     if (s) {
@@ -54,8 +53,8 @@ const ReceiptDesignerMain = () => {
       type,
       x: 20,
       y: 20,
-      width: type === 'line' ? 100 : type === 'qr' ? 50 : type === 'logo' ? 30 : 80,
-      height: type === 'line' ? 2 : type === 'qr' ? 50 : type === 'logo' ? 30 : 14,
+      width: type === 'line' ? 100 : type === 'qr' ? 50 : type === 'logo' ? 30 : type === 'field' ? 200 : 80,
+      height: type === 'line' ? 2 : type === 'qr' ? 50 : type === 'logo' ? 30 : type === 'field' ? 16 : 14,
       content: type === 'text' ? (bn ? 'নতুন টেক্সট' : 'New Text') : '',
       fontSize: 10,
       color: '#000000',
@@ -70,6 +69,12 @@ const ReceiptDesignerMain = () => {
     setConfig(prev => ({ ...prev, elements: prev.elements.filter(el => el.id !== id) }));
     setSelectedId(null);
   }, []);
+
+  const handleLoadPreset = useCallback((preset: ReceiptDesignConfig) => {
+    setConfig({ ...preset, elements: preset.elements.map(el => ({ ...el })) });
+    setSelectedId(null);
+    toast.info(bn ? 'টেমপ্লেট লোড হয়েছে' : 'Template loaded');
+  }, [bn]);
 
   const handleSave = async () => {
     try {
@@ -143,6 +148,7 @@ const ReceiptDesignerMain = () => {
           onUpdateElement={handleUpdateElement}
           onAddElement={handleAddElement}
           onDeleteElement={handleDeleteElement}
+          onLoadPreset={handleLoadPreset}
         />
         <DesignerCanvas
           config={config}
@@ -159,37 +165,48 @@ function generatePrintHtml(config: ReceiptDesignConfig, data: any, bn: boolean):
   const scale = 2.5;
   const renderElements = (elements: ReceiptElement[], copyLabel: string) => {
     return elements.map(el => {
-      const style = `position:absolute;left:${el.x * scale}px;top:${el.y * scale}px;width:${el.width * scale}px;height:${el.height * scale}px;font-size:${(el.fontSize || 10) * scale}px;font-weight:${el.fontWeight || 'normal'};font-style:${el.fontStyle || 'normal'};text-align:${el.textAlign || 'left'};color:${el.color || '#000'};font-family:${el.fontFamily === 'bengali' ? "'Noto Sans Bengali',sans-serif" : el.fontFamily === 'monospace' ? 'monospace' : 'sans-serif'};display:flex;align-items:center;overflow:hidden;line-height:1.2;`;
+      const fontFam = el.fontFamily === 'bengali' ? "'Noto Sans Bengali',sans-serif" : el.fontFamily === 'monospace' ? 'monospace' : 'sans-serif';
+      const baseStyle = `position:absolute;left:${el.x * scale}px;top:${el.y * scale}px;width:${el.width * scale}px;height:${el.height * scale}px;font-size:${(el.fontSize || 10) * scale}px;font-weight:${el.fontWeight || 'normal'};font-style:${el.fontStyle || 'normal'};text-align:${el.textAlign || 'left'};color:${el.color || '#000'};font-family:${fontFam};display:flex;align-items:center;overflow:hidden;line-height:1.2;opacity:${el.opacity ?? 1};`;
 
       let content = el.content || el.placeholder || '';
-      // Replace placeholders with data or blank
       if (data) {
         content = content.replace(/\{(\w+)\}/g, (_, key) => data[key] || '');
       } else {
         content = content.replace(/\{(\w+)\}/g, '___________');
       }
 
+      if (el.type === 'field') {
+        const labelW = 28 * scale;
+        let inputHtml = '';
+        if (el.lineStyle === 'rounded-fill') {
+          inputHtml = `<div style="flex:1;height:80%;background:#f0f0f0;border-radius:${10 * scale}px;border:${scale}px solid ${el.borderColor || '#ddd'};display:flex;align-items:center;padding:0 ${4 * scale}px;"><span style="color:#999;font-style:italic;font-size:0.85em;">${content}</span></div>`;
+        } else {
+          inputHtml = `<div style="flex:1;height:80%;border-bottom:${scale}px ${el.lineStyle || 'solid'} ${el.borderColor || '#333'};display:flex;align-items:center;"><span style="color:#999;font-style:italic;font-size:0.85em;">${content}</span></div>`;
+        }
+        return `<div style="${baseStyle}"><span style="width:${labelW}px;flex-shrink:0;font-weight:600;">${el.fieldLabel || ''}</span>${inputHtml}</div>`;
+      }
+
       if (el.type === 'line') {
-        return `<div style="${style}border-bottom:${(el.borderWidth || 1) * scale}px solid ${el.color || '#333'};"></div>`;
+        return `<div style="${baseStyle}border-bottom:${(el.borderWidth || 1) * scale}px solid ${el.color || '#333'};"></div>`;
       }
       if (el.type === 'qr') {
         if (data) {
           const qrData = encodeURIComponent(`TXN:${data.transaction_id || ''}|AMT:${data.amount || ''}`);
-          return `<div style="${style}"><img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrData}" style="width:100%;height:100%;" /></div>`;
+          return `<div style="${baseStyle}"><img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrData}" style="width:100%;height:100%;" /></div>`;
         }
-        return `<div style="${style}border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;"><span style="font-size:${8 * scale}px;color:#999">QR</span></div>`;
+        return `<div style="${baseStyle}border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;"><span style="font-size:${8 * scale}px;color:#999">QR</span></div>`;
       }
       if (el.type === 'logo') {
         if (data?.logo_url) {
-          return `<div style="${style}"><img src="${data.logo_url}" style="width:100%;height:100%;object-fit:contain;" /></div>`;
+          return `<div style="${baseStyle}"><img src="${data.logo_url}" style="width:100%;height:100%;object-fit:contain;" /></div>`;
         }
-        return `<div style="${style}border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;"><span style="font-size:${7 * scale}px;color:#999">Logo</span></div>`;
+        return `<div style="${baseStyle}border:1px dashed #ccc;display:flex;align-items:center;justify-content:center;"><span style="font-size:${7 * scale}px;color:#999">Logo</span></div>`;
       }
       if (el.type === 'shape') {
         const br = el.shapeType === 'circle' ? '50%' : `${(el.borderRadius || 0) * scale}px`;
-        return `<div style="${style}background:${el.bgColor || 'transparent'};border:${(el.borderWidth || 1) * scale}px solid ${el.borderColor || '#333'};border-radius:${br};"></div>`;
+        return `<div style="${baseStyle}background:${el.bgColor || 'transparent'};border:${(el.borderWidth || 1) * scale}px solid ${el.borderColor || '#333'};border-radius:${br};"></div>`;
       }
-      return `<div style="${style}">${content}</div>`;
+      return `<div style="${baseStyle}">${content}</div>`;
     }).join('');
   };
 
