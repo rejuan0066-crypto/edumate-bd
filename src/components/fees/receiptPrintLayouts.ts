@@ -109,11 +109,11 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
         </div>
         <div class="form-row">
           <span class="field-label" style="font-size:${8 * fs}px">আইডি / রোল:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.studentId} | রোল: ${data.rollNumber}</span></div>
+          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.studentId || data.rollNumber ? [data.studentId, data.rollNumber ? 'রোল: ' + data.rollNumber : ''].filter(Boolean).join(' | ') : ''}</span></div>
         </div>
         <div class="form-row">
           <span class="field-label" style="font-size:${8 * fs}px">ক্লাস / সেশন:</span>
-          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.className} | ${data.sessionName}</span></div>
+          <div class="field-input"><span class="field-value" style="font-size:${8 * fs}px">${data.className || data.sessionName ? [data.className, data.sessionName].filter(Boolean).join(' | ') : ''}</span></div>
         </div>
         <div class="form-row">
           <span class="field-label" style="font-size:${8 * fs}px">বাবদ:</span>
