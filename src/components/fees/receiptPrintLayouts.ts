@@ -308,3 +308,136 @@ export function buildBulkClassPrintHtml(allReceipts: ReceiptData[], style?: Rece
 
   return wrapInHtml('রশিদ বই - বাল্ক', pages.join(''), s);
 }
+
+/* ===================== DONATION RECEIPT ===================== */
+
+export interface DonationReceiptData {
+  donorName: string;
+  donorPhone: string;
+  donorAddress: string;
+  donationAmount: string;
+  donationType: string;
+  purpose: string;
+  receiptSerial: string;
+  date: string;
+  transactionId: string;
+  gatewayTrxId: string;
+  paymentTimestamp: string;
+  paymentMethod: string;
+  collectorName: string;
+  approverName: string;
+  institutionName: string;
+  institutionNameEn: string;
+  institutionAddress: string;
+  institutionPhone: string;
+  institutionEmail: string;
+  institutionOtherInfo: string;
+  logoUrl: string;
+  bn: boolean;
+}
+
+function buildDonationReceipt(data: DonationReceiptData, copyLabel: string, style: ReceiptStyleConfig = DEFAULT_STYLE): string {
+  const pc = style.primaryColor || '#1a5c2e';
+  const fs = (style.fontSize || 100) / 100;
+  const qrData = encodeURIComponent(`DON:${data.transactionId}|AMT:${data.donationAmount}|NAME:${data.donorName}`);
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${qrData}`;
+
+  return `
+    <div class="receipt-card">
+      ${style.showWatermark !== false ? (data.logoUrl
+        ? `<div class="watermark"><img src="${data.logoUrl}" /></div>`
+        : `<div class="watermark-text">${data.institutionName}</div>`) : ''}
+
+      <div class="copy-label">${copyLabel}</div>
+
+      <div class="receipt-header" style="background:linear-gradient(135deg, ${pc} 0%, ${pc}dd 100%);">
+        ${data.logoUrl ? `<img src="${data.logoUrl}" class="header-logo" />` : '<div class="header-logo-placeholder"></div>'}
+        <div class="header-center">
+          <div class="inst-name-bn" style="font-size:${10 * fs}px">${data.institutionName}</div>
+          ${data.institutionNameEn ? `<div class="inst-name-en" style="font-size:${6.5 * fs}px">${data.institutionNameEn}</div>` : ''}
+          <div class="inst-detail" style="font-size:${5.5 * fs}px">${data.institutionAddress}</div>
+          ${data.institutionPhone ? `<div class="inst-detail" style="font-size:${5.5 * fs}px">যোগাযোগ: ${data.institutionPhone}</div>` : ''}
+        </div>
+        ${data.logoUrl ? `<img src="${data.logoUrl}" class="header-logo" />` : '<div class="header-logo-placeholder"></div>'}
+      </div>
+
+      <div class="title-row">
+        <div class="serial-box">
+          ${style.showQr !== false ? `<img src="${qrUrl}" class="qr-title-img" alt="QR" />` : ''}
+          <span class="serial-label" style="font-size:${6 * fs}px">ক্রমিক নং:</span>
+          <span class="serial-capsule" style="font-size:${6 * fs}px;color:${pc}">${data.receiptSerial || ''}</span>
+        </div>
+        <div class="title-capsule" style="background:${pc};font-size:${8.5 * fs}px">${style.receiptTitle || 'দানের রশিদ'}</div>
+        <div class="date-box-row">
+          <span class="date-label-text" style="font-size:${6 * fs}px">তারিখ:</span>
+          <span class="date-capsule" style="font-size:${6 * fs}px">${data.date || ''}</span>
+        </div>
+      </div>
+
+      ${(style.showTrxId !== false && data.gatewayTrxId) || (style.showTimestamp !== false && data.paymentTimestamp) ? `
+      <div class="trx-row">
+        ${style.showTrxId !== false && data.gatewayTrxId ? `<span class="trx-item" style="font-size:${5.5 * fs}px">TrxID: <strong>${data.gatewayTrxId}</strong></span>` : ''}
+        ${style.showTimestamp !== false && data.paymentTimestamp ? `<span class="trx-item" style="font-size:${5.5 * fs}px">সময়: ${data.paymentTimestamp}</span>` : ''}
+      </div>` : ''}
+
+      <div class="form-body">
+        <div class="form-row">
+          <span class="field-label" style="font-size:${7 * fs}px">দাতার নাম:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.donorName}</span></div>
+        </div>
+        <div class="form-row">
+          <span class="field-label" style="font-size:${7 * fs}px">মোবাইল:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.donorPhone}</span></div>
+        </div>
+        <div class="form-row">
+          <span class="field-label" style="font-size:${7 * fs}px">ঠিকানা:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.donorAddress}</span></div>
+        </div>
+        <div class="form-row">
+          <span class="field-label" style="font-size:${7 * fs}px">দানের ধরন:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.donationType}</span></div>
+        </div>
+        <div class="form-row">
+          <span class="field-label" style="font-size:${7 * fs}px">উদ্দেশ্য:</span>
+          <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.purpose}</span></div>
+        </div>
+        <div class="form-row-split">
+          <div class="form-row half">
+            <span class="field-label" style="font-size:${7 * fs}px">টাকা:</span>
+            <div class="field-input amt"><span class="field-value amt-val" style="font-size:${7.5 * fs}px">৳ ${data.donationAmount}</span></div>
+          </div>
+          <div class="form-row half">
+            <span class="field-label" style="font-size:${7 * fs}px">পদ্ধতি:</span>
+            <div class="field-input"><span class="field-value" style="font-size:${7 * fs}px">${data.paymentMethod}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sig-footer">
+        <div class="sig-block">
+          <div class="sig-line" style="border-color:${pc}"></div>
+          <div class="sig-title" style="font-size:${5.5 * fs}px">আদায়কারী স্বাক্ষর</div>
+          <div class="sig-name" style="font-size:${5 * fs}px">${data.collectorName}</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-line" style="border-color:${pc}"></div>
+          <div class="sig-title" style="font-size:${5.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
+          <div class="sig-name" style="font-size:${5 * fs}px">${data.approverName}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+export function buildDonationReceiptHtml(data: DonationReceiptData, style?: ReceiptStyleConfig): string {
+  const s = { ...DEFAULT_STYLE, receiptTitle: 'দানের রশিদ', ...style };
+  const officeCopy = buildDonationReceipt(data, 'অফিস কপি', s);
+  const donorCopy = buildDonationReceipt(data, 'দাতা কপি', s);
+
+  const page = `<div class="page mode-single">
+    ${officeCopy}
+    <div class="cut-v"></div>
+    ${donorCopy}
+  </div>`;
+
+  return wrapInHtml('দানের রশিদ', page, s);
+}
