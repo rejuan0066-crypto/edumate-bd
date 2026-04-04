@@ -135,18 +135,6 @@ const AdminDonors = () => {
               <Input className="bg-background mt-1" value={form.donorAddress} onChange={(e) => updateField('donorAddress', e.target.value)} />
             </div>
             <div>
-              <Label className="text-sm font-medium text-foreground">{bn ? 'দানের ধরন' : 'Donation Type'}</Label>
-              <Select value={form.donationType} onValueChange={(v) => updateField('donationType', v)}>
-                <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="নগদ">{bn ? 'নগদ' : 'Cash'}</SelectItem>
-                  <SelectItem value="চেক">{bn ? 'চেক' : 'Cheque'}</SelectItem>
-                  <SelectItem value="অনলাইন">{bn ? 'অনলাইন' : 'Online'}</SelectItem>
-                  <SelectItem value="বস্তু/সামগ্রী">{bn ? 'বস্তু/সামগ্রী' : 'In-Kind'}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label className="text-sm font-medium text-foreground">{bn ? 'উদ্দেশ্য / বাবদ' : 'Purpose'}</Label>
               <Input className="bg-background mt-1" value={form.purpose} onChange={(e) => updateField('purpose', e.target.value)} placeholder={bn ? 'মসজিদ নির্মাণ...' : 'Building fund...'} />
             </div>
