@@ -392,10 +392,9 @@ function buildSingleReceipt(
     </div>`;
 }
 
-function printReceipt(params: PrintReceiptParams) {
+function buildPrintReceiptHtml(params: PrintReceiptParams): string {
   const { payments, studentMap, bn } = params;
 
-  // Build receipt pairs (student copy + office copy) for each payment
   const receiptPairs = payments.map((p: any, i: number) => {
     const student = studentMap.get(p.student_id);
     const studentCopy = buildSingleReceipt(p, student, bn ? 'ছাত্র কপি' : 'Student Copy', params, i);
@@ -403,7 +402,6 @@ function printReceipt(params: PrintReceiptParams) {
     return { studentCopy, officeCopy };
   });
 
-  // Group into pages of 3 receipts each
   const pages: string[] = [];
   for (let i = 0; i < receiptPairs.length; i += 3) {
     const chunk = receiptPairs.slice(i, i + 3);
@@ -417,7 +415,7 @@ function printReceipt(params: PrintReceiptParams) {
     pages.push(`<div class="page">${rows}</div>`);
   }
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html><head>
 <meta charset="UTF-8">
 <title>${bn ? 'ফি রিসিট' : 'Fee Receipt'}</title>
@@ -425,106 +423,39 @@ function printReceipt(params: PrintReceiptParams) {
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Noto Sans Bengali', sans-serif; color: #1a1a1a; background: #fff; }
-  
-  .page {
-    width: 210mm; min-height: 297mm; padding: 5mm;
-    display: flex; flex-direction: column; justify-content: flex-start;
-    page-break-after: always;
-  }
+  .page { width: 210mm; min-height: 297mm; padding: 5mm; display: flex; flex-direction: column; justify-content: flex-start; page-break-after: always; }
   .page:last-child { page-break-after: auto; }
-  
-  .receipt-row {
-    display: flex; flex: 1; max-height: 95mm;
-  }
-  
-  .receipt-card {
-    flex: 1; padding: 4mm 5mm; position: relative; overflow: hidden;
-    border: 1px solid #ccc;
-  }
-  
-  .watermark {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%) rotate(-30deg);
-    font-size: 28px; font-weight: 700; color: rgba(0,0,0,0.04);
-    white-space: nowrap; pointer-events: none; z-index: 0;
-    letter-spacing: 4px;
-  }
-  
-  .copy-label {
-    position: absolute; top: 2mm; right: 3mm;
-    font-size: 8px; font-weight: 700; padding: 1px 6px;
-    border-radius: 3px; z-index: 1;
-  }
+  .receipt-row { display: flex; flex: 1; max-height: 95mm; }
+  .receipt-card { flex: 1; padding: 4mm 5mm; position: relative; overflow: hidden; border: 1px solid #ccc; }
+  .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 28px; font-weight: 700; color: rgba(0,0,0,0.04); white-space: nowrap; pointer-events: none; z-index: 0; letter-spacing: 4px; }
+  .copy-label { position: absolute; top: 2mm; right: 3mm; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 3px; z-index: 1; }
   .copy-pending { background: #fef3c7; color: #92400e; }
   .copy-paid { background: #dcfce7; color: #166534; }
-  
-  .receipt-header {
-    display: flex; align-items: center; gap: 3mm;
-    border-bottom: 1.5px solid #333; padding-bottom: 2mm; margin-bottom: 2mm;
-    position: relative; z-index: 1;
-  }
+  .receipt-header { display: flex; align-items: center; gap: 3mm; border-bottom: 1.5px solid #333; padding-bottom: 2mm; margin-bottom: 2mm; position: relative; z-index: 1; }
   .inst-logo { height: 28px; width: auto; }
   .inst-info { flex: 1; }
   .inst-name { font-size: 12px; font-weight: 700; line-height: 1.2; }
   .inst-name-en { font-size: 9px; color: #555; }
   .inst-addr { font-size: 8px; color: #666; line-height: 1.3; }
-  
-  .receipt-title {
-    text-align: center; font-size: 11px; font-weight: 700;
-    margin: 1.5mm 0; color: #333; position: relative; z-index: 1;
-    text-decoration: underline;
-  }
-  
-  .receipt-body {
-    display: flex; gap: 3mm; position: relative; z-index: 1;
-  }
-  
+  .receipt-title { text-align: center; font-size: 11px; font-weight: 700; margin: 1.5mm 0; color: #333; position: relative; z-index: 1; text-decoration: underline; }
+  .receipt-body { display: flex; gap: 3mm; position: relative; z-index: 1; }
   .info-grid { flex: 1; }
-  .info-row {
-    display: flex; font-size: 9px; line-height: 1.6;
-    border-bottom: 0.5px dotted #ddd;
-  }
+  .info-row { display: flex; font-size: 9px; line-height: 1.6; border-bottom: 0.5px dotted #ddd; }
   .info-label { width: 55px; font-weight: 600; color: #555; flex-shrink: 0; }
   .info-value { flex: 1; color: #111; }
   .amount-value { font-weight: 700; font-size: 11px; color: #000; }
   .txn-value { font-size: 7.5px; font-family: monospace; }
-  
-  .qr-section {
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
+  .qr-section { display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .qr-img { width: 55px; height: 55px; }
-  
-  .receipt-footer {
-    display: flex; justify-content: space-between;
-    margin-top: auto; padding-top: 5mm;
-    position: relative; z-index: 1;
-  }
+  .receipt-footer { display: flex; justify-content: space-between; margin-top: auto; padding-top: 5mm; position: relative; z-index: 1; }
   .sig-box { text-align: center; width: 35mm; }
   .sig-line { border-top: 0.8px solid #333; margin-bottom: 1px; }
   .sig-label { font-size: 7.5px; font-weight: 600; color: #555; }
   .sig-name { font-size: 7px; color: #888; }
-  
-  .cut-line-v {
-    width: 0; border-left: 1px dashed #aaa; margin: 2mm 0;
-  }
-  .cut-line-h {
-    height: 0; border-top: 1px dashed #aaa; margin: 0 2mm;
-  }
-  
-  @media print {
-    body { padding: 0; }
-    @page { size: A4; margin: 0; }
-    .page { padding: 5mm; }
-  }
-  
-  @media screen {
-    body { background: #f0f0f0; padding: 20px; }
-    .page {
-      background: white; margin: 0 auto 20px; 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    }
-  }
+  .cut-line-v { width: 0; border-left: 1px dashed #aaa; margin: 2mm 0; }
+  .cut-line-h { height: 0; border-top: 1px dashed #aaa; margin: 0 2mm; }
+  @media print { body { padding: 0; } @page { size: A4; margin: 0; } .page { padding: 5mm; } }
+  @media screen { body { background: #f0f0f0; padding: 20px; } .page { background: white; margin: 0 auto 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.15); } }
 </style>
 </head><body>
 ${pages.join('')}
@@ -532,7 +463,10 @@ ${pages.join('')}
   document.fonts.ready.then(() => { setTimeout(() => window.print(), 800); });
 </script>
 </body></html>`;
+}
 
+function printReceipt(params: PrintReceiptParams) {
+  const html = buildPrintReceiptHtml(params);
   const win = window.open('', '_blank');
   if (win) {
     win.document.write(html);
