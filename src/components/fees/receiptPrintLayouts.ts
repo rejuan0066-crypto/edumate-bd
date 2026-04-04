@@ -145,12 +145,12 @@ function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleC
         ${data.approverName ? `
         <div class="sig-block">
           <div class="sig-line" style="border-color:${pc}"></div>
-          <div class="sig-title" style="font-size:${6.5 * fs}px">পরিচালকের স্বাক্ষর</div>
+          <div class="sig-title" style="font-size:${6.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
           <div class="sig-name" style="font-size:${5.5 * fs}px">${data.approverName}</div>
         </div>` : `
         <div class="sig-block">
           <div class="sig-line" style="border-color:${pc}"></div>
-          <div class="sig-title" style="font-size:${6.5 * fs}px">পরিচালকের স্বাক্ষর</div>
+          <div class="sig-title" style="font-size:${6.5 * fs}px">গ্রহণকারী স্বাক্ষর</div>
         </div>`}
       </div>
     </div>`;
