@@ -39,6 +39,8 @@ export interface ReceiptStyleConfig {
   receiptTitle: string;
   showWatermark: boolean;
   showQr: boolean;
+  showTrxId: boolean;
+  showTimestamp: boolean;
 }
 
 const DEFAULT_STYLE: ReceiptStyleConfig = {
@@ -47,6 +49,8 @@ const DEFAULT_STYLE: ReceiptStyleConfig = {
   receiptTitle: 'রশিদ বই',
   showWatermark: true,
   showQr: true,
+  showTrxId: true,
+  showTimestamp: true,
 };
 
 function buildReceipt(data: ReceiptData, copyLabel: string, style: ReceiptStyleConfig = DEFAULT_STYLE): string {
