@@ -263,9 +263,13 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={handleDownload} disabled={loading || !canDownload} className="btn-primary-gradient flex-1">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
-          {bn ? 'রিসিট ডাউনলোড করুন' : 'Download Receipt'}
+        <Button onClick={() => handleDownload('print')} disabled={loading || pdfLoading || !canDownload} className="flex-1" variant="outline">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
+          {bn ? 'প্রিন্ট করুন' : 'Print Receipt'}
+        </Button>
+        <Button onClick={() => handleDownload('pdf')} disabled={loading || pdfLoading || !canDownload} className="btn-primary-gradient flex-1">
+          {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+          {bn ? 'PDF ডাউনলোড' : 'PDF Download'}
         </Button>
         <Link to="/admin/receipt-designer">
           <Button variant="outline" size="icon" title={bn ? 'রিসিট ডিজাইনার' : 'Receipt Designer'}>
