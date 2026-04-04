@@ -88,9 +88,9 @@ const AdminSubjects = () => {
               <Input placeholder={language === 'bn' ? 'বিষয়ের নাম (বাংলা)' : 'Subject Name (BN)'} value={newName} onChange={(e) => setNewName(e.target.value)} className="bg-background" />
               <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newNameEn} onChange={(e) => setNewNameEn(e.target.value)} className="bg-background" />
               <Input placeholder={language === 'bn' ? 'কোড' : 'Code'} value={newCode} onChange={(e) => setNewCode(e.target.value)} className="bg-background w-24" />
-              <Select value={newDivision} onValueChange={setNewDivision}>
-                <SelectTrigger className="bg-background"><SelectValue placeholder={language === 'bn' ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
-                <SelectContent>{divisions.map(d => <SelectItem key={d.id} value={d.id}>{language === 'bn' ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
+              <Select value={newClass} onValueChange={setNewClass}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder={language === 'bn' ? 'ক্লাস নির্বাচন' : 'Select Class'} /></SelectTrigger>
+                <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{language === 'bn' ? `${c.name_bn} (${c.divisions?.name_bn || ''})` : `${c.name} (${c.divisions?.name || ''})`}</SelectItem>)}</SelectContent>
               </Select>
               <Button onClick={() => { if (!newName.trim()) { toast.error(language === 'bn' ? 'বিষয়ের নাম লিখুন' : 'Enter subject name'); return; } addMutation.mutate(); }} className="btn-primary-gradient shrink-0" disabled={addMutation.isPending}>
                 {addMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Plus className="w-4 h-4 mr-1" />}
