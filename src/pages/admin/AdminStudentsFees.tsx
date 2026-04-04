@@ -489,6 +489,35 @@ const AdminStudentsFees = () => {
         {/* Receipt Download Section */}
         <FeeReceiptDownload collectorName={collectorName} />
       </div>
+  );
+
+  return (
+    <AdminLayout>
+      <TabContainer
+        tabs={[
+          {
+            id: 'collection',
+            label: bn ? 'ফি আদায়' : 'Fee Collection',
+            icon: CreditCard,
+            content: feeCollectionContent,
+          },
+          {
+            id: 'dashboard',
+            label: bn ? 'পেমেন্ট ড্যাশবোর্ড' : 'Payment Dashboard',
+            icon: BarChart3,
+            content: (
+              <ErrorBoundary>
+                <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+                  <EmbeddedProvider>
+                    <LazyPaymentDashboard />
+                  </EmbeddedProvider>
+                </Suspense>
+              </ErrorBoundary>
+            ),
+          },
+        ]}
+        paramKey="tab"
+      />
     </AdminLayout>
   );
 };
