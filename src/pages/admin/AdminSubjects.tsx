@@ -19,8 +19,8 @@ const AdminSubjects = () => {
   const [newName, setNewName] = useState('');
   const [newNameEn, setNewNameEn] = useState('');
   const [newCode, setNewCode] = useState('');
-  const [newDivision, setNewDivision] = useState('');
-  const [filterDivision, setFilterDivision] = useState('all');
+  const [newClass, setNewClass] = useState('');
+  const [filterClass, setFilterClass] = useState('all');
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['divisions'],
