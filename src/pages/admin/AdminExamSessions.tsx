@@ -234,10 +234,21 @@ const AdminExamSessions = () => {
             {academicSessionId && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  {bn ? 'বিভাগ নির্বাচন করুন' : 'Select Division'}
+                </label>
+                <Select value={selectedDivisionId} onValueChange={(v) => { setSelectedDivisionId(v); setSelectedClassIds([]); }}>
+                  <SelectTrigger className="bg-background w-full sm:w-64"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{bn ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
+                    {divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <label className="text-sm font-medium text-muted-foreground mb-2 block mt-3">
                   {bn ? 'ক্লাস নির্বাচন করুন' : 'Select Classes'} *
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {classes.map((cls: any) => {
+                  {filteredClasses.map((cls: any) => {
                     const count = (studentCounts as Record<string, number>)[cls.id] || 0;
                     const divName = cls.divisions ? (bn ? cls.divisions.name_bn : cls.divisions.name) : '';
                     return (
@@ -263,6 +274,11 @@ const AdminExamSessions = () => {
                       </label>
                     );
                   })}
+                  {filteredClasses.length === 0 && (
+                    <p className="text-sm text-muted-foreground col-span-full py-4 text-center">
+                      {bn ? 'এই বিভাগে কোনো ক্লাস নেই' : 'No classes in this division'}
+                    </p>
+                  )}
                 </div>
 
                 {selectedClassIds.length > 0 && (
