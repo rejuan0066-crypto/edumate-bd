@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
+export interface HoverEffect {
+  scale?: number;          // 1.0 - 1.15
+  shadow?: 'none' | 'sm' | 'md' | 'lg' | 'xl';
+  lift?: number;           // translateY in px (0-8)
+  brightness?: number;     // 0.9 - 1.2
+  borderGlow?: boolean;
+  speed?: number;          // transition duration ms (100-500)
+}
+
 export interface SectionStyle {
   columns?: number;        // grid columns (2-6)
   columnsMobile?: number;  // mobile grid columns (1-3)
@@ -9,6 +18,7 @@ export interface SectionStyle {
   cardSize?: 'compact' | 'default' | 'large';
   showBorder?: boolean;
   showShadow?: boolean;
+  hover?: HoverEffect;
 }
 
 export interface DashboardSection {

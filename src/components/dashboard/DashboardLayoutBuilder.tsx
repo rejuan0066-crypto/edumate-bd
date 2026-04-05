@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useDashboardLayout, DashboardSection, DEFAULT_SECTIONS, SECTION_CARDS, SECTION_ICONS, SectionStyle } from '@/hooks/useDashboardLayout';
+import { useDashboardLayout, DashboardSection, DEFAULT_SECTIONS, SECTION_CARDS, SECTION_ICONS, SectionStyle, HoverEffect } from '@/hooks/useDashboardLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
