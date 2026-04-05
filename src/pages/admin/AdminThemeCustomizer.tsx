@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Palette, Type, Layout, RotateCcw, Save, Eye, Monitor, PanelLeft, LayoutDashboard } from 'lucide-react';
+import { Palette, Type, Layout, RotateCcw, Save, Eye, Monitor, PanelLeft, LayoutDashboard, Layers } from 'lucide-react';
 import DashboardLayoutBuilder from '@/components/dashboard/DashboardLayoutBuilder';
+import PageLayoutEditor from '@/components/admin/PageLayoutEditor';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const ColorPreview = ({ hue, sat, light, label }: { hue: number; sat: number; light: number; label: string }) => (
@@ -101,12 +102,13 @@ const AdminThemeCustomizer = () => {
         </div>
 
         <Tabs defaultValue="colors">
-          <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsList className="grid grid-cols-6 w-full max-w-3xl">
             <TabsTrigger value="colors" className="gap-1"><Palette className="w-4 h-4" /> {bn ? 'কালার' : 'Colors'}</TabsTrigger>
             <TabsTrigger value="typography" className="gap-1"><Type className="w-4 h-4" /> {bn ? 'ফন্ট' : 'Fonts'}</TabsTrigger>
             <TabsTrigger value="layout" className="gap-1"><Layout className="w-4 h-4" /> {bn ? 'লেআউট' : 'Layout'}</TabsTrigger>
             <TabsTrigger value="appearance" className="gap-1"><Monitor className="w-4 h-4" /> {bn ? 'অ্যাপিয়ারেন্স' : 'Appearance'}</TabsTrigger>
             <TabsTrigger value="dashboard" className="gap-1"><LayoutDashboard className="w-4 h-4" /> {bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</TabsTrigger>
+            <TabsTrigger value="pages" className="gap-1"><Layers className="w-4 h-4" /> {bn ? 'পেইজ লেআউট' : 'Pages'}</TabsTrigger>
           </TabsList>
 
           {/* COLORS TAB */}
@@ -665,6 +667,11 @@ const AdminThemeCustomizer = () => {
           {/* DASHBOARD BUILDER TAB */}
           <TabsContent value="dashboard" className="mt-4">
             <DashboardLayoutBuilder />
+          </TabsContent>
+
+          {/* PAGE LAYOUTS TAB */}
+          <TabsContent value="pages" className="mt-4">
+            <PageLayoutEditor />
           </TabsContent>
         </Tabs>
 
