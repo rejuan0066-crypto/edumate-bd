@@ -176,10 +176,22 @@ const AdminStudents = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+            <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'সেশন ফিল্টার' : 'Filter Session'} />
+                <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
+                {divisions.map((d: any) => (
+                  <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterSessionId} onValueChange={setFilterSessionId}>
+              <SelectTrigger className="bg-background w-full sm:w-40">
+                <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
+                <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
@@ -189,21 +201,21 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'শ্রেণী ফিল্টার' : 'Filter Class'} />
+                <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
-                {classes.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                {filteredClasses.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}{c.divisions ? ` (${bn ? c.divisions.name_bn : c.divisions.name})` : ''}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={filterApproval} onValueChange={setFilterApproval}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'অনুমোদন স্ট্যাটাস' : 'Approval Status'} />
+                <SelectValue placeholder={bn ? 'স্ট্যাটাস' : 'Status'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল স্ট্যাটাস' : 'All Status'}</SelectItem>
