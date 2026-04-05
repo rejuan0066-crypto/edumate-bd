@@ -49,6 +49,15 @@ const AdminStudents = () => {
     },
   });
 
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: async () => {
@@ -57,6 +66,11 @@ const AdminStudents = () => {
       return data;
     },
   });
+
+  // Filter classes by selected division
+  const filteredClasses = filterDivisionId !== 'all'
+    ? classes.filter((c: any) => c.division_id === filterDivisionId)
+    : classes;
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
