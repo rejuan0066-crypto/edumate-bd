@@ -1105,6 +1105,54 @@ export type Database = {
           },
         ]
       }
+      fee_waivers: {
+        Row: {
+          created_at: string | null
+          fee_type_id: string
+          id: string
+          is_active: boolean | null
+          reason: string | null
+          student_id: string
+          updated_at: string | null
+          waiver_percent: number
+        }
+        Insert: {
+          created_at?: string | null
+          fee_type_id: string
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          student_id: string
+          updated_at?: string | null
+          waiver_percent?: number
+        }
+        Update: {
+          created_at?: string | null
+          fee_type_id?: string
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          student_id?: string
+          updated_at?: string | null
+          waiver_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_waivers_fee_type_id_fkey"
+            columns: ["fee_type_id"]
+            isOneToOne: false
+            referencedRelation: "fee_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_waivers_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_settings: {
         Row: {
           field_name: string | null
@@ -2232,6 +2280,7 @@ export type Database = {
           gender: string | null
           guardian_phone: string | null
           id: string
+          is_free: boolean | null
           is_orphan: boolean | null
           is_poor: boolean | null
           mother_name: string | null
@@ -2274,6 +2323,7 @@ export type Database = {
           gender?: string | null
           guardian_phone?: string | null
           id?: string
+          is_free?: boolean | null
           is_orphan?: boolean | null
           is_poor?: boolean | null
           mother_name?: string | null
@@ -2316,6 +2366,7 @@ export type Database = {
           gender?: string | null
           guardian_phone?: string | null
           id?: string
+          is_free?: boolean | null
           is_orphan?: boolean | null
           is_poor?: boolean | null
           mother_name?: string | null
