@@ -29,7 +29,7 @@ const Dashboard = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['dashboard-students'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id');
+      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free');
       if (error) throw error;
       return data || [];
     },
@@ -103,9 +103,11 @@ const Dashboard = () => {
   const oldStudents = students.filter(s => !s.admission_date || new Date(s.admission_date).getFullYear() < currentYear);
 
   // Category stats
-  const orphanStudents = students.filter(s => (s as any).student_category === 'orphan');
-  const poorStudents = students.filter(s => (s as any).student_category === 'poor');
-  const generalStudents = students.filter(s => (s as any).student_category === 'general' || !(s as any).student_category);
+   const orphanStudents = students.filter(s => (s as any).student_category === 'orphan');
+   const poorStudents = students.filter(s => (s as any).student_category === 'poor');
+   const teacherChildStudents = students.filter(s => (s as any).student_category === 'teacher_child');
+   const generalStudents = students.filter(s => (s as any).student_category === 'general' || !(s as any).student_category);
+   const freeStudents = students.filter(s => (s as any).is_free === true);
 
   // Non-orphan&poor total paid amounts
   const generalStudentIds = new Set(generalStudents.map(s => s.id));
@@ -159,6 +161,8 @@ const Dashboard = () => {
   const studentCategoryStats = [
     { label: language === 'bn' ? 'এতিম ছাত্র' : 'Orphan Students', value: orphanStudents.length, icon: Users, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(language === 'bn' ? 'এতিম ছাত্র' : 'Orphan Students', 'students', { student_category: 'orphan' }) },
     { label: language === 'bn' ? 'গরীব ছাত্র' : 'Poor Students', value: poorStudents.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(language === 'bn' ? 'গরীব ছাত্র' : 'Poor Students', 'students', { student_category: 'poor' }) },
+    { label: language === 'bn' ? 'শিক্ষক সন্তান' : "Teacher's Child", value: teacherChildStudents.length, icon: GraduationCap, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(language === 'bn' ? 'শিক্ষক সন্তান' : "Teacher's Child", 'students', { student_category: 'teacher_child' }) },
+    { label: language === 'bn' ? 'বিনা বেতন ছাত্র' : 'Free Students', value: freeStudents.length, icon: Heart, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(language === 'bn' ? 'বিনা বেতন ছাত্র' : 'Free Students', 'students', { is_free: true }) },
     { label: language === 'bn' ? 'সাধারণ ছাত্র ও পরিশোধিত' : 'Non-Orphan&Poor + Amounts', value: `${generalStudents.length} (৳${generalPaidAmount.toLocaleString()})`, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
     { label: language === 'bn' ? 'আবাসিক ছাত্র' : 'Resident Students', value: residentStudents.length, icon: HomeIcon, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(language === 'bn' ? 'আবাসিক ছাত্র' : 'Resident Students', 'students', { residence_type: 'resident' }) },
     { label: language === 'bn' ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', value: nonResidentStudents.length, icon: HomeIcon, color: 'text-muted-foreground', bg: 'bg-muted/50', onClick: () => openList(language === 'bn' ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', 'students', { residence_type: 'non-resident' }) },

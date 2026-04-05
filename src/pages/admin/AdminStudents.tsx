@@ -258,7 +258,10 @@ const AdminStudents = () => {
                             </div>
                           )}
                           <div>
-                            <span className="font-medium text-foreground text-sm block">{s.name_bn}</span>
+                            <span className="font-medium text-foreground text-sm block">
+                              {s.name_bn}
+                              {s.is_free && <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-success/15 text-success border border-success/20">{bn ? 'বিনা বেতন' : 'Free'}</span>}
+                            </span>
                             {s.name_en && <span className="text-xs text-muted-foreground">{s.name_en}</span>}
                           </div>
                         </div>
