@@ -1,4 +1,4 @@
-import { ReactNode, useRef, useState } from 'react';
+import { ReactNode, useRef, useState, useEffect } from 'react';
 import BackButton from './BackButton';
 import AdminPageWithTabs from './AdminPageWithTabs';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
+import { useThemeSettings } from '@/hooks/useThemeSettings';
 import LanguageToggle from './LanguageToggle';
 import NotificationPanel from './NotificationPanel';
 import DarkModeToggle from './DarkModeToggle';
