@@ -49,10 +49,41 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { menuConfig } = useMenuSettings();
+  const { theme: adminTheme } = useThemeSettings();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
+
+  // Apply default theme mode from settings
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    if (!stored && adminTheme.defaultThemeMode !== 'system') {
+      if (adminTheme.defaultThemeMode === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [adminTheme.defaultThemeMode]);
+
+  // Compute dynamic styles from theme
+  const sidebarWidthMap = { narrow: 'w-[200px]', default: 'w-[260px]', wide: 'w-[300px]' };
+  const sidebarWidthClass = sidebarWidthMap[adminTheme.sidebarWidth] || 'w-[260px]';
+  const iconSizeMap = { small: 'w-4 h-4', medium: 'w-[18px] h-[18px]', large: 'w-5 h-5' };
+  const iconSizeClass = iconSizeMap[adminTheme.sidebarIconSize] || 'w-[18px] h-[18px]';
+  const headerHeightMap = { compact: 'py-1.5', default: 'py-2.5', tall: 'py-4' };
+  const headerPadClass = headerHeightMap[adminTheme.headerHeight] || 'py-2.5';
+
+  const sidebarStyle: React.CSSProperties = {
+    ...(adminTheme.sidebarBgColor ? { backgroundColor: adminTheme.sidebarBgColor } : {}),
+    ...(adminTheme.sidebarTextColor ? { color: adminTheme.sidebarTextColor } : {}),
+  };
+  const headerStyle: React.CSSProperties = {
+    boxShadow: 'var(--shadow-soft)',
+    ...(adminTheme.headerBgColor ? { backgroundColor: adminTheme.headerBgColor } : {}),
+    ...(adminTheme.headerTextColor ? { color: adminTheme.headerTextColor } : {}),
+  };
 
   // When embedded in StaffDashboard, skip the entire admin layout shell
   if (isEmbedded) {
