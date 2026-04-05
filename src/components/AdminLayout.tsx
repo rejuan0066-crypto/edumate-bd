@@ -259,7 +259,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
-      <div className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? 'w-[260px]' : 'w-16'} bg-sidebar flex flex-col h-full transition-all duration-300 ${mobile ? 'order-first shadow-2xl' : ''}`}>
+      <div
+        className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? sidebarWidthClass : 'w-16'} bg-sidebar flex flex-col h-full transition-all duration-300 ${mobile ? 'order-first shadow-2xl' : ''}`}
+        style={sidebarStyle}
+      >
         {/* Logo */}
         <div className="px-4 py-5 flex items-center gap-3 border-b border-sidebar-border shrink-0">
           <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
