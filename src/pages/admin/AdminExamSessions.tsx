@@ -21,6 +21,7 @@ const AdminExamSessions = () => {
   const [nameBn, setNameBn] = useState('');
   const [academicSessionId, setAcademicSessionId] = useState('');
   const [examType, setExamType] = useState('annual');
+  const [selectedDivisionId, setSelectedDivisionId] = useState('');
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -29,6 +30,16 @@ const AdminExamSessions = () => {
     queryKey: ['academic_sessions'],
     queryFn: async () => {
       const { data, error } = await supabase.from('academic_sessions').select('*').eq('is_active', true).order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch divisions
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
     },
@@ -43,6 +54,11 @@ const AdminExamSessions = () => {
       return data;
     },
   });
+
+  // Filter classes by selected division
+  const filteredClasses = selectedDivisionId
+    ? classes.filter((c: any) => c.division_id === selectedDivisionId)
+    : classes;
 
   // Count students per class for selected academic session
   const { data: studentCounts = {} } = useQuery({
@@ -218,10 +234,21 @@ const AdminExamSessions = () => {
             {academicSessionId && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  {bn ? 'বিভাগ নির্বাচন করুন' : 'Select Division'}
+                </label>
+                <Select value={selectedDivisionId} onValueChange={(v) => { setSelectedDivisionId(v); setSelectedClassIds([]); }}>
+                  <SelectTrigger className="bg-background w-full sm:w-64"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{bn ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
+                    {divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <label className="text-sm font-medium text-muted-foreground mb-2 block mt-3">
                   {bn ? 'ক্লাস নির্বাচন করুন' : 'Select Classes'} *
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {classes.map((cls: any) => {
+                  {filteredClasses.map((cls: any) => {
                     const count = (studentCounts as Record<string, number>)[cls.id] || 0;
                     const divName = cls.divisions ? (bn ? cls.divisions.name_bn : cls.divisions.name) : '';
                     return (
@@ -247,6 +274,11 @@ const AdminExamSessions = () => {
                       </label>
                     );
                   })}
+                  {filteredClasses.length === 0 && (
+                    <p className="text-sm text-muted-foreground col-span-full py-4 text-center">
+                      {bn ? 'এই বিভাগে কোনো ক্লাস নেই' : 'No classes in this division'}
+                    </p>
+                  )}
                 </div>
 
                 {selectedClassIds.length > 0 && (

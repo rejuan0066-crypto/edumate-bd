@@ -24,6 +24,7 @@ const AdminStudents = () => {
   const [showAdd, setShowAdd] = useState(false);
   const [showDetail, setShowDetail] = useState<any>(null);
   const [editStudent, setEditStudent] = useState<any>(null);
+  const [filterDivisionId, setFilterDivisionId] = useState('all');
   const [filterSessionId, setFilterSessionId] = useState('all');
   const [filterClassId, setFilterClassId] = useState('all');
   const [filterApproval, setFilterApproval] = useState('all');
@@ -48,6 +49,15 @@ const AdminStudents = () => {
     },
   });
 
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['divisions'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('divisions').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: async () => {
@@ -56,6 +66,11 @@ const AdminStudents = () => {
       return data;
     },
   });
+
+  // Filter classes by selected division
+  const filteredClasses = filterDivisionId !== 'all'
+    ? classes.filter((c: any) => c.division_id === filterDivisionId)
+    : classes;
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ['students'],
@@ -94,6 +109,10 @@ const AdminStudents = () => {
   });
 
   const filtered = students.filter((s: any) => {
+    // Division filter
+    if (filterDivisionId !== 'all') {
+      if (s.division_id !== filterDivisionId) return false;
+    }
     // Session filter
     if (filterSessionId !== 'all') {
       if (s.session_id !== filterSessionId) return false;
@@ -157,10 +176,22 @@ const AdminStudents = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input placeholder={bn ? 'নাম, আইডি বা রোল দিয়ে খুঁজুন...' : 'Search by name, ID or roll...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-            <Select value={filterSessionId} onValueChange={setFilterSessionId}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+            <Select value={filterDivisionId} onValueChange={(v) => { setFilterDivisionId(v); setFilterClassId('all'); }}>
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'সেশন ফিল্টার' : 'Filter Session'} />
+                <SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Divisions'}</SelectItem>
+                {divisions.map((d: any) => (
+                  <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterSessionId} onValueChange={setFilterSessionId}>
+              <SelectTrigger className="bg-background w-full sm:w-40">
+                <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
+                <SelectValue placeholder={bn ? 'সেশন' : 'Session'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল সেশন' : 'All Sessions'}</SelectItem>
@@ -170,21 +201,21 @@ const AdminStudents = () => {
               </SelectContent>
             </Select>
             <Select value={filterClassId} onValueChange={setFilterClassId}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'শ্রেণী ফিল্টার' : 'Filter Class'} />
+                <SelectValue placeholder={bn ? 'শ্রেণী' : 'Class'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
-                {classes.map((c: any) => (
-                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                {filteredClasses.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}{c.divisions ? ` (${bn ? c.divisions.name_bn : c.divisions.name})` : ''}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={filterApproval} onValueChange={setFilterApproval}>
-              <SelectTrigger className="bg-background w-full sm:w-48">
+              <SelectTrigger className="bg-background w-full sm:w-40">
                 <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                <SelectValue placeholder={bn ? 'অনুমোদন স্ট্যাটাস' : 'Approval Status'} />
+                <SelectValue placeholder={bn ? 'স্ট্যাটাস' : 'Status'} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল স্ট্যাটাস' : 'All Status'}</SelectItem>
@@ -207,6 +238,7 @@ const AdminStudents = () => {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নাম' : 'Name'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'আইডি' : 'ID'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'রোল' : 'Roll'}</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'বিভাগ' : 'Division'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'সেশন' : 'Session'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'শ্রেণী' : 'Class'}</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অনুমোদন' : 'Approval'}</th>
@@ -233,6 +265,7 @@ const AdminStudents = () => {
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{s.student_id}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{s.roll_number || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{bn ? s.divisions?.name_bn : s.divisions?.name || '-'}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session)}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
                       <td className="px-4 py-3">{getApprovalBadge(s.approval_status || 'pending')}</td>
@@ -259,7 +292,7 @@ const AdminStudents = () => {
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={7} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
+                    <tr><td colSpan={8} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
                   )}
                 </tbody>
               </table>
