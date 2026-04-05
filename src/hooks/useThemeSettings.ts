@@ -54,6 +54,21 @@ export const DEFAULT_THEME: ThemeSettings = {
   heroStyle: 'gradient',
   cardShadow: 'soft',
   buttonStyle: 'rounded',
+  defaultThemeMode: 'light',
+  sidebarBgColor: '',
+  sidebarTextColor: '',
+  sidebarActiveColor: '',
+  sidebarWidth: 'default',
+  sidebarIconSize: 'medium',
+  headerBgColor: '',
+  headerTextColor: '',
+  headerShowBreadcrumb: true,
+  headerShowSearch: true,
+  headerHeight: 'default',
+  cardGlassEffect: false,
+  cardGlassBlur: 8,
+  cardGlassOpacity: 80,
+  cardBorderStyle: 'subtle',
 };
 
 export const FONT_OPTIONS = [
