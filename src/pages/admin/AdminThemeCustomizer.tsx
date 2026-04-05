@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Palette, Type, Layout, RotateCcw, Save, Eye } from 'lucide-react';
+import { Palette, Type, Layout, RotateCcw, Save, Eye, Monitor, PanelLeft, LayoutDashboard } from 'lucide-react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 const ColorPreview = ({ hue, sat, light, label }: { hue: number; sat: number; light: number; label: string }) => (
