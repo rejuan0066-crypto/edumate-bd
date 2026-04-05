@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { GripVertical, Save, LayoutDashboard, Eye, EyeOff } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GripVertical, Save, LayoutDashboard, Eye, EyeOff, RotateCcw } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'sonner';
+import { DEFAULT_SECTIONS } from '@/hooks/useDashboardLayout';
 
 const SortableItem = ({ section, bn, onToggle }: { section: DashboardSection; bn: boolean; onToggle: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
@@ -56,12 +57,13 @@ const SortableItem = ({ section, bn, onToggle }: { section: DashboardSection; bn
   );
 };
 
-interface Props {
+// Dialog version for Dashboard page
+interface DialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-const DashboardLayoutBuilder = ({ open, onClose }: Props) => {
+export const DashboardLayoutDialog = ({ open, onClose }: DialogProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { sections, saveSections } = useDashboardLayout();
@@ -101,6 +103,10 @@ const DashboardLayoutBuilder = ({ open, onClose }: Props) => {
     });
   };
 
+  if (!open) return null;
+
+  const { Dialog, DialogContent, DialogHeader, DialogTitle } = require('@/components/ui/dialog');
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
@@ -109,11 +115,7 @@ const DashboardLayoutBuilder = ({ open, onClose }: Props) => {
             <LayoutDashboard className="w-5 h-5 text-primary" />
             {bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {bn ? 'সেকশনগুলো ড্র্যাগ করে সাজান এবং দৃশ্যমানতা নিয়ন্ত্রণ করুন' : 'Drag to reorder sections and toggle visibility'}
-          </p>
         </DialogHeader>
-
         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -123,11 +125,8 @@ const DashboardLayoutBuilder = ({ open, onClose }: Props) => {
             </SortableContext>
           </DndContext>
         </div>
-
         <div className="flex justify-end gap-2 pt-3 border-t border-border">
-          <Button variant="outline" onClick={onClose}>
-            {bn ? 'বাতিল' : 'Cancel'}
-          </Button>
+          <Button variant="outline" onClick={onClose}>{bn ? 'বাতিল' : 'Cancel'}</Button>
           <Button onClick={handleSave} disabled={saveSections.isPending} className="btn-primary-gradient">
             <Save className="w-4 h-4 mr-1" />
             {saveSections.isPending ? (bn ? 'সেভ হচ্ছে...' : 'Saving...') : (bn ? 'সেভ করুন' : 'Save')}
@@ -135,6 +134,89 @@ const DashboardLayoutBuilder = ({ open, onClose }: Props) => {
         </div>
       </DialogContent>
     </Dialog>
+  );
+};
+
+// Inline version for Theme Customizer page
+const DashboardLayoutBuilder = () => {
+  const { language } = useLanguage();
+  const bn = language === 'bn';
+  const { sections, saveSections } = useDashboardLayout();
+  const [items, setItems] = useState<DashboardSection[]>([]);
+
+  useEffect(() => {
+    setItems([...sections]);
+  }, [sections]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setItems(prev => {
+        const oldIdx = prev.findIndex(i => i.id === active.id);
+        const newIdx = prev.findIndex(i => i.id === over.id);
+        return arrayMove(prev, oldIdx, newIdx);
+      });
+    }
+  };
+
+  const toggleVisibility = (id: string) => {
+    setItems(prev => prev.map(s => s.id === id ? { ...s, visible: !s.visible } : s));
+  };
+
+  const handleSave = () => {
+    saveSections.mutate(items, {
+      onSuccess: () => toast.success(bn ? 'ড্যাশবোর্ড লেআউট সেভ হয়েছে' : 'Dashboard layout saved'),
+      onError: () => toast.error(bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save'),
+    });
+  };
+
+  const handleReset = () => {
+    setItems([...DEFAULT_SECTIONS]);
+    toast.info(bn ? 'ডিফল্ট লেআউটে রিসেট হয়েছে' : 'Reset to default layout');
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <LayoutDashboard className="w-5 h-5 text-primary" />
+              {bn ? 'ড্যাশবোর্ড সেকশন সাজান' : 'Reorder Dashboard Sections'}
+            </CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="w-4 h-4 mr-1" />
+                {bn ? 'রিসেট' : 'Reset'}
+              </Button>
+              <Button size="sm" onClick={handleSave} disabled={saveSections.isPending} className="btn-primary-gradient">
+                <Save className="w-4 h-4 mr-1" />
+                {saveSections.isPending ? (bn ? 'সেভ হচ্ছে...' : 'Saving...') : (bn ? 'সেভ করুন' : 'Save')}
+              </Button>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {bn ? 'সেকশনগুলো ড্র্যাগ করে সাজান এবং দৃশ্যমানতা নিয়ন্ত্রণ করুন। এই অর্ডার ডাটাবেসে সংরক্ষিত থাকবে।' : 'Drag to reorder sections and toggle visibility. The order is saved in the database.'}
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                {items.map(section => (
+                  <SortableItem key={section.id} section={section} bn={bn} onToggle={toggleVisibility} />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
