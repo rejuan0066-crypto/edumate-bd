@@ -516,6 +516,18 @@ const AdminStudentsFees = () => {
               </ErrorBoundary>
             ),
           },
+          {
+            id: 'fee_types',
+            label: bn ? 'ফি ধরন' : 'Fee Types',
+            icon: Settings,
+            content: <FeeTypeManager />,
+          },
+          {
+            id: 'categories',
+            label: bn ? 'ছাত্র ক্যাটাগরি' : 'Student Categories',
+            icon: Users,
+            content: <StudentCategoryManager />,
+          },
         ]}
         paramKey="tab"
       />
