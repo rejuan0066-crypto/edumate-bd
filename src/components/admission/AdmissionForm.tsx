@@ -150,6 +150,15 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     },
   });
 
+  const { data: studentCategories = [] } = useQuery({
+    queryKey: ['student_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('student_categories').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const [selectedDivisionId, setSelectedDivisionId] = useState('');
 
   // Pre-fill division from edit student
@@ -1039,10 +1048,12 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               }}>
                 <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
-                  <SelectItem value="orphan">{bn ? 'এতিম' : 'Orphan'}</SelectItem>
-                  <SelectItem value="poor">{bn ? 'গরীব' : 'Poor'}</SelectItem>
-                  <SelectItem value="teacher_child">{bn ? 'শিক্ষক সন্তান' : "Teacher's Child"}</SelectItem>
+                  {studentCategories.map((cat: any) => (
+                    <SelectItem key={cat.id} value={cat.name}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                  ))}
+                  {studentCategories.length === 0 && (
+                    <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
