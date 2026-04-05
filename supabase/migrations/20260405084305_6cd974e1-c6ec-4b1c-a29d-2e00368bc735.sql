@@ -1,0 +1,1 @@
+ALTER TABLE public.fee_types ADD COLUMN IF NOT EXISTS class_id uuid REFERENCES public.classes(id) ON DELETE SET NULL DEFAULT NULL;

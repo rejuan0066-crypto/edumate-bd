@@ -15,12 +15,12 @@ const FeeTypeManager = () => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', name_bn: '', amount: '', fee_category: 'monthly', division_id: '' });
+  const [form, setForm] = useState({ name: '', name_bn: '', amount: '', fee_category: 'monthly', division_id: '', class_id: '' });
 
-  const { data: feeTypes = [], isLoading } = useQuery({
+  const { data: feeTypes = [] } = useQuery({
     queryKey: ['all_fee_types'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('fee_types').select('*, divisions(name_bn)').order('fee_category').order('name_bn');
+      const { data, error } = await supabase.from('fee_types').select('*, divisions(name_bn), classes(name_bn)').order('fee_category').order('name_bn');
       if (error) throw error;
       return data;
     },
@@ -35,6 +35,15 @@ const FeeTypeManager = () => {
     },
   });
 
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ['all_classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('*').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: feeCategories = [] } = useQuery({
     queryKey: ['fee_categories'],
     queryFn: async () => {
@@ -44,15 +53,21 @@ const FeeTypeManager = () => {
     },
   });
 
+  // Filter classes by selected division
+  const filteredClasses = form.division_id
+    ? allClasses.filter((c: any) => c.division_id === form.division_id)
+    : allClasses;
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!form.name_bn || !form.amount) throw new Error(bn ? 'নাম ও পরিমাণ আবশ্যক' : 'Name and amount required');
-      const payload = {
+      const payload: any = {
         name: form.name || form.name_bn,
         name_bn: form.name_bn,
         amount: parseFloat(form.amount),
         fee_category: form.fee_category,
         division_id: form.division_id || null,
+        class_id: form.class_id || null,
       };
       if (editId) {
         const { error } = await supabase.from('fee_types').update(payload).eq('id', editId);
@@ -85,14 +100,25 @@ const FeeTypeManager = () => {
   });
 
   const resetForm = () => {
-    setForm({ name: '', name_bn: '', amount: '', fee_category: 'monthly', division_id: '' });
+    setForm({ name: '', name_bn: '', amount: '', fee_category: 'monthly', division_id: '', class_id: '' });
     setEditId(null);
   };
 
   const openEdit = (item: any) => {
-    setForm({ name: item.name, name_bn: item.name_bn, amount: String(item.amount), fee_category: item.fee_category, division_id: item.division_id || '' });
+    setForm({
+      name: item.name,
+      name_bn: item.name_bn,
+      amount: String(item.amount),
+      fee_category: item.fee_category,
+      division_id: item.division_id || '',
+      class_id: item.class_id || '',
+    });
     setEditId(item.id);
     setOpen(true);
+  };
+
+  const handleDivisionChange = (v: string) => {
+    setForm(p => ({ ...p, division_id: v, class_id: '' })); // Reset class when division changes
   };
 
   const categories = feeCategories.map((c: any) => ({ key: c.name, bn: c.name_bn, en: c.name }));
@@ -114,6 +140,7 @@ const FeeTypeManager = () => {
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'পরিমাণ' : 'Amount'}</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'বিভাগ' : 'Division'}</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{bn ? 'শ্রেণী' : 'Class'}</th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground">{bn ? 'অ্যাকশন' : 'Action'}</th>
             </tr>
           </thead>
@@ -127,7 +154,8 @@ const FeeTypeManager = () => {
                   </span>
                 </td>
                 <td className="px-4 py-3 font-bold text-foreground">৳{f.amount}</td>
-                <td className="px-4 py-3 text-muted-foreground">{(f as any).divisions?.name_bn || '-'}</td>
+                <td className="px-4 py-3 text-muted-foreground">{f.divisions?.name_bn || (bn ? 'সব' : 'All')}</td>
+                <td className="px-4 py-3 text-muted-foreground">{f.classes?.name_bn || (bn ? 'সব' : 'All')}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex gap-1 justify-end">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(f)}><Pencil className="w-3.5 h-3.5" /></Button>
@@ -137,7 +165,7 @@ const FeeTypeManager = () => {
               </tr>
             ))}
             {feeTypes.filter((f: any) => f.is_active !== false).length === 0 && (
-              <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">{bn ? 'কোনো ফি ধরন নেই' : 'No fee types'}</td></tr>
+              <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">{bn ? 'কোনো ফি ধরন নেই' : 'No fee types'}</td></tr>
             )}
           </tbody>
         </table>
@@ -168,14 +196,25 @@ const FeeTypeManager = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="text-sm font-medium">{bn ? 'বিভাগ (ঐচ্ছিক)' : 'Division (Optional)'}</label>
-              <Select value={form.division_id} onValueChange={v => setForm(p => ({ ...p, division_id: v }))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'সব বিভাগ' : 'All Divisions'} /></SelectTrigger>
-                <SelectContent>
-                  {divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium">{bn ? 'বিভাগ (ঐচ্ছিক)' : 'Division (Optional)'}</label>
+                <Select value={form.division_id} onValueChange={handleDivisionChange}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={bn ? 'সব বিভাগ' : 'All Divisions'} /></SelectTrigger>
+                  <SelectContent>
+                    {divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">{bn ? 'শ্রেণী (ঐচ্ছিক)' : 'Class (Optional)'}</label>
+                <Select value={form.class_id} onValueChange={v => setForm(p => ({ ...p, class_id: v }))} disabled={!form.division_id}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={form.division_id ? (bn ? 'সব শ্রেণী' : 'All Classes') : (bn ? 'আগে বিভাগ নির্বাচন করুন' : 'Select division first')} /></SelectTrigger>
+                  <SelectContent>
+                    {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>

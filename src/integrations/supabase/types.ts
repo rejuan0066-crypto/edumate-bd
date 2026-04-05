@@ -1097,6 +1097,7 @@ export type Database = {
       fee_types: {
         Row: {
           amount: number
+          class_id: string | null
           created_at: string | null
           division_id: string | null
           fee_category: string
@@ -1108,6 +1109,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          class_id?: string | null
           created_at?: string | null
           division_id?: string | null
           fee_category?: string
@@ -1119,6 +1121,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          class_id?: string | null
           created_at?: string | null
           division_id?: string | null
           fee_category?: string
@@ -1129,6 +1132,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fee_types_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fee_types_division_id_fkey"
             columns: ["division_id"]
