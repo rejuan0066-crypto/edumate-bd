@@ -24,7 +24,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'sonner';
-import { DEFAULT_SECTIONS } from '@/hooks/useDashboardLayout';
+
 
 const SortableItem = ({ section, bn, onToggle }: { section: DashboardSection; bn: boolean; onToggle: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
