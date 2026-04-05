@@ -173,8 +173,18 @@ const AdminFees = () => {
               <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ছাত্র' : 'Student'}</label>
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={language === 'bn' ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-                <SelectContent>{students.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.roll_number} - {s.name_bn}</SelectItem>)}</SelectContent>
+                <SelectContent>{students.map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.roll_number} - {s.name_bn}
+                    {s.is_free ? ` 🟢` : ''}
+                  </SelectItem>
+                ))}</SelectContent>
               </Select>
+              {isFreeStudent && (
+                <p className="text-xs mt-1 px-2 py-1 rounded bg-success/10 text-success font-medium">
+                  {language === 'bn' ? '✓ বিনা বেতন ছাত্র — মাসিক ফি ১০০% ছাড়' : '✓ Free Student — 100% monthly fee waiver'}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'ফি ধরন' : 'Fee Type'}</label>
@@ -195,6 +205,12 @@ const AdminFees = () => {
             <div>
               <label className="text-sm font-medium text-foreground">{language === 'bn' ? 'পরিশোধ পরিমাণ' : 'Amount'}</label>
               <Input type="number" className="bg-background mt-1" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="৳" />
+              {waiverPercent > 0 && selectedFeeType && (
+                <div className="text-xs mt-1 space-y-0.5">
+                  <p className="text-muted-foreground">{language === 'bn' ? 'মূল ফি' : 'Original'}: ৳{originalAmount} | {language === 'bn' ? 'ছাড়' : 'Discount'}: ৳{discountAmount} ({waiverPercent}%)</p>
+                  <p className="font-semibold text-success">{language === 'bn' ? 'পরিশোধযোগ্য' : 'Payable'}: ৳{netAmount}</p>
+                </div>
+              )}
             </div>
           </div>
           <Button onClick={() => payMutation.mutate()} className="btn-primary-gradient mt-4" disabled={payMutation.isPending}>
