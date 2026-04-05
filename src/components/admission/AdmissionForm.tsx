@@ -48,7 +48,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     admission_class: '', first_name: '', last_name: '',
     gender: 'male', religion: 'islam', date_of_birth: '',
     birth_reg_no: '', previous_class: '', previous_institute: '',
-    is_orphan: false, is_poor: false, photo_url: '',
+    is_orphan: false, is_poor: false, is_free: false, student_category: '', photo_url: '',
     father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
     mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
     guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
@@ -107,6 +107,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         previous_institute: s.previous_institute || '',
         is_orphan: s.is_orphan || false,
         is_poor: s.is_poor || false,
+        is_free: s.is_free || false,
+        student_category: s.student_category || '',
         photo_url: s.photo_url || '',
         father_name: s.father_name || '',
         father_occupation: s.father_occupation || '',
@@ -367,7 +369,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       admission_class: '', first_name: '', last_name: '',
       gender: 'male', religion: 'islam', date_of_birth: '',
       birth_reg_no: '', previous_class: '', previous_institute: '',
-      is_orphan: false, is_poor: false, photo_url: '',
+      is_orphan: false, is_poor: false, is_free: false, student_category: '', photo_url: '',
       father_name: '', father_occupation: '', father_nid: '', father_phone: '', father_phone_code: '+880',
       mother_name: '', mother_occupation: '', mother_nid: '', mother_phone: '', mother_phone_code: '+880',
       guardian_type: '', guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_phone_code: '+880', guardian_nid: '',
@@ -428,7 +430,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       gender: form.gender,
       date_of_birth: form.date_of_birth || null,
       photo_url: form.photo_url || null,
-      student_category: form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general',
+      student_category: form.student_category || (form.is_orphan ? 'orphan' : form.is_poor ? 'poor' : 'general'),
+      is_free: form.is_free,
       residence_type: form.residence_type,
       admission_date: form.admission_date || null,
       birth_reg_no: form.birth_reg_no || null,
@@ -1032,27 +1035,35 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
             })}
           </div>
 
-          {/* Orphan/Poor status */}
-          {(orphanField && isFormFieldVisible('is_orphan') || poorField && isFormFieldVisible('is_poor')) && (
-            <div className="flex flex-wrap gap-6">
-              {orphanField && isFormFieldVisible('is_orphan') && (
-                <div className="flex items-center gap-2">
-                  <Checkbox id="isOrphan" checked={form.is_orphan} onCheckedChange={v => setForm(prev => ({ ...prev, is_orphan: !!v, is_poor: false }))} />
-                  <Label htmlFor="isOrphan">{bn ? orphanField.label_bn : orphanField.label}</Label>
-                </div>
-              )}
-              {poorField && isFormFieldVisible('is_poor') && (
-                <div className="flex items-center gap-2">
-                  <Checkbox id="isPoor" checked={form.is_poor} onCheckedChange={v => setForm(prev => ({ ...prev, is_poor: !!v, is_orphan: false }))} />
-                  <Label htmlFor="isPoor">{bn ? poorField.label_bn : poorField.label}</Label>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Checkbox id="isNormal" checked={!form.is_orphan && !form.is_poor} onCheckedChange={() => setForm(prev => ({ ...prev, is_orphan: false, is_poor: false }))} />
-                <Label htmlFor="isNormal">{bn ? 'সাধারণ' : 'General'}</Label>
-              </div>
-            </div>
-          )}
+          {/* Student Category Dropdown */}
+          <div>
+            <Label className="text-sm font-medium">{bn ? 'ছাত্রের ধরন' : 'Student Category'}</Label>
+            <Select value={form.student_category} onValueChange={v => {
+              setForm(prev => ({
+                ...prev,
+                student_category: v,
+                is_orphan: v === 'orphan',
+                is_poor: v === 'poor',
+              }));
+            }}>
+              <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="general">{bn ? 'সাধারণ' : 'General'}</SelectItem>
+                <SelectItem value="orphan">{bn ? 'এতিম' : 'Orphan'}</SelectItem>
+                <SelectItem value="poor">{bn ? 'গরীব' : 'Poor'}</SelectItem>
+                <SelectItem value="teacher_child">{bn ? 'শিক্ষক সন্তান' : "Teacher's Child"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Free Student Toggle */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background">
+            <Switch id="isFree" checked={form.is_free} onCheckedChange={v => setForm(prev => ({ ...prev, is_free: !!v }))} />
+            <Label htmlFor="isFree" className="text-sm font-medium cursor-pointer">
+              {bn ? 'বিনা বেতন (Free Student)' : 'Free Student (No Fee)'}
+            </Label>
+            {form.is_free && <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success font-medium">{bn ? 'সক্রিয়' : 'Active'}</span>}
+          </div>
         </div>
       );
     }
