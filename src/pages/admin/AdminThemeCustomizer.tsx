@@ -668,6 +668,11 @@ const AdminThemeCustomizer = () => {
           <TabsContent value="dashboard" className="mt-4">
             <DashboardLayoutBuilder />
           </TabsContent>
+
+          {/* PAGE LAYOUTS TAB */}
+          <TabsContent value="pages" className="mt-4">
+            <PageLayoutEditor />
+          </TabsContent>
         </Tabs>
 
         {/* Live Preview Section */}
