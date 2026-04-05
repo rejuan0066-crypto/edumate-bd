@@ -677,13 +677,26 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       case 'admission_class':
         if (!isFormFieldVisible('admission_class')) return null;
         return (
-          <div>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))}>
-              <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
-              <SelectContent>{classes.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
-            </Select>
-            <FieldError field={fieldKey} />
+          <div className="space-y-2">
+            {/* Division select before class */}
+            <div>
+              <Label className="text-sm font-medium text-foreground">{bn ? 'বিভাগ' : 'Division'}</Label>
+              <Select value={selectedDivisionId} onValueChange={(v) => { setSelectedDivisionId(v); setForm(prev => ({ ...prev, admission_class: '' })); }}>
+                <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select Division'} /></SelectTrigger>
+                <SelectContent>{divisions.map((d: any) => <SelectItem key={d.id} value={d.id}>{bn ? d.name_bn : d.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className={errorLabel}>{label} {reqStar}</Label>
+              <Select value={form.admission_class} onValueChange={v => setForm(prev => ({ ...prev, admission_class: v }))}>
+                <SelectTrigger className={`bg-background mt-1 ${errorBorder}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
+                <SelectContent>
+                  {filteredClasses.map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}{c.divisions ? ` (${bn ? c.divisions.name_bn : c.divisions.name})` : ''}</SelectItem>)}
+                  {filteredClasses.length === 0 && <SelectItem value="none" disabled>{bn ? 'এই বিভাগে কোনো শ্রেণী নেই' : 'No classes in this division'}</SelectItem>}
+                </SelectContent>
+              </Select>
+              <FieldError field={fieldKey} />
+            </div>
           </div>
         );
 
