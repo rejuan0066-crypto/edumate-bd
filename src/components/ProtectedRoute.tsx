@@ -26,9 +26,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   const path = location.pathname;
   const isAdminRoute = path.startsWith('/admin');
+  const isStaffDashboard = path === '/staff-dashboard';
 
-  // Admin/Super Admin has full access everywhere
+  // Admin/Super Admin: full access to /admin, but redirect away from /staff-dashboard
   if (isAdminRole(role)) {
+    if (isStaffDashboard) {
+      return <Navigate to="/admin" replace />;
+    }
     return <>{children}</>;
   }
 
