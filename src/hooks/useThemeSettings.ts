@@ -19,6 +19,22 @@ export interface ThemeSettings {
   heroStyle: 'gradient' | 'solid' | 'pattern';
   cardShadow: 'none' | 'soft' | 'medium' | 'strong';
   buttonStyle: 'rounded' | 'pill' | 'sharp';
+  // Admin Panel Appearance
+  defaultThemeMode: 'light' | 'dark' | 'system';
+  sidebarBgColor: string;
+  sidebarTextColor: string;
+  sidebarActiveColor: string;
+  sidebarWidth: 'narrow' | 'default' | 'wide';
+  sidebarIconSize: 'small' | 'medium' | 'large';
+  headerBgColor: string;
+  headerTextColor: string;
+  headerShowBreadcrumb: boolean;
+  headerShowSearch: boolean;
+  headerHeight: 'compact' | 'default' | 'tall';
+  cardGlassEffect: boolean;
+  cardGlassBlur: number;
+  cardGlassOpacity: number;
+  cardBorderStyle: 'none' | 'subtle' | 'solid' | 'accent';
 }
 
 export const DEFAULT_THEME: ThemeSettings = {
