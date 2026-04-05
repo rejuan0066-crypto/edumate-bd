@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
+import { useDashboardLayout, DashboardSection, DEFAULT_SECTIONS } from '@/hooks/useDashboardLayout';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +24,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'sonner';
-import { DEFAULT_SECTIONS } from '@/hooks/useDashboardLayout';
+
 
 const SortableItem = ({ section, bn, onToggle }: { section: DashboardSection; bn: boolean; onToggle: (id: string) => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
@@ -103,9 +104,6 @@ export const DashboardLayoutDialog = ({ open, onClose }: DialogProps) => {
     });
   };
 
-  if (!open) return null;
-
-  const { Dialog, DialogContent, DialogHeader, DialogTitle } = require('@/components/ui/dialog');
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
