@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { lazy, Suspense, useState } from 'react';
-import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3 } from 'lucide-react';
+import { CreditCard, Loader2, CheckCircle, ArrowRight, ExternalLink, Search, User, Banknote, Globe, AlertCircle, Settings, BarChart3, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import FeeReceiptDownload from '@/components/fees/FeeReceiptDownload';
 import { EmbeddedProvider } from '@/contexts/EmbeddedContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import FeeTypeManager from '@/components/admin/FeeTypeManager';
+import StudentCategoryManager from '@/components/admin/StudentCategoryManager';
 
 const LazyPaymentDashboard = lazy(() => import('@/pages/admin/AdminPayments'));
 
@@ -513,6 +515,18 @@ const AdminStudentsFees = () => {
                 </Suspense>
               </ErrorBoundary>
             ),
+          },
+          {
+            id: 'fee_types',
+            label: bn ? 'ফি ধরন' : 'Fee Types',
+            icon: Settings,
+            content: <FeeTypeManager />,
+          },
+          {
+            id: 'categories',
+            label: bn ? 'ছাত্র ক্যাটাগরি' : 'Student Categories',
+            icon: Users,
+            content: <StudentCategoryManager />,
           },
         ]}
         paramKey="tab"
