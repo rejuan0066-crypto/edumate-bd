@@ -109,6 +109,10 @@ const AdminStudents = () => {
   });
 
   const filtered = students.filter((s: any) => {
+    // Division filter
+    if (filterDivisionId !== 'all') {
+      if (s.division_id !== filterDivisionId) return false;
+    }
     // Session filter
     if (filterSessionId !== 'all') {
       if (s.session_id !== filterSessionId) return false;
