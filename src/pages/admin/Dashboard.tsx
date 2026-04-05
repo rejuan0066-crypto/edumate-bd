@@ -8,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users, UserCog, BookOpen, UserCheck, UserX, GraduationCap,
-  Layers, FileText, CreditCard, ClipboardList, History, HomeIcon, Heart, LayoutDashboard
+  Layers, FileText, CreditCard, ClipboardList, History, HomeIcon, Heart, LayoutDashboard,
+  type LucideIcon
 } from 'lucide-react';
 import DashboardInstitutionCard from '@/components/dashboard/DashboardInstitutionCard';
 import DashboardSearch from '@/components/dashboard/DashboardSearch';
@@ -16,8 +17,18 @@ import DashboardFeeSection from '@/components/dashboard/DashboardFeeSection';
 import DashboardStatsList from '@/components/dashboard/DashboardStatsList';
 import DashboardCustomWidgets from '@/components/dashboard/DashboardCustomWidgets';
 import { DashboardLayoutDialog } from '@/components/dashboard/DashboardLayoutBuilder';
-import { useDashboardLayout } from '@/hooks/useDashboardLayout';
+import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
 import { Button } from '@/components/ui/button';
+
+interface StatCard {
+  key: string;
+  label: string;
+  value: string | number;
+  icon: LucideIcon;
+  color: string;
+  bg: string;
+  onClick?: () => void;
+}
 
 const Dashboard = () => {
   const { language } = useLanguage();
@@ -32,6 +43,7 @@ const Dashboard = () => {
     open: false, title: '', table: 'students', filters: {},
   });
 
+  // Data queries
   const { data: students = [] } = useQuery({
     queryKey: ['dashboard-students'],
     queryFn: async () => {
@@ -54,87 +66,53 @@ const Dashboard = () => {
 
   const { data: divisions = [] } = useQuery({
     queryKey: ['dashboard-divisions'],
-    queryFn: async () => {
-      const { data } = await supabase.from('divisions').select('id').eq('is_active', true);
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('divisions').select('id').eq('is_active', true); return data || []; },
   });
-
   const { data: subjects = [] } = useQuery({
     queryKey: ['dashboard-subjects'],
-    queryFn: async () => {
-      const { data } = await supabase.from('subjects').select('id').eq('is_active', true);
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('subjects').select('id').eq('is_active', true); return data || []; },
   });
-
   const { data: results = [] } = useQuery({
     queryKey: ['dashboard-results'],
-    queryFn: async () => {
-      const { data } = await supabase.from('results').select('id');
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('results').select('id'); return data || []; },
   });
-
   const { data: exams = [] } = useQuery({
     queryKey: ['dashboard-exams'],
-    queryFn: async () => {
-      const { data } = await supabase.from('exams').select('id');
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('exams').select('id'); return data || []; },
   });
-
   const { data: donors = [] } = useQuery({
     queryKey: ['dashboard-donors'],
-    queryFn: async () => {
-      const { data } = await supabase.from('donors').select('id, name_bn, donation_amount, status');
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('donors').select('id, name_bn, donation_amount, status'); return data || []; },
   });
-
   const { data: feePayments = [] } = useQuery({
     queryKey: ['dashboard-fee-payments-summary'],
-    queryFn: async () => {
-      const { data } = await supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id');
-      return data || [];
-    },
+    queryFn: async () => { const { data } = await supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id'); return data || []; },
   });
 
-  // Student stats
+  // Computed stats
   const activeStudents = students.filter(s => s.status === 'active');
   const inactiveStudents = students.filter(s => s.status === 'inactive');
   const currentYear = new Date().getFullYear();
   const newStudents = students.filter(s => s.admission_date && new Date(s.admission_date).getFullYear() === currentYear);
   const oldStudents = students.filter(s => !s.admission_date || new Date(s.admission_date).getFullYear() < currentYear);
-
   const orphanStudents = students.filter(s => (s as any).student_category === 'orphan');
   const poorStudents = students.filter(s => (s as any).student_category === 'poor');
   const teacherChildStudents = students.filter(s => (s as any).student_category === 'teacher_child');
   const generalStudents = students.filter(s => (s as any).student_category === 'general' || !(s as any).student_category);
   const freeStudents = students.filter(s => (s as any).is_free === true);
-
   const generalStudentIds = new Set(generalStudents.map(s => s.id));
-  const generalPaidAmount = feePayments
-    .filter(fp => generalStudentIds.has(fp.student_id) && fp.status === 'paid')
-    .reduce((sum, fp) => sum + Number(fp.paid_amount || fp.amount || 0), 0);
-
+  const generalPaidAmount = feePayments.filter(fp => generalStudentIds.has(fp.student_id) && fp.status === 'paid').reduce((sum, fp) => sum + Number(fp.paid_amount || fp.amount || 0), 0);
   const residentStudents = students.filter(s => (s as any).residence_type === 'resident');
   const nonResidentStudents = students.filter(s => (s as any).residence_type === 'non-resident' || !(s as any).residence_type);
-
   const sessionWiseMap: Record<number, number> = {};
-  students.forEach(s => {
-    const year = s.admission_date ? new Date(s.admission_date).getFullYear() : 0;
-    if (year) sessionWiseMap[year] = (sessionWiseMap[year] || 0) + 1;
-  });
+  students.forEach(s => { const year = s.admission_date ? new Date(s.admission_date).getFullYear() : 0; if (year) sessionWiseMap[year] = (sessionWiseMap[year] || 0) + 1; });
   const sessionYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
-
   const teachers = staff.filter(s => s.department === 'teaching' || s.designation?.includes('শিক্ষক') || s.designation?.includes('teacher') || s.designation?.toLowerCase()?.includes('teacher'));
   const nonTeachingStaff = staff.filter(s => !teachers.includes(s));
   const activeStaff = nonTeachingStaff.filter(s => s.status === 'active');
   const resignedStaff = nonTeachingStaff.filter(s => s.status !== 'active');
   const activeTeachers = teachers.filter(s => s.status === 'active');
   const resignedTeachers = teachers.filter(s => s.status !== 'active');
-
   const totalDonationAmount = donors.reduce((sum, d) => sum + Number(d.donation_amount || 0), 0);
   const activeDonors = donors.filter(d => d.status === 'active');
 
@@ -142,64 +120,125 @@ const Dashboard = () => {
     setListDialog({ open: true, title, table, filters });
   };
 
-  const statCards = [
-    { label: bn ? 'মোট ছাত্র' : 'Total Students', value: students.length, icon: Users, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'মোট ছাত্র' : 'Total Students', 'students') },
-    { label: bn ? 'সক্রিয় ছাত্র' : 'Active Students', value: activeStudents.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'সক্রিয় ছাত্র' : 'Active Students', 'students', { status: 'active' }) },
-    { label: bn ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', value: inactiveStudents.length, icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', 'students', { status: 'inactive' }) },
-    { label: bn ? 'মোট কর্মী' : 'Total Staff', value: nonTeachingStaff.length, icon: UserCog, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'মোট কর্মী' : 'Total Staff', 'staff') },
+  // Stat card arrays with keys for filtering
+  const statCards: StatCard[] = [
+    { key: 'total_students', label: bn ? 'মোট ছাত্র' : 'Total Students', value: students.length, icon: Users, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'মোট ছাত্র' : 'Total Students', 'students') },
+    { key: 'active_students', label: bn ? 'সক্রিয় ছাত্র' : 'Active Students', value: activeStudents.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'সক্রিয় ছাত্র' : 'Active Students', 'students', { status: 'active' }) },
+    { key: 'inactive_students', label: bn ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', value: inactiveStudents.length, icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'নিষ্ক্রিয় ছাত্র' : 'Inactive Students', 'students', { status: 'inactive' }) },
+    { key: 'total_staff', label: bn ? 'মোট কর্মী' : 'Total Staff', value: nonTeachingStaff.length, icon: UserCog, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'মোট কর্মী' : 'Total Staff', 'staff') },
   ];
 
-  const staffTeacherStats = [
-    { label: bn ? 'শিক্ষক (সক্রিয়)' : 'Teachers (Active)', value: activeTeachers.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'সক্রিয় শিক্ষক' : 'Active Teachers', 'staff', { status: 'active' }) },
-    { label: bn ? 'শিক্ষক (পদত্যাগী)' : 'Teachers (Resigned)', value: resignedTeachers.length, icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'পদত্যাগী শিক্ষক' : 'Resigned Teachers', 'staff') },
-    { label: bn ? 'কর্মী (সক্রিয়)' : 'Staff (Active)', value: activeStaff.length, icon: UserCheck, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'সক্রিয় কর্মী' : 'Active Staff', 'staff', { status: 'active' }) },
-    { label: bn ? 'কর্মী (পদত্যাগী)' : 'Staff (Resigned)', value: resignedStaff.length, icon: UserX, color: 'text-muted-foreground', bg: 'bg-muted/50', onClick: () => openList(bn ? 'পদত্যাগী কর্মী' : 'Resigned Staff', 'staff') },
-    { label: bn ? 'গত মাসের বেতন' : 'Last Month Salary', value: `৳ ${staff.filter(s => s.status === 'active').reduce((s, x) => s + (Number(x.salary) || 0), 0).toLocaleString()}`, icon: CreditCard, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'সক্রিয় কর্মী ও শিক্ষক' : 'Active Staff & Teachers', 'staff', { status: 'active' }) },
+  const staffTeacherStats: StatCard[] = [
+    { key: 'teachers_active', label: bn ? 'শিক্ষক (সক্রিয়)' : 'Teachers (Active)', value: activeTeachers.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'সক্রিয় শিক্ষক' : 'Active Teachers', 'staff', { status: 'active' }) },
+    { key: 'teachers_resigned', label: bn ? 'শিক্ষক (পদত্যাগী)' : 'Teachers (Resigned)', value: resignedTeachers.length, icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'পদত্যাগী শিক্ষক' : 'Resigned Teachers', 'staff') },
+    { key: 'staff_active', label: bn ? 'কর্মী (সক্রিয়)' : 'Staff (Active)', value: activeStaff.length, icon: UserCheck, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'সক্রিয় কর্মী' : 'Active Staff', 'staff', { status: 'active' }) },
+    { key: 'staff_resigned', label: bn ? 'কর্মী (পদত্যাগী)' : 'Staff (Resigned)', value: resignedStaff.length, icon: UserX, color: 'text-muted-foreground', bg: 'bg-muted/50', onClick: () => openList(bn ? 'পদত্যাগী কর্মী' : 'Resigned Staff', 'staff') },
+    { key: 'last_salary', label: bn ? 'গত মাসের বেতন' : 'Last Month Salary', value: `৳ ${staff.filter(s => s.status === 'active').reduce((s, x) => s + (Number(x.salary) || 0), 0).toLocaleString()}`, icon: CreditCard, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'সক্রিয় কর্মী ও শিক্ষক' : 'Active Staff & Teachers', 'staff', { status: 'active' }) },
   ];
 
-  const studentCategoryStats = [
-    { label: bn ? 'এতিম ছাত্র' : 'Orphan Students', value: orphanStudents.length, icon: Users, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'এতিম ছাত্র' : 'Orphan Students', 'students', { student_category: 'orphan' }) },
-    { label: bn ? 'গরীব ছাত্র' : 'Poor Students', value: poorStudents.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'গরীব ছাত্র' : 'Poor Students', 'students', { student_category: 'poor' }) },
-    { label: bn ? 'শিক্ষক সন্তান' : "Teacher's Child", value: teacherChildStudents.length, icon: GraduationCap, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'শিক্ষক সন্তান' : "Teacher's Child", 'students', { student_category: 'teacher_child' }) },
-    { label: bn ? 'বিনা বেতন ছাত্র' : 'Free Students', value: freeStudents.length, icon: Heart, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'বিনা বেতন ছাত্র' : 'Free Students', 'students', { is_free: true }) },
-    { label: bn ? 'সাধারণ ছাত্র ও পরিশোধিত' : 'Non-Orphan&Poor + Amounts', value: `${generalStudents.length} (৳${generalPaidAmount.toLocaleString()})`, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: bn ? 'আবাসিক ছাত্র' : 'Resident Students', value: residentStudents.length, icon: HomeIcon, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'আবাসিক ছাত্র' : 'Resident Students', 'students', { residence_type: 'resident' }) },
-    { label: bn ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', value: nonResidentStudents.length, icon: HomeIcon, color: 'text-muted-foreground', bg: 'bg-muted/50', onClick: () => openList(bn ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', 'students', { residence_type: 'non-resident' }) },
+  const studentCategoryStats: StatCard[] = [
+    { key: 'orphan', label: bn ? 'এতিম ছাত্র' : 'Orphan Students', value: orphanStudents.length, icon: Users, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'এতিম ছাত্র' : 'Orphan Students', 'students', { student_category: 'orphan' }) },
+    { key: 'poor', label: bn ? 'গরীব ছাত্র' : 'Poor Students', value: poorStudents.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'গরীব ছাত্র' : 'Poor Students', 'students', { student_category: 'poor' }) },
+    { key: 'teacher_child', label: bn ? 'শিক্ষক সন্তান' : "Teacher's Child", value: teacherChildStudents.length, icon: GraduationCap, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'শিক্ষক সন্তান' : "Teacher's Child", 'students', { student_category: 'teacher_child' }) },
+    { key: 'free', label: bn ? 'বিনা বেতন ছাত্র' : 'Free Students', value: freeStudents.length, icon: Heart, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'বিনা বেতন ছাত্র' : 'Free Students', 'students', { is_free: true }) },
+    { key: 'general_paid', label: bn ? 'সাধারণ ছাত্র ও পরিশোধিত' : 'Non-Orphan&Poor + Amounts', value: `${generalStudents.length} (৳${generalPaidAmount.toLocaleString()})`, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+    { key: 'resident', label: bn ? 'আবাসিক ছাত্র' : 'Resident Students', value: residentStudents.length, icon: HomeIcon, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'আবাসিক ছাত্র' : 'Resident Students', 'students', { residence_type: 'resident' }) },
+    { key: 'non_resident', label: bn ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', value: nonResidentStudents.length, icon: HomeIcon, color: 'text-muted-foreground', bg: 'bg-muted/50', onClick: () => openList(bn ? 'অনাবাসিক ছাত্র' : 'Non-Resident Students', 'students', { residence_type: 'non-resident' }) },
   ];
 
-  const studentDetailStats = [
-    { label: bn ? 'নতুন ছাত্র' : 'New Students', value: newStudents.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'নতুন ছাত্র' : 'New Students', 'students') },
-    { label: bn ? 'পুরাতন ছাত্র' : 'Old Students', value: oldStudents.length, icon: Users, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'পুরাতন ছাত্র' : 'Old Students', 'students') },
-    { label: bn ? 'বিভাগ' : 'Divisions', value: divisions.length, icon: Layers, color: 'text-accent', bg: 'bg-accent/10' },
-    { label: bn ? 'বিষয়' : 'Subjects', value: subjects.length, icon: BookOpen, color: 'text-info', bg: 'bg-info/10' },
-    { label: bn ? 'পরীক্ষা' : 'Exams', value: exams.length, icon: ClipboardList, color: 'text-destructive', bg: 'bg-destructive/10' },
-    { label: bn ? 'ফলাফল' : 'Results', value: results.length, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: bn ? 'ভর্তি ইতিহাস' : 'Admission History', value: students.length, icon: History, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'ভর্তি ইতিহাস' : 'Admission History', 'students') },
+  const studentDetailStats: StatCard[] = [
+    { key: 'new_students', label: bn ? 'নতুন ছাত্র' : 'New Students', value: newStudents.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'নতুন ছাত্র' : 'New Students', 'students') },
+    { key: 'old_students', label: bn ? 'পুরাতন ছাত্র' : 'Old Students', value: oldStudents.length, icon: Users, color: 'text-primary', bg: 'bg-primary/10', onClick: () => openList(bn ? 'পুরাতন ছাত্র' : 'Old Students', 'students') },
+    { key: 'divisions', label: bn ? 'বিভাগ' : 'Divisions', value: divisions.length, icon: Layers, color: 'text-accent', bg: 'bg-accent/10' },
+    { key: 'subjects', label: bn ? 'বিষয়' : 'Subjects', value: subjects.length, icon: BookOpen, color: 'text-info', bg: 'bg-info/10' },
+    { key: 'exams', label: bn ? 'পরীক্ষা' : 'Exams', value: exams.length, icon: ClipboardList, color: 'text-destructive', bg: 'bg-destructive/10' },
+    { key: 'results', label: bn ? 'ফলাফল' : 'Results', value: results.length, icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
+    { key: 'admission_history', label: bn ? 'ভর্তি ইতিহাস' : 'Admission History', value: students.length, icon: History, color: 'text-accent', bg: 'bg-accent/10', onClick: () => openList(bn ? 'ভর্তি ইতিহাস' : 'Admission History', 'students') },
   ];
 
-  const StatCardGrid = ({ items, cols = 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' }: { items: any[]; cols?: string }) => (
-    <div className={`grid ${cols} gap-3`}>
-      {items.map((s, i) => (
-        <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${s.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}>
-          <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
-            <s.icon className={`w-5 h-5 ${s.color}`} />
-          </div>
-          <div className="min-w-0">
-            <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
-            <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const donorCards: StatCard[] = [
+    { key: 'total_donors', label: bn ? 'মোট দাতা' : 'Total Donors', value: donors.length, icon: Heart, color: 'text-destructive', bg: 'bg-destructive/10', onClick: () => openList(bn ? 'মোট দাতা' : 'Total Donors', 'donors') },
+    { key: 'active_donors', label: bn ? 'সক্রিয় দাতা' : 'Active Donors', value: activeDonors.length, icon: UserCheck, color: 'text-success', bg: 'bg-success/10', onClick: () => openList(bn ? 'সক্রিয় দাতা' : 'Active Donors', 'donors', { status: 'active' }) },
+    { key: 'total_donations', label: bn ? 'মোট অনুদান' : 'Total Donations', value: `৳${totalDonationAmount.toLocaleString()}`, icon: CreditCard, color: 'text-accent', bg: 'bg-accent/10' },
+  ];
 
-  const isSectionVisible = (id: string) => {
-    const s = sections.find(sec => sec.id === id);
-    return s ? s.visible : true;
+  const feeCategories = [
+    { key: 'monthly', category: 'monthly', titleBn: 'মাসিক ফি', titleEn: 'Monthly Fees' },
+    { key: 'exam', category: 'exam', titleBn: 'পরীক্ষা ফি', titleEn: 'Exam Fees' },
+    { key: 'admission', category: 'admission', titleBn: 'ভর্তি ফি', titleEn: 'Admission Fees' },
+  ];
+
+  // Helper: filter cards by hiddenCards config
+  const filterCards = (cards: StatCard[], sectionId: string): StatCard[] => {
+    const sec = sections.find(s => s.id === sectionId);
+    const hidden = sec?.hiddenCards || [];
+    return hidden.length > 0 ? cards.filter(c => !hidden.includes(c.key)) : cards;
   };
 
+  // Helper: get grid classes from section config
+  const getGridCols = (sec: DashboardSection, fallbackCols: number, fallbackMobile: number): string => {
+    const cols = sec.style?.columns || fallbackCols;
+    const mobile = sec.style?.columnsMobile || fallbackMobile;
+    return `grid-cols-${mobile} sm:grid-cols-${Math.min(cols, 3)} lg:grid-cols-${cols}`;
+  };
+
+  const getGap = (sec: DashboardSection): string => `gap-[${sec.style?.gap || 12}px]`;
+
+  const getCardSizeClasses = (sec: DashboardSection): string => {
+    switch (sec.style?.cardSize) {
+      case 'compact': return 'p-2';
+      case 'large': return 'p-4';
+      default: return '';
+    }
+  };
+
+  // Render stat card grid with section config
+  const StatCardGrid = ({ items, section }: { items: StatCard[]; section: DashboardSection }) => {
+    const filtered = filterCards(items, section.id);
+    if (filtered.length === 0) return null;
+    const cols = section.style?.columns || 4;
+    const mobileCols = section.style?.columnsMobile || 2;
+    const gap = section.style?.gap || 12;
+    const cardExtra = getCardSizeClasses(section);
+
+    return (
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: `repeat(${mobileCols}, 1fr)`,
+          gap: `${gap}px`,
+        }}
+      >
+        <style>{`@media (min-width: 640px) { .sec-grid-${section.id} { grid-template-columns: repeat(${Math.min(cols, 3)}, 1fr) !important; } } @media (min-width: 1024px) { .sec-grid-${section.id} { grid-template-columns: repeat(${cols}, 1fr) !important; } }`}</style>
+        <div className={`grid sec-grid-${section.id}`} style={{ gridTemplateColumns: `repeat(${mobileCols}, 1fr)`, gap: `${gap}px` }}>
+          {filtered.map((s, i) => (
+            <div key={i} onClick={s.onClick} className={`stat-card flex items-center gap-3 ${s.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${cardExtra}`}>
+              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center shrink-0`}>
+                <s.icon className={`w-5 h-5 ${s.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-foreground leading-tight">{s.value}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight truncate">{s.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const getSec = (id: string) => sections.find(s => s.id === id)!;
+  const getTitle = (sec: DashboardSection) => bn ? sec.titleBn : sec.titleEn;
+
+  const ICON_MAP: Record<string, LucideIcon> = {
+    Users, UserCog, CreditCard, Heart, BookOpen, FileText, GraduationCap, History, Layers, ClipboardList, Home: HomeIcon, Search: Users, Star: Users, Award: Users, LayoutDashboard,
+  };
+  const getSectionIcon = (sec: DashboardSection) => ICON_MAP[sec.icon || 'Users'] || Users;
+
   const renderSection = (id: string) => {
-    if (!isSectionVisible(id)) return null;
+    const sec = getSec(id);
+    if (!sec || !sec.visible) return null;
+    const SectionIcon = getSectionIcon(sec);
 
     switch (id) {
       case 'institution':
@@ -207,50 +246,44 @@ const Dashboard = () => {
       case 'search':
         return <DashboardSearch key={id} />;
       case 'main_stats':
-        return canViewStats ? (
-          <div key={id}>
-            <StatCardGrid items={statCards} cols="grid-cols-2 sm:grid-cols-4" />
-          </div>
-        ) : null;
+        return canViewStats ? <div key={id}><StatCardGrid items={statCards} section={sec} /></div> : null;
       case 'staff_teacher':
         return canViewStats ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
-              <UserCog className="w-5 h-5 text-accent" />
-              {bn ? 'কর্মী ও শিক্ষক পরিসংখ্যান' : 'Staff & Teacher Statistics'}
+              <SectionIcon className="w-5 h-5 text-accent" />
+              {getTitle(sec)}
             </h3>
-            <StatCardGrid items={staffTeacherStats} cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" />
+            <StatCardGrid items={staffTeacherStats} section={sec} />
           </div>
         ) : null;
       case 'student_category':
         return canViewStats ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-primary" />
-              {bn ? 'ছাত্র ক্যাটাগরি পরিসংখ্যান' : 'Student Category Statistics'}
+              <SectionIcon className="w-5 h-5 text-primary" />
+              {getTitle(sec)}
             </h3>
-            <StatCardGrid items={studentCategoryStats} cols="grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" />
+            <StatCardGrid items={studentCategoryStats} section={sec} />
           </div>
         ) : null;
       case 'session_wise':
         return canViewStats && sessionYears.length > 0 ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
-              <History className="w-5 h-5 text-accent" />
-              {bn ? 'সেশন ভিত্তিক ছাত্র সংখ্যা' : 'Session-wise Student Count'}
+              <SectionIcon className="w-5 h-5 text-accent" />
+              {getTitle(sec)}
             </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-              {sessionYears.map(year => (
-                <div key={year} onClick={() => openList(`${bn ? 'সেশন' : 'Session'} ${year}`, 'students')} className="stat-card flex items-center gap-3 cursor-pointer">
-                  <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
-                    <GraduationCap className="w-5 h-5 text-accent" />
+            <div className="grid" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
+              <style>{`@media (min-width: 640px) { .sec-grid-session_wise { grid-template-columns: repeat(4, 1fr) !important; } } @media (min-width: 1024px) { .sec-grid-session_wise { grid-template-columns: repeat(${sec.style?.columns || 6}, 1fr) !important; } }`}</style>
+              <div className="grid sec-grid-session_wise" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
+                {sessionYears.map(year => (
+                  <div key={year} onClick={() => openList(`${bn ? 'সেশন' : 'Session'} ${year}`, 'students')} className="stat-card flex items-center gap-3 cursor-pointer">
+                    <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0"><GraduationCap className="w-5 h-5 text-accent" /></div>
+                    <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">{sessionWiseMap[Number(year)]}</p><p className="text-[11px] text-muted-foreground leading-tight">{year}</p></div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-lg font-bold text-foreground leading-tight">{sessionWiseMap[Number(year)]}</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight">{year}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         ) : null;
@@ -258,47 +291,37 @@ const Dashboard = () => {
         return canViewStats ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
-              {bn ? 'ছাত্র বিস্তারিত পরিসংখ্যান' : 'Student Detailed Statistics'}
+              <SectionIcon className="w-5 h-5 text-primary" />
+              {getTitle(sec)}
             </h3>
-            <StatCardGrid items={studentDetailStats} />
+            <StatCardGrid items={studentDetailStats} section={sec} />
           </div>
         ) : null;
       case 'donor':
         return canViewStats ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
-              <Heart className="w-5 h-5 text-destructive" />
-              {bn ? 'দাতা তালিকা' : 'Donor List'}
+              <SectionIcon className="w-5 h-5 text-destructive" />
+              {getTitle(sec)}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              <div onClick={() => openList(bn ? 'মোট দাতা' : 'Total Donors', 'donors')} className="stat-card flex items-center gap-3 cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0"><Heart className="w-5 h-5 text-destructive" /></div>
-                <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">{donors.length}</p><p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট দাতা' : 'Total Donors'}</p></div>
-              </div>
-              <div onClick={() => openList(bn ? 'সক্রিয় দাতা' : 'Active Donors', 'donors', { status: 'active' })} className="stat-card flex items-center gap-3 cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0"><UserCheck className="w-5 h-5 text-success" /></div>
-                <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">{activeDonors.length}</p><p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'সক্রিয় দাতা' : 'Active Donors'}</p></div>
-              </div>
-              <div className="stat-card flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0"><CreditCard className="w-5 h-5 text-accent" /></div>
-                <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">৳{totalDonationAmount.toLocaleString()}</p><p className="text-[11px] text-muted-foreground leading-tight">{bn ? 'মোট অনুদান' : 'Total Donations'}</p></div>
-              </div>
-            </div>
+            <StatCardGrid items={donorCards} section={sec} />
           </div>
         ) : null;
-      case 'fee_stats':
-        return canViewStats ? (
+      case 'fee_stats': {
+        const hiddenFees = sec.hiddenCards || [];
+        const visibleFees = feeCategories.filter(f => !hiddenFees.includes(f.key));
+        return canViewStats && visibleFees.length > 0 ? (
           <div key={id} className="space-y-3">
             <h3 className="font-display font-bold text-foreground flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-primary" />
-              {bn ? 'ফি পরিসংখ্যান' : 'Fee Statistics'}
+              <SectionIcon className="w-5 h-5 text-primary" />
+              {getTitle(sec)}
             </h3>
-            <DashboardFeeSection category="monthly" titleBn="মাসিক ফি" titleEn="Monthly Fees" />
-            <DashboardFeeSection category="exam" titleBn="পরীক্ষা ফি" titleEn="Exam Fees" />
-            <DashboardFeeSection category="admission" titleBn="ভর্তি ফি" titleEn="Admission Fees" />
+            {visibleFees.map(f => (
+              <DashboardFeeSection key={f.key} category={f.category as 'monthly' | 'exam' | 'admission'} titleBn={f.titleBn} titleEn={f.titleEn} />
+            ))}
           </div>
         ) : null;
+      }
       case 'custom_widgets':
         return <DashboardCustomWidgets key={id} />;
       default:
@@ -306,12 +329,11 @@ const Dashboard = () => {
     }
   };
 
-  const visibleSections = sections.sort((a, b) => a.sort_order - b.sort_order);
+  const visibleSections = [...sections].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <AdminLayout>
       <div className="space-y-5">
-        {/* Dashboard Builder Button */}
         {isAdmin && (
           <div className="flex justify-end">
             <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
@@ -321,25 +343,15 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Dynamic sections */}
         {visibleSections.map(s => renderSection(s.id))}
 
         {!canViewStats && (
           <div className="card-elevated p-8 text-center text-muted-foreground">
-            {bn ? 'আপনার পরিসংখ্যান দেখার অনুমতি নেই। শুধুমাত্র অনুমোদিত মডিউলগুলো ব্যবহার করুন।' : 'You do not have permission to view statistics. Please use your permitted modules only.'}
+            {bn ? 'আপনার পরিসংখ্যান দেখার অনুমতি নেই।' : 'You do not have permission to view statistics.'}
           </div>
         )}
 
-        {/* Stats List Dialog */}
-        <DashboardStatsList
-          open={listDialog.open}
-          onClose={() => setListDialog(d => ({ ...d, open: false }))}
-          title={listDialog.title}
-          table={listDialog.table}
-          filters={listDialog.filters}
-        />
-
-        {/* Dashboard Layout Builder */}
+        <DashboardStatsList open={listDialog.open} onClose={() => setListDialog(d => ({ ...d, open: false }))} title={listDialog.title} table={listDialog.table} filters={listDialog.filters} />
         <DashboardLayoutDialog open={builderOpen} onClose={() => setBuilderOpen(false)} />
       </div>
     </AdminLayout>
