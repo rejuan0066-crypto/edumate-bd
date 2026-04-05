@@ -99,10 +99,11 @@ const AdminThemeCustomizer = () => {
         </div>
 
         <Tabs defaultValue="colors">
-          <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsList className="grid grid-cols-4 w-full max-w-lg">
             <TabsTrigger value="colors" className="gap-1"><Palette className="w-4 h-4" /> {bn ? 'কালার' : 'Colors'}</TabsTrigger>
             <TabsTrigger value="typography" className="gap-1"><Type className="w-4 h-4" /> {bn ? 'ফন্ট' : 'Fonts'}</TabsTrigger>
             <TabsTrigger value="layout" className="gap-1"><Layout className="w-4 h-4" /> {bn ? 'লেআউট' : 'Layout'}</TabsTrigger>
+            <TabsTrigger value="appearance" className="gap-1"><Monitor className="w-4 h-4" /> {bn ? 'অ্যাপিয়ারেন্স' : 'Appearance'}</TabsTrigger>
           </TabsList>
 
           {/* COLORS TAB */}
