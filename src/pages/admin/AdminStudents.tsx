@@ -337,7 +337,9 @@ const AdminStudents = () => {
                 <div><span className="text-muted-foreground">{bn ? 'ধর্ম: ' : 'Religion: '}</span>{showDetail.religion || '-'}</div>
                 <div><span className="text-muted-foreground">{bn ? 'সেশন: ' : 'Session: '}</span>{getSessionName(showDetail.session_id, showDetail.admission_session)}</div>
                 <div><span className="text-muted-foreground">{bn ? 'শ্রেণী: ' : 'Class: '}</span>{getClassName(showDetail.class_id)}</div>
-                <div><span className="text-muted-foreground">{bn ? 'আবাসিক: ' : 'Residence: '}</span>{showDetail.residence_type || '-'}</div>
+                 <div><span className="text-muted-foreground">{bn ? 'আবাসিক: ' : 'Residence: '}</span>{showDetail.residence_type || '-'}</div>
+                 <div><span className="text-muted-foreground">{bn ? 'ক্যাটাগরি: ' : 'Category: '}</span>{showDetail.student_category === 'orphan' ? (bn ? 'এতিম' : 'Orphan') : showDetail.student_category === 'poor' ? (bn ? 'গরীব' : 'Poor') : showDetail.student_category === 'teacher_child' ? (bn ? 'শিক্ষক সন্তান' : "Teacher's Child") : (bn ? 'সাধারণ' : 'General')}</div>
+                 {showDetail.is_free && <div><span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success border border-success/20">{bn ? '✓ বিনা বেতন' : '✓ Free Student'}</span></div>}
               </div>
               <div className="flex gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => { setEditStudent(showDetail); setShowDetail(null); setShowAdd(true); }} className="flex-1">
