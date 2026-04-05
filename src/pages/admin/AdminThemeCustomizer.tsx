@@ -380,6 +380,284 @@ const AdminThemeCustomizer = () => {
               </Card>
             </div>
           </TabsContent>
+
+          {/* APPEARANCE TAB */}
+          <TabsContent value="appearance" className="space-y-4 mt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Default Theme Mode */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Monitor className="w-4 h-4" />
+                    {bn ? 'ডিফল্ট থিম মোড' : 'Default Theme Mode'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {bn ? 'নতুন ভিজিটরদের জন্য ডিফল্ট থিম সেট করুন' : 'Set default theme for new visitors'}
+                  </p>
+                  <div className="flex gap-2">
+                    {(['light', 'dark', 'system'] as const).map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => updateDraft('defaultThemeMode', mode)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                          draft.defaultThemeMode === mode
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground'
+                        }`}
+                      >
+                        {mode === 'light' ? (bn ? '☀️ লাইট' : '☀️ Light') :
+                         mode === 'dark' ? (bn ? '🌙 ডার্ক' : '🌙 Dark') :
+                         (bn ? '💻 সিস্টেম' : '💻 System')}
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Sidebar Style */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <PanelLeft className="w-4 h-4" />
+                    {bn ? 'সাইডবার স্টাইল' : 'Sidebar Style'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-xs">{bn ? 'সাইডবার ব্যাকগ্রাউন্ড' : 'Sidebar Background'}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={draft.sidebarBgColor || '#1a1f2e'}
+                        onChange={e => updateDraft('sidebarBgColor', e.target.value)}
+                        className="w-10 h-10 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={draft.sidebarBgColor}
+                        onChange={e => updateDraft('sidebarBgColor', e.target.value)}
+                        placeholder="#1a1f2e"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'টেক্সট কালার' : 'Text Color'}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={draft.sidebarTextColor || '#94a3b8'}
+                        onChange={e => updateDraft('sidebarTextColor', e.target.value)}
+                        className="w-10 h-10 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={draft.sidebarTextColor}
+                        onChange={e => updateDraft('sidebarTextColor', e.target.value)}
+                        placeholder="#94a3b8"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'অ্যাক্টিভ আইটেম কালার' : 'Active Item Color'}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={draft.sidebarActiveColor || '#3b82f6'}
+                        onChange={e => updateDraft('sidebarActiveColor', e.target.value)}
+                        className="w-10 h-10 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={draft.sidebarActiveColor}
+                        onChange={e => updateDraft('sidebarActiveColor', e.target.value)}
+                        placeholder="#3b82f6"
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">{bn ? 'সাইডবার প্রস্থ' : 'Sidebar Width'}</Label>
+                    <div className="flex gap-2">
+                      {(['narrow', 'default', 'wide'] as const).map(w => (
+                        <button
+                          key={w}
+                          onClick={() => updateDraft('sidebarWidth', w)}
+                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-all ${
+                            draft.sidebarWidth === w ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'
+                          }`}
+                        >
+                          {w === 'narrow' ? (bn ? 'সরু' : 'Narrow') : w === 'default' ? (bn ? 'ডিফল্ট' : 'Default') : (bn ? 'প্রশস্ত' : 'Wide')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">{bn ? 'আইকন সাইজ' : 'Icon Size'}</Label>
+                    <div className="flex gap-2">
+                      {(['small', 'medium', 'large'] as const).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => updateDraft('sidebarIconSize', s)}
+                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-all ${
+                            draft.sidebarIconSize === s ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'
+                          }`}
+                        >
+                          {s === 'small' ? (bn ? 'ছোট' : 'Small') : s === 'medium' ? (bn ? 'মাঝারি' : 'Medium') : (bn ? 'বড়' : 'Large')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Header/Topbar Style */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4" />
+                    {bn ? 'হেডার/টপবার স্টাইল' : 'Header/Topbar Style'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-xs">{bn ? 'হেডার ব্যাকগ্রাউন্ড' : 'Header Background'}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={draft.headerBgColor || '#ffffff'}
+                        onChange={e => updateDraft('headerBgColor', e.target.value)}
+                        className="w-10 h-10 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={draft.headerBgColor}
+                        onChange={e => updateDraft('headerBgColor', e.target.value)}
+                        placeholder=""
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'হেডার টেক্সট কালার' : 'Header Text Color'}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={draft.headerTextColor || '#1e293b'}
+                        onChange={e => updateDraft('headerTextColor', e.target.value)}
+                        className="w-10 h-10 rounded border cursor-pointer"
+                      />
+                      <Input
+                        value={draft.headerTextColor}
+                        onChange={e => updateDraft('headerTextColor', e.target.value)}
+                        placeholder=""
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{bn ? 'ব্রেডক্রাম্ব দেখান' : 'Show Breadcrumb'}</p>
+                    </div>
+                    <Switch checked={draft.headerShowBreadcrumb} onCheckedChange={v => updateDraft('headerShowBreadcrumb', v)} />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{bn ? 'সার্চবার দেখান' : 'Show Search Bar'}</p>
+                    </div>
+                    <Switch checked={draft.headerShowSearch} onCheckedChange={v => updateDraft('headerShowSearch', v)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">{bn ? 'হেডার উচ্চতা' : 'Header Height'}</Label>
+                    <div className="flex gap-2">
+                      {(['compact', 'default', 'tall'] as const).map(h => (
+                        <button
+                          key={h}
+                          onClick={() => updateDraft('headerHeight', h)}
+                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-all ${
+                            draft.headerHeight === h ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'
+                          }`}
+                        >
+                          {h === 'compact' ? (bn ? 'কম্প্যাক্ট' : 'Compact') : h === 'default' ? (bn ? 'ডিফল্ট' : 'Default') : (bn ? 'লম্বা' : 'Tall')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Card & Glassmorphism */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{bn ? '🪟 কার্ড ও গ্লাসমর্ফিজম' : '🪟 Card & Glassmorphism'}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{bn ? 'গ্লাস ইফেক্ট চালু' : 'Glass Effect'}</p>
+                      <p className="text-xs text-muted-foreground">{bn ? 'কার্ডে স্বচ্ছ ব্লার ইফেক্ট' : 'Transparent blur effect on cards'}</p>
+                    </div>
+                    <Switch checked={draft.cardGlassEffect} onCheckedChange={v => updateDraft('cardGlassEffect', v)} />
+                  </div>
+                  {draft.cardGlassEffect && (
+                    <>
+                      <div>
+                        <Label className="text-xs">{bn ? 'ব্লার পরিমাণ' : 'Blur Amount'}: {draft.cardGlassBlur}px</Label>
+                        <Slider value={[draft.cardGlassBlur]} min={0} max={20} step={1} onValueChange={([v]) => updateDraft('cardGlassBlur', v)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">{bn ? 'স্বচ্ছতা' : 'Opacity'}: {draft.cardGlassOpacity}%</Label>
+                        <Slider value={[draft.cardGlassOpacity]} min={30} max={100} step={5} onValueChange={([v]) => updateDraft('cardGlassOpacity', v)} />
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <Label className="text-xs mb-1 block">{bn ? 'কার্ড বর্ডার স্টাইল' : 'Card Border Style'}</Label>
+                    <div className="flex gap-2">
+                      {(['none', 'subtle', 'solid', 'accent'] as const).map(b => (
+                        <button
+                          key={b}
+                          onClick={() => updateDraft('cardBorderStyle', b)}
+                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-all ${
+                            draft.cardBorderStyle === b ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground'
+                          }`}
+                        >
+                          {b === 'none' ? (bn ? 'নাই' : 'None') :
+                           b === 'subtle' ? (bn ? 'হালকা' : 'Subtle') :
+                           b === 'solid' ? (bn ? 'সলিড' : 'Solid') :
+                           (bn ? 'অ্যাক্সেন্ট' : 'Accent')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Mini Preview */}
+                  <div className="p-4 rounded-lg border bg-muted/20">
+                    <p className="text-xs text-muted-foreground mb-2">{bn ? 'প্রিভিউ:' : 'Preview:'}</p>
+                    <div
+                      className="p-4 rounded-lg"
+                      style={{
+                        backdropFilter: draft.cardGlassEffect ? `blur(${draft.cardGlassBlur}px)` : 'none',
+                        backgroundColor: draft.cardGlassEffect
+                          ? `rgba(255,255,255,${draft.cardGlassOpacity / 100})`
+                          : 'white',
+                        border: draft.cardBorderStyle === 'none' ? 'none' :
+                                draft.cardBorderStyle === 'subtle' ? '1px solid rgba(0,0,0,0.08)' :
+                                draft.cardBorderStyle === 'solid' ? '1px solid rgba(0,0,0,0.2)' :
+                                `2px solid hsl(${draft.primaryHue}, ${draft.primarySaturation}%, ${draft.primaryLightness}%)`,
+                        boxShadow: draft.cardShadow === 'none' ? 'none' :
+                          draft.cardShadow === 'soft' ? '0 2px 8px rgba(0,0,0,0.06)' :
+                          draft.cardShadow === 'medium' ? '0 4px 16px rgba(0,0,0,0.1)' :
+                          '0 8px 30px rgba(0,0,0,0.15)',
+                        borderRadius: `${draft.borderRadius}px`,
+                      }}
+                    >
+                      <p className="text-sm font-medium text-foreground">{bn ? 'নমুনা কার্ড' : 'Sample Card'}</p>
+                      <p className="text-xs text-muted-foreground">{bn ? 'এটি একটি প্রিভিউ কার্ড' : 'This is a preview card'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {/* Live Preview Section */}
