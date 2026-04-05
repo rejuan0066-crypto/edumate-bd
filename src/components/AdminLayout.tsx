@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import LanguageToggle from './LanguageToggle';
 import NotificationPanel from './NotificationPanel';
+import DarkModeToggle from './DarkModeToggle';
 import {
   LayoutDashboard, Users, UserCog, BookOpen, FileText, Bell,
   CreditCard, Settings, Globe, GraduationCap, Menu, X, LogOut,
@@ -19,7 +20,7 @@ import {
   FilePlus, FileCheck, Tag, Wrench, UserCircle, ChevronDown, FileBox,
   Blocks, FlaskConical, CalendarDays, ShieldCheck, BarChart3, KeyRound, Palette,
   ListOrdered, Home, Image, Mail, Phone, MapPin, Star, Award, Clock, Folder, LayoutGrid,
-  HardDrive, MessageSquare, Wallet, UserPlus, Camera,
+  HardDrive, MessageSquare, Wallet, UserPlus, Camera, Search, Maximize2, MoreVertical,
   type LucideIcon
 } from 'lucide-react';
 
@@ -42,7 +43,7 @@ const getIcon = (name: string): LucideIcon => ICON_MAP[name] || FileBox;
 const AdminLayout = ({ children }: { children: ReactNode }) => {
   const isEmbedded = useIsEmbedded();
   const { t, language } = useLanguage();
-  const { signOut, role } = useAuth();
+  const { signOut, role, user } = useAuth();
   const { canView, hasUserPermission } = usePermissions();
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,12 +79,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   const restoreMenuScroll = (element: HTMLElement | null, mobile: boolean) => {
     if (!element) return;
-
     const storageKey = mobile ? MENU_SCROLL_STORAGE_KEYS.mobile : MENU_SCROLL_STORAGE_KEYS.desktop;
     const savedScrollTop = window.sessionStorage.getItem(storageKey);
     const fallbackScrollTop = menuScrollPositionsRef.current[mobile ? 'mobile' : 'desktop'];
     const scrollTop = savedScrollTop ? Number(savedScrollTop) : fallbackScrollTop;
-
     requestAnimationFrame(() => {
       element.scrollTop = Number.isFinite(scrollTop) ? scrollTop : 0;
     });
@@ -108,11 +107,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     path: string;
     label: string;
     icon: any;
+    group?: string;
     children?: { path: string; label: string; icon: any }[];
   };
 
-  // Convert MenuItemConfig to MenuItem using dynamic config, filtering by permission
-  // Also filter out items that are configured as tabs of another page
   const configToMenuItem = (cfg: MenuItemConfig): MenuItem => ({
     path: cfg.path,
     label: language === 'bn' ? cfg.label_bn : cfg.label_en,
@@ -126,11 +124,9 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
       })),
   });
 
-  // A parent menu is visible if: user can access its path directly, OR any child is accessible
   const canAccessParent = (item: MenuItemConfig): boolean => {
     if (isAdmin) return true;
     if (canAccessPath(item.path)) return true;
-    // Show parent if any child is accessible
     if (item.children && item.children.length > 0) {
       return item.children.some(c => c.visible && canAccessPath(c.path));
     }
@@ -142,7 +138,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     .sort((a, b) => a.sort_order - b.sort_order)
     .map(configToMenuItem);
 
-  // Build final menu items with published custom forms injected
   const menuItems: MenuItem[] = baseMenuItems.map(item => {
     const subForms = publishedForms.filter(f => f.publish_to === 'sub_menu' && f.parent_menu === item.path);
     if (subForms.length > 0) {
@@ -157,7 +152,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     return item;
   });
 
-  // Add main_menu published forms
   const mainMenuForms = publishedForms.filter(f => f.publish_to === 'main_menu');
   mainMenuForms.forEach(f => {
     const settingsIdx = menuItems.findIndex(m => m.path === '/admin/settings');
@@ -173,6 +167,58 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     }
   });
 
+  // Group menu items by category for the reference-style grouped sidebar
+  const getGroupLabel = (path: string): string => {
+    const groupMap: Record<string, string> = {
+      '/admin': language === 'bn' ? 'প্রধান মেনু' : 'Main Menu',
+      '/admin/students': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/staff': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/divisions': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/subjects': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/attendance': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/results': language === 'bn' ? 'শিক্ষা ব্যবস্থা' : 'Academics',
+      '/admin/fees': language === 'bn' ? 'আর্থিক' : 'Finance',
+      '/admin/payments': language === 'bn' ? 'আর্থিক' : 'Finance',
+      '/admin/expenses': language === 'bn' ? 'আর্থিক' : 'Finance',
+      '/admin/donors': language === 'bn' ? 'আর্থিক' : 'Finance',
+      '/admin/website': language === 'bn' ? 'অন্যান্য' : 'Others',
+      '/admin/notices': language === 'bn' ? 'অন্যান্য' : 'Others',
+      '/admin/settings': language === 'bn' ? 'অন্যান্য' : 'Others',
+    };
+    return groupMap[path] || '';
+  };
+
+  // Build breadcrumb from current path
+  const getBreadcrumbs = () => {
+    const crumbs = [{ label: language === 'bn' ? 'হোম' : 'Home', path: '/admin' }];
+    const currentItem = menuItems.find(i => i.path === location.pathname);
+    if (currentItem && currentItem.path !== '/admin') {
+      crumbs.push({ label: currentItem.label, path: currentItem.path });
+    } else {
+      // Check children
+      for (const item of menuItems) {
+        const child = item.children?.find(c => c.path === location.pathname);
+        if (child) {
+          crumbs.push({ label: item.label, path: item.path });
+          crumbs.push({ label: child.label, path: child.path });
+          break;
+        }
+      }
+    }
+    return crumbs;
+  };
+
+  const currentPageLabel = (() => {
+    for (const item of menuItems) {
+      if (item.path === location.pathname) return item.label;
+      const child = item.children?.find(c => c.path === location.pathname);
+      if (child) return child.label;
+    }
+    return t('dashboard');
+  })();
+
+  const breadcrumbs = getBreadcrumbs();
+
   const renderSidebar = (mobile = false) => (
     <aside key={mobile ? 'mobile' : 'desktop'} className={`${mobile ? 'fixed inset-0 z-50' : 'hidden lg:flex h-screen sticky top-0'} flex`}>
       {mobile && (
@@ -181,16 +227,16 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
-      <div className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? 'w-64' : 'w-16'} bg-sidebar flex flex-col h-full transition-all duration-300 ${mobile ? 'order-first shadow-2xl' : ''}`}>
+      <div className={`${mobile ? 'w-[280px] max-w-[85vw] animate-in slide-in-from-left duration-300' : sidebarOpen ? 'w-[260px]' : 'w-16'} bg-sidebar flex flex-col h-full transition-all duration-300 ${mobile ? 'order-first shadow-2xl' : ''}`}>
         {/* Logo */}
-        <div className="p-4 flex items-center gap-3 border-b border-sidebar-border shrink-0">
-          <div className="w-10 h-10 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-            <GraduationCap className="w-6 h-6 text-sidebar-primary-foreground" />
+        <div className="px-4 py-5 flex items-center gap-3 border-b border-sidebar-border shrink-0">
+          <div className="w-9 h-9 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
+            <span className="text-sm font-bold text-sidebar-primary-foreground">E</span>
           </div>
           {(sidebarOpen || mobile) && (
             <div className="overflow-hidden flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-sidebar-foreground truncate">{language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট' : 'Madrasa Management'}</h2>
-              <p className="text-xs text-sidebar-foreground/60">{language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Panel'}</p>
+              <h2 className="text-sm font-bold text-sidebar-foreground truncate">EduMate BD</h2>
+              <p className="text-[11px] text-sidebar-foreground/50">{language === 'bn' ? 'মাদরাসা ম্যানেজমেন্ট' : 'Madrasa Management'}</p>
             </div>
           )}
           {mobile && (
@@ -204,82 +250,103 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
         <nav
           ref={(element) => restoreMenuScroll(element, mobile)}
           onScroll={(event) => persistMenuScroll(mobile, event.currentTarget.scrollTop)}
-          className="flex-1 min-h-0 p-2 space-y-0.5 overflow-y-auto overscroll-contain scrollbar-thin"
+          className="flex-1 min-h-0 py-3 px-3 space-y-0.5 overflow-y-auto overscroll-contain scrollbar-thin"
         >
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const hasChildren = item.children && item.children.length > 0;
-            const isGroupOpen = openGroups[item.path] || item.children?.some(c => location.pathname === c.path);
+          {/* Group items with labels */}
+          {(() => {
+            let lastGroup = '';
+            return menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              const hasChildren = item.children && item.children.length > 0;
+              const isGroupOpen = openGroups[item.path] || item.children?.some(c => location.pathname === c.path);
+              const group = getGroupLabel(item.path);
+              const showGroupLabel = group && group !== lastGroup;
+              if (group) lastGroup = group;
 
-            return (
-              <div key={item.path}>
-                <div className="flex items-center">
-                  {hasChildren ? (
-                    <div className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}>
+              return (
+                <div key={item.path}>
+                  {showGroupLabel && (
+                    <div className="sidebar-group-label mt-4 first:mt-0">{group}</div>
+                  )}
+                  <div className="flex items-center">
+                    {hasChildren ? (
+                      <div className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}>
+                        <Link
+                          to={item.path}
+                          onClick={() => mobile && setMobileSidebarOpen(false)}
+                          className="flex items-center gap-2.5 flex-1 min-w-0"
+                          title={!sidebarOpen && !mobile ? item.label : undefined}
+                        >
+                          <item.icon className="w-[18px] h-[18px] shrink-0" />
+                          {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
+                        </Link>
+                        {(sidebarOpen || mobile) && hasChildren && (
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGroup(item.path); }}
+                            className="p-0.5 rounded hover:bg-sidebar-accent/50 shrink-0 ml-auto"
+                          >
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
                       <Link
                         to={item.path}
                         onClick={() => mobile && setMobileSidebarOpen(false)}
-                        className="flex items-center gap-2 flex-1 min-w-0"
+                        className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}
                         title={!sidebarOpen && !mobile ? item.label : undefined}
                       >
-                        <item.icon className="w-5 h-5 shrink-0" />
+                        <item.icon className="w-[18px] h-[18px] shrink-0" />
                         {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
+                        {isActive && (sidebarOpen || mobile) && <ChevronRight className="w-3.5 h-3.5 ml-auto shrink-0 opacity-50" />}
                       </Link>
-                      {(sidebarOpen || mobile) && (
-                        <button
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGroup(item.path); }}
-                          className="p-1 rounded hover:bg-sidebar-accent shrink-0 ml-auto"
-                        >
-                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGroupOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                      )}
+                    )}
+                  </div>
+                  {hasChildren && isGroupOpen && (sidebarOpen || mobile) && (
+                    <div className="ml-7 mt-0.5 space-y-0.5 border-l border-sidebar-border/50 pl-2">
+                      {item.children!.map(child => {
+                        const childActive = location.pathname === child.path;
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            onClick={() => mobile && setMobileSidebarOpen(false)}
+                            className={`sidebar-item text-xs py-1.5 ${childActive ? 'active' : ''}`}
+                          >
+                            <child.icon className="w-4 h-4 shrink-0" />
+                            <span className="truncate">{child.label}</span>
+                          </Link>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <Link
-                      to={item.path}
-                      onClick={() => mobile && setMobileSidebarOpen(false)}
-                      className={`sidebar-item flex-1 ${isActive ? 'active' : ''}`}
-                      title={!sidebarOpen && !mobile ? item.label : undefined}
-                    >
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      {(sidebarOpen || mobile) && <span className="truncate">{item.label}</span>}
-                      {isActive && (sidebarOpen || mobile) && <ChevronRight className="w-4 h-4 ml-auto shrink-0" />}
-                    </Link>
                   )}
                 </div>
-                {hasChildren && isGroupOpen && (sidebarOpen || mobile) && (
-                  <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
-                    {item.children!.map(child => {
-                      const childActive = location.pathname === child.path;
-                      return (
-                        <Link
-                          key={child.path}
-                          to={child.path}
-                          onClick={() => mobile && setMobileSidebarOpen(false)}
-                          className={`sidebar-item text-sm ${childActive ? 'active' : ''}`}
-                        >
-                          <child.icon className="w-4 h-4 shrink-0" />
-                          <span className="truncate">{child.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </nav>
 
-        {/* Bottom - fixed logout */}
+        {/* Bottom - user profile + logout */}
         {(sidebarOpen || mobile) && (
-          <div className="p-2 border-t border-sidebar-border shrink-0">
-            <button
-              onClick={async () => { await signOut(); navigate('/login'); }}
-              className="sidebar-item w-full text-destructive/80 hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>{language === 'bn' ? 'লগআউট' : 'Logout'}</span>
-            </button>
+          <div className="p-3 border-t border-sidebar-border shrink-0">
+            <div className="flex items-center gap-3 px-2 py-2">
+              <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-sidebar-primary-foreground">
+                  {user?.email?.charAt(0).toUpperCase() || 'A'}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.email?.split('@')[0] || 'Admin'}</p>
+                <p className="text-[10px] text-sidebar-foreground/50 capitalize">{role === 'super_admin' ? (language === 'bn' ? 'সুপার অ্যাডমিন' : 'Super Admin') : (language === 'bn' ? 'অ্যাডমিন' : 'Admin')}</p>
+              </div>
+              <button
+                onClick={async () => { await signOut(); navigate('/login'); }}
+                className="p-1.5 rounded-md hover:bg-destructive/20 text-sidebar-foreground/60 hover:text-destructive transition-colors"
+                title={language === 'bn' ? 'লগআউট' : 'Logout'}
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -293,26 +360,50 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="bg-card border-b px-4 py-3 flex items-center justify-between sticky top-0 z-40" style={{ boxShadow: 'var(--shadow-soft)' }}>
+        <header className="bg-card border-b px-4 lg:px-6 py-2.5 flex items-center justify-between sticky top-0 z-40" style={{ boxShadow: 'var(--shadow-soft)' }}>
           <div className="flex items-center gap-3">
-            <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="p-2 rounded-lg hover:bg-secondary">
-              <Menu className="w-5 h-5" />
+            <button onClick={() => { if (window.innerWidth < 1024) setMobileSidebarOpen(true); else setSidebarOpen(!sidebarOpen); }} className="p-2 rounded-lg hover:bg-secondary transition-colors">
+              <Menu className="w-5 h-5 text-muted-foreground" />
             </button>
-            <h2 className="text-lg font-display font-semibold text-foreground hidden sm:block">
-              {menuItems.find(i => i.path === location.pathname)?.label || t('dashboard')}
-            </h2>
+            {/* Breadcrumbs */}
+            <nav className="hidden sm:flex items-center gap-1 text-sm">
+              {breadcrumbs.map((crumb, i) => (
+                <span key={crumb.path} className="flex items-center gap-1">
+                  {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50" />}
+                  {i === breadcrumbs.length - 1 ? (
+                    <span className="text-foreground font-medium">{crumb.label}</span>
+                  ) : (
+                    <Link to={crumb.path} className="text-muted-foreground hover:text-foreground transition-colors">{crumb.label}</Link>
+                  )}
+                </span>
+              ))}
+            </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Search */}
+            <div className="hidden md:flex items-center gap-2 bg-secondary rounded-lg px-3 py-1.5 text-sm text-muted-foreground min-w-[200px]">
+              <Search className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-xs">{language === 'bn' ? 'শিক্ষার্থী, শিক্ষক, ক্লাস খুঁজুন...' : 'Search students, teachers...'}</span>
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border bg-card px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Ctrl+K
+              </kbd>
+            </div>
+            <DarkModeToggle />
             <NotificationPanel />
             <LanguageToggle />
-            <Link to="/" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-              <Globe className="w-4 h-4" /> {t('home')}
+            <Link to="/" className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title={t('home')}>
+              <Globe className="w-5 h-5" />
             </Link>
           </div>
         </header>
 
+        {/* Page title */}
+        <div className="px-4 lg:px-6 pt-5 pb-2">
+          <h1 className="text-xl font-bold text-foreground">{currentPageLabel}</h1>
+        </div>
+
         {/* Content */}
-        <main className="flex-1 p-4 sm:p-6">
+        <main className="flex-1 px-4 lg:px-6 pb-6">
           <AdminPageWithTabs>{children}</AdminPageWithTabs>
           <BackButton />
         </main>
