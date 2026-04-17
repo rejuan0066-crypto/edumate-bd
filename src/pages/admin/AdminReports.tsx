@@ -16,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import {
   BarChart3, PieChart as PieChartIcon, TrendingUp, Users, CreditCard,
   CalendarDays, DollarSign, UserCheck, Wallet, ArrowUpRight, ArrowDownRight,
-  Printer, Download
+  Printer, Download, FileText, FileSpreadsheet, GraduationCap, FileCheck2
 } from 'lucide-react';
+import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 
 const COLORS = [
   'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
@@ -174,7 +175,7 @@ const AdminReports = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['report-students'],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id');
+      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id, class_id');
       return data || [];
     },
   });
@@ -223,6 +224,30 @@ const AdminReports = () => {
     queryKey: ['report-donors'],
     queryFn: async () => {
       const { data } = await supabase.from('donors').select('id, donation_amount, donation_date, status');
+      return data || [];
+    },
+  });
+
+  const { data: results = [] } = useQuery({
+    queryKey: ['report-results'],
+    queryFn: async () => {
+      const { data } = await supabase.from('results').select('marks, gpa, grade, student_id, subject_id, division_id');
+      return data || [];
+    },
+  });
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['report-divisions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('divisions').select('id, name, name_bn');
+      return data || [];
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['report-classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('id, name, name_bn, division_id');
       return data || [];
     },
   });
@@ -307,6 +332,278 @@ const AdminReports = () => {
 
   const years = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
 
+  // ===== Bilingual PDF Generators =====
+  const reportMeta = {
+    institution_name: ws.institution_name || 'প্রতিষ্ঠানের নাম',
+    institution_name_en: ws.institution_name_en || 'Institution Name',
+    address: ws.address || '',
+    phone: ws.phone || '',
+    email: ws.email || '',
+    logo_url: ws.logo_url,
+  };
+
+  const handleAttendancePDF = () => {
+    // Group attendance by month for the selected year
+    const monthlyAttendance = MONTHS.map((m, i) => {
+      const monthRecords = attendance.filter(a => {
+        if (!a.attendance_date) return false;
+        const d = new Date(a.attendance_date);
+        return d.getFullYear() === yearNum && d.getMonth() === i;
+      });
+      const present = monthRecords.filter(a => a.status === 'present').length;
+      const absent = monthRecords.filter(a => a.status === 'absent').length;
+      const late = monthRecords.filter(a => a.status === 'late').length;
+      const total = monthRecords.length;
+      const rate = total > 0 ? ((present / total) * 100).toFixed(1) + '%' : '-';
+      return [m, present, absent, late, total, rate];
+    });
+
+    const totalP = attendance.filter(a => {
+      const d = a.attendance_date ? new Date(a.attendance_date).getFullYear() : 0;
+      return d === yearNum && a.status === 'present';
+    }).length;
+    const totalA = attendance.filter(a => {
+      const d = a.attendance_date ? new Date(a.attendance_date).getFullYear() : 0;
+      return d === yearNum && a.status === 'absent';
+    }).length;
+    const totalL = attendance.filter(a => {
+      const d = a.attendance_date ? new Date(a.attendance_date).getFullYear() : 0;
+      return d === yearNum && a.status === 'late';
+    }).length;
+    const grand = totalP + totalA + totalL;
+
+    generateBilingualReport(
+      {
+        ...reportMeta,
+        report_title_bn: 'মাসিক হাজিরা রিপোর্ট',
+        report_title_en: 'Monthly Attendance Report',
+        period_label_bn: `সাল: ${selectedYear}`,
+        period_label_en: `Year: ${selectedYear}`,
+      },
+      [{
+        title_bn: 'মাসভিত্তিক বিবরণ',
+        title_en: 'Monthly Breakdown',
+        headers: [
+          { bn: 'মাস', en: 'Month' },
+          { bn: 'উপস্থিত', en: 'Present' },
+          { bn: 'অনুপস্থিত', en: 'Absent' },
+          { bn: 'বিলম্ব', en: 'Late' },
+          { bn: 'মোট', en: 'Total' },
+          { bn: 'উপস্থিতি হার', en: 'Rate' },
+        ],
+        rows: monthlyAttendance,
+        totals: [
+          { bn: 'মোট উপস্থিতি হার', en: 'Overall Rate', value: grand > 0 ? ((totalP / grand) * 100).toFixed(1) + '%' : '-' },
+        ],
+      }],
+      [
+        { label_bn: 'মোট উপস্থিত', label_en: 'Total Present', value: totalP, tone: 'positive' },
+        { label_bn: 'মোট অনুপস্থিত', label_en: 'Total Absent', value: totalA, tone: 'negative' },
+        { label_bn: 'মোট বিলম্ব', label_en: 'Total Late', value: totalL, tone: 'accent' },
+        { label_bn: 'মোট রেকর্ড', label_en: 'Total Records', value: grand, tone: 'neutral' },
+      ],
+    );
+  };
+
+  const handleFinancialPDF = () => {
+    generateBilingualReport(
+      {
+        ...reportMeta,
+        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
+        report_title_en: 'Monthly Financial Summary',
+        period_label_bn: `সাল: ${selectedYear}`,
+        period_label_en: `Year: ${selectedYear}`,
+      },
+      [{
+        title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
+        title_en: 'Monthly Income & Expense Statement',
+        headers: [
+          { bn: 'মাস', en: 'Month' },
+          { bn: 'আয় (৳)', en: 'Income (৳)' },
+          { bn: 'ব্যয় (৳)', en: 'Expense (৳)' },
+          { bn: 'নেট ব্যালেন্স (৳)', en: 'Net Balance (৳)' },
+        ],
+        rows: incomeExpenseData.map((d, i) => [
+          MONTHS[i],
+          d.income,
+          d.expense,
+          d.profit,
+        ]),
+        totals: [
+          { bn: 'মোট আয়', en: 'Total Income', value: totalIncome },
+          { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExpense },
+          { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
+        ],
+      }],
+      [
+        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
+        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
+        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
+        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
+      ],
+    );
+  };
+
+  const handleAcademicPDF = () => {
+    // GPA distribution
+    const gpaRanges = [
+      { min: 5, max: 5, label_bn: 'A+ (GPA 5.00)', label_en: 'A+ (GPA 5.00)' },
+      { min: 4, max: 4.99, label_bn: 'A (GPA 4.00-4.99)', label_en: 'A (GPA 4.00-4.99)' },
+      { min: 3.5, max: 3.99, label_bn: 'A- (GPA 3.50-3.99)', label_en: 'A- (GPA 3.50-3.99)' },
+      { min: 3, max: 3.49, label_bn: 'B (GPA 3.00-3.49)', label_en: 'B (GPA 3.00-3.49)' },
+      { min: 2, max: 2.99, label_bn: 'C (GPA 2.00-2.99)', label_en: 'C (GPA 2.00-2.99)' },
+      { min: 0, max: 1.99, label_bn: 'ফেল (GPA <2.00)', label_en: 'Fail (GPA <2.00)' },
+    ];
+
+    const studentGPAs = new Map<string, number[]>();
+    results.forEach(r => {
+      if (r.gpa != null && r.student_id) {
+        if (!studentGPAs.has(r.student_id)) studentGPAs.set(r.student_id, []);
+        studentGPAs.get(r.student_id)!.push(Number(r.gpa));
+      }
+    });
+    const avgGPAs = Array.from(studentGPAs.values()).map(arr => arr.reduce((s, v) => s + v, 0) / arr.length);
+
+    const gpaRows = gpaRanges.map(range => {
+      const count = avgGPAs.filter(g => g >= range.min && g <= range.max).length;
+      const pct = avgGPAs.length > 0 ? ((count / avgGPAs.length) * 100).toFixed(1) + '%' : '-';
+      return [range.label_bn, count, pct];
+    });
+
+    const passed = avgGPAs.filter(g => g >= 2).length;
+    const failed = avgGPAs.filter(g => g < 2).length;
+    const passRate = avgGPAs.length > 0 ? ((passed / avgGPAs.length) * 100).toFixed(1) + '%' : '-';
+
+    // Class-wise pass rate
+    const classRows: (string | number)[][] = [];
+    classes.forEach(cls => {
+      const div = divisions.find(d => d.id === cls.division_id);
+      const classStudents = students.filter(s => s.class_id === cls.id || s.division_id === cls.division_id);
+      const classGPAs: number[] = [];
+      classStudents.forEach(s => {
+        const gpas = studentGPAs.get(s.id) || [];
+        if (gpas.length > 0) classGPAs.push(gpas.reduce((a, b) => a + b, 0) / gpas.length);
+      });
+      if (classGPAs.length > 0) {
+        const avg = (classGPAs.reduce((a, b) => a + b, 0) / classGPAs.length).toFixed(2);
+        const p = classGPAs.filter(g => g >= 2).length;
+        const rate = ((p / classGPAs.length) * 100).toFixed(1) + '%';
+        classRows.push([
+          (div?.name_bn || div?.name || '') + ' - ' + (cls.name_bn || cls.name),
+          classGPAs.length,
+          avg,
+          rate,
+        ]);
+      }
+    });
+
+    generateBilingualReport(
+      {
+        ...reportMeta,
+        report_title_bn: 'একাডেমিক পারফরম্যান্স রিপোর্ট',
+        report_title_en: 'Academic Performance Report',
+      },
+      [
+        {
+          title_bn: 'GPA বণ্টন',
+          title_en: 'GPA Distribution',
+          headers: [
+            { bn: 'গ্রেড', en: 'Grade' },
+            { bn: 'সংখ্যা', en: 'Count' },
+            { bn: 'শতকরা', en: 'Percentage' },
+          ],
+          rows: gpaRows,
+          totals: [{ bn: 'মোট মূল্যায়িত', en: 'Total Evaluated', value: avgGPAs.length }],
+        },
+        {
+          title_bn: 'শ্রেণীভিত্তিক পারফরম্যান্স',
+          title_en: 'Class-wise Performance',
+          headers: [
+            { bn: 'শ্রেণী', en: 'Class' },
+            { bn: 'ছাত্র', en: 'Students' },
+            { bn: 'গড় GPA', en: 'Avg GPA' },
+            { bn: 'পাস হার', en: 'Pass Rate' },
+          ],
+          rows: classRows,
+        },
+      ],
+      [
+        { label_bn: 'মোট মূল্যায়ন', label_en: 'Total Evaluated', value: avgGPAs.length, tone: 'neutral' },
+        { label_bn: 'উত্তীর্ণ', label_en: 'Passed', value: passed, tone: 'positive' },
+        { label_bn: 'অকৃতকার্য', label_en: 'Failed', value: failed, tone: 'negative' },
+        { label_bn: 'পাস হার', label_en: 'Pass Rate', value: passRate, tone: 'accent' },
+      ],
+    );
+  };
+
+  const handleComprehensivePDF = () => {
+    generateBilingualReport(
+      {
+        ...reportMeta,
+        report_title_bn: 'কম্প্রিহেনসিভ ইনস্টিটিউশন রিপোর্ট',
+        report_title_en: 'Comprehensive Institution Report',
+        period_label_bn: `সাল: ${selectedYear}`,
+        period_label_en: `Year: ${selectedYear}`,
+      },
+      [
+        {
+          title_bn: 'প্রতিষ্ঠানের সামগ্রিক চিত্র',
+          title_en: 'Institution Overview',
+          headers: [
+            { bn: 'বিষয়', en: 'Metric' },
+            { bn: 'মান', en: 'Value' },
+          ],
+          rows: [
+            ['মোট ছাত্র / Total Students', students.length],
+            ['সক্রিয় ছাত্র / Active Students', activeStudents],
+            ['মোট স্টাফ / Total Staff', staff.length],
+            ['সক্রিয় স্টাফ / Active Staff', activeStaff],
+            ['মোট দাতা / Total Donors', donors.length],
+            ['হাজিরা রেকর্ড / Attendance Records', attendance.length],
+          ],
+        },
+        {
+          title_bn: 'আর্থিক সারসংক্ষেপ',
+          title_en: 'Financial Summary',
+          headers: [
+            { bn: 'বিবরণ', en: 'Description' },
+            { bn: 'পরিমাণ (৳)', en: 'Amount (৳)' },
+          ],
+          rows: [
+            ['মোট আয় / Total Income', totalIncome],
+            ['মোট ব্যয় / Total Expense', totalExpense],
+            ['ফি আদায় / Fee Collected', feeStats.paid],
+            ['বকেয়া ফি / Outstanding Fee', feeStats.unpaid],
+            ['মাসিক বেতন বিল / Monthly Salary', totalSalary],
+            ['অনুদান / Donations', totalDonation],
+          ],
+          totals: [
+            { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
+          ],
+        },
+        {
+          title_bn: 'ছাত্র বিভাজন',
+          title_en: 'Student Distribution',
+          headers: [
+            { bn: 'ক্যাটাগরি', en: 'Category' },
+            { bn: 'সংখ্যা', en: 'Count' },
+          ],
+          rows: [
+            ...studentCategoryData.map(s => [s.name, s.value]),
+            ...genderData.map(g => [g.name, g.value]),
+          ],
+        },
+      ],
+      [
+        { label_bn: 'মোট ছাত্র', label_en: 'Students', value: activeStudents, tone: 'accent' },
+        { label_bn: 'মোট স্টাফ', label_en: 'Staff', value: activeStaff, tone: 'accent' },
+        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
+        { label_bn: 'ফি আদায়', label_en: 'Fee Collected', value: '৳' + feeStats.paid.toLocaleString(), tone: 'positive' },
+      ],
+    );
+  };
+
+
   return (
     <AdminLayout>
       <div className="space-y-4">
@@ -357,6 +654,74 @@ const AdminReports = () => {
             );
           })}
         </div>
+
+        {/* === Bilingual PDF Report Generator === */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-5 w-5 text-primary" />
+              {bn ? 'অটোমেটেড PDF রিপোর্ট জেনারেটর (দ্বিভাষিক)' : 'Automated PDF Report Generator (Bilingual)'}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {bn ? 'বাংলা ও ইংরেজিতে পেশাদার রিপোর্ট তৈরি করুন — ক্লিক করলে নতুন উইন্ডোতে রিপোর্ট খুলবে এবং সরাসরি PDF সংরক্ষণ করা যাবে।' : 'Generate professional bilingual reports. Click any report to open it in a new window and save as PDF directly.'}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <button
+                onClick={handleAttendancePDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক হাজিরা রিপোর্ট' : 'Monthly Attendance'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'উপস্থিত/অনুপস্থিত/বিলম্ব মাসিক বিশ্লেষণ' : 'Present/Absent/Late monthly breakdown'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleFinancialPDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Wallet className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক আর্থিক সারসংক্ষেপ' : 'Monthly Financial Summary'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'আয়, ব্যয়, নেট ব্যালেন্স' : 'Income, Expense, Net Balance'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleAcademicPDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'একাডেমিক পারফরম্যান্স' : 'Academic Performance'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'GPA বণ্টন, পাস হার, শ্রেণীভিত্তিক' : 'GPA distribution, pass rate, class-wise'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleComprehensivePDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileCheck2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'কম্প্রিহেনসিভ রিপোর্ট' : 'Comprehensive Report'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'সকল মডিউলের সমন্বিত সারসংক্ষেপ' : 'All modules combined overview'}</p>
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Charts Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
