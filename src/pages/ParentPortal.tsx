@@ -34,8 +34,20 @@ const ParentPortal = () => {
 
   const [session, setSession] = useState<ParentSession | null>(null);
   const [loading, setLoading] = useState(false);
-  const [studentId, setStudentId] = useState('');
-  const [dob, setDob] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // Signup state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupFullName, setSignupFullName] = useState('');
+  const [signupPhone, setSignupPhone] = useState('');
+  const [signupStudentId, setSignupStudentId] = useState('');
+  const [signupDob, setSignupDob] = useState('');
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -50,48 +62,45 @@ const ParentPortal = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentId.trim() || !dob) {
+    if (!loginEmail.trim() || !loginPassword) {
       toast({
         title: bn ? 'ত্রুটি' : 'Error',
-        description: bn ? 'ছাত্র আইডি ও জন্মতারিখ দিন' : 'Provide Student ID and Date of Birth',
+        description: bn ? 'ইমেইল ও পাসওয়ার্ড দিন' : 'Provide email and password',
         variant: 'destructive',
       });
       return;
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('students')
-        .select('id, student_id, date_of_birth')
-        .eq('student_id', studentId.trim())
-        .maybeSingle();
-      if (error) throw error;
-      if (!data) {
-        toast({
-          title: bn ? 'খুঁজে পাওয়া যায়নি' : 'Not Found',
-          description: bn ? 'এই ছাত্র আইডি পাওয়া যায়নি' : 'No student found with this ID',
-          variant: 'destructive',
-        });
+      const { data, error } = await supabase.functions.invoke('parent-auth', {
+        body: { action: 'login', email: loginEmail.trim(), password: loginPassword },
+      });
+      if (error || !data?.success) {
+        const errMsg = data?.error || error?.message || 'Login failed';
+        const code = data?.code;
+        const friendly =
+          code === 'PENDING_APPROVAL' ? (bn ? 'আপনার অ্যাকাউন্ট অনুমোদনের অপেক্ষায়' : 'Account pending admin approval')
+          : code === 'EMAIL_NOT_VERIFIED' ? (bn ? 'ইমেইল ভেরিফাই হয়নি' : 'Email not verified')
+          : code === 'REJECTED' ? (bn ? `প্রত্যাখ্যাত: ${errMsg}` : `Rejected: ${errMsg}`)
+          : code === 'SUSPENDED' ? (bn ? 'অ্যাকাউন্ট স্থগিত' : 'Account suspended')
+          : errMsg;
+        toast({ title: bn ? 'লগইন ব্যর্থ' : 'Login Failed', description: friendly, variant: 'destructive' });
         return;
       }
-      if (!data.date_of_birth || data.date_of_birth !== dob) {
-        toast({
-          title: bn ? 'ভেরিফিকেশন ব্যর্থ' : 'Verification Failed',
-          description: bn ? 'জন্মতারিখ মিলছে না' : 'Date of birth does not match',
-          variant: 'destructive',
-        });
-        return;
-      }
+      const acc = data.account;
       const newSession: ParentSession = {
-        studentId: data.student_id,
-        studentUuid: data.id,
+        accountId: acc.id,
+        email: acc.email,
+        fullName: acc.full_name,
+        studentId: acc.student_id,
+        studentUuid: acc.linked_student_uuid,
         loggedInAt: new Date().toISOString(),
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
       setSession(newSession);
       toast({
         title: bn ? 'স্বাগতম' : 'Welcome',
-        description: bn ? 'অভিভাবক পোর্টালে স্বাগতম' : 'Welcome to Parent Portal',
+        description: bn ? `স্বাগতম, ${acc.full_name}` : `Welcome, ${acc.full_name}`,
       });
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -100,11 +109,76 @@ const ParentPortal = () => {
     }
   };
 
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signupEmail.trim() || !signupPassword || !signupFullName.trim() || !signupStudentId.trim() || !signupDob) {
+      toast({
+        title: bn ? 'ত্রুটি' : 'Error',
+        description: bn ? 'সব তথ্য পূরণ করুন' : 'Fill all required fields',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (signupPassword.length < 6) {
+      toast({ title: 'Error', description: bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password must be at least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parent-auth', {
+        body: {
+          action: 'signup',
+          email: signupEmail.trim(),
+          password: signupPassword,
+          full_name: signupFullName.trim(),
+          phone: signupPhone.trim() || undefined,
+          student_id: signupStudentId.trim(),
+          student_dob: signupDob,
+        },
+      });
+      if (error || !data?.success) {
+        toast({
+          title: bn ? 'সাইনআপ ব্যর্থ' : 'Signup Failed',
+          description: data?.error || error?.message || 'Failed',
+          variant: 'destructive',
+        });
+        return;
+      }
+      // Open OTP dialog for email verification
+      setOtpDialogOpen(true);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpVerified = async () => {
+    // Mark email as verified
+    await supabase.functions.invoke('parent-auth', {
+      body: { action: 'mark_verified', email: signupEmail.trim() },
+    });
+    toast({
+      title: bn ? 'সাইনআপ সম্পন্ন' : 'Signup Complete',
+      description: bn
+        ? 'ইমেইল ভেরিফাইড। অ্যাডমিন অনুমোদনের পর লগইন করতে পারবেন।'
+        : 'Email verified. You can login after admin approval.',
+    });
+    // Reset signup form & switch to login
+    setSignupEmail('');
+    setSignupPassword('');
+    setSignupFullName('');
+    setSignupPhone('');
+    setSignupStudentId('');
+    setSignupDob('');
+    setMode('login');
+  };
+
   const handleLogout = () => {
     sessionStorage.removeItem(STORAGE_KEY);
     setSession(null);
-    setStudentId('');
-    setDob('');
+    setLoginEmail('');
+    setLoginPassword('');
   };
 
   if (!session) {
@@ -126,40 +200,98 @@ const ParentPortal = () => {
                   {bn ? 'অভিভাবক পোর্টাল' : 'Parent Portal'}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {bn ? 'সন্তানের ছাত্র আইডি ও জন্মতারিখ দিয়ে প্রবেশ করুন' : 'Login with your child\'s Student ID and Date of Birth'}
+                  {mode === 'login'
+                    ? (bn ? 'আপনার অ্যাকাউন্টে প্রবেশ করুন' : 'Login to your account')
+                    : (bn ? 'নতুন অভিভাবক অ্যাকাউন্ট তৈরি করুন' : 'Create a new parent account')}
                 </p>
               </CardHeader>
-              <CardContent className="pt-6 pb-8 px-8">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sid">{bn ? 'ছাত্র আইডি' : 'Student ID'}</Label>
-                    <Input
-                      id="sid"
-                      placeholder="STU-2026-001"
-                      value={studentId}
-                      onChange={(e) => setStudentId(e.target.value)}
-                      className="rounded-xl h-12"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dob">{bn ? 'জন্মতারিখ' : 'Date of Birth'}</Label>
-                    <Input
-                      id="dob"
-                      type="date"
-                      value={dob}
-                      onChange={(e) => setDob(e.target.value)}
-                      className="rounded-xl h-12"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-12 rounded-xl text-base font-semibold mt-2"
-                  >
-                    {loading ? (bn ? 'যাচাই হচ্ছে...' : 'Verifying...') : (bn ? 'প্রবেশ করুন' : 'Login')}
-                  </Button>
-                </form>
+              <CardContent className="pt-4 pb-8 px-6 sm:px-8">
+                <Tabs value={mode} onValueChange={(v) => setMode(v as 'login' | 'signup')} className="w-full">
+                  <TabsList className="grid grid-cols-2 w-full h-auto p-1 rounded-2xl mb-5">
+                    <TabsTrigger value="login" className="rounded-xl py-2.5">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      {bn ? 'লগইন' : 'Login'}
+                    </TabsTrigger>
+                    <TabsTrigger value="signup" className="rounded-xl py-2.5">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      {bn ? 'সাইনআপ' : 'Sign Up'}
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="login">
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="login-email" className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5" /> {bn ? 'ইমেইল' : 'Email'}
+                        </Label>
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="parent@example.com"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          className="rounded-xl h-12"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="login-password" className="flex items-center gap-2">
+                          <Lock className="w-3.5 h-3.5" /> {bn ? 'পাসওয়ার্ড' : 'Password'}
+                        </Label>
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          className="rounded-xl h-12"
+                        />
+                      </div>
+                      <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold mt-2">
+                        {loading ? (bn ? 'যাচাই হচ্ছে...' : 'Verifying...') : (bn ? 'প্রবেশ করুন' : 'Login')}
+                      </Button>
+                    </form>
+                  </TabsContent>
+
+                  <TabsContent value="signup">
+                    <form onSubmit={handleSignup} className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="su-name">{bn ? 'আপনার নাম' : 'Your Full Name'}</Label>
+                        <Input id="su-name" value={signupFullName} onChange={(e) => setSignupFullName(e.target.value)} className="rounded-xl h-11" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="su-email">{bn ? 'ইমেইল' : 'Email'}</Label>
+                        <Input id="su-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} className="rounded-xl h-11" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="su-phone">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
+                        <Input id="su-phone" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} className="rounded-xl h-11" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="su-pwd">{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                        <Input id="su-pwd" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="rounded-xl h-11" />
+                      </div>
+                      <div className="border-t pt-3 mt-3">
+                        <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
+                        <div className="space-y-2">
+                          <Label htmlFor="su-sid">{bn ? 'ছাত্র আইডি' : 'Student ID'}</Label>
+                          <Input id="su-sid" placeholder="STU-2026-001" value={signupStudentId} onChange={(e) => setSignupStudentId(e.target.value)} className="rounded-xl h-11" />
+                        </div>
+                        <div className="space-y-2 mt-2">
+                          <Label htmlFor="su-dob">{bn ? 'সন্তানের জন্মতারিখ' : "Child's Date of Birth"}</Label>
+                          <Input id="su-dob" type="date" value={signupDob} onChange={(e) => setSignupDob(e.target.value)} className="rounded-xl h-11" />
+                        </div>
+                      </div>
+                      <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold mt-3">
+                        {loading ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'সাইনআপ করুন' : 'Sign Up')}
+                      </Button>
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        {bn ? 'সাইনআপের পর ইমেইল ভেরিফাই ও অ্যাডমিন অনুমোদন প্রয়োজন' : 'Email verification & admin approval required after signup'}
+                      </p>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+
                 <p className="text-xs text-muted-foreground text-center mt-6">
                   {bn ? 'সমস্যা হলে প্রতিষ্ঠানের অফিসে যোগাযোগ করুন' : 'Contact the institution office for assistance'}
                 </p>
@@ -167,6 +299,17 @@ const ParentPortal = () => {
             </Card>
           </motion.div>
         </div>
+
+        {otpDialogOpen && (
+          <OtpVerificationDialog
+            open={otpDialogOpen}
+            onOpenChange={setOtpDialogOpen}
+            email={signupEmail.trim()}
+            purpose="email_verification"
+            recipientName={signupFullName}
+            onVerified={handleOtpVerified}
+          />
+        )}
       </PublicLayout>
     );
   }
