@@ -38,6 +38,8 @@ const HomeGallery = ({ galleryItems, language }: Props) => {
                     <img
                       src={item.image_url}
                       alt={bn ? item.title_bn : item.title_en}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   ) : (
