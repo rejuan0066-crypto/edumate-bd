@@ -414,6 +414,7 @@ const DuesManagement = () => {
                 </TableFooter>
               )}
             </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
