@@ -33,7 +33,7 @@ const Gallery = () => {
                 className="card-elevated overflow-hidden group cursor-pointer"
               >
                 {item.image_url ? (
-                  <img src={item.image_url} alt={language === 'bn' ? item.title_bn : item.title_en} className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <img src={item.image_url} alt={language === 'bn' ? item.title_bn : item.title_en} loading="lazy" decoding="async" className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                   <div className="aspect-video bg-secondary/50 flex items-center justify-center">
                     <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
