@@ -24,6 +24,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   // ড্যাশবোর্ড
   { id: 'dashboard', path: '/admin', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard', icon: 'LayoutDashboard', visible: true, sort_order: 0, children: [
     { id: 'profile', path: '/admin/profile', label_bn: 'প্রোফাইল', label_en: 'Profile', icon: 'UserCircle', visible: true, sort_order: 0 },
+    { id: 'analytics', path: '/admin/analytics', label_bn: 'অ্যানালিটিক্স', label_en: 'Analytics', icon: 'BarChart3', visible: true, sort_order: 1 },
   ]},
 
   // ছাত্র ব্যবস্থাপনা

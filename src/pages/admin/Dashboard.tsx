@@ -371,6 +371,12 @@ const Dashboard = () => {
             <LayoutDashboard className="w-4 h-4" />
             {bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}
           </Button>
+          <Button variant="default" size="sm" asChild className="gap-2">
+            <a href="/admin/analytics">
+              <LayoutDashboard className="w-4 h-4" />
+              {bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}
+            </a>
+          </Button>
         </div>
       )}
 
