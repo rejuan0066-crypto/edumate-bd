@@ -341,7 +341,8 @@ const DuesManagement = () => {
       {/* Table - matrix view (horizontal scroll on mobile) */}
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto sm:overflow-y-auto sm:max-h-[560px]" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="w-full overflow-x-auto sm:overflow-y-auto sm:max-h-[560px]" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div className="min-w-[720px]">
             <Table>
               <TableHeader className="sticky top-0 bg-card z-10">
                 <TableRow>
