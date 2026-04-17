@@ -520,7 +520,4 @@ const StatCard = ({ icon: Icon, label, value, color, bg }: { icon: any; label: s
   </Card>
 );
 
-// Re-import UserCog (was missing in main lucide import group)
-import { UserCog } from 'lucide-react';
-
 export default AdminAnalytics;
