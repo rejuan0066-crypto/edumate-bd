@@ -397,6 +397,27 @@ const parseSettingsData = (data: any[] | null): WebsiteSettings => {
   return result;
 };
 
+const CACHE_KEY = 'website-settings-cache';
+
+const readCache = (): WebsiteSettings | null => {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return { ...DEFAULT_SETTINGS, ...parsed };
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (settings: WebsiteSettings) => {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(settings));
+  } catch {
+    // ignore quota errors
+  }
+};
+
 export const useWebsiteSettings = () => {
   const queryClient = useQueryClient();
 
@@ -409,27 +430,29 @@ export const useWebsiteSettings = () => {
       
       if (error) {
         console.warn('Website settings fetch error:', error.message);
-        // On auth errors, try fetching with a fresh anon client approach by clearing session first
         if (error.message?.includes('JWT') || error.code === 'PGRST301' || error.code === '401') {
-          // Try one more time — auth may have cleared by now
           const { data: retryData, error: retryError } = await supabase
             .from('website_settings')
             .select('key, value');
           if (retryError) {
-            return null;
+            return readCache();
           }
-          return parseSettingsData(retryData);
+          const parsed = parseSettingsData(retryData);
+          writeCache(parsed);
+          return parsed;
         }
         throw error;
       }
       
-      return parseSettingsData(data);
+      const parsed = parseSettingsData(data);
+      writeCache(parsed);
+      return parsed;
     },
+    initialData: () => readCache() ?? undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnMount: 'always',
     retry: (failureCount, error) => {
-      // Retry auth errors up to 3 times (session may be refreshing)
       if (error?.message?.includes('JWT') || error?.message?.includes('401')) return failureCount < 3;
       return failureCount < 2;
     },
@@ -462,7 +485,7 @@ export const useWebsiteSettings = () => {
   });
 
   return {
-    settings: settings || DEFAULT_SETTINGS,
+    settings: settings || readCache() || DEFAULT_SETTINGS,
     isLoading,
     updateSetting,
     updateMultiple,
