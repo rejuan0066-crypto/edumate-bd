@@ -63,7 +63,7 @@ const AdminAnalytics = () => {
   const { data: staff = [] } = useQuery({
     queryKey: ['analytics-staff'],
     queryFn: async () => {
-      const { data } = await supabase.from('staff').select('id, status, staff_category, joining_date, gender').is('deleted_at', null);
+      const { data } = await supabase.from('staff').select('id, status, staff_category, joining_date').is('deleted_at', null);
       return data || [];
     },
   });
@@ -95,7 +95,15 @@ const AdminAnalytics = () => {
   const { data: results = [] } = useQuery({
     queryKey: ['analytics-results'],
     queryFn: async () => {
-      const { data } = await supabase.from('results').select('total_marks, gpa, grade, is_pass, exam_session_id, class_id');
+      const { data } = await supabase.from('results').select('marks, gpa, grade, student_id, subject_id, division_id');
+      return data || [];
+    },
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['analytics-subjects'],
+    queryFn: async () => {
+      const { data } = await supabase.from('subjects').select('id, class_id');
       return data || [];
     },
   });
