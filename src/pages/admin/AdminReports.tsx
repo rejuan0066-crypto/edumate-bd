@@ -175,7 +175,7 @@ const AdminReports = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['report-students'],
     queryFn: async () => {
-      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id');
+      const { data } = await supabase.from('students').select('id, status, student_category, residence_type, admission_date, gender, division_id, class_id');
       return data || [];
     },
   });
@@ -231,7 +231,7 @@ const AdminReports = () => {
   const { data: results = [] } = useQuery({
     queryKey: ['report-results'],
     queryFn: async () => {
-      const { data } = await supabase.from('results').select('marks, gpa, grade, student_id, subject_id, division_id, exam_session_id');
+      const { data } = await supabase.from('results').select('marks, gpa, grade, student_id, subject_id, division_id');
       return data || [];
     },
   });
