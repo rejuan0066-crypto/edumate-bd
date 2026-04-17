@@ -228,6 +228,30 @@ const AdminReports = () => {
     },
   });
 
+  const { data: results = [] } = useQuery({
+    queryKey: ['report-results'],
+    queryFn: async () => {
+      const { data } = await supabase.from('results').select('marks, gpa, grade, student_id, subject_id, division_id, exam_session_id');
+      return data || [];
+    },
+  });
+
+  const { data: divisions = [] } = useQuery({
+    queryKey: ['report-divisions'],
+    queryFn: async () => {
+      const { data } = await supabase.from('divisions').select('id, name, name_bn');
+      return data || [];
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['report-classes'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('id, name, name_bn, division_id');
+      return data || [];
+    },
+  });
+
   // === Computed Data ===
   const yearNum = parseInt(selectedYear);
 
