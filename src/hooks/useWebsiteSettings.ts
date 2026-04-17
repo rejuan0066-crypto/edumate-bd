@@ -299,12 +299,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
     { platform: 'Facebook', url: '', icon: 'facebook' },
     { platform: 'YouTube', url: '', icon: 'youtube' },
   ],
-  gallery_items: [
-    { title_bn: 'মাদরাসা ভবন', title_en: 'Madrasah Building', image_url: '', sort_order: 1 },
-    { title_bn: 'বার্ষিক সভা', title_en: 'Annual Meeting', image_url: '', sort_order: 2 },
-    { title_bn: 'ক্লাসরুম', title_en: 'Classroom', image_url: '', sort_order: 3 },
-    { title_bn: 'লাইব্রেরি', title_en: 'Library', image_url: '', sort_order: 4 },
-  ],
+  gallery_items: [],
   header_style: {
     topbar_visible: true,
     topbar_bg_color: '',
