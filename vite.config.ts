@@ -20,11 +20,30 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-popover',
+            '@radix-ui/react-tooltip',
+          ],
+          'chart-vendor': ['recharts'],
+          'pdf-vendor': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          'excel-vendor': ['xlsx', 'xlsx-js-style'],
+          'animation-vendor': ['framer-motion'],
+          'supabase-vendor': ['@supabase/supabase-js'],
+          'query-vendor': ['@tanstack/react-query'],
+          'form-vendor': ['react-hook-form', 'zod', '@hookform/resolvers'],
+        },
       },
     },
   },
