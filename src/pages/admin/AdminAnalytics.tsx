@@ -11,7 +11,7 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area,
 } from 'recharts';
-import { CalendarIcon, TrendingUp, TrendingDown, Wallet, Users, GraduationCap, BookOpen, UserCheck, UserX, BarChart3 } from 'lucide-react';
+import { CalendarIcon, TrendingUp, TrendingDown, Wallet, Users, GraduationCap, BookOpen, UserCheck, UserX, BarChart3, UserCog } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
