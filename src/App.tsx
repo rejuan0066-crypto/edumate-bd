@@ -100,6 +100,7 @@ import StaffCheckin from "./pages/StaffCheckin";
 import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
 import RouteLoader from "./components/RouteLoader";
+import InstallPrompt from "./components/InstallPrompt";
 import { supabase } from "@/integrations/supabase/client";
 
 let isRefreshingSession = false;
@@ -190,6 +191,7 @@ const App = () => (
                 <RouteLoader />
                 <ScrollToTop />
                 <ScrollNavigation />
+                <InstallPrompt />
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
