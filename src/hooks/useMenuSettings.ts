@@ -122,6 +122,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'formula-builder', path: '/admin/formula-builder', label_bn: 'ফর্মুলা বিল্ডার', label_en: 'Formula Builder', icon: 'FlaskConical', visible: true, sort_order: 10 },
     { id: 'validation-manager', path: '/admin/validation-manager', label_bn: 'ভ্যালিডেশন ম্যানেজার', label_en: 'Validation Manager', icon: 'ShieldCheck', visible: true, sort_order: 11 },
     { id: 'reports', path: '/admin/reports', label_bn: 'রিপোর্ট ও অ্যানালিটিক্স', label_en: 'Reports & Analytics', icon: 'BarChart3', visible: true, sort_order: 12 },
+    { id: 'bulk-import', path: '/admin/bulk-import', label_bn: 'বাল্ক ইমপোর্ট', label_en: 'Bulk Import', icon: 'Upload', visible: true, sort_order: 13 },
   ]},
 ];
 
