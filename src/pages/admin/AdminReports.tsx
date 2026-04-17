@@ -655,6 +655,74 @@ const AdminReports = () => {
           })}
         </div>
 
+        {/* === Bilingual PDF Report Generator === */}
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileText className="h-5 w-5 text-primary" />
+              {bn ? 'অটোমেটেড PDF রিপোর্ট জেনারেটর (দ্বিভাষিক)' : 'Automated PDF Report Generator (Bilingual)'}
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {bn ? 'বাংলা ও ইংরেজিতে পেশাদার রিপোর্ট তৈরি করুন — ক্লিক করলে নতুন উইন্ডোতে রিপোর্ট খুলবে এবং সরাসরি PDF সংরক্ষণ করা যাবে।' : 'Generate professional bilingual reports. Click any report to open it in a new window and save as PDF directly.'}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <button
+                onClick={handleAttendancePDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <UserCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক হাজিরা রিপোর্ট' : 'Monthly Attendance'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'উপস্থিত/অনুপস্থিত/বিলম্ব মাসিক বিশ্লেষণ' : 'Present/Absent/Late monthly breakdown'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleFinancialPDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Wallet className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক আর্থিক সারসংক্ষেপ' : 'Monthly Financial Summary'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'আয়, ব্যয়, নেট ব্যালেন্স' : 'Income, Expense, Net Balance'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleAcademicPDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <GraduationCap className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'একাডেমিক পারফরম্যান্স' : 'Academic Performance'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'GPA বণ্টন, পাস হার, শ্রেণীভিত্তিক' : 'GPA distribution, pass rate, class-wise'}</p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleComprehensivePDF}
+                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
+              >
+                <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <FileCheck2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{bn ? 'কম্প্রিহেনসিভ রিপোর্ট' : 'Comprehensive Report'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'সকল মডিউলের সমন্বিত সারসংক্ষেপ' : 'All modules combined overview'}</p>
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Charts Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-wrap gap-2 mb-4">
