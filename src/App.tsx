@@ -95,6 +95,7 @@ import AdminExamRoutine from "./pages/admin/AdminExamRoutine";
 import AdminStudentPromotion from "./pages/admin/AdminStudentPromotion";
 import AdminQuestionPapers from "./pages/admin/AdminQuestionPapers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
@@ -216,6 +217,7 @@ const App = () => (
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
                     <Route path="analytics" element={<AdminAnalytics />} />
+                    <Route path="bulk-import" element={<AdminBulkImport />} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
                     <Route path="staff/add" element={<ModuleGuard menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
