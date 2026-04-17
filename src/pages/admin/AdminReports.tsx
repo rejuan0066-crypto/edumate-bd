@@ -16,8 +16,9 @@ import { Button } from '@/components/ui/button';
 import {
   BarChart3, PieChart as PieChartIcon, TrendingUp, Users, CreditCard,
   CalendarDays, DollarSign, UserCheck, Wallet, ArrowUpRight, ArrowDownRight,
-  Printer, Download
+  Printer, Download, FileText, FileSpreadsheet, GraduationCap, FileCheck2
 } from 'lucide-react';
+import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 
 const COLORS = [
   'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
