@@ -466,7 +466,12 @@ export const useWebsiteSettings = () => {
         .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      // Optimistically update cache so next load shows new value immediately
+      const current = queryClient.getQueryData<WebsiteSettings>(['website-settings']) ?? readCache() ?? DEFAULT_SETTINGS;
+      const updated = { ...current, [variables.key]: variables.value as any };
+      queryClient.setQueryData(['website-settings'], updated);
+      writeCache(updated);
       queryClient.invalidateQueries({ queryKey: ['website-settings'] });
     },
   });
@@ -479,7 +484,12 @@ export const useWebsiteSettings = () => {
         .upsert(rows, { onConflict: 'key' });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
+      const current = queryClient.getQueryData<WebsiteSettings>(['website-settings']) ?? readCache() ?? DEFAULT_SETTINGS;
+      const updated = { ...current };
+      variables.forEach(u => { (updated as any)[u.key] = u.value; });
+      queryClient.setQueryData(['website-settings'], updated);
+      writeCache(updated);
       queryClient.invalidateQueries({ queryKey: ['website-settings'] });
     },
   });
