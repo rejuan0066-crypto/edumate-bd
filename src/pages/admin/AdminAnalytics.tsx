@@ -178,11 +178,11 @@ const AdminAnalytics = () => {
   // ---------- Academic Performance ----------
   const academic = useMemo(() => {
     const totalResults = results.length;
-    const passed = results.filter(r => r.is_pass).length;
+    const isPass = (g: number) => g >= 2;
+    const passed = results.filter(r => isPass(Number(r.gpa || 0))).length;
     const passRate = totalResults ? (passed / totalResults) * 100 : 0;
     const avgGPA = totalResults ? results.reduce((s, r) => s + Number(r.gpa || 0), 0) / totalResults : 0;
 
-    // GPA distribution
     const gpaBuckets = [
       { range: '5.0', count: 0 },
       { range: '4.0-4.9', count: 0 },
@@ -199,14 +199,17 @@ const AdminAnalytics = () => {
       else if (g > 0) gpaBuckets[4].count++;
     });
 
-    // Class-wise pass rate
+    // Class-wise pass rate (resolved via subjects → class_id)
+    const subjectClassMap = new Map<string, string>();
+    subjects.forEach(s => { if (s.class_id) subjectClassMap.set(s.id, s.class_id); });
     const classMap = new Map<string, { total: number; pass: number }>();
     results.forEach(r => {
-      if (!r.class_id) return;
-      if (!classMap.has(r.class_id)) classMap.set(r.class_id, { total: 0, pass: 0 });
-      const c = classMap.get(r.class_id)!;
+      const cid = subjectClassMap.get(r.subject_id);
+      if (!cid) return;
+      if (!classMap.has(cid)) classMap.set(cid, { total: 0, pass: 0 });
+      const c = classMap.get(cid)!;
       c.total++;
-      if (r.is_pass) c.pass++;
+      if (isPass(Number(r.gpa || 0))) c.pass++;
     });
     const classWise = Array.from(classMap.entries()).map(([cid, v]) => {
       const cls = classes.find(c => c.id === cid);
@@ -214,7 +217,7 @@ const AdminAnalytics = () => {
     }).slice(0, 10);
 
     return { totalResults, passed, passRate, avgGPA, gpaBuckets, classWise };
-  }, [results, classes, bn]);
+  }, [results, classes, subjects, bn]);
 
   // ---------- Growth Stats ----------
   const growth = useMemo(() => {
