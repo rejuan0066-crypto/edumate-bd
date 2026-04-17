@@ -665,8 +665,8 @@
     min-width: 0 !important;
   }
 
-  /* Wrap long names/IDs in tables instead of pushing layout off-screen */
-  td, th { word-break: break-word; overflow-wrap: anywhere; }
+  /* Wrap long plain text but keep table cells on one line — scroll the table horizontally instead */
+  p, li, a, span:not([class*="badge"]) { overflow-wrap: anywhere; }
 
   /* Ensure any fixed-pixel-width SelectTrigger never overflows */
   [class*="SelectTrigger"][class*="w-["],
