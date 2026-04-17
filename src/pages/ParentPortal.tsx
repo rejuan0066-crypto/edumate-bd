@@ -11,13 +11,17 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen } from 'lucide-react';
+import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const STORAGE_KEY = 'parent_portal_session';
 
 interface ParentSession {
+  accountId?: string;
+  email?: string;
+  fullName?: string;
   studentId: string;
   studentUuid: string;
   loggedInAt: string;
