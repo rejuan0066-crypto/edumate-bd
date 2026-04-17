@@ -2380,6 +2380,71 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_accounts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          email: string
+          email_verified: boolean
+          full_name: string
+          id: string
+          last_login_at: string | null
+          linked_student_uuid: string | null
+          password_hash: string
+          phone: string | null
+          rejection_reason: string | null
+          status: string
+          student_dob: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email: string
+          email_verified?: boolean
+          full_name: string
+          id?: string
+          last_login_at?: string | null
+          linked_student_uuid?: string | null
+          password_hash: string
+          phone?: string | null
+          rejection_reason?: string | null
+          status?: string
+          student_dob: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          email?: string
+          email_verified?: boolean
+          full_name?: string
+          id?: string
+          last_login_at?: string | null
+          linked_student_uuid?: string | null
+          password_hash?: string
+          phone?: string | null
+          rejection_reason?: string | null
+          status?: string
+          student_dob?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_accounts_linked_student_uuid_fkey"
+            columns: ["linked_student_uuid"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_gateway_config: {
         Row: {
           api_key: string

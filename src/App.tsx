@@ -97,6 +97,7 @@ import AdminStudentPromotion from "./pages/admin/AdminStudentPromotion";
 import AdminQuestionPapers from "./pages/admin/AdminQuestionPapers";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
+import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
@@ -278,6 +279,7 @@ const App = () => (
                     <Route path="api-verification" element={<AdminApiVerification />} />
                     <Route path="user-management" element={<AdminUserManagement />} />
                     <Route path="approvals" element={<AdminApprovals />} />
+                    <Route path="parent-approvals" element={<AdminParentApprovals />} />
                     <Route path="photo-tools" element={<AdminPhotoTools />} />
                     <Route path="payments" element={<AdminPayments />} />
                     <Route path="receipt-designer" element={<AdminReceiptDesigner />} />
