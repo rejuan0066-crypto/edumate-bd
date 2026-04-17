@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface Props {
@@ -36,6 +36,21 @@ const HomeAdmissionButtons = ({ divisions, language, t }: Props) => {
             </Link>
           </motion.div>
         ))}
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          transition={{ delay: divisions.length * 0.08 }}
+          viewport={{ once: true }}
+          className="pt-2 mt-1 border-t border-border/40"
+        >
+          <Link
+            to="/parent"
+            className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-secondary text-secondary-foreground rounded-lg text-center text-sm font-bold hover:bg-secondary/80 transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <Users className="w-4 h-4" />
+            {bn ? 'অভিভাবক লগইন' : 'Parent Login'}
+          </Link>
+        </motion.div>
       </div>
     </div>
   );
