@@ -21,6 +21,8 @@ import {
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import StudentReportSection from '@/components/admin/reports/StudentReportSection';
 import AttendanceReportSection from '@/components/admin/reports/AttendanceReportSection';
+import SyllabusCoverageSection from '@/components/admin/reports/SyllabusCoverageSection';
+import { BookOpen } from 'lucide-react';
 
 const COLORS = [
   'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
@@ -734,6 +736,7 @@ const AdminReports = () => {
               { key: 'students', icon: Users, bn: 'ছাত্র বিশ্লেষণ', en: 'Student Analysis' },
               { key: 'student-list', icon: GraduationCap, bn: 'ছাত্র তালিকা', en: 'Student List' },
               { key: 'attendance', icon: CalendarDays, bn: 'অ্যাটেন্ডেন্স', en: 'Attendance' },
+              { key: 'syllabus', icon: BookOpen, bn: 'সিলেবাস কভারেজ', en: 'Syllabus Coverage' },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border-2 whitespace-nowrap ${activeTab === t.key ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}`}>
