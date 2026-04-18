@@ -1,0 +1,246 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
+import PublicLayout from '@/components/PublicLayout';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Briefcase, Calendar, Clock, ExternalLink, ShieldCheck, Users, Lock } from 'lucide-react';
+import { toast } from 'sonner';
+
+const MeetingRoom = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { language } = useLanguage();
+  const bn = language === 'bn';
+
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [granted, setGranted] = useState(false);
+
+  const { data: meeting, isLoading, error } = useQuery({
+    queryKey: ['meeting', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('meetings')
+        .select('*, staff:staff_organizer_id(name_bn, name_en)')
+        .eq('id', id!)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const status = useMemo(() => {
+    if (!meeting) return 'scheduled' as const;
+    if (meeting.status === 'cancelled' || meeting.status === 'ended') return meeting.status;
+    const now = new Date();
+    const start = new Date(meeting.scheduled_start);
+    const end = new Date(meeting.scheduled_end);
+    if (now >= start && now <= end) return 'live' as const;
+    if (now > end) return 'ended' as const;
+    return 'scheduled' as const;
+  }, [meeting]);
+
+  const canEnter = useMemo(() => {
+    if (!meeting) return false;
+    if (meeting.access_mode === 'public') return true;
+    if (meeting.access_mode === 'logged_in') return !!user;
+    if (meeting.access_mode === 'access_code') return granted;
+    return true;
+  }, [meeting, user, granted]);
+
+  useEffect(() => {
+    if (!meeting || !canEnter || !meeting.enable_attendance) return;
+    let mounted = true;
+    let participantId: string | null = null;
+    (async () => {
+      const displayName = user?.email || guestName || 'Guest';
+      const { data } = await supabase
+        .from('meeting_participants')
+        .insert({
+          meeting_id: meeting.id,
+          user_id: user?.id ?? null,
+          display_name: displayName,
+          attendance_marked: true,
+        })
+        .select('id')
+        .maybeSingle();
+      if (mounted && data) participantId = data.id;
+    })();
+    return () => {
+      mounted = false;
+      if (participantId) {
+        supabase.from('meeting_participants').update({ left_at: new Date().toISOString() }).eq('id', participantId);
+      }
+    };
+  }, [meeting, canEnter, user, guestName]);
+
+  if (isLoading) {
+    return (
+      <PublicLayout>
+        <div className="text-center py-20 text-muted-foreground">{bn ? 'লোড হচ্ছে…' : 'Loading…'}</div>
+      </PublicLayout>
+    );
+  }
+
+  if (error || !meeting) {
+    return (
+      <PublicLayout>
+        <div className="container mx-auto py-20 text-center">
+          <Briefcase className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-2xl font-bold mb-2">{bn ? 'মিটিং পাওয়া যায়নি' : 'Meeting not found'}</h2>
+          <Button onClick={() => navigate('/')} className="mt-4 rounded-2xl">
+            <ArrowLeft className="w-4 h-4 mr-2" /> {bn ? 'হোমে ফিরুন' : 'Back home'}
+          </Button>
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  const formatDT = (iso: string) =>
+    new Date(iso).toLocaleString(bn ? 'bn-BD' : 'en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+
+  const joinUrl = meeting.provider === 'jitsi'
+    ? `https://meet.jit.si/${meeting.meeting_room || meeting.id}#userInfo.displayName="${encodeURIComponent(user?.email || guestName || 'Guest')}"&config.prejoinPageEnabled=false`
+    : meeting.meeting_url;
+
+  const tryAccessCode = () => {
+    if (accessCodeInput.trim() === (meeting.access_code || '').trim()) {
+      setGranted(true);
+      toast.success(bn ? 'অ্যাক্সেস অনুমোদিত' : 'Access granted');
+    } else {
+      toast.error(bn ? 'ভুল অ্যাক্সেস কোড' : 'Wrong access code');
+    }
+  };
+
+  return (
+    <PublicLayout>
+      <div className="container mx-auto py-6 px-4 max-w-6xl">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4 rounded-xl">
+          <ArrowLeft className="w-4 h-4 mr-2" /> {bn ? 'ফিরুন' : 'Back'}
+        </Button>
+
+        <Card className="p-6 rounded-[32px] mb-6">
+          <div className="flex flex-wrap items-start gap-3 mb-3">
+            <h1 className="text-2xl font-bold flex-1">{bn ? meeting.title_bn : meeting.title}</h1>
+            <Badge variant={status === 'live' ? 'destructive' : 'secondary'} className="rounded-full">
+              {status === 'live' ? (bn ? 'লাইভ' : 'LIVE') : status === 'scheduled' ? (bn ? 'নির্ধারিত' : 'Scheduled') : status === 'ended' ? (bn ? 'সমাপ্ত' : 'Ended') : (bn ? 'বাতিল' : 'Cancelled')}
+            </Badge>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {formatDT(meeting.scheduled_start)}</span>
+            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> → {formatDT(meeting.scheduled_end)}</span>
+            <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" /> {meeting.access_mode}</span>
+            {meeting.staff && <span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> {bn ? meeting.staff.name_bn : meeting.staff.name_en}</span>}
+          </div>
+          {(meeting.description || meeting.description_bn) && (
+            <p className="mt-3 text-sm">{bn ? meeting.description_bn || meeting.description : meeting.description}</p>
+          )}
+          {(meeting.notes || meeting.notes_bn) && (
+            <div className="mt-3 p-3 rounded-2xl bg-muted/40 text-sm">
+              <div className="font-medium mb-1">{bn ? 'এজেন্ডা/নোট' : 'Agenda/Notes'}</div>
+              <div className="whitespace-pre-wrap text-muted-foreground">{bn ? meeting.notes_bn || meeting.notes : meeting.notes}</div>
+            </div>
+          )}
+        </Card>
+
+        {/* Access Gates */}
+        {!canEnter && meeting.access_mode === 'logged_in' && (
+          <Card className="p-8 rounded-[32px] text-center">
+            <Lock className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">{bn ? 'লগইন প্রয়োজন' : 'Login required'}</h3>
+            <Button onClick={() => navigate('/login')} className="rounded-2xl mt-2">{bn ? 'লগইন করুন' : 'Login'}</Button>
+          </Card>
+        )}
+
+        {!canEnter && meeting.access_mode === 'access_code' && (
+          <Card className="p-8 rounded-[32px] max-w-md mx-auto">
+            <Lock className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-center mb-4">{bn ? 'অ্যাক্সেস কোড দিন' : 'Enter access code'}</h3>
+            <div className="space-y-3">
+              <Input value={accessCodeInput} onChange={(e) => setAccessCodeInput(e.target.value)} placeholder={bn ? 'কোড' : 'Code'} className="rounded-xl" />
+              {!user && (
+                <div>
+                  <Label className="text-xs">{bn ? 'আপনার নাম' : 'Your name'}</Label>
+                  <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} className="rounded-xl mt-1" />
+                </div>
+              )}
+              <Button onClick={tryAccessCode} className="w-full rounded-xl">{bn ? 'প্রবেশ করুন' : 'Enter'}</Button>
+            </div>
+          </Card>
+        )}
+
+        {canEnter && status !== 'cancelled' && (
+          <>
+            {meeting.provider === 'jitsi' && status === 'live' && (
+              <Card className="p-2 rounded-[32px] overflow-hidden">
+                <iframe
+                  src={joinUrl}
+                  className="w-full h-[70vh] rounded-[28px] border-0"
+                  allow="camera; microphone; fullscreen; display-capture"
+                  title={meeting.title}
+                />
+              </Card>
+            )}
+
+            {meeting.provider === 'youtube' && status === 'live' && meeting.meeting_url && (
+              <Card className="p-2 rounded-[32px] overflow-hidden">
+                <iframe
+                  src={meeting.meeting_url.replace('watch?v=', 'embed/')}
+                  className="w-full h-[70vh] rounded-[28px] border-0"
+                  allow="autoplay; fullscreen"
+                  title={meeting.title}
+                />
+              </Card>
+            )}
+
+            {(meeting.provider === 'zoom' || meeting.provider === 'google_meet') && (
+              <Card className="p-8 rounded-[32px] text-center">
+                <h3 className="text-lg font-semibold mb-3">{bn ? 'বাহ্যিক মিটিং লিংক' : 'External meeting link'}</h3>
+                <Button asChild size="lg" className="rounded-2xl">
+                  <a href={meeting.meeting_url} target="_blank" rel="noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" /> {bn ? 'মিটিংয়ে যোগ দিন' : 'Join meeting'}
+                  </a>
+                </Button>
+              </Card>
+            )}
+
+            {meeting.provider === 'jitsi' && status === 'scheduled' && (
+              <Card className="p-8 rounded-[32px] text-center">
+                <Clock className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <p>{bn ? 'মিটিং এখনো শুরু হয়নি।' : 'Meeting has not started yet.'}</p>
+                <p className="text-sm text-muted-foreground mt-1">{formatDT(meeting.scheduled_start)}</p>
+              </Card>
+            )}
+
+            {status === 'ended' && (
+              <Card className="p-8 rounded-[32px] text-center">
+                <p className="text-muted-foreground">{bn ? 'এই মিটিংটি সমাপ্ত।' : 'This meeting has ended.'}</p>
+                {meeting.recording_url && (
+                  <Button asChild className="mt-4 rounded-2xl">
+                    <a href={meeting.recording_url} target="_blank" rel="noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" /> {bn ? 'রেকর্ডিং দেখুন' : 'View recording'}
+                    </a>
+                  </Button>
+                )}
+              </Card>
+            )}
+          </>
+        )}
+      </div>
+    </PublicLayout>
+  );
+};
+
+export default MeetingRoom;
