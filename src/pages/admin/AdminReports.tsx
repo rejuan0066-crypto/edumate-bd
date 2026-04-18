@@ -648,18 +648,7 @@ const AdminReports = () => {
                 </div>
               </button>
 
-              <button
-                onClick={handleFinancialPDF}
-                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
-              >
-                <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Wallet className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক আর্থিক সারসংক্ষেপ' : 'Monthly Financial Summary'}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'আয়, ব্যয়, নেট ব্যালেন্স' : 'Income, Expense, Net Balance'}</p>
-                </div>
-              </button>
+              {/* মাসিক আর্থিক সারসংক্ষেপ → /admin/expenses (Summary tab) তে স্থানান্তরিত */}
 
               <button
                 onClick={handleAcademicPDF}
