@@ -608,69 +608,94 @@ const SyllabusCoverageSection = () => {
               <label className="text-xs font-medium mb-1 block">{bn ? 'তারিখ' : 'Date'} *</label>
               <Input type="date" value={editing.coverage_date} onChange={(e) => setEditing({ ...editing, coverage_date: e.target.value })} />
             </div>
-            {editing.class_id && routinePeriods.length > 0 && (
+            {editing.class_id && (
               <div className="md:col-span-2 p-3 rounded-2xl border border-primary/20 bg-primary/5">
-                <label className="text-xs font-semibold mb-2 block text-primary flex items-center gap-1">
-                  <BookOpen className="h-3.5 w-3.5" />
-                  {bn ? 'ক্লাস রুটিন থেকে অটো-ফিল' : 'Auto-fill from Class Routine'}
-                  <span className="text-[10px] font-normal text-muted-foreground ml-auto">
-                    {bn ? `${routinePeriods.length} টি পিরিয়ড` : `${routinePeriods.length} periods`}
-                  </span>
-                </label>
-                <Select
-                  value=""
-                  onValueChange={(periodId) => {
-                    const p: any = routinePeriods.find((rp: any) => rp.id === periodId);
-                    if (!p) return;
-                    const subjName = p.subjects?.name_en || p.subjects?.name;
-                    const subjNameBn = p.subjects?.name_bn;
-                    const matchedTeacherId = findTeacherIdByName(p.teacher_name, p.teacher_name_bn);
-                    // Compute duration from start/end if available
-                    let dur: number | null = editing.duration_minutes;
-                    if (p.start_time && p.end_time) {
-                      const [sh, sm] = p.start_time.split(':').map(Number);
-                      const [eh, em] = p.end_time.split(':').map(Number);
-                      dur = (eh * 60 + em) - (sh * 60 + sm);
-                    }
-                    setEditing({
-                      ...editing,
-                      subject_id: p.subject_id || editing.subject_id,
-                      teacher_id: matchedTeacherId ?? editing.teacher_id,
-                      duration_minutes: dur,
-                      notes: editing.notes || (p.teacher_name && !matchedTeacherId
-                        ? `${bn ? 'শিক্ষক' : 'Teacher'}: ${bn ? (p.teacher_name_bn || p.teacher_name) : (p.teacher_name || p.teacher_name_bn)}`
-                        : editing.notes),
-                    });
-                    toast.success(bn
-                      ? `পিরিয়ড ${p.period_number} থেকে অটো-ফিল হয়েছে`
-                      : `Auto-filled from period ${p.period_number}`);
-                  }}
-                >
-                  <SelectTrigger className="bg-background">
-                    <SelectValue placeholder={bn ? 'পিরিয়ড বাছাই করে অটো-ফিল করুন' : 'Pick a period to auto-fill'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {routinePeriods.map((p: any) => {
-                      const subjLabel = bn ? (p.subjects?.name_bn || p.subjects?.name || '—') : (p.subjects?.name || p.subjects?.name_bn || '—');
-                      const teachLabel = bn ? (p.teacher_name_bn || p.teacher_name || '') : (p.teacher_name || p.teacher_name_bn || '');
-                      return (
-                        <SelectItem key={p.id} value={p.id}>
-                          <span className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[9px] px-1.5">P{p.period_number}</Badge>
-                            <span className="text-xs text-muted-foreground">{p.start_time?.slice(0, 5)}–{p.end_time?.slice(0, 5)}</span>
-                            <span className="font-medium">{subjLabel}</span>
-                            {teachLabel && <span className="text-[10px] text-muted-foreground">• {teachLabel}</span>}
-                          </span>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            {editing.class_id && editingDayOfWeek !== null && routinePeriods.length === 0 && (
-              <div className="md:col-span-2 text-[11px] text-muted-foreground italic px-1">
-                {bn ? 'এই দিনের জন্য কোনো ক্লাস রুটিন এন্ট্রি পাওয়া যায়নি' : 'No class routine entries found for this day'}
+                <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                  <label className="text-xs font-semibold text-primary flex items-center gap-1">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    {bn ? 'ক্লাস রুটিন থেকে অটো-ফিল' : 'Auto-fill from Class Routine'}
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">
+                      {routinePeriods.length > 0
+                        ? (bn ? `${routinePeriods.length} টি পিরিয়ড` : `${routinePeriods.length} periods`)
+                        : (bn ? 'কোনো পিরিয়ড নেই' : 'No periods')}
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={showAllDays ? 'default' : 'outline'}
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => setShowAllDays(v => !v)}
+                    >
+                      {showAllDays ? (bn ? 'শুধু আজকের দিন' : 'Only this day') : (bn ? 'সকল দিন দেখান' : 'Show all days')}
+                    </Button>
+                  </div>
+                </div>
+                {routinePeriods.length === 0 ? (
+                  <div className="text-[11px] text-muted-foreground italic px-1 py-2">
+                    {bn
+                      ? (showAllDays
+                          ? 'এই ক্লাসের কোনো সক্রিয় রুটিন পাওয়া যায়নি। অ্যাডমিন → ক্লাস রুটিন থেকে যোগ করুন।'
+                          : 'এই দিনের জন্য কোনো ক্লাস রুটিন এন্ট্রি পাওয়া যায়নি। "সকল দিন দেখান" চাপুন।')
+                      : (showAllDays
+                          ? 'No active routine for this class. Add via Admin → Class Routine.'
+                          : 'No routine entries for this day. Try "Show all days".')}
+                  </div>
+                ) : (
+                  <Select
+                    value=""
+                    onValueChange={(periodId) => {
+                      const p: any = routinePeriods.find((rp: any) => rp.id === periodId);
+                      if (!p) return;
+                      const matchedTeacherId = findTeacherIdByName(p.teacher_name, p.teacher_name_bn);
+                      let dur: number | null = editing.duration_minutes;
+                      if (p.start_time && p.end_time) {
+                        const [sh, sm] = p.start_time.split(':').map(Number);
+                        const [eh, em] = p.end_time.split(':').map(Number);
+                        dur = (eh * 60 + em) - (sh * 60 + sm);
+                      }
+                      setEditing({
+                        ...editing,
+                        subject_id: p.subject_id || editing.subject_id,
+                        teacher_id: matchedTeacherId ?? editing.teacher_id,
+                        duration_minutes: dur,
+                        notes: editing.notes || (p.teacher_name && !matchedTeacherId
+                          ? `${bn ? 'শিক্ষক' : 'Teacher'}: ${bn ? (p.teacher_name_bn || p.teacher_name) : (p.teacher_name || p.teacher_name_bn)}`
+                          : editing.notes),
+                      });
+                      toast.success(bn
+                        ? `পিরিয়ড ${p.period_number} থেকে অটো-ফিল হয়েছে`
+                        : `Auto-filled from period ${p.period_number}`);
+                    }}
+                  >
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder={bn ? 'পিরিয়ড বাছাই করে অটো-ফিল করুন' : 'Pick a period to auto-fill'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {routinePeriods.map((p: any) => {
+                        const subjLabel = bn ? (p.subjects?.name_bn || p.subjects?.name || '—') : (p.subjects?.name || p.subjects?.name_bn || '—');
+                        const teachLabel = bn ? (p.teacher_name_bn || p.teacher_name || '') : (p.teacher_name || p.teacher_name_bn || '');
+                        const dayNames = bn
+                          ? ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি']
+                          : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        return (
+                          <SelectItem key={p.id} value={p.id}>
+                            <span className="flex items-center gap-2">
+                              {showAllDays && (
+                                <Badge variant="secondary" className="text-[9px] px-1.5">{dayNames[p.day_of_week]}</Badge>
+                              )}
+                              <Badge variant="outline" className="text-[9px] px-1.5">P{p.period_number}</Badge>
+                              <span className="text-xs text-muted-foreground">{p.start_time?.slice(0, 5)}–{p.end_time?.slice(0, 5)}</span>
+                              <span className="font-medium">{subjLabel}</span>
+                              {teachLabel && <span className="text-[10px] text-muted-foreground">• {teachLabel}</span>}
+                            </span>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
             <div>
