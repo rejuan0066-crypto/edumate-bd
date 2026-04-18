@@ -64,6 +64,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'exam-routine', path: '/admin/exam-routine', label_bn: 'পরীক্ষার রুটিন', label_en: 'Exam Routine', icon: 'ClipboardList', visible: true, sort_order: 1 },
     { id: 'results', path: '/admin/results', label_bn: 'ফলাফল', label_en: 'Results', icon: 'FileText', visible: true, sort_order: 2 },
     { id: 'question-papers', path: '/admin/question-papers', label_bn: 'প্রশ্নপত্র', label_en: 'Question Papers', icon: 'FileText', visible: true, sort_order: 3 },
+    { id: 'online-exams', path: '/admin/online-exams', label_bn: 'অনলাইন পরীক্ষা', label_en: 'Online Exams', icon: 'ListChecks', visible: true, sort_order: 4 },
   ]},
 
   // আর্থিক

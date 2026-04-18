@@ -95,6 +95,7 @@ import AdminClassRoutine from "./pages/admin/AdminClassRoutine";
 import AdminExamRoutine from "./pages/admin/AdminExamRoutine";
 import AdminStudentPromotion from "./pages/admin/AdminStudentPromotion";
 import AdminQuestionPapers from "./pages/admin/AdminQuestionPapers";
+import AdminOnlineExams from "./pages/admin/AdminOnlineExams";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
@@ -290,6 +291,7 @@ const App = () => (
                     <Route path="exam-routine" element={<AdminExamRoutine />} />
                     <Route path="student-promotion" element={<ModuleGuard menuPath="/admin/student-promotion"><AdminStudentPromotion /></ModuleGuard>} />
                     <Route path="question-papers" element={<AdminQuestionPapers />} />
+                    <Route path="online-exams" element={<AdminOnlineExams />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
 
