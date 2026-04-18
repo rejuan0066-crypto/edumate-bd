@@ -2344,6 +2344,347 @@ export type Database = {
         }
         Relationships: []
       }
+      online_exam_answers: {
+        Row: {
+          answer: Json | null
+          attempt_id: string
+          awarded_marks: number
+          created_at: string
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          is_correct: boolean | null
+          manually_graded: boolean
+          question_id: string
+          reviewer_comment: string | null
+          updated_at: string
+        }
+        Insert: {
+          answer?: Json | null
+          attempt_id: string
+          awarded_marks?: number
+          created_at?: string
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          is_correct?: boolean | null
+          manually_graded?: boolean
+          question_id: string
+          reviewer_comment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: Json | null
+          attempt_id?: string
+          awarded_marks?: number
+          created_at?: string
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          is_correct?: boolean | null
+          manually_graded?: boolean
+          question_id?: string
+          reviewer_comment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_exam_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "online_exam_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exam_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "online_exam_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_exam_attempts: {
+        Row: {
+          attempted_by_identifier: string | null
+          attempted_by_name: string | null
+          auto_graded_score: number
+          created_at: string
+          exam_id: string
+          expires_at: string | null
+          fullscreen_exit_count: number
+          id: string
+          ip_address: string | null
+          is_published: boolean
+          manual_graded_score: number
+          parent_account_id: string | null
+          question_order: Json | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewer_notes: string | null
+          started_at: string
+          status: string
+          student_id: string | null
+          submitted_at: string | null
+          tab_switch_count: number
+          time_taken_seconds: number | null
+          total_score: number
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          attempted_by_identifier?: string | null
+          attempted_by_name?: string | null
+          auto_graded_score?: number
+          created_at?: string
+          exam_id: string
+          expires_at?: string | null
+          fullscreen_exit_count?: number
+          id?: string
+          ip_address?: string | null
+          is_published?: boolean
+          manual_graded_score?: number
+          parent_account_id?: string | null
+          question_order?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          started_at?: string
+          status?: string
+          student_id?: string | null
+          submitted_at?: string | null
+          tab_switch_count?: number
+          time_taken_seconds?: number | null
+          total_score?: number
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          attempted_by_identifier?: string | null
+          attempted_by_name?: string | null
+          auto_graded_score?: number
+          created_at?: string
+          exam_id?: string
+          expires_at?: string | null
+          fullscreen_exit_count?: number
+          id?: string
+          ip_address?: string | null
+          is_published?: boolean
+          manual_graded_score?: number
+          parent_account_id?: string | null
+          question_order?: Json | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewer_notes?: string | null
+          started_at?: string
+          status?: string
+          student_id?: string | null
+          submitted_at?: string | null
+          tab_switch_count?: number
+          time_taken_seconds?: number | null
+          total_score?: number
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_exam_attempts_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "online_exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exam_attempts_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "parent_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exam_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_exam_questions: {
+        Row: {
+          correct_answer: Json | null
+          created_at: string
+          exam_id: string
+          explanation: string | null
+          explanation_bn: string | null
+          id: string
+          marks: number
+          negative_marks: number
+          options: Json | null
+          question_text: string
+          question_text_bn: string
+          question_type: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          correct_answer?: Json | null
+          created_at?: string
+          exam_id: string
+          explanation?: string | null
+          explanation_bn?: string | null
+          id?: string
+          marks?: number
+          negative_marks?: number
+          options?: Json | null
+          question_text: string
+          question_text_bn: string
+          question_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          correct_answer?: Json | null
+          created_at?: string
+          exam_id?: string
+          explanation?: string | null
+          explanation_bn?: string | null
+          id?: string
+          marks?: number
+          negative_marks?: number
+          options?: Json | null
+          question_text?: string
+          question_text_bn?: string
+          question_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_exam_questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "online_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_exams: {
+        Row: {
+          academic_session_id: string | null
+          access_code: string | null
+          access_mode: string
+          class_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          duration_minutes: number
+          end_at: string | null
+          exam_session_id: string | null
+          id: string
+          instructions: string | null
+          instructions_bn: string | null
+          passing_marks: number
+          result_mode: string
+          result_publish_at: string | null
+          settings: Json
+          start_at: string | null
+          status: string
+          subject_id: string | null
+          title: string
+          title_bn: string
+          total_marks: number
+          updated_at: string
+        }
+        Insert: {
+          academic_session_id?: string | null
+          access_code?: string | null
+          access_mode?: string
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          duration_minutes?: number
+          end_at?: string | null
+          exam_session_id?: string | null
+          id?: string
+          instructions?: string | null
+          instructions_bn?: string | null
+          passing_marks?: number
+          result_mode?: string
+          result_publish_at?: string | null
+          settings?: Json
+          start_at?: string | null
+          status?: string
+          subject_id?: string | null
+          title: string
+          title_bn: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_session_id?: string | null
+          access_code?: string | null
+          access_mode?: string
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          duration_minutes?: number
+          end_at?: string | null
+          exam_session_id?: string | null
+          id?: string
+          instructions?: string | null
+          instructions_bn?: string | null
+          passing_marks?: number
+          result_mode?: string
+          result_publish_at?: string | null
+          settings?: Json
+          start_at?: string | null
+          status?: string
+          subject_id?: string | null
+          title?: string
+          title_bn?: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_exams_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exams_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exams_exam_session_id_fkey"
+            columns: ["exam_session_id"]
+            isOneToOne: false
+            referencedRelation: "exam_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exams_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       otp_codes: {
         Row: {
           attempts: number
