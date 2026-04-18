@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import StudentReportSection from '@/components/admin/reports/StudentReportSection';
+import AttendanceReportSection from '@/components/admin/reports/AttendanceReportSection';
 
 const COLORS = [
   'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
@@ -944,55 +945,9 @@ const AdminReports = () => {
             <StudentReportSection />
           </TabsContent>
 
-          {/* Attendance */}
+          {/* Attendance — session + class + date range */}
           <TabsContent value="attendance" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{bn ? 'সামগ্রিক অ্যাটেন্ডেন্স' : 'Overall Attendance'}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {attendanceSummary.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <PieChart>
-                        <Pie data={attendanceSummary} cx="50%" cy="50%" outerRadius={100} paddingAngle={3} dataKey="value"
-                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                          {attendanceSummary.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-[280px] flex items-center justify-center text-muted-foreground text-sm">
-                      {bn ? 'কোনো অ্যাটেন্ডেন্স ডেটা নেই' : 'No attendance data'}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{bn ? 'অ্যাটেন্ডেন্স পরিসংখ্যান' : 'Attendance Stats'}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: bn ? 'মোট রেকর্ড' : 'Total Records', value: attendance.length },
-                      { label: bn ? 'ছাত্র রেকর্ড' : 'Student Records', value: attendance.filter(a => a.entity_type === 'student').length },
-                      { label: bn ? 'স্টাফ রেকর্ড' : 'Staff Records', value: attendance.filter(a => a.entity_type === 'staff').length },
-                      { label: bn ? 'আজকের রেকর্ড' : "Today's Records", value: attendance.filter(a => a.attendance_date === new Date().toISOString().split('T')[0]).length },
-                    ].map((item, i) => (
-                      <Card key={i}>
-                        <CardContent className="p-3 text-center">
-                          <p className="text-xl font-bold">{item.value}</p>
-                          <p className="text-[10px] text-muted-foreground">{item.label}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <AttendanceReportSection />
           </TabsContent>
         </Tabs>
       </div>
