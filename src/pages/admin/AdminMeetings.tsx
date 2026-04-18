@@ -20,8 +20,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Plus, Pencil, Trash2, Video, Users, Calendar, Clock, ExternalLink,
-  Copy, Search, MessageCircle, ShieldCheck, Briefcase,
+  Copy, Search, MessageCircle, ShieldCheck, Briefcase, Zap,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -132,6 +133,7 @@ const AdminMeetings = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const bn = language === 'bn';
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
@@ -310,6 +312,57 @@ const AdminMeetings = () => {
     },
   });
 
+  const startNowMutation = useMutation({
+    mutationFn: async () => {
+      const now = new Date();
+      const end = new Date(now.getTime() + 60 * 60 * 1000);
+      const { data, error } = await supabase.from('meetings').insert({
+        title: `Instant Meeting - ${now.toLocaleString('en-GB')}`,
+        title_bn: `ইনস্ট্যান্ট মিটিং - ${now.toLocaleString('bn-BD')}`,
+        provider: 'jitsi',
+        meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
+        meeting_type: 'staff',
+        access_mode: 'logged_in',
+        scheduled_start: now.toISOString(),
+        scheduled_end: end.toISOString(),
+        enable_chat: true,
+        enable_attendance: true,
+        is_published: true,
+        status: 'scheduled',
+        organizer_id: user?.id ?? null,
+      }).select('id').single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success(bn ? 'মিটিং শুরু হচ্ছে…' : 'Starting meeting…');
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      navigate(`/meeting/${id}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startScheduledMutation = useMutation({
+    mutationFn: async (m: any) => {
+      const now = new Date();
+      const originalDuration = new Date(m.scheduled_end).getTime() - new Date(m.scheduled_start).getTime();
+      const newEnd = new Date(now.getTime() + Math.max(originalDuration, 30 * 60 * 1000));
+      const { error } = await supabase.from('meetings').update({
+        scheduled_start: now.toISOString(),
+        scheduled_end: newEnd.toISOString(),
+        status: 'scheduled',
+      }).eq('id', m.id);
+      if (error) throw error;
+      return m.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success(bn ? 'মিটিং এখন লাইভ' : 'Meeting is now live');
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      navigate(`/meeting/${id}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const copyJoinLink = (m: any) => {
     const url = `${window.location.origin}/meeting/${m.id}`;
     navigator.clipboard.writeText(url);
@@ -334,9 +387,19 @@ const AdminMeetings = () => {
               {bn ? 'স্টাফ, অভিভাবক ও প্রশাসনিক মিটিং শিডিউল ও পরিচালনা করুন' : 'Schedule and manage staff, parent and administrative meetings'}
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2 rounded-2xl">
-            <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'New Meeting'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => startNowMutation.mutate()}
+              disabled={startNowMutation.isPending}
+              variant="default"
+              className="gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+            >
+              <Zap className="w-4 h-4" /> {bn ? 'এখনই শুরু করুন' : 'Start Now'}
+            </Button>
+            <Button onClick={openCreate} variant="outline" className="gap-2 rounded-2xl">
+              <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'Schedule'}
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
@@ -431,9 +494,19 @@ const AdminMeetings = () => {
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                         {m._status === 'scheduled' && (
-                          <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
-                            {bn ? 'বাতিল' : 'Cancel'}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => startScheduledMutation.mutate(m)}
+                              disabled={startScheduledMutation.isPending}
+                              className="rounded-xl gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+                            >
+                              <Zap className="w-3.5 h-3.5" /> {bn ? 'এখনই শুরু' : 'Start Now'}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
+                              {bn ? 'বাতিল' : 'Cancel'}
+                            </Button>
+                          </>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => setDeleteId(m.id)} className="rounded-xl text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
