@@ -139,6 +139,7 @@ const DEFAULT_PUBLIC: MenuItemConfig[] = [
   { id: 'notices', path: '/notices', label_bn: 'নোটিশ', label_en: 'Notices', icon: '', visible: true, sort_order: 6 },
   { id: 'donation', path: '/donation', label_bn: 'দান', label_en: 'Donation', icon: '', visible: true, sort_order: 7 },
   { id: 'fee-payment', path: '/fee-payment', label_bn: 'ফি প্রদান', label_en: 'Fee Payment', icon: '', visible: true, sort_order: 8 },
+  { id: 'live-classes-public', path: '/live-classes', label_bn: 'লাইভ ক্লাস', label_en: 'Live Classes', icon: '', visible: true, sort_order: 8.5 },
   { id: 'contact', path: '/contact', label_bn: 'যোগাযোগ', label_en: 'Contact', icon: '', visible: true, sort_order: 9 },
 ];
 
