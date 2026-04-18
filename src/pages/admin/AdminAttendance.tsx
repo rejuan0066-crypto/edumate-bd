@@ -1200,8 +1200,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     <SelectValue placeholder={bn ? 'সেশন ইয়ার' : 'Session Year'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {sessionYears.map((sy: any) => (
-                      <SelectItem key={sy} value={sy}>{sy}</SelectItem>
+                    {sessionOptions.map((opt: any) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
