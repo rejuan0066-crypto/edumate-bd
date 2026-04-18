@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import StudentReportSection from '@/components/admin/reports/StudentReportSection';
+import AttendanceReportSection from '@/components/admin/reports/AttendanceReportSection';
 
 const COLORS = [
   'hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))',
