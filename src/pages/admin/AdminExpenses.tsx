@@ -17,12 +17,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
 import MiniSparkline from '@/components/expenses/MiniSparkline';
+import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
