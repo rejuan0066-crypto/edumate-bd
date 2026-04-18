@@ -111,6 +111,45 @@ const SyllabusCoverageSection = () => {
     },
   });
 
+  // Routine periods for the editing class on the editing date's day-of-week
+  const editingDayOfWeek = useMemo(() => {
+    if (!editing.coverage_date) return null;
+    const d = new Date(editing.coverage_date);
+    return isNaN(d.getTime()) ? null : d.getDay(); // 0=Sun, 6=Sat
+  }, [editing.coverage_date]);
+
+  const { data: routinePeriods = [] } = useQuery({
+    queryKey: ['syl-routine-periods', editing.class_id, editingDayOfWeek],
+    enabled: !!editing.class_id && editingDayOfWeek !== null && editOpen,
+    queryFn: async () => {
+      const { data: routines } = await supabase
+        .from('class_routines')
+        .select('id')
+        .eq('class_id', editing.class_id)
+        .eq('is_active', true)
+        .limit(1);
+      const routineId = routines?.[0]?.id;
+      if (!routineId) return [];
+      const { data } = await supabase
+        .from('routine_periods')
+        .select('id, period_number, start_time, end_time, subject_id, teacher_name, teacher_name_bn, is_break, room, subjects(id, name, name_bn)')
+        .eq('routine_id', routineId)
+        .eq('day_of_week', editingDayOfWeek)
+        .eq('is_break', false)
+        .order('period_number');
+      return data || [];
+    },
+  });
+
+  const findTeacherIdByName = (nameEn?: string | null, nameBn?: string | null): string | null => {
+    if (!nameEn && !nameBn) return null;
+    const match = teachers.find((t: any) =>
+      (nameEn && (t.name_en === nameEn || t.name_bn === nameEn)) ||
+      (nameBn && (t.name_bn === nameBn || t.name_en === nameBn))
+    );
+    return match?.id || null;
+  };
+
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['syl-coverage', sessionId, classId, teacherId, subjectId, fromDate, toDate],
     enabled: !!sessionId && !!classId,
