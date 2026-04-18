@@ -619,6 +619,8 @@ const SyllabusCoverageSection = () => {
             <Button variant="outline" onClick={() => setEditOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
             <Button
               onClick={() => {
+                if (!editing.session_id) { toast.error(bn ? 'সেশন বাছাই করুন' : 'Please select a session'); return; }
+                if (!editing.class_id) { toast.error(bn ? 'ক্লাস বাছাই করুন' : 'Please select a class'); return; }
                 if (!editing.subject_id) { toast.error(bn ? 'বিষয় বাছাই করুন' : 'Please select a subject'); return; }
                 saveMutation.mutate(editing);
               }}
