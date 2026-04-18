@@ -222,6 +222,7 @@ const App = () => (
                   <Route path="/exam/:id" element={<OnlineExamTake />} />
                   <Route path="/live-classes" element={<LiveClasses />} />
                   <Route path="/live-class/:id" element={<LiveClassRoom />} />
+                  <Route path="/meeting/:id" element={<MeetingRoom />} />
                   <Route path="/staff-dashboard" element={<ProtectedRoute><StaffDashboard /></ProtectedRoute>} />
                   <Route path="/waiting-approval" element={<WaitingApproval />} />
                   <Route path="/attendance-checkin" element={<AttendanceCheckin />} />
