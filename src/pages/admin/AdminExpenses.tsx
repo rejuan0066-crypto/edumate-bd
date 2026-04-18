@@ -593,6 +593,72 @@ const AdminExpenses = () => {
   const handlePrint = () => window.print();
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
 
+  // Annual Financial Summary PDF (Income / Expense / Net Balance per month)
+  const handleAnnualFinancialPDF = () => {
+    const yearStr = String(selectedYear);
+    const monthlyRows = MONTHS.map((m, i) => {
+      const monthKey = `${MONTHS[i]}-${selectedYear}`;
+      // Income = deposits for that month + paid fee_payments for that month
+      const monthDeposits = allDeposits
+        .filter((d: any) => d.month_year === monthKey)
+        .reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+      const monthFees = annualFeePayments
+        .filter((f: any) => f.month === MONTHS[i] && f.status === 'paid')
+        .reduce((s: number, f: any) => s + Number(f.paid_amount || 0), 0);
+      const income = monthDeposits + monthFees;
+      const expense = allExpenses
+        .filter((e: any) => e.month_year === monthKey)
+        .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      return { monthIdx: i, income, expense, profit: income - expense };
+    });
+
+    const totalIncome = monthlyRows.reduce((s, r) => s + r.income, 0);
+    const totalExpense = monthlyRows.reduce((s, r) => s + r.expense, 0);
+    const totalDonation = annualDonors.reduce((s: number, d: any) => s + Number(d.donation_amount || 0), 0);
+
+    generateBilingualReport(
+      {
+        institution_name: instName || '',
+        institution_name_en: instNameEn || '',
+        address: instAddress || '',
+        phone: instPhone || '',
+        email: instEmail || '',
+        logo_url: selectedInstitution?.logo_url,
+        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
+        report_title_en: 'Monthly Financial Summary',
+        period_label_bn: `সাল: ${yearStr}`,
+        period_label_en: `Year: ${yearStr}`,
+      },
+      [{
+        title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
+        title_en: 'Monthly Income & Expense Statement',
+        headers: [
+          { bn: 'মাস', en: 'Month' },
+          { bn: 'আয় (৳)', en: 'Income (৳)' },
+          { bn: 'ব্যয় (৳)', en: 'Expense (৳)' },
+          { bn: 'নেট ব্যালেন্স (৳)', en: 'Net Balance (৳)' },
+        ],
+        rows: monthlyRows.map(r => [
+          bn ? MONTHS_BN[r.monthIdx] : MONTHS[r.monthIdx],
+          r.income,
+          r.expense,
+          r.profit,
+        ]),
+        totals: [
+          { bn: 'মোট আয়', en: 'Total Income', value: totalIncome },
+          { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExpense },
+          { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
+        ],
+      }],
+      [
+        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
+        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
+        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
+        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
+      ],
+    );
+  };
+
   // Get selected month display name
   const selectedMonthIndex = MONTHS.indexOf(selectedMonthYear.split('-')[0]);
   const selectedMonthYearStr = selectedMonthYear.split('-')[1];
