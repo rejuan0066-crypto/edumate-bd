@@ -731,6 +731,7 @@ const AdminReports = () => {
               { key: 'income-expense', icon: BarChart3, bn: 'আয় vs ব্যয়', en: 'Income vs Expense' },
               { key: 'fee', icon: CreditCard, bn: 'ফি রিপোর্ট', en: 'Fee Report' },
               { key: 'students', icon: Users, bn: 'ছাত্র বিশ্লেষণ', en: 'Student Analysis' },
+              { key: 'student-list', icon: GraduationCap, bn: 'ছাত্র তালিকা', en: 'Student List' },
               { key: 'attendance', icon: CalendarDays, bn: 'অ্যাটেন্ডেন্স', en: 'Attendance' },
             ].map(t => (
               <button key={t.key} onClick={() => setActiveTab(t.key)}
