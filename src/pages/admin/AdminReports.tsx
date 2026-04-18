@@ -409,44 +409,7 @@ const AdminReports = () => {
     );
   };
 
-  const handleFinancialPDF = () => {
-    generateBilingualReport(
-      {
-        ...reportMeta,
-        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
-        report_title_en: 'Monthly Financial Summary',
-        period_label_bn: `সাল: ${selectedYear}`,
-        period_label_en: `Year: ${selectedYear}`,
-      },
-      [{
-        title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
-        title_en: 'Monthly Income & Expense Statement',
-        headers: [
-          { bn: 'মাস', en: 'Month' },
-          { bn: 'আয় (৳)', en: 'Income (৳)' },
-          { bn: 'ব্যয় (৳)', en: 'Expense (৳)' },
-          { bn: 'নেট ব্যালেন্স (৳)', en: 'Net Balance (৳)' },
-        ],
-        rows: incomeExpenseData.map((d, i) => [
-          MONTHS[i],
-          d.income,
-          d.expense,
-          d.profit,
-        ]),
-        totals: [
-          { bn: 'মোট আয়', en: 'Total Income', value: totalIncome },
-          { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExpense },
-          { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
-        ],
-      }],
-      [
-        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
-        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
-        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
-        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
-      ],
-    );
-  };
+  // Note: Monthly Financial Summary moved to /admin/expenses → Summary tab
 
   const handleAcademicPDF = () => {
     // GPA distribution
