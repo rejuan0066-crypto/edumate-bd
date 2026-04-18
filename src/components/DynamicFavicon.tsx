@@ -185,8 +185,9 @@ function buildManifest(opts: {
     categories: ['education', 'productivity'],
     lang: 'bn',
   };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
-  return URL.createObjectURL(blob);
+  // Use data URL (not blob:) — Android Chrome requires same-origin or data: manifest for install
+  const json = JSON.stringify(manifest);
+  return 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(json);
 }
 
 export default DynamicFavicon;
