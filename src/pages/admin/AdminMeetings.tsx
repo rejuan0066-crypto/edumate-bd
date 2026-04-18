@@ -25,6 +25,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { useMeetingProviderSettings } from '@/hooks/useMeetingProviderSettings';
 
 type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'access_code';
