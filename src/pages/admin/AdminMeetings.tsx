@@ -25,6 +25,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { useMeetingProviderSettings } from '@/hooks/useMeetingProviderSettings';
 
 type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'access_code';
@@ -137,6 +138,7 @@ const AdminMeetings = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const bn = language === 'bn';
+  const { getDefaultUrl } = useMeetingProviderSettings();
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
   const [search, setSearch] = useState('');
@@ -209,11 +211,15 @@ const AdminMeetings = () => {
     const now = new Date();
     const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
     const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    // Auto-populate default Daily.co URL if available
+    const defaultDailyUrl = getDefaultUrl('daily');
     setForm({
       ...emptyForm,
       scheduled_start: toLocal(inOneHour),
       scheduled_end: toLocal(new Date(inOneHour.getTime() + 60 * 60 * 1000)),
       meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
+      meeting_url: defaultDailyUrl || '',
+      provider: defaultDailyUrl ? 'daily' : 'jitsi',
     });
     setOpen(true);
   };
@@ -600,7 +606,21 @@ const AdminMeetings = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label>{bn ? 'প্রোভাইডার' : 'Provider'} *</Label>
-                <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v as Provider })}>
+                <Select 
+                  value={form.provider} 
+                  onValueChange={(v) => {
+                    const provider = v as Provider;
+                    // Auto-populate default URL when switching to daily
+                    if (provider === 'daily') {
+                      const defaultUrl = getDefaultUrl('daily');
+                      setForm({ ...form, provider, meeting_url: defaultUrl || form.meeting_url });
+                    } else if (provider === 'jitsi') {
+                      setForm({ ...form, provider, meeting_url: '', meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}` });
+                    } else {
+                      setForm({ ...form, provider, meeting_url: '' });
+                    }
+                  }}
+                >
                   <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="jitsi">{providerLabel('jitsi', bn)}</SelectItem>
