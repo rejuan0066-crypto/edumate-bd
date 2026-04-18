@@ -387,9 +387,19 @@ const AdminMeetings = () => {
               {bn ? 'স্টাফ, অভিভাবক ও প্রশাসনিক মিটিং শিডিউল ও পরিচালনা করুন' : 'Schedule and manage staff, parent and administrative meetings'}
             </p>
           </div>
-          <Button onClick={openCreate} className="gap-2 rounded-2xl">
-            <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'New Meeting'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => startNowMutation.mutate()}
+              disabled={startNowMutation.isPending}
+              variant="default"
+              className="gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+            >
+              <Zap className="w-4 h-4" /> {bn ? 'এখনই শুরু করুন' : 'Start Now'}
+            </Button>
+            <Button onClick={openCreate} variant="outline" className="gap-2 rounded-2xl">
+              <Plus className="w-4 h-4" /> {bn ? 'নতুন মিটিং' : 'Schedule'}
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
