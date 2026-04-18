@@ -62,6 +62,7 @@ import AdminStudentAttendance from "./pages/admin/AdminStudentAttendance";
 import AdminStaffAttendance from "./pages/admin/AdminStaffAttendance";
 import AdminValidationManager from "./pages/admin/AdminValidationManager";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminStaffReports from "./pages/admin/AdminStaffReports";
 import AdminPermissions from "./pages/admin/AdminPermissions";
 import AdminThemeCustomizer from "./pages/admin/AdminThemeCustomizer";
 import ThemeProvider from "./components/ThemeProvider";
@@ -275,6 +276,7 @@ const App = () => (
                     <Route path="staff-attendance" element={<ModuleGuard menuPath="/admin/staff-attendance"><AdminStaffAttendance /></ModuleGuard>} />
                     <Route path="validation-manager" element={<AdminValidationManager />} />
                     <Route path="reports" element={<AdminReports />} />
+                    <Route path="staff-reports" element={<AdminStaffReports />} />
                     <Route path="permissions" element={<AdminPermissions />} />
                     <Route path="theme" element={<AdminThemeCustomizer />} />
                     <Route path="menu-manager" element={<AdminMenuManager />} />
