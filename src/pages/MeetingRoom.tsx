@@ -245,12 +245,13 @@ const MeetingRoom = () => {
                 <iframe
                   src={joinUrl}
                   className="w-full h-[70vh] rounded-[28px] border-0"
-                  allow="camera; microphone; autoplay; fullscreen; display-capture; speaker-selection; clipboard-write"
+                  allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
                   allowFullScreen
+                  {...({ allowusermedia: 'true' } as any)}
                   title={meeting.title}
                 />
                 <p className="text-xs text-muted-foreground text-center mt-2 px-2">
-                  {bn ? '🔊 সাউন্ড না এলে মিটিং এর ভেতরে আনমিউট আইকনে ক্লিক করুন।' : '🔊 If you cannot hear, click the unmute icon inside the meeting.'}
+                  {bn ? '🎙️ আনমিউট না হলে: ব্রাউজার অ্যাড্রেস বারের 🔒 আইকনে ট্যাপ করে Microphone "Allow" করুন, তারপর পেজ রিফ্রেশ করুন।' : '🎙️ If unmute fails: Tap 🔒 in address bar, "Allow" Microphone, then refresh.'}
                 </p>
               </Card>
             )}
