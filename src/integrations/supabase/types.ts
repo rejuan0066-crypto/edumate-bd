@@ -4779,6 +4779,92 @@ export type Database = {
           },
         ]
       }
+      syllabus_coverage: {
+        Row: {
+          chapter: string | null
+          chapter_bn: string | null
+          class_id: string
+          coverage_date: string
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          pages_covered: string | null
+          progress_percent: number | null
+          session_id: string
+          subject_id: string
+          teacher_id: string | null
+          topic: string | null
+          topic_bn: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          chapter?: string | null
+          chapter_bn?: string | null
+          class_id: string
+          coverage_date?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          pages_covered?: string | null
+          progress_percent?: number | null
+          session_id: string
+          subject_id: string
+          teacher_id?: string | null
+          topic?: string | null
+          topic_bn?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          chapter?: string | null
+          chapter_bn?: string | null
+          class_id?: string
+          coverage_date?: string
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          pages_covered?: string | null
+          progress_percent?: number | null
+          session_id?: string
+          subject_id?: string
+          teacher_id?: string | null
+          topic?: string | null
+          topic_bn?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "syllabus_coverage_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syllabus_coverage_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syllabus_coverage_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "syllabus_coverage_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_logs: {
         Row: {
           action: string
