@@ -2553,6 +2553,36 @@ export type Database = {
           },
         ]
       }
+      meeting_provider_settings: {
+        Row: {
+          config: Json | null
+          created_at: string
+          default_room_url: string | null
+          id: string
+          is_enabled: boolean
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          default_room_url?: string | null
+          id?: string
+          is_enabled?: boolean
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          default_room_url?: string | null
+          id?: string
+          is_enabled?: boolean
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meetings: {
         Row: {
           access_code: string | null
