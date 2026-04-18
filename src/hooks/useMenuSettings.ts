@@ -47,6 +47,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'resign-letters', path: '/admin/resign-letters', label_bn: 'পদত্যাগ পত্র', label_en: 'Resign Letters', icon: 'FileSignature', visible: true, sort_order: 6 },
     { id: 'salary', path: '/admin/salary', label_bn: 'বেতন ব্যবস্থাপনা', label_en: 'Salary Management', icon: 'Wallet', visible: true, sort_order: 7 },
     { id: 'attendance-staff', path: '/admin/staff-attendance', label_bn: 'স্টাফ উপস্থিতি', label_en: 'Staff Attendance', icon: 'CalendarCheck', visible: true, sort_order: 8 },
+    { id: 'staff-reports', path: '/admin/staff-reports', label_bn: 'স্টাফ রিপোর্ট', label_en: 'Staff Reports', icon: 'BarChart3', visible: true, sort_order: 9 },
   ]},
 
   // একাডেমিক
