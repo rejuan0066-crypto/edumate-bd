@@ -93,6 +93,16 @@ const SyllabusCoverageSection = () => {
     },
   });
 
+  // Subjects scoped to the entry being edited (independent of filter classId)
+  const { data: editSubjects = [] } = useQuery({
+    queryKey: ['syl-edit-subjects', editing.class_id],
+    enabled: !!editing.class_id,
+    queryFn: async () => {
+      const { data } = await supabase.from('subjects').select('id, name, name_bn, class_id').eq('class_id', editing.class_id).eq('is_active', true);
+      return data || [];
+    },
+  });
+
   const { data: teachers = [] } = useQuery({
     queryKey: ['syl-teachers'],
     queryFn: async () => {
