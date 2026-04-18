@@ -138,6 +138,7 @@ const AdminMeetings = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const bn = language === 'bn';
+  const { getDefaultUrl } = useMeetingProviderSettings();
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
   const [search, setSearch] = useState('');
