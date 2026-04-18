@@ -111,6 +111,45 @@ const SyllabusCoverageSection = () => {
     },
   });
 
+  // Routine periods for the editing class on the editing date's day-of-week
+  const editingDayOfWeek = useMemo(() => {
+    if (!editing.coverage_date) return null;
+    const d = new Date(editing.coverage_date);
+    return isNaN(d.getTime()) ? null : d.getDay(); // 0=Sun, 6=Sat
+  }, [editing.coverage_date]);
+
+  const { data: routinePeriods = [] } = useQuery({
+    queryKey: ['syl-routine-periods', editing.class_id, editingDayOfWeek],
+    enabled: !!editing.class_id && editingDayOfWeek !== null && editOpen,
+    queryFn: async () => {
+      const { data: routines } = await supabase
+        .from('class_routines')
+        .select('id')
+        .eq('class_id', editing.class_id)
+        .eq('is_active', true)
+        .limit(1);
+      const routineId = routines?.[0]?.id;
+      if (!routineId) return [];
+      const { data } = await supabase
+        .from('routine_periods')
+        .select('id, period_number, start_time, end_time, subject_id, teacher_name, teacher_name_bn, is_break, room, subjects(id, name, name_bn)')
+        .eq('routine_id', routineId)
+        .eq('day_of_week', editingDayOfWeek)
+        .eq('is_break', false)
+        .order('period_number');
+      return data || [];
+    },
+  });
+
+  const findTeacherIdByName = (nameEn?: string | null, nameBn?: string | null): string | null => {
+    if (!nameEn && !nameBn) return null;
+    const match = teachers.find((t: any) =>
+      (nameEn && (t.name_en === nameEn || t.name_bn === nameEn)) ||
+      (nameBn && (t.name_bn === nameBn || t.name_en === nameBn))
+    );
+    return match?.id || null;
+  };
+
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['syl-coverage', sessionId, classId, teacherId, subjectId, fromDate, toDate],
     enabled: !!sessionId && !!classId,
@@ -563,6 +602,71 @@ const SyllabusCoverageSection = () => {
               <label className="text-xs font-medium mb-1 block">{bn ? 'তারিখ' : 'Date'} *</label>
               <Input type="date" value={editing.coverage_date} onChange={(e) => setEditing({ ...editing, coverage_date: e.target.value })} />
             </div>
+            {editing.class_id && routinePeriods.length > 0 && (
+              <div className="md:col-span-2 p-3 rounded-2xl border border-primary/20 bg-primary/5">
+                <label className="text-xs font-semibold mb-2 block text-primary flex items-center gap-1">
+                  <BookOpen className="h-3.5 w-3.5" />
+                  {bn ? 'ক্লাস রুটিন থেকে অটো-ফিল' : 'Auto-fill from Class Routine'}
+                  <span className="text-[10px] font-normal text-muted-foreground ml-auto">
+                    {bn ? `${routinePeriods.length} টি পিরিয়ড` : `${routinePeriods.length} periods`}
+                  </span>
+                </label>
+                <Select
+                  value=""
+                  onValueChange={(periodId) => {
+                    const p: any = routinePeriods.find((rp: any) => rp.id === periodId);
+                    if (!p) return;
+                    const subjName = p.subjects?.name_en || p.subjects?.name;
+                    const subjNameBn = p.subjects?.name_bn;
+                    const matchedTeacherId = findTeacherIdByName(p.teacher_name, p.teacher_name_bn);
+                    // Compute duration from start/end if available
+                    let dur: number | null = editing.duration_minutes;
+                    if (p.start_time && p.end_time) {
+                      const [sh, sm] = p.start_time.split(':').map(Number);
+                      const [eh, em] = p.end_time.split(':').map(Number);
+                      dur = (eh * 60 + em) - (sh * 60 + sm);
+                    }
+                    setEditing({
+                      ...editing,
+                      subject_id: p.subject_id || editing.subject_id,
+                      teacher_id: matchedTeacherId ?? editing.teacher_id,
+                      duration_minutes: dur,
+                      notes: editing.notes || (p.teacher_name && !matchedTeacherId
+                        ? `${bn ? 'শিক্ষক' : 'Teacher'}: ${bn ? (p.teacher_name_bn || p.teacher_name) : (p.teacher_name || p.teacher_name_bn)}`
+                        : editing.notes),
+                    });
+                    toast.success(bn
+                      ? `পিরিয়ড ${p.period_number} থেকে অটো-ফিল হয়েছে`
+                      : `Auto-filled from period ${p.period_number}`);
+                  }}
+                >
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder={bn ? 'পিরিয়ড বাছাই করে অটো-ফিল করুন' : 'Pick a period to auto-fill'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {routinePeriods.map((p: any) => {
+                      const subjLabel = bn ? (p.subjects?.name_bn || p.subjects?.name || '—') : (p.subjects?.name || p.subjects?.name_bn || '—');
+                      const teachLabel = bn ? (p.teacher_name_bn || p.teacher_name || '') : (p.teacher_name || p.teacher_name_bn || '');
+                      return (
+                        <SelectItem key={p.id} value={p.id}>
+                          <span className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[9px] px-1.5">P{p.period_number}</Badge>
+                            <span className="text-xs text-muted-foreground">{p.start_time?.slice(0, 5)}–{p.end_time?.slice(0, 5)}</span>
+                            <span className="font-medium">{subjLabel}</span>
+                            {teachLabel && <span className="text-[10px] text-muted-foreground">• {teachLabel}</span>}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {editing.class_id && editingDayOfWeek !== null && routinePeriods.length === 0 && (
+              <div className="md:col-span-2 text-[11px] text-muted-foreground italic px-1">
+                {bn ? 'এই দিনের জন্য কোনো ক্লাস রুটিন এন্ট্রি পাওয়া যায়নি' : 'No class routine entries found for this day'}
+              </div>
+            )}
             <div>
               <label className="text-xs font-medium mb-1 block">{bn ? 'বিষয়' : 'Subject'} *</label>
               <Select value={editing.subject_id} onValueChange={(v) => setEditing({ ...editing, subject_id: v })} disabled={!editing.class_id}>
