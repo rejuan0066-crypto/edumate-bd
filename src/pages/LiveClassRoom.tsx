@@ -83,17 +83,17 @@ const LiveClassRoom = () => {
     refetchInterval: 60_000,
   });
 
-  // Profile lookup for student/staff link
+  // Profile lookup
   const { data: profile } = useQuery({
     queryKey: ['lc-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, student_record_id, staff_record_id')
+        .select('id, full_name')
         .eq('id', user.id)
         .maybeSingle();
-      return data;
+      return data as { id: string; full_name: string | null } | null;
     },
     enabled: !!user?.id,
   });
@@ -199,8 +199,6 @@ const LiveClassRoom = () => {
         .insert({
           live_class_id: id,
           user_id: user?.id ?? null,
-          student_id: profile?.student_record_id ?? null,
-          staff_id: profile?.staff_record_id ?? null,
           display_name: displayName,
           attendance_marked: true,
         })
@@ -228,7 +226,7 @@ const LiveClassRoom = () => {
       live_class_id: id,
       user_id: user?.id ?? null,
       sender_name: displayName,
-      sender_role: profile?.staff_record_id ? 'teacher' : 'student',
+      sender_role: 'student',
       message: t,
       message_type: 'chat',
     });
