@@ -939,6 +939,11 @@ const AdminReports = () => {
             </div>
           </TabsContent>
 
+          {/* Student List (session + class + search) */}
+          <TabsContent value="student-list" className="space-y-4">
+            <StudentReportSection />
+          </TabsContent>
+
           {/* Attendance */}
           <TabsContent value="attendance" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
