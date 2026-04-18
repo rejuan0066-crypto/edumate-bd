@@ -20,8 +20,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import {
   Plus, Pencil, Trash2, Video, Users, Calendar, Clock, ExternalLink,
-  Copy, Search, MessageCircle, ShieldCheck, Briefcase,
+  Copy, Search, MessageCircle, ShieldCheck, Briefcase, Zap,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
