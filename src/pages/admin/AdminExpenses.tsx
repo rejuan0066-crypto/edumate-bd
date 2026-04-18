@@ -214,6 +214,30 @@ const AdminExpenses = () => {
     },
   });
 
+  // For Annual Financial Summary report
+  const { data: annualFeePayments = [] } = useQuery({
+    queryKey: ['annual-fee-payments', selectedYear],
+    queryFn: async () => {
+      const { data } = await supabase.from('fee_payments')
+        .select('paid_amount, status, month, year')
+        .eq('year', selectedYear);
+      return data || [];
+    },
+  });
+
+  const { data: annualDonors = [] } = useQuery({
+    queryKey: ['annual-donors', selectedYear],
+    queryFn: async () => {
+      const start = `${selectedYear}-01-01`;
+      const end = `${selectedYear}-12-31`;
+      const { data } = await supabase.from('donors')
+        .select('donation_amount, donation_date')
+        .gte('donation_date', start)
+        .lte('donation_date', end);
+      return data || [];
+    },
+  });
+
   // Auto-select default institution
   useEffect(() => {
     if (institutions.length > 0 && !selectedInstitutionId) {
