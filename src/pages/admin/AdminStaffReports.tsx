@@ -697,6 +697,54 @@ const AdminStaffReports = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Remarks Edit Dialog */}
+        <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5 text-primary" />
+                {bn ? 'বিস্তারিত / মন্তব্য' : 'Details / Remarks'}
+              </DialogTitle>
+            </DialogHeader>
+            {editTarget && (
+              <div className="space-y-3">
+                <div className="rounded-2xl bg-muted/40 p-3 space-y-1">
+                  <div className="text-sm font-semibold">
+                    {bn ? (editTarget.name_bn || editTarget.name_en) : (editTarget.name_en || editTarget.name_bn)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {editTarget.staff_id || '-'} • {editTarget.designation || '-'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {bn ? 'তারিখ' : 'Date'}: {dutyDate}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'বিস্তারিত / মন্তব্য লিখুন' : 'Enter details / remarks'}
+                  </label>
+                  <Textarea
+                    value={editRemarks}
+                    onChange={(e) => setEditRemarks(e.target.value)}
+                    rows={5}
+                    placeholder={bn ? 'যেমন: ছুটিতে আছেন, ভিজিটে গেছেন, বিশেষ দায়িত্ব...' : 'e.g. On leave, Field visit, Special duty...'}
+                    className="resize-none"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)} disabled={savingRemarks}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button onClick={saveRemarks} disabled={savingRemarks}>
+                {savingRemarks && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {bn ? 'সংরক্ষণ' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
