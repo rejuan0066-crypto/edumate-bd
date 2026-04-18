@@ -222,7 +222,25 @@ const MeetingRoom = () => {
 
         {canEnter && status !== 'cancelled' && (
           <>
-            {meeting.provider === 'jitsi' && status === 'live' && (
+            {meeting.provider === 'jitsi' && status === 'live' && !mediaReady && (
+              <Card className="p-8 rounded-[32px] text-center max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                  <ShieldCheck className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{bn ? 'মাইক্রোফোন/ক্যামেরা অনুমতি দিন' : 'Allow Microphone & Camera'}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {bn ? 'মিটিংয়ে যোগ দিতে আপনার ব্রাউজারকে মাইক্রোফোন এবং ক্যামেরা ব্যবহারের অনুমতি দিতে হবে। মোবাইলে ব্রাউজার পপ-আপে "Allow" চাপুন।' : 'To join, your browser needs permission to use microphone and camera. On mobile, tap "Allow" in the browser pop-up.'}
+                </p>
+                <Button onClick={requestMediaPermission} disabled={requestingMedia} size="lg" className="rounded-2xl w-full">
+                  {requestingMedia ? (bn ? 'অনুরোধ করা হচ্ছে…' : 'Requesting…') : (bn ? 'অনুমতি দিন ও যোগ দিন' : 'Grant Permission & Join')}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-3">
+                  {bn ? 'টিপ: শুধু অডিও চাইলে ভেতরে গিয়ে ক্যামেরা বন্ধ করতে পারবেন।' : 'Tip: You can turn off the camera once inside.'}
+                </p>
+              </Card>
+            )}
+
+            {meeting.provider === 'jitsi' && status === 'live' && mediaReady && (
               <Card className="p-2 rounded-[32px] overflow-hidden">
                 <iframe
                   src={joinUrl}
@@ -232,7 +250,7 @@ const MeetingRoom = () => {
                   title={meeting.title}
                 />
                 <p className="text-xs text-muted-foreground text-center mt-2 px-2">
-                  {bn ? '🔊 সাউন্ড না এলে ব্রাউজারে এই সাইটে অডিও/মাইক্রোফোন অনুমতি দিন এবং মিটিং এর ভেতরে আনমিউট আইকনে ক্লিক করুন।' : '🔊 If you cannot hear, allow microphone/audio in your browser and click the unmute icon inside the meeting.'}
+                  {bn ? '🔊 সাউন্ড না এলে মিটিং এর ভেতরে আনমিউট আইকনে ক্লিক করুন।' : '🔊 If you cannot hear, click the unmute icon inside the meeting.'}
                 </p>
               </Card>
             )}
