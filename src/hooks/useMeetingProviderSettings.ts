@@ -10,15 +10,18 @@ interface ProviderSetting {
 }
 
 export function useMeetingProviderSettings() {
-  const { data, isLoading } = useQuery<ProviderSetting[]>({
+  const { data, isLoading } = useQuery({
     queryKey: ['meeting-provider-settings'],
-    queryFn: async () => {
+    queryFn: async (): Promise<ProviderSetting[]> => {
       const { data, error } = await supabase
         .from('meeting_provider_settings')
         .select('*')
         .eq('is_enabled', true);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((item) => ({
+        ...item,
+        config: (item.config as Record<string, any>) ?? {},
+      })) as ProviderSetting[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -27,5 +30,5 @@ export function useMeetingProviderSettings() {
     return data?.find((s) => s.provider === provider)?.default_room_url || null;
   };
 
-  return { settings: data, getDefaultUrl, isLoading };
+  return { settings: data ?? [], getDefaultUrl, isLoading };
 }
