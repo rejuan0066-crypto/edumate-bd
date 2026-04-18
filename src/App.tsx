@@ -81,6 +81,8 @@ import AdminAddressManager from "./pages/admin/AdminAddressManager";
 import AdminApiVerification from "./pages/admin/AdminApiVerification";
 import PostsPage from "./pages/PostsPage";
 import PhotoToolsPage from "./pages/PhotoToolsPage";
+import OnlineExams from "./pages/OnlineExams";
+import OnlineExamTake from "./pages/OnlineExamTake";
 import AdminUserManagement from "./pages/admin/AdminUserManagement";
 import AdminPhotoTools from "./pages/admin/AdminPhotoTools";
 import StaffDashboard from "./pages/StaffDashboard";
@@ -211,6 +213,8 @@ const App = () => (
                   <Route path="/fee-payment" element={<ProtectedRoute><FeePaymentPage /></ProtectedRoute>} />
                   <Route path="/posts" element={<PostsPage />} />
                   <Route path="/photo-tools" element={<PhotoToolsPage />} />
+                  <Route path="/exams" element={<OnlineExams />} />
+                  <Route path="/exam/:id" element={<OnlineExamTake />} />
                   <Route path="/staff-dashboard" element={<ProtectedRoute><StaffDashboard /></ProtectedRoute>} />
                   <Route path="/waiting-approval" element={<WaitingApproval />} />
                   <Route path="/attendance-checkin" element={<AttendanceCheckin />} />
