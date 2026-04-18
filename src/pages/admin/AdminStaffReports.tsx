@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
@@ -7,12 +7,15 @@ import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { CalendarDays, Download, FileText, Users, ClipboardList, UserCheck, Pencil, Loader2 } from 'lucide-react';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
+import { toast } from 'sonner';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const firstOfMonth = () => {
@@ -32,8 +35,60 @@ const AdminStaffReports = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { settings: ws } = useWebsiteSettings();
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('attendance');
+
+  // ================== REMARKS EDIT DIALOG ==================
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editRemarks, setEditRemarks] = useState('');
+  const [savingRemarks, setSavingRemarks] = useState(false);
+
+  const openEditRemarks = (d: any) => {
+    setEditTarget(d);
+    setEditRemarks(d.remarks && d.remarks !== '-' ? d.remarks : '');
+  };
+
+  const saveRemarks = async () => {
+    if (!editTarget) return;
+    setSavingRemarks(true);
+    try {
+      const { data: existing } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('entity_type', 'staff')
+        .eq('entity_id', editTarget.id)
+        .eq('attendance_date', dutyDate)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('attendance_records')
+          .update({ remarks: editRemarks || null })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('attendance_records')
+          .insert({
+            entity_type: 'staff',
+            entity_id: editTarget.id,
+            attendance_date: dutyDate,
+            status: 'absent',
+            shift: 'morning',
+            remarks: editRemarks || null,
+          });
+        if (error) throw error;
+      }
+      toast.success(bn ? 'মন্তব্য সংরক্ষিত হয়েছে' : 'Remarks saved');
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Failed to save'));
+    } finally {
+      setSavingRemarks(false);
+    }
+  };
 
   // ================== ATTENDANCE FILTERS ==================
   const [category, setCategory] = useState<string>('all');
@@ -604,6 +659,7 @@ const AdminStaffReports = () => {
                           <TableHead className="text-center">{bn ? 'আউট' : 'Check-out'}</TableHead>
                           <TableHead className="text-center">{bn ? 'শিফট' : 'Shift'}</TableHead>
                           <TableHead>{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
+                          <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -617,7 +673,20 @@ const AdminStaffReports = () => {
                             <TableCell className="text-center text-sm font-mono">{d.check_in}</TableCell>
                             <TableCell className="text-center text-sm font-mono">{d.check_out}</TableCell>
                             <TableCell className="text-center text-sm">{d.shift}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{d.remarks}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground max-w-xs">
+                              <div className="line-clamp-2 whitespace-pre-wrap">{d.remarks}</div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
+                                onClick={() => openEditRemarks(d)}
+                                title={bn ? 'মন্তব্য সম্পাদনা' : 'Edit Remarks'}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -628,6 +697,54 @@ const AdminStaffReports = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Remarks Edit Dialog */}
+        <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5 text-primary" />
+                {bn ? 'বিস্তারিত / মন্তব্য' : 'Details / Remarks'}
+              </DialogTitle>
+            </DialogHeader>
+            {editTarget && (
+              <div className="space-y-3">
+                <div className="rounded-2xl bg-muted/40 p-3 space-y-1">
+                  <div className="text-sm font-semibold">
+                    {bn ? (editTarget.name_bn || editTarget.name_en) : (editTarget.name_en || editTarget.name_bn)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {editTarget.staff_id || '-'} • {editTarget.designation || '-'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {bn ? 'তারিখ' : 'Date'}: {dutyDate}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    {bn ? 'বিস্তারিত / মন্তব্য লিখুন' : 'Enter details / remarks'}
+                  </label>
+                  <Textarea
+                    value={editRemarks}
+                    onChange={(e) => setEditRemarks(e.target.value)}
+                    rows={5}
+                    placeholder={bn ? 'যেমন: ছুটিতে আছেন, ভিজিটে গেছেন, বিশেষ দায়িত্ব...' : 'e.g. On leave, Field visit, Special duty...'}
+                    className="resize-none"
+                  />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)} disabled={savingRemarks}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button onClick={saveRemarks} disabled={savingRemarks}>
+                {savingRemarks && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {bn ? 'সংরক্ষণ' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
