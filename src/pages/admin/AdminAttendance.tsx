@@ -167,6 +167,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
+  // Fetch academic sessions (proper session_id source)
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-attendance'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('academic_sessions')
+        .select('id, name, name_bn, is_active')
+        .order('name', { ascending: false });
+      return data || [];
+    },
+  });
+
   // Fetch students
   const { data: allStudents = [] } = useQuery({
     queryKey: ['students-attendance'],
@@ -187,18 +199,30 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     enabled: entityType === 'staff',
   });
 
-  // Get unique session years from students
-  const sessionYears = useMemo(() => {
-    const years = new Set(allStudents.map((s: any) => s.session_year).filter(Boolean));
-    return Array.from(years).sort().reverse();
-  }, [allStudents]);
-
-  // Set default session year
-  useMemo(() => {
-    if (sessionYears.length > 0 && !selectedSessionYear) {
-      setSelectedSessionYear(sessionYears[0] as string);
+  // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
+  const sessionOptions = useMemo(() => {
+    if (academicSessions.length > 0) {
+      return academicSessions.map((s: any) => ({
+        value: s.id,
+        label: bn ? (s.name_bn || s.name) : s.name,
+        isLegacy: false,
+      }));
     }
-  }, [sessionYears]);
+    const years = new Set(allStudents.map((s: any) => s.session_year).filter(Boolean));
+    return Array.from(years).sort().reverse().map((y: any) => ({
+      value: y as string,
+      label: y as string,
+      isLegacy: true,
+    }));
+  }, [academicSessions, allStudents, bn]);
+
+  // Set default session
+  useMemo(() => {
+    if (sessionOptions.length > 0 && !selectedSessionYear) {
+      const active = academicSessions.find((s: any) => s.is_active);
+      setSelectedSessionYear(active?.id || sessionOptions[0].value);
+    }
+  }, [sessionOptions, academicSessions]);
 
   const orderedClasses = useMemo(() => {
     const divisionOrder = new Map(divisions.map((d: any, index: number) => [d.id, d.sort_order ?? index]));
