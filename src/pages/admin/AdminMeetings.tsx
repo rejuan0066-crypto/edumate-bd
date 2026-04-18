@@ -312,6 +312,57 @@ const AdminMeetings = () => {
     },
   });
 
+  const startNowMutation = useMutation({
+    mutationFn: async () => {
+      const now = new Date();
+      const end = new Date(now.getTime() + 60 * 60 * 1000);
+      const { data, error } = await supabase.from('meetings').insert({
+        title: `Instant Meeting - ${now.toLocaleString('en-GB')}`,
+        title_bn: `ইনস্ট্যান্ট মিটিং - ${now.toLocaleString('bn-BD')}`,
+        provider: 'jitsi',
+        meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
+        meeting_type: 'staff',
+        access_mode: 'logged_in',
+        scheduled_start: now.toISOString(),
+        scheduled_end: end.toISOString(),
+        enable_chat: true,
+        enable_attendance: true,
+        is_published: true,
+        status: 'scheduled',
+        organizer_id: user?.id ?? null,
+      }).select('id').single();
+      if (error) throw error;
+      return data.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success(bn ? 'মিটিং শুরু হচ্ছে…' : 'Starting meeting…');
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      navigate(`/meeting/${id}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const startScheduledMutation = useMutation({
+    mutationFn: async (m: any) => {
+      const now = new Date();
+      const originalDuration = new Date(m.scheduled_end).getTime() - new Date(m.scheduled_start).getTime();
+      const newEnd = new Date(now.getTime() + Math.max(originalDuration, 30 * 60 * 1000));
+      const { error } = await supabase.from('meetings').update({
+        scheduled_start: now.toISOString(),
+        scheduled_end: newEnd.toISOString(),
+        status: 'scheduled',
+      }).eq('id', m.id);
+      if (error) throw error;
+      return m.id as string;
+    },
+    onSuccess: (id) => {
+      toast.success(bn ? 'মিটিং এখন লাইভ' : 'Meeting is now live');
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      navigate(`/meeting/${id}`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const copyJoinLink = (m: any) => {
     const url = `${window.location.origin}/meeting/${m.id}`;
     navigator.clipboard.writeText(url);
