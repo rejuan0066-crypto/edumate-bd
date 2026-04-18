@@ -324,11 +324,14 @@ const AdminMeetings = () => {
     mutationFn: async () => {
       const now = new Date();
       const end = new Date(now.getTime() + 60 * 60 * 1000);
+      const defaultDailyUrl = getDefaultUrl('daily');
+      const useDaily = !!defaultDailyUrl;
       const { data, error } = await supabase.from('meetings').insert({
         title: `Instant Meeting - ${now.toLocaleString('en-GB')}`,
         title_bn: `ইনস্ট্যান্ট মিটিং - ${now.toLocaleString('bn-BD')}`,
-        provider: 'jitsi',
-        meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
+        provider: useDaily ? 'daily' : 'jitsi',
+        meeting_url: useDaily ? defaultDailyUrl : '',
+        meeting_room: useDaily ? '' : `meet-${Math.random().toString(36).slice(2, 10)}`,
         meeting_type: 'staff',
         access_mode: 'logged_in',
         scheduled_start: now.toISOString(),
