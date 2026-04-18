@@ -1654,7 +1654,7 @@ const AdminExpenses = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 items-end">
                   <Button onClick={() => saveSummary.mutate()} disabled={saveSummary.isPending}>
                     {bn ? 'সারাংশ সংরক্ষণ' : 'Save Summary'}
                   </Button>
@@ -1664,6 +1664,37 @@ const AdminExpenses = () => {
                   <Button variant="outline" onClick={handleExcelDownload}>
                     <Download className="w-4 h-4 mr-1" />{bn ? 'সম্পূর্ণ এক্সেল' : 'Excel All'}
                   </Button>
+                </div>
+
+                {/* Annual Financial Summary (Year-wise PDF) - moved from Reports & Analytics */}
+                <div className="card-elevated p-4 border-2 border-primary/20 bg-primary/5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <FileBarChart className="w-4 h-4 text-primary" />
+                        {bn ? 'মাসিক আর্থিক সারসংক্ষেপ (বার্ষিক রিপোর্ট)' : 'Monthly Financial Summary (Annual Report)'}
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {bn ? 'নির্বাচিত বছরের প্রতি মাসের আয়, ব্যয় ও নেট ব্যালেন্সের বাংলা-ইংরেজি দ্বিভাষিক PDF রিপোর্ট।' : 'Bilingual PDF report of monthly income, expense and net balance for the selected year.'}
+                      </p>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <Label className="text-xs">{bn ? 'বছর' : 'Year'}</Label>
+                        <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                          <SelectTrigger className="w-[120px] h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 8 }, (_, i) => currentYear - i).map(y => (
+                              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handleAnnualFinancialPDF}>
+                        <FileText className="w-4 h-4 mr-1" />{bn ? 'PDF ডাউনলোড' : 'Download PDF'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Per-institution download */}
