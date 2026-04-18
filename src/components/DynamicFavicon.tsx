@@ -25,7 +25,7 @@ const DynamicFavicon = () => {
   const appIconSrc = settings.logo_url || settings.favicon_url;
   const appName = settings.institution_name_en || settings.institution_name || 'Madrasah';
   const shortName = (settings.institution_name_en || settings.institution_name || 'App').slice(0, 12);
-  const themeColor = settings.theme_color || '#0f766e';
+  const themeColor = (settings as any).theme_color || '#0f766e';
 
   // Update when settings load from DB
   useEffect(() => {
