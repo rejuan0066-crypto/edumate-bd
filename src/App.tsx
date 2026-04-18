@@ -101,6 +101,8 @@ import AdminStudentPromotion from "./pages/admin/AdminStudentPromotion";
 import AdminQuestionPapers from "./pages/admin/AdminQuestionPapers";
 import AdminOnlineExams from "./pages/admin/AdminOnlineExams";
 import AdminLiveClasses from "./pages/admin/AdminLiveClasses";
+import AdminMeetings from "./pages/admin/AdminMeetings";
+import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
