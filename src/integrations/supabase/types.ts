@@ -2499,6 +2499,158 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_participants: {
+        Row: {
+          attendance_marked: boolean | null
+          created_at: string
+          display_name: string
+          id: string
+          joined_at: string | null
+          left_at: string | null
+          meeting_id: string
+          role: string
+          staff_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          meeting_id: string
+          role?: string
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          meeting_id?: string
+          role?: string
+          staff_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_participants_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          access_code: string | null
+          access_mode: string
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          enable_attendance: boolean
+          enable_chat: boolean
+          enable_reminder: boolean
+          id: string
+          is_published: boolean
+          meeting_room: string | null
+          meeting_type: string
+          meeting_url: string | null
+          notes: string | null
+          notes_bn: string | null
+          organizer_id: string | null
+          provider: string
+          recording_url: string | null
+          reminder_minutes: number | null
+          scheduled_end: string
+          scheduled_start: string
+          staff_organizer_id: string | null
+          status: string
+          title: string
+          title_bn: string
+          updated_at: string
+        }
+        Insert: {
+          access_code?: string | null
+          access_mode?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          enable_attendance?: boolean
+          enable_chat?: boolean
+          enable_reminder?: boolean
+          id?: string
+          is_published?: boolean
+          meeting_room?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          notes_bn?: string | null
+          organizer_id?: string | null
+          provider?: string
+          recording_url?: string | null
+          reminder_minutes?: number | null
+          scheduled_end: string
+          scheduled_start: string
+          staff_organizer_id?: string | null
+          status?: string
+          title: string
+          title_bn?: string
+          updated_at?: string
+        }
+        Update: {
+          access_code?: string | null
+          access_mode?: string
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          enable_attendance?: boolean
+          enable_chat?: boolean
+          enable_reminder?: boolean
+          id?: string
+          is_published?: boolean
+          meeting_room?: string | null
+          meeting_type?: string
+          meeting_url?: string | null
+          notes?: string | null
+          notes_bn?: string | null
+          organizer_id?: string | null
+          provider?: string
+          recording_url?: string | null
+          reminder_minutes?: number | null
+          scheduled_end?: string
+          scheduled_start?: string
+          staff_organizer_id?: string | null
+          status?: string
+          title?: string
+          title_bn?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meetings_staff_organizer_id_fkey"
+            columns: ["staff_organizer_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notices: {
         Row: {
           attachment_url: string | null

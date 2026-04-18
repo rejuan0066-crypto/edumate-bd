@@ -101,6 +101,8 @@ import AdminStudentPromotion from "./pages/admin/AdminStudentPromotion";
 import AdminQuestionPapers from "./pages/admin/AdminQuestionPapers";
 import AdminOnlineExams from "./pages/admin/AdminOnlineExams";
 import AdminLiveClasses from "./pages/admin/AdminLiveClasses";
+import AdminMeetings from "./pages/admin/AdminMeetings";
+import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
@@ -220,6 +222,7 @@ const App = () => (
                   <Route path="/exam/:id" element={<OnlineExamTake />} />
                   <Route path="/live-classes" element={<LiveClasses />} />
                   <Route path="/live-class/:id" element={<LiveClassRoom />} />
+                  <Route path="/meeting/:id" element={<MeetingRoom />} />
                   <Route path="/staff-dashboard" element={<ProtectedRoute><StaffDashboard /></ProtectedRoute>} />
                   <Route path="/waiting-approval" element={<WaitingApproval />} />
                   <Route path="/attendance-checkin" element={<AttendanceCheckin />} />
@@ -302,6 +305,7 @@ const App = () => (
                     <Route path="question-papers" element={<AdminQuestionPapers />} />
                     <Route path="online-exams" element={<AdminOnlineExams />} />
                     <Route path="live-classes" element={<AdminLiveClasses />} />
+                    <Route path="meetings" element={<AdminMeetings />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
 
