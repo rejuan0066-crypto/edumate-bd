@@ -538,15 +538,41 @@ const SyllabusCoverageSection = () => {
           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
+              <label className="text-xs font-medium mb-1 block">{bn ? 'সেশন' : 'Session'} *</label>
+              <Select value={editing.session_id} onValueChange={(v) => setEditing({ ...editing, session_id: v })}>
+                <SelectTrigger><SelectValue placeholder={bn ? 'সেশন বাছাই' : 'Select session'} /></SelectTrigger>
+                <SelectContent>
+                  {sessions.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">{bn ? 'শ্রেণী' : 'Class'} *</label>
+              <Select value={editing.class_id} onValueChange={(v) => setEditing({ ...editing, class_id: v, subject_id: '' })}>
+                <SelectTrigger><SelectValue placeholder={bn ? 'ক্লাস বাছাই' : 'Select class'} /></SelectTrigger>
+                <SelectContent>
+                  {classes.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-xs font-medium mb-1 block">{bn ? 'তারিখ' : 'Date'} *</label>
               <Input type="date" value={editing.coverage_date} onChange={(e) => setEditing({ ...editing, coverage_date: e.target.value })} />
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">{bn ? 'বিষয়' : 'Subject'} *</label>
-              <Select value={editing.subject_id} onValueChange={(v) => setEditing({ ...editing, subject_id: v })}>
+              <Select value={editing.subject_id} onValueChange={(v) => setEditing({ ...editing, subject_id: v })} disabled={!editing.class_id}>
                 <SelectTrigger><SelectValue placeholder={bn ? 'বিষয় বাছাই' : 'Select subject'} /></SelectTrigger>
                 <SelectContent>
-                  {subjects.map((s: any) => (
+                  {editSubjects.length === 0 ? (
+                    <div className="p-3 text-xs text-muted-foreground text-center">
+                      {bn ? 'এই ক্লাসে কোনো বিষয় নেই' : 'No subjects for this class'}
+                    </div>
+                  ) : editSubjects.map((s: any) => (
                     <SelectItem key={s.id} value={s.id}>{bn ? s.name_bn : s.name}</SelectItem>
                   ))}
                 </SelectContent>
