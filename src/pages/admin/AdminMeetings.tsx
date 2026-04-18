@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
-type Provider = 'jitsi' | 'zoom' | 'google_meet' | 'youtube';
+type Provider = 'jitsi' | 'jaas' | 'daily' | 'zoom' | 'google_meet' | 'youtube';
 type AccessMode = 'public' | 'logged_in' | 'access_code';
 type Status = 'scheduled' | 'live' | 'ended' | 'cancelled';
 type MeetingType = 'staff' | 'parent' | 'administrative' | 'committee' | 'other';
@@ -80,11 +80,13 @@ const emptyForm: MeetingForm = {
 };
 
 const providerLabel = (p: Provider, bn: boolean) => ({
-  jitsi: ['Jitsi Meet', 'জিতসি মিট'],
+  jitsi: ['Jitsi Meet (5 min limit)', 'জিতসি মিট (৫ মিনিট লিমিট)'],
+  jaas: ['JaaS by 8x8 (Embed)', 'JaaS by 8x8 (এমবেড)'],
+  daily: ['Daily.co (Embed)', 'Daily.co (এমবেড)'],
   zoom: ['Zoom', 'জুম'],
   google_meet: ['Google Meet', 'গুগল মিট'],
   youtube: ['YouTube Live', 'ইউটিউব লাইভ'],
-}[p][bn ? 1 : 0]);
+}[p]?.[bn ? 1 : 0] || p);
 
 const accessLabel = (a: AccessMode, bn: boolean) => ({
   public: ['Public', 'পাবলিক'],
@@ -601,9 +603,11 @@ const AdminMeetings = () => {
                 <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v as Provider })}>
                   <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="jitsi">{providerLabel('jitsi', bn)} ({bn ? 'এমবেডেড' : 'Embedded'})</SelectItem>
-                    <SelectItem value="zoom">{providerLabel('zoom', bn)}</SelectItem>
+                    <SelectItem value="jitsi">{providerLabel('jitsi', bn)}</SelectItem>
+                    <SelectItem value="jaas">{providerLabel('jaas', bn)}</SelectItem>
+                    <SelectItem value="daily">{providerLabel('daily', bn)}</SelectItem>
                     <SelectItem value="google_meet">{providerLabel('google_meet', bn)}</SelectItem>
+                    <SelectItem value="zoom">{providerLabel('zoom', bn)}</SelectItem>
                     <SelectItem value="youtube">{providerLabel('youtube', bn)}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -621,13 +625,28 @@ const AdminMeetings = () => {
               </div>
             </div>
 
-            {form.provider === 'jitsi' ? (
+            {form.provider === 'jitsi' && (
               <div>
                 <Label>{bn ? 'রুম নাম (অনন্য)' : 'Room name (unique)'}</Label>
                 <Input value={form.meeting_room} onChange={(e) => setForm({ ...form, meeting_room: e.target.value })} placeholder="meet-abc123" className="mt-1.5 rounded-xl" />
                 <p className="text-xs text-muted-foreground mt-1">https://meet.jit.si/{form.meeting_room || '[room]'}</p>
               </div>
-            ) : (
+            )}
+            {form.provider === 'jaas' && (
+              <div>
+                <Label>{bn ? 'JaaS মিটিং URL' : 'JaaS Meeting URL'} *</Label>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://8x8.vc/vpaas-magic-cookie-XXXX/RoomName" className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground mt-1">{bn ? '8x8.vc থেকে আপনার tenant সহ পূর্ণ URL paste করুন। মাসে ১০০ ফ্রি মিনিট।' : 'Paste full URL with your tenant from 8x8.vc. 100 free min/month.'}</p>
+              </div>
+            )}
+            {form.provider === 'daily' && (
+              <div>
+                <Label>{bn ? 'Daily.co রুম URL' : 'Daily.co Room URL'} *</Label>
+                <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://your-domain.daily.co/room-name" className="mt-1.5 rounded-xl" />
+                <p className="text-xs text-muted-foreground mt-1">{bn ? 'daily.co dashboard থেকে রুম তৈরি করে URL paste করুন। মাসে ১০,০০০ ফ্রি মিনিট।' : 'Create a room at daily.co dashboard and paste URL. 10,000 free min/month.'}</p>
+              </div>
+            )}
+            {(form.provider === 'zoom' || form.provider === 'google_meet' || form.provider === 'youtube') && (
               <div>
                 <Label>{bn ? 'মিটিং URL' : 'Meeting URL'} *</Label>
                 <Input value={form.meeting_url} onChange={(e) => setForm({ ...form, meeting_url: e.target.value })} placeholder="https://…" className="mt-1.5 rounded-xl" />

@@ -268,9 +268,43 @@ const MeetingRoom = () => {
               </Card>
             )}
 
+            {(meeting.provider === 'jaas' || meeting.provider === 'daily') && status === 'live' && meeting.meeting_url && !mediaReady && (
+              <Card className="p-8 rounded-[32px] text-center max-w-md mx-auto">
+                <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                  <ShieldCheck className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{bn ? 'মাইক্রোফোন/ক্যামেরা অনুমতি দিন' : 'Allow Microphone & Camera'}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {bn ? 'মিটিংয়ে যোগ দিতে আপনার ব্রাউজারকে মাইক্রোফোন এবং ক্যামেরা ব্যবহারের অনুমতি দিতে হবে।' : 'To join, your browser needs permission to use microphone and camera.'}
+                </p>
+                <Button onClick={requestMediaPermission} disabled={requestingMedia} size="lg" className="rounded-2xl w-full">
+                  {requestingMedia ? (bn ? 'অনুরোধ করা হচ্ছে…' : 'Requesting…') : (bn ? 'অনুমতি দিন ও যোগ দিন' : 'Grant Permission & Join')}
+                </Button>
+              </Card>
+            )}
+
+            {(meeting.provider === 'jaas' || meeting.provider === 'daily') && status === 'live' && meeting.meeting_url && mediaReady && (
+              <Card className="p-2 rounded-[32px] overflow-hidden">
+                <iframe
+                  src={meeting.meeting_url}
+                  className="w-full h-[70vh] rounded-[28px] border-0"
+                  allow="camera *; microphone *; autoplay *; fullscreen *; display-capture *; speaker-selection *; clipboard-write *"
+                  allowFullScreen
+                  {...({ allowusermedia: 'true' } as any)}
+                  title={meeting.title}
+                />
+                <p className="text-xs text-muted-foreground text-center mt-2 px-2">
+                  {bn ? '🎙️ আনমিউট না হলে: ব্রাউজার অ্যাড্রেস বারের 🔒 আইকনে ট্যাপ করে Microphone "Allow" করুন।' : '🎙️ If unmute fails: Tap 🔒 in address bar, "Allow" Microphone.'}
+                </p>
+              </Card>
+            )}
+
             {(meeting.provider === 'zoom' || meeting.provider === 'google_meet') && (
               <Card className="p-8 rounded-[32px] text-center">
                 <h3 className="text-lg font-semibold mb-3">{bn ? 'বাহ্যিক মিটিং লিংক' : 'External meeting link'}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {bn ? 'নিচের বাটনে ক্লিক করে নতুন ট্যাবে মিটিংয়ে যোগ দিন। কোনো লিমিট নেই।' : 'Click below to join in a new tab. No time limit.'}
+                </p>
                 <Button asChild size="lg" className="rounded-2xl">
                   <a href={meeting.meeting_url} target="_blank" rel="noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" /> {bn ? 'মিটিংয়ে যোগ দিন' : 'Join meeting'}
