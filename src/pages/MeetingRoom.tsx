@@ -111,8 +111,17 @@ const MeetingRoom = () => {
       day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true,
     });
 
+  const displayName = encodeURIComponent(user?.email || guestName || 'Guest');
+  const jitsiConfig = [
+    'config.prejoinPageEnabled=false',
+    'config.startWithAudioMuted=false',
+    'config.startWithVideoMuted=false',
+    'config.startSilent=false',
+    'config.disableDeepLinking=true',
+    'config.p2p.enabled=true',
+  ].join('&');
   const joinUrl = meeting.provider === 'jitsi'
-    ? `https://meet.jit.si/${meeting.meeting_room || meeting.id}#userInfo.displayName="${encodeURIComponent(user?.email || guestName || 'Guest')}"&config.prejoinPageEnabled=false`
+    ? `https://meet.jit.si/${meeting.meeting_room || meeting.id}#userInfo.displayName="${displayName}"&${jitsiConfig}`
     : meeting.meeting_url;
 
   const tryAccessCode = () => {
@@ -188,18 +197,23 @@ const MeetingRoom = () => {
                 <iframe
                   src={joinUrl}
                   className="w-full h-[70vh] rounded-[28px] border-0"
-                  allow="camera; microphone; fullscreen; display-capture"
+                  allow="camera; microphone; autoplay; fullscreen; display-capture; speaker-selection; clipboard-write"
+                  allowFullScreen
                   title={meeting.title}
                 />
+                <p className="text-xs text-muted-foreground text-center mt-2 px-2">
+                  {bn ? '🔊 সাউন্ড না এলে ব্রাউজারে এই সাইটে অডিও/মাইক্রোফোন অনুমতি দিন এবং মিটিং এর ভেতরে আনমিউট আইকনে ক্লিক করুন।' : '🔊 If you cannot hear, allow microphone/audio in your browser and click the unmute icon inside the meeting.'}
+                </p>
               </Card>
             )}
 
             {meeting.provider === 'youtube' && status === 'live' && meeting.meeting_url && (
               <Card className="p-2 rounded-[32px] overflow-hidden">
                 <iframe
-                  src={meeting.meeting_url.replace('watch?v=', 'embed/')}
+                  src={`${meeting.meeting_url.replace('watch?v=', 'embed/')}${meeting.meeting_url.includes('?') ? '&' : '?'}autoplay=1`}
                   className="w-full h-[70vh] rounded-[28px] border-0"
-                  allow="autoplay; fullscreen"
+                  allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+                  allowFullScreen
                   title={meeting.title}
                 />
               </Card>
