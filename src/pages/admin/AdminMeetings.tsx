@@ -606,7 +606,21 @@ const AdminMeetings = () => {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <Label>{bn ? 'প্রোভাইডার' : 'Provider'} *</Label>
-                <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v as Provider })}>
+                <Select 
+                  value={form.provider} 
+                  onValueChange={(v) => {
+                    const provider = v as Provider;
+                    // Auto-populate default URL when switching to daily
+                    if (provider === 'daily') {
+                      const defaultUrl = getDefaultUrl('daily');
+                      setForm({ ...form, provider, meeting_url: defaultUrl || form.meeting_url });
+                    } else if (provider === 'jitsi') {
+                      setForm({ ...form, provider, meeting_url: '', meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}` });
+                    } else {
+                      setForm({ ...form, provider, meeting_url: '' });
+                    }
+                  }}
+                >
                   <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="jitsi">{providerLabel('jitsi', bn)}</SelectItem>
