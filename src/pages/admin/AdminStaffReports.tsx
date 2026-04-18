@@ -659,6 +659,7 @@ const AdminStaffReports = () => {
                           <TableHead className="text-center">{bn ? 'আউট' : 'Check-out'}</TableHead>
                           <TableHead className="text-center">{bn ? 'শিফট' : 'Shift'}</TableHead>
                           <TableHead>{bn ? 'মন্তব্য' : 'Remarks'}</TableHead>
+                          <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -672,7 +673,20 @@ const AdminStaffReports = () => {
                             <TableCell className="text-center text-sm font-mono">{d.check_in}</TableCell>
                             <TableCell className="text-center text-sm font-mono">{d.check_out}</TableCell>
                             <TableCell className="text-center text-sm">{d.shift}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{d.remarks}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground max-w-xs">
+                              <div className="line-clamp-2 whitespace-pre-wrap">{d.remarks}</div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 rounded-full hover:bg-primary/10 hover:text-primary"
+                                onClick={() => openEditRemarks(d)}
+                                title={bn ? 'মন্তব্য সম্পাদনা' : 'Edit Remarks'}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
