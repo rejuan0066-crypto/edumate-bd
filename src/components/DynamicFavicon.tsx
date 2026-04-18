@@ -51,11 +51,34 @@ const DynamicFavicon = () => {
 };
 
 function applyFavicon(src: string) {
-  const link = document.getElementById('dynamic-favicon') as HTMLLinkElement | null;
-  if (link) {
-    link.href = src;
-    link.type = 'image/png';
-  }
+  // Remove all existing icon links to avoid browser caching the old one
+  const existing = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+  existing.forEach((el) => el.parentNode?.removeChild(el));
+
+  const mime = guessMime(src);
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.id = 'dynamic-favicon';
+  link.type = mime;
+  // Cache-bust so the browser tab actually refreshes
+  link.href = src.includes('?') ? src : `${src}?v=${Date.now()}`;
+  document.head.appendChild(link);
+
+  // Also add a shortcut icon for older browsers
+  const shortcut = document.createElement('link');
+  shortcut.rel = 'shortcut icon';
+  shortcut.type = mime;
+  shortcut.href = link.href;
+  document.head.appendChild(shortcut);
+}
+
+function guessMime(src: string): string {
+  const lower = src.split('?')[0].toLowerCase();
+  if (lower.endsWith('.svg')) return 'image/svg+xml';
+  if (lower.endsWith('.ico')) return 'image/x-icon';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'image/png';
 }
 
 function applyAppleTouchIcon(src: string) {
