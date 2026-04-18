@@ -17,12 +17,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, DollarSign, TrendingDown, TrendingUp, Wallet, Printer, FolderPlus, TagIcon, Upload, Download, Eye, ScanLine, Building2, Package, AlertTriangle, FileText, FileBarChart } from 'lucide-react';
 import ExpenseVoucherPrint from '@/components/expenses/ExpenseVoucherPrint';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
 import MiniSparkline from '@/components/expenses/MiniSparkline';
+import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
@@ -209,6 +210,30 @@ const AdminExpenses = () => {
     queryKey: ['inventory-items-for-expense'],
     queryFn: async () => {
       const { data } = await supabase.from('inventory_items').select('*').eq('is_active', true).order('name_bn');
+      return data || [];
+    },
+  });
+
+  // For Annual Financial Summary report
+  const { data: annualFeePayments = [] } = useQuery({
+    queryKey: ['annual-fee-payments', selectedYear],
+    queryFn: async () => {
+      const { data } = await supabase.from('fee_payments')
+        .select('paid_amount, status, month, year')
+        .eq('year', selectedYear);
+      return data || [];
+    },
+  });
+
+  const { data: annualDonors = [] } = useQuery({
+    queryKey: ['annual-donors', selectedYear],
+    queryFn: async () => {
+      const start = `${selectedYear}-01-01`;
+      const end = `${selectedYear}-12-31`;
+      const { data } = await supabase.from('donors')
+        .select('donation_amount, donation_date')
+        .gte('donation_date', start)
+        .lte('donation_date', end);
       return data || [];
     },
   });
@@ -567,6 +592,72 @@ const AdminExpenses = () => {
 
   const handlePrint = () => window.print();
   const formatNum = (n: number) => n.toLocaleString(bn ? 'bn-BD' : 'en-BD');
+
+  // Annual Financial Summary PDF (Income / Expense / Net Balance per month)
+  const handleAnnualFinancialPDF = () => {
+    const yearStr = String(selectedYear);
+    const monthlyRows = MONTHS.map((m, i) => {
+      const monthKey = `${MONTHS[i]}-${selectedYear}`;
+      // Income = deposits for that month + paid fee_payments for that month
+      const monthDeposits = allDeposits
+        .filter((d: any) => d.month_year === monthKey)
+        .reduce((s: number, d: any) => s + Number(d.amount || 0), 0);
+      const monthFees = annualFeePayments
+        .filter((f: any) => f.month === MONTHS[i] && f.status === 'paid')
+        .reduce((s: number, f: any) => s + Number(f.paid_amount || 0), 0);
+      const income = monthDeposits + monthFees;
+      const expense = allExpenses
+        .filter((e: any) => e.month_year === monthKey)
+        .reduce((s: number, e: any) => s + Number(e.amount || 0), 0);
+      return { monthIdx: i, income, expense, profit: income - expense };
+    });
+
+    const totalIncome = monthlyRows.reduce((s, r) => s + r.income, 0);
+    const totalExpense = monthlyRows.reduce((s, r) => s + r.expense, 0);
+    const totalDonation = annualDonors.reduce((s: number, d: any) => s + Number(d.donation_amount || 0), 0);
+
+    generateBilingualReport(
+      {
+        institution_name: instName || '',
+        institution_name_en: instNameEn || '',
+        address: instAddress || '',
+        phone: instPhone || '',
+        email: instEmail || '',
+        logo_url: selectedInstitution?.logo_url,
+        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
+        report_title_en: 'Monthly Financial Summary',
+        period_label_bn: `সাল: ${yearStr}`,
+        period_label_en: `Year: ${yearStr}`,
+      },
+      [{
+        title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
+        title_en: 'Monthly Income & Expense Statement',
+        headers: [
+          { bn: 'মাস', en: 'Month' },
+          { bn: 'আয় (৳)', en: 'Income (৳)' },
+          { bn: 'ব্যয় (৳)', en: 'Expense (৳)' },
+          { bn: 'নেট ব্যালেন্স (৳)', en: 'Net Balance (৳)' },
+        ],
+        rows: monthlyRows.map(r => [
+          bn ? MONTHS_BN[r.monthIdx] : MONTHS[r.monthIdx],
+          r.income,
+          r.expense,
+          r.profit,
+        ]),
+        totals: [
+          { bn: 'মোট আয়', en: 'Total Income', value: totalIncome },
+          { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExpense },
+          { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
+        ],
+      }],
+      [
+        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
+        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
+        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
+        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
+      ],
+    );
+  };
 
   // Get selected month display name
   const selectedMonthIndex = MONTHS.indexOf(selectedMonthYear.split('-')[0]);
@@ -1563,7 +1654,7 @@ const AdminExpenses = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3 items-end">
                   <Button onClick={() => saveSummary.mutate()} disabled={saveSummary.isPending}>
                     {bn ? 'সারাংশ সংরক্ষণ' : 'Save Summary'}
                   </Button>
@@ -1573,6 +1664,37 @@ const AdminExpenses = () => {
                   <Button variant="outline" onClick={handleExcelDownload}>
                     <Download className="w-4 h-4 mr-1" />{bn ? 'সম্পূর্ণ এক্সেল' : 'Excel All'}
                   </Button>
+                </div>
+
+                {/* Annual Financial Summary (Year-wise PDF) - moved from Reports & Analytics */}
+                <div className="card-elevated p-4 border-2 border-primary/20 bg-primary/5">
+                  <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <FileBarChart className="w-4 h-4 text-primary" />
+                        {bn ? 'মাসিক আর্থিক সারসংক্ষেপ (বার্ষিক রিপোর্ট)' : 'Monthly Financial Summary (Annual Report)'}
+                      </h4>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {bn ? 'নির্বাচিত বছরের প্রতি মাসের আয়, ব্যয় ও নেট ব্যালেন্সের বাংলা-ইংরেজি দ্বিভাষিক PDF রিপোর্ট।' : 'Bilingual PDF report of monthly income, expense and net balance for the selected year.'}
+                      </p>
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <Label className="text-xs">{bn ? 'বছর' : 'Year'}</Label>
+                        <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                          <SelectTrigger className="w-[120px] h-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {Array.from({ length: 8 }, (_, i) => currentYear - i).map(y => (
+                              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handleAnnualFinancialPDF}>
+                        <FileText className="w-4 h-4 mr-1" />{bn ? 'PDF ডাউনলোড' : 'Download PDF'}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Per-institution download */}

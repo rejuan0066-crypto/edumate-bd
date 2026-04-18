@@ -409,44 +409,7 @@ const AdminReports = () => {
     );
   };
 
-  const handleFinancialPDF = () => {
-    generateBilingualReport(
-      {
-        ...reportMeta,
-        report_title_bn: 'মাসিক আর্থিক সারসংক্ষেপ',
-        report_title_en: 'Monthly Financial Summary',
-        period_label_bn: `সাল: ${selectedYear}`,
-        period_label_en: `Year: ${selectedYear}`,
-      },
-      [{
-        title_bn: 'মাসিক আয়-ব্যয় বিবরণী',
-        title_en: 'Monthly Income & Expense Statement',
-        headers: [
-          { bn: 'মাস', en: 'Month' },
-          { bn: 'আয় (৳)', en: 'Income (৳)' },
-          { bn: 'ব্যয় (৳)', en: 'Expense (৳)' },
-          { bn: 'নেট ব্যালেন্স (৳)', en: 'Net Balance (৳)' },
-        ],
-        rows: incomeExpenseData.map((d, i) => [
-          MONTHS[i],
-          d.income,
-          d.expense,
-          d.profit,
-        ]),
-        totals: [
-          { bn: 'মোট আয়', en: 'Total Income', value: totalIncome },
-          { bn: 'মোট ব্যয়', en: 'Total Expense', value: totalExpense },
-          { bn: 'নেট ব্যালেন্স', en: 'Net Balance', value: totalIncome - totalExpense },
-        ],
-      }],
-      [
-        { label_bn: 'মোট আয়', label_en: 'Income', value: '৳' + totalIncome.toLocaleString(), tone: 'positive' },
-        { label_bn: 'মোট ব্যয়', label_en: 'Expense', value: '৳' + totalExpense.toLocaleString(), tone: 'negative' },
-        { label_bn: 'নেট ব্যালেন্স', label_en: 'Net Balance', value: '৳' + (totalIncome - totalExpense).toLocaleString(), tone: totalIncome >= totalExpense ? 'positive' : 'negative' },
-        { label_bn: 'অনুদান', label_en: 'Donations', value: '৳' + totalDonation.toLocaleString(), tone: 'accent' },
-      ],
-    );
-  };
+  // Note: Monthly Financial Summary moved to /admin/expenses → Summary tab
 
   const handleAcademicPDF = () => {
     // GPA distribution
@@ -685,18 +648,7 @@ const AdminReports = () => {
                 </div>
               </button>
 
-              <button
-                onClick={handleFinancialPDF}
-                className="group flex flex-col items-start gap-2 p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left"
-              >
-                <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Wallet className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm text-foreground">{bn ? 'মাসিক আর্থিক সারসংক্ষেপ' : 'Monthly Financial Summary'}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{bn ? 'আয়, ব্যয়, নেট ব্যালেন্স' : 'Income, Expense, Net Balance'}</p>
-                </div>
-              </button>
+              {/* মাসিক আর্থিক সারসংক্ষেপ → /admin/expenses (Summary tab) তে স্থানান্তরিত */}
 
               <button
                 onClick={handleAcademicPDF}
