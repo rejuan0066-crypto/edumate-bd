@@ -1,0 +1,36 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rounded corner background -->
+  <rect width="192" height="192" rx="40" ry="40" fill="#0f766e"/>
+  
+  <!-- Madrasa hat/turban icon -->
+  <g transform="translate(56, 40)">
+    <!-- Base circle for head -->
+    <circle cx="40" cy="70" r="28" fill="white"/>
+    
+    <!-- Turban/Hat shape -->
+    <ellipse cx="40" cy="50" rx="32" ry="22" fill="#e8f5f3"/>
+    <ellipse cx="40" cy="45" rx="28" ry="18" fill="white"/>
+    
+    <!-- Turban wrap detail -->
+    <path d="M20 50 Q40 60 60 50" stroke="#0f766e" stroke-width="3" fill="none"/>
+    <path d="M25 45 Q40 55 55 45" stroke="#0f766e" stroke-width="2" fill="none"/>
+    
+    <!-- Cap top -->
+    <ellipse cx="40" cy="35" rx="12" ry="8" fill="#0f766e"/>
+  </g>
+  
+  <!-- Book/base element -->
+  <g transform="translate(70, 110)">
+    <rect x="0" y="0" width="52" height="40" rx="4" fill="white"/>
+    <rect x="4" y="4" width="44" height="32" rx="2" fill="#e8f5f3"/>
+    <!-- Book spine lines -->
+    <line x1="26" y1="4" x2="26" y2="36" stroke="#0f766e" stroke-width="1"/>
+    <line x1="10" y1="12" x2="22" y2="12" stroke="#0f766e" stroke-width="2"/>
+    <line x1="10" y1="20" x2="42" y2="20" stroke="#0f766e" stroke-width="1"/>
+    <line x1="10" y1="26" x2="38" y2="26" stroke="#0f766e" stroke-width="1"/>
+  </g>
+  
+  <!-- Decorative corner accents -->
+  <circle cx="170" cy="22" r="8" fill="white" opacity="0.3"/>
+  <circle cx="22" cy="170" r="6" fill="white" opacity="0.2"/>
+</svg>
