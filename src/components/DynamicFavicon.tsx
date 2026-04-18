@@ -41,18 +41,21 @@ const DynamicFavicon = () => {
       // Generate proper-sized PNG icons for PWA install
       (async () => {
         try {
-          const cached192 = localStorage.getItem(ICON_192_CACHE + ':' + appIconSrc);
-          const cached512 = localStorage.getItem(ICON_512_CACHE + ':' + appIconSrc);
+          // v2 cache key — invalidates old square/white-bg icons
+          const ck192 = ICON_192_CACHE + ':v2:' + appIconSrc;
+          const ck512 = ICON_512_CACHE + ':v2:' + appIconSrc;
+          const cached192 = localStorage.getItem(ck192);
+          const cached512 = localStorage.getItem(ck512);
           let icon192 = cached192;
           let icon512 = cached512;
           if (!icon192 || !icon512) {
             [icon192, icon512] = await Promise.all([
-              rasterizeToPng(appIconSrc, 192),
-              rasterizeToPng(appIconSrc, 512),
+              rasterizeToPng(appIconSrc, 192, themeColor),
+              rasterizeToPng(appIconSrc, 512, themeColor),
             ]);
             try {
-              localStorage.setItem(ICON_192_CACHE + ':' + appIconSrc, icon192);
-              localStorage.setItem(ICON_512_CACHE + ':' + appIconSrc, icon512);
+              localStorage.setItem(ck192, icon192);
+              localStorage.setItem(ck512, icon512);
             } catch {}
           }
           const manifestUrl = buildManifest({
@@ -132,7 +135,7 @@ function applyManifest(href: string) {
   link.href = href;
 }
 
-async function rasterizeToPng(src: string, size: number): Promise<string> {
+async function rasterizeToPng(src: string, size: number, bgColor = '#0f766e'): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -142,11 +145,28 @@ async function rasterizeToPng(src: string, size: number): Promise<string> {
       canvas.height = size;
       const ctx = canvas.getContext('2d');
       if (!ctx) return reject(new Error('No canvas context'));
-      // White background for maskable icon safety
-      ctx.fillStyle = '#ffffff';
+
+      // Clip to rounded square (squircle) so install prompt shows rounded corners
+      const radius = size * 0.22;
+      ctx.beginPath();
+      ctx.moveTo(radius, 0);
+      ctx.lineTo(size - radius, 0);
+      ctx.quadraticCurveTo(size, 0, size, radius);
+      ctx.lineTo(size, size - radius);
+      ctx.quadraticCurveTo(size, size, size - radius, size);
+      ctx.lineTo(radius, size);
+      ctx.quadraticCurveTo(0, size, 0, size - radius);
+      ctx.lineTo(0, radius);
+      ctx.quadraticCurveTo(0, 0, radius, 0);
+      ctx.closePath();
+      ctx.clip();
+
+      // Brand background fills inside the rounded clip
+      ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, size, size);
+
       // Contain-fit the logo with padding
-      const pad = size * 0.08;
+      const pad = size * 0.14;
       const target = size - pad * 2;
       const ratio = Math.min(target / img.width, target / img.height);
       const w = img.width * ratio;
