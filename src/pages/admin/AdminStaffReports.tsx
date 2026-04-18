@@ -35,8 +35,60 @@ const AdminStaffReports = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { settings: ws } = useWebsiteSettings();
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('attendance');
+
+  // ================== REMARKS EDIT DIALOG ==================
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editRemarks, setEditRemarks] = useState('');
+  const [savingRemarks, setSavingRemarks] = useState(false);
+
+  const openEditRemarks = (d: any) => {
+    setEditTarget(d);
+    setEditRemarks(d.remarks && d.remarks !== '-' ? d.remarks : '');
+  };
+
+  const saveRemarks = async () => {
+    if (!editTarget) return;
+    setSavingRemarks(true);
+    try {
+      const { data: existing } = await supabase
+        .from('attendance_records')
+        .select('id')
+        .eq('entity_type', 'staff')
+        .eq('entity_id', editTarget.id)
+        .eq('attendance_date', dutyDate)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from('attendance_records')
+          .update({ remarks: editRemarks || null })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('attendance_records')
+          .insert({
+            entity_type: 'staff',
+            entity_id: editTarget.id,
+            attendance_date: dutyDate,
+            status: 'absent',
+            shift: 'morning',
+            remarks: editRemarks || null,
+          });
+        if (error) throw error;
+      }
+      toast.success(bn ? 'মন্তব্য সংরক্ষিত হয়েছে' : 'Remarks saved');
+      setEditTarget(null);
+      queryClient.invalidateQueries({ queryKey: ['staff-duty-records'] });
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সংরক্ষণে ত্রুটি' : 'Failed to save'));
+    } finally {
+      setSavingRemarks(false);
+    }
+  };
 
   // ================== ATTENDANCE FILTERS ==================
   const [category, setCategory] = useState<string>('all');
