@@ -266,9 +266,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       filtered = filtered.filter((s: any) => s.residence_type === 'resident');
     }
 
-    // Common filters for all student sub-tabs: session year + division/class
+    // Common filters for all student sub-tabs: session (id or legacy year) + division/class
     if (selectedSessionYear) {
-      filtered = filtered.filter((s: any) => s.session_year === selectedSessionYear);
+      filtered = filtered.filter((s: any) =>
+        s.session_id === selectedSessionYear || s.session_year === selectedSessionYear
+      );
     }
     if (selectedClassId && selectedClassId !== 'all') {
       filtered = filtered.filter((s: any) => s.class_id === selectedClassId);
