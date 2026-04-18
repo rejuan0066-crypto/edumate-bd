@@ -211,11 +211,15 @@ const AdminMeetings = () => {
     const now = new Date();
     const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
     const toLocal = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    // Auto-populate default Daily.co URL if available
+    const defaultDailyUrl = getDefaultUrl('daily');
     setForm({
       ...emptyForm,
       scheduled_start: toLocal(inOneHour),
       scheduled_end: toLocal(new Date(inOneHour.getTime() + 60 * 60 * 1000)),
       meeting_room: `meet-${Math.random().toString(36).slice(2, 10)}`,
+      meeting_url: defaultDailyUrl || '',
+      provider: defaultDailyUrl ? 'daily' : 'jitsi',
     });
     setOpen(true);
   };
