@@ -718,7 +718,8 @@ const AdminLiveClasses = () => {
         open={!!deleteId}
         onOpenChange={(o) => !o && setDeleteId(null)}
         onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-        itemName={bn ? 'এই লাইভ ক্লাস' : 'this live class'}
+        isPending={deleteMutation.isPending}
+        description={bn ? 'এই লাইভ ক্লাসটি রিসাইকেল বিন-এ চলে যাবে।' : 'This live class will be moved to the recycle bin.'}
       />
     </AdminLayout>
   );
