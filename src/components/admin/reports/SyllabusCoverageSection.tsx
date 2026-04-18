@@ -118,9 +118,11 @@ const SyllabusCoverageSection = () => {
     return isNaN(d.getTime()) ? null : d.getDay(); // 0=Sun, 6=Sat
   }, [editing.coverage_date]);
 
+  const [showAllDays, setShowAllDays] = useState(false);
+
   const { data: routinePeriods = [] } = useQuery({
-    queryKey: ['syl-routine-periods', editing.class_id, editingDayOfWeek],
-    enabled: !!editing.class_id && editingDayOfWeek !== null && editOpen,
+    queryKey: ['syl-routine-periods', editing.class_id, editingDayOfWeek, showAllDays],
+    enabled: !!editing.class_id && editOpen,
     queryFn: async () => {
       const { data: routines } = await supabase
         .from('class_routines')
@@ -130,13 +132,17 @@ const SyllabusCoverageSection = () => {
         .limit(1);
       const routineId = routines?.[0]?.id;
       if (!routineId) return [];
-      const { data } = await supabase
+      let q = supabase
         .from('routine_periods')
-        .select('id, period_number, start_time, end_time, subject_id, teacher_name, teacher_name_bn, is_break, room, subjects(id, name, name_bn)')
+        .select('id, period_number, start_time, end_time, subject_id, teacher_name, teacher_name_bn, is_break, room, day_of_week, subjects(id, name, name_bn)')
         .eq('routine_id', routineId)
-        .eq('day_of_week', editingDayOfWeek)
         .eq('is_break', false)
+        .order('day_of_week')
         .order('period_number');
+      if (!showAllDays && editingDayOfWeek !== null) {
+        q = q.eq('day_of_week', editingDayOfWeek);
+      }
+      const { data } = await q;
       return data || [];
     },
   });
