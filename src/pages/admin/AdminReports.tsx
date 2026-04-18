@@ -952,6 +952,11 @@ const AdminReports = () => {
           <TabsContent value="attendance" className="space-y-4">
             <AttendanceReportSection />
           </TabsContent>
+
+          {/* Syllabus Coverage — session + class + subject + teacher + date range */}
+          <TabsContent value="syllabus" className="space-y-4">
+            <SyllabusCoverageSection />
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
