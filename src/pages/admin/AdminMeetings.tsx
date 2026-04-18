@@ -494,9 +494,19 @@ const AdminMeetings = () => {
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                         {m._status === 'scheduled' && (
-                          <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
-                            {bn ? 'বাতিল' : 'Cancel'}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => startScheduledMutation.mutate(m)}
+                              disabled={startScheduledMutation.isPending}
+                              className="rounded-xl gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white"
+                            >
+                              <Zap className="w-3.5 h-3.5" /> {bn ? 'এখনই শুরু' : 'Start Now'}
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => cancelMutation.mutate(m.id)} className="rounded-xl text-orange-600">
+                              {bn ? 'বাতিল' : 'Cancel'}
+                            </Button>
+                          </>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => setDeleteId(m.id)} className="rounded-xl text-destructive">
                           <Trash2 className="w-3.5 h-3.5" />
