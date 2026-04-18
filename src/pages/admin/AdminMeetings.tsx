@@ -133,6 +133,7 @@ const AdminMeetings = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const bn = language === 'bn';
 
   const [tab, setTab] = useState<'all' | 'scheduled' | 'live' | 'ended'>('all');
