@@ -2158,6 +2158,296 @@ export type Database = {
           },
         ]
       }
+      live_class_messages: {
+        Row: {
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          live_class_id: string
+          message: string
+          message_type: string
+          parent_message_id: string | null
+          sender_name: string
+          sender_role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          live_class_id: string
+          message: string
+          message_type?: string
+          parent_message_id?: string | null
+          sender_name: string
+          sender_role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          live_class_id?: string
+          message?: string
+          message_type?: string
+          parent_message_id?: string | null
+          sender_name?: string
+          sender_role?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_messages_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_class_messages_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "live_class_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_class_participants: {
+        Row: {
+          attendance_marked: boolean | null
+          created_at: string
+          display_name: string
+          duration_seconds: number | null
+          id: string
+          joined_at: string
+          left_at: string | null
+          live_class_id: string
+          staff_id: string | null
+          student_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          display_name: string
+          duration_seconds?: number | null
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          live_class_id: string
+          staff_id?: string | null
+          student_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attendance_marked?: boolean | null
+          created_at?: string
+          display_name?: string
+          duration_seconds?: number | null
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          live_class_id?: string
+          staff_id?: string | null
+          student_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_participants_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_class_participants_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_class_participants_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_class_reminders: {
+        Row: {
+          channel: string
+          created_at: string
+          error_message: string | null
+          id: string
+          live_class_id: string
+          recipients_count: number | null
+          reminder_at: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          live_class_id: string
+          recipients_count?: number | null
+          reminder_at: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          live_class_id?: string
+          recipients_count?: number | null
+          reminder_at?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_reminders_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_classes: {
+        Row: {
+          academic_session_id: string | null
+          access_code: string | null
+          access_mode: string
+          actual_end: string | null
+          actual_start: string | null
+          class_id: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          enable_attendance: boolean
+          enable_chat: boolean
+          enable_reminder: boolean
+          id: string
+          is_published: boolean
+          max_participants: number | null
+          meeting_room: string | null
+          meeting_url: string | null
+          provider: string
+          recording_url: string | null
+          reminder_minutes_before: number
+          scheduled_end: string
+          scheduled_start: string
+          status: string
+          subject_id: string | null
+          teacher_id: string | null
+          title: string
+          title_bn: string
+          updated_at: string
+        }
+        Insert: {
+          academic_session_id?: string | null
+          access_code?: string | null
+          access_mode?: string
+          actual_end?: string | null
+          actual_start?: string | null
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          enable_attendance?: boolean
+          enable_chat?: boolean
+          enable_reminder?: boolean
+          id?: string
+          is_published?: boolean
+          max_participants?: number | null
+          meeting_room?: string | null
+          meeting_url?: string | null
+          provider?: string
+          recording_url?: string | null
+          reminder_minutes_before?: number
+          scheduled_end: string
+          scheduled_start: string
+          status?: string
+          subject_id?: string | null
+          teacher_id?: string | null
+          title: string
+          title_bn: string
+          updated_at?: string
+        }
+        Update: {
+          academic_session_id?: string | null
+          access_code?: string | null
+          access_mode?: string
+          actual_end?: string | null
+          actual_start?: string | null
+          class_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          enable_attendance?: boolean
+          enable_chat?: boolean
+          enable_reminder?: boolean
+          id?: string
+          is_published?: boolean
+          max_participants?: number | null
+          meeting_room?: string | null
+          meeting_url?: string | null
+          provider?: string
+          recording_url?: string | null
+          reminder_minutes_before?: number
+          scheduled_end?: string
+          scheduled_start?: string
+          status?: string
+          subject_id?: string | null
+          teacher_id?: string | null
+          title?: string
+          title_bn?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_classes_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_classes_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manual_payment_methods: {
         Row: {
           account_holder: string | null
