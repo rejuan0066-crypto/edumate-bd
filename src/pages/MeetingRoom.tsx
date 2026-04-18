@@ -23,6 +23,36 @@ const MeetingRoom = () => {
   const [accessCodeInput, setAccessCodeInput] = useState('');
   const [guestName, setGuestName] = useState('');
   const [granted, setGranted] = useState(false);
+  const [mediaReady, setMediaReady] = useState(false);
+  const [requestingMedia, setRequestingMedia] = useState(false);
+
+  const requestMediaPermission = async () => {
+    setRequestingMedia(true);
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        toast.error(bn ? 'এই ব্রাউজারে মাইক্রোফোন সমর্থন নেই' : 'Microphone not supported in this browser');
+        setRequestingMedia(false);
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setMediaReady(true);
+      toast.success(bn ? 'অনুমতি পাওয়া গেছে' : 'Permission granted');
+    } catch (err: any) {
+      const name = err?.name || '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        toast.error(bn ? 'মাইক/ক্যামেরা অনুমতি বাতিল করা হয়েছে। ব্রাউজার সেটিংস থেকে অনুমতি দিন।' : 'Mic/Camera denied. Allow it in browser settings.');
+      } else if (name === 'NotFoundError') {
+        toast.error(bn ? 'কোনো মাইক্রোফোন পাওয়া যায়নি' : 'No microphone found');
+      } else if (name === 'NotReadableError') {
+        toast.error(bn ? 'মাইক্রোফোন অন্য অ্যাপে ব্যবহৃত হচ্ছে' : 'Microphone is in use by another app');
+      } else {
+        toast.error(bn ? 'অনুমতি পেতে ব্যর্থ' : 'Permission request failed');
+      }
+    } finally {
+      setRequestingMedia(false);
+    }
+  };
 
   const { data: meeting, isLoading, error } = useQuery({
     queryKey: ['meeting', id],
