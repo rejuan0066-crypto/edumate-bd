@@ -9,11 +9,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Award, FileText, ScrollText, Printer, Trash2, Plus, Search, Loader2, GraduationCap } from 'lucide-react';
+import { Award, FileText, ScrollText, Printer, Trash2, Plus, Search, Loader2, GraduationCap, Palette } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMemo, useState } from 'react';
 import SearchableSelect from '@/components/SearchableSelect';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import CertificateTemplateDesigner from '@/components/admin/CertificateTemplateDesigner';
+import { renderCertificateHTML, mergeTemplate, CertTemplateConfig, CertType as RenderCertType } from '@/lib/certificateTemplate';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
