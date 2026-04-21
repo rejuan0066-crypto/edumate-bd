@@ -220,6 +220,15 @@ const AdminCertificates = () => {
     const tplRow = templates.find((t: any) => t.template_type === cert.certificate_type);
     const cfg = mergeTemplate((tplRow?.config ?? null) as Partial<CertTemplateConfig> | null);
 
+    // Apply global footer text from website settings if no template-specific footer is set
+    const isEnOnlyEarly = langChoice === 'en-only';
+    const globalFooter = isEnOnlyEarly
+      ? (principalInfo?.global_footer_text_en || (principalInfo?.global_footer_text_bn ? romanizeBangla(principalInfo.global_footer_text_bn) : ''))
+      : (principalInfo?.global_footer_text_bn || principalInfo?.global_footer_text_en || '');
+    if (!cfg.footerText && globalFooter) {
+      cfg.footerText = globalFooter;
+    }
+
     const cat = cert.certificate_category
       ? CERT_CATEGORIES.find(c => c.key === cert.certificate_category)
       : null;
