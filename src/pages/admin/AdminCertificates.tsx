@@ -398,7 +398,9 @@ const AdminCertificates = () => {
         principalName: isEnOnly
           ? (principalInfo?.principal_name_en
               || (principalInfo?.principal_name ? romanizeBangla(principalInfo.principal_name) : ''))
-          : (principalInfo?.principal_name || ''),
+          : (principalInfo?.principal_name || principalInfo?.principal_name_en || ''),
+        principalNameEn: principalInfo?.principal_name_en
+          || (principalInfo?.principal_name ? romanizeBangla(principalInfo.principal_name) : ''),
         principalNameAr: principalInfo?.principal_name_ar
           || (principalInfo?.principal_name && containsBangla(principalInfo.principal_name)
               ? romanizeBangla(principalInfo.principal_name)
