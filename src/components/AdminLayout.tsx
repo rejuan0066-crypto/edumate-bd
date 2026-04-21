@@ -632,7 +632,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
             {/* Page Header - outside card for clear separation */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4 sm:mb-5">
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight truncate">{currentPageLabel}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight truncate text-right lg:text-3xl">{currentPageLabel}</h1>
                 {adminTheme.headerShowBreadcrumb && breadcrumbs.length > 1 && (
                   <nav className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground flex-wrap">
                     {breadcrumbs.map((crumb, i) => (
