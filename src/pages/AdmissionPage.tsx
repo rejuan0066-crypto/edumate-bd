@@ -113,7 +113,7 @@ const AdmissionPage = () => {
       const { data, error } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public']);
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public', 'global_footer_text_bn', 'global_footer_text_en']);
       if (error) throw error;
       const result: Record<string, any> = {};
       data?.forEach(row => { result[row.key] = row.value; });
