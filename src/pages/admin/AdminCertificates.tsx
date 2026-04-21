@@ -291,7 +291,9 @@ const AdminCertificates = () => {
       data: {
         institutionNameBn: inst.name || '',
         institutionNameEn: inst.name_en || '',
-        institutionAddress: inst.address || '',
+        institutionAddress: isEnOnly
+          ? ((inst as any).address_en || (inst.address ? romanizeBangla(inst.address) : ''))
+          : (inst.address || ''),
         institutionPhone: inst.phone || '',
         institutionEmail: inst.email || '',
         institutionLogo: inst.logo_url || '',

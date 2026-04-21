@@ -15,7 +15,7 @@ const DashboardInstitutionCard = () => {
   const isAdmin = isAdminRole(role);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '', logo_url: '' });
+  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '' });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -32,9 +32,11 @@ const DashboardInstitutionCard = () => {
         name: institution.name || '',
         name_en: institution.name_en || '',
         address: institution.address || '',
+        address_en: (institution as any).address_en || '',
         phone: institution.phone || '',
         email: institution.email || '',
         other_info: institution.other_info || '',
+        other_info_en: (institution as any).other_info_en || '',
         logo_url: institution.logo_url || '',
       });
     }
@@ -101,8 +103,12 @@ const DashboardInstitutionCard = () => {
             <Input value={form.name_en || ''} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} className="mt-1" />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা' : 'Address'}</label>
+            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (বাংলা)' : 'Address (Bangla)'}</label>
             <Input value={form.address || ''} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (ইংরেজি)' : 'Address (English)'}</label>
+            <Input value={form.address_en || ''} onChange={e => setForm(f => ({ ...f, address_en: e.target.value }))} className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফোন' : 'Phone'}</label>
@@ -113,8 +119,12 @@ const DashboardInstitutionCard = () => {
             <Input value={form.email || ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1" />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য' : 'Other Info'}</label>
+            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (বাংলা)' : 'Other Info (Bangla)'}</label>
             <Input value={form.other_info || ''} onChange={e => setForm(f => ({ ...f, other_info: e.target.value }))} className="mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (ইংরেজি)' : 'Other Info (English)'}</label>
+            <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
