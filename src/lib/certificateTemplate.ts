@@ -182,6 +182,7 @@ export interface RenderInput {
     bodyEn: string;
     bodyAr?: string;
     principalName: string;
+    principalNameEn?: string;
     principalNameAr?: string;
     principalTitleBn: string;
     principalTitleEn: string;
@@ -301,7 +302,10 @@ export function renderCertificateHTML(input: RenderInput): string {
 
   const sigPrincipalName = isArOnly
     ? (data.principalNameAr || data.principalName)
-    : data.principalName;
+    : isEnOnly
+      ? (data.principalNameEn || data.principalName)
+      : data.principalName;
+  const sigPrincipalNameEn = data.principalNameEn || '';
   const sigPrincipalTitleAr = data.principalTitleAr || 'المدير';
 
   const sigBlock = `
@@ -311,6 +315,7 @@ export function renderCertificateHTML(input: RenderInput): string {
       <div class="sig">
         <div class="line"></div>
         <div class="name"${isArOnly ? ` style="font-family:'Amiri','Scheherazade New',serif;direction:rtl;"` : ''}>${escapeHtml(sigPrincipalName)}</div>
+        ${(showBn && showEn && sigPrincipalNameEn && sigPrincipalNameEn !== sigPrincipalName) ? `<div class="name-en" style="font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:${cfg.headerAccentColor};letter-spacing:1px;margin-top:2px">${escapeHtml(sigPrincipalNameEn)}</div>` : ''}
         ${showBn ? `<div class="title-bn">${escapeHtml(data.principalTitleBn)}</div>` : ''}
         ${showEn ? `<div class="title-en">${escapeHtml(data.principalTitleEn)}</div>` : ''}
         ${showAr ? `<div class="title-bn" style="font-family:'Amiri',serif;direction:rtl;">${escapeHtml(sigPrincipalTitleAr)}</div>` : ''}
