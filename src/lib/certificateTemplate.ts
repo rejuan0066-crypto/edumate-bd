@@ -166,6 +166,11 @@ export interface RenderInput {
 export function renderCertificateHTML(input: RenderInput): string {
   const { cfg: baseCfg, defaultTitleBn, defaultTitleEn, data, certType, bodyLayoutOverride } = input;
   const cfg: CertTemplateConfig = bodyLayoutOverride ? { ...baseCfg, bodyLayout: bodyLayoutOverride } : baseCfg;
+  const isBnOnly = cfg.bodyLayout === 'bn-only';
+  const isEnOnly = cfg.bodyLayout === 'en-only';
+  const showBn = !isEnOnly;
+  const showEn = !isBnOnly;
+
   const titleBn = cfg.titleBn || defaultTitleBn;
   const titleEn = cfg.titleEn || defaultTitleEn;
 
@@ -176,6 +181,10 @@ export function renderCertificateHTML(input: RenderInput): string {
   const headerJustify = cfg.logoPosition === 'left' ? 'flex-start' : cfg.logoPosition === 'right' ? 'flex-end' : 'center';
 
   const sigJustify = cfg.signaturePosition === 'left' ? 'flex-start' : cfg.signaturePosition === 'center' ? 'center' : 'flex-end';
+
+  // Bilingual label helper
+  const dual = (en: string, bn: string) =>
+    isEnOnly ? en : isBnOnly ? bn : `${en} / ${bn}`;
 
   const corners = cfg.showCornerOrnaments ? `
     <div class="corner tl">${CORNER_SVG(cfg.borderColor)}</div>
@@ -189,23 +198,39 @@ export function renderCertificateHTML(input: RenderInput): string {
   const headerLogo = cfg.showLogo && logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="" style="width:${cfg.logoSize}px;height:${cfg.logoSize}px;object-fit:contain"/>` : '';
 
+  // Institution name — pick by language. In English-only mode prefer English (fallback to Bn) and never show Bengali secondary.
+  const instNamePrimary = isEnOnly
+    ? (data.institutionNameEn || data.institutionNameBn)
+    : (data.institutionNameBn || data.institutionNameEn);
+  const instNameSecondary = (isEnOnly || isBnOnly)
+    ? ''
+    : (data.institutionNameEn && data.institutionNameEn !== data.institutionNameBn ? data.institutionNameEn : '');
+
   const instBlock = `
     <div class="header-text">
-      ${cfg.showInstitutionName ? `<div class="name-bn">${escapeHtml(data.institutionNameBn)}</div>${data.institutionNameEn ? `<div class="name-en">${escapeHtml(data.institutionNameEn)}</div>` : ''}` : ''}
+      ${cfg.showInstitutionName ? `<div class="name-bn"${isEnOnly ? ` style="font-family:'Cinzel',serif;letter-spacing:2px;text-transform:uppercase;font-size:18px;"` : ''}>${escapeHtml(instNamePrimary)}</div>${instNameSecondary ? `<div class="name-en">${escapeHtml(instNameSecondary)}</div>` : ''}` : ''}
       ${cfg.showAddress ? `<div class="addr">${escapeHtml(data.institutionAddress)}${data.institutionPhone ? ` &middot; ${escapeHtml(data.institutionPhone)}` : ''}${data.institutionEmail ? ` &middot; ${escapeHtml(data.institutionEmail)}` : ''}</div>` : ''}
     </div>`;
 
   const infoCells: string[] = [];
-  if (data.studentId) infoCells.push(`<div><b>Student ID</b><span>${escapeHtml(data.studentId)}</span></div>`);
-  if (data.rollNumber) infoCells.push(`<div><b>Roll / রোল</b><span>${escapeHtml(data.rollNumber)}</span></div>`);
-  if (data.classEn) infoCells.push(`<div><b>Class / শ্রেণী</b><span>${escapeHtml(data.classEn)}</span></div>`);
-  if (data.sessionName) infoCells.push(`<div><b>Session / সেশন</b><span>${escapeHtml(data.sessionName)}</span></div>`);
-  if (data.fatherName) infoCells.push(`<div><b>Father / পিতা</b><span>${escapeHtml(data.fatherName)}</span></div>`);
-  if (data.motherName) infoCells.push(`<div><b>Mother / মাতা</b><span>${escapeHtml(data.motherName)}</span></div>`);
-  if (data.dobEn) infoCells.push(`<div><b>Date of Birth</b><span>${escapeHtml(data.dobEn)}</span></div>`);
-  if (certType === 'transfer' && data.admissionDateEn) infoCells.push(`<div><b>Admitted On</b><span>${escapeHtml(data.admissionDateEn)}</span></div>`);
-  if (certType === 'transfer' && data.leavingDateEn) infoCells.push(`<div><b>Date of Leaving</b><span>${escapeHtml(data.leavingDateEn)}</span></div>`);
-  if (certType !== 'certificate' && data.conduct) infoCells.push(`<div><b>Conduct / আচরণ</b><span>${escapeHtml(data.conduct)}</span></div>`);
+  if (data.studentId) infoCells.push(`<div><b>${dual('Student ID', 'ছাত্র আইডি')}</b><span>${escapeHtml(data.studentId)}</span></div>`);
+  if (data.rollNumber) infoCells.push(`<div><b>${dual('Roll', 'রোল')}</b><span>${escapeHtml(data.rollNumber)}</span></div>`);
+  if (data.classEn || data.classBn) {
+    const classVal = isBnOnly ? (data.classBn || data.classEn) : (data.classEn || data.classBn);
+    infoCells.push(`<div><b>${dual('Class', 'শ্রেণী')}</b><span>${escapeHtml(classVal)}</span></div>`);
+  }
+  if (data.sessionName) infoCells.push(`<div><b>${dual('Session', 'সেশন')}</b><span>${escapeHtml(data.sessionName)}</span></div>`);
+  if (data.fatherName) infoCells.push(`<div><b>${dual('Father', 'পিতা')}</b><span>${escapeHtml(data.fatherName)}</span></div>`);
+  if (data.motherName) infoCells.push(`<div><b>${dual('Mother', 'মাতা')}</b><span>${escapeHtml(data.motherName)}</span></div>`);
+  const dobShown = isBnOnly ? data.dobBn : data.dobEn;
+  if (dobShown) infoCells.push(`<div><b>${dual('Date of Birth', 'জন্ম তারিখ')}</b><span>${escapeHtml(dobShown)}</span></div>`);
+  if (certType === 'transfer') {
+    const admShown = isBnOnly ? data.admissionDateBn : data.admissionDateEn;
+    const lvShown = isBnOnly ? data.leavingDateBn : data.leavingDateEn;
+    if (admShown) infoCells.push(`<div><b>${dual('Admitted On', 'ভর্তির তারিখ')}</b><span>${escapeHtml(admShown)}</span></div>`);
+    if (lvShown) infoCells.push(`<div><b>${dual('Date of Leaving', 'প্রস্থানের তারিখ')}</b><span>${escapeHtml(lvShown)}</span></div>`);
+  }
+  if (certType !== 'certificate' && data.conduct) infoCells.push(`<div><b>${dual('Conduct', 'আচরণ')}</b><span>${escapeHtml(data.conduct)}</span></div>`);
 
   const bodyGrid = (() => {
     if (cfg.bodyLayout === 'bilingual') {
@@ -220,15 +245,23 @@ export function renderCertificateHTML(input: RenderInput): string {
     return `<div class="body-grid one-col"><div class="col en"><div class="text">${bodyEn}</div></div></div>`;
   })();
 
+  const sealBlock = cfg.showSeal && sigJustify !== 'flex-start'
+    ? `<div class="seal">
+        ${showEn ? `<div class="seal-en">OFFICIAL</div>` : ''}
+        ${showBn ? `<div class="seal-bn">প্রাতিষ্ঠানিক সিল</div>` : ''}
+      </div>` : '';
+
+  const wishesText = isBnOnly ? '~ শুভকামনা ~' : '~ Best Wishes ~';
+
   const sigBlock = `
     <div class="footer" style="justify-content:${sigJustify === 'flex-start' ? 'flex-start' : sigJustify === 'center' ? 'center' : 'space-between'}">
-      ${cfg.showSeal && sigJustify !== 'flex-start' ? `<div class="seal"><div class="seal-en">OFFICIAL</div><div class="seal-bn">প্রাতিষ্ঠানিক সিল</div></div>` : ''}
-      ${cfg.showWishes ? `<div class="wishes">~ Best Wishes ~</div>` : ''}
+      ${sealBlock}
+      ${cfg.showWishes ? `<div class="wishes">${escapeHtml(wishesText)}</div>` : ''}
       <div class="sig">
         <div class="line"></div>
         <div class="name">${escapeHtml(data.principalName)}</div>
-        <div class="title-bn">${escapeHtml(data.principalTitleBn)}</div>
-        <div class="title-en">${escapeHtml(data.principalTitleEn)}</div>
+        ${showBn ? `<div class="title-bn">${escapeHtml(data.principalTitleBn)}</div>` : ''}
+        ${showEn ? `<div class="title-en">${escapeHtml(data.principalTitleEn)}</div>` : ''}
       </div>
     </div>`;
 
