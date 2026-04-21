@@ -278,8 +278,22 @@ const ParentPortal = () => {
                           <Input id="su-sid" placeholder="STU-2026-001" value={signupStudentId} onChange={(e) => setSignupStudentId(e.target.value)} className="rounded-xl h-11" />
                         </div>
                         <div className="space-y-2 mt-2">
-                          <Label htmlFor="su-dob">{bn ? 'সন্তানের জন্মতারিখ' : "Child's Date of Birth"}</Label>
-                          <Input id="su-dob" type="date" value={signupDob} onChange={(e) => setSignupDob(e.target.value)} className="rounded-xl h-11" />
+                          <Label htmlFor="su-dob">{bn ? 'সন্তানের জন্মতারিখ (dd/mm/yyyy)' : "Child's Date of Birth (dd/mm/yyyy)"}</Label>
+                          <Input
+                            id="su-dob"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="dd/mm/yyyy"
+                            maxLength={10}
+                            value={signupDob}
+                            onChange={(e) => {
+                              let v = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
+                              if (v.length >= 5) v = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+                              else if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
+                              setSignupDob(v);
+                            }}
+                            className="rounded-xl h-11"
+                          />
                         </div>
                       </div>
                       <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold mt-3">
