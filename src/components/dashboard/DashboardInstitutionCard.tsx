@@ -69,6 +69,10 @@ const DashboardInstitutionCard = () => {
         principal_message_en: settings.principal_message_en || '',
         principal_photo_url: settings.principal_photo_url || '',
       });
+      setFooterForm({
+        global_footer_text_bn: (settings as any).global_footer_text_bn || '',
+        global_footer_text_en: (settings as any).global_footer_text_en || '',
+      });
     }
   }, [settings]);
 
@@ -81,9 +85,12 @@ const DashboardInstitutionCard = () => {
         const { error } = await supabase.from('institutions').insert({ ...form, is_default: true });
         if (error) throw error;
       }
-      // Save principal info to website_settings
-      const principalUpdates = Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any }));
-      await updateMultiple.mutateAsync(principalUpdates);
+      // Save principal info + global footer to website_settings
+      const updates = [
+        ...Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any })),
+        ...Object.entries(footerForm).map(([key, value]) => ({ key, value: value as any })),
+      ];
+      await updateMultiple.mutateAsync(updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['institution-default'] });
