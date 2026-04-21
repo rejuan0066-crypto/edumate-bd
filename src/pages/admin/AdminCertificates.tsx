@@ -272,6 +272,7 @@ const AdminCertificates = () => {
       certType: cert.certificate_type as RenderCertType,
       defaultTitleBn: meta.titleBn,
       defaultTitleEn: meta.titleEn,
+      bodyLayoutOverride: langChoice,
       data: {
         institutionNameBn: inst.name || '',
         institutionNameEn: inst.name_en || '',
