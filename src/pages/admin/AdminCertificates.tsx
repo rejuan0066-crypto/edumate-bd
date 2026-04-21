@@ -156,13 +156,24 @@ const AdminCertificates = () => {
     });
   }, [certs, searchTerm]);
 
-  /* ── Generate next serial (unique sequential per type) ─────────────── */
-  const generateSerial = async (type: CertType): Promise<string> => {
-    const prefix = type === 'certificate' ? 'CERT' : type === 'transfer' ? 'TC' : 'TM';
-    const year = new Date().getFullYear();
-    const pattern = `${prefix}-${year}-%`;
+  /* ── Generate next serial: PREFIX-SESSION-CLASS-SEQ (unique per type+session+class) ── */
+  const sanitizeToken = (v: string): string => {
+    // Keep digits/letters; convert Bangla digits to English; strip the rest
+    const bnToEn: Record<string, string> = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+    const normalized = (v || '').replace(/[০-৯]/g, (c) => bnToEn[c] || c);
+    const cleaned = normalized.replace(/[^A-Za-z0-9]/g, '');
+    return cleaned || 'NA';
+  };
 
-    // Fetch all serials for this type+year and compute the max sequence
+  const generateSerial = async (type: CertType, student: any): Promise<string> => {
+    const prefix = type === 'certificate' ? 'CERT' : type === 'transfer' ? 'TC' : 'TM';
+    const sessionRaw = student?.academic_sessions?.name || String(new Date().getFullYear());
+    const classRaw = student?.classes?.name || student?.classes?.name_bn || 'NA';
+    const sessionToken = sanitizeToken(sessionRaw);
+    const classToken = sanitizeToken(classRaw);
+    const pattern = `${prefix}-${sessionToken}-${classToken}-%`;
+
+    // Fetch all serials for this type+session+class and compute the max sequence
     const { data, error } = await supabase
       .from('student_certificates')
       .select('serial_number')
@@ -171,8 +182,9 @@ const AdminCertificates = () => {
 
     let maxSeq = 0;
     if (!error && data) {
+      const re = new RegExp(`^${prefix}-${sessionToken}-${classToken}-(\\d+)$`);
       data.forEach((row: any) => {
-        const m = String(row.serial_number || '').match(new RegExp(`^${prefix}-${year}-(\\d+)$`));
+        const m = String(row.serial_number || '').match(re);
         if (m) {
           const n = parseInt(m[1], 10);
           if (!isNaN(n) && n > maxSeq) maxSeq = n;
@@ -181,7 +193,7 @@ const AdminCertificates = () => {
     }
 
     const next = maxSeq + 1;
-    return `${prefix}-${year}-${String(next).padStart(4, '0')}`;
+    return `${prefix}-${sessionToken}-${classToken}-${String(next).padStart(4, '0')}`;
   };
 
   /* ── Reset form ───────────────────────── */
@@ -202,11 +214,12 @@ const AdminCertificates = () => {
   const issueMutation = useMutation({
     mutationFn: async () => {
       if (!studentId) throw new Error(bn ? 'একজন ছাত্র নির্বাচন করুন' : 'Please select a student');
+      const selectedStudent = students.find((s: any) => s.id === studentId);
       const payload: any = {
         student_id: studentId,
         certificate_type: tab,
         certificate_category: tab === 'certificate' ? category : null,
-        serial_number: await generateSerial(tab),
+        serial_number: await generateSerial(tab, selectedStudent),
         issue_date: issueDate,
         purpose_bn: purpose,
         conduct_bn: conduct,
