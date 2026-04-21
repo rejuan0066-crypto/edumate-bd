@@ -185,6 +185,7 @@ export interface WebsiteSettings {
   hero_subtitle_en: string;
   hero_bg_image_url: string;
   principal_name: string;
+  principal_name_en: string;
   principal_title_bn: string;
   principal_title_en: string;
   principal_message_bn: string;
