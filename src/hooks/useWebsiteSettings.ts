@@ -270,6 +270,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   hero_subtitle_en: '',
   hero_bg_image_url: '',
   principal_name: '',
+  principal_name_en: '',
   principal_title_bn: '',
   principal_title_en: '',
   principal_message_bn: '',
