@@ -257,6 +257,8 @@ const AdminCertificates = () => {
       : null;
     const catBn = cat?.bn || '';
     const catEn = cat?.en || '';
+    const catAr = cert.certificate_category ? (CERT_CATEGORIES_AR[cert.certificate_category] || '') : '';
+    const isArOnly = langChoice === 'ar-only';
 
     const nameBn = s.name_bn || s.name_en || '';
     const nameEn = s.name_en || s.name_bn || '';
