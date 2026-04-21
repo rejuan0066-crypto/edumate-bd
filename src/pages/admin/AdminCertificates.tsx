@@ -99,6 +99,8 @@ const AdminCertificates = () => {
       return data || [];
     },
   });
+
+  const { data: students = [] } = useQuery({
     queryKey: ['students-for-cert'],
     queryFn: async () => {
       const { data, error } = await supabase
