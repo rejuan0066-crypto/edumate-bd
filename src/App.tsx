@@ -108,6 +108,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
+import AdminCertificates from "./pages/admin/AdminCertificates";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
@@ -269,6 +270,7 @@ const App = () => (
                     <Route path="resign-letters" element={<AdminResignLetters />} />
                     <Route path="joining-letters" element={<AdminJoiningLetters />} />
                     <Route path="admission-letters" element={<AdminAdmissionLetters />} />
+                    <Route path="student-certificates" element={<AdminCertificates />} />
                     <Route path="designations" element={<AdminDesignations />} />
                     <Route path="form-builder" element={<AdminFormBuilder />} />
                     <Route path="custom/:slug" element={<AdminCustomFormPage />} />
