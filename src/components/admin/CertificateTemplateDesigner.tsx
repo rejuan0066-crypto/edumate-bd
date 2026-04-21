@@ -182,6 +182,9 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
                   <Field label={bn ? 'শিরোনাম (ইংরেজি)' : 'Title (English)'}>
                     <Input value={cfg.titleEn} onChange={e => set('titleEn', e.target.value)} placeholder={meta.titleEn} />
                   </Field>
+                  <Field label={bn ? 'শিরোনাম (আরবি)' : 'Title (Arabic)'}>
+                    <Input value={cfg.titleAr} onChange={e => set('titleAr', e.target.value)} placeholder={meta.titleAr} dir="rtl" style={{ fontFamily: 'Amiri, serif' }} />
+                  </Field>
                   <SliderField label={bn ? 'ফন্ট সাইজ' : 'Font size'} value={cfg.titleFontSize} min={18} max={48} onChange={v => set('titleFontSize', v)} />
                   <ColorField label={bn ? 'শিরোনাম রং' : 'Title color'} value={cfg.titleColor} onChange={v => set('titleColor', v)} />
                   <ToggleField label={bn ? 'ক্যাটেগরি সাবটাইটেল' : 'Category subtitle'} value={cfg.showCategorySubtitle} onChange={v => set('showCategorySubtitle', v)} />
@@ -245,6 +248,7 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
                         <SelectItem value="bilingual">{bn ? 'দ্বিভাষিক (বাংলা + ইংরেজি)' : 'Bilingual (Bn + En)'}</SelectItem>
                         <SelectItem value="bn-only">{bn ? 'শুধু বাংলা' : 'Bengali only'}</SelectItem>
                         <SelectItem value="en-only">{bn ? 'শুধু ইংরেজি' : 'English only'}</SelectItem>
+                        <SelectItem value="ar-only">{bn ? 'শুধু আরবি' : 'Arabic only'}</SelectItem>
                       </SelectContent>
                     </Select>
                   </Field>
@@ -257,6 +261,11 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
                   <Field label={bn ? 'কাস্টম ইংরেজি টেক্সট (ঐচ্ছিক)' : 'Custom English text (optional)'}>
                     <Textarea rows={4} value={cfg.customBodyEn} onChange={e => set('customBodyEn', e.target.value)}
                       placeholder="Placeholders: {nameEn} {fatherName} {classEn} {conduct}" />
+                  </Field>
+                  <Field label={bn ? 'কাস্টম আরবি টেক্সট (ঐচ্ছিক)' : 'Custom Arabic text (optional)'}>
+                    <Textarea rows={4} value={cfg.customBodyAr} onChange={e => set('customBodyAr', e.target.value)}
+                      dir="rtl" style={{ fontFamily: 'Amiri, serif', fontSize: '14px', lineHeight: 1.8 }}
+                      placeholder={bn ? 'প্লেসহোল্ডার: {nameAr} {fatherNameAr} {classAr} {conductAr} ...' : 'Placeholders: {nameAr} {fatherNameAr} {classAr} {conductAr}'} />
                   </Field>
                 </Section>
 
