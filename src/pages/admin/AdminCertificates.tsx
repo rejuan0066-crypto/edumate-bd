@@ -16,6 +16,7 @@ import SearchableSelect from '@/components/SearchableSelect';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import CertificateTemplateDesigner from '@/components/admin/CertificateTemplateDesigner';
 import { renderCertificateHTML, mergeTemplate, CertTemplateConfig, CertType as RenderCertType } from '@/lib/certificateTemplate';
+import { romanizeBangla, containsBangla } from '@/lib/bnRomanize';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
@@ -239,6 +240,20 @@ const AdminCertificates = () => {
     const remarksVal = cert.remarks_bn || remarks || '';
     const lastClassVal = cert.last_class_attended_bn || lastClass || classBn;
 
+    // English-mode safe values: romanize Bangla so en-only output never shows raw Bangla.
+    const isEnOnly = langChoice === 'en-only';
+    const enSafe = (v: string) => isEnOnly && containsBangla(v) ? romanizeBangla(v) : v;
+    const nameEnSafe = enSafe(nameEn);
+    const fatherEn = enSafe(fatherName);
+    const motherEn = enSafe(motherName);
+    const conductEn = enSafe(conductVal);
+    const reasonEn = enSafe(reasonVal);
+    const achievementsEn = enSafe(achievementsVal);
+    const purposeEn = enSafe(purposeVal);
+    const remarksEn = enSafe(remarksVal);
+    const lastClassEn = enSafe(lastClassVal);
+    const classEnSafe = classEn || enSafe(classBn);
+
     const dobBn = s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString('bn-BD') : '';
     const dobEn = s.date_of_birth ? new Date(s.date_of_birth).toLocaleDateString('en-GB') : '';
     const admBn = s.admission_date ? new Date(s.admission_date).toLocaleDateString('bn-BD') : '';
@@ -256,13 +271,13 @@ const AdminCertificates = () => {
       const subjectBn = catBn || 'কৃতিত্ব';
       const subjectEn = catEn || 'Achievement';
       bodyBn = `এই সনদপত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>${classBn ? `, ${esc(classBn)} শ্রেণীর একজন কৃতী শিক্ষার্থী।` : '।'} সে <span class="hl">${esc(subjectBn)}</span> ক্ষেত্রে অসাধারণ দক্ষতা ও কৃতিত্বের পরিচয় দিয়েছে।${achievementsVal ? ` বিশেষ অর্জন: <i>${esc(achievementsVal)}</i>।` : ''} আমরা তার উজ্জ্বল ভবিষ্যৎ ও সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
-      bodyEn = `This is to certify that <span class="hl">${esc(nameEn)}</span>, son/daughter of <b>${esc(fatherName)}</b> and <b>${esc(motherName)}</b>${classEn ? `, a student of Class <b>${esc(classEn)}</b>,` : ','} has demonstrated exceptional skill and accomplishment in <span class="hl">${esc(subjectEn)}</span>.${achievementsVal ? ` Notable achievement: <i>${esc(achievementsVal)}</i>.` : ''} We wish them continued success and prosperity in all future endeavours.`;
+      bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>${classEnSafe ? `, a student of Class <b>${esc(classEnSafe)}</b>,` : ','} has demonstrated exceptional skill and accomplishment in <span class="hl">${esc(subjectEn)}</span>.${achievementsEn ? ` Notable achievement: <i>${esc(achievementsEn)}</i>.` : ''} We wish them continued success and prosperity in all future endeavours.`;
     } else if (cert.certificate_type === 'transfer') {
       bodyBn = `এই ছাড়পত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>, জন্ম তারিখ: ${dobBn || '—'}, ${admBn ? `${admBn} তারিখে` : ''} এই প্রতিষ্ঠানে ভর্তি হয়েছিল এবং ${leavingBn ? `${leavingBn} তারিখ পর্যন্ত` : ''} <b>${esc(lastClassVal)}</b> শ্রেণী পর্যন্ত অধ্যয়ন করেছে। অধ্যয়নকালে তার আচরণ ছিল <span class="hl">${esc(conductVal)}</span>।${reasonVal ? ` ছাড়পত্র গ্রহণের কারণ: <i>${esc(reasonVal)}</i>।` : ''} আমরা তার ভবিষ্যৎ জীবনের সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
-      bodyEn = `This is to certify that <span class="hl">${esc(nameEn)}</span>, son/daughter of <b>${esc(fatherName)}</b> and <b>${esc(motherName)}</b>, born on <b>${dobEn || '—'}</b>, was admitted to this institution ${admEn ? `on <b>${admEn}</b>` : ''} and continued studies up to Class <b>${esc(lastClassVal)}</b>${leavingEn ? ` until <b>${leavingEn}</b>` : ''}. Their conduct during the period of study was <span class="hl">${esc(conductVal)}</span>.${reasonVal ? ` Reason for leaving: <i>${esc(reasonVal)}</i>.` : ''} We wish them all the best in their future endeavours.`;
+      bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>, born on <b>${dobEn || '—'}</b>, was admitted to this institution ${admEn ? `on <b>${admEn}</b>` : ''} and continued studies up to Class <b>${esc(lastClassEn)}</b>${leavingEn ? ` until <b>${leavingEn}</b>` : ''}. Their conduct during the period of study was <span class="hl">${esc(conductEn)}</span>.${reasonEn ? ` Reason for leaving: <i>${esc(reasonEn)}</i>.` : ''} We wish them all the best in their future endeavours.`;
     } else {
       bodyBn = `এই প্রশংসাপত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>${classBn ? `, ${esc(classBn)} শ্রেণীর একজন মেধাবী শিক্ষার্থী।` : '।'} অধ্যয়নকালে তার আচরণ ছিল <span class="hl">${esc(conductVal)}</span> এবং সে শিক্ষা ও সহশিক্ষা কার্যক্রমে সক্রিয় ভূমিকা পালন করেছে।${achievementsVal ? ` বিশেষ অর্জন: <i>${esc(achievementsVal)}</i>।` : ''} আমরা তার উজ্জ্বল ভবিষ্যৎ ও সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
-      bodyEn = `This is to certify that <span class="hl">${esc(nameEn)}</span>, son/daughter of <b>${esc(fatherName)}</b> and <b>${esc(motherName)}</b>${classEn ? `, a student of Class <b>${esc(classEn)}</b>,` : ','} has been a meritorious student of this institution. Their conduct throughout the period of study has been <span class="hl">${esc(conductVal)}</span>, and they have actively participated in academic and co-curricular activities.${achievementsVal ? ` Notable achievement: <i>${esc(achievementsVal)}</i>.` : ''} We wish them a bright future ahead.`;
+      bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>${classEnSafe ? `, a student of Class <b>${esc(classEnSafe)}</b>,` : ','} has been a meritorious student of this institution. Their conduct throughout the period of study has been <span class="hl">${esc(conductEn)}</span>, and they have actively participated in academic and co-curricular activities.${achievementsEn ? ` Notable achievement: <i>${esc(achievementsEn)}</i>.` : ''} We wish them a bright future ahead.`;
     }
 
     const monogramText = (inst.name_en || inst.name || 'A').trim().charAt(0).toUpperCase();
@@ -284,19 +299,24 @@ const AdminCertificates = () => {
         serial: cert.serial_number || '',
         issueDateBn: issueBn,
         issueDateEn: issueEn,
-        nameBn, nameEn, fatherName, motherName, classBn, classEn,
+        nameBn,
+        nameEn: nameEnSafe,
+        fatherName: isEnOnly ? fatherEn : fatherName,
+        motherName: isEnOnly ? motherEn : motherName,
+        classBn,
+        classEn: classEnSafe,
         sessionName,
         studentId: s.student_id || '',
         rollNumber: s.roll_number ? String(s.roll_number) : '',
         dobBn, dobEn,
         admissionDateBn: admBn, admissionDateEn: admEn,
         leavingDateBn: leavingBn, leavingDateEn: leavingEn,
-        conduct: conductVal,
-        reason: reasonVal,
-        achievements: achievementsVal,
-        purpose: purposeVal,
-        remarks: remarksVal,
-        lastClass: lastClassVal,
+        conduct: isEnOnly ? conductEn : conductVal,
+        reason: isEnOnly ? reasonEn : reasonVal,
+        achievements: isEnOnly ? achievementsEn : achievementsVal,
+        purpose: isEnOnly ? purposeEn : purposeVal,
+        remarks: isEnOnly ? remarksEn : remarksVal,
+        lastClass: isEnOnly ? lastClassEn : lastClassVal,
         categoryBn: catBn,
         categoryEn: catEn,
         bodyBn,
