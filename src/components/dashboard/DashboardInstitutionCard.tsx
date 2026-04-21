@@ -15,7 +15,7 @@ const DashboardInstitutionCard = () => {
   const isAdmin = isAdminRole(role);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', name_en: '', address: '', phone: '', email: '', other_info: '', logo_url: '' });
+  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '' });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
