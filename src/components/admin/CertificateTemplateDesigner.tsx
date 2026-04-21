@@ -274,8 +274,18 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
                   </Field>
                   <ToggleField label={bn ? 'অফিসিয়াল সিল' : 'Official seal'} value={cfg.showSeal} onChange={v => set('showSeal', v)} />
                   <ToggleField label={bn ? '"Best Wishes" দেখান' : 'Show "Best Wishes"'} value={cfg.showWishes} onChange={v => set('showWishes', v)} />
-                  <Field label={bn ? 'ফুটার নোট (ঐচ্ছিক)' : 'Footer note (optional)'}>
-                    <Input value={cfg.footerText} onChange={e => set('footerText', e.target.value)} placeholder={bn ? 'যেমন: এই সনদ কম্পিউটার-জেনারেটেড' : 'e.g. Computer generated'} />
+                  <Field label={bn ? 'ফুটার ওভাররাইড (ঐচ্ছিক)' : 'Footer override (optional)'}>
+                    <Textarea
+                      rows={2}
+                      value={cfg.footerText}
+                      onChange={e => set('footerText', e.target.value)}
+                      placeholder={bn ? 'খালি রাখলে গ্লোবাল ফুটার ব্যবহৃত হবে' : 'Leave empty to use global footer'}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn
+                        ? '💡 এই টেমপ্লেটের জন্য আলাদা ফুটার দিতে চাইলে এখানে লিখুন। খালি রাখলে ড্যাশবোর্ডে সেট করা গ্লোবাল ফুটার ব্যবহৃত হবে।'
+                        : '💡 Set a custom footer for this template only. Leave blank to fall back to the global footer set in the dashboard.'}
+                    </p>
                   </Field>
                 </Section>
 
