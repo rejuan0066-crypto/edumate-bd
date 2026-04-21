@@ -678,6 +678,14 @@ const AdminCertificates = () => {
                 <span className="text-base font-semibold">{bn ? 'শুধুমাত্র ইংরেজি' : 'English Only'}</span>
                 <span className="text-xs text-muted-foreground font-normal">{bn ? 'পূর্ণ-প্রস্থ ইংরেজি ভার্সন' : 'Full-width English version'}</span>
               </Button>
+              <Button
+                variant="outline"
+                className="rounded-2xl h-auto py-4 flex-col gap-1 hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => { const c = printLangCert; setPrintLangCert(null); if (c) handlePrint(c, 'ar-only'); }}
+              >
+                <span className="text-base font-semibold" style={{ fontFamily: "'Amiri', 'Scheherazade New', serif" }}>{bn ? 'শুধুমাত্র আরবি' : 'Arabic Only'}</span>
+                <span className="text-xs text-muted-foreground font-normal">{bn ? 'পূর্ণ-প্রস্থ আরবি ভার্সন (RTL)' : 'Full-width Arabic version (RTL)'}</span>
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
