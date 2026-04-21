@@ -253,6 +253,8 @@ export interface WebsiteSettings {
   logo_shape: 'square' | 'rounded' | 'circle';
   favicon_shape: 'square' | 'rounded' | 'circle';
   loader_logo_shape: 'square' | 'rounded' | 'circle';
+  global_footer_text_bn: string;
+  global_footer_text_en: string;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
