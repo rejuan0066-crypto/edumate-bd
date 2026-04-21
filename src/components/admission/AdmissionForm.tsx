@@ -235,8 +235,8 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
   const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
   const globalFooterText = bn
-    ? ((websiteSettings as any)?.global_footer_text_bn as string | undefined)
-    : ((websiteSettings as any)?.global_footer_text_en as string | undefined);
+    ? (websiteAdmissionSettings?.global_footer_text_bn as string | undefined)
+    : (websiteAdmissionSettings?.global_footer_text_en as string | undefined);
 
   const getRollStartForClass = useCallback((classId: string) => {
     // Sort classes globally: first by division sort_order, then by class sort_order
