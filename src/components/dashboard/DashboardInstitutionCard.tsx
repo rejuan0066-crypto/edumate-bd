@@ -4,9 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { GraduationCap, Edit2, Save, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 
 const DashboardInstitutionCard = () => {
@@ -14,8 +16,18 @@ const DashboardInstitutionCard = () => {
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   const queryClient = useQueryClient();
+  const { settings, updateMultiple } = useWebsiteSettings();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '' });
+  const [principalForm, setPrincipalForm] = useState({
+    principal_name: '',
+    principal_name_en: '',
+    principal_title_bn: '',
+    principal_title_en: '',
+    principal_message_bn: '',
+    principal_message_en: '',
+    principal_photo_url: '',
+  });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -42,30 +54,40 @@ const DashboardInstitutionCard = () => {
     }
   }, [institution]);
 
+  useEffect(() => {
+    if (settings) {
+      setPrincipalForm({
+        principal_name: settings.principal_name || '',
+        principal_name_en: settings.principal_name_en || '',
+        principal_title_bn: settings.principal_title_bn || '',
+        principal_title_en: settings.principal_title_en || '',
+        principal_message_bn: settings.principal_message_bn || '',
+        principal_message_en: settings.principal_message_en || '',
+        principal_photo_url: settings.principal_photo_url || '',
+      });
+    }
+  }, [settings]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
-      console.log('Save institution - existing:', !!institution, 'form:', form);
       if (institution) {
         const { error } = await supabase.from('institutions').update(form).eq('id', institution.id);
-        if (error) {
-          console.error('Institution update error:', error);
-          throw error;
-        }
+        if (error) throw error;
       } else {
         const { error } = await supabase.from('institutions').insert({ ...form, is_default: true });
-        if (error) {
-          console.error('Institution insert error:', error);
-          throw error;
-        }
+        if (error) throw error;
       }
+      // Save principal info to website_settings
+      const principalUpdates = Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any }));
+      await updateMultiple.mutateAsync(principalUpdates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['institution-default'] });
+      queryClient.invalidateQueries({ queryKey: ['website-settings'] });
       setEditing(false);
-      toast.success(language === 'bn' ? 'প্রতিষ্ঠানের তথ্য সংরক্ষিত' : 'Institution info saved');
+      toast.success(language === 'bn' ? 'তথ্য সংরক্ষিত' : 'Info saved');
     },
     onError: (e: any) => {
-      console.error('Institution save failed:', e);
       toast.error(e.message || (language === 'bn' ? 'সংরক্ষণ ব্যর্থ' : 'Save failed'));
     },
   });
@@ -81,9 +103,20 @@ const DashboardInstitutionCard = () => {
     setForm(f => ({ ...f, logo_url: urlData.publicUrl }));
   };
 
+  const handlePrincipalPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ext = file.name.split('.').pop();
+    const path = `principal/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('website-assets').upload(path, file);
+    if (error) { toast.error(error.message); return; }
+    const { data: urlData } = supabase.storage.from('website-assets').getPublicUrl(path);
+    setPrincipalForm(f => ({ ...f, principal_photo_url: urlData.publicUrl }));
+  };
+
   if (editing) {
     return (
-      <div className="card-elevated p-5 space-y-4">
+      <div className="card-elevated p-5 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-foreground">{language === 'bn' ? 'প্রতিষ্ঠানের তথ্য সম্পাদনা' : 'Edit Institution Info'}</h3>
           <div className="flex gap-2">
@@ -93,47 +126,93 @@ const DashboardInstitutionCard = () => {
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (বাংলা)' : 'Name (Bangla)'}</label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
+
+        {/* Institution fields */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'প্রতিষ্ঠান' : 'Institution'}</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (বাংলা)' : 'Name (Bangla)'}</label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
+              <Input value={form.name_en || ''} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (বাংলা)' : 'Address (Bangla)'}</label>
+              <Input value={form.address || ''} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (ইংরেজি)' : 'Address (English)'}</label>
+              <Input value={form.address_en || ''} onChange={e => setForm(f => ({ ...f, address_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফোন' : 'Phone'}</label>
+              <Input value={form.phone || ''} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ইমেইল' : 'Email'}</label>
+              <Input value={form.email || ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (বাংলা)' : 'Other Info (Bangla)'}</label>
+              <Input value={form.other_info || ''} onChange={e => setForm(f => ({ ...f, other_info: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (ইংরেজি)' : 'Other Info (English)'}</label>
+              <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
+              <div className="flex items-center gap-2 mt-1">
+                {form.logo_url && <img src={form.logo_url} alt="Logo" className="w-10 h-10 rounded object-cover" />}
+                <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
+                  <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
-            <Input value={form.name_en || ''} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (বাংলা)' : 'Address (Bangla)'}</label>
-            <Input value={form.address || ''} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (ইংরেজি)' : 'Address (English)'}</label>
-            <Input value={form.address_en || ''} onChange={e => setForm(f => ({ ...f, address_en: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফোন' : 'Phone'}</label>
-            <Input value={form.phone || ''} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ইমেইল' : 'Email'}</label>
-            <Input value={form.email || ''} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (বাংলা)' : 'Other Info (Bangla)'}</label>
-            <Input value={form.other_info || ''} onChange={e => setForm(f => ({ ...f, other_info: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (ইংরেজি)' : 'Other Info (English)'}</label>
-            <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
-            <div className="flex items-center gap-2 mt-1">
-              {form.logo_url && <img src={form.logo_url} alt="Logo" className="w-10 h-10 rounded object-cover" />}
-              <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
-                <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
-                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-              </label>
+        </div>
+
+        {/* Principal fields */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'অধ্যক্ষের তথ্য' : 'Principal Info'}</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের নাম (বাংলা)' : 'Principal Name (Bangla)'}</label>
+              <Input value={principalForm.principal_name} onChange={e => setPrincipalForm(f => ({ ...f, principal_name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের নাম (ইংরেজি)' : 'Principal Name (English)'}</label>
+              <Input value={principalForm.principal_name_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_name_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'পদবি (বাংলা)' : 'Designation (Bangla)'}</label>
+              <Input value={principalForm.principal_title_bn} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_bn: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'পদবি (ইংরেজি)' : 'Designation (English)'}</label>
+              <Input value={principalForm.principal_title_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের ছবি' : 'Principal Photo'}</label>
+              <div className="flex items-center gap-2 mt-1">
+                {principalForm.principal_photo_url && <img src={principalForm.principal_photo_url} alt="Principal" className="w-10 h-10 rounded-full object-cover" />}
+                <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
+                  <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePrincipalPhotoUpload} />
+                </label>
+              </div>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের বাণী (বাংলা)' : "Principal's Message (Bangla)"}</label>
+              <Textarea rows={3} value={principalForm.principal_message_bn} onChange={e => setPrincipalForm(f => ({ ...f, principal_message_bn: e.target.value }))} className="mt-1" />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের বাণী (ইংরেজি)' : "Principal's Message (English)"}</label>
+              <Textarea rows={3} value={principalForm.principal_message_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_message_en: e.target.value }))} className="mt-1" />
             </div>
           </div>
         </div>
