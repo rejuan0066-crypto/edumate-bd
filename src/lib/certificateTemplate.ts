@@ -118,6 +118,8 @@ export interface RenderInput {
   /** Default title fallback (e.g. "Certificate of Achievement") */
   defaultTitleBn: string;
   defaultTitleEn: string;
+  /** Override the saved cfg.bodyLayout at print time (per-print language choice). */
+  bodyLayoutOverride?: 'bilingual' | 'bn-only' | 'en-only';
   /** All resolved placeholder values for body / info etc. */
   data: {
     institutionNameBn: string;
@@ -162,7 +164,8 @@ export interface RenderInput {
 }
 
 export function renderCertificateHTML(input: RenderInput): string {
-  const { cfg, defaultTitleBn, defaultTitleEn, data, certType } = input;
+  const { cfg: baseCfg, defaultTitleBn, defaultTitleEn, data, certType, bodyLayoutOverride } = input;
+  const cfg: CertTemplateConfig = bodyLayoutOverride ? { ...baseCfg, bodyLayout: bodyLayoutOverride } : baseCfg;
   const titleBn = cfg.titleBn || defaultTitleBn;
   const titleEn = cfg.titleEn || defaultTitleEn;
 
