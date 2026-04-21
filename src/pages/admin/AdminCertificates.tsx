@@ -56,6 +56,7 @@ const AdminCertificates = () => {
   const [issueOpen, setIssueOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [designerOpen, setDesignerOpen] = useState(false);
 
   // Issue form state
   const [studentId, setStudentId] = useState('');
@@ -91,7 +92,13 @@ const AdminCertificates = () => {
     },
   });
 
-  const { data: students = [] } = useQuery({
+  const { data: templates = [] } = useQuery({
+    queryKey: ['certificate-templates'],
+    queryFn: async () => {
+      const { data } = await supabase.from('certificate_templates').select('*');
+      return data || [];
+    },
+  });
     queryKey: ['students-for-cert'],
     queryFn: async () => {
       const { data, error } = await supabase
