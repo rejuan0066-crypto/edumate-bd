@@ -58,31 +58,28 @@ Deno.serve(async (req) => {
       if (studentErr) return json({ error: studentErr.message }, 500);
       if (!student) return json({ error: 'Student ID not found' }, 404);
 
-      // Normalize both DOBs to YYYY-MM-DD before comparing (handles ISO timestamps, single-digit months, etc.)
+      // Normalize DOB to YYYY-MM-DD. Accepts dd/mm/yyyy, dd-mm-yyyy, or YYYY-MM-DD.
       const normalizeDob = (v: string | null | undefined): string => {
         if (!v) return '';
         const s = String(v).trim();
-        // If already YYYY-MM-DD prefix, take first 10 chars
-        if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
-        // Try Date parse
-        const d = new Date(s);
-        if (!isNaN(d.getTime())) {
-          const y = d.getUTCFullYear();
-          const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(d.getUTCDate()).padStart(2, '0');
-          return `${y}-${m}-${day}`;
-        }
-        // Fallback: pad parts
-        const parts = s.split(/[-/]/);
-        if (parts.length === 3) {
-          const [y, m, d2] = parts;
-          return `${y}-${m.padStart(2, '0')}-${d2.padStart(2, '0')}`;
+        // ISO YYYY-MM-DD (DB format)
+        const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+        // dd/mm/yyyy or dd-mm-yyyy (user input format)
+        const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (dmy) {
+          const d = dmy[1].padStart(2, '0');
+          const m = dmy[2].padStart(2, '0');
+          return `${dmy[3]}-${m}-${d}`;
         }
         return s;
       };
 
       const dbDob = normalizeDob(student.date_of_birth);
       const inputDob = normalizeDob(student_dob);
+      if (!inputDob || !/^\d{4}-\d{2}-\d{2}$/.test(inputDob)) {
+        return json({ error: 'Invalid date format. Use dd/mm/yyyy' }, 400);
+      }
       if (dbDob !== inputDob) {
         return json({
           error: 'Date of birth does not match student record',
