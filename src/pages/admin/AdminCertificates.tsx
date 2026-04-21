@@ -372,6 +372,10 @@ const AdminCertificates = () => {
               className="pl-10 rounded-2xl"
             />
           </div>
+          <Button variant="outline" onClick={() => setDesignerOpen(true)} className="rounded-2xl">
+            <Palette className="w-4 h-4" />
+            {bn ? 'টেমপ্লেট ডিজাইনার' : 'Template Designer'}
+          </Button>
           <Button onClick={() => { resetForm(); setIssueOpen(true); }} className="rounded-2xl">
             <Plus className="w-4 h-4" />
             {bn ? 'নতুন ইস্যু' : 'Issue New'}
