@@ -182,6 +182,7 @@ export interface RenderInput {
     bodyEn: string;
     bodyAr?: string;
     principalName: string;
+    principalNameEn?: string;
     principalNameAr?: string;
     principalTitleBn: string;
     principalTitleEn: string;
