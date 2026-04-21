@@ -87,9 +87,9 @@ const AdminCertificates = () => {
       const { data } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'global_footer_text_bn', 'global_footer_text_en']);
-      const map: Record<string, string> = {};
-      (data || []).forEach((r: any) => { map[r.key] = typeof r.value === 'string' ? r.value : ''; });
+        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
+      const map: Record<string, any> = {};
+      (data || []).forEach((r: any) => { map[r.key] = r.value; });
       return map;
     },
   });
@@ -222,11 +222,23 @@ const AdminCertificates = () => {
 
     // Apply global footer text from website settings if no template-specific footer is set
     const isEnOnlyEarly = langChoice === 'en-only';
+    const gBn = typeof principalInfo?.global_footer_text_bn === 'string' ? principalInfo.global_footer_text_bn : '';
+    const gEn = typeof principalInfo?.global_footer_text_en === 'string' ? principalInfo.global_footer_text_en : '';
     const globalFooter = isEnOnlyEarly
-      ? (principalInfo?.global_footer_text_en || (principalInfo?.global_footer_text_bn ? romanizeBangla(principalInfo.global_footer_text_bn) : ''))
-      : (principalInfo?.global_footer_text_bn || principalInfo?.global_footer_text_en || '');
+      ? (gEn || (gBn ? romanizeBangla(gBn) : ''))
+      : (gBn || gEn || '');
     if (!cfg.footerText && globalFooter) {
       cfg.footerText = globalFooter;
+    }
+    // Always apply global footer spacing/size unless template explicitly set its own
+    if (cfg.footerSpacingTop === undefined) {
+      cfg.footerSpacingTop = Number(principalInfo?.global_footer_spacing_top ?? 8);
+    }
+    if (cfg.footerSpacingBottom === undefined) {
+      cfg.footerSpacingBottom = Number(principalInfo?.global_footer_spacing_bottom ?? 6);
+    }
+    if (cfg.footerFontSize === undefined) {
+      cfg.footerFontSize = Number(principalInfo?.global_footer_font_size ?? 10);
     }
 
     const cat = cert.certificate_category
