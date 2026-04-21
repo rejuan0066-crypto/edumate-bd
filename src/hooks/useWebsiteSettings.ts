@@ -374,6 +374,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   logo_shape: 'square',
   favicon_shape: 'square',
   loader_logo_shape: 'square',
+  global_footer_text_bn: '',
+  global_footer_text_en: '',
 };
 
 const parseSettingsData = (data: any[] | null): WebsiteSettings => {
