@@ -610,7 +610,7 @@ const AdminCertificates = () => {
           open={!!deleteId}
           onOpenChange={(o) => !o && setDeleteId(null)}
           onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
-          itemName={bn ? 'এই রেকর্ড' : 'this record'}
+          isPending={deleteMutation.isPending}
         />
       </div>
     </AdminLayout>
