@@ -16,6 +16,7 @@ import SearchableSelect from '@/components/SearchableSelect';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import CertificateTemplateDesigner from '@/components/admin/CertificateTemplateDesigner';
 import { renderCertificateHTML, mergeTemplate, CertTemplateConfig, CertType as RenderCertType } from '@/lib/certificateTemplate';
+import { romanizeBangla, containsBangla } from '@/lib/bnRomanize';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
