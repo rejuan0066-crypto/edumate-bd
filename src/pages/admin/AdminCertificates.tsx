@@ -87,7 +87,7 @@ const AdminCertificates = () => {
       const { data } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['principal_name', 'principal_title_bn', 'principal_title_en']);
+        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en']);
       const map: Record<string, string> = {};
       (data || []).forEach((r: any) => { map[r.key] = typeof r.value === 'string' ? r.value : ''; });
       return map;
