@@ -1781,6 +1781,7 @@ export type Database = {
       institutions: {
         Row: {
           address: string | null
+          address_en: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -1789,11 +1790,13 @@ export type Database = {
           name: string
           name_en: string | null
           other_info: string | null
+          other_info_en: string | null
           phone: string | null
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          address_en?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -1802,11 +1805,13 @@ export type Database = {
           name: string
           name_en?: string | null
           other_info?: string | null
+          other_info_en?: string | null
           phone?: string | null
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          address_en?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -1815,6 +1820,7 @@ export type Database = {
           name?: string
           name_en?: string | null
           other_info?: string | null
+          other_info_en?: string | null
           phone?: string | null
           updated_at?: string | null
         }
