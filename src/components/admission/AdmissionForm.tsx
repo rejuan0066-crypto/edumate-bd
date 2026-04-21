@@ -211,7 +211,7 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       const { data, error } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'global_footer_text_bn', 'global_footer_text_en']);
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
       if (error) throw error;
       const result: Record<string, any> = {};
       data?.forEach(row => { result[row.key] = row.value; });
@@ -237,6 +237,9 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
   const globalFooterText = bn
     ? (websiteAdmissionSettings?.global_footer_text_bn as string | undefined)
     : (websiteAdmissionSettings?.global_footer_text_en as string | undefined);
+  const footerSpacingTop = Number(websiteAdmissionSettings?.global_footer_spacing_top ?? 8);
+  const footerSpacingBottom = Number(websiteAdmissionSettings?.global_footer_spacing_bottom ?? 6);
+  const footerFontSize = Number(websiteAdmissionSettings?.global_footer_font_size ?? 10);
 
   const getRollStartForClass = useCallback((classId: string) => {
     // Sort classes globally: first by division sort_order, then by class sort_order
@@ -1372,8 +1375,20 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               const finalFooter = overrideText || globalFooterText;
               if (!finalFooter) return null;
               return (
-                <div className="border rounded-lg p-4 bg-muted/50">
-                  <p className="text-sm text-foreground whitespace-pre-wrap text-center">{finalFooter}</p>
+                <div
+                  className="border rounded-lg bg-muted/50 print-footer"
+                  style={{
+                    marginTop: `${footerSpacingTop}mm`,
+                    marginBottom: `${footerSpacingBottom}mm`,
+                    padding: '1rem',
+                  }}
+                >
+                  <p
+                    className="text-foreground whitespace-pre-wrap text-center"
+                    style={{ fontSize: `${footerFontSize}pt`, lineHeight: 1.4 }}
+                  >
+                    {finalFooter}
+                  </p>
                 </div>
               );
             })()}

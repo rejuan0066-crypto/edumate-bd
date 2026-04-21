@@ -31,6 +31,9 @@ const DashboardInstitutionCard = () => {
   const [footerForm, setFooterForm] = useState({
     global_footer_text_bn: '',
     global_footer_text_en: '',
+    global_footer_spacing_top: 8,
+    global_footer_spacing_bottom: 6,
+    global_footer_font_size: 10,
   });
 
   const { data: institution } = useQuery({
@@ -72,6 +75,9 @@ const DashboardInstitutionCard = () => {
       setFooterForm({
         global_footer_text_bn: (settings as any).global_footer_text_bn || '',
         global_footer_text_en: (settings as any).global_footer_text_en || '',
+        global_footer_spacing_top: Number((settings as any).global_footer_spacing_top ?? 8),
+        global_footer_spacing_bottom: Number((settings as any).global_footer_spacing_bottom ?? 6),
+        global_footer_font_size: Number((settings as any).global_footer_font_size ?? 10),
       });
     }
   }, [settings]);
@@ -239,6 +245,59 @@ const DashboardInstitutionCard = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফুটার টেক্সট (ইংরেজি)' : 'Footer Text (English)'}</label>
               <Textarea rows={3} value={footerForm.global_footer_text_en} onChange={e => setFooterForm(f => ({ ...f, global_footer_text_en: e.target.value }))} className="mt-1" placeholder="e.g. All rights reserved © Institution Name" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {language === 'bn' ? 'উপরের স্পেস (mm)' : 'Top Spacing (mm)'}
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                step={1}
+                value={footerForm.global_footer_spacing_top}
+                onChange={e => setFooterForm(f => ({ ...f, global_footer_spacing_top: Math.max(0, Number(e.target.value) || 0) }))}
+                className="mt-1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {language === 'bn' ? 'প্রিন্ট/PDF-এ ফুটারের উপরের প্যাডিং' : 'Padding above footer on print/PDF'}
+              </p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {language === 'bn' ? 'নিচের মার্জিন (mm)' : 'Bottom Margin (mm)'}
+              </label>
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                step={1}
+                value={footerForm.global_footer_spacing_bottom}
+                onChange={e => setFooterForm(f => ({ ...f, global_footer_spacing_bottom: Math.max(0, Number(e.target.value) || 0) }))}
+                className="mt-1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {language === 'bn' ? 'পাতার নিচের কিনারা থেকে দূরত্ব' : 'Distance from page bottom edge'}
+              </p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                {language === 'bn' ? 'ফন্ট সাইজ (pt)' : 'Font Size (pt)'}
+              </label>
+              <Input
+                type="number"
+                min={6}
+                max={20}
+                step={1}
+                value={footerForm.global_footer_font_size}
+                onChange={e => setFooterForm(f => ({ ...f, global_footer_font_size: Math.max(6, Number(e.target.value) || 10) }))}
+                className="mt-1"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {language === 'bn' ? 'প্রিন্টে ফুটার টেক্সটের আকার' : 'Footer text size on print'}
+              </p>
             </div>
           </div>
         </div>
