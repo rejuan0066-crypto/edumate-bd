@@ -136,6 +136,9 @@ const AdmissionPage = () => {
     : isFormFieldVisible('admission_session');
   const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
   const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
+  const globalFooterText = (language === 'bn'
+    ? websiteAdmissionSettings?.global_footer_text_bn
+    : websiteAdmissionSettings?.global_footer_text_en) as string | undefined;
 
   const getRollStartForClass = useCallback((classId: string) => {
     const cls = classes.find((c: any) => c.id === classId);
