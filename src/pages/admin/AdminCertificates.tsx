@@ -212,7 +212,7 @@ const AdminCertificates = () => {
   });
 
   /* ── Print handler — uses shared template renderer ─────── */
-  const handlePrint = (cert: any) => {
+  const handlePrint = (cert: any, langChoice: 'bilingual' | 'bn-only' | 'en-only' = 'bilingual') => {
     const s = cert.students || {};
     const inst = institution || ({} as any);
     const meta = TYPE_META[cert.certificate_type as CertType];
