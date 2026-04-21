@@ -558,6 +558,8 @@ const AdminCertificates = () => {
           onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
           isPending={deleteMutation.isPending}
         />
+
+        <CertificateTemplateDesigner open={designerOpen} onOpenChange={setDesignerOpen} />
       </div>
     </AdminLayout>
   );
