@@ -113,7 +113,7 @@ const AdmissionPage = () => {
       const { data, error } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public']);
+        .in('key', ['show_roll_no', 'show_session', 'admission_footer_text', 'admission_form_public', 'global_footer_text_bn', 'global_footer_text_en']);
       if (error) throw error;
       const result: Record<string, any> = {};
       data?.forEach(row => { result[row.key] = row.value; });
@@ -136,6 +136,9 @@ const AdmissionPage = () => {
     : isFormFieldVisible('admission_session');
   const footerParagraph = formSettings.find(s => s.field_name === 'footer_paragraph');
   const websiteFooterText = websiteAdmissionSettings?.admission_footer_text as string | undefined;
+  const globalFooterText = (language === 'bn'
+    ? websiteAdmissionSettings?.global_footer_text_bn
+    : websiteAdmissionSettings?.global_footer_text_en) as string | undefined;
 
   const getRollStartForClass = useCallback((classId: string) => {
     const cls = classes.find((c: any) => c.id === classId);
@@ -1330,6 +1333,13 @@ const AdmissionPage = () => {
             {websiteFooterText && (
               <div className="border rounded-lg p-4 bg-muted/50">
                 <p className="text-sm text-foreground whitespace-pre-wrap">{websiteFooterText}</p>
+              </div>
+            )}
+
+            {/* Global footer (institution-wide) */}
+            {globalFooterText && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <p className="text-sm text-foreground whitespace-pre-wrap text-center">{globalFooterText}</p>
               </div>
             )}
 

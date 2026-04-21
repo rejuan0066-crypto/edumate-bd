@@ -28,6 +28,10 @@ const DashboardInstitutionCard = () => {
     principal_message_en: '',
     principal_photo_url: '',
   });
+  const [footerForm, setFooterForm] = useState({
+    global_footer_text_bn: '',
+    global_footer_text_en: '',
+  });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
@@ -65,6 +69,10 @@ const DashboardInstitutionCard = () => {
         principal_message_en: settings.principal_message_en || '',
         principal_photo_url: settings.principal_photo_url || '',
       });
+      setFooterForm({
+        global_footer_text_bn: (settings as any).global_footer_text_bn || '',
+        global_footer_text_en: (settings as any).global_footer_text_en || '',
+      });
     }
   }, [settings]);
 
@@ -77,9 +85,12 @@ const DashboardInstitutionCard = () => {
         const { error } = await supabase.from('institutions').insert({ ...form, is_default: true });
         if (error) throw error;
       }
-      // Save principal info to website_settings
-      const principalUpdates = Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any }));
-      await updateMultiple.mutateAsync(principalUpdates);
+      // Save principal info + global footer to website_settings
+      const updates = [
+        ...Object.entries(principalForm).map(([key, value]) => ({ key, value: value as any })),
+        ...Object.entries(footerForm).map(([key, value]) => ({ key, value: value as any })),
+      ];
+      await updateMultiple.mutateAsync(updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['institution-default'] });
@@ -213,6 +224,21 @@ const DashboardInstitutionCard = () => {
             <div className="sm:col-span-2 lg:col-span-3">
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের বাণী (ইংরেজি)' : "Principal's Message (English)"}</label>
               <Textarea rows={3} value={principalForm.principal_message_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_message_en: e.target.value }))} className="mt-1" />
+            </div>
+          </div>
+        </div>
+
+        {/* Global Footer (used in all forms & templates) */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'গ্লোবাল ফুটার (সকল ফর্ম ও টেমপ্লেটে ব্যবহৃত হবে)' : 'Global Footer (used in all forms & templates)'}</h4>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফুটার টেক্সট (বাংলা)' : 'Footer Text (Bangla)'}</label>
+              <Textarea rows={3} value={footerForm.global_footer_text_bn} onChange={e => setFooterForm(f => ({ ...f, global_footer_text_bn: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'উদাহরণ: সকল অধিকার সংরক্ষিত © প্রতিষ্ঠানের নাম' : 'e.g. All rights reserved © Institution Name'} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ফুটার টেক্সট (ইংরেজি)' : 'Footer Text (English)'}</label>
+              <Textarea rows={3} value={footerForm.global_footer_text_en} onChange={e => setFooterForm(f => ({ ...f, global_footer_text_en: e.target.value }))} className="mt-1" placeholder="e.g. All rights reserved © Institution Name" />
             </div>
           </div>
         </div>

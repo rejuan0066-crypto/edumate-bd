@@ -253,6 +253,8 @@ export interface WebsiteSettings {
   logo_shape: 'square' | 'rounded' | 'circle';
   favicon_shape: 'square' | 'rounded' | 'circle';
   loader_logo_shape: 'square' | 'rounded' | 'circle';
+  global_footer_text_bn: string;
+  global_footer_text_en: string;
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -372,6 +374,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   logo_shape: 'square',
   favicon_shape: 'square',
   loader_logo_shape: 'square',
+  global_footer_text_bn: '',
+  global_footer_text_en: '',
 };
 
 const parseSettingsData = (data: any[] | null): WebsiteSettings => {

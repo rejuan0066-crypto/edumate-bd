@@ -87,7 +87,7 @@ const AdminCertificates = () => {
       const { data } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en']);
+        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'global_footer_text_bn', 'global_footer_text_en']);
       const map: Record<string, string> = {};
       (data || []).forEach((r: any) => { map[r.key] = typeof r.value === 'string' ? r.value : ''; });
       return map;
@@ -219,6 +219,15 @@ const AdminCertificates = () => {
     const meta = TYPE_META[cert.certificate_type as CertType];
     const tplRow = templates.find((t: any) => t.template_type === cert.certificate_type);
     const cfg = mergeTemplate((tplRow?.config ?? null) as Partial<CertTemplateConfig> | null);
+
+    // Apply global footer text from website settings if no template-specific footer is set
+    const isEnOnlyEarly = langChoice === 'en-only';
+    const globalFooter = isEnOnlyEarly
+      ? (principalInfo?.global_footer_text_en || (principalInfo?.global_footer_text_bn ? romanizeBangla(principalInfo.global_footer_text_bn) : ''))
+      : (principalInfo?.global_footer_text_bn || principalInfo?.global_footer_text_en || '');
+    if (!cfg.footerText && globalFooter) {
+      cfg.footerText = globalFooter;
+    }
 
     const cat = cert.certificate_category
       ? CERT_CATEGORIES.find(c => c.key === cert.certificate_category)
