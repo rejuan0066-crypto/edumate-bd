@@ -28,6 +28,10 @@ const DashboardInstitutionCard = () => {
     principal_message_en: '',
     principal_photo_url: '',
   });
+  const [footerForm, setFooterForm] = useState({
+    global_footer_text_bn: '',
+    global_footer_text_en: '',
+  });
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
