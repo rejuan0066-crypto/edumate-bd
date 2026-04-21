@@ -206,7 +206,7 @@ const AdminCertificates = () => {
         student_id: studentId,
         certificate_type: tab,
         certificate_category: tab === 'certificate' ? category : null,
-        serial_number: generateSerial(tab),
+        serial_number: await generateSerial(tab),
         issue_date: issueDate,
         purpose_bn: purpose,
         conduct_bn: conduct,
