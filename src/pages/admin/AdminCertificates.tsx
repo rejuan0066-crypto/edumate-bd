@@ -156,12 +156,32 @@ const AdminCertificates = () => {
     });
   }, [certs, searchTerm]);
 
-  /* ── Generate next serial ─────────────── */
-  const generateSerial = (type: CertType) => {
+  /* ── Generate next serial (unique sequential per type) ─────────────── */
+  const generateSerial = async (type: CertType): Promise<string> => {
     const prefix = type === 'certificate' ? 'CERT' : type === 'transfer' ? 'TC' : 'TM';
     const year = new Date().getFullYear();
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `${prefix}-${year}-${random}`;
+    const pattern = `${prefix}-${year}-%`;
+
+    // Fetch all serials for this type+year and compute the max sequence
+    const { data, error } = await supabase
+      .from('student_certificates')
+      .select('serial_number')
+      .eq('certificate_type', type)
+      .like('serial_number', pattern);
+
+    let maxSeq = 0;
+    if (!error && data) {
+      data.forEach((row: any) => {
+        const m = String(row.serial_number || '').match(new RegExp(`^${prefix}-${year}-(\\d+)$`));
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (!isNaN(n) && n > maxSeq) maxSeq = n;
+        }
+      });
+    }
+
+    const next = maxSeq + 1;
+    return `${prefix}-${year}-${String(next).padStart(4, '0')}`;
   };
 
   /* ── Reset form ───────────────────────── */
@@ -186,7 +206,7 @@ const AdminCertificates = () => {
         student_id: studentId,
         certificate_type: tab,
         certificate_category: tab === 'certificate' ? category : null,
-        serial_number: generateSerial(tab),
+        serial_number: await generateSerial(tab),
         issue_date: issueDate,
         purpose_bn: purpose,
         conduct_bn: conduct,
