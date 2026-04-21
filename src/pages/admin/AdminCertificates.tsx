@@ -214,11 +214,12 @@ const AdminCertificates = () => {
   const issueMutation = useMutation({
     mutationFn: async () => {
       if (!studentId) throw new Error(bn ? 'একজন ছাত্র নির্বাচন করুন' : 'Please select a student');
+      const selectedStudent = students.find((s: any) => s.id === studentId);
       const payload: any = {
         student_id: studentId,
         certificate_type: tab,
         certificate_category: tab === 'certificate' ? category : null,
-        serial_number: await generateSerial(tab),
+        serial_number: await generateSerial(tab, selectedStudent),
         issue_date: issueDate,
         purpose_bn: purpose,
         conduct_bn: conduct,
