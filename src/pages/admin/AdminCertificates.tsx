@@ -98,7 +98,7 @@ const AdminCertificates = () => {
       const { data } = await supabase
         .from('website_settings')
         .select('key, value')
-        .in('key', ['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
+        .in('key', ['principal_name', 'principal_name_en', 'principal_name_ar', 'principal_title_bn', 'principal_title_en', 'principal_title_ar', 'global_footer_text_bn', 'global_footer_text_en', 'global_footer_spacing_top', 'global_footer_spacing_bottom', 'global_footer_font_size']);
       const map: Record<string, any> = {};
       (data || []).forEach((r: any) => { map[r.key] = r.value; });
       return map;
