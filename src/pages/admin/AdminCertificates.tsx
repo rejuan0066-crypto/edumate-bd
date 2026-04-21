@@ -345,11 +345,15 @@ const AdminCertificates = () => {
       data: {
         institutionNameBn: inst.name || '',
         institutionNameEn: inst.name_en || '',
-        institutionNameAr: (inst as any).name_ar || '',
+        institutionNameAr: (inst as any).name_ar
+          || inst.name_en
+          || (inst.name && containsBangla(inst.name) ? romanizeBangla(inst.name) : (inst.name || '')),
         institutionAddress: isEnOnly
           ? ((inst as any).address_en || (inst.address ? romanizeBangla(inst.address) : ''))
           : (inst.address || ''),
-        institutionAddressAr: (inst as any).address_ar || (inst.address || ''),
+        institutionAddressAr: (inst as any).address_ar
+          || (inst as any).address_en
+          || (inst.address && containsBangla(inst.address) ? romanizeBangla(inst.address) : (inst.address || '')),
         institutionPhone: inst.phone || '',
         institutionEmail: inst.email || '',
         institutionLogo: inst.logo_url || '',
