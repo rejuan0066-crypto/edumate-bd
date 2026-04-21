@@ -340,10 +340,14 @@ export const validateRow = (
         break;
       }
       case 'enum': {
-        if (field.enumValues && !field.enumValues.includes(val.toLowerCase())) {
+        const lower = val.toLowerCase();
+        if (field.enumValues && !field.enumValues.includes(lower)) {
           warnings.push({ field: field.key, message: `${field.label_bn}: অজানা মান (${val})` });
         }
-        cleaned[field.key] = val.toLowerCase();
+        // Coerce true/false strings to actual booleans for boolean DB columns
+        if (lower === 'true') cleaned[field.key] = true;
+        else if (lower === 'false') cleaned[field.key] = false;
+        else cleaned[field.key] = lower;
         break;
       }
       default:
