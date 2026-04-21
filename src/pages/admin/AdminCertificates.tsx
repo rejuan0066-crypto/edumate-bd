@@ -562,6 +562,44 @@ const AdminCertificates = () => {
         />
 
         <CertificateTemplateDesigner open={designerOpen} onOpenChange={setDesignerOpen} />
+
+        {/* Language picker before printing */}
+        <Dialog open={!!printLangCert} onOpenChange={(o) => !o && setPrintLangCert(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                <Languages className="w-5 h-5 text-primary" />
+                {bn ? 'প্রিন্টের ভাষা নির্বাচন করুন' : 'Choose Print Language'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-3 py-2">
+              <Button
+                variant="outline"
+                className="rounded-2xl h-auto py-4 flex-col gap-1 hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => { const c = printLangCert; setPrintLangCert(null); if (c) handlePrint(c, 'bilingual'); }}
+              >
+                <span className="text-base font-semibold">{bn ? 'বাংলা ও ইংরেজি (একসাথে)' : 'Bengali & English (Side by Side)'}</span>
+                <span className="text-xs text-muted-foreground font-normal">{bn ? 'একই পেজে দুই ভাষায়' : 'Bilingual on a single page'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-2xl h-auto py-4 flex-col gap-1 hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => { const c = printLangCert; setPrintLangCert(null); if (c) handlePrint(c, 'bn-only'); }}
+              >
+                <span className="text-base font-semibold">{bn ? 'শুধুমাত্র বাংলা' : 'Bengali Only'}</span>
+                <span className="text-xs text-muted-foreground font-normal">{bn ? 'পূর্ণ-প্রস্থ বাংলা ভার্সন' : 'Full-width Bengali version'}</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-2xl h-auto py-4 flex-col gap-1 hover:border-primary/50 hover:bg-primary/5"
+                onClick={() => { const c = printLangCert; setPrintLangCert(null); if (c) handlePrint(c, 'en-only'); }}
+              >
+                <span className="text-base font-semibold">{bn ? 'শুধুমাত্র ইংরেজি' : 'English Only'}</span>
+                <span className="text-xs text-muted-foreground font-normal">{bn ? 'পূর্ণ-প্রস্থ ইংরেজি ভার্সন' : 'Full-width English version'}</span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
