@@ -32,9 +32,11 @@ const DashboardInstitutionCard = () => {
         name: institution.name || '',
         name_en: institution.name_en || '',
         address: institution.address || '',
+        address_en: (institution as any).address_en || '',
         phone: institution.phone || '',
         email: institution.email || '',
         other_info: institution.other_info || '',
+        other_info_en: (institution as any).other_info_en || '',
         logo_url: institution.logo_url || '',
       });
     }
