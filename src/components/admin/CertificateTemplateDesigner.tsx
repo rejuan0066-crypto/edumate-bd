@@ -18,10 +18,10 @@ import {
   CertType, CertTemplateConfig, DEFAULT_TEMPLATE, mergeTemplate, renderCertificateHTML,
 } from '@/lib/certificateTemplate';
 
-const TYPE_TABS: { key: CertType; bn: string; en: string; icon: any; titleBn: string; titleEn: string }[] = [
-  { key: 'certificate', bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award, titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement' },
-  { key: 'transfer', bn: 'ছাড়পত্র', en: 'Transfer Certificate', icon: FileText, titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate' },
-  { key: 'testimonial', bn: 'প্রশংসাপত্র', en: 'Testimonial', icon: ScrollText, titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial' },
+const TYPE_TABS: { key: CertType; bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string }[] = [
+  { key: 'certificate', bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award, titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير' },
+  { key: 'transfer', bn: 'ছাড়পত্র', en: 'Transfer Certificate', icon: FileText, titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate', titleAr: 'شهادة انتقال' },
+  { key: 'testimonial', bn: 'প্রশংসাপত্র', en: 'Testimonial', icon: ScrollText, titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial', titleAr: 'شهادة حسن سيرة وسلوك' },
 ];
 
 interface Props {
@@ -65,9 +65,25 @@ const SAMPLE_DATA = {
   categoryEn: 'Academic Achievement',
   bodyBn: 'এই সনদপত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">মোহাম্মদ আব্দুল্লাহ</span>, পিতা: <b>মোহাম্মদ রহিম</b>, একজন কৃতী শিক্ষার্থী।',
   bodyEn: 'This is to certify that <span class="hl">Mohammad Abdullah</span>, son of <b>Mohammad Rahim</b>, has been a meritorious student.',
+  bodyAr: 'يشهد هذا بأن <span class="hl">محمد عبد الله</span>، ابن <b>محمد رحيم</b>، كان طالبًا متفوقًا في هذه المؤسسة، وقد أظهر سلوكًا حسنًا والتزامًا مثاليًا. نسأل الله له التوفيق والنجاح في حياته.',
+  nameAr: 'محمد عبد الله',
+  fatherNameAr: 'محمد رحيم',
+  motherNameAr: 'راحلة بيغم',
+  classAr: 'الصف العاشر',
+  conductAr: 'ممتاز',
+  reasonAr: 'الانتقال العائلي',
+  achievementsAr: 'المركز الأول في مسابقة العلوم',
+  purposeAr: 'للدراسات العليا',
+  remarksAr: '',
+  lastClassAr: 'الصف العاشر',
+  categoryAr: 'التفوق الأكاديمي',
+  institutionNameAr: 'مؤسسة المثالية التعليمية',
+  institutionAddressAr: 'دكا، بنغلاديش',
   principalName: 'মোহাম্মদ ইব্রাহিম',
+  principalNameAr: 'محمد إبراهيم',
   principalTitleBn: 'প্রিন্সিপাল',
   principalTitleEn: 'Principal',
+  principalTitleAr: 'المدير',
 };
 
 const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
@@ -100,7 +116,8 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
     certType: activeType,
     defaultTitleBn: meta.titleBn,
     defaultTitleEn: meta.titleEn,
-    data: SAMPLE_DATA,
+    defaultTitleAr: meta.titleAr,
+    data: SAMPLE_DATA as any,
   }), [cfg, activeType, meta]);
 
   const saveMutation = useMutation({
