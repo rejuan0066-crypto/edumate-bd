@@ -193,7 +193,10 @@ export function renderCertificateHTML(input: RenderInput): string {
     <div class="corner br">${CORNER_SVG(cfg.borderColor)}</div>` : '';
 
   const watermark = cfg.showWatermark
-    ? `<div class="watermark">${escapeHtml(data.monogram)}</div>` : '';
+    ? (logoUrl
+        ? `<div class="watermark watermark-logo"><img src="${escapeHtml(logoUrl)}" alt=""/></div>`
+        : `<div class="watermark">${escapeHtml(data.monogram)}</div>`)
+    : '';
 
   const headerLogo = cfg.showLogo && logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="" style="width:${cfg.logoSize}px;height:${cfg.logoSize}px;object-fit:contain"/>` : '';
@@ -281,7 +284,8 @@ export function renderCertificateHTML(input: RenderInput): string {
   .corner.tr{top:9mm;right:9mm;transform:rotate(90deg)}
   .corner.br{bottom:9mm;right:9mm;transform:rotate(180deg)}
   .corner.bl{bottom:9mm;left:9mm;transform:rotate(270deg)}
-  .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cinzel',serif;font-size:340px;font-weight:700;color:${cfg.borderColor};opacity:${cfg.watermarkOpacity};pointer-events:none;z-index:0;letter-spacing:0}
+  .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cinzel',serif;font-size:340px;font-weight:700;color:${cfg.borderColor};opacity:${cfg.watermarkOpacity};pointer-events:none;z-index:0;letter-spacing:0;display:flex;align-items:center;justify-content:center}
+  .watermark-logo img{width:140mm;height:140mm;object-fit:contain;filter:grayscale(100%)}
   .content{position:relative;z-index:2;padding:${cfg.pagePadding}mm ${cfg.pagePadding}mm 14mm;height:100%;display:flex;flex-direction:column}
   .header{display:flex;align-items:center;gap:16px;justify-content:${headerJustify};padding-bottom:10px;border-bottom:1px solid ${cfg.innerBorderColor};margin-bottom:6px}
   .header-text{text-align:center}
