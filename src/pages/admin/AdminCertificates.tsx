@@ -20,22 +20,33 @@ import { romanizeBangla, containsBangla } from '@/lib/bnRomanize';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
-const TYPE_META: Record<CertType, { bn: string; en: string; icon: any; titleBn: string; titleEn: string; color: string }> = {
+const TYPE_META: Record<CertType, { bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string; color: string }> = {
   certificate: {
     bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award,
-    titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement',
+    titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير',
     color: 'from-amber-500 to-orange-500',
   },
   transfer: {
     bn: 'ছাড়পত্র', en: 'Transfer Certificate', icon: FileText,
-    titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate',
+    titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate', titleAr: 'شهادة انتقال',
     color: 'from-blue-500 to-cyan-500',
   },
   testimonial: {
     bn: 'প্রশংসাপত্র', en: 'Testimonial', icon: ScrollText,
-    titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial',
+    titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial', titleAr: 'شهادة حسن سيرة وسلوك',
     color: 'from-emerald-500 to-teal-500',
   },
+};
+
+const CERT_CATEGORIES_AR: Record<string, string> = {
+  academic: 'التفوق الأكاديمي',
+  attendance: 'المواظبة على الحضور',
+  participation: 'المشاركة',
+  sports: 'التفوق الرياضي',
+  cultural: 'التفوق الثقافي',
+  leadership: 'القيادة',
+  merit: 'جائزة الجدارة',
+  completion: 'إتمام الدورة',
 };
 
 const CERT_CATEGORIES: { key: string; bn: string; en: string }[] = [
