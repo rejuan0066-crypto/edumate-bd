@@ -103,6 +103,30 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
     enabled: open,
   });
 
+  // Live principal/institution info for accurate preview
+  const { data: livePrincipal } = useQuery({
+    queryKey: ['designer-principal-info'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('website_settings')
+        .select('key, value')
+        .in('key', ['principal_name', 'principal_name_en', 'principal_name_ar', 'principal_title_bn', 'principal_title_en', 'principal_title_ar']);
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => { map[r.key] = typeof r.value === 'string' ? r.value : ''; });
+      return map;
+    },
+    enabled: open,
+  });
+
+  const { data: liveInstitution } = useQuery({
+    queryKey: ['designer-institution'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+    enabled: open,
+  });
+
   // Load active type's config
   useEffect(() => {
     const t = templates.find((x: any) => x.template_type === activeType);
@@ -111,14 +135,33 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
 
   const meta = TYPE_TABS.find(t => t.key === activeType)!;
 
-  const previewHtml = useMemo(() => renderCertificateHTML({
-    cfg,
-    certType: activeType,
-    defaultTitleBn: meta.titleBn,
-    defaultTitleEn: meta.titleEn,
-    defaultTitleAr: meta.titleAr,
-    data: SAMPLE_DATA as any,
-  }), [cfg, activeType, meta]);
+  const previewHtml = useMemo(() => {
+    const mergedData: any = { ...SAMPLE_DATA };
+    if (livePrincipal) {
+      if (livePrincipal.principal_name) mergedData.principalName = livePrincipal.principal_name;
+      if (livePrincipal.principal_name_en) mergedData.principalNameEn = livePrincipal.principal_name_en;
+      if (livePrincipal.principal_name_ar) mergedData.principalNameAr = livePrincipal.principal_name_ar;
+      if (livePrincipal.principal_title_bn) mergedData.principalTitleBn = livePrincipal.principal_title_bn;
+      if (livePrincipal.principal_title_en) mergedData.principalTitleEn = livePrincipal.principal_title_en;
+      if (livePrincipal.principal_title_ar) mergedData.principalTitleAr = livePrincipal.principal_title_ar;
+    }
+    if (liveInstitution) {
+      if (liveInstitution.name) mergedData.institutionNameBn = liveInstitution.name;
+      if (liveInstitution.name_en) mergedData.institutionNameEn = liveInstitution.name_en;
+      if (liveInstitution.address) mergedData.institutionAddress = liveInstitution.address;
+      if (liveInstitution.phone) mergedData.institutionPhone = liveInstitution.phone;
+      if (liveInstitution.email) mergedData.institutionEmail = liveInstitution.email;
+      if (liveInstitution.logo_url) mergedData.institutionLogo = liveInstitution.logo_url;
+    }
+    return renderCertificateHTML({
+      cfg,
+      certType: activeType,
+      defaultTitleBn: meta.titleBn,
+      defaultTitleEn: meta.titleEn,
+      defaultTitleAr: meta.titleAr,
+      data: mergedData,
+    });
+  }, [cfg, activeType, meta, livePrincipal, liveInstitution]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
