@@ -3,6 +3,8 @@
 
 export type CertType = 'certificate' | 'transfer' | 'testimonial';
 
+export type BodyLayout = 'bilingual' | 'bn-only' | 'en-only' | 'ar-only';
+
 export interface CertTemplateConfig {
   // Borders / frame
   borderColor: string;          // outer double border color
@@ -20,6 +22,7 @@ export interface CertTemplateConfig {
   titleColor: string;
   titleBn: string;
   titleEn: string;
+  titleAr: string;
   titleFontSize: number;        // px
   showCategorySubtitle: boolean;
 
@@ -33,10 +36,11 @@ export interface CertTemplateConfig {
   headerAccentColor: string;
 
   // Body
-  bodyLayout: 'bilingual' | 'bn-only' | 'en-only';
+  bodyLayout: BodyLayout;
   bodyFontSize: number;         // px
   customBodyBn: string;         // optional override; supports {placeholders}
   customBodyEn: string;
+  customBodyAr: string;
 
   // Info grid
   showInfoGrid: boolean;
@@ -72,6 +76,7 @@ export const DEFAULT_TEMPLATE: CertTemplateConfig = {
   titleColor: '#5c3a0e',
   titleBn: '',
   titleEn: '',
+  titleAr: '',
   titleFontSize: 30,
   showCategorySubtitle: true,
 
@@ -87,6 +92,7 @@ export const DEFAULT_TEMPLATE: CertTemplateConfig = {
   bodyFontSize: 12.5,
   customBodyBn: '',
   customBodyEn: '',
+  customBodyAr: '',
 
   showInfoGrid: true,
   infoColumns: 4,
@@ -121,13 +127,16 @@ export interface RenderInput {
   /** Default title fallback (e.g. "Certificate of Achievement") */
   defaultTitleBn: string;
   defaultTitleEn: string;
+  defaultTitleAr?: string;
   /** Override the saved cfg.bodyLayout at print time (per-print language choice). */
-  bodyLayoutOverride?: 'bilingual' | 'bn-only' | 'en-only';
+  bodyLayoutOverride?: BodyLayout;
   /** All resolved placeholder values for body / info etc. */
   data: {
     institutionNameBn: string;
     institutionNameEn: string;
+    institutionNameAr?: string;
     institutionAddress: string;
+    institutionAddressAr?: string;
     institutionPhone: string;
     institutionEmail: string;
     institutionLogo: string;
@@ -137,10 +146,14 @@ export interface RenderInput {
     issueDateEn: string;
     nameBn: string;
     nameEn: string;
+    nameAr?: string;
     fatherName: string;
+    fatherNameAr?: string;
     motherName: string;
+    motherNameAr?: string;
     classBn: string;
     classEn: string;
+    classAr?: string;
     sessionName: string;
     studentId: string;
     rollNumber: string;
@@ -151,34 +164,48 @@ export interface RenderInput {
     leavingDateBn: string;
     leavingDateEn: string;
     conduct: string;
+    conductAr?: string;
     reason: string;
+    reasonAr?: string;
     achievements: string;
+    achievementsAr?: string;
     purpose: string;
+    purposeAr?: string;
     remarks: string;
+    remarksAr?: string;
     lastClass: string;
+    lastClassAr?: string;
     categoryBn: string;
     categoryEn: string;
+    categoryAr?: string;
     bodyBn: string;        // pre-built default sentence
     bodyEn: string;
+    bodyAr?: string;
     principalName: string;
+    principalNameAr?: string;
     principalTitleBn: string;
     principalTitleEn: string;
+    principalTitleAr?: string;
   };
 }
 
 export function renderCertificateHTML(input: RenderInput): string {
-  const { cfg: baseCfg, defaultTitleBn, defaultTitleEn, data, certType, bodyLayoutOverride } = input;
+  const { cfg: baseCfg, defaultTitleBn, defaultTitleEn, defaultTitleAr = '', data, certType, bodyLayoutOverride } = input;
   const cfg: CertTemplateConfig = bodyLayoutOverride ? { ...baseCfg, bodyLayout: bodyLayoutOverride } : baseCfg;
   const isBnOnly = cfg.bodyLayout === 'bn-only';
   const isEnOnly = cfg.bodyLayout === 'en-only';
-  const showBn = !isEnOnly;
-  const showEn = !isBnOnly;
+  const isArOnly = cfg.bodyLayout === 'ar-only';
+  const showBn = !isEnOnly && !isArOnly;
+  const showEn = !isBnOnly && !isArOnly;
+  const showAr = isArOnly;
 
   const titleBn = cfg.titleBn || defaultTitleBn;
   const titleEn = cfg.titleEn || defaultTitleEn;
+  const titleAr = cfg.titleAr || defaultTitleAr;
 
   const bodyBn = cfg.customBodyBn ? fillTemplate(cfg.customBodyBn, data as any) : data.bodyBn;
   const bodyEn = cfg.customBodyEn ? fillTemplate(cfg.customBodyEn, data as any) : data.bodyEn;
+  const bodyAr = cfg.customBodyAr ? fillTemplate(cfg.customBodyAr, data as any) : (data.bodyAr || '');
 
   const logoUrl = cfg.logoUrlOverride || data.institutionLogo;
   const headerJustify = cfg.logoPosition === 'left' ? 'flex-start' : cfg.logoPosition === 'right' ? 'flex-end' : 'center';
@@ -186,8 +213,8 @@ export function renderCertificateHTML(input: RenderInput): string {
   const sigJustify = cfg.signaturePosition === 'left' ? 'flex-start' : cfg.signaturePosition === 'center' ? 'center' : 'flex-end';
 
   // Bilingual label helper
-  const dual = (en: string, bn: string) =>
-    isEnOnly ? en : isBnOnly ? bn : `${en} / ${bn}`;
+  const dual = (en: string, bn: string, ar?: string) =>
+    isArOnly ? (ar || en) : isEnOnly ? en : isBnOnly ? bn : `${en} / ${bn}`;
 
   const corners = cfg.showCornerOrnaments ? `
     <div class="corner tl">${CORNER_SVG(cfg.borderColor)}</div>
@@ -204,39 +231,48 @@ export function renderCertificateHTML(input: RenderInput): string {
   const headerLogo = cfg.showLogo && logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="" style="width:${cfg.logoSize}px;height:${cfg.logoSize}px;object-fit:contain"/>` : '';
 
-  // Institution name — pick by language. In English-only mode prefer English (fallback to Bn) and never show Bengali secondary.
-  const instNamePrimary = isEnOnly
-    ? (data.institutionNameEn || data.institutionNameBn)
-    : (data.institutionNameBn || data.institutionNameEn);
-  const instNameSecondary = (isEnOnly || isBnOnly)
+  // Institution name — pick by language.
+  const instNamePrimary = isArOnly
+    ? (data.institutionNameAr || data.institutionNameBn || data.institutionNameEn)
+    : isEnOnly
+      ? (data.institutionNameEn || data.institutionNameBn)
+      : (data.institutionNameBn || data.institutionNameEn);
+  const instNameSecondary = (isEnOnly || isBnOnly || isArOnly)
     ? ''
     : (data.institutionNameEn && data.institutionNameEn !== data.institutionNameBn ? data.institutionNameEn : '');
 
+  const instAddress = isArOnly
+    ? (data.institutionAddressAr || data.institutionAddress)
+    : data.institutionAddress;
+
   const instBlock = `
     <div class="header-text">
-      ${cfg.showInstitutionName ? `<div class="name-bn"${isEnOnly ? ` style="font-family:'Cinzel',serif;letter-spacing:2px;text-transform:uppercase;font-size:18px;"` : ''}>${escapeHtml(instNamePrimary)}</div>${instNameSecondary ? `<div class="name-en">${escapeHtml(instNameSecondary)}</div>` : ''}` : ''}
-      ${cfg.showAddress ? `<div class="addr">${escapeHtml(data.institutionAddress)}${data.institutionPhone ? ` &middot; ${escapeHtml(data.institutionPhone)}` : ''}${data.institutionEmail ? ` &middot; ${escapeHtml(data.institutionEmail)}` : ''}</div>` : ''}
+      ${cfg.showInstitutionName ? `<div class="name-bn"${isEnOnly ? ` style="font-family:'Cinzel',serif;letter-spacing:2px;text-transform:uppercase;font-size:18px;"` : ''}${isArOnly ? ` style="font-family:'Amiri','Scheherazade New',serif;font-size:24px;direction:rtl;"` : ''}>${escapeHtml(instNamePrimary)}</div>${instNameSecondary ? `<div class="name-en">${escapeHtml(instNameSecondary)}</div>` : ''}` : ''}
+      ${cfg.showAddress ? `<div class="addr"${isArOnly ? ` style="font-family:'Amiri',serif;direction:rtl;"` : ''}>${escapeHtml(instAddress)}${data.institutionPhone ? ` &middot; ${escapeHtml(data.institutionPhone)}` : ''}${data.institutionEmail ? ` &middot; ${escapeHtml(data.institutionEmail)}` : ''}</div>` : ''}
     </div>`;
 
   const infoCells: string[] = [];
-  if (data.studentId) infoCells.push(`<div><b>${dual('Student ID', 'ছাত্র আইডি')}</b><span>${escapeHtml(data.studentId)}</span></div>`);
-  if (data.rollNumber) infoCells.push(`<div><b>${dual('Roll', 'রোল')}</b><span>${escapeHtml(data.rollNumber)}</span></div>`);
-  if (data.classEn || data.classBn) {
-    const classVal = isBnOnly ? (data.classBn || data.classEn) : (data.classEn || data.classBn);
-    infoCells.push(`<div><b>${dual('Class', 'শ্রেণী')}</b><span>${escapeHtml(classVal)}</span></div>`);
+  const arVal = (ar: string | undefined, fallback: string) => isArOnly ? (ar || fallback) : fallback;
+  if (data.studentId) infoCells.push(`<div><b>${dual('Student ID', 'ছাত্র আইডি', 'رقم الطالب')}</b><span>${escapeHtml(data.studentId)}</span></div>`);
+  if (data.rollNumber) infoCells.push(`<div><b>${dual('Roll', 'রোল', 'الرقم التسلسلي')}</b><span>${escapeHtml(data.rollNumber)}</span></div>`);
+  if (data.classEn || data.classBn || data.classAr) {
+    const classVal = isArOnly
+      ? (data.classAr || data.classBn || data.classEn)
+      : isBnOnly ? (data.classBn || data.classEn) : (data.classEn || data.classBn);
+    infoCells.push(`<div><b>${dual('Class', 'শ্রেণী', 'الصف')}</b><span>${escapeHtml(classVal)}</span></div>`);
   }
-  if (data.sessionName) infoCells.push(`<div><b>${dual('Session', 'সেশন')}</b><span>${escapeHtml(data.sessionName)}</span></div>`);
-  if (data.fatherName) infoCells.push(`<div><b>${dual('Father', 'পিতা')}</b><span>${escapeHtml(data.fatherName)}</span></div>`);
-  if (data.motherName) infoCells.push(`<div><b>${dual('Mother', 'মাতা')}</b><span>${escapeHtml(data.motherName)}</span></div>`);
+  if (data.sessionName) infoCells.push(`<div><b>${dual('Session', 'সেশন', 'العام الدراسي')}</b><span>${escapeHtml(data.sessionName)}</span></div>`);
+  if (data.fatherName) infoCells.push(`<div><b>${dual('Father', 'পিতা', 'الأب')}</b><span>${escapeHtml(arVal(data.fatherNameAr, data.fatherName))}</span></div>`);
+  if (data.motherName) infoCells.push(`<div><b>${dual('Mother', 'মাতা', 'الأم')}</b><span>${escapeHtml(arVal(data.motherNameAr, data.motherName))}</span></div>`);
   const dobShown = isBnOnly ? data.dobBn : data.dobEn;
-  if (dobShown) infoCells.push(`<div><b>${dual('Date of Birth', 'জন্ম তারিখ')}</b><span>${escapeHtml(dobShown)}</span></div>`);
+  if (dobShown) infoCells.push(`<div><b>${dual('Date of Birth', 'জন্ম তারিখ', 'تاريخ الميلاد')}</b><span>${escapeHtml(dobShown)}</span></div>`);
   if (certType === 'transfer') {
     const admShown = isBnOnly ? data.admissionDateBn : data.admissionDateEn;
     const lvShown = isBnOnly ? data.leavingDateBn : data.leavingDateEn;
-    if (admShown) infoCells.push(`<div><b>${dual('Admitted On', 'ভর্তির তারিখ')}</b><span>${escapeHtml(admShown)}</span></div>`);
-    if (lvShown) infoCells.push(`<div><b>${dual('Date of Leaving', 'প্রস্থানের তারিখ')}</b><span>${escapeHtml(lvShown)}</span></div>`);
+    if (admShown) infoCells.push(`<div><b>${dual('Admitted On', 'ভর্তির তারিখ', 'تاريخ القبول')}</b><span>${escapeHtml(admShown)}</span></div>`);
+    if (lvShown) infoCells.push(`<div><b>${dual('Date of Leaving', 'প্রস্থানের তারিখ', 'تاريخ المغادرة')}</b><span>${escapeHtml(lvShown)}</span></div>`);
   }
-  if (certType !== 'certificate' && data.conduct) infoCells.push(`<div><b>${dual('Conduct', 'আচরণ')}</b><span>${escapeHtml(data.conduct)}</span></div>`);
+  if (certType !== 'certificate' && data.conduct) infoCells.push(`<div><b>${dual('Conduct', 'আচরণ', 'السلوك')}</b><span>${escapeHtml(arVal(data.conductAr, data.conduct))}</span></div>`);
 
   const bodyGrid = (() => {
     if (cfg.bodyLayout === 'bilingual') {
@@ -248,6 +284,9 @@ export function renderCertificateHTML(input: RenderInput): string {
     if (cfg.bodyLayout === 'bn-only') {
       return `<div class="body-grid one-col"><div class="col bn"><div class="text">${bodyBn}</div></div></div>`;
     }
+    if (cfg.bodyLayout === 'ar-only') {
+      return `<div class="body-grid one-col"><div class="col ar" dir="rtl"><div class="text">${bodyAr}</div></div></div>`;
+    }
     return `<div class="body-grid one-col"><div class="col en"><div class="text">${bodyEn}</div></div></div>`;
   })();
 
@@ -255,28 +294,39 @@ export function renderCertificateHTML(input: RenderInput): string {
     ? `<div class="seal">
         ${showEn ? `<div class="seal-en">OFFICIAL</div>` : ''}
         ${showBn ? `<div class="seal-bn">প্রাতিষ্ঠানিক সিল</div>` : ''}
+        ${showAr ? `<div class="seal-bn" style="font-family:'Amiri',serif;">الختم الرسمي</div>` : ''}
       </div>` : '';
 
-  const wishesText = isBnOnly ? '~ শুভকামনা ~' : '~ Best Wishes ~';
+  const wishesText = isArOnly ? '~ مع أطيب التمنيات ~' : isBnOnly ? '~ শুভকামনা ~' : '~ Best Wishes ~';
+
+  const sigPrincipalName = isArOnly
+    ? (data.principalNameAr || data.principalName)
+    : data.principalName;
+  const sigPrincipalTitleAr = data.principalTitleAr || 'المدير';
 
   const sigBlock = `
     <div class="footer" style="justify-content:${sigJustify === 'flex-start' ? 'flex-start' : sigJustify === 'center' ? 'center' : 'space-between'}">
       ${sealBlock}
-      ${cfg.showWishes ? `<div class="wishes">${escapeHtml(wishesText)}</div>` : ''}
+      ${cfg.showWishes ? `<div class="wishes"${isArOnly ? ` style="font-family:'Amiri',serif;"` : ''}>${escapeHtml(wishesText)}</div>` : ''}
       <div class="sig">
         <div class="line"></div>
-        <div class="name">${escapeHtml(data.principalName)}</div>
+        <div class="name"${isArOnly ? ` style="font-family:'Amiri','Scheherazade New',serif;direction:rtl;"` : ''}>${escapeHtml(sigPrincipalName)}</div>
         ${showBn ? `<div class="title-bn">${escapeHtml(data.principalTitleBn)}</div>` : ''}
         ${showEn ? `<div class="title-en">${escapeHtml(data.principalTitleEn)}</div>` : ''}
+        ${showAr ? `<div class="title-bn" style="font-family:'Amiri',serif;direction:rtl;">${escapeHtml(sigPrincipalTitleAr)}</div>` : ''}
       </div>
     </div>`;
 
-  return `<!DOCTYPE html><html lang="bn"><head><meta charset="utf-8"><title>${escapeHtml(titleEn)} — ${escapeHtml(data.nameEn)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  const docDir = isArOnly ? 'rtl' : 'ltr';
+  const docLang = isArOnly ? 'ar' : 'bn';
+
+  return `<!DOCTYPE html><html lang="${docLang}" dir="${docDir}"><head><meta charset="utf-8"><title>${escapeHtml(titleEn || titleBn || titleAr)} — ${escapeHtml(data.nameEn || data.nameBn)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@400;500;600;700&family=Cinzel:wght@500;700&family=Great+Vibes&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Reem+Kufi:wght@500;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   @page{size:A4;margin:0}
   html,body{width:210mm;height:297mm;background:#fff;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color:#1a1410;font-family:'Cormorant Garamond','Noto Serif Bengali',serif}
+  html[dir="rtl"] body{font-family:'Amiri','Scheherazade New','Noto Serif Bengali',serif}
   .page{width:210mm;height:297mm;position:relative;overflow:hidden;background:radial-gradient(ellipse at top,${cfg.bgGradientFrom} 0%,${cfg.bgGradientTo} 100%)}
   .frame-outer{position:absolute;inset:7mm;border:4px ${cfg.borderStyle} ${cfg.borderColor};border-radius:2px;pointer-events:none}
   .frame-inner{position:absolute;inset:11mm;border:1px solid ${cfg.innerBorderColor};pointer-events:none}
@@ -297,6 +347,7 @@ export function renderCertificateHTML(input: RenderInput): string {
   .header-text .addr{font-size:10.5px;color:${cfg.headerAccentColor};margin-top:3px;letter-spacing:.3px}
   .title-wrap{text-align:center;margin:14px 0 10px}
   .title-bn{font-family:'Noto Serif Bengali',serif;font-size:${Math.round(cfg.titleFontSize * 0.86)}px;font-weight:700;color:${cfg.headerAccentColor};letter-spacing:4px}
+  .title-ar{font-family:'Reem Kufi','Amiri',serif;font-size:${cfg.titleFontSize}px;font-weight:700;color:${cfg.titleColor};letter-spacing:2px;direction:rtl;line-height:1.4}
   .title-divider{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 4px}
   .title-divider .line{width:60px;height:1px;background:linear-gradient(90deg,transparent,${cfg.borderColor},transparent)}
   .title-divider .diamond{width:7px;height:7px;background:${cfg.borderColor};transform:rotate(45deg)}
@@ -304,8 +355,10 @@ export function renderCertificateHTML(input: RenderInput): string {
   .title-sub{font-family:'Great Vibes',cursive;font-size:22px;color:${cfg.headerAccentColor};margin-top:2px;letter-spacing:1px}
   .meta-row{display:flex;justify-content:space-between;font-size:11px;color:${cfg.titleColor};padding:8px 6px;margin:6px 0 4px;border-top:1px dashed ${cfg.innerBorderColor};border-bottom:1px dashed ${cfg.innerBorderColor};letter-spacing:.4px}
   .presented{text-align:center;margin:10px 0 4px;font-family:'Noto Serif Bengali',serif;font-size:11.5px;color:${cfg.headerAccentColor};letter-spacing:2px;text-transform:uppercase}
+  .presented.ar{font-family:'Amiri',serif;direction:rtl;letter-spacing:0;font-size:14px;text-transform:none}
   .recipient{text-align:center;margin:2px 0 8px}
   .recipient .name-bn{font-family:'Noto Serif Bengali',serif;font-size:26px;font-weight:700;color:${cfg.titleColor};line-height:1.2}
+  .recipient .name-ar{font-family:'Amiri','Scheherazade New',serif;font-size:32px;font-weight:700;color:${cfg.titleColor};line-height:1.4;direction:rtl}
   .recipient .name-en{font-family:'Great Vibes',cursive;font-size:36px;color:${cfg.headerAccentColor};line-height:1;margin-top:2px}
   .recipient .underline{margin:6px auto 0;width:60%;height:1px;background:linear-gradient(90deg,transparent,${cfg.borderColor} 20%,${cfg.borderColor} 80%,transparent)}
   .body-grid{display:grid;gap:14px;margin:10px 0;flex:1}
@@ -316,12 +369,16 @@ export function renderCertificateHTML(input: RenderInput): string {
   .col .text{font-size:${cfg.bodyFontSize}px;line-height:1.85;text-align:justify;color:#2a1d0c}
   .col.bn .text{font-family:'Noto Serif Bengali',serif;line-height:1.95}
   .col.en .text{font-family:'Cormorant Garamond',serif}
+  .col.ar{direction:rtl}
+  .col.ar .text{font-family:'Amiri','Scheherazade New',serif;line-height:2.1;font-size:${Math.max(cfg.bodyFontSize + 2, 14)}px;text-align:justify;direction:rtl}
   .text .hl{color:${cfg.highlightColor};font-weight:700}
   .text b{color:${cfg.titleColor};font-weight:600}
   .info{display:grid;grid-template-columns:repeat(${cfg.infoColumns},1fr);gap:4px 10px;font-size:10.5px;color:${cfg.titleColor};margin:6px 0 8px;padding:6px 8px;background:rgba(212,175,55,.06);border-radius:3px}
   .info > div{padding:2px 0;border-bottom:1px dotted rgba(212,175,55,.4)}
   .info > div b{color:${cfg.headerAccentColor};font-weight:600;display:block;font-size:9px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:1px}
   .info > div span{font-family:'Noto Serif Bengali','Cormorant Garamond',serif;font-size:11px;color:#1f1408;font-weight:500}
+  html[dir="rtl"] .info > div b{font-family:'Amiri',serif;letter-spacing:0;text-transform:none;font-size:10px}
+  html[dir="rtl"] .info > div span{font-family:'Amiri','Scheherazade New',serif;font-size:12px;direction:rtl}
   .footer{display:flex;align-items:flex-end;margin-top:auto;padding:14px 4px 0;border-top:1px solid rgba(212,175,55,.4);gap:24px}
   .seal{width:88px;height:88px;border:2px dashed ${cfg.borderColor};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:${cfg.headerAccentColor};text-align:center;background:rgba(212,175,55,.05)}
   .seal .seal-en{font-family:'Cinzel',serif;font-size:8px;font-weight:700;letter-spacing:1.5px}
@@ -335,6 +392,7 @@ export function renderCertificateHTML(input: RenderInput): string {
   .bottom-note{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:${cfg.headerAccentColor};margin-top:8px;padding-top:6px;letter-spacing:.3px}
   .bottom-note .serial-no{font-family:'Cinzel',serif;font-weight:600;letter-spacing:2px}
   .footer-extra{text-align:center;font-size:${cfg.footerFontSize ?? 10}pt;color:${cfg.headerAccentColor};margin-top:${cfg.footerSpacingTop ?? 6}mm;margin-bottom:${cfg.footerSpacingBottom ?? 0}mm;font-style:italic;line-height:1.4;white-space:pre-wrap;padding-top:6px;border-top:1px dotted ${cfg.innerBorderColor}}
+  html[dir="rtl"] .footer-extra{font-family:'Amiri',serif;font-style:normal;direction:rtl}
   @media print{body{margin:0}.page{box-shadow:none}}
 </style></head>
 <body>
@@ -353,28 +411,31 @@ export function renderCertificateHTML(input: RenderInput): string {
       ${showBn ? `<div class="title-bn">${escapeHtml(titleBn)}</div>` : ''}
       ${showBn && showEn ? `<div class="title-divider"><span class="line"></span><span class="diamond"></span><span class="line"></span></div>` : ''}
       ${showEn ? `<div class="title-en">${escapeHtml(titleEn)}</div>` : ''}
-      ${cfg.showCategorySubtitle && (data.categoryEn || data.categoryBn) ? `<div class="title-sub">${escapeHtml(isBnOnly ? (data.categoryBn || data.categoryEn) : (data.categoryEn || data.categoryBn))}</div>` : ''}
+      ${showAr ? `<div class="title-ar">${escapeHtml(titleAr || titleBn || titleEn)}</div>` : ''}
+      ${cfg.showCategorySubtitle && (data.categoryEn || data.categoryBn || data.categoryAr) ? `<div class="title-sub"${isArOnly ? ` style="font-family:'Amiri',serif;direction:rtl;font-size:18px;"` : ''}>${escapeHtml(isArOnly ? (data.categoryAr || data.categoryBn || data.categoryEn) : isBnOnly ? (data.categoryBn || data.categoryEn) : (data.categoryEn || data.categoryBn))}</div>` : ''}
     </div>
     <div class="meta-row">
-      <span><b>${dual('Ref', 'রেফারেন্স')}:</b> ${escapeHtml(data.serial)}</span>
-      <span><b>${dual('Date', 'তারিখ')}:</b> ${isEnOnly ? escapeHtml(data.issueDateEn) : isBnOnly ? escapeHtml(data.issueDateBn) : `${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
+      <span><b>${dual('Ref', 'রেফারেন্স', 'المرجع')}:</b> ${escapeHtml(data.serial)}</span>
+      <span><b>${dual('Date', 'তারিখ', 'التاريخ')}:</b> ${isEnOnly || isArOnly ? escapeHtml(data.issueDateEn) : isBnOnly ? escapeHtml(data.issueDateBn) : `${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
     </div>
-    <div class="presented">${isEnOnly ? 'This Is Proudly Presented To' : isBnOnly ? 'এই সনদ প্রদান করা হলো' : 'This Is Proudly Presented To &middot; এই সনদ প্রদান করা হলো'}</div>
+    <div class="presented${isArOnly ? ' ar' : ''}">${isArOnly ? 'يُمنح هذا التقدير بكل فخر إلى' : isEnOnly ? 'This Is Proudly Presented To' : isBnOnly ? 'এই সনদ প্রদান করা হলো' : 'This Is Proudly Presented To &middot; এই সনদ প্রদান করা হলো'}</div>
     <div class="recipient">
-      ${isEnOnly
-        ? `<div class="name-bn" style="font-family:'Cormorant Garamond',serif;">${escapeHtml(data.nameEn || data.nameBn)}</div>`
-        : `<div class="name-bn">${escapeHtml(data.nameBn || data.nameEn)}</div>${(showEn && data.nameEn && data.nameEn !== data.nameBn) ? `<div class="name-en">${escapeHtml(data.nameEn)}</div>` : ''}`}
+      ${isArOnly
+        ? `<div class="name-ar">${escapeHtml(data.nameAr || data.nameBn || data.nameEn)}</div>`
+        : isEnOnly
+          ? `<div class="name-bn" style="font-family:'Cormorant Garamond',serif;">${escapeHtml(data.nameEn || data.nameBn)}</div>`
+          : `<div class="name-bn">${escapeHtml(data.nameBn || data.nameEn)}</div>${(showEn && data.nameEn && data.nameEn !== data.nameBn) ? `<div class="name-en">${escapeHtml(data.nameEn)}</div>` : ''}`}
       <div class="underline"></div>
     </div>
     ${cfg.showInfoGrid && infoCells.length ? `<div class="info">${infoCells.join('')}</div>` : ''}
     ${bodyGrid}
-    ${data.purpose ? `<div class="bottom-note"><span><b>${dual('Purpose', 'উদ্দেশ্য')}:</b> ${escapeHtml(data.purpose)}</span></div>` : ''}
-    ${data.remarks ? `<div class="bottom-note"><span><b>${dual('Remarks', 'মন্তব্য')}:</b> ${escapeHtml(data.remarks)}</span></div>` : ''}
+    ${data.purpose ? `<div class="bottom-note"><span><b>${dual('Purpose', 'উদ্দেশ্য', 'الغرض')}:</b> ${escapeHtml(isArOnly ? (data.purposeAr || data.purpose) : data.purpose)}</span></div>` : ''}
+    ${data.remarks ? `<div class="bottom-note"><span><b>${dual('Remarks', 'মন্তব্য', 'ملاحظات')}:</b> ${escapeHtml(isArOnly ? (data.remarksAr || data.remarks) : data.remarks)}</span></div>` : ''}
     ${sigBlock}
     ${cfg.footerText ? `<div class="footer-extra">${escapeHtml(cfg.footerText)}</div>` : ''}
     <div class="bottom-note">
       <span class="serial-no">${escapeHtml(data.serial)}</span>
-      <span>${isEnOnly ? `Issued on ${escapeHtml(data.issueDateEn)}` : isBnOnly ? `প্রদান: ${escapeHtml(data.issueDateBn)}` : `Issued on ${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
+      <span>${isArOnly ? `صدر بتاريخ ${escapeHtml(data.issueDateEn)}` : isEnOnly ? `Issued on ${escapeHtml(data.issueDateEn)}` : isBnOnly ? `প্রদান: ${escapeHtml(data.issueDateBn)}` : `Issued on ${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
     </div>
   </div>
 </div>
