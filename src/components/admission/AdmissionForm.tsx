@@ -1364,26 +1364,19 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
               </div>
             )}
 
-            {/* Footer Paragraph from form_settings */}
-            {footerParagraph?.is_visible && footerParagraph?.footer_text && (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{footerParagraph.footer_text}</p>
-              </div>
-            )}
-
-            {/* Footer text from website_settings */}
-            {websiteFooterText && (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <p className="text-sm text-foreground whitespace-pre-wrap">{websiteFooterText}</p>
-              </div>
-            )}
-
-            {/* Global footer text (institution-wide) */}
-            {globalFooterText && (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <p className="text-sm text-foreground whitespace-pre-wrap text-center">{globalFooterText}</p>
-              </div>
-            )}
+            {/* Footer: per-form override (form_settings or admission_footer_text) takes priority over global */}
+            {(() => {
+              const overrideText = (footerParagraph?.is_visible && footerParagraph?.footer_text)
+                ? footerParagraph.footer_text
+                : websiteFooterText;
+              const finalFooter = overrideText || globalFooterText;
+              if (!finalFooter) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-muted/50">
+                  <p className="text-sm text-foreground whitespace-pre-wrap text-center">{finalFooter}</p>
+                </div>
+              );
+            })()}
 
 
             {/* Submit */}
