@@ -792,8 +792,12 @@ const AdminWebsite = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label>{language === 'bn' ? 'নাম' : 'Name'}</Label>
+                    <Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
                     <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name_en || ''} onChange={e => updateField('principal_name_en', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
