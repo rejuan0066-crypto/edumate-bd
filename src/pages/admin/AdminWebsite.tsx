@@ -792,8 +792,12 @@ const AdminWebsite = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label>{language === 'bn' ? 'নাম' : 'Name'}</Label>
+                    <Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
                     <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name_en || ''} onChange={e => updateField('principal_name_en', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
@@ -822,7 +826,7 @@ const AdminWebsite = () => {
                   <Label>{language === 'bn' ? 'বাণী (ইংরেজি)' : 'Message (English)'}</Label>
                   <Textarea className="bg-background mt-1 min-h-[100px]" value={form.principal_message_en} onChange={e => updateField('principal_message_en', e.target.value)} />
                 </div>
-                <Button className="btn-primary-gradient" onClick={() => saveSection(['principal_name', 'principal_title_bn', 'principal_title_en', 'principal_message_bn', 'principal_message_en', 'principal_photo_url'])} disabled={saving}>
+                <Button className="btn-primary-gradient" onClick={() => saveSection(['principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en', 'principal_message_bn', 'principal_message_en', 'principal_photo_url'])} disabled={saving}>
                   <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ' : 'Save'}
                 </Button>
               </div>

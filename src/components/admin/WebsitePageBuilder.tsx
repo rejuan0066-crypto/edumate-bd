@@ -733,7 +733,7 @@ const WebsitePageBuilder = ({ form, setForm, language, saving, onSave }: Props) 
   const previewWidth = deviceView === 'mobile' ? 'max-w-[360px]' : deviceView === 'tablet' ? 'max-w-[600px]' : 'max-w-full';
 
   const saveAllKeys: (keyof WebsiteSettings)[] = [
-    'section_order', 'sections', 'principal_name', 'principal_title_bn', 'principal_title_en',
+    'section_order', 'sections', 'principal_name', 'principal_name_en', 'principal_title_bn', 'principal_title_en',
     'principal_message_bn', 'principal_message_en', 'principal_photo_url',
     'admin_name', 'admin_title_bn', 'admin_title_en', 'admin_message_bn', 'admin_message_en',
     'admin_photo_url', 'admin_email', 'admin_phone',
