@@ -20,22 +20,33 @@ import { romanizeBangla, containsBangla } from '@/lib/bnRomanize';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
-const TYPE_META: Record<CertType, { bn: string; en: string; icon: any; titleBn: string; titleEn: string; color: string }> = {
+const TYPE_META: Record<CertType, { bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string; color: string }> = {
   certificate: {
     bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award,
-    titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement',
+    titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير',
     color: 'from-amber-500 to-orange-500',
   },
   transfer: {
     bn: 'ছাড়পত্র', en: 'Transfer Certificate', icon: FileText,
-    titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate',
+    titleBn: 'ছাড়পত্র', titleEn: 'Transfer Certificate', titleAr: 'شهادة انتقال',
     color: 'from-blue-500 to-cyan-500',
   },
   testimonial: {
     bn: 'প্রশংসাপত্র', en: 'Testimonial', icon: ScrollText,
-    titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial',
+    titleBn: 'প্রশংসাপত্র', titleEn: 'Testimonial', titleAr: 'شهادة حسن سيرة وسلوك',
     color: 'from-emerald-500 to-teal-500',
   },
+};
+
+const CERT_CATEGORIES_AR: Record<string, string> = {
+  academic: 'التفوق الأكاديمي',
+  attendance: 'المواظبة على الحضور',
+  participation: 'المشاركة',
+  sports: 'التفوق الرياضي',
+  cultural: 'التفوق الثقافي',
+  leadership: 'القيادة',
+  merit: 'جائزة الجدارة',
+  completion: 'إتمام الدورة',
 };
 
 const CERT_CATEGORIES: { key: string; bn: string; en: string }[] = [
@@ -213,7 +224,7 @@ const AdminCertificates = () => {
   });
 
   /* ── Print handler — uses shared template renderer ─────── */
-  const handlePrint = (cert: any, langChoice: 'bilingual' | 'bn-only' | 'en-only' = 'bilingual') => {
+  const handlePrint = (cert: any, langChoice: 'bilingual' | 'bn-only' | 'en-only' | 'ar-only' = 'bilingual') => {
     const s = cert.students || {};
     const inst = institution || ({} as any);
     const meta = TYPE_META[cert.certificate_type as CertType];
@@ -246,6 +257,8 @@ const AdminCertificates = () => {
       : null;
     const catBn = cat?.bn || '';
     const catEn = cat?.en || '';
+    const catAr = cert.certificate_category ? (CERT_CATEGORIES_AR[cert.certificate_category] || '') : '';
+    const isArOnly = langChoice === 'ar-only';
 
     const nameBn = s.name_bn || s.name_en || '';
     const nameEn = s.name_en || s.name_bn || '';
@@ -288,17 +301,22 @@ const AdminCertificates = () => {
 
     let bodyBn = '';
     let bodyEn = '';
+    let bodyAr = '';
     if (cert.certificate_type === 'certificate') {
       const subjectBn = catBn || 'কৃতিত্ব';
       const subjectEn = catEn || 'Achievement';
+      const subjectAr = catAr || 'الإنجاز';
       bodyBn = `এই সনদপত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>${classBn ? `, ${esc(classBn)} শ্রেণীর একজন কৃতী শিক্ষার্থী।` : '।'} সে <span class="hl">${esc(subjectBn)}</span> ক্ষেত্রে অসাধারণ দক্ষতা ও কৃতিত্বের পরিচয় দিয়েছে।${achievementsVal ? ` বিশেষ অর্জন: <i>${esc(achievementsVal)}</i>।` : ''} আমরা তার উজ্জ্বল ভবিষ্যৎ ও সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
       bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>${classEnSafe ? `, a student of Class <b>${esc(classEnSafe)}</b>,` : ','} has demonstrated exceptional skill and accomplishment in <span class="hl">${esc(subjectEn)}</span>.${achievementsEn ? ` Notable achievement: <i>${esc(achievementsEn)}</i>.` : ''} We wish them continued success and prosperity in all future endeavours.`;
+      bodyAr = `يشهد هذا بأن الطالب <span class="hl">${esc(nameBn)}</span>، ابن <b>${esc(fatherName)}</b> و <b>${esc(motherName)}</b>${classBn ? ` من طلاب ${esc(classBn)}،` : '،'} قد أظهر تفوقًا ومهارةً متميزةً في مجال <span class="hl">${esc(subjectAr)}</span>.${achievementsVal ? ` إنجاز خاص: <i>${esc(achievementsVal)}</i>.` : ''} نسأل الله له دوام التوفيق والنجاح في حياته العلمية والعملية.`;
     } else if (cert.certificate_type === 'transfer') {
       bodyBn = `এই ছাড়পত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>, জন্ম তারিখ: ${dobBn || '—'}, ${admBn ? `${admBn} তারিখে` : ''} এই প্রতিষ্ঠানে ভর্তি হয়েছিল এবং ${leavingBn ? `${leavingBn} তারিখ পর্যন্ত` : ''} <b>${esc(lastClassVal)}</b> শ্রেণী পর্যন্ত অধ্যয়ন করেছে। অধ্যয়নকালে তার আচরণ ছিল <span class="hl">${esc(conductVal)}</span>।${reasonVal ? ` ছাড়পত্র গ্রহণের কারণ: <i>${esc(reasonVal)}</i>।` : ''} আমরা তার ভবিষ্যৎ জীবনের সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
       bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>, born on <b>${dobEn || '—'}</b>, was admitted to this institution ${admEn ? `on <b>${admEn}</b>` : ''} and continued studies up to Class <b>${esc(lastClassEn)}</b>${leavingEn ? ` until <b>${leavingEn}</b>` : ''}. Their conduct during the period of study was <span class="hl">${esc(conductEn)}</span>.${reasonEn ? ` Reason for leaving: <i>${esc(reasonEn)}</i>.` : ''} We wish them all the best in their future endeavours.`;
+      bodyAr = `يشهد هذا بأن <span class="hl">${esc(nameBn)}</span>، ابن <b>${esc(fatherName)}</b> و <b>${esc(motherName)}</b>، المولود بتاريخ <b>${dobEn || '—'}</b>، قد التحق بهذه المؤسسة ${admEn ? `بتاريخ <b>${admEn}</b>` : ''} وواصل دراسته حتى <b>${esc(lastClassVal)}</b>${leavingEn ? ` إلى تاريخ <b>${leavingEn}</b>` : ''}. وكان سلوكه خلال فترة الدراسة <span class="hl">${esc(conductVal)}</span>.${reasonVal ? ` سبب المغادرة: <i>${esc(reasonVal)}</i>.` : ''} نتمنى له التوفيق في مستقبله.`;
     } else {
       bodyBn = `এই প্রশংসাপত্র দ্বারা প্রত্যয়ন করা যাচ্ছে যে, <span class="hl">${esc(nameBn)}</span>, পিতা: <b>${esc(fatherName)}</b>, মাতা: <b>${esc(motherName)}</b>${classBn ? `, ${esc(classBn)} শ্রেণীর একজন মেধাবী শিক্ষার্থী।` : '।'} অধ্যয়নকালে তার আচরণ ছিল <span class="hl">${esc(conductVal)}</span> এবং সে শিক্ষা ও সহশিক্ষা কার্যক্রমে সক্রিয় ভূমিকা পালন করেছে।${achievementsVal ? ` বিশেষ অর্জন: <i>${esc(achievementsVal)}</i>।` : ''} আমরা তার উজ্জ্বল ভবিষ্যৎ ও সর্বাঙ্গীণ মঙ্গল কামনা করছি।`;
       bodyEn = `This is to certify that <span class="hl">${esc(nameEnSafe)}</span>, son/daughter of <b>${esc(fatherEn)}</b> and <b>${esc(motherEn)}</b>${classEnSafe ? `, a student of Class <b>${esc(classEnSafe)}</b>,` : ','} has been a meritorious student of this institution. Their conduct throughout the period of study has been <span class="hl">${esc(conductEn)}</span>, and they have actively participated in academic and co-curricular activities.${achievementsEn ? ` Notable achievement: <i>${esc(achievementsEn)}</i>.` : ''} We wish them a bright future ahead.`;
+      bodyAr = `يشهد هذا بأن الطالب <span class="hl">${esc(nameBn)}</span>، ابن <b>${esc(fatherName)}</b> و <b>${esc(motherName)}</b>${classBn ? `، أحد طلاب ${esc(classBn)} المتميزين.` : '.'} كان سلوكه خلال فترة الدراسة <span class="hl">${esc(conductVal)}</span>، وشارك بفعالية في الأنشطة العلمية واللامنهجية.${achievementsVal ? ` إنجاز خاص: <i>${esc(achievementsVal)}</i>.` : ''} نسأل الله له مستقبلًا مشرقًا.`;
     }
 
     const monogramText = (inst.name_en || inst.name || 'A').trim().charAt(0).toUpperCase();
@@ -308,13 +326,16 @@ const AdminCertificates = () => {
       certType: cert.certificate_type as RenderCertType,
       defaultTitleBn: meta.titleBn,
       defaultTitleEn: meta.titleEn,
+      defaultTitleAr: meta.titleAr,
       bodyLayoutOverride: langChoice,
       data: {
         institutionNameBn: inst.name || '',
         institutionNameEn: inst.name_en || '',
+        institutionNameAr: (inst as any).name_ar || '',
         institutionAddress: isEnOnly
           ? ((inst as any).address_en || (inst.address ? romanizeBangla(inst.address) : ''))
           : (inst.address || ''),
+        institutionAddressAr: (inst as any).address_ar || (inst.address || ''),
         institutionPhone: inst.phone || '',
         institutionEmail: inst.email || '',
         institutionLogo: inst.logo_url || '',
@@ -324,10 +345,14 @@ const AdminCertificates = () => {
         issueDateEn: issueEn,
         nameBn,
         nameEn: nameEnSafe,
+        nameAr: nameBn,
         fatherName: isEnOnly ? fatherEn : fatherName,
+        fatherNameAr: fatherName,
         motherName: isEnOnly ? motherEn : motherName,
+        motherNameAr: motherName,
         classBn,
         classEn: classEnSafe,
+        classAr: classBn,
         sessionName,
         studentId: s.student_id || '',
         rollNumber: s.roll_number ? String(s.roll_number) : '',
@@ -335,21 +360,31 @@ const AdminCertificates = () => {
         admissionDateBn: admBn, admissionDateEn: admEn,
         leavingDateBn: leavingBn, leavingDateEn: leavingEn,
         conduct: isEnOnly ? conductEn : conductVal,
+        conductAr: conductVal,
         reason: isEnOnly ? reasonEn : reasonVal,
+        reasonAr: reasonVal,
         achievements: isEnOnly ? achievementsEn : achievementsVal,
+        achievementsAr: achievementsVal,
         purpose: isEnOnly ? purposeEn : purposeVal,
+        purposeAr: purposeVal,
         remarks: isEnOnly ? remarksEn : remarksVal,
+        remarksAr: remarksVal,
         lastClass: isEnOnly ? lastClassEn : lastClassVal,
+        lastClassAr: lastClassVal,
         categoryBn: catBn,
         categoryEn: catEn,
+        categoryAr: catAr,
         bodyBn,
         bodyEn,
+        bodyAr,
         principalName: isEnOnly
           ? (principalInfo?.principal_name_en
               || (principalInfo?.principal_name ? romanizeBangla(principalInfo.principal_name) : ''))
           : (principalInfo?.principal_name || ''),
+        principalNameAr: principalInfo?.principal_name_ar || principalInfo?.principal_name || '',
         principalTitleBn: principalInfo?.principal_title_bn || 'মুহতামিম / প্রিন্সিপাল',
         principalTitleEn: principalInfo?.principal_title_en || 'Principal',
+        principalTitleAr: principalInfo?.principal_title_ar || 'المدير',
       },
     }) + `<script>window.onload=()=>{setTimeout(()=>window.print(),400);};</script>`;
 
