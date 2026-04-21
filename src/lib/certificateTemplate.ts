@@ -343,30 +343,31 @@ export function renderCertificateHTML(input: RenderInput): string {
       ${instBlock}
     </div>
     <div class="title-wrap">
-      <div class="title-bn">${escapeHtml(titleBn)}</div>
-      <div class="title-divider"><span class="line"></span><span class="diamond"></span><span class="line"></span></div>
-      <div class="title-en">${escapeHtml(titleEn)}</div>
-      ${cfg.showCategorySubtitle && (data.categoryEn || data.categoryBn) ? `<div class="title-sub">${escapeHtml(data.categoryEn || data.categoryBn)}</div>` : ''}
+      ${showBn ? `<div class="title-bn">${escapeHtml(titleBn)}</div>` : ''}
+      ${showBn && showEn ? `<div class="title-divider"><span class="line"></span><span class="diamond"></span><span class="line"></span></div>` : ''}
+      ${showEn ? `<div class="title-en">${escapeHtml(titleEn)}</div>` : ''}
+      ${cfg.showCategorySubtitle && (data.categoryEn || data.categoryBn) ? `<div class="title-sub">${escapeHtml(isBnOnly ? (data.categoryBn || data.categoryEn) : (data.categoryEn || data.categoryBn))}</div>` : ''}
     </div>
     <div class="meta-row">
-      <span><b>Ref / রেফারেন্স:</b> ${escapeHtml(data.serial)}</span>
-      <span><b>Date / তারিখ:</b> ${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}</span>
+      <span><b>${dual('Ref', 'রেফারেন্স')}:</b> ${escapeHtml(data.serial)}</span>
+      <span><b>${dual('Date', 'তারিখ')}:</b> ${isEnOnly ? escapeHtml(data.issueDateEn) : isBnOnly ? escapeHtml(data.issueDateBn) : `${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
     </div>
-    <div class="presented">This Is Proudly Presented To &middot; এই সনদ প্রদান করা হলো</div>
+    <div class="presented">${isEnOnly ? 'This Is Proudly Presented To' : isBnOnly ? 'এই সনদ প্রদান করা হলো' : 'This Is Proudly Presented To &middot; এই সনদ প্রদান করা হলো'}</div>
     <div class="recipient">
-      <div class="name-bn">${escapeHtml(data.nameBn)}</div>
-      ${data.nameEn && data.nameEn !== data.nameBn ? `<div class="name-en">${escapeHtml(data.nameEn)}</div>` : ''}
+      ${isEnOnly
+        ? `<div class="name-bn" style="font-family:'Cormorant Garamond',serif;">${escapeHtml(data.nameEn || data.nameBn)}</div>`
+        : `<div class="name-bn">${escapeHtml(data.nameBn || data.nameEn)}</div>${(showEn && data.nameEn && data.nameEn !== data.nameBn) ? `<div class="name-en">${escapeHtml(data.nameEn)}</div>` : ''}`}
       <div class="underline"></div>
     </div>
     ${cfg.showInfoGrid && infoCells.length ? `<div class="info">${infoCells.join('')}</div>` : ''}
     ${bodyGrid}
-    ${data.purpose ? `<div class="bottom-note"><span><b>Purpose / উদ্দেশ্য:</b> ${escapeHtml(data.purpose)}</span></div>` : ''}
-    ${data.remarks ? `<div class="bottom-note"><span><b>Remarks / মন্তব্য:</b> ${escapeHtml(data.remarks)}</span></div>` : ''}
+    ${data.purpose ? `<div class="bottom-note"><span><b>${dual('Purpose', 'উদ্দেশ্য')}:</b> ${escapeHtml(data.purpose)}</span></div>` : ''}
+    ${data.remarks ? `<div class="bottom-note"><span><b>${dual('Remarks', 'মন্তব্য')}:</b> ${escapeHtml(data.remarks)}</span></div>` : ''}
     ${sigBlock}
     ${cfg.footerText ? `<div class="footer-extra">${escapeHtml(cfg.footerText)}</div>` : ''}
     <div class="bottom-note">
       <span class="serial-no">${escapeHtml(data.serial)}</span>
-      <span>Issued on ${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}</span>
+      <span>${isEnOnly ? `Issued on ${escapeHtml(data.issueDateEn)}` : isBnOnly ? `প্রদান: ${escapeHtml(data.issueDateBn)}` : `Issued on ${escapeHtml(data.issueDateEn)} &middot; ${escapeHtml(data.issueDateBn)}`}</span>
     </div>
   </div>
 </div>
