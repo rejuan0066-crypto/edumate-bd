@@ -431,7 +431,7 @@ const AdminCertificates = () => {
                       <TableCell>{new Date(c.issue_date).toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}</TableCell>
                       <TableCell className="text-right">
                         <div className="inline-flex gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => handlePrint(c)}
+                          <Button size="icon" variant="ghost" onClick={() => setPrintLangCert(c)}
                             className="rounded-full h-9 w-9 hover:bg-primary/10 hover:text-primary">
                             <Printer className="w-4 h-4" />
                           </Button>
