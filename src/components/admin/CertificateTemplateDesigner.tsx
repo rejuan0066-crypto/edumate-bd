@@ -90,7 +90,7 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
   // Load active type's config
   useEffect(() => {
     const t = templates.find((x: any) => x.template_type === activeType);
-    setCfg(mergeTemplate(t?.config));
+    setCfg(mergeTemplate((t?.config ?? null) as Partial<CertTemplateConfig> | null));
   }, [activeType, templates]);
 
   const meta = TYPE_TABS.find(t => t.key === activeType)!;
