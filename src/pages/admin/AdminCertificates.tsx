@@ -57,6 +57,7 @@ const AdminCertificates = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [designerOpen, setDesignerOpen] = useState(false);
+  const [printLangCert, setPrintLangCert] = useState<any | null>(null);
 
   // Issue form state
   const [studentId, setStudentId] = useState('');
