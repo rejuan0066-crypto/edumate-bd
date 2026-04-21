@@ -47,6 +47,9 @@ export interface CertTemplateConfig {
   showSeal: boolean;
   showWishes: boolean;
   footerText: string;           // optional extra footer line
+  footerSpacingTop?: number;    // mm — padding above footer-extra block
+  footerSpacingBottom?: number; // mm — bottom margin of footer-extra block
+  footerFontSize?: number;      // pt — footer-extra font size
 
   // Spacing
   pagePadding: number;          // mm
@@ -331,7 +334,7 @@ export function renderCertificateHTML(input: RenderInput): string {
   .sig .title-en{font-family:'Cinzel',serif;font-size:9px;color:${cfg.headerAccentColor};letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
   .bottom-note{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:${cfg.headerAccentColor};margin-top:8px;padding-top:6px;letter-spacing:.3px}
   .bottom-note .serial-no{font-family:'Cinzel',serif;font-weight:600;letter-spacing:2px}
-  .footer-extra{text-align:center;font-size:10px;color:${cfg.headerAccentColor};margin-top:6px;font-style:italic}
+  .footer-extra{text-align:center;font-size:${cfg.footerFontSize ?? 10}pt;color:${cfg.headerAccentColor};margin-top:${cfg.footerSpacingTop ?? 6}mm;margin-bottom:${cfg.footerSpacingBottom ?? 0}mm;font-style:italic;line-height:1.4;white-space:pre-wrap;padding-top:6px;border-top:1px dotted ${cfg.innerBorderColor}}
   @media print{body{margin:0}.page{box-shadow:none}}
 </style></head>
 <body>
