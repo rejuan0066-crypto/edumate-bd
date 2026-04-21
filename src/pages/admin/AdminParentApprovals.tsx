@@ -87,7 +87,7 @@ const AdminParentApprovals = () => {
             <Users className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{bn ? 'অভিভাবক অনুমোদন' : 'Parent Approvals'}</h1>
+            <h1 className="text-2xl font-bold text-center">{bn ? ' তালিকা' : 'Parent Approvals'}</h1>
             <p className="text-sm text-muted-foreground">
               {bn ? 'অভিভাবক পোর্টালের সাইনআপ অনুরোধ পরিচালনা করুন' : 'Manage parent portal signup requests'}
             </p>
@@ -108,9 +108,9 @@ const AdminParentApprovals = () => {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-center py-8 text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</p>
+              <p className="py-8 text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</p>
             ) : accounts.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">{bn ? 'কোনো অ্যাকাউন্ট পাওয়া যায়নি' : 'No accounts found'}</p>
+              <p className="py-8 text-muted-foreground">{bn ? 'কোনো অ্যাকাউন্ট পাওয়া যায়নি' : 'No accounts found'}</p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>

@@ -115,7 +115,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'permissions', path: '/admin/permissions', label_bn: 'পারমিশন', label_en: 'Permissions', icon: 'KeyRound', visible: true, sort_order: 1 },
     { id: 'user-management', path: '/admin/user-management', label_bn: 'ইউজার ম্যানেজমেন্ট', label_en: 'User Management', icon: 'UserPlus', visible: true, sort_order: 2 },
     { id: 'approvals', path: '/admin/approvals', label_bn: 'অনুমোদন', label_en: 'Approvals', icon: 'ShieldCheck', visible: true, sort_order: 3 },
-    { id: 'parent-approvals', path: '/admin/parent-approvals', label_bn: 'অভিভাবক অনুমোদন', label_en: 'Parent Approvals', icon: 'UserCheck', visible: true, sort_order: 3.5 },
+    { id: 'parent-approvals', path: '/admin/parent-approvals', label_bn: 'অভিভাবকবৃন্দ তালিকা', label_en: 'Parent Approvals', icon: 'UserCheck', visible: true, sort_order: 3.5 },
     { id: 'menu-manager', path: '/admin/menu-manager', label_bn: 'মেনু ম্যানেজার', label_en: 'Menu Manager', icon: 'ListOrdered', visible: true, sort_order: 4 },
     { id: 'backup', path: '/admin/backup', label_bn: 'ব্যাকআপ', label_en: 'Backup', icon: 'HardDrive', visible: true, sort_order: 5 },
     { id: 'recycle-bin', path: '/admin/recycle-bin', label_bn: 'রিসাইকেল বিন', label_en: 'Recycle Bin', icon: 'Trash2', visible: true, sort_order: 5.5 },
