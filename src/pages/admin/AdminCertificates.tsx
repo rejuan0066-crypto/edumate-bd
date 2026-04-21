@@ -386,8 +386,8 @@ const AdminCertificates = () => {
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-amber-600" />
+          <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
+            <GraduationCap className="w-6 h-6 text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
