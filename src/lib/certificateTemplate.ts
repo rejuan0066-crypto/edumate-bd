@@ -193,7 +193,10 @@ export function renderCertificateHTML(input: RenderInput): string {
     <div class="corner br">${CORNER_SVG(cfg.borderColor)}</div>` : '';
 
   const watermark = cfg.showWatermark
-    ? `<div class="watermark">${escapeHtml(data.monogram)}</div>` : '';
+    ? (logoUrl
+        ? `<div class="watermark watermark-logo"><img src="${escapeHtml(logoUrl)}" alt=""/></div>`
+        : `<div class="watermark">${escapeHtml(data.monogram)}</div>`)
+    : '';
 
   const headerLogo = cfg.showLogo && logoUrl
     ? `<img src="${escapeHtml(logoUrl)}" alt="" style="width:${cfg.logoSize}px;height:${cfg.logoSize}px;object-fit:contain"/>` : '';
