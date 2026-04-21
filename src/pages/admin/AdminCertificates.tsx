@@ -321,7 +321,10 @@ const AdminCertificates = () => {
         categoryEn: catEn,
         bodyBn,
         bodyEn,
-        principalName: principalInfo?.principal_name || '',
+        principalName: isEnOnly
+          ? (principalInfo?.principal_name_en
+              || (principalInfo?.principal_name ? romanizeBangla(principalInfo.principal_name) : ''))
+          : (principalInfo?.principal_name || ''),
         principalTitleBn: principalInfo?.principal_title_bn || 'মুহতামিম / প্রিন্সিপাল',
         principalTitleEn: principalInfo?.principal_title_en || 'Principal',
       },
