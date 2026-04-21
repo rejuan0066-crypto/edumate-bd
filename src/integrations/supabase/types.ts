@@ -4565,6 +4565,98 @@ export type Database = {
         }
         Relationships: []
       }
+      student_certificates: {
+        Row: {
+          achievements: string | null
+          achievements_bn: string | null
+          certificate_category: string | null
+          certificate_type: string
+          conduct: string | null
+          conduct_bn: string | null
+          created_at: string
+          custom_data: Json | null
+          date_of_admission: string | null
+          date_of_leaving: string | null
+          deleted_at: string | null
+          id: string
+          issue_date: string
+          issued_by: string | null
+          last_class_attended: string | null
+          last_class_attended_bn: string | null
+          purpose: string | null
+          purpose_bn: string | null
+          reason: string | null
+          reason_bn: string | null
+          remarks: string | null
+          remarks_bn: string | null
+          serial_number: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          achievements?: string | null
+          achievements_bn?: string | null
+          certificate_category?: string | null
+          certificate_type: string
+          conduct?: string | null
+          conduct_bn?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          date_of_admission?: string | null
+          date_of_leaving?: string | null
+          deleted_at?: string | null
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          last_class_attended?: string | null
+          last_class_attended_bn?: string | null
+          purpose?: string | null
+          purpose_bn?: string | null
+          reason?: string | null
+          reason_bn?: string | null
+          remarks?: string | null
+          remarks_bn?: string | null
+          serial_number: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          achievements?: string | null
+          achievements_bn?: string | null
+          certificate_category?: string | null
+          certificate_type?: string
+          conduct?: string | null
+          conduct_bn?: string | null
+          created_at?: string
+          custom_data?: Json | null
+          date_of_admission?: string | null
+          date_of_leaving?: string | null
+          deleted_at?: string | null
+          id?: string
+          issue_date?: string
+          issued_by?: string | null
+          last_class_attended?: string | null
+          last_class_attended_bn?: string | null
+          purpose?: string | null
+          purpose_bn?: string | null
+          reason?: string | null
+          reason_bn?: string | null
+          remarks?: string | null
+          remarks_bn?: string | null
+          serial_number?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_certificates_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           address: string | null

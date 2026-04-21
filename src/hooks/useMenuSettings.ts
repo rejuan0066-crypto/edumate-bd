@@ -33,6 +33,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'student-promotion', path: '/admin/student-promotion', label_bn: 'প্রমোশন/ডিমোশন', label_en: 'Promotion/Demotion', icon: 'ArrowUpDown', visible: true, sort_order: 1 },
     { id: 'admission-letters', path: '/admin/admission-letters', label_bn: 'ভর্তি পত্র', label_en: 'Admission Letters', icon: 'FileCheck', visible: true, sort_order: 2 },
     { id: 'id-cards', path: '/admin/id-cards', label_bn: 'আইডি কার্ড', label_en: 'ID Cards', icon: 'CreditCard', visible: true, sort_order: 3 },
+    { id: 'student-certificates', path: '/admin/student-certificates', label_bn: 'সার্টিফিকেট/ছাড়পত্র', label_en: 'Certificates', icon: 'Award', visible: true, sort_order: 3.5 },
     { id: 'attendance-student', path: '/admin/student-attendance', label_bn: 'ছাত্র উপস্থিতি', label_en: 'Student Attendance', icon: 'CalendarCheck', visible: true, sort_order: 4 },
   ]},
 
