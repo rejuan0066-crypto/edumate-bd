@@ -13,7 +13,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 const STATUS_CONFIG: Record<string, { color: string; icon: any; bn: string; en: string }> = {
   pending: { color: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/20', icon: Clock, bn: 'অপেক্ষমাণ', en: 'Pending' },
