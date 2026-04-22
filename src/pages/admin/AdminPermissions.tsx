@@ -131,17 +131,29 @@ const AdminPermissions = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const rows = Object.values(localPerms).map((p) => ({
-        role: selectedRole,
-        menu_path: p.menu_path,
-        can_view: p.can_view,
-        can_add: p.can_add,
-        can_edit: p.can_edit,
-        can_delete: p.can_delete,
-        updated_at: new Date().toISOString(),
-      }));
+      // Only persist rows for menu paths that currently exist — keeps the
+      // table free of stale entries for menus that have been removed.
+      const validPaths = new Set(menuItems.map((m) => m.path));
+      const rows = Object.values(localPerms)
+        .filter((p) => p.menu_path && validPaths.has(p.menu_path))
+        .map((p) => ({
+          role: selectedRole,
+          menu_path: p.menu_path,
+          can_view: !!p.can_view,
+          can_add: !!p.can_add,
+          can_edit: !!p.can_edit,
+          can_delete: !!p.can_delete,
+          updated_at: new Date().toISOString(),
+        }));
 
-      await supabase.from('role_permissions').delete().eq('role', selectedRole);
+      // Always clear the role's existing rows, then insert only if we have rows.
+      const { error: delErr } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role', selectedRole);
+      if (delErr) throw delErr;
+
+      if (rows.length === 0) return;
       const { error } = await supabase.from('role_permissions').insert(rows);
       if (error) throw error;
     },
@@ -150,46 +162,63 @@ const AdminPermissions = () => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
       setDirty(false);
     },
-    onError: () => {
+    onError: (err: any) => {
+      console.error('[AdminPermissions] save failed', err);
       toast.error(language === 'bn' ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save');
     },
   });
 
+  // Build a fresh permission row with all flags off — used as a safe default
+  // when a menu path has no existing role_permissions record yet.
+  const blankRow = (path: string): PermRow => ({
+    menu_path: path,
+    can_view: false,
+    can_add: false,
+    can_edit: false,
+    can_delete: false,
+  });
+
   const togglePerm = (path: string, field: keyof PermRow) => {
     if (field === 'menu_path') return;
-    setLocalPerms((prev) => ({
-      ...prev,
-      [path]: { ...prev[path], [field]: !prev[path][field] },
-    }));
+    setLocalPerms((prev) => {
+      const current = prev[path] ?? blankRow(path);
+      return {
+        ...prev,
+        [path]: { ...current, [field]: !current[field] },
+      };
+    });
     setDirty(true);
   };
 
   const toggleAllForMenu = (path: string) => {
-    const p = localPerms[path];
-    if (!p) return;
-    const allChecked = p.can_view && p.can_add && p.can_edit && p.can_delete;
-    setLocalPerms((prev) => ({
-      ...prev,
-      [path]: {
-        ...prev[path],
-        can_view: !allChecked,
-        can_add: !allChecked,
-        can_edit: !allChecked,
-        can_delete: !allChecked,
-      },
-    }));
+    setLocalPerms((prev) => {
+      const current = prev[path] ?? blankRow(path);
+      const allChecked =
+        current.can_view && current.can_add && current.can_edit && current.can_delete;
+      return {
+        ...prev,
+        [path]: {
+          ...current,
+          can_view: !allChecked,
+          can_add: !allChecked,
+          can_edit: !allChecked,
+          can_delete: !allChecked,
+        },
+      };
+    });
     setDirty(true);
   };
 
   const toggleAllForAction = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete') => {
     const allChecked = filteredItems.every((item) => localPerms[item.path]?.[field]);
-    const updated = { ...localPerms };
-    filteredItems.forEach((item) => {
-      if (updated[item.path]) {
-        updated[item.path] = { ...updated[item.path], [field]: !allChecked };
-      }
+    setLocalPerms((prev) => {
+      const updated = { ...prev };
+      filteredItems.forEach((item) => {
+        const current = updated[item.path] ?? blankRow(item.path);
+        updated[item.path] = { ...current, [field]: !allChecked };
+      });
+      return updated;
     });
-    setLocalPerms(updated);
     setDirty(true);
   };
 
@@ -324,8 +353,8 @@ const AdminPermissions = () => {
                           </td>
                         </tr>
                         {group.items.map((item, idx) => {
-                          const perm = localPerms[item.path];
-                          if (!perm) return null;
+                          const perm =
+                            localPerms[item.path] ?? blankRow(item.path);
                           const allChecked =
                             perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
                           return (
