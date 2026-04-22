@@ -66,17 +66,24 @@ const ToolBtn = ({
     <TooltipTrigger asChild>
       <button
         onClick={onClick}
-        className={`h-9 w-9 rounded-lg flex items-center justify-center transition-all ${
+        className={`relative h-10 w-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
           active
-            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/30'
-            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
+            ? 'bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/40 scale-105'
+            : 'text-foreground/60 hover:bg-foreground/5 hover:text-foreground hover:scale-105'
         }`}
       >
-        <Icon className="w-4 h-4" />
+        <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
+        {active && (
+          <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary" />
+        )}
       </button>
     </TooltipTrigger>
-    <TooltipContent side="right" className="text-xs">{label}</TooltipContent>
+    <TooltipContent side="right" className="text-xs font-medium">{label}</TooltipContent>
   </Tooltip>
+);
+
+const Divider = () => (
+  <div className="w-7 h-px bg-gradient-to-r from-transparent via-border to-transparent my-1.5" />
 );
 
 const DesignToolbar = ({
@@ -96,7 +103,7 @@ const DesignToolbar = ({
   toggleGrid,
 }: Props) => {
   return (
-    <div className="flex flex-col items-center gap-1 p-2 bg-card/60 backdrop-blur-xl border-r border-border/50 w-14 shrink-0">
+    <div className="flex flex-col items-center gap-0.5 py-3 px-2 bg-card/40 backdrop-blur-2xl border-r border-border/30 w-[60px] shrink-0">
       {tools.map((t) => (
         <ToolBtn
           key={t.id}
@@ -110,8 +117,8 @@ const DesignToolbar = ({
       {/* Image upload */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <label className="h-9 w-9 rounded-lg flex items-center justify-center cursor-pointer text-foreground/70 hover:bg-muted hover:text-foreground transition-all">
-            <ImageIcon className="w-4 h-4" />
+          <label className="h-10 w-10 rounded-2xl flex items-center justify-center cursor-pointer text-foreground/60 hover:bg-foreground/5 hover:text-foreground hover:scale-105 transition-all duration-300">
+            <ImageIcon className="w-[18px] h-[18px]" strokeWidth={2} />
             <input
               type="file"
               accept="image/*"
@@ -124,17 +131,17 @@ const DesignToolbar = ({
             />
           </label>
         </TooltipTrigger>
-        <TooltipContent side="right" className="text-xs">Upload image</TooltipContent>
+        <TooltipContent side="right" className="text-xs font-medium">Upload image</TooltipContent>
       </Tooltip>
 
-      <div className="w-8 h-px bg-border/50 my-1" />
+      <Divider />
 
       <ToolBtn icon={Undo2} label="Undo (Ctrl+Z)" onClick={onUndo} />
       <ToolBtn icon={Redo2} label="Redo (Ctrl+Shift+Z)" onClick={onRedo} />
       <ToolBtn icon={Copy} label="Duplicate (Ctrl+D)" onClick={onDuplicate} />
       <ToolBtn icon={Trash2} label="Delete (Del)" onClick={onDelete} />
 
-      <div className="w-8 h-px bg-border/50 my-1" />
+      <Divider />
 
       <ToolBtn icon={AlignStartHorizontal} label="Align left" onClick={() => onAlign('left')} />
       <ToolBtn icon={AlignCenterHorizontal} label="Align center H" onClick={() => onAlign('center-h')} />
@@ -143,7 +150,7 @@ const DesignToolbar = ({
       <ToolBtn icon={AlignCenterVertical} label="Align center V" onClick={() => onAlign('center-v')} />
       <ToolBtn icon={AlignEndVertical} label="Align bottom" onClick={() => onAlign('bottom')} />
 
-      <div className="w-8 h-px bg-border/50 my-1" />
+      <Divider />
 
       <ToolBtn active={showGrid} icon={Grid3x3} label="Toggle grid" onClick={toggleGrid} />
       <ToolBtn active={snap} icon={Magnet} label="Snap to grid" onClick={toggleSnap} />
