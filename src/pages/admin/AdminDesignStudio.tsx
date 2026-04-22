@@ -478,6 +478,7 @@ const AdminDesignStudio = () => {
       }
       const { summary, errors, createdLayerIds } = await applyAiActions(fc, actions, {
         onBackgroundChange: setBackground,
+        onResize: (w, h) => { setWidth(w); setHeight(h); },
         scope: aiScope,
         selectedFallback: selected,
         templateLoader,
