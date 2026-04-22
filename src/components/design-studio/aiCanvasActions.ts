@@ -186,6 +186,16 @@ export async function applyAiActions(
           summary.push(`bg → ${action.color}`);
           break;
         }
+        case 'resize_canvas': {
+          const w = Math.max(64, Math.round(action.width));
+          const h = Math.max(64, Math.round(action.height));
+          fc.setWidth(w);
+          fc.setHeight(h);
+          fc.renderAll();
+          options.onResize?.(w, h);
+          summary.push(`canvas → ${w}×${h}`);
+          break;
+        }
         case 'add_image': {
           const layerId = await new Promise<string>((resolve) => {
             fabric.Image.fromURL(
