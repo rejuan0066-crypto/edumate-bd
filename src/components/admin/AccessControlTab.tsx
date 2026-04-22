@@ -32,6 +32,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/divisions', label_en: 'Divisions & Class', label_bn: 'বিভাগ ও শ্রেণী' },
   { path: '/admin/subjects', label_en: 'Subjects', label_bn: 'বিষয়সমূহ' },
   { path: '/admin/results', label_en: 'Results', label_bn: 'ফলাফল' },
+  { path: '/admin/merit-list', label_en: 'Merit List', label_bn: 'মেধা তালিকা' },
   { path: '/admin/notices', label_en: 'Notices', label_bn: 'নোটিশ' },
   { path: '/admin/students-fees', label_en: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/fee-receipts', label_en: 'Fee Receipts', label_bn: 'ফি রসিদ' },
