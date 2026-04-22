@@ -11,9 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen, Mail, Lock, UserPlus, LogIn, Library, MessageSquare, Send, Clock, AlertTriangle } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
+import { Link } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const STORAGE_KEY = 'parent_portal_session';
