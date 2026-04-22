@@ -772,8 +772,8 @@ const AdminDesignStudio = () => {
           />
 
           {/* Canvas viewport */}
-          <div className="relative flex-1 overflow-hidden bg-[#1a1a1f] flex flex-col">
-            <div className="flex-1 overflow-auto flex items-center justify-center p-8">
+          <div className="relative flex-1 overflow-hidden bg-gradient-to-br from-[#16161c] via-[#1a1a22] to-[#16161c] flex flex-col">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-10">
               <DesignCanvas
                 ref={canvasRef}
                 width={width}
@@ -815,8 +815,8 @@ const AdminDesignStudio = () => {
           </div>
 
           {/* Right column: Layers + Properties + AI Image History */}
-          <div className="w-72 shrink-0 border-l border-border/50 bg-card/60 backdrop-blur-xl flex flex-col">
-            <div className="flex-1 min-h-0 border-b border-border/50">
+          <div className="w-72 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex flex-col">
+            <div className="flex-1 min-h-0 border-b border-border/30">
               <LayersPanel
                 layers={layers}
                 activeId={selected ? (selected as any).layerId : null}
