@@ -1526,13 +1526,20 @@ const AdminQuestionPapers = () => {
           ))}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-1">
-            <Button onClick={addQuestion} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 font-semibold">
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button onClick={addQuestion} className="flex-1 min-w-[140px] h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 font-semibold">
               <Plus className="h-4 w-4 mr-1.5" />{language === 'bn' ? 'প্রশ্ন যোগ করুন' : 'Add Question'}
             </Button>
             <Button
+              onClick={() => setShowAIGenerator(true)}
+              className="flex-1 min-w-[140px] h-10 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-95 shadow-md shadow-primary/20 font-semibold"
+            >
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              {language === 'bn' ? 'AI দিয়ে তৈরি' : 'AI Generate'}
+            </Button>
+            <Button
               variant="outline"
-              className="flex-1 h-10 rounded-xl border-dashed border-2"
+              className="flex-1 min-w-[140px] h-10 rounded-xl border-dashed border-2"
               disabled={scanning}
               onClick={() => scanInputRef.current?.click()}
             >
