@@ -827,7 +827,7 @@ const AdminDesignStudio = () => {
                 onReorder={onReorder}
               />
             </div>
-            <div className="flex-1 min-h-0 border-b border-border/50">
+            <div className="flex-1 min-h-0 border-b border-border/30">
               <PropertiesPanel
                 selected={selected}
                 canvasWidth={width}
