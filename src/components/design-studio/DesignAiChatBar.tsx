@@ -169,43 +169,50 @@ const DesignAiChatBar = ({
           </div>
         )}
 
-        {/* Scope picker */}
-        <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 mr-1 shrink-0">Target</span>
-          {SCOPES.map((s) => {
-            const Icon = s.icon;
-            const active = scope === s.id;
-            return (
+        {/* Scope picker + tools — auto-hidden until focus / selection / typing */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300 ease-out',
+            revealTools ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 overflow-x-auto scrollbar-none animate-fade-in">
+            <span className="text-[10px] uppercase tracking-wider text-white/40 mr-1 shrink-0">Target</span>
+            {SCOPES.map((s) => {
+              const Icon = s.icon;
+              const active = scope === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => onScopeChange(s.id)}
+                  className={cn(
+                    'flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition shrink-0',
+                    active
+                      ? 'bg-primary/20 border-primary/40 text-primary-foreground'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90',
+                  )}
+                >
+                  <Icon className="w-3 h-3" />
+                  {s.label}
+                </button>
+              );
+            })}
+            <div className="ml-auto flex items-center gap-1 shrink-0">
               <button
-                key={s.id}
-                onClick={() => onScopeChange(s.id)}
-                className={cn(
-                  'flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition shrink-0',
-                  active
-                    ? 'bg-primary/20 border-primary/40 text-primary-foreground'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90',
-                )}
+                onClick={onOpenTemplates}
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                title="Templates"
               >
-                <Icon className="w-3 h-3" />
-                {s.label}
+                <Bookmark className="w-3 h-3" /> Templates
               </button>
-            );
-          })}
-          <div className="ml-auto flex items-center gap-1 shrink-0">
-            <button
-              onClick={onOpenTemplates}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
-              title="Templates"
-            >
-              <Bookmark className="w-3 h-3" /> Templates
-            </button>
-            <button
-              onClick={onOpenHistory}
-              className="text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
-              title="Version history"
-            >
-              History
-            </button>
+              <button
+                onClick={onOpenHistory}
+                className="text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                title="Version history"
+              >
+                History
+              </button>
+            </div>
           </div>
         </div>
 
