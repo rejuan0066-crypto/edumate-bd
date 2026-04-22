@@ -14,9 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { toast } from 'sonner';
-import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type, ChevronDown, ChevronUp, GripVertical, FileCheck, AlertCircle, Settings2, Columns, RotateCcw, Bold, Italic, Underline, Hash, ScanLine, Loader2, Sparkles } from 'lucide-react';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
+import AIQuestionGeneratorDialog from '@/components/admin/AIQuestionGeneratorDialog';
 
 // ─── Arabic Virtual Keyboard Layout (IBM PC Arabic Keyboard) ───
 const ARABIC_ROWS_NORMAL = [
