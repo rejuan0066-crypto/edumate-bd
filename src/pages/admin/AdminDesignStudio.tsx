@@ -911,7 +911,6 @@ const AdminDesignStudio = () => {
           </div>
         </div>
       </div>
-      </div>
 
       {/* Templates dialog */}
       <TemplatesDialog
