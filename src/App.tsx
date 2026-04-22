@@ -317,6 +317,7 @@ const App = () => (
                     <Route path="user-management" element={<AdminUserManagement />} />
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
+                    <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="photo-tools" element={<AdminPhotoTools />} />
                     <Route path="payments" element={<AdminPayments />} />
                     <Route path="receipt-designer" element={<AdminReceiptDesigner />} />

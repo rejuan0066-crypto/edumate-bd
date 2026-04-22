@@ -17,7 +17,7 @@ import { format } from 'date-fns';
 interface ParentMessage {
   id: string;
   student_id: string;
-  parent_id: string | null;
+  parent_account_id: string | null;
   sender_type: string;
   sender_name: string | null;
   subject: string;
@@ -153,7 +153,7 @@ const AdminParentMessages = () => {
       const lastSubject = activeConv.messages[activeConv.messages.length - 1]?.subject || 'Reply';
       const { error } = await supabase.from('parent_messages').insert({
         student_id: activeConv.studentId,
-        parent_id: activeConv.messages.find(m => m.parent_id)?.parent_id || null,
+        parent_account_id: activeConv.messages.find(m => m.parent_account_id)?.parent_account_id || null,
         sender_type: 'admin',
         sender_name: user?.email || 'Admin',
         subject: subject.trim() || `Re: ${lastSubject}`,
