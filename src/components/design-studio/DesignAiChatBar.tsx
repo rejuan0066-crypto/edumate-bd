@@ -67,11 +67,26 @@ const DesignAiChatBar = ({
 }: Props) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(true);
+  const [focused, setFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length, isLoading]);
+
+  // Collapse the target/tools panel when clicking outside the chat bar
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target as Node)) setFocused(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  // Reveal panel whenever user has typed something, has a selection, or is reviewing AI output
+  const revealTools = focused || hasSelection || pendingReview || input.trim().length > 0;
 
   const send = () => {
     const t = input.trim();
@@ -88,8 +103,11 @@ const DesignAiChatBar = ({
   };
 
   return (
-    <div className="pointer-events-none absolute left-1/2 bottom-4 -translate-x-1/2 z-30 w-[min(820px,calc(100%-2rem))]">
-      <div className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden">
+    <div ref={wrapperRef} className="pointer-events-none absolute left-1/2 bottom-4 -translate-x-1/2 z-30 w-[min(820px,calc(100%-2rem))]">
+      <div
+        onClick={() => setFocused(true)}
+        className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden"
+      >
 
         {/* Pending review bar */}
         {pendingReview && (
@@ -154,43 +172,50 @@ const DesignAiChatBar = ({
           </div>
         )}
 
-        {/* Scope picker */}
-        <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] uppercase tracking-wider text-white/40 mr-1 shrink-0">Target</span>
-          {SCOPES.map((s) => {
-            const Icon = s.icon;
-            const active = scope === s.id;
-            return (
+        {/* Scope picker + tools — auto-hidden until focus / selection / typing */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300 ease-out',
+            revealTools ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-1 overflow-x-auto scrollbar-none animate-fade-in">
+            <span className="text-[10px] uppercase tracking-wider text-white/40 mr-1 shrink-0">Target</span>
+            {SCOPES.map((s) => {
+              const Icon = s.icon;
+              const active = scope === s.id;
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => onScopeChange(s.id)}
+                  className={cn(
+                    'flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition shrink-0',
+                    active
+                      ? 'bg-primary/20 border-primary/40 text-primary-foreground'
+                      : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90',
+                  )}
+                >
+                  <Icon className="w-3 h-3" />
+                  {s.label}
+                </button>
+              );
+            })}
+            <div className="ml-auto flex items-center gap-1 shrink-0">
               <button
-                key={s.id}
-                onClick={() => onScopeChange(s.id)}
-                className={cn(
-                  'flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border transition shrink-0',
-                  active
-                    ? 'bg-primary/20 border-primary/40 text-primary-foreground'
-                    : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white/90',
-                )}
+                onClick={onOpenTemplates}
+                className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                title="Templates"
               >
-                <Icon className="w-3 h-3" />
-                {s.label}
+                <Bookmark className="w-3 h-3" /> Templates
               </button>
-            );
-          })}
-          <div className="ml-auto flex items-center gap-1 shrink-0">
-            <button
-              onClick={onOpenTemplates}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
-              title="Templates"
-            >
-              <Bookmark className="w-3 h-3" /> Templates
-            </button>
-            <button
-              onClick={onOpenHistory}
-              className="text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
-              title="Version history"
-            >
-              History
-            </button>
+              <button
+                onClick={onOpenHistory}
+                className="text-[11px] px-2 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                title="Version history"
+              >
+                History
+              </button>
+            </div>
           </div>
         </div>
 
@@ -222,6 +247,7 @@ const DesignAiChatBar = ({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKey}
+                onFocus={() => setFocused(true)}
                 placeholder='AI কে বলুন... যেমন: "একটা ড্যাশবোর্ড সেকশন বানাও" বা "টেবিল কার্ডটি লাল করো"'
                 disabled={disabled || isLoading}
                 rows={1}
@@ -240,9 +266,14 @@ const DesignAiChatBar = ({
           </Button>
         </div>
 
-        {/* Smart prompt hints — adapt to selection */}
-        {open && (
-          <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+        {/* Smart prompt hints — only when typing / focused / has selection */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300 ease-out',
+            open && revealTools ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div className="px-3 pb-3 flex flex-wrap gap-1.5 animate-fade-in">
             {(hints && hints.length > 0 ? hints : QUICK_PROMPTS.map((p) => ({ label: p, prompt: p }))).map((q) => (
               <button
                 key={q.label}
@@ -254,7 +285,7 @@ const DesignAiChatBar = ({
               </button>
             ))}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
