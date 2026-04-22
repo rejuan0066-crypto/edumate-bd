@@ -352,6 +352,54 @@ const AdminDesignStudio = () => {
 
   const safeName = useMemo(() => projectName.replace(/[^\w\-]+/g, '_') || 'design', [projectName]);
 
+  // ---------- AI command handler ----------
+  const handleAiPrompt = useCallback(async (prompt: string) => {
+    if (!fc) return;
+    setAiMessages((m) => [...m, { role: 'user', text: prompt }]);
+    setAiLoading(true);
+    try {
+      const selectedImage = selectedImageToDataUrl(selected);
+      const { data, error } = await supabase.functions.invoke('design-ai', {
+        body: {
+          prompt,
+          context: {
+            canvasWidth: fc.getWidth(),
+            canvasHeight: fc.getHeight(),
+            background,
+            selectedType: selected?.type ?? null,
+            selectedSummary: summarizeSelection(selected),
+          },
+          selectedImage,
+        },
+      });
+      if (error) throw error;
+      const actions = (data?.actions || []) as AiAction[];
+      if (actions.length === 0) {
+        setAiMessages((m) => [...m, {
+          role: 'assistant',
+          text: data?.reply || "I couldn't translate that into a canvas action.",
+          status: 'error',
+        }]);
+        return;
+      }
+      const { summary, errors } = await applyAiActions(fc, actions, setBackground);
+      pushHistory();
+      const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
+      setAiMessages((m) => [...m, {
+        role: 'assistant',
+        text,
+        status: errors.length ? 'error' : 'done',
+      }]);
+    } catch (e: any) {
+      const msg = e?.message || 'AI request failed';
+      setAiMessages((m) => [...m, { role: 'assistant', text: msg, status: 'error' }]);
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [fc, selected, background, pushHistory]);
+
+
   return (
     <AdminLayout>
       <div className="flex flex-col h-[calc(100vh-7rem)] -mx-3 -my-3 bg-[#0d0d10] text-foreground rounded-2xl overflow-hidden border border-border/40">
