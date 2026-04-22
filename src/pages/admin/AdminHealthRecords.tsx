@@ -136,13 +136,21 @@ const AdminHealthRecords = () => {
     },
   });
 
-  const personLabel = (pType: PersonType, sid?: string | null, stfId?: string | null) => {
-    if (pType === 'student') {
-      const s = students.find(x => x.id === sid);
+  /**
+   * Render a label for a person referenced by a health record.
+   * Accepts the raw record so person type is resolved from the populated id
+   * field via the shared `resolvePersonType` utility (tolerates legacy rows
+   * where person_type disagrees with which id is set).
+   */
+  const personLabel = (record: PersonTypeInput) => {
+    const { resolvedType, personId } = resolvePersonType(record);
+    if (!personId) return '—';
+    if (resolvedType === 'student') {
+      const s = students.find(x => x.id === personId);
       if (!s) return '—';
       return `${bn ? s.name_bn : (s.name_en || s.name_bn)} (${s.student_id})`;
     }
-    const st = staff.find(x => x.id === stfId);
+    const st = staff.find(x => x.id === personId);
     if (!st) return '—';
     return `${bn ? st.name_bn : (st.name_en || st.name_bn)}${st.staff_id ? ` (${st.staff_id})` : ''}`;
   };
