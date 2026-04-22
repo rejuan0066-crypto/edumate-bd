@@ -364,12 +364,76 @@ const AdminDesignStudio = () => {
 
   const safeName = useMemo(() => projectName.replace(/[^\w\-]+/g, '_') || 'design', [projectName]);
 
-  // ---------- AI command handler ----------
+  // ---------- Version history helpers ----------
+  const captureVersion = useCallback((label: string): VersionEntry | null => {
+    if (!fc) return null;
+    const snapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+    const thumbnail = fc.toDataURL({ format: 'png', multiplier: 0.15, quality: 0.6 });
+    const entry: VersionEntry = {
+      id: `v-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      label,
+      timestamp: Date.now(),
+      thumbnail,
+      snapshot,
+    };
+    setVersions((prev) => {
+      const next = [entry, ...prev].slice(0, 20);
+      return next;
+    });
+    setCurrentVersionId(entry.id);
+    return entry;
+  }, [fc]);
+
+  const restoreVersion = useCallback((v: VersionEntry) => {
+    if (!fc) return;
+    skipHistoryRef.current = true;
+    fc.loadFromJSON(v.snapshot, () => {
+      fc.renderAll();
+      skipHistoryRef.current = false;
+      refreshLayers();
+      setCurrentVersionId(v.id);
+      pushHistory();
+    });
+    setHistoryOpen(false);
+    toast.success(`Restored "${v.label}"`);
+  }, [fc, refreshLayers, pushHistory]);
+
+  // Resolve a template by id or fuzzy name from the database
+  const templateLoader = useCallback(async (q: { templateId?: string; templateName?: string }) => {
+    let query = supabase.from('design_templates').select('*').limit(1);
+    if (q.templateId) query = query.eq('id', q.templateId);
+    else if (q.templateName) query = query.ilike('name', `%${q.templateName}%`);
+    else return null;
+    const { data } = await query.maybeSingle();
+    if (!data) return null;
+    return {
+      canvas_json: (data as any).canvas_json,
+      width: (data as any).width,
+      height: (data as any).height,
+    };
+  }, []);
+
+  // ---------- AI command handler (with preview/apply) ----------
   const handleAiPrompt = useCallback(async (prompt: string) => {
     if (!fc) return;
     setAiMessages((m) => [...m, { role: 'user', text: prompt }]);
     setAiLoading(true);
     try {
+      // Capture pre-AI snapshot for revert
+      const preSnapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+
+      // Fetch user templates to make AI aware of them
+      const { data: tplRows } = await supabase
+        .from('design_templates')
+        .select('id,name,category')
+        .limit(30);
+
+      const layersForAi = fc.getObjects().slice(-20).map((o, i) => ({
+        id: (o as any).layerId || `l-${i}`,
+        name: (o as any).layerName || (o.type ?? 'object'),
+        type: o.type || 'object',
+      }));
+
       const selectedImage = selectedImageToDataUrl(selected);
       const { data, error } = await supabase.functions.invoke('design-ai', {
         body: {
@@ -378,10 +442,13 @@ const AdminDesignStudio = () => {
             canvasWidth: fc.getWidth(),
             canvasHeight: fc.getHeight(),
             background,
+            scope: aiScope,
             selectedType: selected?.type ?? null,
             selectedSummary: summarizeSelection(selected),
+            layers: layersForAi,
           },
           selectedImage,
+          templates: tplRows || [],
         },
       });
       if (error) throw error;
@@ -394,13 +461,20 @@ const AdminDesignStudio = () => {
         }]);
         return;
       }
-      const { summary, errors } = await applyAiActions(fc, actions, setBackground);
-      pushHistory();
+      const { summary, errors, createdLayerIds } = await applyAiActions(fc, actions, {
+        onBackgroundChange: setBackground,
+        scope: aiScope,
+        selectedFallback: selected,
+        templateLoader,
+      });
+      // Stage as preview (don't push history yet — wait for Apply)
+      setPendingSnapshot(preSnapshot);
+      setPendingLayerIds(createdLayerIds);
       const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
       setAiMessages((m) => [...m, {
         role: 'assistant',
-        text,
-        status: errors.length ? 'error' : 'done',
+        text: `${text} — review & Apply to keep`,
+        status: errors.length ? 'error' : 'pending-review',
       }]);
     } catch (e: any) {
       const msg = e?.message || 'AI request failed';
@@ -409,7 +483,58 @@ const AdminDesignStudio = () => {
     } finally {
       setAiLoading(false);
     }
-  }, [fc, selected, background, pushHistory]);
+  }, [fc, selected, background, aiScope, templateLoader]);
+
+  const applyPending = useCallback(() => {
+    if (!fc || !pendingSnapshot) return;
+    pushHistory();
+    captureVersion(`AI change · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+    setPendingSnapshot(null);
+    setPendingLayerIds([]);
+    toast.success('Applied');
+  }, [fc, pendingSnapshot, pushHistory, captureVersion]);
+
+  const revertPending = useCallback(() => {
+    if (!fc || !pendingSnapshot) return;
+    skipHistoryRef.current = true;
+    fc.loadFromJSON(pendingSnapshot, () => {
+      fc.renderAll();
+      skipHistoryRef.current = false;
+      refreshLayers();
+      setPendingSnapshot(null);
+      setPendingLayerIds([]);
+      toast.success('Reverted');
+    });
+  }, [fc, pendingSnapshot, refreshLayers]);
+
+  // Insert a saved template directly (from dialog)
+  const insertTemplate = useCallback(async (tpl: DesignTemplate) => {
+    if (!fc) return;
+    const preSnapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+    const { errors, createdLayerIds } = await applyAiActions(
+      fc,
+      [{ type: 'use_template', templateId: tpl.id, left: 40, top: 40 }],
+      { templateLoader },
+    );
+    if (errors.length) { toast.error(errors.join(' · ')); return; }
+    setPendingSnapshot(preSnapshot);
+    setPendingLayerIds(createdLayerIds);
+    setAiMessages((m) => [...m, {
+      role: 'assistant',
+      text: `Inserted template "${tpl.name}" — Apply to keep`,
+      status: 'pending-review',
+    }]);
+  }, [fc, templateLoader]);
+
+  // Capture current canvas for "Save as template"
+  const captureForTemplate = useCallback(() => {
+    if (!fc) return null;
+    return {
+      canvas_json: fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']),
+      thumbnail: fc.toDataURL({ format: 'png', multiplier: 0.25, quality: 0.7 }),
+      width, height, background,
+    };
+  }, [fc, width, height, background]);
 
 
   return (
