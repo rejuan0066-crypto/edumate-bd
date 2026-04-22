@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { DesignScope } from './aiCanvasActions';
+import AiCommandHistory, { type AiCommandEntry } from './AiCommandHistory';
+import type { PromptHint } from './promptHints';
 
 export interface AiChatMessage {
   role: 'user' | 'assistant';
@@ -19,6 +21,8 @@ interface Props {
   disabled?: boolean;
   hasSelection: boolean;
   selectionLabel?: string;
+  selectionTypeLabel?: string | null;
+  hints?: PromptHint[];
   scope: DesignScope;
   onScopeChange: (s: DesignScope) => void;
   pendingReview: boolean;
@@ -26,6 +30,11 @@ interface Props {
   onRevert: () => void;
   onOpenTemplates: () => void;
   onOpenHistory: () => void;
+  commandHistory: AiCommandEntry[];
+  commandCursor: number;
+  onUndoCommand: () => void;
+  onRedoCommand: () => void;
+  onReplayCommand: (entry: AiCommandEntry) => void;
 }
 
 const SCOPES: { id: DesignScope; label: string; icon: any }[] = [
