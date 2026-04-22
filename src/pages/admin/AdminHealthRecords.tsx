@@ -511,22 +511,44 @@ const AdminHealthRecords = () => {
       },
     ];
 
-    generateBilingualReport(
-      {
-        institution_name: institution?.name || (bn ? 'প্রতিষ্ঠান' : 'Institution'),
-        institution_name_en: (institution as any)?.name_en || institution?.name || 'Institution',
-        address: institution?.address || '',
-        phone: institution?.phone || '',
-        email: (institution as any)?.email || '',
-        logo_url: institution?.logo_url || undefined,
-        report_title_bn: `স্বাস্থ্য সারসংক্ষেপ — ${personName}`,
-        report_title_en: `Health Summary — ${personName}`,
-        period_label_bn: `তারিখ পর্যন্ত: ${today.toLocaleDateString('bn-BD')}`,
-        period_label_en: `As of: ${today.toLocaleDateString('en-GB')}`,
-      },
-      sections,
-      summaryStats,
-    );
+    const runPrint = () => {
+      generateBilingualReport(
+        {
+          institution_name: institution?.name || (bn ? 'প্রতিষ্ঠান' : 'Institution'),
+          institution_name_en: (institution as any)?.name_en || institution?.name || 'Institution',
+          address: institution?.address || '',
+          phone: institution?.phone || '',
+          email: (institution as any)?.email || '',
+          logo_url: institution?.logo_url || undefined,
+          report_title_bn: `স্বাস্থ্য সারসংক্ষেপ — ${personName}`,
+          report_title_en: `Health Summary — ${personName}`,
+          period_label_bn: `তারিখ পর্যন্ত: ${today.toLocaleDateString('bn-BD')}`,
+          period_label_en: `As of: ${today.toLocaleDateString('en-GB')}`,
+        },
+        sections,
+        summaryStats,
+      );
+    };
+
+    // If Debug Mode is on, show inspector first instead of printing immediately.
+    if (debugMode) {
+      setDebugInfo({
+        profile,
+        hasStudent: !!profile.student_id,
+        hasStaff: !!profile.staff_id,
+        resolvedType,
+        personId,
+        ambiguous,
+        missing,
+        mismatch,
+        matchedVisits: personVisits.length,
+        matchedVaccinations: personVaccs.length,
+        runPrint,
+      });
+      return;
+    }
+
+    runPrint();
   };
 
   return (
