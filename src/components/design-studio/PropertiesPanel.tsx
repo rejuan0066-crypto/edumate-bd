@@ -199,11 +199,13 @@ const PropertiesPanel = ({
       )}
 
       {/* Typography */}
-      {isText && (
+      {isText && (() => {
+        const tt = selected as any;
+        return (
         <div className="space-y-2 pt-3 border-t border-border/50">
           <Label className="text-[10px] text-muted-foreground">Font</Label>
           <Select value={t.fontFamily || 'Inter'}
-            onValueChange={(v) => update(() => selected.set('fontFamily', v))}>
+            onValueChange={(v) => update(() => tt.set('fontFamily', v))}>
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               {FONT_FAMILIES.map((f) => (
