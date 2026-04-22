@@ -382,22 +382,34 @@ const ParentDashboard = ({
       </motion.div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto p-1 rounded-2xl mb-6">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 w-full h-auto p-1 rounded-2xl mb-6 gap-1">
           <TabsTrigger value="profile" className="rounded-xl py-2.5">
-            <User className="w-4 h-4 mr-2" />
-            {bn ? 'প্রোফাইল' : 'Profile'}
+            <User className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
           </TabsTrigger>
           <TabsTrigger value="results" className="rounded-xl py-2.5">
-            <GraduationCap className="w-4 h-4 mr-2" />
-            {bn ? 'ফলাফল' : 'Results'}
+            <GraduationCap className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'ফলাফল' : 'Results'}</span>
           </TabsTrigger>
           <TabsTrigger value="fees" className="rounded-xl py-2.5">
-            <Wallet className="w-4 h-4 mr-2" />
-            {bn ? 'ফি' : 'Fees'}
+            <Wallet className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'ফি' : 'Fees'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="routine" className="rounded-xl py-2.5">
+            <Clock className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'রুটিন' : 'Routine'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="library" className="rounded-xl py-2.5">
+            <Library className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'লাইব্রেরি' : 'Library'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="rounded-xl py-2.5">
+            <MessageSquare className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'বার্তা' : 'Messages'}</span>
           </TabsTrigger>
           <TabsTrigger value="notices" className="rounded-xl py-2.5">
-            <Bell className="w-4 h-4 mr-2" />
-            {bn ? 'নোটিশ' : 'Notices'}
+            <Bell className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -410,10 +422,34 @@ const ParentDashboard = ({
         <TabsContent value="fees">
           <FeesTab studentUuid={session.studentUuid} bn={bn} />
         </TabsContent>
+        <TabsContent value="routine">
+          <RoutineTab student={student} bn={bn} />
+        </TabsContent>
+        <TabsContent value="library">
+          <LibraryTab studentUuid={session.studentUuid} bn={bn} />
+        </TabsContent>
+        <TabsContent value="messages">
+          <MessagesTab session={session} bn={bn} />
+        </TabsContent>
         <TabsContent value="notices">
           <NoticesTab bn={bn} />
         </TabsContent>
       </Tabs>
+
+      {/* Quick complaint link */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 text-center"
+      >
+        <Link to="/complaints">
+          <Button variant="outline" className="rounded-xl">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            {bn ? 'অভিযোগ জমা দিন' : 'Submit a Complaint'}
+          </Button>
+        </Link>
+      </motion.div>
     </div>
   );
 };
