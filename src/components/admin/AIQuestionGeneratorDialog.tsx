@@ -22,12 +22,12 @@ interface AIQuestionGeneratorDialogProps {
   onOpenChange: (open: boolean) => void;
   language: string;
   subjectName?: string;
-  className?: string;
+  classLevel?: string;
   onImport: (questions: GeneratedQuestion[]) => void;
 }
 
 export const AIQuestionGeneratorDialog = ({
-  open, onOpenChange, language, subjectName, className: classLevel, onImport,
+  open, onOpenChange, language, subjectName, classLevel, onImport,
 }: AIQuestionGeneratorDialogProps) => {
   const bn = language === 'bn';
   const [syllabus, setSyllabus] = useState('');
