@@ -19,7 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { DesignTool, LayerInfo, DesignProject } from '@/components/design-studio/types';
 import {
-  exportSVG, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
+  exportSVG, exportLayeredSVG, exportLayeredPDF, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
 } from '@/components/design-studio/exportUtils';
 import DesignAiChatBar, { type AiChatMessage } from '@/components/design-studio/DesignAiChatBar';
 import {
@@ -706,9 +706,21 @@ const AdminDesignStudio = () => {
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-[10px] uppercase">Vector</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => fc && exportSVG(fc, safeName)}>SVG (.svg) — Illustrator</DropdownMenuItem>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel className="text-[10px] uppercase">Vector — Editable layers</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => fc && exportLayeredSVG(fc, safeName, background)}>
+                  Layered SVG (.svg) — AI / Inkscape
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => {
+                  if (!fc) return;
+                  toast.promise(exportLayeredPDF(fc, safeName, background),
+                    { loading: 'Building layered PDF…', success: 'PDF exported with editable text', error: 'PDF export failed' });
+                }}>
+                  Layered PDF (.pdf) — Live text
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fc && exportSVG(fc, safeName)}>
+                  Flat SVG (.svg)
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-[10px] uppercase">Photoshop</DropdownMenuLabel>
                 <DropdownMenuItem onClick={async () => {
