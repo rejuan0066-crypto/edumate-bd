@@ -241,9 +241,26 @@ const AdminHostel = () => {
   const occupied = allocations.filter(a => a.status === 'active').length;
   const occupancyRate = totalBeds > 0 ? Math.round((occupied / totalBeds) * 100) : 0;
 
-  const studentName = (id: string) => {
+  const studentName = (id?: string | null) => {
+    if (!id) return '—';
     const s: any = students.find((x: any) => x.id === id);
     return s ? (bn ? s.name_bn : (s.name_en || s.name_bn)) + ` (${s.student_id})` : id.slice(0, 8);
+  };
+  const staffName = (id?: string | null) => {
+    if (!id) return '—';
+    const s: any = (staffList as any[]).find((x: any) => x.id === id);
+    return s ? (bn ? s.name_bn : (s.name_en || s.name_bn)) + (s.staff_id ? ` (${s.staff_id})` : '') : id.slice(0, 8);
+  };
+  const occupantLabel = (a: Allocation) => a.occupant_type === 'staff' ? staffName(a.staff_id) : studentName(a.student_id);
+  const sessionLabel = (id?: string | null) => {
+    if (!id) return '—';
+    const s: any = (academicSessions as any[]).find((x: any) => x.id === id);
+    return s ? (bn ? (s.name_bn || s.name) : s.name) : '—';
+  };
+  const classLabel = (id?: string | null) => {
+    if (!id) return '—';
+    const c: any = (classesList as any[]).find((x: any) => x.id === id);
+    return c ? (bn ? c.name_bn : c.name) : '—';
   };
   const roomLabel = (id: string) => {
     const r = rooms.find(x => x.id === id);
@@ -254,6 +271,27 @@ const AdminHostel = () => {
   const hostelLabel = (id: string) => {
     const h = hostels.find(x => x.id === id);
     return h ? (bn ? h.name_bn : h.name) : id.slice(0, 8);
+  };
+
+  // Filter students by selected session/class for allocation form
+  const filteredStudents = (students as any[]).filter((s: any) => {
+    if (allocForm.academic_session_id && s.academic_session_id !== allocForm.academic_session_id) return false;
+    if (allocForm.class_id && s.class_id !== allocForm.class_id) return false;
+    return true;
+  });
+
+  // Auto-calculate net charge based on fee mode + room rent
+  const computeNetCharge = (form: Partial<Allocation>): number => {
+    const room = rooms.find(r => r.id === form.room_id);
+    const base = Number(room?.monthly_rent || 0);
+    if (form.fee_mode === 'free') return 0;
+    if (form.fee_mode === 'discount') {
+      const pct = Number(form.discount_percent || 0);
+      const amt = Number(form.discount_amount || 0);
+      const afterPct = base - (base * pct / 100);
+      return Math.max(0, afterPct - amt);
+    }
+    return base;
   };
 
   return (
