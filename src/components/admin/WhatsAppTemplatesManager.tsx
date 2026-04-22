@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,7 +15,19 @@ import { toast } from '@/hooks/use-toast';
 import {
   Loader2, Plus, Pencil, Trash2, FileText, Save, Tag, Eye, Copy,
   Receipt, GraduationCap, CalendarX, ClipboardList, Bell, Sparkles,
+  AsteriskSquare, X, GripVertical, AlertCircle,
 } from 'lucide-react';
+
+type VarType = 'text' | 'number' | 'date' | 'currency';
+
+interface VariableRule {
+  key: string;
+  label: string;
+  required: boolean;
+  type: VarType;
+  placeholder?: string;
+  default_value?: string;
+}
 
 interface Template {
   id: string;
@@ -27,6 +39,7 @@ interface Template {
   body_en: string;
   body_bn: string;
   variables: string[];
+  variable_rules: VariableRule[];
   meta_template_name: string | null;
   meta_language_code: string | null;
   use_meta_template: boolean;
@@ -47,6 +60,13 @@ const SUGGESTED_VARS = [
   'due_date', 'date', 'exam_name', 'gpa', 'position', 'institution', 'message',
 ];
 
+const VAR_TYPE_LABELS: Record<VarType, { bn: string; en: string }> = {
+  text: { bn: 'টেক্সট', en: 'Text' },
+  number: { bn: 'সংখ্যা', en: 'Number' },
+  date: { bn: 'তারিখ', en: 'Date' },
+  currency: { bn: 'মুদ্রা', en: 'Currency' },
+};
+
 const emptyForm = (): Omit<Template, 'id'> => ({
   template_key: '',
   name: '',
@@ -56,12 +76,18 @@ const emptyForm = (): Omit<Template, 'id'> => ({
   body_en: '',
   body_bn: '',
   variables: [],
+  variable_rules: [],
   meta_template_name: '',
   meta_language_code: 'bn',
   use_meta_template: false,
   is_active: true,
   sort_order: 0,
 });
+
+const detectVars = (text: string) => {
+  const matches = text.match(/\{([a-z_][a-z0-9_]*)\}/gi) || [];
+  return [...new Set(matches.map(m => m.slice(1, -1)))];
+};
 
 const WhatsAppTemplatesManager = () => {
   const { language } = useLanguage();
@@ -72,6 +98,7 @@ const WhatsAppTemplatesManager = () => {
   const [form, setForm] = useState<Omit<Template, 'id'>>(emptyForm());
   const [open, setOpen] = useState(false);
   const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
+  const [previewErrors, setPreviewErrors] = useState<Record<string, string>>({});
   const [previewOpen, setPreviewOpen] = useState<Template | null>(null);
   const [filterCat, setFilterCat] = useState<string>('all');
   const [saving, setSaving] = useState(false);
@@ -91,6 +118,24 @@ const WhatsAppTemplatesManager = () => {
 
   const filtered = filterCat === 'all' ? templates : templates.filter(t => t.category === filterCat);
 
+  // Auto-sync rules when message body changes — add new vars, keep existing rules
+  useEffect(() => {
+    if (!open) return;
+    const detected = [...new Set([...detectVars(form.body_bn), ...detectVars(form.body_en)])];
+    const existing = new Map(form.variable_rules.map(r => [r.key, r]));
+    const merged: VariableRule[] = detected.map(key =>
+      existing.get(key) || { key, label: key, required: false, type: 'text', placeholder: '', default_value: '' }
+    );
+    // Keep manually-added rules whose keys aren't yet in the body
+    form.variable_rules.forEach(r => {
+      if (!detected.includes(r.key) && !merged.find(m => m.key === r.key)) merged.push(r);
+    });
+    if (JSON.stringify(merged) !== JSON.stringify(form.variable_rules)) {
+      setForm(f => ({ ...f, variable_rules: merged, variables: merged.map(r => r.key) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.body_bn, form.body_en, open]);
+
   const openNew = () => {
     setEditing(null);
     setForm(emptyForm());
@@ -108,6 +153,7 @@ const WhatsAppTemplatesManager = () => {
       body_en: t.body_en || '',
       body_bn: t.body_bn,
       variables: t.variables || [],
+      variable_rules: t.variable_rules || [],
       meta_template_name: t.meta_template_name || '',
       meta_language_code: t.meta_language_code || 'bn',
       use_meta_template: t.use_meta_template,
@@ -117,9 +163,29 @@ const WhatsAppTemplatesManager = () => {
     setOpen(true);
   };
 
-  const detectVars = (text: string) => {
-    const matches = text.match(/\{([a-z_][a-z0-9_]*)\}/gi) || [];
-    return [...new Set(matches.map(m => m.slice(1, -1)))];
+  const updateRule = (idx: number, patch: Partial<VariableRule>) => {
+    setForm(f => ({
+      ...f,
+      variable_rules: f.variable_rules.map((r, i) => (i === idx ? { ...r, ...patch } : r)),
+    }));
+  };
+
+  const removeRule = (idx: number) => {
+    setForm(f => ({
+      ...f,
+      variable_rules: f.variable_rules.filter((_, i) => i !== idx),
+      variables: f.variable_rules.filter((_, i) => i !== idx).map(r => r.key),
+    }));
+  };
+
+  const addCustomRule = () => {
+    setForm(f => ({
+      ...f,
+      variable_rules: [
+        ...f.variable_rules,
+        { key: `var_${f.variable_rules.length + 1}`, label: '', required: false, type: 'text', placeholder: '', default_value: '' },
+      ],
+    }));
   };
 
   const handleSave = async () => {
@@ -127,13 +193,22 @@ const WhatsAppTemplatesManager = () => {
       toast({ title: bn ? 'প্রয়োজনীয় ফিল্ড পূরণ করুন' : 'Fill required fields', variant: 'destructive' });
       return;
     }
+    // Validate rule keys are unique and valid
+    const keys = form.variable_rules.map(r => r.key.trim()).filter(Boolean);
+    if (new Set(keys).size !== keys.length) {
+      toast({ title: bn ? 'ভ্যারিয়েবল কী ইউনিক হতে হবে' : 'Variable keys must be unique', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
-      const detected = [...new Set([...detectVars(form.body_bn), ...detectVars(form.body_en)])];
+      const cleanRules = form.variable_rules
+        .map(r => ({ ...r, key: r.key.trim() }))
+        .filter(r => r.key);
       const payload = {
         ...form,
         template_key: form.template_key.trim().toLowerCase().replace(/\s+/g, '_'),
-        variables: detected.length > 0 ? detected : form.variables,
+        variable_rules: cleanRules,
+        variables: cleanRules.map(r => r.key),
       };
 
       if (editing) {
@@ -177,6 +252,38 @@ const WhatsAppTemplatesManager = () => {
     return body.replace(/\{([a-z_][a-z0-9_]*)\}/gi, (_, key) => vars[key] || `{${key}}`);
   };
 
+  const validatePreview = (tpl: Template) => {
+    const errors: Record<string, string> = {};
+    (tpl.variable_rules || []).forEach(rule => {
+      const val = (previewVars[rule.key] || rule.default_value || '').trim();
+      if (rule.required && !val) {
+        errors[rule.key] = bn ? 'এটি আবশ্যক' : 'Required';
+        return;
+      }
+      if (!val) return;
+      if (rule.type === 'number' && isNaN(Number(val))) {
+        errors[rule.key] = bn ? 'সংখ্যা হতে হবে' : 'Must be a number';
+      } else if (rule.type === 'currency' && isNaN(Number(val.replace(/[৳$,\s]/g, '')))) {
+        errors[rule.key] = bn ? 'বৈধ মুদ্রা মান দিন' : 'Invalid currency value';
+      } else if (rule.type === 'date' && isNaN(Date.parse(val))) {
+        errors[rule.key] = bn ? 'বৈধ তারিখ দিন' : 'Invalid date';
+      }
+    });
+    return errors;
+  };
+
+  const handleCopy = (tpl: Template) => {
+    const errs = validatePreview(tpl);
+    setPreviewErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast({ title: bn ? 'বৈধতা ব্যর্থ' : 'Validation failed', description: bn ? 'আবশ্যক ফিল্ড পূরণ করুন' : 'Fill required fields', variant: 'destructive' });
+      return;
+    }
+    const merged = { ...Object.fromEntries((tpl.variable_rules || []).map(r => [r.key, r.default_value || ''])), ...previewVars };
+    navigator.clipboard.writeText(renderPreview(tpl.body_bn, merged));
+    toast({ title: bn ? 'কপি করা হয়েছে' : 'Copied' });
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -192,8 +299,8 @@ const WhatsAppTemplatesManager = () => {
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
             {bn
-              ? 'ফি, ফলাফল, হাজিরা ইত্যাদির জন্য পুনরায় ব্যবহারযোগ্য টেমপ্লেট তৈরি করুন। `{variable}` ফরম্যাটে ভ্যারিয়েবল ব্যবহার করুন।'
-              : 'Create reusable templates for fees, results, attendance and more. Use `{variable}` placeholders.'}
+              ? 'ফি, ফলাফল, হাজিরা ইত্যাদির জন্য পুনরায় ব্যবহারযোগ্য টেমপ্লেট তৈরি করুন। প্রতিটি ভ্যারিয়েবলের জন্য টাইপ ও আবশ্যকতা সেট করুন।'
+              : 'Create reusable templates with typed, validated variable placeholders.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -222,6 +329,7 @@ const WhatsAppTemplatesManager = () => {
           {filtered.map((t) => {
             const meta = CATEGORY_META[t.category] || CATEGORY_META.general;
             const Icon = meta.icon;
+            const requiredCount = (t.variable_rules || []).filter(r => r.required).length;
             return (
               <Card key={t.id} className={`transition-all hover:shadow-md ${!t.is_active ? 'opacity-60' : ''}`}>
                 <CardContent className="p-4 space-y-3">
@@ -242,21 +350,27 @@ const WhatsAppTemplatesManager = () => {
                     {bn ? t.body_bn : (t.body_en || t.body_bn)}
                   </p>
 
-                  {t.variables && t.variables.length > 0 && (
+                  {t.variable_rules && t.variable_rules.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {t.variables.slice(0, 4).map(v => (
-                        <Badge key={v} variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0">
-                          <Tag className="w-2.5 h-2.5" />{v}
+                      {t.variable_rules.slice(0, 4).map(r => (
+                        <Badge key={r.key} variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0">
+                          {r.required && <AsteriskSquare className="w-2.5 h-2.5 text-destructive" />}
+                          <Tag className="w-2.5 h-2.5" />{r.key}
                         </Badge>
                       ))}
-                      {t.variables.length > 4 && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">+{t.variables.length - 4}</Badge>
+                      {t.variable_rules.length > 4 && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">+{t.variable_rules.length - 4}</Badge>
+                      )}
+                      {requiredCount > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-destructive/10 text-destructive border-0">
+                          {requiredCount} {bn ? 'আবশ্যক' : 'required'}
+                        </Badge>
                       )}
                     </div>
                   )}
 
                   <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/50">
-                    <Button size="sm" variant="ghost" onClick={() => setPreviewOpen(t)} className="h-8 px-2 gap-1.5">
+                    <Button size="sm" variant="ghost" onClick={() => { setPreviewOpen(t); setPreviewVars({}); setPreviewErrors({}); }} className="h-8 px-2 gap-1.5">
                       <Eye className="w-3.5 h-3.5" />{bn ? 'প্রিভিউ' : 'Preview'}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => openEdit(t)} className="h-8 px-2 gap-1.5">
@@ -275,7 +389,7 @@ const WhatsAppTemplatesManager = () => {
 
       {/* Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-[#25D366]" />
@@ -330,7 +444,7 @@ const WhatsAppTemplatesManager = () => {
               />
             </div>
 
-            {/* Variables helper */}
+            {/* Suggested variables */}
             <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
               <Label className="text-xs flex items-center gap-1.5 mb-2">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -368,6 +482,101 @@ const WhatsAppTemplatesManager = () => {
                 rows={3}
                 placeholder="Dear Guardian, {student_name} ..."
               />
+            </div>
+
+            {/* Variable rules editor */}
+            <div className="p-3 rounded-xl bg-gradient-to-br from-[#25D366]/5 to-emerald-500/5 border border-[#25D366]/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-[#25D366]" />
+                    {bn ? 'ভ্যারিয়েবল ভ্যালিডেশন রুল' : 'Variable Validation Rules'}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {bn ? 'প্রতিটি ভ্যারিয়েবলের জন্য টাইপ, লেবেল ও আবশ্যকতা নির্ধারণ করুন' : 'Define type, label, and required flag per variable'}
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addCustomRule} className="gap-1.5 h-8">
+                  <Plus className="w-3.5 h-3.5" />{bn ? 'কাস্টম' : 'Custom'}
+                </Button>
+              </div>
+
+              {form.variable_rules.length === 0 ? (
+                <div className="text-center py-6 text-xs text-muted-foreground">
+                  {bn ? 'মেসেজ বডিতে {variable} যোগ করুন বা কাস্টম রুল তৈরি করুন' : 'Add {variable} in message body or create a custom rule'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {form.variable_rules.map((rule, idx) => (
+                    <div key={idx} className="bg-background rounded-xl border border-border/60 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <code className="text-[11px] font-mono px-2 py-1 rounded bg-muted/60 text-foreground">{`{${rule.key}}`}</code>
+                        <div className="ml-auto flex items-center gap-3">
+                          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                            <Switch
+                              checked={rule.required}
+                              onCheckedChange={(v) => updateRule(idx, { required: v })}
+                            />
+                            <span className={rule.required ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                              {bn ? 'আবশ্যক' : 'Required'}
+                            </span>
+                          </label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => removeRule(idx)}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'কী' : 'Key'}</Label>
+                          <Input
+                            className="h-8 text-xs font-mono"
+                            value={rule.key}
+                            onChange={(e) => updateRule(idx, { key: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'লেবেল' : 'Label'}</Label>
+                          <Input
+                            className="h-8 text-xs"
+                            value={rule.label}
+                            onChange={(e) => updateRule(idx, { label: e.target.value })}
+                            placeholder={rule.key}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'টাইপ' : 'Type'}</Label>
+                          <Select value={rule.type} onValueChange={(v: VarType) => updateRule(idx, { type: v })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {(Object.keys(VAR_TYPE_LABELS) as VarType[]).map(t => (
+                                <SelectItem key={t} value={t}>{bn ? VAR_TYPE_LABELS[t].bn : VAR_TYPE_LABELS[t].en}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground">{bn ? 'ডিফল্ট' : 'Default'}</Label>
+                          <Input
+                            className="h-8 text-xs"
+                            value={rule.default_value || ''}
+                            onChange={(e) => updateRule(idx, { default_value: e.target.value })}
+                            placeholder={rule.placeholder}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-3">
@@ -428,8 +637,8 @@ const WhatsAppTemplatesManager = () => {
       </Dialog>
 
       {/* Preview dialog */}
-      <Dialog open={!!previewOpen} onOpenChange={(o) => { if (!o) { setPreviewOpen(null); setPreviewVars({}); } }}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!previewOpen} onOpenChange={(o) => { if (!o) { setPreviewOpen(null); setPreviewVars({}); setPreviewErrors({}); } }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="w-5 h-5 text-[#25D366]" />
@@ -438,39 +647,56 @@ const WhatsAppTemplatesManager = () => {
           </DialogHeader>
           {previewOpen && (
             <div className="space-y-4">
-              {previewOpen.variables && previewOpen.variables.length > 0 && (
+              {previewOpen.variable_rules && previewOpen.variable_rules.length > 0 && (
                 <div className="space-y-2">
                   <Label className="text-xs">{bn ? 'ভ্যারিয়েবল মান দিন' : 'Fill variables'}</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {previewOpen.variables.map(v => (
-                      <div key={v}>
-                        <Label className="text-[10px] font-mono text-muted-foreground">{`{${v}}`}</Label>
-                        <Input
-                          className="h-8 text-xs"
-                          value={previewVars[v] || ''}
-                          onChange={(e) => setPreviewVars({ ...previewVars, [v]: e.target.value })}
-                          placeholder={v}
-                        />
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {previewOpen.variable_rules.map(rule => {
+                      const inputType = rule.type === 'date' ? 'date' : rule.type === 'number' || rule.type === 'currency' ? 'text' : 'text';
+                      const err = previewErrors[rule.key];
+                      return (
+                        <div key={rule.key}>
+                          <Label className="text-[10px] flex items-center gap-1">
+                            <span className="font-medium">{rule.label || rule.key}</span>
+                            {rule.required && <span className="text-destructive">*</span>}
+                            <code className="text-[9px] font-mono text-muted-foreground ml-auto">{`{${rule.key}}`}</code>
+                          </Label>
+                          <Input
+                            type={inputType}
+                            className={`h-8 text-xs ${err ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
+                            value={previewVars[rule.key] ?? rule.default_value ?? ''}
+                            onChange={(e) => {
+                              setPreviewVars({ ...previewVars, [rule.key]: e.target.value });
+                              if (err) setPreviewErrors({ ...previewErrors, [rule.key]: '' });
+                            }}
+                            placeholder={rule.placeholder || rule.label || rule.key}
+                          />
+                          {err && (
+                            <p className="text-[10px] text-destructive flex items-center gap-1 mt-0.5">
+                              <AlertCircle className="w-2.5 h-2.5" />{err}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
               <div className="rounded-2xl bg-[#DCF8C6] dark:bg-[#005C4B] p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed shadow-sm">
-                {renderPreview(previewOpen.body_bn, previewVars)}
+                {renderPreview(
+                  previewOpen.body_bn,
+                  { ...Object.fromEntries((previewOpen.variable_rules || []).map(r => [r.key, r.default_value || ''])), ...previewVars },
+                )}
               </div>
 
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full gap-2"
-                onClick={() => {
-                  navigator.clipboard.writeText(renderPreview(previewOpen.body_bn, previewVars));
-                  toast({ title: bn ? 'কপি করা হয়েছে' : 'Copied' });
-                }}
+                onClick={() => handleCopy(previewOpen)}
               >
-                <Copy className="w-3.5 h-3.5" />{bn ? 'কপি করুন' : 'Copy message'}
+                <Copy className="w-3.5 h-3.5" />{bn ? 'কপি করুন (ভ্যালিডেট সহ)' : 'Copy (with validation)'}
               </Button>
             </div>
           )}
