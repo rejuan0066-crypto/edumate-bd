@@ -19,6 +19,7 @@ export type AiAction =
   | { type: 'add_image'; imageUrl: string; width?: number; height?: number; name?: string }
   | { type: 'replace_selected_image'; imageUrl: string }
   | { type: 'use_template'; templateId?: string; templateName?: string; left?: number; top?: number }
+  | { type: 'resize_canvas'; width: number; height: number }
   | { type: 'error'; message: string };
 
 export type DesignScope = 'any' | 'section' | 'card' | 'table' | 'chart' | 'text' | 'image' | 'shape';
