@@ -103,8 +103,11 @@ const DesignAiChatBar = ({
   };
 
   return (
-    <div className="pointer-events-none absolute left-1/2 bottom-4 -translate-x-1/2 z-30 w-[min(820px,calc(100%-2rem))]">
-      <div className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden">
+    <div ref={wrapperRef} className="pointer-events-none absolute left-1/2 bottom-4 -translate-x-1/2 z-30 w-[min(820px,calc(100%-2rem))]">
+      <div
+        onClick={() => setFocused(true)}
+        className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden"
+      >
 
         {/* Pending review bar */}
         {pendingReview && (
