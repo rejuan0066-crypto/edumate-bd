@@ -484,19 +484,31 @@ const AdminDesignStudio = () => {
           />
 
           {/* Canvas viewport */}
-          <div className="flex-1 overflow-auto bg-[#1a1a1f] flex items-center justify-center p-8">
-            <DesignCanvas
-              ref={canvasRef}
-              width={width}
-              height={height}
-              background={background}
-              activeTool={activeTool}
-              showGrid={showGrid}
-              snapToGrid={snap}
-              gridSize={GRID_SIZE}
-              onReady={handleReady}
-              onSelectionChange={setSelected}
-              onObjectsChange={handleObjectsChange}
+          <div className="relative flex-1 overflow-hidden bg-[#1a1a1f] flex flex-col">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-8">
+              <DesignCanvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                background={background}
+                activeTool={activeTool}
+                showGrid={showGrid}
+                snapToGrid={snap}
+                gridSize={GRID_SIZE}
+                onReady={handleReady}
+                onSelectionChange={setSelected}
+                onObjectsChange={handleObjectsChange}
+              />
+            </div>
+
+            {/* Floating AI command bar */}
+            <DesignAiChatBar
+              messages={aiMessages}
+              onSubmit={handleAiPrompt}
+              isLoading={aiLoading}
+              disabled={!fc}
+              hasSelection={!!selected}
+              selectionLabel={summarizeSelection(selected) ?? undefined}
             />
           </div>
 
