@@ -5232,6 +5232,57 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_config: {
+        Row: {
+          away_message: string | null
+          business_account_id: string | null
+          business_hours: string | null
+          button_label: string | null
+          button_position: string
+          cloud_api_enabled: boolean
+          created_at: string
+          default_language: string | null
+          id: string
+          phone_number: string | null
+          phone_number_id: string | null
+          show_floating_button: boolean
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          away_message?: string | null
+          business_account_id?: string | null
+          business_hours?: string | null
+          button_label?: string | null
+          button_position?: string
+          cloud_api_enabled?: boolean
+          created_at?: string
+          default_language?: string | null
+          id?: string
+          phone_number?: string | null
+          phone_number_id?: string | null
+          show_floating_button?: boolean
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          away_message?: string | null
+          business_account_id?: string | null
+          business_hours?: string | null
+          button_label?: string | null
+          button_position?: string
+          cloud_api_enabled?: boolean
+          created_at?: string
+          default_language?: string | null
+          id?: string
+          phone_number?: string | null
+          phone_number_id?: string | null
+          show_floating_button?: boolean
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
