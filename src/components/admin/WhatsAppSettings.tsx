@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, MessageCircle, Save, ExternalLink, Phone } from 'lucide-react';
+import { Loader2, MessageCircle, Save, ExternalLink, Phone, Send, CheckCircle2, XCircle } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 
 const WhatsAppSettings = () => {
@@ -40,6 +40,49 @@ const WhatsAppSettings = () => {
     default_language: 'bn',
   });
   const [saving, setSaving] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
+  const [testMessage, setTestMessage] = useState(
+    bn ? 'এটি একটি টেস্ট মেসেজ। WhatsApp Cloud API সঠিকভাবে কনফিগার করা হয়েছে।' : 'This is a test message. WhatsApp Cloud API is correctly configured.'
+  );
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; messageId?: string; error?: string; sentAt?: string } | null>(null);
+
+  const handleTest = async () => {
+    if (!testPhone.trim()) {
+      toast({ title: bn ? 'ফোন নম্বর দিন' : 'Enter a phone number', variant: 'destructive' });
+      return;
+    }
+    if (!testMessage.trim()) {
+      toast({ title: bn ? 'মেসেজ দিন' : 'Enter a message', variant: 'destructive' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { recipients: [testPhone.trim()], message: testMessage.trim() },
+      });
+      if (error) throw error;
+      const result = data?.results?.[0];
+      const ok = !!result?.success;
+      setTestResult({
+        success: ok,
+        messageId: result?.messageId,
+        error: result?.error || (ok ? undefined : data?.error),
+        sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US'),
+      });
+      toast({
+        title: ok ? (bn ? 'মেসেজ পাঠানো হয়েছে' : 'Message sent') : (bn ? 'পাঠানো ব্যর্থ' : 'Send failed'),
+        description: ok ? (bn ? 'WhatsApp এ চেক করুন' : 'Check WhatsApp inbox') : (result?.error || data?.error),
+        variant: ok ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      setTestResult({ success: false, error: err.message, sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US') });
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     if (config) {
@@ -238,6 +281,114 @@ const WhatsAppSettings = () => {
               </SelectContent>
             </Select>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Test WhatsApp */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Send className="w-4 h-4 text-[#25D366]" />
+            {bn ? 'টেস্ট WhatsApp মেসেজ পাঠান' : 'Send Test WhatsApp Message'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="p-3 rounded-xl bg-muted/50 text-xs text-muted-foreground">
+            {bn
+              ? 'যেকোনো গার্ডিয়ান বা স্টাফের নম্বরে টেস্ট মেসেজ পাঠিয়ে Cloud API কনফিগারেশন যাচাই করুন। নম্বরটি অবশ্যই কান্ট্রি কোডসহ E.164 ফরম্যাটে দিতে হবে (যেমন: +8801XXXXXXXXX)।'
+              : 'Verify your Cloud API setup by sending a test message to any guardian or staff number. Use E.164 format with country code (e.g., +8801XXXXXXXXX).'}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5" />
+                {bn ? 'প্রাপকের নম্বর' : 'Recipient phone'} *
+              </Label>
+              <Input
+                value={testPhone}
+                onChange={(e) => setTestPhone(e.target.value)}
+                placeholder="+8801XXXXXXXXX"
+                disabled={testing}
+              />
+            </div>
+            <div className="flex items-end">
+              <Button
+                onClick={handleTest}
+                disabled={testing || !form.cloud_api_enabled || !form.phone_number_id}
+                className="w-full gap-2 bg-[#25D366] hover:bg-[#25D366]/90 text-white"
+              >
+                {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {testing ? (bn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (bn ? 'টেস্ট পাঠান' : 'Send Test')}
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <Label>{bn ? 'টেস্ট মেসেজ' : 'Test message'}</Label>
+            <Textarea
+              value={testMessage}
+              onChange={(e) => setTestMessage(e.target.value)}
+              rows={3}
+              disabled={testing}
+            />
+          </div>
+
+          {(!form.cloud_api_enabled || !form.phone_number_id) && (
+            <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 text-xs text-muted-foreground">
+              {bn
+                ? '⚠️ টেস্ট পাঠানোর আগে Cloud API চালু করুন এবং Phone Number ID যোগ করে সংরক্ষণ করুন।'
+                : '⚠️ Enable Cloud API and save a Phone Number ID before testing.'}
+            </div>
+          )}
+
+          {testResult && (
+            <div
+              className={`p-4 rounded-xl border ${
+                testResult.success
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-destructive/10 border-destructive/30'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                {testResult.success ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 space-y-1.5 text-xs">
+                  <p className="font-semibold text-sm text-foreground">
+                    {testResult.success
+                      ? bn ? 'সফলভাবে পাঠানো হয়েছে' : 'Successfully delivered to Meta'
+                      : bn ? 'মেসেজ পাঠানো ব্যর্থ' : 'Message delivery failed'}
+                  </p>
+                  {testResult.sentAt && (
+                    <p className="text-muted-foreground">
+                      <span className="font-medium">{bn ? 'সময়:' : 'Time:'}</span> {testResult.sentAt}
+                    </p>
+                  )}
+                  {testResult.messageId && (
+                    <p className="text-muted-foreground break-all">
+                      <span className="font-medium">{bn ? 'মেসেজ আইডি:' : 'Message ID:'}</span>{' '}
+                      <code className="text-[10px] bg-background/50 px-1.5 py-0.5 rounded">{testResult.messageId}</code>
+                    </p>
+                  )}
+                  {testResult.error && (
+                    <p className="text-destructive">
+                      <span className="font-medium">{bn ? 'ত্রুটি:' : 'Error:'}</span> {testResult.error}
+                    </p>
+                  )}
+                  {testResult.success && (
+                    <p className="text-muted-foreground italic mt-2">
+                      {bn
+                        ? 'প্রাপকের WhatsApp ইনবক্সে মেসেজ চেক করুন। ২৪ ঘণ্টার সেশন উইন্ডোর বাইরে শুধু approved টেমপ্লেট মেসেজ পাঠানো যাবে।'
+                        : 'Check the recipient\'s WhatsApp inbox. Outside the 24-hour session window, only approved template messages can be delivered.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
