@@ -566,6 +566,9 @@ const AdminHealthRecords = () => {
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
                         <TableCell>{p.emergency_contact_name ? `${p.emergency_contact_name} (${p.emergency_contact_phone || ''})` : '—'}</TableCell>
                         <TableCell className="text-right">
+                          <Button size="icon" variant="ghost" title={bn ? 'প্রিন্ট সারসংক্ষেপ' : 'Print Summary'} onClick={() => printSummary(p)}>
+                            <Printer className="h-4 w-4 text-primary" />
+                          </Button>
                           {canEditItem && (
                             <Button size="icon" variant="ghost" onClick={() => { setEditProf(p); setProfForm(p); setProfDlg(true); }}><Pencil className="h-4 w-4" /></Button>
                           )}
