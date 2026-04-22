@@ -323,25 +323,47 @@ const AdminApprovals = () => {
                   </pre>
                 </div>
 
-                {/* Admin note */}
+                {/* Admin note / rejection reason input */}
                 {detailAction.status === 'pending' && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                       <MessageSquare className="w-3 h-3" />
-                      {bn ? 'অ্যাডমিন নোট (ঐচ্ছিক)' : 'Admin Note (optional)'}
+                      {bn
+                        ? 'অ্যাডমিন নোট / প্রত্যাখ্যানের কারণ'
+                        : 'Admin Note / Rejection Reason'}
+                      <span className="text-xs text-muted-foreground/70 ml-1">
+                        {bn ? '(প্রত্যাখ্যানের ক্ষেত্রে আবশ্যক)' : '(required when rejecting)'}
+                      </span>
                     </p>
-                    <Input
+                    <Textarea
                       value={adminNote}
                       onChange={e => setAdminNote(e.target.value)}
-                      placeholder={bn ? 'নোট লিখুন...' : 'Write a note...'}
+                      placeholder={bn
+                        ? 'অনুমোদনের জন্য ঐচ্ছিক নোট, অথবা প্রত্যাখ্যানের কারণ লিখুন...'
+                        : 'Optional note for approval, or reason for rejection...'}
+                      rows={3}
                     />
                   </div>
                 )}
 
+                {/* Show stored admin note / rejection reason on resolved records */}
                 {detailAction.admin_note && detailAction.status !== 'pending' && (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground mb-1">{bn ? 'অ্যাডমিন নোট' : 'Admin Note'}</p>
-                    <p className="text-sm">{detailAction.admin_note}</p>
+                  <div
+                    className={
+                      detailAction.status === 'rejected'
+                        ? 'bg-destructive/10 border border-destructive/30 rounded-lg p-3'
+                        : 'bg-muted/50 rounded-lg p-3'
+                    }
+                  >
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      {detailAction.status === 'rejected'
+                        ? (bn ? 'প্রত্যাখ্যানের কারণ' : 'Rejection Reason')
+                        : (bn ? 'অ্যাডমিন নোট' : 'Admin Note')}
+                    </p>
+                    <p className={`text-sm ${detailAction.status === 'rejected' ? 'text-destructive font-medium' : ''}`}>
+                      {detailAction.admin_note}
+                    </p>
                   </div>
                 )}
 
@@ -350,7 +372,7 @@ const AdminApprovals = () => {
                   <div className="flex gap-2">
                     <Button
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved' })}
+                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved', note: adminNote })}
                       disabled={approveMutation.isPending}
                     >
                       {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
@@ -359,8 +381,9 @@ const AdminApprovals = () => {
                     <Button
                       variant="destructive"
                       className="flex-1"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected' })}
-                      disabled={approveMutation.isPending}
+                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected', note: adminNote })}
+                      disabled={approveMutation.isPending || !adminNote.trim()}
+                      title={!adminNote.trim() ? (bn ? 'প্রত্যাখ্যানের কারণ আবশ্যক' : 'Rejection reason is required') : undefined}
                     >
                       {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
                       {bn ? 'প্রত্যাখ্যান করুন' : 'Reject'}
