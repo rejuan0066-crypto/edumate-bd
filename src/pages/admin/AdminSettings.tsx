@@ -14,6 +14,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
+import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
@@ -545,8 +546,9 @@ const AdminSettings = () => {
             <SmsGatewaySettings />
           </TabsContent>
 
-          <TabsContent value="whatsapp" className="mt-6">
+          <TabsContent value="whatsapp" className="mt-6 space-y-6">
             <WhatsAppSettings />
+            <WhatsAppTemplatesManager />
           </TabsContent>
 
           <TabsContent value="security" className="mt-6">

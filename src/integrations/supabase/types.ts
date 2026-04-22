@@ -5283,6 +5283,63 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_templates: {
+        Row: {
+          body_bn: string
+          body_en: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          meta_language_code: string | null
+          meta_template_name: string | null
+          name: string
+          name_bn: string
+          sort_order: number | null
+          template_key: string
+          updated_at: string
+          use_meta_template: boolean
+          variables: Json
+        }
+        Insert: {
+          body_bn: string
+          body_en?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          meta_language_code?: string | null
+          meta_template_name?: string | null
+          name: string
+          name_bn: string
+          sort_order?: number | null
+          template_key: string
+          updated_at?: string
+          use_meta_template?: boolean
+          variables?: Json
+        }
+        Update: {
+          body_bn?: string
+          body_en?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          meta_language_code?: string | null
+          meta_template_name?: string | null
+          name?: string
+          name_bn?: string
+          sort_order?: number | null
+          template_key?: string
+          updated_at?: string
+          use_meta_template?: boolean
+          variables?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
