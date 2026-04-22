@@ -4110,6 +4110,81 @@ export type Database = {
           },
         ]
       }
+      push_notification_log: {
+        Row: {
+          body: string | null
+          category: string | null
+          created_at: string | null
+          failed_count: number | null
+          id: string
+          link: string | null
+          sent_count: number | null
+          title: string
+          triggered_by: string | null
+        }
+        Insert: {
+          body?: string | null
+          category?: string | null
+          created_at?: string | null
+          failed_count?: number | null
+          id?: string
+          link?: string | null
+          sent_count?: number | null
+          title: string
+          triggered_by?: string | null
+        }
+        Update: {
+          body?: string | null
+          category?: string | null
+          created_at?: string | null
+          failed_count?: number | null
+          id?: string
+          link?: string | null
+          sent_count?: number | null
+          title?: string
+          triggered_by?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string | null
+          endpoint: string
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          p256dh: string
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          p256dh: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          p256dh?: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       question_papers: {
         Row: {
           approved_at: string | null
