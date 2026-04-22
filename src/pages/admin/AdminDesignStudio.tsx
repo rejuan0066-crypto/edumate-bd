@@ -65,6 +65,7 @@ const AdminDesignStudio = () => {
   // Preview / version-history state
   const [pendingSnapshot, setPendingSnapshot] = useState<string | null>(null);
   const [pendingLayerIds, setPendingLayerIds] = useState<string[]>([]);
+  const pendingCommandRef = useRef<{ prompt: string; imageOps: AiImageOp[] } | null>(null);
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
