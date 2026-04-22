@@ -2135,6 +2135,202 @@ export type Database = {
         }
         Relationships: []
       }
+      hostel_allocations: {
+        Row: {
+          bed_number: number | null
+          check_in_date: string
+          check_out_date: string | null
+          created_at: string
+          id: string
+          monthly_charge: number
+          notes: string | null
+          room_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          bed_number?: number | null
+          check_in_date?: string
+          check_out_date?: string | null
+          created_at?: string
+          id?: string
+          monthly_charge?: number
+          notes?: string | null
+          room_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          bed_number?: number | null
+          check_in_date?: string
+          check_out_date?: string | null
+          created_at?: string
+          id?: string
+          monthly_charge?: number
+          notes?: string | null
+          room_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_allocations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_allocations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_meal_menu: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          hostel_id: string
+          id: string
+          items: string
+          items_bn: string | null
+          meal_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          hostel_id: string
+          id?: string
+          items: string
+          items_bn?: string | null
+          meal_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          hostel_id?: string
+          id?: string
+          items?: string
+          items_bn?: string | null
+          meal_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_meal_menu_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_rooms: {
+        Row: {
+          bed_count: number
+          created_at: string
+          floor: string | null
+          hostel_id: string
+          id: string
+          is_active: boolean
+          monthly_rent: number
+          notes: string | null
+          room_number: string
+          room_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          bed_count?: number
+          created_at?: string
+          floor?: string | null
+          hostel_id: string
+          id?: string
+          is_active?: boolean
+          monthly_rent?: number
+          notes?: string | null
+          room_number: string
+          room_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bed_count?: number
+          created_at?: string
+          floor?: string | null
+          hostel_id?: string
+          id?: string
+          is_active?: boolean
+          monthly_rent?: number
+          notes?: string | null
+          room_number?: string
+          room_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_rooms_hostel_id_fkey"
+            columns: ["hostel_id"]
+            isOneToOne: false
+            referencedRelation: "hostels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostels: {
+        Row: {
+          address: string | null
+          created_at: string
+          deleted_at: string | null
+          hostel_type: string
+          id: string
+          is_active: boolean
+          name: string
+          name_bn: string
+          notes: string | null
+          total_capacity: number
+          updated_at: string
+          warden_name: string | null
+          warden_phone: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          hostel_type?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_bn: string
+          notes?: string | null
+          total_capacity?: number
+          updated_at?: string
+          warden_name?: string | null
+          warden_phone?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          hostel_type?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_bn?: string
+          notes?: string | null
+          total_capacity?: number
+          updated_at?: string
+          warden_name?: string | null
+          warden_phone?: string | null
+        }
+        Relationships: []
+      }
       institutions: {
         Row: {
           address: string | null
