@@ -5283,6 +5283,63 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_message_queue: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          message_text: string
+          recipient_name: string | null
+          recipient_phone: string
+          reference_id: string | null
+          reference_table: string | null
+          sent_at: string | null
+          status: string
+          template_name: string | null
+          template_variables: Json | null
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_text: string
+          recipient_name?: string | null
+          recipient_phone: string
+          reference_id?: string | null
+          reference_table?: string | null
+          sent_at?: string | null
+          status?: string
+          template_name?: string | null
+          template_variables?: Json | null
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          message_text?: string
+          recipient_name?: string | null
+          recipient_phone?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          sent_at?: string | null
+          status?: string
+          template_name?: string | null
+          template_variables?: Json | null
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       whatsapp_templates: {
         Row: {
           body_bn: string

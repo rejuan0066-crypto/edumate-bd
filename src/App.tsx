@@ -75,6 +75,7 @@ import AdminRecycleBin from "./pages/admin/AdminRecycleBin";
 import AdminSystemLogs from "./pages/admin/AdminSystemLogs";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
+import AdminWhatsAppQueue from "./pages/admin/AdminWhatsAppQueue";
 import AdminSalary from "./pages/admin/AdminSalary";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
@@ -292,6 +293,7 @@ const App = () => (
                     <Route path="system-logs" element={<AdminSystemLogs />} />
                     <Route path="inventory" element={<AdminInventory />} />
                     <Route path="guardian-notify" element={<AdminGuardianNotifications />} />
+                    <Route path="whatsapp-queue" element={<AdminWhatsAppQueue />} />
                     <Route path="salary" element={<ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard>} />
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />

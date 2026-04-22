@@ -23,6 +23,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/address-manager', label_en: 'Address Manager', label_bn: 'ঠিকানা ম্যানেজার' },
   { path: '/admin/prayer-calendar', label_en: 'Prayer & Calendar', label_bn: 'নামাজ ও ক্যালেন্ডার' },
   { path: '/admin/guardian-notify', label_en: 'Guardian Notifications', label_bn: 'অভিভাবক নোটিফিকেশন' },
+  { path: '/admin/whatsapp-queue', label_en: 'WhatsApp Queue', label_bn: 'WhatsApp কিউ' },
   { path: '/admin/approvals', label_en: 'Approvals', label_bn: 'অনুমোদন' },
   { path: '/admin/designations', label_en: 'Designations', label_bn: 'পদবি' },
   { path: '/admin/academic-sessions', label_en: 'Academic Sessions', label_bn: 'একাডেমিক সেশন' },
