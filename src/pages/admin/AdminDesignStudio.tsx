@@ -23,8 +23,11 @@ import {
 } from '@/components/design-studio/exportUtils';
 import DesignAiChatBar, { type AiChatMessage } from '@/components/design-studio/DesignAiChatBar';
 import {
-  applyAiActions, selectedImageToDataUrl, summarizeSelection, type AiAction,
+  applyAiActions, selectedImageToDataUrl, summarizeSelection,
+  type AiAction, type DesignScope,
 } from '@/components/design-studio/aiCanvasActions';
+import TemplatesDialog, { type DesignTemplate } from '@/components/design-studio/TemplatesDialog';
+import VersionHistoryDialog, { type VersionEntry } from '@/components/design-studio/VersionHistoryDialog';
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
