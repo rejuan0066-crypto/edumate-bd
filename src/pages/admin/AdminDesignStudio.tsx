@@ -13,7 +13,8 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown } from 'lucide-react';
+import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown, PanelRight, Layers as LayersIcon } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -695,38 +696,41 @@ const AdminDesignStudio = () => {
     <AdminLayout>
       <div className="flex flex-col h-[calc(100vh-7rem)] -mx-3 -my-3 bg-gradient-to-br from-[#0a0a0d] via-[#0d0d12] to-[#0a0a0d] text-foreground rounded-3xl overflow-hidden border border-border/30 shadow-2xl shadow-black/30">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/30 bg-card/30 backdrop-blur-2xl">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
+        <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-2.5 sm:py-3 border-b border-border/30 bg-card/30 backdrop-blur-2xl">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
               <Palette className="w-4 h-4 text-primary-foreground" strokeWidth={2.2} />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Design Studio</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="hidden sm:inline text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Design Studio</span>
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
-                className="h-6 text-sm font-bold bg-transparent border-transparent hover:border-border/50 focus:border-primary focus:bg-background/30 rounded-lg px-2 -ml-2 max-w-[280px]"
+                className="h-6 text-sm font-bold bg-transparent border-transparent hover:border-border/50 focus:border-primary focus:bg-background/30 rounded-lg px-2 -ml-2 max-w-full sm:max-w-[280px]"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="ghost" onClick={newProject} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5">
-              <FilePlus2 className="w-3.5 h-3.5" /> New
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <Button size="sm" variant="ghost" onClick={newProject} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 px-2 sm:px-3">
+              <FilePlus2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">New</span>
             </Button>
-            <Button size="sm" variant="ghost" onClick={openProjectDialog} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5">
-              <FolderOpen className="w-3.5 h-3.5" /> Open
+            <Button size="sm" variant="ghost" onClick={openProjectDialog} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5 px-2 sm:px-3">
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Open</span>
             </Button>
-            <div className="w-px h-5 bg-border/40 mx-1" />
-            <Button size="sm" variant="secondary" onClick={saveProject} disabled={saving} className="h-9 gap-1.5 rounded-xl bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border/40">
+            <div className="hidden sm:block w-px h-5 bg-border/40 mx-1" />
+            <Button size="sm" variant="secondary" onClick={saveProject} disabled={saving} className="h-9 gap-1.5 rounded-xl bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border/40 px-2 sm:px-3">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Save
+              <span className="hidden md:inline">Save</span>
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" className="h-9 gap-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary hover:to-primary/90 shadow-lg shadow-primary/30 border-0">
-                  <Download className="w-3.5 h-3.5" /> Export
+                <Button size="sm" className="h-9 gap-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary hover:to-primary/90 shadow-lg shadow-primary/30 border-0 px-2 sm:px-3">
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Export</span>
                   <ChevronDown className="w-3 h-3 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
@@ -768,11 +772,51 @@ const AdminDesignStudio = () => {
                 <DropdownMenuItem onClick={() => fc && exportJSON(fc, safeName)}>Canvas JSON</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Mobile: Layers + Properties drawer trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl lg:hidden text-foreground/70 hover:text-foreground hover:bg-foreground/5">
+                  <PanelRight className="w-4 h-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[88vw] max-w-sm p-0 bg-card/95 backdrop-blur-2xl border-l border-border/30 flex flex-col">
+                <div className="flex-1 min-h-0 border-b border-border/30">
+                  <LayersPanel
+                    layers={layers}
+                    activeId={selected ? (selected as any).layerId : null}
+                    onSelect={onSelectLayer}
+                    onToggleVisible={onToggleVisible}
+                    onToggleLocked={onToggleLocked}
+                    onRename={onRename}
+                    onReorder={onReorder}
+                  />
+                </div>
+                <div className="flex-1 min-h-0 border-b border-border/30">
+                  <PropertiesPanel
+                    selected={selected}
+                    canvasWidth={width}
+                    canvasHeight={height}
+                    canvasBackground={background}
+                    onCanvasResize={(w, h) => { setWidth(w); setHeight(h); }}
+                    onCanvasBackground={setBackground}
+                    onChange={() => { fc?.requestRenderAll(); pushHistory(); }}
+                  />
+                </div>
+                <div className="h-56 shrink-0 min-h-0">
+                  <AiImageHistoryPanel
+                    ops={imageOps}
+                    onRerun={rerunImageOp}
+                    onClear={() => setImageOps([])}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 
         {/* Workspace */}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
           <DesignToolbar
             active={activeTool}
             setActive={setActiveTool}
@@ -791,8 +835,8 @@ const AdminDesignStudio = () => {
           />
 
           {/* Canvas viewport */}
-          <div className="relative flex-1 overflow-hidden bg-gradient-to-br from-[#16161c] via-[#1a1a22] to-[#16161c] flex flex-col">
-            <div className="flex-1 overflow-auto flex items-center justify-center p-10">
+          <div className="relative flex-1 min-h-0 overflow-hidden bg-gradient-to-br from-[#16161c] via-[#1a1a22] to-[#16161c] flex flex-col">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-4 sm:p-6 lg:p-10 pb-32 sm:pb-32">
               <DesignCanvas
                 ref={canvasRef}
                 width={width}
@@ -833,8 +877,8 @@ const AdminDesignStudio = () => {
             />
           </div>
 
-          {/* Right column: Layers + Properties + AI Image History */}
-          <div className="w-72 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex flex-col">
+          {/* Right column: Layers + Properties + AI Image History (desktop only) */}
+          <div className="hidden lg:flex w-72 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex-col">
             <div className="flex-1 min-h-0 border-b border-border/30">
               <LayersPanel
                 layers={layers}
