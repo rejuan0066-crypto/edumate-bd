@@ -89,6 +89,7 @@ import AdminAddressManager from "./pages/admin/AdminAddressManager";
 import AdminApiVerification from "./pages/admin/AdminApiVerification";
 import PostsPage from "./pages/PostsPage";
 import PhotoToolsPage from "./pages/PhotoToolsPage";
+import AdminDesignStudio from "./pages/admin/AdminDesignStudio";
 import OnlineExams from "./pages/OnlineExams";
 import OnlineExamTake from "./pages/OnlineExamTake";
 import LiveClasses from "./pages/LiveClasses";
@@ -328,6 +329,7 @@ const App = () => (
                     <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="push-notifications" element={<AdminPushNotifications />} />
                     <Route path="photo-tools" element={<AdminPhotoTools />} />
+                    <Route path="design-studio" element={<AdminDesignStudio />} />
                     <Route path="payments" element={<AdminPayments />} />
                     <Route path="receipt-designer" element={<AdminReceiptDesigner />} />
                     <Route path="exam-sessions" element={<ModuleGuard menuPath="/admin/exam-sessions"><AdminExamSessions /></ModuleGuard>} />

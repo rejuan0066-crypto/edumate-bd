@@ -167,7 +167,8 @@ const AdminDesignStudio = () => {
       cloned.set({ left: (a.left || 0) + 20, top: (a.top || 0) + 20 });
       (cloned as any).layerName = ((a as any).layerName || 'Layer') + ' copy';
       (cloned as any).layerId = `obj-${Date.now()}`;
-      fc.add(cloned).setActiveObject(cloned);
+      fc.add(cloned);
+      fc.setActiveObject(cloned);
       fc.requestRenderAll();
     });
   };
@@ -204,7 +205,8 @@ const AdminDesignStudio = () => {
         const scale = Math.min(max / (img.width || 1), max / (img.height || 1), 1);
         img.set({ left: 50, top: 50, scaleX: scale, scaleY: scale });
         (img as any).layerName = file.name.replace(/\.[^.]+$/, '');
-        fc.add(img).setActiveObject(img);
+        fc.add(img);
+        fc.setActiveObject(img);
         fc.requestRenderAll();
       });
     };
@@ -259,7 +261,7 @@ const AdminDesignStudio = () => {
     if (!fc || !user) return;
     setSaving(true);
     try {
-      const canvas_json = fc.toJSON(['layerName', 'layerId', 'locked']);
+      const canvas_json = fc.toJSON(['layerName', 'layerId', 'locked']) as any;
       const thumbnail = fc.toDataURL({ format: 'png', multiplier: 0.2, quality: 0.7 });
       if (projectId) {
         const { error } = await supabase
@@ -270,7 +272,7 @@ const AdminDesignStudio = () => {
       } else {
         const { data, error } = await supabase
           .from('design_projects')
-          .insert({ user_id: user.id, name: projectName, width, height, background, canvas_json, thumbnail })
+          .insert([{ user_id: user.id, name: projectName, width, height, background, canvas_json, thumbnail }])
           .select('id')
           .single();
         if (error) throw error;

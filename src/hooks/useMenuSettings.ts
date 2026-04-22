@@ -100,6 +100,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'theme', path: '/admin/theme', label_bn: 'থিম কাস্টমাইজার', label_en: 'Theme Customizer', icon: 'Palette', visible: true, sort_order: 1 },
     { id: 'widget-builder', path: '/admin/widget-builder', label_bn: 'উইজেট বিল্ডার', label_en: 'Widget Builder', icon: 'LayoutGrid', visible: true, sort_order: 2 },
     { id: 'photo-tools', path: '/admin/photo-tools', label_bn: 'ফটো টুলস', label_en: 'Photo Tools', icon: 'Camera', visible: true, sort_order: 3 },
+    { id: 'design-studio', path: '/admin/design-studio', label_bn: 'ডিজাইন স্টুডিও', label_en: 'Design Studio', icon: 'Palette', visible: true, sort_order: 4 },
     { id: 'prayer-calendar', path: '/admin/prayer-calendar', label_bn: 'নামাজ ও ক্যালেন্ডার', label_en: 'Prayer & Calendar', icon: 'Clock', visible: true, sort_order: 4 },
   ]},
 
