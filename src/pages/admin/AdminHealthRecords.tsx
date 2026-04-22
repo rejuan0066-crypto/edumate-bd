@@ -327,21 +327,14 @@ const AdminHealthRecords = () => {
 
   // ─── Printable Health Summary ──────────────────────────────────────────
   const printSummary = (profile: HealthProfile) => {
-    // Resolve the correct person id and type from the profile itself,
-    // tolerating cases where person_type is missing or doesn't match the populated id field.
-    const hasStudent = !!profile.student_id;
-    const hasStaff = !!profile.staff_id;
-    const resolvedType: 'student' | 'staff' =
-      hasStudent && !hasStaff ? 'student'
-      : hasStaff && !hasStudent ? 'staff'
-      : (profile.person_type === 'staff' ? 'staff' : 'student');
-    const personId = resolvedType === 'student' ? profile.student_id : profile.staff_id;
-    const personName = personLabel(resolvedType, profile.student_id, profile.staff_id);
+    // Use the shared resolver so person type is determined from the populated
+    // id field (tolerant of legacy rows where person_type disagrees).
+    const resolved = resolvePersonType(profile);
+    const { resolvedType, personId, ambiguous, missing, mismatch } = resolved;
+    const personName = personLabel(profile);
 
     // ─── Debug-safe cross-check ──────────────────────────────────────────
-    // Warn admins (via toast + console) when the profile's id mapping is ambiguous
-    // or empty, so silent mis-prints become visible.
-    if (hasStudent && hasStaff) {
+    if (ambiguous) {
       const msg = bn
         ? `⚠️ এই প্রোফাইলে student_id ও staff_id দুটোই আছে — "${resolvedType === 'student' ? 'ছাত্র' : 'স্টাফ'}" হিসেবে প্রিন্ট করা হচ্ছে।`
         : `⚠️ Profile has BOTH student_id and staff_id — printing as "${resolvedType}".`;
@@ -350,7 +343,7 @@ const AdminHealthRecords = () => {
         profileId: profile.id, person_type: profile.person_type,
         student_id: profile.student_id, staff_id: profile.staff_id, resolvedType,
       });
-    } else if (!hasStudent && !hasStaff) {
+    } else if (missing) {
       toast({
         title: bn ? 'কোনো আইডি নেই' : 'No linked ID',
         description: bn
@@ -359,8 +352,7 @@ const AdminHealthRecords = () => {
         variant: 'destructive',
       });
       console.warn('[HealthSummary] Profile missing both ids', { profileId: profile.id, person_type: profile.person_type });
-    } else if (profile.person_type && profile.person_type !== resolvedType) {
-      // person_type field disagrees with which id is populated
+    } else if (mismatch) {
       console.warn('[HealthSummary] person_type mismatch — using id-based resolution', {
         profileId: profile.id, declared: profile.person_type, resolvedType,
       });
@@ -373,8 +365,7 @@ const AdminHealthRecords = () => {
 
     // Match related records strictly against the resolved id+side so a mis-set
     // person_type can never cross-link a student's id to a staff record (or vice versa).
-    const matchesPerson = (r: { student_id?: string | null; staff_id?: string | null }) =>
-      !!personId && (resolvedType === 'student' ? r.student_id === personId : r.staff_id === personId);
+    const matchesPerson = makePersonMatcher(resolved);
 
     const personVisits = visits
       .filter(matchesPerson)
