@@ -737,6 +737,8 @@ function buildTemplate(args: any): { actions: Action[]; resize: { w: number; h: 
   }
   return { actions, resize: { w: W, h: H } };
 }
+
+serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
