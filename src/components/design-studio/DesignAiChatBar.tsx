@@ -67,11 +67,26 @@ const DesignAiChatBar = ({
 }: Props) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(true);
+  const [focused, setFocused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length, isLoading]);
+
+  // Collapse the target/tools panel when clicking outside the chat bar
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (!wrapperRef.current) return;
+      if (!wrapperRef.current.contains(e.target as Node)) setFocused(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  // Reveal panel whenever user has typed something, has a selection, or is reviewing AI output
+  const revealTools = focused || hasSelection || pendingReview || input.trim().length > 0;
 
   const send = () => {
     const t = input.trim();
