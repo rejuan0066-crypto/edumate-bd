@@ -776,6 +776,8 @@ const AdminDesignStudio = () => {
               disabled={!fc}
               hasSelection={!!selected}
               selectionLabel={summarizeSelection(selected) ?? undefined}
+              selectionTypeLabel={getSelectionTypeLabel(selected)}
+              hints={getPromptHints(selected)}
               scope={aiScope}
               onScopeChange={setAiScope}
               pendingReview={!!pendingSnapshot}
@@ -783,12 +785,17 @@ const AdminDesignStudio = () => {
               onRevert={revertPending}
               onOpenTemplates={() => setTemplatesOpen(true)}
               onOpenHistory={() => setHistoryOpen(true)}
+              commandHistory={aiCommandStack}
+              commandCursor={aiCommandCursor}
+              onUndoCommand={undoAiCommand}
+              onRedoCommand={redoAiCommand}
+              onReplayCommand={replayAiCommand}
             />
           </div>
 
-          {/* Right column: Layers + Properties */}
+          {/* Right column: Layers + Properties + AI Image History */}
           <div className="w-72 shrink-0 border-l border-border/50 bg-card/60 backdrop-blur-xl flex flex-col">
-            <div className="h-1/2 min-h-0 border-b border-border/50">
+            <div className="flex-1 min-h-0 border-b border-border/50">
               <LayersPanel
                 layers={layers}
                 activeId={selected ? (selected as any).layerId : null}
@@ -799,7 +806,7 @@ const AdminDesignStudio = () => {
                 onReorder={onReorder}
               />
             </div>
-            <div className="h-1/2 min-h-0">
+            <div className="flex-1 min-h-0 border-b border-border/50">
               <PropertiesPanel
                 selected={selected}
                 canvasWidth={width}
@@ -810,9 +817,33 @@ const AdminDesignStudio = () => {
                 onChange={() => { fc?.requestRenderAll(); pushHistory(); }}
               />
             </div>
+            <div className="h-56 shrink-0 min-h-0">
+              <AiImageHistoryPanel
+                ops={imageOps}
+                onRerun={rerunImageOp}
+                onClear={() => setImageOps([])}
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Templates dialog */}
+      <TemplatesDialog
+        open={templatesOpen}
+        onOpenChange={setTemplatesOpen}
+        onInsert={(tpl) => { setTemplatesOpen(false); insertTemplate(tpl); }}
+        onCapture={captureForTemplate}
+      />
+
+      {/* Version history dialog */}
+      <VersionHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        versions={versions}
+        currentId={currentVersionId}
+        onRestore={restoreVersion}
+      />
 
       {/* Open project dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
