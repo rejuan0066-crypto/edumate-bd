@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { HeartPulse, Stethoscope, Syringe, Plus, Pencil, Trash2, Users, Activity, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { useApprovalCheck } from '@/hooks/useApprovalCheck';
+import { usePagePermissions } from '@/hooks/usePagePermissions';
 
 type PersonType = 'student' | 'staff';
 
@@ -90,6 +92,12 @@ const AdminHealthRecords = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+
+  // Permission & approval workflow (one menuPath, three target tables)
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/health-records');
+  const profApproval = useApprovalCheck('/admin/health-records', 'health_profiles');
+  const visitApproval = useApprovalCheck('/admin/health-records', 'medical_visits');
+  const vaccApproval = useApprovalCheck('/admin/health-records', 'vaccinations');
 
   // ─── Roster (students + staff) ─────────────────────────────────────────
   const { data: students = [] } = useQuery({
