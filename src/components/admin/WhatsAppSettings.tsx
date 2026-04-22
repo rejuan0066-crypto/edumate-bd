@@ -40,6 +40,49 @@ const WhatsAppSettings = () => {
     default_language: 'bn',
   });
   const [saving, setSaving] = useState(false);
+  const [testPhone, setTestPhone] = useState('');
+  const [testMessage, setTestMessage] = useState(
+    bn ? 'এটি একটি টেস্ট মেসেজ। WhatsApp Cloud API সঠিকভাবে কনফিগার করা হয়েছে।' : 'This is a test message. WhatsApp Cloud API is correctly configured.'
+  );
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; messageId?: string; error?: string; sentAt?: string } | null>(null);
+
+  const handleTest = async () => {
+    if (!testPhone.trim()) {
+      toast({ title: bn ? 'ফোন নম্বর দিন' : 'Enter a phone number', variant: 'destructive' });
+      return;
+    }
+    if (!testMessage.trim()) {
+      toast({ title: bn ? 'মেসেজ দিন' : 'Enter a message', variant: 'destructive' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+        body: { recipients: [testPhone.trim()], message: testMessage.trim() },
+      });
+      if (error) throw error;
+      const result = data?.results?.[0];
+      const ok = !!result?.success;
+      setTestResult({
+        success: ok,
+        messageId: result?.messageId,
+        error: result?.error || (ok ? undefined : data?.error),
+        sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US'),
+      });
+      toast({
+        title: ok ? (bn ? 'মেসেজ পাঠানো হয়েছে' : 'Message sent') : (bn ? 'পাঠানো ব্যর্থ' : 'Send failed'),
+        description: ok ? (bn ? 'WhatsApp এ চেক করুন' : 'Check WhatsApp inbox') : (result?.error || data?.error),
+        variant: ok ? 'default' : 'destructive',
+      });
+    } catch (err: any) {
+      setTestResult({ success: false, error: err.message, sentAt: new Date().toLocaleString(bn ? 'bn-BD' : 'en-US') });
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   useEffect(() => {
     if (config) {
