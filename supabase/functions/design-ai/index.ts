@@ -188,7 +188,70 @@ const CANVAS_TOOLS = [
       },
     },
   },
-];
+  {
+    type: "function",
+    function: {
+      name: "build_template",
+      description:
+        "Build a COMPLETE, professionally-laid-out template at the correct standard print/screen size. " +
+        "Use whenever the user names a real-world deliverable: visiting card, business card, ID card, " +
+        "invoice, money receipt, memo, letterhead, certificate, class routine, facebook cover, " +
+        "facebook post, instagram post, instagram story, youtube thumbnail, poster, flyer, banner. " +
+        "This auto-resizes the canvas to the standard size and emits a 4-group layered design " +
+        "(Background / Branding / Content / Footer).",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: [
+              "visiting_card", "id_card", "invoice", "money_receipt", "memo", "letterhead",
+              "certificate", "class_routine",
+              "facebook_cover", "facebook_post", "instagram_post", "instagram_story",
+              "youtube_thumbnail", "poster", "flyer", "banner",
+            ],
+          },
+          orgName: { type: "string", description: "Organization / institution / brand name." },
+          personName: { type: "string", description: "Person name (for ID, business card, certificate)." },
+          designation: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string" },
+          address: { type: "string" },
+          website: { type: "string" },
+          accent: { type: "string", description: "Primary accent hex color." },
+          theme: { type: "string", enum: ["light", "dark", "minimal", "bold"], description: "Visual style." },
+          title: { type: "string", description: "Document title (e.g. 'INVOICE', 'CERTIFICATE OF ACHIEVEMENT')." },
+          subtitle: { type: "string" },
+          rollNumber: { type: "string" },
+          studentClass: { type: "string" },
+          session: { type: "string" },
+          invoiceNumber: { type: "string" },
+          invoiceDate: { type: "string" },
+          amount: { type: "string" },
+          recipientName: { type: "string" },
+          ctaText: { type: "string" },
+        },
+        required: ["kind"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "resize_canvas",
+      description: "Resize the canvas to a new width and height (pixels).",
+      parameters: {
+        type: "object",
+        properties: {
+          width: { type: "number" },
+          height: { type: "number" },
+        },
+        required: ["width", "height"],
+        additionalProperties: false,
+      },
+    },
+  },
 
 const SYSTEM_PROMPT = `You are an AI design copilot inside a Fabric.js graphic design studio.
 You receive a user instruction, canvas context (size, background), the user's current SCOPE
