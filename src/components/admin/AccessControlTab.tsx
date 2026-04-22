@@ -25,6 +25,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/guardian-notify', label_en: 'Guardian Notifications', label_bn: 'অভিভাবক নোটিফিকেশন' },
   { path: '/admin/whatsapp-queue', label_en: 'WhatsApp Queue', label_bn: 'WhatsApp কিউ' },
   { path: '/admin/parent-messages', label_en: 'Parent Messages', label_bn: 'অভিভাবক বার্তা' },
+  { path: '/admin/push-notifications', label_en: 'Push Notifications', label_bn: 'পুশ নোটিফিকেশন' },
   { path: '/admin/approvals', label_en: 'Approvals', label_bn: 'অনুমোদন' },
   { path: '/admin/designations', label_en: 'Designations', label_bn: 'পদবি' },
   { path: '/admin/academic-sessions', label_en: 'Academic Sessions', label_bn: 'একাডেমিক সেশন' },
