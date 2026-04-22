@@ -281,6 +281,23 @@ const AdminHealthRecords = () => {
   const [vaccForm, setVaccForm] = useState<Partial<Vaccination>>({ person_type: 'student', dose_number: 1, vaccination_date: new Date().toISOString().split('T')[0] });
   const [delVaccId, setDelVaccId] = useState<string | null>(null);
 
+  // Debug Panel: when on, clicking Print Summary opens a debug modal first.
+  const [debugMode, setDebugMode] = useState(false);
+  type DebugInfo = {
+    profile: HealthProfile;
+    hasStudent: boolean;
+    hasStaff: boolean;
+    resolvedType: 'student' | 'staff';
+    personId: string | undefined;
+    ambiguous: boolean;
+    missing: boolean;
+    mismatch: boolean;
+    matchedVisits: number;
+    matchedVaccinations: number;
+    runPrint: () => void;
+  };
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
+
   const saveVacc = useMutation({
     mutationFn: async (payload: Partial<Vaccination>) => {
       const clean: any = { ...payload };
