@@ -58,10 +58,12 @@ const QUICK_PROMPTS = [
 
 const DesignAiChatBar = ({
   messages, onSubmit, isLoading, disabled,
-  hasSelection, selectionLabel,
+  hasSelection, selectionLabel, selectionTypeLabel, hints,
   scope, onScopeChange,
   pendingReview, onApply, onRevert,
   onOpenTemplates, onOpenHistory,
+  commandHistory, commandCursor,
+  onUndoCommand, onRedoCommand, onReplayCommand,
 }: Props) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(true);
