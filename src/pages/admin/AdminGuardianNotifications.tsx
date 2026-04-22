@@ -25,7 +25,7 @@ const AdminGuardianNotifications = () => {
   const { canAddItem } = usePagePermissions('/admin/guardian-notifications');
 
   const [activeTab, setActiveTab] = useState('');
-  const [channel, setChannel] = useState<'sms' | 'email'>('sms');
+  const [channel, setChannel] = useState<'sms' | 'email' | 'whatsapp'>('sms');
   const [templateType, setTemplateType] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [divisionFilter, setDivisionFilter] = useState('all');
@@ -79,7 +79,7 @@ const AdminGuardianNotifications = () => {
 
   const filteredTemplates = templates.filter(t => t.channel === channel && (templateType ? t.template_type === templateType : true));
 
-  const recipientsWithContact = students.filter(s => channel === 'sms' ? s.guardian_phone : s.email);
+  const recipientsWithContact = students.filter(s => (channel === 'sms' || channel === 'whatsapp') ? s.guardian_phone : s.email);
 
   const handleTemplateSelect = (templateId: string) => {
     setSelectedTemplate(templateId);
@@ -197,11 +197,12 @@ const AdminGuardianNotifications = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <Label>{bn ? 'মাধ্যম' : 'Channel'}</Label>
-                        <Select value={channel} onValueChange={(v) => { setChannel(v as 'sms' | 'email'); setSelectedTemplate(''); setMessage(''); }}>
+                        <Select value={channel} onValueChange={(v) => { setChannel(v as 'sms' | 'email' | 'whatsapp'); setSelectedTemplate(''); setMessage(''); }}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="sms"><div className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" />SMS</div></SelectItem>
                             <SelectItem value="email"><div className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" />{bn ? 'ইমেইল' : 'Email'}</div></SelectItem>
+                            <SelectItem value="whatsapp"><div className="flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5 text-[hsl(142,70%,45%)]" />WhatsApp</div></SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

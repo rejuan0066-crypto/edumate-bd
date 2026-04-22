@@ -189,10 +189,10 @@ const WhatsAppSettings = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-muted-foreground">
-            {bn
+          <div className="p-3 rounded-xl bg-warning/10 border border-warning/20 text-xs text-muted-foreground">
+            <p>{bn
               ? 'Bulk মেসেজ পাঠাতে Meta Business Suite এ গিয়ে WhatsApp Business Account তৈরি করতে হবে। এরপর Phone Number ID ও Access Token সংগ্রহ করে এখানে যোগ করুন। Access Token আলাদাভাবে সিকিউর সিক্রেট হিসেবে স্টোর করতে হবে।'
-              : 'To send bulk messages, create a WhatsApp Business Account in Meta Business Suite. Get the Phone Number ID and Access Token, then add them here. The Access Token must be stored as a secure secret.'}
+              : 'To send bulk messages, create a WhatsApp Business Account in Meta Business Suite. Get the Phone Number ID and Access Token, then add them here. The Access Token must be stored as a secure secret.'}</p>
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
