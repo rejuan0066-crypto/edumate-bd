@@ -1024,6 +1024,7 @@ export type Database = {
           thumbnail: string | null
           updated_at: string
           user_id: string
+          version_history: Json
           width: number
         }
         Insert: {
@@ -1037,6 +1038,7 @@ export type Database = {
           thumbnail?: string | null
           updated_at?: string
           user_id: string
+          version_history?: Json
           width?: number
         }
         Update: {
@@ -1050,6 +1052,58 @@ export type Database = {
           thumbnail?: string | null
           updated_at?: string
           user_id?: string
+          version_history?: Json
+          width?: number
+        }
+        Relationships: []
+      }
+      design_templates: {
+        Row: {
+          background: string
+          canvas_json: Json
+          category: string
+          created_at: string
+          description: string | null
+          height: number
+          id: string
+          is_system: boolean
+          name: string
+          tags: string[] | null
+          thumbnail: string | null
+          updated_at: string
+          user_id: string | null
+          width: number
+        }
+        Insert: {
+          background?: string
+          canvas_json?: Json
+          category?: string
+          created_at?: string
+          description?: string | null
+          height?: number
+          id?: string
+          is_system?: boolean
+          name: string
+          tags?: string[] | null
+          thumbnail?: string | null
+          updated_at?: string
+          user_id?: string | null
+          width?: number
+        }
+        Update: {
+          background?: string
+          canvas_json?: Json
+          category?: string
+          created_at?: string
+          description?: string | null
+          height?: number
+          id?: string
+          is_system?: boolean
+          name?: string
+          tags?: string[] | null
+          thumbnail?: string | null
+          updated_at?: string
+          user_id?: string | null
           width?: number
         }
         Relationships: []

@@ -4,10 +4,12 @@ import type { AiChatMessage } from './DesignAiChatBar';
 export type AiAction =
   | { type: 'add_shape'; shape: 'rect' | 'ellipse' | 'triangle' | 'line';
       left?: number; top?: number; width?: number; height?: number;
-      fill?: string; stroke?: string; strokeWidth?: number; name?: string }
+      fill?: string; stroke?: string; strokeWidth?: number; rx?: number;
+      name?: string; sectionTag?: string }
   | { type: 'add_text'; text: string; left?: number; top?: number;
       fontSize?: number; fontFamily?: string; fontWeight?: string;
-      fill?: string; textAlign?: 'left' | 'center' | 'right'; name?: string }
+      fill?: string; textAlign?: 'left' | 'center' | 'right';
+      name?: string; sectionTag?: string }
   | { type: 'update_object'; left?: number; top?: number; width?: number; height?: number;
       scaleX?: number; scaleY?: number; angle?: number; opacity?: number;
       fill?: string; stroke?: string; strokeWidth?: number;
@@ -16,7 +18,10 @@ export type AiAction =
   | { type: 'change_background'; color: string }
   | { type: 'add_image'; imageUrl: string; width?: number; height?: number; name?: string }
   | { type: 'replace_selected_image'; imageUrl: string }
+  | { type: 'use_template'; templateId?: string; templateName?: string; left?: number; top?: number }
   | { type: 'error'; message: string };
+
+export type DesignScope = 'any' | 'section' | 'card' | 'table' | 'chart' | 'text' | 'image' | 'shape';
 
 const newId = () => `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
@@ -25,6 +30,38 @@ const centerPos = (fc: fabric.Canvas, w: number, h: number) => ({
   top: Math.max(0, (fc.getHeight() - h) / 2),
 });
 
+/** Find the best target for an `update_object`/`remove_object` action given the user's scope. */
+export function resolveScopedTarget(
+  fc: fabric.Canvas,
+  scope: DesignScope,
+  fallback: fabric.Object | null,
+): fabric.Object | null {
+  if (scope === 'any') return fallback ?? fc.getActiveObject();
+  if (fallback) {
+    const matches = (o: fabric.Object) => matchScope(o, scope);
+    if (matches(fallback)) return fallback;
+  }
+  // Walk top-to-bottom for the first matching object
+  const objs = fc.getObjects().slice().reverse();
+  for (const o of objs) {
+    if (matchScope(o, scope)) return o;
+  }
+  return fallback ?? fc.getActiveObject();
+}
+
+function matchScope(o: fabric.Object, scope: DesignScope): boolean {
+  const name = String((o as any).layerName || '').toLowerCase();
+  const tag = String((o as any).sectionTag || '').toLowerCase();
+  if (scope === 'text') return o.type === 'i-text' || o.type === 'text' || o.type === 'textbox';
+  if (scope === 'image') return o.type === 'image';
+  if (scope === 'shape') return ['rect', 'ellipse', 'triangle', 'line', 'circle'].includes(o.type || '');
+  if (scope === 'section') return !!tag;
+  if (scope === 'card') return name.includes('card') || tag.includes('card');
+  if (scope === 'table') return tag.includes('table') || name.includes('table');
+  if (scope === 'chart') return tag.includes('chart') || tag.includes('dashboard') || tag.includes('stats') || name.includes('chart');
+  return true;
+}
+
 /**
  * Apply a list of AI-produced actions to the live Fabric canvas.
  * Returns a human-readable summary for the chat transcript.
@@ -32,10 +69,19 @@ const centerPos = (fc: fabric.Canvas, w: number, h: number) => ({
 export async function applyAiActions(
   fc: fabric.Canvas,
   actions: AiAction[],
-  onBackgroundChange?: (color: string) => void,
-): Promise<{ summary: string; errors: string[] }> {
+  options: {
+    onBackgroundChange?: (color: string) => void;
+    scope?: DesignScope;
+    selectedFallback?: fabric.Object | null;
+    templateLoader?: (idOrName: { templateId?: string; templateName?: string }) => Promise<{
+      canvas_json: any; width: number; height: number;
+    } | null>;
+  } = {},
+): Promise<{ summary: string; errors: string[]; createdLayerIds: string[] }> {
   const summary: string[] = [];
   const errors: string[] = [];
+  const createdLayerIds: string[] = [];
+  const scope = options.scope ?? 'any';
 
   for (const action of actions) {
     try {
@@ -49,23 +95,32 @@ export async function applyAiActions(
           const fill = action.fill ?? '#6366f1';
           let obj: fabric.Object;
           if (action.shape === 'rect') {
-            obj = new fabric.Rect({ left, top, width: w, height: h, fill,
-              stroke: action.stroke, strokeWidth: action.strokeWidth });
+            obj = new fabric.Rect({
+              left, top, width: w, height: h, fill,
+              stroke: action.stroke, strokeWidth: action.strokeWidth,
+              rx: action.rx, ry: action.rx,
+            });
           } else if (action.shape === 'ellipse') {
-            obj = new fabric.Ellipse({ left, top, rx: w / 2, ry: h / 2, fill,
-              stroke: action.stroke, strokeWidth: action.strokeWidth });
+            obj = new fabric.Ellipse({
+              left, top, rx: w / 2, ry: h / 2, fill,
+              stroke: action.stroke, strokeWidth: action.strokeWidth,
+            });
           } else if (action.shape === 'triangle') {
-            obj = new fabric.Triangle({ left, top, width: w, height: h, fill,
-              stroke: action.stroke, strokeWidth: action.strokeWidth });
+            obj = new fabric.Triangle({
+              left, top, width: w, height: h, fill,
+              stroke: action.stroke, strokeWidth: action.strokeWidth,
+            });
           } else {
             obj = new fabric.Line([left, top, left + w, top], {
-              stroke: action.stroke ?? fill, strokeWidth: action.strokeWidth ?? 2 });
+              stroke: action.stroke ?? fill, strokeWidth: action.strokeWidth ?? 2,
+            });
           }
           (obj as any).layerName = action.name || `${action.shape[0].toUpperCase()}${action.shape.slice(1)}`;
           (obj as any).layerId = newId();
+          if (action.sectionTag) (obj as any).sectionTag = action.sectionTag;
           fc.add(obj);
-          fc.setActiveObject(obj);
-          summary.push(`Added ${action.shape}`);
+          createdLayerIds.push((obj as any).layerId);
+          summary.push(`+${action.shape}`);
           break;
         }
         case 'add_text': {
@@ -87,44 +142,50 @@ export async function applyAiActions(
           }
           (text as any).layerName = action.name || 'Text';
           (text as any).layerId = newId();
+          if (action.sectionTag) (text as any).sectionTag = action.sectionTag;
           fc.add(text);
-          fc.setActiveObject(text);
-          summary.push(`Added text "${action.text.slice(0, 24)}${action.text.length > 24 ? '…' : ''}"`);
+          createdLayerIds.push((text as any).layerId);
+          summary.push(`+text`);
           break;
         }
         case 'update_object': {
-          const obj = fc.getActiveObject();
-          if (!obj) {
-            errors.push('No object selected to update.');
-            break;
-          }
+          const obj = resolveScopedTarget(fc, scope, options.selectedFallback ?? null);
+          if (!obj) { errors.push('No target found for update.'); break; }
+          fc.setActiveObject(obj);
           const { type: _t, ...changes } = action;
-          // text-only props
-          if ('text' in changes && (obj as any).set && (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox')) {
+          if ('text' in changes && (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox')) {
             (obj as fabric.IText).set('text', String(changes.text));
             delete (changes as any).text;
           }
           obj.set(changes as any);
           obj.setCoords();
-          summary.push('Updated selection');
+          summary.push('Updated');
           break;
         }
         case 'remove_object': {
-          const obj = fc.getActiveObject();
-          if (!obj) { errors.push('No object selected to remove.'); break; }
-          fc.remove(obj);
+          const obj = resolveScopedTarget(fc, scope, options.selectedFallback ?? null);
+          if (!obj) { errors.push('No target to remove.'); break; }
+          // If the target is part of a section, remove the whole section
+          const tag = (obj as any).sectionTag;
+          if (tag) {
+            const all = fc.getObjects().filter((o) => (o as any).sectionTag === tag);
+            all.forEach((o) => fc.remove(o));
+            summary.push(`Removed section ${tag}`);
+          } else {
+            fc.remove(obj);
+            summary.push('Removed');
+          }
           fc.discardActiveObject();
-          summary.push('Removed selection');
           break;
         }
         case 'change_background': {
           fc.setBackgroundColor(action.color, () => fc.renderAll());
-          onBackgroundChange?.(action.color);
-          summary.push(`Background → ${action.color}`);
+          options.onBackgroundChange?.(action.color);
+          summary.push(`bg → ${action.color}`);
           break;
         }
         case 'add_image': {
-          await new Promise<void>((resolve) => {
+          const layerId = await new Promise<string>((resolve) => {
             fabric.Image.fromURL(
               action.imageUrl,
               (img) => {
@@ -136,19 +197,20 @@ export async function applyAiActions(
                 const pos = centerPos(fc, w, h);
                 img.set({ left: pos.left, top: pos.top });
                 (img as any).layerName = action.name || 'AI Image';
-                (img as any).layerId = newId();
+                const id = newId();
+                (img as any).layerId = id;
                 fc.add(img);
-                fc.setActiveObject(img);
-                resolve();
+                resolve(id);
               },
               { crossOrigin: 'anonymous' },
             );
           });
-          summary.push('Generated and placed image');
+          createdLayerIds.push(layerId);
+          summary.push('+image');
           break;
         }
         case 'replace_selected_image': {
-          const obj = fc.getActiveObject();
+          const obj = resolveScopedTarget(fc, 'image', options.selectedFallback ?? null);
           if (!obj || obj.type !== 'image') {
             errors.push('Please select an image to edit.');
             break;
@@ -160,7 +222,39 @@ export async function applyAiActions(
               { crossOrigin: 'anonymous' },
             );
           });
-          summary.push('Updated selected image');
+          summary.push('Updated image');
+          break;
+        }
+        case 'use_template': {
+          if (!options.templateLoader) {
+            errors.push('Template loading not available.');
+            break;
+          }
+          const tpl = await options.templateLoader({
+            templateId: action.templateId,
+            templateName: action.templateName,
+          });
+          if (!tpl) { errors.push('Template not found.'); break; }
+          const offsetLeft = action.left ?? 40;
+          const offsetTop = action.top ?? 40;
+          await new Promise<void>((resolve) => {
+            // Load template objects and add them on top of current canvas (without clearing)
+            fabric.util.enlivenObjects(
+              tpl.canvas_json?.objects || [],
+              (enlivened: fabric.Object[]) => {
+                enlivened.forEach((o) => {
+                  o.set({ left: (o.left || 0) + offsetLeft, top: (o.top || 0) + offsetTop });
+                  (o as any).layerId = newId();
+                  if (!(o as any).layerName) (o as any).layerName = 'Template';
+                  fc.add(o);
+                  createdLayerIds.push((o as any).layerId);
+                });
+                resolve();
+              },
+              'fabric',
+            );
+          });
+          summary.push(`Inserted template`);
           break;
         }
         case 'error': {
@@ -174,10 +268,9 @@ export async function applyAiActions(
   }
 
   fc.requestRenderAll();
-  return { summary: summary.join(' · '), errors };
+  return { summary: summary.join(' · '), errors, createdLayerIds };
 }
 
-/** Convert a fabric image object to a base64 data URL for the AI to consume. */
 export function selectedImageToDataUrl(obj: fabric.Object | null): string | null {
   if (!obj || obj.type !== 'image') return null;
   try {
