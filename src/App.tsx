@@ -225,6 +225,9 @@ const App = () => (
                   <Route path="/result" element={<ResultFind />} />
                   <Route path="/student-info" element={<StudentInfoPage />} />
                   <Route path="/admission" element={<AdmissionPage />} />
+                  <Route path="/admission-tests" element={<AdmissionTestsPublic />} />
+                  <Route path="/admission-test/:id" element={<AdmissionTestTake />} />
+                  <Route path="/admission-test/:id/merit" element={<AdmissionTestMerit />} />
                   <Route path="/staff-application" element={<StaffApplicationPage />} />
                   <Route path="/donation" element={<DonationPage />} />
                   <Route path="/fee-payment" element={<ProtectedRoute><FeePaymentPage /></ProtectedRoute>} />
@@ -322,6 +325,7 @@ const App = () => (
                     <Route path="online-exams" element={<AdminOnlineExams />} />
                     <Route path="live-classes" element={<AdminLiveClasses />} />
                     <Route path="meetings" element={<AdminMeetings />} />
+                    <Route path="admission-tests" element={<ModuleGuard menuPath="/admin/admission-tests"><AdminAdmissionTests /></ModuleGuard>} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
 
