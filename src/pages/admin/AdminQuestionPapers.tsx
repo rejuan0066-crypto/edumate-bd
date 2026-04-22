@@ -1592,6 +1592,41 @@ const AdminQuestionPapers = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Question Generator Dialog */}
+      <AIQuestionGeneratorDialog
+        open={showAIGenerator}
+        onOpenChange={setShowAIGenerator}
+        language={language}
+        subjectName={(() => {
+          const s = subjects.find((x: any) => x.id === newPaper.subject_id);
+          return s ? (language === 'bn' ? s.name_bn : (s.name || s.name_bn)) : undefined;
+        })()}
+        className={(() => {
+          const c = classes.find((x: any) => x.id === newPaper.class_id);
+          return c ? (language === 'bn' ? c.name_bn : (c.name || c.name_bn)) : undefined;
+        })()}
+        onImport={(generated) => {
+          setQuestions(prev => {
+            const startOrder = prev.length;
+            const newQs = generated.map((g, i) => ({
+              question_text: '',
+              question_text_bn: g.text || '',
+              question_type: (g.question_type === 'mcq' ? 'mcq' : 'descriptive') as 'mcq' | 'descriptive',
+              marks: g.marks || 0,
+              sort_order: startOrder + i,
+              group_label: '',
+              group_label_bn: '',
+              group_marks: null,
+              options: g.options && g.options.length > 0
+                ? g.options.map(o => ({ text: '', text_bn: o.text, is_correct: !!o.is_correct }))
+                : null,
+              answer: g.answer || '',
+            }));
+            return [...prev, ...newQs];
+          });
+        }}
+      />
     </div>
   );
 };
