@@ -253,7 +253,7 @@ const AdminApprovals = () => {
                               size="icon"
                               variant="ghost"
                               className="text-destructive hover:bg-destructive/10"
-                              onClick={() => approveMutation.mutate({ id: action.id, status: 'rejected' })}
+                              onClick={() => handleQuickReject(action)}
                               disabled={approveMutation.isPending}
                               title={bn ? 'প্রত্যাখ্যান' : 'Reject'}
                             >
