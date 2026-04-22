@@ -774,10 +774,12 @@ const AdminHealthRecords = () => {
                     <TableRow>
                       <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                       <TableHead>{bn ? 'ব্যক্তি' : 'Person'}</TableHead>
+                      <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
                       <TableHead>{bn ? 'টিকার নাম' : 'Vaccine'}</TableHead>
                       <TableHead>{bn ? 'ডোজ' : 'Dose'}</TableHead>
                       <TableHead>{bn ? 'পরবর্তী ডিউ' : 'Next Due'}</TableHead>
                       <TableHead>{bn ? 'প্রদানকারী' : 'By'}</TableHead>
+                      <TableHead className="text-right">{bn ? 'কাজ' : 'Actions'}</TableHead>
                       <TableHead className="text-right">{bn ? 'কাজ' : 'Actions'}</TableHead>
                     </TableRow>
                   </TableHeader>
