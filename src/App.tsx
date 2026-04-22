@@ -114,6 +114,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
+import AdminParentMessages from "./pages/admin/AdminParentMessages";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
@@ -317,6 +318,7 @@ const App = () => (
                     <Route path="user-management" element={<AdminUserManagement />} />
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
+                    <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="photo-tools" element={<AdminPhotoTools />} />
                     <Route path="payments" element={<AdminPayments />} />
                     <Route path="receipt-designer" element={<AdminReceiptDesigner />} />
