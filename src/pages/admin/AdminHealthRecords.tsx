@@ -615,11 +615,23 @@ const AdminHealthRecords = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'হেলথ প্রোফাইলসমূহ' : 'Health Profiles'}</CardTitle>
-              {canAddItem && (
-                <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
-                  <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant={debugMode ? 'default' : 'outline'}
+                  onClick={() => setDebugMode(d => !d)}
+                  title={bn
+                    ? 'প্রিন্টের আগে আইডি ম্যাপিং ও ম্যাচ গণনা পরিদর্শন করুন'
+                    : 'Inspect id mapping & match counts before printing'}
+                >
+                  {bn ? `ডিবাগ: ${debugMode ? 'চালু' : 'বন্ধ'}` : `Debug: ${debugMode ? 'On' : 'Off'}`}
                 </Button>
-              )}
+                {canAddItem && (
+                  <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
+                    <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
