@@ -1012,6 +1012,48 @@ export type Database = {
         }
         Relationships: []
       }
+      design_projects: {
+        Row: {
+          background: string
+          canvas_json: Json
+          created_at: string
+          deleted_at: string | null
+          height: number
+          id: string
+          name: string
+          thumbnail: string | null
+          updated_at: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          background?: string
+          canvas_json?: Json
+          created_at?: string
+          deleted_at?: string | null
+          height?: number
+          id?: string
+          name?: string
+          thumbnail?: string | null
+          updated_at?: string
+          user_id: string
+          width?: number
+        }
+        Update: {
+          background?: string
+          canvas_json?: Json
+          created_at?: string
+          deleted_at?: string | null
+          height?: number
+          id?: string
+          name?: string
+          thumbnail?: string | null
+          updated_at?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: []
+      }
       designations: {
         Row: {
           created_at: string | null
