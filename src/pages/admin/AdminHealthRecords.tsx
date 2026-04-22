@@ -370,7 +370,7 @@ const AdminHealthRecords = () => {
         headers: [{ bn: 'ক্ষেত্র', en: 'Field' }, { bn: 'মান', en: 'Value' }],
         rows: [
           [bn ? 'নাম' : 'Name', personName],
-          [bn ? 'ধরন' : 'Type', profile.person_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')],
+          [bn ? 'ধরন' : 'Type', resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')],
           [bn ? 'রক্তের গ্রুপ' : 'Blood Group', profile.blood_group || '—'],
           [bn ? 'উচ্চতা' : 'Height', profile.height_cm ? `${profile.height_cm} cm` : '—'],
           [bn ? 'ওজন' : 'Weight', profile.weight_kg ? `${profile.weight_kg} kg` : '—'],
