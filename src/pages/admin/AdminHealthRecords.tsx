@@ -18,6 +18,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { generateBilingualReport, type ReportSection, type ReportSummaryStat } from '@/lib/reportPdfGenerator';
+import { resolvePersonType, makePersonMatcher, type PersonTypeInput } from '@/lib/personType';
 
 type PersonType = 'student' | 'staff';
 
