@@ -866,6 +866,7 @@ const AdminQuestionPapers = () => {
   };
 
   const [scanning, setScanning] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
 
   const handleScanImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
