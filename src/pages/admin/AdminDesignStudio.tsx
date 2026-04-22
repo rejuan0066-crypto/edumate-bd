@@ -28,6 +28,9 @@ import {
 } from '@/components/design-studio/aiCanvasActions';
 import TemplatesDialog, { type DesignTemplate } from '@/components/design-studio/TemplatesDialog';
 import VersionHistoryDialog, { type VersionEntry } from '@/components/design-studio/VersionHistoryDialog';
+import AiImageHistoryPanel, { type AiImageOp, type AiImageOpKind } from '@/components/design-studio/AiImageHistoryPanel';
+import type { AiCommandEntry } from '@/components/design-studio/AiCommandHistory';
+import { getPromptHints, getSelectionTypeLabel } from '@/components/design-studio/promptHints';
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
@@ -62,12 +65,20 @@ const AdminDesignStudio = () => {
   // Preview / version-history state
   const [pendingSnapshot, setPendingSnapshot] = useState<string | null>(null);
   const [pendingLayerIds, setPendingLayerIds] = useState<string[]>([]);
+  const pendingCommandRef = useRef<{ prompt: string; imageOps: AiImageOp[] } | null>(null);
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // Undo / redo
+  // AI image operation history (for re-run)
+  const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
+
+  // AI command undo/redo stack (separate from canvas-level undo)
+  const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
+  const [aiCommandCursor, setAiCommandCursor] = useState(-1); // -1 = nothing applied
+
+  // Undo / redo (canvas-level)
   const historyRef = useRef<string[]>([]);
   const futureRef = useRef<string[]>([]);
   const skipHistoryRef = useRef(false);
@@ -132,6 +143,10 @@ const AdminDesignStudio = () => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const a = fc.getActiveObject();
         if (a && !(a as any).locked) { fc.remove(a); fc.discardActiveObject(); fc.requestRenderAll(); }
+      } else if (meta && e.altKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault(); undoAiCommand();
+      } else if (meta && e.altKey && e.key.toLowerCase() === 'z' && e.shiftKey) {
+        e.preventDefault(); redoAiCommand();
       } else if (meta && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault(); undo();
       } else if (meta && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
@@ -467,9 +482,52 @@ const AdminDesignStudio = () => {
         selectedFallback: selected,
         templateLoader,
       });
+
+      // Detect image-related actions and capture thumbnails from newly created layers
+      const imageOpsFromActions: AiImageOp[] = [];
+      const createdImageLayer = fc
+        .getObjects()
+        .reverse()
+        .find(
+          (o) =>
+            o.type === 'image' &&
+            createdLayerIds.includes((o as any).layerId),
+        ) as fabric.Image | undefined;
+      const createdThumb = createdImageLayer
+        ? (() => {
+            try {
+              return createdImageLayer.toDataURL({ format: 'png', multiplier: 0.25 });
+            } catch {
+              return null;
+            }
+          })()
+        : null;
+      const selectedThumb = selectedImageToDataUrl(selected);
+
+      const kindOfAction = (a: AiAction): AiImageOpKind | null => {
+        if (a.type === 'add_image') return 'generate';
+        if (a.type === 'replace_selected_image') {
+          // Heuristic: if the prompt mentions background removal we tag it as remove_bg
+          return /background|বিজি|bg|ব্যাকগ্রাউন্ড|রিমুভ|remove\s*bg/i.test(prompt) ? 'remove_bg' : 'edit';
+        }
+        return null;
+      };
+      for (const a of actions) {
+        const kind = kindOfAction(a);
+        if (!kind) continue;
+        imageOpsFromActions.push({
+          id: `op-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          kind,
+          prompt,
+          thumbnail: kind === 'generate' ? createdThumb : selectedThumb,
+          timestamp: Date.now(),
+        });
+      }
+
       // Stage as preview (don't push history yet — wait for Apply)
       setPendingSnapshot(preSnapshot);
       setPendingLayerIds(createdLayerIds);
+      pendingCommandRef.current = { prompt, imageOps: imageOpsFromActions };
       const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
       setAiMessages((m) => [...m, {
         role: 'assistant',
@@ -487,12 +545,36 @@ const AdminDesignStudio = () => {
 
   const applyPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
+    const postSnapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+    const cmdInfo = pendingCommandRef.current;
     pushHistory();
     captureVersion(`AI change · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+
+    // Push to AI command stack (truncate any future entries)
+    if (cmdInfo) {
+      const entry: AiCommandEntry = {
+        id: `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        prompt: cmdInfo.prompt,
+        preSnapshot: pendingSnapshot,
+        postSnapshot,
+        timestamp: Date.now(),
+      };
+      setAiCommandStack((prev) => {
+        const truncated = prev.slice(0, aiCommandCursor + 1);
+        return [...truncated, entry].slice(-30);
+      });
+      setAiCommandCursor((c) => Math.min(c + 1, 29));
+      // Commit image ops
+      if (cmdInfo.imageOps.length > 0) {
+        setImageOps((prev) => [...cmdInfo.imageOps, ...prev].slice(0, 50));
+      }
+    }
+
+    pendingCommandRef.current = null;
     setPendingSnapshot(null);
     setPendingLayerIds([]);
     toast.success('Applied');
-  }, [fc, pendingSnapshot, pushHistory, captureVersion]);
+  }, [fc, pendingSnapshot, pushHistory, captureVersion, aiCommandCursor]);
 
   const revertPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
@@ -501,11 +583,63 @@ const AdminDesignStudio = () => {
       fc.renderAll();
       skipHistoryRef.current = false;
       refreshLayers();
+      pendingCommandRef.current = null;
       setPendingSnapshot(null);
       setPendingLayerIds([]);
       toast.success('Reverted');
     });
   }, [fc, pendingSnapshot, refreshLayers]);
+
+  // ---------- AI command undo / redo / replay ----------
+  const loadSnapshot = useCallback(
+    (snapshot: string, onDone?: () => void) => {
+      if (!fc) return;
+      skipHistoryRef.current = true;
+      fc.loadFromJSON(snapshot, () => {
+        fc.renderAll();
+        skipHistoryRef.current = false;
+        refreshLayers();
+        pushHistory();
+        onDone?.();
+      });
+    },
+    [fc, refreshLayers, pushHistory],
+  );
+
+  const undoAiCommand = useCallback(() => {
+    if (aiCommandCursor < 0) return;
+    const entry = aiCommandStack[aiCommandCursor];
+    if (!entry) return;
+    loadSnapshot(entry.preSnapshot, () => {
+      setAiCommandCursor((c) => c - 1);
+      toast.success(`Undid: "${entry.prompt.slice(0, 40)}"`);
+    });
+  }, [aiCommandCursor, aiCommandStack, loadSnapshot]);
+
+  const redoAiCommand = useCallback(() => {
+    if (aiCommandCursor >= aiCommandStack.length - 1) return;
+    const next = aiCommandStack[aiCommandCursor + 1];
+    if (!next) return;
+    loadSnapshot(next.postSnapshot, () => {
+      setAiCommandCursor((c) => c + 1);
+      toast.success(`Redid: "${next.prompt.slice(0, 40)}"`);
+    });
+  }, [aiCommandCursor, aiCommandStack, loadSnapshot]);
+
+  const replayAiCommand = useCallback(
+    (entry: AiCommandEntry) => {
+      // Re-submit the same prompt as a fresh AI command on the current canvas
+      handleAiPrompt(entry.prompt);
+    },
+    [handleAiPrompt],
+  );
+
+  const rerunImageOp = useCallback(
+    (op: AiImageOp) => {
+      handleAiPrompt(op.prompt);
+    },
+    [handleAiPrompt],
+  );
 
   // Insert a saved template directly (from dialog)
   const insertTemplate = useCallback(async (tpl: DesignTemplate) => {
@@ -646,6 +780,8 @@ const AdminDesignStudio = () => {
               disabled={!fc}
               hasSelection={!!selected}
               selectionLabel={summarizeSelection(selected) ?? undefined}
+              selectionTypeLabel={getSelectionTypeLabel(selected)}
+              hints={getPromptHints(selected)}
               scope={aiScope}
               onScopeChange={setAiScope}
               pendingReview={!!pendingSnapshot}
@@ -653,12 +789,17 @@ const AdminDesignStudio = () => {
               onRevert={revertPending}
               onOpenTemplates={() => setTemplatesOpen(true)}
               onOpenHistory={() => setHistoryOpen(true)}
+              commandHistory={aiCommandStack}
+              commandCursor={aiCommandCursor}
+              onUndoCommand={undoAiCommand}
+              onRedoCommand={redoAiCommand}
+              onReplayCommand={replayAiCommand}
             />
           </div>
 
-          {/* Right column: Layers + Properties */}
+          {/* Right column: Layers + Properties + AI Image History */}
           <div className="w-72 shrink-0 border-l border-border/50 bg-card/60 backdrop-blur-xl flex flex-col">
-            <div className="h-1/2 min-h-0 border-b border-border/50">
+            <div className="flex-1 min-h-0 border-b border-border/50">
               <LayersPanel
                 layers={layers}
                 activeId={selected ? (selected as any).layerId : null}
@@ -669,7 +810,7 @@ const AdminDesignStudio = () => {
                 onReorder={onReorder}
               />
             </div>
-            <div className="h-1/2 min-h-0">
+            <div className="flex-1 min-h-0 border-b border-border/50">
               <PropertiesPanel
                 selected={selected}
                 canvasWidth={width}
@@ -680,9 +821,33 @@ const AdminDesignStudio = () => {
                 onChange={() => { fc?.requestRenderAll(); pushHistory(); }}
               />
             </div>
+            <div className="h-56 shrink-0 min-h-0">
+              <AiImageHistoryPanel
+                ops={imageOps}
+                onRerun={rerunImageOp}
+                onClear={() => setImageOps([])}
+              />
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Templates dialog */}
+      <TemplatesDialog
+        open={templatesOpen}
+        onOpenChange={setTemplatesOpen}
+        onInsert={(tpl) => { setTemplatesOpen(false); insertTemplate(tpl); }}
+        onCapture={captureForTemplate}
+      />
+
+      {/* Version history dialog */}
+      <VersionHistoryDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        versions={versions}
+        currentId={currentVersionId}
+        onRestore={restoreVersion}
+      />
 
       {/* Open project dialog */}
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>

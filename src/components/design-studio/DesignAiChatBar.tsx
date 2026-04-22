@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { DesignScope } from './aiCanvasActions';
+import AiCommandHistory, { type AiCommandEntry } from './AiCommandHistory';
+import type { PromptHint } from './promptHints';
 
 export interface AiChatMessage {
   role: 'user' | 'assistant';
@@ -19,6 +21,8 @@ interface Props {
   disabled?: boolean;
   hasSelection: boolean;
   selectionLabel?: string;
+  selectionTypeLabel?: string | null;
+  hints?: PromptHint[];
   scope: DesignScope;
   onScopeChange: (s: DesignScope) => void;
   pendingReview: boolean;
@@ -26,6 +30,11 @@ interface Props {
   onRevert: () => void;
   onOpenTemplates: () => void;
   onOpenHistory: () => void;
+  commandHistory: AiCommandEntry[];
+  commandCursor: number;
+  onUndoCommand: () => void;
+  onRedoCommand: () => void;
+  onReplayCommand: (entry: AiCommandEntry) => void;
 }
 
 const SCOPES: { id: DesignScope; label: string; icon: any }[] = [
@@ -49,10 +58,12 @@ const QUICK_PROMPTS = [
 
 const DesignAiChatBar = ({
   messages, onSubmit, isLoading, disabled,
-  hasSelection, selectionLabel,
+  hasSelection, selectionLabel, selectionTypeLabel, hints,
   scope, onScopeChange,
   pendingReview, onApply, onRevert,
   onOpenTemplates, onOpenHistory,
+  commandHistory, commandCursor,
+  onUndoCommand, onRedoCommand, onReplayCommand,
 }: Props) => {
   const [input, setInput] = useState('');
   const [open, setOpen] = useState(true);
@@ -103,6 +114,15 @@ const DesignAiChatBar = ({
             </div>
           </div>
         )}
+
+        {/* AI command undo/redo + history strip */}
+        <AiCommandHistory
+          history={commandHistory}
+          cursor={commandCursor}
+          onUndo={onUndoCommand}
+          onRedo={onRedoCommand}
+          onReplay={onReplayCommand}
+        />
 
         {/* Conversation history */}
         {open && messages.length > 0 && (
@@ -188,6 +208,11 @@ const DesignAiChatBar = ({
             {hasSelection && (
               <div className="flex items-center gap-1.5 mb-1 px-2">
                 <span className="text-[10px] uppercase tracking-wide text-emerald-400/80">Selected:</span>
+                {selectionTypeLabel && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-200 border border-emerald-500/30">
+                    {selectionTypeLabel}
+                  </span>
+                )}
                 <span className="text-[10px] text-white/60 truncate">{selectionLabel}</span>
               </div>
             )}
@@ -215,16 +240,17 @@ const DesignAiChatBar = ({
           </Button>
         </div>
 
-        {/* Quick prompts */}
-        {open && messages.length === 0 && (
+        {/* Smart prompt hints — adapt to selection */}
+        {open && (
           <div className="px-3 pb-3 flex flex-wrap gap-1.5">
-            {QUICK_PROMPTS.map((q) => (
+            {(hints && hints.length > 0 ? hints : QUICK_PROMPTS.map((p) => ({ label: p, prompt: p }))).map((q) => (
               <button
-                key={q}
-                onClick={() => setInput(q)}
+                key={q.label}
+                onClick={() => setInput(q.prompt)}
                 className="text-[11px] px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition"
+                title={q.prompt}
               >
-                {q}
+                {q.label}
               </button>
             ))}
           </div>
