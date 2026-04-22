@@ -674,37 +674,41 @@ const AdminDesignStudio = () => {
 
   return (
     <AdminLayout>
-      <div className="flex flex-col h-[calc(100vh-7rem)] -mx-3 -my-3 bg-[#0d0d10] text-foreground rounded-2xl overflow-hidden border border-border/40">
+      <div className="flex flex-col h-[calc(100vh-7rem)] -mx-3 -my-3 bg-gradient-to-br from-[#0a0a0d] via-[#0d0d12] to-[#0a0a0d] text-foreground rounded-3xl overflow-hidden border border-border/30 shadow-2xl shadow-black/30">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-border/50 bg-card/60 backdrop-blur-xl">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
-              <Palette className="w-3.5 h-3.5 text-primary" />
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border/30 bg-card/30 backdrop-blur-2xl">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shrink-0 shadow-lg shadow-primary/30">
+              <Palette className="w-4 h-4 text-primary-foreground" strokeWidth={2.2} />
             </div>
-            <Input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              className="h-8 text-sm font-medium bg-transparent border-transparent hover:border-border focus:border-primary max-w-[260px]"
-            />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Design Studio</span>
+              <Input
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                className="h-6 text-sm font-bold bg-transparent border-transparent hover:border-border/50 focus:border-primary focus:bg-background/30 rounded-lg px-2 -ml-2 max-w-[280px]"
+              />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={newProject} className="h-8 gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="ghost" onClick={newProject} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5">
               <FilePlus2 className="w-3.5 h-3.5" /> New
             </Button>
-            <Button size="sm" variant="ghost" onClick={openProjectDialog} className="h-8 gap-1.5">
+            <Button size="sm" variant="ghost" onClick={openProjectDialog} className="h-9 gap-1.5 rounded-xl text-foreground/70 hover:text-foreground hover:bg-foreground/5">
               <FolderOpen className="w-3.5 h-3.5" /> Open
             </Button>
-            <Button size="sm" variant="secondary" onClick={saveProject} disabled={saving} className="h-8 gap-1.5">
+            <div className="w-px h-5 bg-border/40 mx-1" />
+            <Button size="sm" variant="secondary" onClick={saveProject} disabled={saving} className="h-9 gap-1.5 rounded-xl bg-foreground/5 hover:bg-foreground/10 text-foreground border border-border/40">
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               Save
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="sm" className="h-8 gap-1.5">
+                <Button size="sm" className="h-9 gap-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary hover:to-primary/90 shadow-lg shadow-primary/30 border-0">
                   <Download className="w-3.5 h-3.5" /> Export
-                  <ChevronDown className="w-3 h-3" />
+                  <ChevronDown className="w-3 h-3 opacity-70" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
