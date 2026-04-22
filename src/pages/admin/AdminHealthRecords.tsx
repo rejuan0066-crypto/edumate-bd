@@ -318,14 +318,27 @@ const AdminHealthRecords = () => {
 
   // ─── Printable Health Summary ──────────────────────────────────────────
   const printSummary = (profile: HealthProfile) => {
-    const personId = profile.person_type === 'student' ? profile.student_id : profile.staff_id;
-    const personName = personLabel(profile.person_type, profile.student_id, profile.staff_id);
+    // Resolve the correct person id and type from the profile itself,
+    // tolerating cases where person_type is missing or doesn't match the populated id field.
+    const hasStudent = !!profile.student_id;
+    const hasStaff = !!profile.staff_id;
+    const resolvedType: 'student' | 'staff' =
+      hasStudent && !hasStaff ? 'student'
+      : hasStaff && !hasStudent ? 'staff'
+      : (profile.person_type === 'staff' ? 'staff' : 'student');
+    const personId = resolvedType === 'student' ? profile.student_id : profile.staff_id;
+    const personName = personLabel(resolvedType, profile.student_id, profile.staff_id);
     const today = new Date();
     const monthAgo = new Date(today.getTime() - 30 * 86400000);
     const next30 = new Date(today.getTime() + 30 * 86400000);
 
+    // Match related records strictly against the resolved id+side so a mis-set
+    // person_type can never cross-link a student's id to a staff record (or vice versa).
+    const matchesPerson = (r: { student_id?: string | null; staff_id?: string | null }) =>
+      !!personId && (resolvedType === 'student' ? r.student_id === personId : r.staff_id === personId);
+
     const personVisits = visits
-      .filter(v => (profile.person_type === 'student' ? v.student_id === personId : v.staff_id === personId))
+      .filter(matchesPerson)
       .sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
     const lastVisit = personVisits[0];
     const recentVisits = personVisits.filter(v => new Date(v.visit_date) >= monthAgo);
@@ -334,7 +347,7 @@ const AdminHealthRecords = () => {
     recentVisits.forEach(v => { sevCount[v.severity] = (sevCount[v.severity] || 0) + 1; });
 
     const personVaccs = vaccinations
-      .filter(v => (profile.person_type === 'student' ? v.student_id === personId : v.staff_id === personId))
+      .filter(matchesPerson)
       .sort((a, b) => new Date(b.vaccination_date).getTime() - new Date(a.vaccination_date).getTime());
     const upcomingDue = personVaccs.filter(v =>
       v.next_due_date && new Date(v.next_due_date) >= today && new Date(v.next_due_date) <= next30
@@ -357,7 +370,7 @@ const AdminHealthRecords = () => {
         headers: [{ bn: 'ক্ষেত্র', en: 'Field' }, { bn: 'মান', en: 'Value' }],
         rows: [
           [bn ? 'নাম' : 'Name', personName],
-          [bn ? 'ধরন' : 'Type', profile.person_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')],
+          [bn ? 'ধরন' : 'Type', resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')],
           [bn ? 'রক্তের গ্রুপ' : 'Blood Group', profile.blood_group || '—'],
           [bn ? 'উচ্চতা' : 'Height', profile.height_cm ? `${profile.height_cm} cm` : '—'],
           [bn ? 'ওজন' : 'Weight', profile.weight_kg ? `${profile.weight_kg} kg` : '—'],
