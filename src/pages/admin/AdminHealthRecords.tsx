@@ -161,9 +161,11 @@ const AdminHealthRecords = () => {
       if (clean.person_type === 'student') clean.staff_id = null;
       else clean.student_id = null;
       if (editProf) {
+        if (await profApproval.checkApproval('edit', clean, editProf.id, bn ? 'হেলথ প্রোফাইল সম্পাদনা' : 'Edit health profile')) return;
         const { error } = await supabase.from('health_profiles' as any).update(clean).eq('id', editProf.id);
         if (error) throw error;
       } else {
+        if (await profApproval.checkApproval('add', clean, undefined, bn ? 'নতুন হেলথ প্রোফাইল' : 'New health profile')) return;
         const { error } = await supabase.from('health_profiles' as any).insert(clean);
         if (error) throw error;
       }
@@ -178,6 +180,7 @@ const AdminHealthRecords = () => {
 
   const deleteProf = useMutation({
     mutationFn: async (id: string) => {
+      if (await profApproval.checkApproval('delete', { id }, id, bn ? 'হেলথ প্রোফাইল মুছুন' : 'Delete health profile')) return;
       const { error } = await supabase.from('health_profiles' as any).update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     },
@@ -213,9 +216,11 @@ const AdminHealthRecords = () => {
         else if (clean[k] !== null) clean[k] = Number(clean[k]);
       });
       if (editVisit) {
+        if (await visitApproval.checkApproval('edit', clean, editVisit.id, bn ? 'মেডিকেল ভিজিট সম্পাদনা' : 'Edit medical visit')) return;
         const { error } = await supabase.from('medical_visits' as any).update(clean).eq('id', editVisit.id);
         if (error) throw error;
       } else {
+        if (await visitApproval.checkApproval('add', clean, undefined, bn ? 'নতুন মেডিকেল ভিজিট' : 'New medical visit')) return;
         const { error } = await supabase.from('medical_visits' as any).insert(clean);
         if (error) throw error;
       }
@@ -231,6 +236,7 @@ const AdminHealthRecords = () => {
 
   const deleteVisit = useMutation({
     mutationFn: async (id: string) => {
+      if (await visitApproval.checkApproval('delete', { id }, id, bn ? 'ভিজিট মুছুন' : 'Delete visit')) return;
       const { error } = await supabase.from('medical_visits' as any).update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     },
@@ -263,9 +269,11 @@ const AdminHealthRecords = () => {
       else clean.student_id = null;
       clean.dose_number = Number(clean.dose_number) || 1;
       if (editVacc) {
+        if (await vaccApproval.checkApproval('edit', clean, editVacc.id, bn ? 'টিকা সম্পাদনা' : 'Edit vaccination')) return;
         const { error } = await supabase.from('vaccinations' as any).update(clean).eq('id', editVacc.id);
         if (error) throw error;
       } else {
+        if (await vaccApproval.checkApproval('add', clean, undefined, bn ? 'নতুন টিকা' : 'New vaccination')) return;
         const { error } = await supabase.from('vaccinations' as any).insert(clean);
         if (error) throw error;
       }
@@ -281,6 +289,7 @@ const AdminHealthRecords = () => {
 
   const deleteVacc = useMutation({
     mutationFn: async (id: string) => {
+      if (await vaccApproval.checkApproval('delete', { id }, id, bn ? 'টিকা মুছুন' : 'Delete vaccination')) return;
       const { error } = await supabase.from('vaccinations' as any).update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     },
