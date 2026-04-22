@@ -735,6 +735,7 @@ const AdminHealthRecords = () => {
                       <TableRow key={v.id}>
                         <TableCell>{v.visit_date}</TableCell>
                         <TableCell className="font-medium">{personLabel(v)}</TableCell>
+                        <TableCell>{personTypeBadge(v)}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.symptoms || '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.diagnosis || '—'}</TableCell>
                         <TableCell><Badge variant={severityVariant(v.severity) as any}>{SEVERITY_OPTIONS.find(s => s.v === v.severity)?.[bn ? 'bn' : 'en']}</Badge></TableCell>
