@@ -116,6 +116,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
 import RouteLoader from "./components/RouteLoader";
 import InstallPrompt from "./components/InstallPrompt";
+import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 
 let isRefreshingSession = false;
@@ -208,6 +209,7 @@ const App = () => (
                 <ScrollToTop />
                 <ScrollNavigation />
                 <InstallPrompt />
+                <FloatingWhatsAppButton />
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
