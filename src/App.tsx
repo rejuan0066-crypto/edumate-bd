@@ -115,6 +115,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminParentMessages from "@/pages/admin/AdminParentMessages";
+import AdminPushNotifications from "@/pages/admin/AdminPushNotifications";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
@@ -127,6 +128,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
 import RouteLoader from "./components/RouteLoader";
 import InstallPrompt from "./components/InstallPrompt";
+import NetworkStatusIndicator from "./components/NetworkStatusIndicator";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -220,6 +222,7 @@ const App = () => (
                 <ScrollToTop />
                 <ScrollNavigation />
                 <InstallPrompt />
+                <NetworkStatusIndicator />
                 <FloatingWhatsAppButton />
                 <Routes>
                   <Route path="/" element={<Home />} />
@@ -319,6 +322,7 @@ const App = () => (
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
                     <Route path="parent-messages" element={<AdminParentMessages />} />
+                    <Route path="push-notifications" element={<AdminPushNotifications />} />
                     <Route path="photo-tools" element={<AdminPhotoTools />} />
                     <Route path="payments" element={<AdminPayments />} />
                     <Route path="receipt-designer" element={<AdminReceiptDesigner />} />

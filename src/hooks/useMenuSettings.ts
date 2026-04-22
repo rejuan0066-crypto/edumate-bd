@@ -124,6 +124,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'approvals', path: '/admin/approvals', label_bn: 'অনুমোদন', label_en: 'Approvals', icon: 'ShieldCheck', visible: true, sort_order: 3 },
     { id: 'parent-approvals', path: '/admin/parent-approvals', label_bn: 'অভিভাবকবৃন্দ তালিকা', label_en: 'Parent Approvals', icon: 'UserCheck', visible: true, sort_order: 3.5 },
     { id: 'parent-messages', path: '/admin/parent-messages', label_bn: 'অভিভাবক বার্তা', label_en: 'Parent Messages', icon: 'MessageSquare', visible: true, sort_order: 3.6 },
+    { id: 'push-notifications', path: '/admin/push-notifications', label_bn: 'পুশ নোটিফিকেশন', label_en: 'Push Notifications', icon: 'Bell', visible: true, sort_order: 3.7 },
     { id: 'menu-manager', path: '/admin/menu-manager', label_bn: 'মেনু ম্যানেজার', label_en: 'Menu Manager', icon: 'ListOrdered', visible: true, sort_order: 4 },
     { id: 'backup', path: '/admin/backup', label_bn: 'ব্যাকআপ', label_en: 'Backup', icon: 'HardDrive', visible: true, sort_order: 5 },
     { id: 'recycle-bin', path: '/admin/recycle-bin', label_bn: 'রিসাইকেল বিন', label_en: 'Recycle Bin', icon: 'Trash2', visible: true, sort_order: 5.5 },
