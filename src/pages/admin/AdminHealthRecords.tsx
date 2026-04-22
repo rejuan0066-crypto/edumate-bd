@@ -328,6 +328,39 @@ const AdminHealthRecords = () => {
       : (profile.person_type === 'staff' ? 'staff' : 'student');
     const personId = resolvedType === 'student' ? profile.student_id : profile.staff_id;
     const personName = personLabel(resolvedType, profile.student_id, profile.staff_id);
+
+    // ─── Debug-safe cross-check ──────────────────────────────────────────
+    // Warn admins (via toast + console) when the profile's id mapping is ambiguous
+    // or empty, so silent mis-prints become visible.
+    if (hasStudent && hasStaff) {
+      const msg = bn
+        ? `⚠️ এই প্রোফাইলে student_id ও staff_id দুটোই আছে — "${resolvedType === 'student' ? 'ছাত্র' : 'স্টাফ'}" হিসেবে প্রিন্ট করা হচ্ছে।`
+        : `⚠️ Profile has BOTH student_id and staff_id — printing as "${resolvedType}".`;
+      toast({ title: bn ? 'অস্পষ্ট ম্যাপিং' : 'Ambiguous mapping', description: msg, variant: 'destructive' });
+      console.warn('[HealthSummary] Ambiguous profile id mapping', {
+        profileId: profile.id, person_type: profile.person_type,
+        student_id: profile.student_id, staff_id: profile.staff_id, resolvedType,
+      });
+    } else if (!hasStudent && !hasStaff) {
+      toast({
+        title: bn ? 'কোনো আইডি নেই' : 'No linked ID',
+        description: bn
+          ? 'এই প্রোফাইলে student_id বা staff_id কোনোটাই নেই — সম্পর্কিত ভিজিট/টিকা পাওয়া যাবে না।'
+          : 'Profile has neither student_id nor staff_id — related visits/vaccinations cannot be matched.',
+        variant: 'destructive',
+      });
+      console.warn('[HealthSummary] Profile missing both ids', { profileId: profile.id, person_type: profile.person_type });
+    } else if (profile.person_type && profile.person_type !== resolvedType) {
+      // person_type field disagrees with which id is populated
+      console.warn('[HealthSummary] person_type mismatch — using id-based resolution', {
+        profileId: profile.id, declared: profile.person_type, resolvedType,
+      });
+    }
+    console.info('[HealthSummary] matched on', resolvedType + '_id', '=', personId, 'for profile', profile.id);
+
+    const today = new Date();
+    const monthAgo = new Date(today.getTime() - 30 * 86400000);
+    const next30 = new Date(today.getTime() + 30 * 86400000);
     const today = new Date();
     const monthAgo = new Date(today.getTime() - 30 * 86400000);
     const next30 = new Date(today.getTime() + 30 * 86400000);
