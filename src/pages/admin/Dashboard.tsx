@@ -17,6 +17,7 @@ import DashboardSearch from '@/components/dashboard/DashboardSearch';
 import DashboardFeeSection from '@/components/dashboard/DashboardFeeSection';
 import DashboardStatsList from '@/components/dashboard/DashboardStatsList';
 import DashboardCustomWidgets from '@/components/dashboard/DashboardCustomWidgets';
+import DashboardProfilesCard from '@/components/dashboard/DashboardProfilesCard';
 import { DashboardLayoutDialog } from '@/components/dashboard/DashboardLayoutBuilder';
 import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -265,6 +266,8 @@ const Dashboard = () => {
     switch (id) {
       case 'institution':
         return <DashboardInstitutionCard key={id} />;
+      case 'profiles':
+        return <DashboardProfilesCard key={id} />;
       case 'search':
         return <DashboardSearch key={id} />;
       case 'main_stats':
