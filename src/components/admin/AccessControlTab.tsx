@@ -34,6 +34,8 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/results', label_en: 'Results', label_bn: 'ফলাফল' },
   { path: '/admin/merit-list', label_en: 'Merit List', label_bn: 'মেধা তালিকা' },
   { path: '/admin/admission-tests', label_en: 'Admission Tests', label_bn: 'অনলাইন ভর্তি পরীক্ষা' },
+  { path: '/admin/scholarships', label_en: 'Scholarships', label_bn: 'বৃত্তি ব্যবস্থাপনা' },
+  { path: '/admin/budgets', label_en: 'Budgets', label_bn: 'বাজেট ব্যবস্থাপনা' },
   { path: '/admin/notices', label_en: 'Notices', label_bn: 'নোটিশ' },
   { path: '/admin/students-fees', label_en: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/fee-receipts', label_en: 'Fee Receipts', label_bn: 'ফি রসিদ' },

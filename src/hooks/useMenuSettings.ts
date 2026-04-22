@@ -80,6 +80,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'expenses', path: '/admin/expenses', label_bn: 'খরচ ব্যবস্থাপনা', label_en: 'Expenses', icon: 'Receipt', visible: true, sort_order: 2 },
     { id: 'payments', path: '/admin/payments', label_bn: 'পেমেন্ট', label_en: 'Payments', icon: 'CreditCard', visible: true, sort_order: 3 },
     { id: 'donors', path: '/admin/donors', label_bn: 'দাতা তালিকা', label_en: 'Donor List', icon: 'Heart', visible: true, sort_order: 4 },
+    { id: 'scholarships', path: '/admin/scholarships', label_bn: 'বৃত্তি ব্যবস্থাপনা', label_en: 'Scholarships', icon: 'Award', visible: true, sort_order: 4.5 },
+    { id: 'budgets', path: '/admin/budgets', label_bn: 'বাজেট ব্যবস্থাপনা', label_en: 'Budgets', icon: 'PiggyBank', visible: true, sort_order: 4.7 },
     { id: 'receipt-designer', path: '/admin/receipt-designer', label_bn: 'রসিদ ডিজাইনার', label_en: 'Receipt Designer', icon: 'ReceiptText', visible: true, sort_order: 5 },
   ]},
 
