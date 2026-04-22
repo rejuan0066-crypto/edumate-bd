@@ -180,7 +180,7 @@ const AdminHostel = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hostel-allocations'] });
-      setAllocDlg(false); setEditAlloc(null); setAllocForm({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
+      setAllocDlg(false); setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
       toast({ title: bn ? 'বরাদ্দ সংরক্ষিত' : 'Allocation saved' });
     },
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
