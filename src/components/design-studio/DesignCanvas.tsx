@@ -82,7 +82,8 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
             left: p.x, top: p.y, fontSize: 32, fontFamily: 'Inter', fill: '#111111',
           });
           (t as any).layerName = 'Text';
-          fc.add(t).setActiveObject(t);
+          fc.add(t);
+          fc.setActiveObject(t);
           toolRef.current = 'select';
           return;
         }
@@ -145,7 +146,8 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
             stroke: '#111111', strokeWidth: 2, fill: 'transparent',
           });
           (path as any).layerName = 'Path';
-          fc.add(path).setActiveObject(path);
+          fc.add(path);
+          fc.setActiveObject(path);
           penPoints = [];
           toolRef.current = 'select';
         }
