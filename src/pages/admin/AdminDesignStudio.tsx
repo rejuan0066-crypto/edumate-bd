@@ -541,12 +541,36 @@ const AdminDesignStudio = () => {
 
   const applyPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
+    const postSnapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+    const cmdInfo = pendingCommandRef.current;
     pushHistory();
     captureVersion(`AI change · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+
+    // Push to AI command stack (truncate any future entries)
+    if (cmdInfo) {
+      const entry: AiCommandEntry = {
+        id: `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        prompt: cmdInfo.prompt,
+        preSnapshot: pendingSnapshot,
+        postSnapshot,
+        timestamp: Date.now(),
+      };
+      setAiCommandStack((prev) => {
+        const truncated = prev.slice(0, aiCommandCursor + 1);
+        return [...truncated, entry].slice(-30);
+      });
+      setAiCommandCursor((c) => Math.min(c + 1, 29));
+      // Commit image ops
+      if (cmdInfo.imageOps.length > 0) {
+        setImageOps((prev) => [...cmdInfo.imageOps, ...prev].slice(0, 50));
+      }
+    }
+
+    pendingCommandRef.current = null;
     setPendingSnapshot(null);
     setPendingLayerIds([]);
     toast.success('Applied');
-  }, [fc, pendingSnapshot, pushHistory, captureVersion]);
+  }, [fc, pendingSnapshot, pushHistory, captureVersion, aiCommandCursor]);
 
   const revertPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
@@ -555,11 +579,63 @@ const AdminDesignStudio = () => {
       fc.renderAll();
       skipHistoryRef.current = false;
       refreshLayers();
+      pendingCommandRef.current = null;
       setPendingSnapshot(null);
       setPendingLayerIds([]);
       toast.success('Reverted');
     });
   }, [fc, pendingSnapshot, refreshLayers]);
+
+  // ---------- AI command undo / redo / replay ----------
+  const loadSnapshot = useCallback(
+    (snapshot: string, onDone?: () => void) => {
+      if (!fc) return;
+      skipHistoryRef.current = true;
+      fc.loadFromJSON(snapshot, () => {
+        fc.renderAll();
+        skipHistoryRef.current = false;
+        refreshLayers();
+        pushHistory();
+        onDone?.();
+      });
+    },
+    [fc, refreshLayers, pushHistory],
+  );
+
+  const undoAiCommand = useCallback(() => {
+    if (aiCommandCursor < 0) return;
+    const entry = aiCommandStack[aiCommandCursor];
+    if (!entry) return;
+    loadSnapshot(entry.preSnapshot, () => {
+      setAiCommandCursor((c) => c - 1);
+      toast.success(`Undid: "${entry.prompt.slice(0, 40)}"`);
+    });
+  }, [aiCommandCursor, aiCommandStack, loadSnapshot]);
+
+  const redoAiCommand = useCallback(() => {
+    if (aiCommandCursor >= aiCommandStack.length - 1) return;
+    const next = aiCommandStack[aiCommandCursor + 1];
+    if (!next) return;
+    loadSnapshot(next.postSnapshot, () => {
+      setAiCommandCursor((c) => c + 1);
+      toast.success(`Redid: "${next.prompt.slice(0, 40)}"`);
+    });
+  }, [aiCommandCursor, aiCommandStack, loadSnapshot]);
+
+  const replayAiCommand = useCallback(
+    (entry: AiCommandEntry) => {
+      // Re-submit the same prompt as a fresh AI command on the current canvas
+      handleAiPrompt(entry.prompt);
+    },
+    [handleAiPrompt],
+  );
+
+  const rerunImageOp = useCallback(
+    (op: AiImageOp) => {
+      handleAiPrompt(op.prompt);
+    },
+    [handleAiPrompt],
+  );
 
   // Insert a saved template directly (from dialog)
   const insertTemplate = useCallback(async (tpl: DesignTemplate) => {
