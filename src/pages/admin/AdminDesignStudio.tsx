@@ -646,6 +646,13 @@ const AdminDesignStudio = () => {
               disabled={!fc}
               hasSelection={!!selected}
               selectionLabel={summarizeSelection(selected) ?? undefined}
+              scope={aiScope}
+              onScopeChange={setAiScope}
+              pendingReview={!!pendingSnapshot}
+              onApply={applyPending}
+              onRevert={revertPending}
+              onOpenTemplates={() => setTemplatesOpen(true)}
+              onOpenHistory={() => setHistoryOpen(true)}
             />
           </div>
 
