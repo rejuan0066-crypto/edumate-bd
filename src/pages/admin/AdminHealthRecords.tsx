@@ -18,6 +18,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { generateBilingualReport, type ReportSection, type ReportSummaryStat } from '@/lib/reportPdfGenerator';
+import { resolvePersonType, makePersonMatcher, type PersonTypeInput } from '@/lib/personType';
 
 type PersonType = 'student' | 'staff';
 
@@ -135,13 +136,21 @@ const AdminHealthRecords = () => {
     },
   });
 
-  const personLabel = (pType: PersonType, sid?: string | null, stfId?: string | null) => {
-    if (pType === 'student') {
-      const s = students.find(x => x.id === sid);
+  /**
+   * Render a label for a person referenced by a health record.
+   * Accepts the raw record so person type is resolved from the populated id
+   * field via the shared `resolvePersonType` utility (tolerates legacy rows
+   * where person_type disagrees with which id is set).
+   */
+  const personLabel = (record: PersonTypeInput) => {
+    const { resolvedType, personId } = resolvePersonType(record);
+    if (!personId) return '—';
+    if (resolvedType === 'student') {
+      const s = students.find(x => x.id === personId);
       if (!s) return '—';
       return `${bn ? s.name_bn : (s.name_en || s.name_bn)} (${s.student_id})`;
     }
-    const st = staff.find(x => x.id === stfId);
+    const st = staff.find(x => x.id === personId);
     if (!st) return '—';
     return `${bn ? st.name_bn : (st.name_en || st.name_bn)}${st.staff_id ? ` (${st.staff_id})` : ''}`;
   };
@@ -318,21 +327,14 @@ const AdminHealthRecords = () => {
 
   // ─── Printable Health Summary ──────────────────────────────────────────
   const printSummary = (profile: HealthProfile) => {
-    // Resolve the correct person id and type from the profile itself,
-    // tolerating cases where person_type is missing or doesn't match the populated id field.
-    const hasStudent = !!profile.student_id;
-    const hasStaff = !!profile.staff_id;
-    const resolvedType: 'student' | 'staff' =
-      hasStudent && !hasStaff ? 'student'
-      : hasStaff && !hasStudent ? 'staff'
-      : (profile.person_type === 'staff' ? 'staff' : 'student');
-    const personId = resolvedType === 'student' ? profile.student_id : profile.staff_id;
-    const personName = personLabel(resolvedType, profile.student_id, profile.staff_id);
+    // Use the shared resolver so person type is determined from the populated
+    // id field (tolerant of legacy rows where person_type disagrees).
+    const resolved = resolvePersonType(profile);
+    const { resolvedType, personId, ambiguous, missing, mismatch } = resolved;
+    const personName = personLabel(profile);
 
     // ─── Debug-safe cross-check ──────────────────────────────────────────
-    // Warn admins (via toast + console) when the profile's id mapping is ambiguous
-    // or empty, so silent mis-prints become visible.
-    if (hasStudent && hasStaff) {
+    if (ambiguous) {
       const msg = bn
         ? `⚠️ এই প্রোফাইলে student_id ও staff_id দুটোই আছে — "${resolvedType === 'student' ? 'ছাত্র' : 'স্টাফ'}" হিসেবে প্রিন্ট করা হচ্ছে।`
         : `⚠️ Profile has BOTH student_id and staff_id — printing as "${resolvedType}".`;
@@ -341,7 +343,7 @@ const AdminHealthRecords = () => {
         profileId: profile.id, person_type: profile.person_type,
         student_id: profile.student_id, staff_id: profile.staff_id, resolvedType,
       });
-    } else if (!hasStudent && !hasStaff) {
+    } else if (missing) {
       toast({
         title: bn ? 'কোনো আইডি নেই' : 'No linked ID',
         description: bn
@@ -350,8 +352,7 @@ const AdminHealthRecords = () => {
         variant: 'destructive',
       });
       console.warn('[HealthSummary] Profile missing both ids', { profileId: profile.id, person_type: profile.person_type });
-    } else if (profile.person_type && profile.person_type !== resolvedType) {
-      // person_type field disagrees with which id is populated
+    } else if (mismatch) {
       console.warn('[HealthSummary] person_type mismatch — using id-based resolution', {
         profileId: profile.id, declared: profile.person_type, resolvedType,
       });
@@ -364,8 +365,7 @@ const AdminHealthRecords = () => {
 
     // Match related records strictly against the resolved id+side so a mis-set
     // person_type can never cross-link a student's id to a staff record (or vice versa).
-    const matchesPerson = (r: { student_id?: string | null; staff_id?: string | null }) =>
-      !!personId && (resolvedType === 'student' ? r.student_id === personId : r.staff_id === personId);
+    const matchesPerson = makePersonMatcher(resolved);
 
     const personVisits = visits
       .filter(matchesPerson)
@@ -602,8 +602,8 @@ const AdminHealthRecords = () => {
                     )}
                     {profiles.map(p => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{personLabel(p.person_type, p.student_id, p.staff_id)}</TableCell>
-                        <TableCell><Badge variant="outline">{p.person_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
+                        <TableCell className="font-medium">{personLabel(p)}</TableCell>
+                        <TableCell><Badge variant="outline">{resolvePersonType(p).resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
                         <TableCell>{p.blood_group || '—'}</TableCell>
                         <TableCell>{p.height_cm ? `${p.height_cm}cm` : '—'} / {p.weight_kg ? `${p.weight_kg}kg` : '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
@@ -660,7 +660,7 @@ const AdminHealthRecords = () => {
                     {visits.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.visit_date}</TableCell>
-                        <TableCell className="font-medium">{personLabel(v.person_type, v.student_id, v.staff_id)}</TableCell>
+                        <TableCell className="font-medium">{personLabel(v)}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.symptoms || '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.diagnosis || '—'}</TableCell>
                         <TableCell><Badge variant={severityVariant(v.severity) as any}>{SEVERITY_OPTIONS.find(s => s.v === v.severity)?.[bn ? 'bn' : 'en']}</Badge></TableCell>
@@ -714,7 +714,7 @@ const AdminHealthRecords = () => {
                     {vaccinations.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.vaccination_date}</TableCell>
-                        <TableCell className="font-medium">{personLabel(v.person_type, v.student_id, v.staff_id)}</TableCell>
+                        <TableCell className="font-medium">{personLabel(v)}</TableCell>
                         <TableCell>{bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name}</TableCell>
                         <TableCell><Badge variant="outline">#{v.dose_number}</Badge></TableCell>
                         <TableCell>{v.next_due_date || '—'}</TableCell>
