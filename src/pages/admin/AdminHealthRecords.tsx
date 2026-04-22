@@ -676,7 +676,7 @@ const AdminHealthRecords = () => {
                     {profiles.map(p => (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{personLabel(p)}</TableCell>
-                        <TableCell><Badge variant="outline">{resolvePersonType(p).resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
+                        <TableCell>{personTypeBadge(p)}</TableCell>
                         <TableCell>{p.blood_group || '—'}</TableCell>
                         <TableCell>{p.height_cm ? `${p.height_cm}cm` : '—'} / {p.weight_kg ? `${p.weight_kg}kg` : '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
@@ -719,6 +719,7 @@ const AdminHealthRecords = () => {
                     <TableRow>
                       <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                       <TableHead>{bn ? 'ব্যক্তি' : 'Person'}</TableHead>
+                      <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
                       <TableHead>{bn ? 'লক্ষণ' : 'Symptoms'}</TableHead>
                       <TableHead>{bn ? 'ডায়াগনোসিস' : 'Diagnosis'}</TableHead>
                       <TableHead>{bn ? 'গুরুত্ব' : 'Severity'}</TableHead>
@@ -728,7 +729,7 @@ const AdminHealthRecords = () => {
                   </TableHeader>
                   <TableBody>
                     {visits.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ভিজিট নেই' : 'No visits yet'}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ভিজিট নেই' : 'No visits yet'}</TableCell></TableRow>
                     )}
                     {visits.map(v => (
                       <TableRow key={v.id}>
