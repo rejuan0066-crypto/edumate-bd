@@ -602,8 +602,8 @@ const AdminHealthRecords = () => {
                     )}
                     {profiles.map(p => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{personLabel(p.person_type, p.student_id, p.staff_id)}</TableCell>
-                        <TableCell><Badge variant="outline">{p.person_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
+                        <TableCell className="font-medium">{personLabel(p)}</TableCell>
+                        <TableCell><Badge variant="outline">{resolvePersonType(p).resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
                         <TableCell>{p.blood_group || '—'}</TableCell>
                         <TableCell>{p.height_cm ? `${p.height_cm}cm` : '—'} / {p.weight_kg ? `${p.weight_kg}kg` : '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
