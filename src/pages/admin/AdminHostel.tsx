@@ -130,7 +130,34 @@ const AdminHostel = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-min'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en').is('deleted_at', null).limit(1000);
+      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, academic_session_id, class_id').is('deleted_at', null).limit(2000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['staff-min-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('staff').select('id, staff_id, name_bn, name_en').is('deleted_at', null).limit(1000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('academic_sessions').select('id, name, name_bn').eq('is_active', true).order('name', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: classesList = [] } = useQuery({
+    queryKey: ['classes-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('id, name, name_bn, sort_order').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
     },
@@ -138,7 +165,7 @@ const AdminHostel = () => {
 
   const [allocDlg, setAllocDlg] = useState(false);
   const [editAlloc, setEditAlloc] = useState<Allocation | null>(null);
-  const [allocForm, setAllocForm] = useState<Partial<Allocation>>({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
+  const [allocForm, setAllocForm] = useState<Partial<Allocation>>({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
   const [delAllocId, setDelAllocId] = useState<string | null>(null);
 
   const saveAlloc = useMutation({
