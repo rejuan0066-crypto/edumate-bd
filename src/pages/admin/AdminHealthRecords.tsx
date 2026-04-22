@@ -511,8 +511,12 @@ const AdminHealthRecords = () => {
                         <TableCell>{v.next_due_date || '—'}</TableCell>
                         <TableCell>{v.administered_by || '—'}</TableCell>
                         <TableCell className="text-right">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditVacc(v); setVaccForm(v); setVaccDlg(true); }}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDelVaccId(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          {canEditItem && (
+                            <Button size="icon" variant="ghost" onClick={() => { setEditVacc(v); setVaccForm(v); setVaccDlg(true); }}><Pencil className="h-4 w-4" /></Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button size="icon" variant="ghost" onClick={() => setDelVaccId(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
