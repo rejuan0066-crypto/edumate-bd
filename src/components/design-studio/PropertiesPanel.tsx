@@ -218,13 +218,13 @@ const PropertiesPanel = ({
             <div>
               <Label className="text-[10px] text-muted-foreground">Size</Label>
               <Input type="number" value={t.fontSize || 16}
-                onChange={(e) => update(() => selected.set('fontSize', parseFloat(e.target.value) || 16))}
+                onChange={(e) => update(() => tt.set('fontSize', parseFloat(e.target.value) || 16))}
                 className="h-8 text-xs" />
             </div>
             <div>
               <Label className="text-[10px] text-muted-foreground">Line H</Label>
               <Input type="number" step={0.1} value={t.lineHeight || 1.16}
-                onChange={(e) => update(() => selected.set('lineHeight', parseFloat(e.target.value) || 1))}
+                onChange={(e) => update(() => tt.set('lineHeight', parseFloat(e.target.value) || 1))}
                 className="h-8 text-xs" />
             </div>
           </div>
@@ -232,45 +232,46 @@ const PropertiesPanel = ({
           <div>
             <Label className="text-[10px] text-muted-foreground">Letter spacing</Label>
             <Input type="number" value={t.charSpacing || 0}
-              onChange={(e) => update(() => selected.set('charSpacing', parseFloat(e.target.value) || 0))}
+              onChange={(e) => update(() => tt.set('charSpacing', parseFloat(e.target.value) || 0))}
               className="h-8 text-xs" />
           </div>
 
           <div className="flex gap-1">
             <Button size="sm" variant={t.fontWeight === 'bold' ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('fontWeight', t.fontWeight === 'bold' ? 'normal' : 'bold'))}>
+              onClick={() => update(() => tt.set('fontWeight', t.fontWeight === 'bold' ? 'normal' : 'bold'))}>
               <Bold className="w-3.5 h-3.5" />
             </Button>
             <Button size="sm" variant={t.fontStyle === 'italic' ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('fontStyle', t.fontStyle === 'italic' ? 'normal' : 'italic'))}>
+              onClick={() => update(() => tt.set('fontStyle', t.fontStyle === 'italic' ? 'normal' : 'italic'))}>
               <Italic className="w-3.5 h-3.5" />
             </Button>
             <Button size="sm" variant={t.underline ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('underline', !t.underline))}>
+              onClick={() => update(() => tt.set('underline', !t.underline))}>
               <Underline className="w-3.5 h-3.5" />
             </Button>
             <div className="w-px bg-border/50 mx-1" />
             <Button size="sm" variant={t.textAlign === 'left' ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('textAlign', 'left'))}>
+              onClick={() => update(() => tt.set('textAlign', 'left'))}>
               <AlignLeft className="w-3.5 h-3.5" />
             </Button>
             <Button size="sm" variant={t.textAlign === 'center' ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('textAlign', 'center'))}>
+              onClick={() => update(() => tt.set('textAlign', 'center'))}>
               <AlignCenter className="w-3.5 h-3.5" />
             </Button>
             <Button size="sm" variant={t.textAlign === 'right' ? 'default' : 'outline'}
               className="h-8 w-8 p-0"
-              onClick={() => update(() => selected.set('textAlign', 'right'))}>
+              onClick={() => update(() => tt.set('textAlign', 'right'))}>
               <AlignRight className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
