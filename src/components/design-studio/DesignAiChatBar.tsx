@@ -85,8 +85,8 @@ const DesignAiChatBar = ({
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  // Reveal panel whenever user has typed something, has a selection, or is reviewing AI output
-  const revealTools = focused || hasSelection || pendingReview || input.trim().length > 0;
+  // Reveal panels only when user is actively engaging the chat (focus or typing)
+  const revealTools = focused || input.trim().length > 0;
 
   const send = () => {
     const t = input.trim();
