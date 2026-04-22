@@ -115,6 +115,8 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminCertificates from "./pages/admin/AdminCertificates";
+import AdminScholarships from "./pages/admin/AdminScholarships";
+import AdminBudgets from "./pages/admin/AdminBudgets";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
@@ -326,6 +328,8 @@ const App = () => (
                     <Route path="live-classes" element={<AdminLiveClasses />} />
                     <Route path="meetings" element={<AdminMeetings />} />
                     <Route path="admission-tests" element={<ModuleGuard menuPath="/admin/admission-tests"><AdminAdmissionTests /></ModuleGuard>} />
+                    <Route path="scholarships" element={<ModuleGuard menuPath="/admin/scholarships"><AdminScholarships /></ModuleGuard>} />
+                    <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
 
