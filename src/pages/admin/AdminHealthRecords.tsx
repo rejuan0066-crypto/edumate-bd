@@ -786,12 +786,13 @@ const AdminHealthRecords = () => {
                   </TableHeader>
                   <TableBody>
                     {vaccinations.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো রেকর্ড নেই' : 'No records yet'}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{bn ? 'কোনো রেকর্ড নেই' : 'No records yet'}</TableCell></TableRow>
                     )}
                     {vaccinations.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.vaccination_date}</TableCell>
                         <TableCell className="font-medium">{personLabel(v)}</TableCell>
+                        <TableCell>{personTypeBadge(v)}</TableCell>
                         <TableCell>{bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name}</TableCell>
                         <TableCell><Badge variant="outline">#{v.dose_number}</Badge></TableCell>
                         <TableCell>{v.next_due_date || '—'}</TableCell>
