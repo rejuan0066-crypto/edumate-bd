@@ -155,6 +155,28 @@ const AdminHealthRecords = () => {
     return `${bn ? st.name_bn : (st.name_en || st.name_bn)}${st.staff_id ? ` (${st.staff_id})` : ''}`;
   };
 
+  /**
+   * Render a Student/Staff badge derived strictly from the resolved id field.
+   * Centralises the visual treatment so no health UI surface reads `person_type`
+   * directly to decide which label to show.
+   */
+  const personTypeBadge = (record: PersonTypeInput) => {
+    const { resolvedType, missing, ambiguous, mismatch } = resolvePersonType(record);
+    if (missing) {
+      return <Badge variant="destructive">{bn ? 'অজানা' : 'Unknown'}</Badge>;
+    }
+    const label = resolvedType === 'student'
+      ? (bn ? 'ছাত্র' : 'Student')
+      : (bn ? 'স্টাফ' : 'Staff');
+    const tone = ambiguous || mismatch ? 'secondary' : 'outline';
+    const title = ambiguous
+      ? (bn ? 'উভয় আইডি সেট আছে — id থেকে রিজলভ করা হয়েছে' : 'Both ids set — resolved from id field')
+      : mismatch
+        ? (bn ? 'declared person_type সেট করা আইডির সাথে মিলছে না' : 'declared person_type disagrees with populated id')
+        : undefined;
+    return <Badge variant={tone as any} title={title}>{label}{(ambiguous || mismatch) ? ' ⚠' : ''}</Badge>;
+  };
+
   // ─── Health Profiles ───────────────────────────────────────────────────
   const { data: profiles = [] } = useQuery({
     queryKey: ['health-profiles'],
