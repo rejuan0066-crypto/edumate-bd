@@ -72,6 +72,7 @@ export async function applyAiActions(
   actions: AiAction[],
   options: {
     onBackgroundChange?: (color: string) => void;
+    onResize?: (w: number, h: number) => void;
     scope?: DesignScope;
     selectedFallback?: fabric.Object | null;
     templateLoader?: (idOrName: { templateId?: string; templateName?: string }) => Promise<{
