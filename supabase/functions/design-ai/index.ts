@@ -867,6 +867,13 @@ serve(async (req) => {
       } else if (name === "generate_section") {
         const blueprint = blueprintSection(args, cw, ch);
         actions.push(...blueprint);
+      } else if (name === "build_template") {
+        const built = buildTemplate(args);
+        // Resize canvas first so positions land correctly
+        actions.push({ type: "resize_canvas", width: built.resize.w, height: built.resize.h });
+        actions.push(...built.actions);
+      } else if (name === "resize_canvas") {
+        actions.push({ type: "resize_canvas", width: args.width, height: args.height });
       } else if (name === "use_template") {
         actions.push({ type: "use_template", templateId: args.templateId, templateName: args.templateName, left: args.left, top: args.top });
       } else {
