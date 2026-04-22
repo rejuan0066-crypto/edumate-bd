@@ -114,6 +114,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
+import AdminParentMessages from "./pages/admin/AdminParentMessages";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
