@@ -19,6 +19,7 @@ export type AiAction =
   | { type: 'add_image'; imageUrl: string; width?: number; height?: number; name?: string }
   | { type: 'replace_selected_image'; imageUrl: string }
   | { type: 'use_template'; templateId?: string; templateName?: string; left?: number; top?: number }
+  | { type: 'resize_canvas'; width: number; height: number }
   | { type: 'error'; message: string };
 
 export type DesignScope = 'any' | 'section' | 'card' | 'table' | 'chart' | 'text' | 'image' | 'shape';
@@ -71,6 +72,7 @@ export async function applyAiActions(
   actions: AiAction[],
   options: {
     onBackgroundChange?: (color: string) => void;
+    onResize?: (w: number, h: number) => void;
     scope?: DesignScope;
     selectedFallback?: fabric.Object | null;
     templateLoader?: (idOrName: { templateId?: string; templateName?: string }) => Promise<{
@@ -182,6 +184,16 @@ export async function applyAiActions(
           fc.setBackgroundColor(action.color, () => fc.renderAll());
           options.onBackgroundChange?.(action.color);
           summary.push(`bg → ${action.color}`);
+          break;
+        }
+        case 'resize_canvas': {
+          const w = Math.max(64, Math.round(action.width));
+          const h = Math.max(64, Math.round(action.height));
+          fc.setWidth(w);
+          fc.setHeight(h);
+          fc.renderAll();
+          options.onResize?.(w, h);
+          summary.push(`canvas → ${w}×${h}`);
           break;
         }
         case 'add_image': {

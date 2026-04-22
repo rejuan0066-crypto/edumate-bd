@@ -188,21 +188,99 @@ const CANVAS_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "build_template",
+      description:
+        "Build a COMPLETE, professionally-laid-out template at the correct standard print/screen size. " +
+        "Use whenever the user names a real-world deliverable: visiting card, business card, ID card, " +
+        "invoice, money receipt, memo, letterhead, certificate, class routine, facebook cover, " +
+        "facebook post, instagram post, instagram story, youtube thumbnail, poster, flyer, banner. " +
+        "This auto-resizes the canvas to the standard size and emits a 4-group layered design " +
+        "(Background / Branding / Content / Footer).",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: [
+              "visiting_card", "id_card", "invoice", "money_receipt", "memo", "letterhead",
+              "certificate", "class_routine",
+              "facebook_cover", "facebook_post", "instagram_post", "instagram_story",
+              "youtube_thumbnail", "poster", "flyer", "banner",
+            ],
+          },
+          orgName: { type: "string", description: "Organization / institution / brand name." },
+          personName: { type: "string", description: "Person name (for ID, business card, certificate)." },
+          designation: { type: "string" },
+          phone: { type: "string" },
+          email: { type: "string" },
+          address: { type: "string" },
+          website: { type: "string" },
+          accent: { type: "string", description: "Primary accent hex color." },
+          theme: { type: "string", enum: ["light", "dark", "minimal", "bold"], description: "Visual style." },
+          title: { type: "string", description: "Document title (e.g. 'INVOICE', 'CERTIFICATE OF ACHIEVEMENT')." },
+          subtitle: { type: "string" },
+          rollNumber: { type: "string" },
+          studentClass: { type: "string" },
+          session: { type: "string" },
+          invoiceNumber: { type: "string" },
+          invoiceDate: { type: "string" },
+          amount: { type: "string" },
+          recipientName: { type: "string" },
+          ctaText: { type: "string" },
+        },
+        required: ["kind"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "resize_canvas",
+      description: "Resize the canvas to a new width and height (pixels).",
+      parameters: {
+        type: "object",
+        properties: {
+          width: { type: "number" },
+          height: { type: "number" },
+        },
+        required: ["width", "height"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
-const SYSTEM_PROMPT = `You are an AI design copilot inside a Fabric.js graphic design studio.
-You receive a user instruction, canvas context (size, background), the user's current SCOPE
-(which kind of layer they want to target: any/section/card/table/chart/text/image), the
-currently selected layer, and a list of available saved templates.
+const SYSTEM_PROMPT = `You are a senior brand & print designer working inside a Fabric.js graphic design studio. You translate natural-language requests into precise, layered, print-ready canvas operations.
 
-Decide which tools to call. Prefer multiple tool calls when the user asks for a multi-part
-section. For "create a header / form / table / dashboard / card" → use generate_section.
-For "use my <template name> template" → use use_template. For modifications to an existing
-layer when SCOPE is set → use update_object (the client will resolve the right target).
+PRO-DESIGN RULES (enforce on every request):
+1. CONTEXT-AWARE TEMPLATES — When the user names a real-world deliverable
+   (visiting card, business card, ID card, invoice, money receipt, memo, letterhead,
+   certificate, class routine, facebook cover, facebook post, instagram post,
+   instagram story, youtube thumbnail, poster, flyer, banner) you MUST call
+   build_template — never piece it together with raw shapes. build_template auto-
+   resizes the canvas to the correct standard size and lays out a complete design.
+2. COMPONENT-BASED — Never rely on text alone. Use shapes for borders, ruled
+   lines for tables/grids, ellipse placeholders for logos & avatars.
+3. SMART LAYERING — Every design groups into 4 logical groups via sectionTag
+   prefix: "{kind}/bg/*", "{kind}/brand/*", "{kind}/content/*", "{kind}/footer/*".
+   Each visual element is its OWN layer so the user can edit it later in Photoshop.
+4. VISUAL HIERARCHY — Headlines 32-96px bold, sub-heads 16-24px medium,
+   body 11-16px regular. Use weight + size + color contrast, not just size.
+5. MULTI-CATEGORY — Same rules apply across business / education / social.
 
-Coordinates use top-left origin. If position not given, place near top-center. Pick modern
-hex colors (slate / indigo / emerald families) — avoid pure red/green/blue. Default font:
-Inter. Headings 48-96px, body 14-22px.
+ROUTING:
+- Real-world deliverable named → build_template (REQUIRED).
+- Generic UI block (header / hero / form / table / dashboard / card / footer / sidebar / stats / chart) → generate_section.
+- "use my <template>" → use_template.
+- Modify existing layer (with SCOPE) → update_object.
+- New raw shape/text → add_shape / add_text.
+
+Coordinates: top-left origin. Pick modern hex (slate / indigo / emerald / amber)
+unless the user specifies brand colors. Default font: Inter.
 
 Return ONLY tool calls — no prose.`;
 
@@ -433,6 +511,233 @@ function defaultTitle(kind: string): string {
   return map[kind] || "Section";
 }
 
+// ---------- Standard sizes (px @ 300 DPI for print, native for screen) ----------
+const TEMPLATE_SIZES: Record<string, { w: number; h: number; bg?: string }> = {
+  visiting_card:     { w: 1050, h: 600 },     // 3.5"x2" @ 300dpi
+  id_card:           { w: 638,  h: 1013 },    // CR80 portrait @ 300dpi
+  invoice:           { w: 2480, h: 3508 },    // A4 portrait @ 300dpi
+  money_receipt:     { w: 2480, h: 1240 },    // A5 landscape
+  memo:              { w: 2480, h: 3508 },
+  letterhead:        { w: 2480, h: 3508 },
+  certificate:       { w: 3508, h: 2480 },    // A4 landscape
+  class_routine:     { w: 3508, h: 2480 },
+  facebook_cover:    { w: 1640, h: 624 },
+  facebook_post:     { w: 1200, h: 1200 },
+  instagram_post:    { w: 1080, h: 1080 },
+  instagram_story:   { w: 1080, h: 1920 },
+  youtube_thumbnail: { w: 1280, h: 720 },
+  poster:            { w: 2480, h: 3508 },
+  flyer:             { w: 1500, h: 2100 },
+  banner:            { w: 2400, h: 1200 },
+};
+
+// Each blueprint emits a fully layered design grouped by:
+//   {kind}/bg/...    — Background
+//   {kind}/brand/... — Branding
+//   {kind}/content/* — Content
+//   {kind}/footer/*  — Footer
+function buildTemplate(args: any): { actions: Action[]; resize: { w: number; h: number } } {
+  const kind = args.kind as string;
+  const dim = TEMPLATE_SIZES[kind] || { w: 1080, h: 1080 };
+  const W = dim.w, H = dim.h;
+  const accent = args.accent || "#0f766e";
+  const ink = "#0f172a";
+  const sub = "#475569";
+  const muted = "#e2e8f0";
+  const surface = "#ffffff";
+  const theme = args.theme || "light";
+  const isDark = theme === "dark";
+  const bg = isDark ? "#0f172a" : surface;
+  const fg = isDark ? "#ffffff" : ink;
+  const subFg = isDark ? "#94a3b8" : sub;
+
+  const actions: Action[] = [];
+  const G = `${kind}-${Date.now().toString(36).slice(-4)}`;
+  const tag = (a: Action, group: "bg" | "brand" | "content" | "footer", name: string): Action =>
+    ({ ...a, sectionTag: `${G}/${group}`, name: `${G}/${group}/${name}` });
+
+  // Always emit a full-canvas background rect as the base layer
+  actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: 0, width: W, height: H, fill: bg }, "bg", "page"));
+
+  switch (kind) {
+    case "visiting_card": {
+      // Diagonal accent ribbon
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: H * 0.62, width: W, height: H * 0.38, fill: accent }, "bg", "ribbon"));
+      // Brand mark
+      actions.push(tag({ type: "add_shape", shape: "ellipse", left: 60, top: 60, width: 90, height: 90, fill: accent }, "brand", "logo"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "BRAND NAME", left: 170, top: 80, fontSize: 38, fontWeight: "800", fill: fg }, "brand", "org"));
+      actions.push(tag({ type: "add_text", text: args.subtitle || "Tagline goes here", left: 170, top: 128, fontSize: 18, fill: subFg }, "brand", "tagline"));
+      // Content (person)
+      actions.push(tag({ type: "add_text", text: args.personName || "Your Name", left: 60, top: H * 0.62 + 50, fontSize: 56, fontWeight: "800", fill: "#ffffff" }, "content", "name"));
+      actions.push(tag({ type: "add_text", text: args.designation || "Position / Designation", left: 60, top: H * 0.62 + 120, fontSize: 22, fill: "#e2e8f0" }, "content", "role"));
+      // Footer (contact)
+      actions.push(tag({ type: "add_text", text: `📞 ${args.phone || "+880 1XXX-XXXXXX"}`, left: 60, top: H - 110, fontSize: 18, fill: "#ffffff" }, "footer", "phone"));
+      actions.push(tag({ type: "add_text", text: `✉ ${args.email || "hello@example.com"}`, left: 60, top: H - 75, fontSize: 18, fill: "#ffffff" }, "footer", "email"));
+      actions.push(tag({ type: "add_text", text: `🌐 ${args.website || "www.example.com"}`, left: 60, top: H - 40, fontSize: 18, fill: "#ffffff" }, "footer", "web"));
+      break;
+    }
+    case "id_card": {
+      // Header band
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: 0, width: W, height: 160, fill: accent }, "bg", "header-band"));
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: H - 90, width: W, height: 90, fill: accent }, "bg", "footer-band"));
+      // Brand
+      actions.push(tag({ type: "add_shape", shape: "ellipse", left: 30, top: 35, width: 90, height: 90, fill: "#ffffff" }, "brand", "logo"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "INSTITUTION NAME", left: 140, top: 55, fontSize: 24, fontWeight: "800", fill: "#ffffff" }, "brand", "org"));
+      actions.push(tag({ type: "add_text", text: args.subtitle || "Official ID Card", left: 140, top: 90, fontSize: 14, fill: "#e2e8f0" }, "brand", "subtitle"));
+      // Content - photo placeholder
+      actions.push(tag({ type: "add_shape", shape: "rect", left: W / 2 - 110, top: 200, width: 220, height: 260, fill: muted, stroke: accent, strokeWidth: 4, rx: 12 }, "content", "photo"));
+      actions.push(tag({ type: "add_text", text: "PHOTO", left: W / 2 - 35, top: 320, fontSize: 18, fontWeight: "700", fill: sub }, "content", "photo-label"));
+      // Content - person details
+      const dy = 500;
+      const fields: Array<[string, string]> = [
+        ["Name", args.personName || "Student Name"],
+        ["Roll", args.rollNumber || "0000"],
+        ["Class", args.studentClass || "—"],
+        ["Session", args.session || "2025"],
+        ["Phone", args.phone || "+880 1XXX-XXXXXX"],
+      ];
+      fields.forEach(([label, value], i) => {
+        const y = dy + i * 60;
+        actions.push(tag({ type: "add_text", text: label, left: 50, top: y, fontSize: 14, fontWeight: "600", fill: sub }, "content", `label-${i}`));
+        actions.push(tag({ type: "add_text", text: value, left: 50, top: y + 20, fontSize: 20, fontWeight: "700", fill: ink }, "content", `value-${i}`));
+        actions.push(tag({ type: "add_shape", shape: "line", left: 50, top: y + 50, width: W - 100, height: 0, stroke: muted, strokeWidth: 1 }, "content", `line-${i}`));
+      });
+      // Footer
+      actions.push(tag({ type: "add_text", text: args.address || "Institution Address, Bangladesh", left: 30, top: H - 60, fontSize: 14, fill: "#ffffff" }, "footer", "address"));
+      break;
+    }
+    case "invoice":
+    case "money_receipt":
+    case "memo":
+    case "letterhead": {
+      const isInvoice = kind === "invoice";
+      const isReceipt = kind === "money_receipt";
+      // Top accent stripe
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: 0, width: W, height: 12, fill: accent }, "bg", "top-stripe"));
+      // Brand
+      actions.push(tag({ type: "add_shape", shape: "ellipse", left: 100, top: 80, width: 110, height: 110, fill: accent }, "brand", "logo"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "Organization Name", left: 230, top: 100, fontSize: 42, fontWeight: "800", fill: ink }, "brand", "org"));
+      actions.push(tag({ type: "add_text", text: args.address || "Street, City, Country  ·  +880 1XXX-XXXXXX", left: 230, top: 158, fontSize: 18, fill: sub }, "brand", "addr"));
+      // Document title
+      const docTitle = args.title || (isInvoice ? "INVOICE" : isReceipt ? "MONEY RECEIPT" : kind === "memo" ? "MEMO" : "LETTERHEAD");
+      actions.push(tag({ type: "add_text", text: docTitle, left: W - 700, top: 100, fontSize: 64, fontWeight: "800", fill: accent, textAlign: "right" }, "content", "title"));
+      actions.push(tag({ type: "add_text", text: `No: ${args.invoiceNumber || "INV-2025-0001"}`, left: W - 700, top: 180, fontSize: 22, fill: sub, textAlign: "right" }, "content", "doc-no"));
+      actions.push(tag({ type: "add_text", text: `Date: ${args.invoiceDate || new Date().toISOString().slice(0, 10)}`, left: W - 700, top: 215, fontSize: 22, fill: sub, textAlign: "right" }, "content", "doc-date"));
+      // Bill to
+      actions.push(tag({ type: "add_text", text: "Bill To", left: 100, top: 320, fontSize: 16, fontWeight: "700", fill: sub }, "content", "to-label"));
+      actions.push(tag({ type: "add_text", text: args.recipientName || "Customer Name", left: 100, top: 350, fontSize: 28, fontWeight: "700", fill: ink }, "content", "to-name"));
+      // Table header
+      const tableTop = 480;
+      const tableH = 80;
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 100, top: tableTop, width: W - 200, height: tableH, fill: accent, rx: 8 }, "content", "thead"));
+      ["Description", "Qty", "Rate", "Amount"].forEach((h, i) => {
+        const colX = [120, W - 800, W - 600, W - 350][i];
+        actions.push(tag({ type: "add_text", text: h, left: colX, top: tableTop + 28, fontSize: 22, fontWeight: "700", fill: "#ffffff" }, "content", `th-${i}`));
+      });
+      // Sample rows
+      for (let r = 0; r < 4; r++) {
+        const ry = tableTop + tableH + r * 80;
+        if (r % 2 === 1) actions.push(tag({ type: "add_shape", shape: "rect", left: 100, top: ry, width: W - 200, height: 80, fill: "#f8fafc", rx: 6 }, "content", `trow-${r}`));
+        ["Item description here", "1", "—", "৳ 0.00"].forEach((c, i) => {
+          const colX = [120, W - 800, W - 600, W - 350][i];
+          actions.push(tag({ type: "add_text", text: c, left: colX, top: ry + 28, fontSize: 20, fill: ink }, "content", `td-${r}-${i}`));
+        });
+      }
+      // Total
+      const totalY = tableTop + tableH + 4 * 80 + 60;
+      actions.push(tag({ type: "add_shape", shape: "rect", left: W - 700, top: totalY, width: 600, height: 90, fill: accent, rx: 10 }, "content", "total-bg"));
+      actions.push(tag({ type: "add_text", text: "TOTAL", left: W - 680, top: totalY + 28, fontSize: 28, fontWeight: "800", fill: "#ffffff" }, "content", "total-label"));
+      actions.push(tag({ type: "add_text", text: args.amount || "৳ 0.00", left: W - 350, top: totalY + 28, fontSize: 28, fontWeight: "800", fill: "#ffffff" }, "content", "total-value"));
+      // Footer
+      actions.push(tag({ type: "add_shape", shape: "line", left: 100, top: H - 220, width: W - 200, height: 0, stroke: muted, strokeWidth: 2 }, "footer", "divider"));
+      actions.push(tag({ type: "add_text", text: "Thank you for your business.", left: 100, top: H - 180, fontSize: 22, fontStyle: "italic" as any, fill: sub }, "footer", "thanks"));
+      actions.push(tag({ type: "add_text", text: `${args.email || "hello@example.com"}  ·  ${args.website || "www.example.com"}`, left: 100, top: H - 130, fontSize: 18, fill: sub }, "footer", "contact"));
+      actions.push(tag({ type: "add_text", text: "Authorized Signature", left: W - 500, top: H - 130, fontSize: 18, fontWeight: "600", fill: ink }, "footer", "sign"));
+      actions.push(tag({ type: "add_shape", shape: "line", left: W - 500, top: H - 145, width: 360, height: 0, stroke: ink, strokeWidth: 2 }, "footer", "sign-line"));
+      break;
+    }
+    case "certificate": {
+      // Decorative borders
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 60, top: 60, width: W - 120, height: H - 120, fill: "#ffffff", stroke: accent, strokeWidth: 8, rx: 0 }, "bg", "outer-border"));
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 100, top: 100, width: W - 200, height: H - 200, fill: "#ffffff", stroke: accent, strokeWidth: 2, rx: 0 }, "bg", "inner-border"));
+      // Brand
+      actions.push(tag({ type: "add_shape", shape: "ellipse", left: W / 2 - 70, top: 160, width: 140, height: 140, fill: accent }, "brand", "seal"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "INSTITUTION NAME", left: 0, top: 320, fontSize: 36, fontWeight: "700", fill: sub, textAlign: "center" as any, width: W }, "brand", "org"));
+      // Content
+      actions.push(tag({ type: "add_text", text: args.title || "CERTIFICATE OF ACHIEVEMENT", left: 0, top: 400, fontSize: 86, fontWeight: "800", fill: accent, textAlign: "center" as any, width: W }, "content", "title"));
+      actions.push(tag({ type: "add_text", text: "This certificate is proudly presented to", left: 0, top: 560, fontSize: 28, fill: sub, textAlign: "center" as any, width: W }, "content", "presented"));
+      actions.push(tag({ type: "add_text", text: args.recipientName || args.personName || "RECIPIENT NAME", left: 0, top: 640, fontSize: 96, fontWeight: "800", fill: ink, textAlign: "center" as any, width: W }, "content", "recipient"));
+      actions.push(tag({ type: "add_shape", shape: "line", left: W / 2 - 500, top: 780, width: 1000, height: 0, stroke: accent, strokeWidth: 3 }, "content", "name-line"));
+      actions.push(tag({ type: "add_text", text: args.subtitle || "for outstanding performance and dedication during the academic year.", left: W / 2 - 800, top: 830, fontSize: 26, fill: sub, textAlign: "center" as any, width: 1600 }, "content", "body"));
+      // Footer signatures
+      actions.push(tag({ type: "add_shape", shape: "line", left: 360, top: H - 320, width: 480, height: 0, stroke: ink, strokeWidth: 2 }, "footer", "sign1-line"));
+      actions.push(tag({ type: "add_text", text: "Principal", left: 360, top: H - 295, fontSize: 22, fontWeight: "700", fill: ink, textAlign: "center" as any, width: 480 }, "footer", "sign1"));
+      actions.push(tag({ type: "add_shape", shape: "line", left: W - 840, top: H - 320, width: 480, height: 0, stroke: ink, strokeWidth: 2 }, "footer", "sign2-line"));
+      actions.push(tag({ type: "add_text", text: "Director", left: W - 840, top: H - 295, fontSize: 22, fontWeight: "700", fill: ink, textAlign: "center" as any, width: 480 }, "footer", "sign2"));
+      actions.push(tag({ type: "add_text", text: `Date: ${args.invoiceDate || new Date().toISOString().slice(0, 10)}`, left: 0, top: H - 180, fontSize: 20, fill: sub, textAlign: "center" as any, width: W }, "footer", "date"));
+      break;
+    }
+    case "class_routine": {
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: 0, width: W, height: 200, fill: accent }, "bg", "header"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "INSTITUTION NAME", left: 0, top: 50, fontSize: 56, fontWeight: "800", fill: "#ffffff", textAlign: "center" as any, width: W }, "brand", "org"));
+      actions.push(tag({ type: "add_text", text: `Class Routine — ${args.studentClass || "Class X"} — ${args.session || "2025"}`, left: 0, top: 120, fontSize: 28, fill: "#e2e8f0", textAlign: "center" as any, width: W }, "brand", "subtitle"));
+      // Grid
+      const cols = 7; // Day + 6 periods
+      const days = ["Day", "1st", "2nd", "3rd", "4th", "5th", "6th"];
+      const rows = ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu"];
+      const tx = 120, ty = 280;
+      const tw = W - 240, th = H - 480;
+      const cw2 = tw / cols, rh = th / (rows.length + 1);
+      // Header row
+      actions.push(tag({ type: "add_shape", shape: "rect", left: tx, top: ty, width: tw, height: rh, fill: accent, rx: 8 }, "content", "thead"));
+      days.forEach((d, c) => actions.push(tag({ type: "add_text", text: d, left: tx + c * cw2 + cw2 / 2 - 30, top: ty + rh / 2 - 16, fontSize: 26, fontWeight: "700", fill: "#ffffff" }, "content", `h-${c}`)));
+      rows.forEach((day, r) => {
+        const ry = ty + (r + 1) * rh;
+        if (r % 2 === 1) actions.push(tag({ type: "add_shape", shape: "rect", left: tx, top: ry, width: tw, height: rh, fill: "#f8fafc" }, "content", `row-${r}`));
+        actions.push(tag({ type: "add_text", text: day, left: tx + cw2 / 2 - 30, top: ry + rh / 2 - 14, fontSize: 22, fontWeight: "700", fill: ink }, "content", `day-${r}`));
+        for (let c = 1; c < cols; c++) {
+          actions.push(tag({ type: "add_text", text: "—", left: tx + c * cw2 + cw2 / 2 - 8, top: ry + rh / 2 - 14, fontSize: 22, fill: sub }, "content", `c-${r}-${c}`));
+        }
+      });
+      // Grid lines
+      for (let c = 1; c < cols; c++) actions.push(tag({ type: "add_shape", shape: "line", left: tx + c * cw2, top: ty, width: 0, height: th, stroke: muted, strokeWidth: 1 }, "content", `vline-${c}`));
+      for (let r = 1; r <= rows.length; r++) actions.push(tag({ type: "add_shape", shape: "line", left: tx, top: ty + r * rh, width: tw, height: 0, stroke: muted, strokeWidth: 1 }, "content", `hline-${r}`));
+      actions.push(tag({ type: "add_text", text: "Authorized: ____________________", left: tx, top: H - 130, fontSize: 22, fontWeight: "600", fill: ink }, "footer", "auth"));
+      break;
+    }
+    case "facebook_cover":
+    case "facebook_post":
+    case "instagram_post":
+    case "instagram_story":
+    case "youtube_thumbnail":
+    case "poster":
+    case "flyer":
+    case "banner": {
+      const isPortrait = H > W;
+      // Bold gradient-ish background using two stacked rects
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: 0, width: W, height: H, fill: "#0f172a" }, "bg", "page"));
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 0, top: isPortrait ? H * 0.55 : 0, width: isPortrait ? W : W * 0.55, height: isPortrait ? H * 0.45 : H, fill: accent }, "bg", "accent-block"));
+      // Brand
+      actions.push(tag({ type: "add_shape", shape: "ellipse", left: 60, top: 60, width: 80, height: 80, fill: "#ffffff" }, "brand", "logo"));
+      actions.push(tag({ type: "add_text", text: args.orgName || "BRAND", left: 160, top: 80, fontSize: Math.min(W, H) * 0.04, fontWeight: "800", fill: "#ffffff" }, "brand", "org"));
+      // Content
+      const headlineSize = Math.min(W, H) * (isPortrait ? 0.09 : 0.11);
+      actions.push(tag({ type: "add_text", text: args.title || "BIG BOLD HEADLINE", left: 60, top: H * (isPortrait ? 0.18 : 0.25), fontSize: headlineSize, fontWeight: "800", fill: "#ffffff", width: W - 120 }, "content", "headline"));
+      actions.push(tag({ type: "add_text", text: args.subtitle || "Supporting message in one strong line.", left: 60, top: H * (isPortrait ? 0.42 : 0.55), fontSize: headlineSize * 0.32, fill: "#e2e8f0", width: W - 120 }, "content", "subhead"));
+      // CTA pill
+      actions.push(tag({ type: "add_shape", shape: "rect", left: 60, top: H - 180, width: 360, height: 90, fill: "#ffffff", rx: 45 }, "content", "cta-bg"));
+      actions.push(tag({ type: "add_text", text: args.ctaText || "Learn More", left: 110, top: H - 158, fontSize: 36, fontWeight: "800", fill: ink }, "content", "cta-text"));
+      // Footer
+      actions.push(tag({ type: "add_text", text: `${args.website || "www.example.com"}  ·  ${args.phone || ""}`.trim(), left: 60, top: H - 60, fontSize: 22, fill: "#e2e8f0" }, "footer", "contact"));
+      break;
+    }
+    default: {
+      actions.push(tag({ type: "add_text", text: args.title || kind, left: W / 2 - 200, top: H / 2 - 40, fontSize: 64, fontWeight: "800", fill: ink }, "content", "title"));
+    }
+  }
+  return { actions, resize: { w: W, h: H } };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -562,6 +867,13 @@ serve(async (req) => {
       } else if (name === "generate_section") {
         const blueprint = blueprintSection(args, cw, ch);
         actions.push(...blueprint);
+      } else if (name === "build_template") {
+        const built = buildTemplate(args);
+        // Resize canvas first so positions land correctly
+        actions.push({ type: "resize_canvas", width: built.resize.w, height: built.resize.h });
+        actions.push(...built.actions);
+      } else if (name === "resize_canvas") {
+        actions.push({ type: "resize_canvas", width: args.width, height: args.height });
       } else if (name === "use_template") {
         actions.push({ type: "use_template", templateId: args.templateId, templateName: args.templateName, left: args.left, top: args.top });
       } else {
