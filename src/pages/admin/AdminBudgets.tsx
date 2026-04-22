@@ -365,11 +365,11 @@ const AdminBudgets = () => {
             </div>
             <div>
               <Label>{bn ? 'শুরুর তারিখ *' : 'Start Date *'}</Label>
-              <DatePicker value={form.period_start ? new Date(form.period_start) : undefined} onChange={(d) => setForm({ ...form, period_start: d ? d.toISOString().slice(0, 10) : '' })} />
+              <DatePicker value={form.period_start} onChange={(d) => setForm({ ...form, period_start: d })} />
             </div>
             <div>
               <Label>{bn ? 'শেষ তারিখ *' : 'End Date *'}</Label>
-              <DatePicker value={form.period_end ? new Date(form.period_end) : undefined} onChange={(d) => setForm({ ...form, period_end: d ? d.toISOString().slice(0, 10) : '' })} />
+              <DatePicker value={form.period_end} onChange={(d) => setForm({ ...form, period_end: d })} />
             </div>
             <div className="col-span-2">
               <Label>{bn ? 'নোট' : 'Notes'}</Label>
