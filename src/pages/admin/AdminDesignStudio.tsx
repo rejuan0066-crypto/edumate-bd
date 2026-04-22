@@ -21,6 +21,10 @@ import type { DesignTool, LayerInfo, DesignProject } from '@/components/design-s
 import {
   exportSVG, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
 } from '@/components/design-studio/exportUtils';
+import DesignAiChatBar, { type AiChatMessage } from '@/components/design-studio/DesignAiChatBar';
+import {
+  applyAiActions, selectedImageToDataUrl, summarizeSelection, type AiAction,
+} from '@/components/design-studio/aiCanvasActions';
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
@@ -46,6 +50,10 @@ const AdminDesignStudio = () => {
   const [openProjects, setOpenProjects] = useState<DesignProject[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
+
+  // AI chat state
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   // Undo / redo
   const historyRef = useRef<string[]>([]);
@@ -344,6 +352,54 @@ const AdminDesignStudio = () => {
 
   const safeName = useMemo(() => projectName.replace(/[^\w\-]+/g, '_') || 'design', [projectName]);
 
+  // ---------- AI command handler ----------
+  const handleAiPrompt = useCallback(async (prompt: string) => {
+    if (!fc) return;
+    setAiMessages((m) => [...m, { role: 'user', text: prompt }]);
+    setAiLoading(true);
+    try {
+      const selectedImage = selectedImageToDataUrl(selected);
+      const { data, error } = await supabase.functions.invoke('design-ai', {
+        body: {
+          prompt,
+          context: {
+            canvasWidth: fc.getWidth(),
+            canvasHeight: fc.getHeight(),
+            background,
+            selectedType: selected?.type ?? null,
+            selectedSummary: summarizeSelection(selected),
+          },
+          selectedImage,
+        },
+      });
+      if (error) throw error;
+      const actions = (data?.actions || []) as AiAction[];
+      if (actions.length === 0) {
+        setAiMessages((m) => [...m, {
+          role: 'assistant',
+          text: data?.reply || "I couldn't translate that into a canvas action.",
+          status: 'error',
+        }]);
+        return;
+      }
+      const { summary, errors } = await applyAiActions(fc, actions, setBackground);
+      pushHistory();
+      const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
+      setAiMessages((m) => [...m, {
+        role: 'assistant',
+        text,
+        status: errors.length ? 'error' : 'done',
+      }]);
+    } catch (e: any) {
+      const msg = e?.message || 'AI request failed';
+      setAiMessages((m) => [...m, { role: 'assistant', text: msg, status: 'error' }]);
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [fc, selected, background, pushHistory]);
+
+
   return (
     <AdminLayout>
       <div className="flex flex-col h-[calc(100vh-7rem)] -mx-3 -my-3 bg-[#0d0d10] text-foreground rounded-2xl overflow-hidden border border-border/40">
@@ -428,19 +484,31 @@ const AdminDesignStudio = () => {
           />
 
           {/* Canvas viewport */}
-          <div className="flex-1 overflow-auto bg-[#1a1a1f] flex items-center justify-center p-8">
-            <DesignCanvas
-              ref={canvasRef}
-              width={width}
-              height={height}
-              background={background}
-              activeTool={activeTool}
-              showGrid={showGrid}
-              snapToGrid={snap}
-              gridSize={GRID_SIZE}
-              onReady={handleReady}
-              onSelectionChange={setSelected}
-              onObjectsChange={handleObjectsChange}
+          <div className="relative flex-1 overflow-hidden bg-[#1a1a1f] flex flex-col">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-8">
+              <DesignCanvas
+                ref={canvasRef}
+                width={width}
+                height={height}
+                background={background}
+                activeTool={activeTool}
+                showGrid={showGrid}
+                snapToGrid={snap}
+                gridSize={GRID_SIZE}
+                onReady={handleReady}
+                onSelectionChange={setSelected}
+                onObjectsChange={handleObjectsChange}
+              />
+            </div>
+
+            {/* Floating AI command bar */}
+            <DesignAiChatBar
+              messages={aiMessages}
+              onSubmit={handleAiPrompt}
+              isLoading={aiLoading}
+              disabled={!fc}
+              hasSelection={!!selected}
+              selectionLabel={summarizeSelection(selected) ?? undefined}
             />
           </div>
 
