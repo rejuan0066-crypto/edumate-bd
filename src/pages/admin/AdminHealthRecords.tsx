@@ -370,9 +370,11 @@ const AdminHealthRecords = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'হেলথ প্রোফাইলসমূহ' : 'Health Profiles'}</CardTitle>
-              <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
-                <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
+                  <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -401,8 +403,12 @@ const AdminHealthRecords = () => {
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
                         <TableCell>{p.emergency_contact_name ? `${p.emergency_contact_name} (${p.emergency_contact_phone || ''})` : '—'}</TableCell>
                         <TableCell className="text-right">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditProf(p); setProfForm(p); setProfDlg(true); }}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDelProfId(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          {canEditItem && (
+                            <Button size="icon" variant="ghost" onClick={() => { setEditProf(p); setProfForm(p); setProfDlg(true); }}><Pencil className="h-4 w-4" /></Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button size="icon" variant="ghost" onClick={() => setDelProfId(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -418,9 +424,11 @@ const AdminHealthRecords = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'মেডিকেল ভিজিট' : 'Medical Visits'}</CardTitle>
-              <Button onClick={() => { setEditVisit(null); setVisitForm({ person_type: 'student', severity: 'mild', visit_date: new Date().toISOString().split('T')[0] }); setVisitDlg(true); }}>
-                <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন ভিজিট' : 'Add Visit'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditVisit(null); setVisitForm({ person_type: 'student', severity: 'mild', visit_date: new Date().toISOString().split('T')[0] }); setVisitDlg(true); }}>
+                  <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন ভিজিট' : 'Add Visit'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -449,8 +457,12 @@ const AdminHealthRecords = () => {
                         <TableCell><Badge variant={severityVariant(v.severity) as any}>{SEVERITY_OPTIONS.find(s => s.v === v.severity)?.[bn ? 'bn' : 'en']}</Badge></TableCell>
                         <TableCell>{v.follow_up_date || '—'}</TableCell>
                         <TableCell className="text-right">
-                          <Button size="icon" variant="ghost" onClick={() => { setEditVisit(v); setVisitForm(v); setVisitDlg(true); }}><Pencil className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" onClick={() => setDelVisitId(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          {canEditItem && (
+                            <Button size="icon" variant="ghost" onClick={() => { setEditVisit(v); setVisitForm(v); setVisitDlg(true); }}><Pencil className="h-4 w-4" /></Button>
+                          )}
+                          {canDeleteItem && (
+                            <Button size="icon" variant="ghost" onClick={() => setDelVisitId(v.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -466,9 +478,11 @@ const AdminHealthRecords = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'টিকার রেকর্ড' : 'Vaccination Records'}</CardTitle>
-              <Button onClick={() => { setEditVacc(null); setVaccForm({ person_type: 'student', dose_number: 1, vaccination_date: new Date().toISOString().split('T')[0] }); setVaccDlg(true); }}>
-                <Plus className="h-4 w-4 mr-1" />{bn ? 'টিকা যোগ' : 'Add Vaccine'}
-              </Button>
+              {canAddItem && (
+                <Button onClick={() => { setEditVacc(null); setVaccForm({ person_type: 'student', dose_number: 1, vaccination_date: new Date().toISOString().split('T')[0] }); setVaccDlg(true); }}>
+                  <Plus className="h-4 w-4 mr-1" />{bn ? 'টিকা যোগ' : 'Add Vaccine'}
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
