@@ -709,6 +709,86 @@ export type Database = {
           },
         ]
       }
+      complaints: {
+        Row: {
+          assigned_to: string | null
+          attachments: Json | null
+          category: string
+          complainant_email: string | null
+          complainant_name: string | null
+          complainant_phone: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string
+          id: string
+          ip_address: string | null
+          is_anonymous: boolean
+          priority: string
+          related_student_id: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          subject: string
+          ticket_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string
+          complainant_email?: string | null
+          complainant_name?: string | null
+          complainant_phone?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description: string
+          id?: string
+          ip_address?: string | null
+          is_anonymous?: boolean
+          priority?: string
+          related_student_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject: string
+          ticket_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: string
+          complainant_email?: string | null
+          complainant_name?: string | null
+          complainant_phone?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string
+          id?: string
+          ip_address?: string | null
+          is_anonymous?: boolean
+          priority?: string
+          related_student_id?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_related_student_id_fkey"
+            columns: ["related_student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_fields: {
         Row: {
           created_at: string | null

@@ -117,6 +117,8 @@ import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
+import AdminComplaints from "./pages/admin/AdminComplaints";
+import ComplaintPage from "./pages/ComplaintPage";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
@@ -246,6 +248,7 @@ const App = () => (
                   <Route path="/staff-checkin" element={<StaffCheckin />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/parent" element={<ParentPortal />} />
+                  <Route path="/complaints" element={<ComplaintPage />} />
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
@@ -330,6 +333,7 @@ const App = () => (
                     <Route path="admission-tests" element={<ModuleGuard menuPath="/admin/admission-tests"><AdminAdmissionTests /></ModuleGuard>} />
                     <Route path="scholarships" element={<ModuleGuard menuPath="/admin/scholarships"><AdminScholarships /></ModuleGuard>} />
                     <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
+                    <Route path="complaints" element={<AdminComplaints />} />
                     <Route path="settings" element={<AdminSettings />} />
                   </Route>
 
