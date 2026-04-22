@@ -1602,7 +1602,7 @@ const AdminQuestionPapers = () => {
           const s = subjects.find((x: any) => x.id === newPaper.subject_id);
           return s ? (language === 'bn' ? s.name_bn : (s.name || s.name_bn)) : undefined;
         })()}
-        className={(() => {
+        classLevel={(() => {
           const c = classes.find((x: any) => x.id === newPaper.class_id);
           return c ? (language === 'bn' ? c.name_bn : (c.name || c.name_bn)) : undefined;
         })()}
