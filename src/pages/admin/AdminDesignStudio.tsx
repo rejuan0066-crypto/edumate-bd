@@ -561,7 +561,7 @@ const AdminDesignStudio = () => {
     } finally {
       setAiLoading(false);
     }
-  }, [fc, selected, background, aiScope, templateLoader]);
+  }, [fc, selected, background, aiScope, templateLoader, pushHistory, captureVersion, aiCommandCursor]);
 
   const applyPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
