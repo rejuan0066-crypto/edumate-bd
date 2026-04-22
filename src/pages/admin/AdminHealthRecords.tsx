@@ -361,9 +361,6 @@ const AdminHealthRecords = () => {
     const today = new Date();
     const monthAgo = new Date(today.getTime() - 30 * 86400000);
     const next30 = new Date(today.getTime() + 30 * 86400000);
-    const today = new Date();
-    const monthAgo = new Date(today.getTime() - 30 * 86400000);
-    const next30 = new Date(today.getTime() + 30 * 86400000);
 
     // Match related records strictly against the resolved id+side so a mis-set
     // person_type can never cross-link a student's id to a staff record (or vice versa).
