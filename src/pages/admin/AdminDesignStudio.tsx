@@ -57,6 +57,15 @@ const AdminDesignStudio = () => {
   // AI chat state
   const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiScope, setAiScope] = useState<DesignScope>('any');
+
+  // Preview / version-history state
+  const [pendingSnapshot, setPendingSnapshot] = useState<string | null>(null);
+  const [pendingLayerIds, setPendingLayerIds] = useState<string[]>([]);
+  const [versions, setVersions] = useState<VersionEntry[]>([]);
+  const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Undo / redo
   const historyRef = useRef<string[]>([]);
