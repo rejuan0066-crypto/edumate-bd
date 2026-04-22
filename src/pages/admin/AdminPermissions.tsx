@@ -1,46 +1,69 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMenuSettings, type MenuItemConfig } from '@/hooks/useMenuSettings';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Shield, Save, Loader2 } from 'lucide-react';
-
-const MENU_ITEMS = [
-  { path: '/admin', label: 'Dashboard', label_bn: 'ড্যাশবোর্ড' },
-  { path: '/admin/donors', label: 'Donor List', label_bn: 'দাতা তালিকা' },
-  { path: '/admin/students', label: 'Student Management', label_bn: 'ছাত্র ব্যবস্থাপনা' },
-  { path: '/admin/staff', label: 'Staff/Teacher Management', label_bn: 'স্টাফ/শিক্ষক ব্যবস্থাপনা' },
-  { path: '/admin/divisions', label: 'Division & Class', label_bn: 'বিভাগ ও শ্রেণী' },
-  { path: '/admin/fee-receipts', label: 'Fee Receipts', label_bn: 'ফি রসিদ' },
-  { path: '/admin/resign-letters', label: 'Resign Letters', label_bn: 'পদত্যাগ পত্র' },
-  { path: '/admin/joining-letters', label: 'Joining Letters', label_bn: 'যোগদান পত্র' },
-  { path: '/admin/admission-letters', label: 'Admission Letters', label_bn: 'ভর্তি পত্র' },
-  { path: '/admin/results', label: 'Results', label_bn: 'ফলাফল' },
-  { path: '/admin/notices', label: 'Notice', label_bn: 'নোটিশ' },
-  { path: '/admin/students-fees', label: 'Student Fees', label_bn: 'ছাত্র ফি' },
-  { path: '/admin/expenses', label: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
-  { path: '/admin/website', label: 'Website Control', label_bn: 'ওয়েবসাইট নিয়ন্ত্রণ' },
-  { path: '/admin/designations', label: 'Designations', label_bn: 'পদবি' },
-  { path: '/admin/subjects', label: 'Subjects', label_bn: 'বিষয়সমূহ' },
-  { path: '/admin/form-builder', label: 'Custom Builder', label_bn: 'কাস্টম বিল্ডার' },
-  { path: '/admin/module-manager', label: 'Module Manager', label_bn: 'মডিউল ম্যানেজার' },
-  { path: '/admin/formula-builder', label: 'Formula Builder', label_bn: 'ফর্মুলা বিল্ডার' },
-  { path: '/admin/attendance', label: 'Attendance', label_bn: 'অ্যাটেন্ডেন্স' },
-  { path: '/admin/validation-manager', label: 'Validation Manager', label_bn: 'ভ্যালিডেশন ম্যানেজার' },
-  { path: '/admin/reports', label: 'Reports & Analytics', label_bn: 'রিপোর্ট ও অ্যানালিটিক্স' },
-  { path: '/admin/permissions', label: 'Permissions', label_bn: 'পারমিশন' },
-  { path: '/admin/settings', label: 'Settings', label_bn: 'সেটিংস' },
-];
+import { Shield, Save, Loader2, Search } from 'lucide-react';
 
 const ROLES = [
   { value: 'staff', label: 'Staff', label_bn: 'স্টাফ' },
   { value: 'teacher', label: 'Teacher', label_bn: 'শিক্ষক' },
 ];
+
+type FlatMenu = {
+  path: string;
+  label: string;
+  label_bn: string;
+  group?: string;
+  group_bn?: string;
+  depth: number;
+};
+
+// Flatten the nested sidebar tree into a single list, preserving group context
+// and de-duplicating by path so the same page never appears twice.
+const flattenMenu = (items: MenuItemConfig[]): FlatMenu[] => {
+  const seen = new Set<string>();
+  const out: FlatMenu[] = [];
+  items
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .forEach((parent) => {
+      if (!seen.has(parent.path)) {
+        seen.add(parent.path);
+        out.push({
+          path: parent.path,
+          label: parent.label_en,
+          label_bn: parent.label_bn,
+          group: parent.label_en,
+          group_bn: parent.label_bn,
+          depth: 0,
+        });
+      }
+      (parent.children ?? [])
+        .slice()
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .forEach((child) => {
+          if (seen.has(child.path)) return;
+          seen.add(child.path);
+          out.push({
+            path: child.path,
+            label: child.label_en,
+            label_bn: child.label_bn,
+            group: parent.label_en,
+            group_bn: parent.label_bn,
+            depth: 1,
+          });
+        });
+    });
+  return out;
+};
 
 type PermRow = {
   menu_path: string;
