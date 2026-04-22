@@ -155,41 +155,57 @@ const AdminPermissions = () => {
     },
   });
 
+  // Build a fresh permission row with all flags off — used as a safe default
+  // when a menu path has no existing role_permissions record yet.
+  const blankRow = (path: string): PermRow => ({
+    menu_path: path,
+    can_view: false,
+    can_add: false,
+    can_edit: false,
+    can_delete: false,
+  });
+
   const togglePerm = (path: string, field: keyof PermRow) => {
     if (field === 'menu_path') return;
-    setLocalPerms((prev) => ({
-      ...prev,
-      [path]: { ...prev[path], [field]: !prev[path][field] },
-    }));
+    setLocalPerms((prev) => {
+      const current = prev[path] ?? blankRow(path);
+      return {
+        ...prev,
+        [path]: { ...current, [field]: !current[field] },
+      };
+    });
     setDirty(true);
   };
 
   const toggleAllForMenu = (path: string) => {
-    const p = localPerms[path];
-    if (!p) return;
-    const allChecked = p.can_view && p.can_add && p.can_edit && p.can_delete;
-    setLocalPerms((prev) => ({
-      ...prev,
-      [path]: {
-        ...prev[path],
-        can_view: !allChecked,
-        can_add: !allChecked,
-        can_edit: !allChecked,
-        can_delete: !allChecked,
-      },
-    }));
+    setLocalPerms((prev) => {
+      const current = prev[path] ?? blankRow(path);
+      const allChecked =
+        current.can_view && current.can_add && current.can_edit && current.can_delete;
+      return {
+        ...prev,
+        [path]: {
+          ...current,
+          can_view: !allChecked,
+          can_add: !allChecked,
+          can_edit: !allChecked,
+          can_delete: !allChecked,
+        },
+      };
+    });
     setDirty(true);
   };
 
   const toggleAllForAction = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete') => {
     const allChecked = filteredItems.every((item) => localPerms[item.path]?.[field]);
-    const updated = { ...localPerms };
-    filteredItems.forEach((item) => {
-      if (updated[item.path]) {
-        updated[item.path] = { ...updated[item.path], [field]: !allChecked };
-      }
+    setLocalPerms((prev) => {
+      const updated = { ...prev };
+      filteredItems.forEach((item) => {
+        const current = updated[item.path] ?? blankRow(item.path);
+        updated[item.path] = { ...current, [field]: !allChecked };
+      });
+      return updated;
     });
-    setLocalPerms(updated);
     setDirty(true);
   };
 
