@@ -18,7 +18,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; address?: string | null; warden_name?: string | null; warden_phone?: string | null; total_capacity: number; is_active: boolean; notes?: string | null };
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
-type Allocation = { id: string; room_id: string; student_id: string; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
+type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
