@@ -40,6 +40,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/budgets', label_en: 'Budgets', label_bn: 'বাজেট ব্যবস্থাপনা' },
   { path: '/admin/complaints', label_en: 'Complaints', label_bn: 'অভিযোগ বক্স' },
   { path: '/admin/hostel', label_en: 'Hostel Management', label_bn: 'হোস্টেল ব্যবস্থাপনা' },
+  { path: '/admin/health-records', label_en: 'Health & Medical Records', label_bn: 'হেলথ ও মেডিকেল রেকর্ড' },
   { path: '/admin/notices', label_en: 'Notices', label_bn: 'নোটিশ' },
   { path: '/admin/students-fees', label_en: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/fee-receipts', label_en: 'Fee Receipts', label_bn: 'ফি রসিদ' },
