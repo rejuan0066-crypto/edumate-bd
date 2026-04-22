@@ -316,6 +316,159 @@ const AdminHealthRecords = () => {
     return { profiles: profiles.length, visitsMonth: visitsThisMonth, emergencies, dueVaccines };
   }, [profiles, visits, vaccinations]);
 
+  // ─── Printable Health Summary ──────────────────────────────────────────
+  const printSummary = (profile: HealthProfile) => {
+    const personId = profile.person_type === 'student' ? profile.student_id : profile.staff_id;
+    const personName = personLabel(profile.person_type, profile.student_id, profile.staff_id);
+    const today = new Date();
+    const monthAgo = new Date(today.getTime() - 30 * 86400000);
+    const next30 = new Date(today.getTime() + 30 * 86400000);
+
+    const personVisits = visits
+      .filter(v => (profile.person_type === 'student' ? v.student_id === personId : v.staff_id === personId))
+      .sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+    const lastVisit = personVisits[0];
+    const recentVisits = personVisits.filter(v => new Date(v.visit_date) >= monthAgo);
+
+    const sevCount: Record<string, number> = { mild: 0, moderate: 0, severe: 0, emergency: 0 };
+    recentVisits.forEach(v => { sevCount[v.severity] = (sevCount[v.severity] || 0) + 1; });
+
+    const personVaccs = vaccinations
+      .filter(v => (profile.person_type === 'student' ? v.student_id === personId : v.staff_id === personId))
+      .sort((a, b) => new Date(b.vaccination_date).getTime() - new Date(a.vaccination_date).getTime());
+    const upcomingDue = personVaccs.filter(v =>
+      v.next_due_date && new Date(v.next_due_date) >= today && new Date(v.next_due_date) <= next30
+    );
+
+    const fmt = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB') : '—';
+    const sevLabel = (s: string) => SEVERITY_OPTIONS.find(o => o.v === s);
+
+    const summaryStats: ReportSummaryStat[] = [
+      { label_bn: 'মোট ভিজিট', label_en: 'Total Visits', value: personVisits.length, tone: 'accent' },
+      { label_bn: '৩০ দিনে ভিজিট', label_en: 'Visits (30d)', value: recentVisits.length, tone: 'neutral' },
+      { label_bn: 'গুরুতর/জরুরি', label_en: 'Severe/Emergency', value: (sevCount.severe || 0) + (sevCount.emergency || 0), tone: 'negative' },
+      { label_bn: 'আসন্ন টিকা', label_en: 'Upcoming Vaccines', value: upcomingDue.length, tone: 'positive' },
+    ];
+
+    const sections: ReportSection[] = [
+      {
+        title_bn: 'প্রোফাইল তথ্য',
+        title_en: 'Profile Information',
+        headers: [{ bn: 'ক্ষেত্র', en: 'Field' }, { bn: 'মান', en: 'Value' }],
+        rows: [
+          [bn ? 'নাম' : 'Name', personName],
+          [bn ? 'ধরন' : 'Type', profile.person_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')],
+          [bn ? 'রক্তের গ্রুপ' : 'Blood Group', profile.blood_group || '—'],
+          [bn ? 'উচ্চতা' : 'Height', profile.height_cm ? `${profile.height_cm} cm` : '—'],
+          [bn ? 'ওজন' : 'Weight', profile.weight_kg ? `${profile.weight_kg} kg` : '—'],
+          [bn ? 'এলার্জি' : 'Allergies', profile.allergies || '—'],
+          [bn ? 'দীর্ঘমেয়াদী রোগ' : 'Chronic Conditions', profile.chronic_conditions || '—'],
+          [bn ? 'বর্তমান ঔষধ' : 'Current Medications', profile.current_medications || '—'],
+          [bn ? 'পারিবারিক ইতিহাস' : 'Family History', profile.family_history || '—'],
+          [bn ? 'জরুরি যোগাযোগ' : 'Emergency Contact',
+            profile.emergency_contact_name
+              ? `${profile.emergency_contact_name}${profile.emergency_contact_phone ? ' • ' + profile.emergency_contact_phone : ''}${profile.emergency_contact_relation ? ' (' + profile.emergency_contact_relation + ')' : ''}`
+              : '—'],
+        ],
+      },
+      {
+        title_bn: 'সর্বশেষ ভিজিট',
+        title_en: 'Last Medical Visit',
+        headers: [{ bn: 'ক্ষেত্র', en: 'Field' }, { bn: 'মান', en: 'Value' }],
+        rows: lastVisit ? [
+          [bn ? 'তারিখ' : 'Date', fmt(lastVisit.visit_date) + (lastVisit.visit_time ? ` ${lastVisit.visit_time}` : '')],
+          [bn ? 'লক্ষণ' : 'Symptoms', lastVisit.symptoms || '—'],
+          [bn ? 'ডায়াগনোসিস' : 'Diagnosis', lastVisit.diagnosis || '—'],
+          [bn ? 'চিকিৎসা' : 'Treatment', lastVisit.treatment || '—'],
+          [bn ? 'প্রেসক্রিপশন' : 'Prescription', lastVisit.prescription || '—'],
+          [bn ? 'গুরুত্ব' : 'Severity', sevLabel(lastVisit.severity) ? `${sevLabel(lastVisit.severity)!.bn} / ${sevLabel(lastVisit.severity)!.en}` : lastVisit.severity],
+          [bn ? 'তাপমাত্রা' : 'Temperature', lastVisit.temperature_c ? `${lastVisit.temperature_c} °C` : '—'],
+          [bn ? 'রক্তচাপ' : 'Blood Pressure', lastVisit.blood_pressure || '—'],
+          [bn ? 'নাড়ির গতি' : 'Pulse', lastVisit.pulse_rate ? `${lastVisit.pulse_rate} bpm` : '—'],
+          [bn ? 'ফলোআপ' : 'Follow-up', fmt(lastVisit.follow_up_date)],
+          [bn ? 'প্রদানকারী' : 'Attended By', lastVisit.attended_by || '—'],
+        ] : [],
+      },
+      {
+        title_bn: 'গত ৩০ দিনের ভিজিট ও গুরুত্ব',
+        title_en: 'Last 30 Days — Visits & Severity',
+        headers: [
+          { bn: 'তারিখ', en: 'Date' },
+          { bn: 'লক্ষণ', en: 'Symptoms' },
+          { bn: 'ডায়াগনোসিস', en: 'Diagnosis' },
+          { bn: 'গুরুত্ব', en: 'Severity' },
+          { bn: 'ফলোআপ', en: 'Follow-up' },
+        ],
+        rows: recentVisits.map(v => [
+          fmt(v.visit_date),
+          v.symptoms || '—',
+          v.diagnosis || '—',
+          sevLabel(v.severity) ? `${sevLabel(v.severity)!.bn} / ${sevLabel(v.severity)!.en}` : v.severity,
+          fmt(v.follow_up_date),
+        ]),
+        totals: [
+          { bn: 'সামান্য', en: 'Mild', value: sevCount.mild || 0 },
+          { bn: 'মাঝারি', en: 'Moderate', value: sevCount.moderate || 0 },
+          { bn: 'গুরুতর', en: 'Severe', value: sevCount.severe || 0 },
+          { bn: 'জরুরি', en: 'Emergency', value: sevCount.emergency || 0 },
+        ],
+      },
+      {
+        title_bn: 'পরবর্তী ৩০ দিনে টিকার ডিউ',
+        title_en: 'Vaccinations Due (Next 30 Days)',
+        headers: [
+          { bn: 'টিকার নাম', en: 'Vaccine' },
+          { bn: 'শেষ ডোজ', en: 'Last Dose' },
+          { bn: 'ডোজ #', en: 'Dose #' },
+          { bn: 'পরবর্তী ডিউ', en: 'Next Due' },
+          { bn: 'প্রদানকারী', en: 'Administered By' },
+        ],
+        rows: upcomingDue.map(v => [
+          bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name,
+          fmt(v.vaccination_date),
+          v.dose_number,
+          fmt(v.next_due_date),
+          v.administered_by || '—',
+        ]),
+      },
+      {
+        title_bn: 'টিকার সম্পূর্ণ ইতিহাস',
+        title_en: 'Complete Vaccination History',
+        headers: [
+          { bn: 'তারিখ', en: 'Date' },
+          { bn: 'টিকার নাম', en: 'Vaccine' },
+          { bn: 'ডোজ #', en: 'Dose #' },
+          { bn: 'ব্যাচ', en: 'Batch' },
+          { bn: 'প্রদানকারী', en: 'By' },
+        ],
+        rows: personVaccs.map(v => [
+          fmt(v.vaccination_date),
+          bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name,
+          v.dose_number,
+          v.batch_number || '—',
+          v.administered_by || '—',
+        ]),
+      },
+    ];
+
+    generateBilingualReport(
+      {
+        institution_name: institution?.name || (bn ? 'প্রতিষ্ঠান' : 'Institution'),
+        institution_name_en: (institution as any)?.name_en || institution?.name || 'Institution',
+        address: institution?.address || '',
+        phone: institution?.phone || '',
+        email: (institution as any)?.email || '',
+        logo_url: institution?.logo_url || undefined,
+        report_title_bn: `স্বাস্থ্য সারসংক্ষেপ — ${personName}`,
+        report_title_en: `Health Summary — ${personName}`,
+        period_label_bn: `তারিখ পর্যন্ত: ${today.toLocaleDateString('bn-BD')}`,
+        period_label_en: `As of: ${today.toLocaleDateString('en-GB')}`,
+      },
+      sections,
+      summaryStats,
+    );
+  };
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-3">
