@@ -525,15 +525,34 @@ const AdminDesignStudio = () => {
         });
       }
 
-      // Stage as preview (don't push history yet — wait for Apply)
-      setPendingSnapshot(preSnapshot);
-      setPendingLayerIds(createdLayerIds);
-      pendingCommandRef.current = { prompt, imageOps: imageOpsFromActions };
+      // Auto-apply: commit to history immediately so users see the live design
+      const postSnapshot = JSON.stringify(fc.toJSON(['layerName', 'layerId', 'locked', 'sectionTag']));
+      pushHistory();
+      captureVersion(`AI · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+      const entry: AiCommandEntry = {
+        id: `cmd-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        prompt,
+        preSnapshot,
+        postSnapshot,
+        timestamp: Date.now(),
+      };
+      setAiCommandStack((prev) => {
+        const truncated = prev.slice(0, aiCommandCursor + 1);
+        return [...truncated, entry].slice(-30);
+      });
+      setAiCommandCursor((c) => Math.min(c + 1, 29));
+      if (imageOpsFromActions.length > 0) {
+        setImageOps((prev) => [...imageOpsFromActions, ...prev].slice(0, 50));
+      }
+      pendingCommandRef.current = null;
+      setPendingSnapshot(null);
+      setPendingLayerIds([]);
+
       const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
       setAiMessages((m) => [...m, {
         role: 'assistant',
-        text: `${text} — review & Apply to keep`,
-        status: errors.length ? 'error' : 'pending-review',
+        text,
+        status: errors.length ? 'error' : 'done',
       }]);
     } catch (e: any) {
       const msg = e?.message || 'AI request failed';
@@ -542,7 +561,7 @@ const AdminDesignStudio = () => {
     } finally {
       setAiLoading(false);
     }
-  }, [fc, selected, background, aiScope, templateLoader]);
+  }, [fc, selected, background, aiScope, templateLoader, pushHistory, captureVersion, aiCommandCursor]);
 
   const applyPending = useCallback(() => {
     if (!fc || !pendingSnapshot) return;
