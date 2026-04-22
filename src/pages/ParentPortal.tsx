@@ -11,9 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, BookOpen, Mail, Lock, UserPlus, LogIn, Library, MessageSquare, Send, Clock, AlertTriangle } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
+import { Link } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const STORAGE_KEY = 'parent_portal_session';
@@ -380,22 +382,34 @@ const ParentDashboard = ({
       </motion.div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto p-1 rounded-2xl mb-6">
+        <TabsList className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 w-full h-auto p-1 rounded-2xl mb-6 gap-1">
           <TabsTrigger value="profile" className="rounded-xl py-2.5">
-            <User className="w-4 h-4 mr-2" />
-            {bn ? 'প্রোফাইল' : 'Profile'}
+            <User className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'প্রোফাইল' : 'Profile'}</span>
           </TabsTrigger>
           <TabsTrigger value="results" className="rounded-xl py-2.5">
-            <GraduationCap className="w-4 h-4 mr-2" />
-            {bn ? 'ফলাফল' : 'Results'}
+            <GraduationCap className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'ফলাফল' : 'Results'}</span>
           </TabsTrigger>
           <TabsTrigger value="fees" className="rounded-xl py-2.5">
-            <Wallet className="w-4 h-4 mr-2" />
-            {bn ? 'ফি' : 'Fees'}
+            <Wallet className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'ফি' : 'Fees'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="routine" className="rounded-xl py-2.5">
+            <Clock className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'রুটিন' : 'Routine'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="library" className="rounded-xl py-2.5">
+            <Library className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'লাইব্রেরি' : 'Library'}</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages" className="rounded-xl py-2.5">
+            <MessageSquare className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'বার্তা' : 'Messages'}</span>
           </TabsTrigger>
           <TabsTrigger value="notices" className="rounded-xl py-2.5">
-            <Bell className="w-4 h-4 mr-2" />
-            {bn ? 'নোটিশ' : 'Notices'}
+            <Bell className="w-4 h-4 mr-1.5" />
+            <span className="hidden sm:inline">{bn ? 'নোটিশ' : 'Notices'}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -408,10 +422,34 @@ const ParentDashboard = ({
         <TabsContent value="fees">
           <FeesTab studentUuid={session.studentUuid} bn={bn} />
         </TabsContent>
+        <TabsContent value="routine">
+          <RoutineTab student={student} bn={bn} />
+        </TabsContent>
+        <TabsContent value="library">
+          <LibraryTab studentUuid={session.studentUuid} bn={bn} />
+        </TabsContent>
+        <TabsContent value="messages">
+          <MessagesTab session={session} bn={bn} />
+        </TabsContent>
         <TabsContent value="notices">
           <NoticesTab bn={bn} />
         </TabsContent>
       </Tabs>
+
+      {/* Quick complaint link */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 text-center"
+      >
+        <Link to="/complaints">
+          <Button variant="outline" className="rounded-xl">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            {bn ? 'অভিযোগ জমা দিন' : 'Submit a Complaint'}
+          </Button>
+        </Link>
+      </motion.div>
     </div>
   );
 };
@@ -736,6 +774,369 @@ const NoticesTab = ({ bn }: { bn: boolean }) => {
         )}
       </CardContent>
     </Card>
+  );
+};
+
+// ===== Routine Tab (Class + Exam) =====
+const RoutineTab = ({ student, bn }: { student: any; bn: boolean }) => {
+  const dayNames = bn
+    ? ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার']
+    : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  const { data: classRoutine = [] } = useQuery({
+    queryKey: ['parent-class-routine', student?.class_id, student?.session_id],
+    enabled: !!student?.class_id,
+    queryFn: async () => {
+      const { data: routines } = await supabase
+        .from('class_routines')
+        .select('id')
+        .eq('class_id', student.class_id)
+        .eq('is_active', true)
+        .limit(1);
+      if (!routines?.length) return [];
+      const { data } = await supabase
+        .from('routine_periods')
+        .select('*, subjects(name, name_bn)')
+        .eq('routine_id', routines[0].id)
+        .order('day_of_week', { ascending: true })
+        .order('period_number', { ascending: true });
+      return data || [];
+    },
+  });
+
+  const { data: examRoutine = [] } = useQuery({
+    queryKey: ['parent-exam-routine', student?.class_id],
+    enabled: !!student?.class_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('exam_routine_entries')
+        .select('*, subjects(name, name_bn), exam_routines(name, name_bn, exam_sessions(name, name_bn, is_active))')
+        .eq('class_id', student.class_id)
+        .order('exam_date', { ascending: true });
+      return (data || []).filter((e: any) => e.exam_routines?.exam_sessions?.is_active);
+    },
+  });
+
+  // Group class routine by day
+  const grouped = classRoutine.reduce((acc: Record<number, any[]>, p: any) => {
+    if (!acc[p.day_of_week]) acc[p.day_of_week] = [];
+    acc[p.day_of_week].push(p);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-6">
+      <Card className="rounded-[28px] border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            {bn ? 'ক্লাস রুটিন' : 'Class Routine'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {classRoutine.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {bn ? 'কোনো ক্লাস রুটিন পাওয়া যায়নি' : 'No class routine available'}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(grouped).map(([day, periods]) => (
+                <div key={day} className="rounded-2xl bg-muted/30 p-4">
+                  <h4 className="font-semibold mb-2 text-sm">{dayNames[Number(day)]}</h4>
+                  <div className="space-y-1.5">
+                    {(periods as any[]).map((p, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-border/40 last:border-0">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-xs font-medium text-muted-foreground w-24 shrink-0">
+                            {p.start_time?.slice(0, 5)} - {p.end_time?.slice(0, 5)}
+                          </span>
+                          {p.is_break ? (
+                            <span className="italic text-muted-foreground">{bn ? (p.break_label_bn || 'বিরতি') : (p.break_label || 'Break')}</span>
+                          ) : (
+                            <>
+                              <span className="font-medium truncate">{bn ? p.subjects?.name_bn : p.subjects?.name}</span>
+                              {p.teacher_name && (
+                                <span className="text-xs text-muted-foreground truncate">— {bn ? (p.teacher_name_bn || p.teacher_name) : p.teacher_name}</span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                        {p.room && <span className="text-xs text-muted-foreground shrink-0 ml-2">{p.room}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            {bn ? 'পরীক্ষা রুটিন' : 'Exam Routine'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {examRoutine.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {bn ? 'কোনো পরীক্ষা রুটিন পাওয়া যায়নি' : 'No exam routine available'}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
+                  <TableHead>{bn ? 'বিষয়' : 'Subject'}</TableHead>
+                  <TableHead>{bn ? 'সময়' : 'Time'}</TableHead>
+                  <TableHead>{bn ? 'কক্ষ' : 'Room'}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {examRoutine.map((e: any) => (
+                  <TableRow key={e.id}>
+                    <TableCell className="font-medium">{format(new Date(e.exam_date), 'dd MMM yyyy')}</TableCell>
+                    <TableCell>{bn ? e.subjects?.name_bn : e.subjects?.name}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">
+                      {e.start_time?.slice(0, 5)} - {e.end_time?.slice(0, 5)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{e.room || '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ===== Library Tab =====
+const LibraryTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
+  const { data: issuances = [] } = useQuery({
+    queryKey: ['parent-library', studentUuid],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('library_issuances')
+        .select('*, library_books(title, title_bn, author)')
+        .eq('student_id', studentUuid)
+        .order('issued_date', { ascending: false });
+      return data || [];
+    },
+  });
+
+  const active = issuances.filter((i: any) => i.status === 'issued');
+  const overdue = active.filter((i: any) => i.due_date && new Date(i.due_date) < new Date());
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatBox label={bn ? 'মোট ইস্যু' : 'Total Issued'} value={issuances.length} color="primary" />
+        <StatBox label={bn ? 'বর্তমানে' : 'Currently Out'} value={active.length} color="amber-500" />
+        <StatBox label={bn ? 'বিলম্বিত' : 'Overdue'} value={overdue.length} color="red-500" />
+      </div>
+
+      <Card className="rounded-[28px] border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Library className="w-5 h-5" />
+            {bn ? 'বই ইস্যু ইতিহাস' : 'Book Issuance History'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {issuances.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {bn ? 'কোনো বই ইস্যুর রেকর্ড নেই' : 'No book issuance records'}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{bn ? 'বই' : 'Book'}</TableHead>
+                  <TableHead>{bn ? 'ইস্যু তারিখ' : 'Issued'}</TableHead>
+                  <TableHead>{bn ? 'ফেরত তারিখ' : 'Due'}</TableHead>
+                  <TableHead>{bn ? 'অবস্থা' : 'Status'}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {issuances.map((i: any) => {
+                  const isOverdue = i.status === 'issued' && i.due_date && new Date(i.due_date) < new Date();
+                  return (
+                    <TableRow key={i.id}>
+                      <TableCell className="font-medium">
+                        {bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}
+                        {i.library_books?.author && (
+                          <div className="text-xs text-muted-foreground">{i.library_books.author}</div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {i.issued_date ? format(new Date(i.issued_date), 'dd MMM yyyy') : '—'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {i.due_date ? format(new Date(i.due_date), 'dd MMM yyyy') : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={
+                          isOverdue ? 'bg-red-100 text-red-700 border-red-200'
+                          : i.status === 'returned' ? 'bg-green-100 text-green-700 border-green-200'
+                          : i.status === 'lost' ? 'bg-red-100 text-red-700 border-red-200'
+                          : 'bg-amber-100 text-amber-700 border-amber-200'
+                        }>
+                          {isOverdue ? (bn ? 'বিলম্বিত' : 'Overdue') :
+                           i.status === 'returned' ? (bn ? 'ফেরত' : 'Returned') :
+                           i.status === 'lost' ? (bn ? 'হারানো' : 'Lost') :
+                           (bn ? 'ইস্যুকৃত' : 'Issued')}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// ===== Messages Tab =====
+const MessagesTab = ({ session, bn }: { session: ParentSession; bn: boolean }) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const { data: messages = [] } = useQuery({
+    queryKey: ['parent-messages', session.accountId],
+    queryFn: async () => {
+      if (!session.accountId) return [];
+      const { data } = await supabase
+        .from('parent_messages' as any)
+        .select('*')
+        .eq('parent_account_id', session.accountId)
+        .order('created_at', { ascending: false });
+      return (data as any[]) || [];
+    },
+    enabled: !!session.accountId,
+  });
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subject.trim() || !body.trim()) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'বিষয় ও বার্তা পূরণ করুন' : 'Fill subject and message', variant: 'destructive' });
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.from('parent_messages' as any).insert({
+        parent_account_id: session.accountId,
+        student_id: session.studentUuid,
+        subject: subject.trim(),
+        message: body.trim(),
+        sender_type: 'parent',
+        sender_name: session.fullName,
+      });
+      if (error) throw error;
+      toast({ title: bn ? 'প্রেরিত' : 'Sent', description: bn ? 'আপনার বার্তা পাঠানো হয়েছে' : 'Your message has been sent' });
+      setSubject('');
+      setBody('');
+      queryClient.invalidateQueries({ queryKey: ['parent-messages', session.accountId] });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="rounded-[28px] border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="w-5 h-5" />
+            {bn ? 'নতুন বার্তা পাঠান' : 'Send New Message'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSend} className="space-y-3">
+            <div className="space-y-2">
+              <Label>{bn ? 'বিষয়' : 'Subject'}</Label>
+              <Input
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder={bn ? 'যেমন: সন্তানের অগ্রগতি' : 'e.g., Child\'s progress'}
+                className="rounded-xl h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{bn ? 'বার্তা' : 'Message'}</Label>
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={bn ? 'আপনার বার্তা লিখুন...' : 'Write your message...'}
+                rows={4}
+                className="rounded-xl resize-none"
+              />
+            </div>
+            <Button type="submit" disabled={sending} className="w-full rounded-xl h-11">
+              <Send className="w-4 h-4 mr-2" />
+              {sending ? (bn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (bn ? 'পাঠান' : 'Send')}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-[28px] border-0 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            {bn ? 'বার্তার ইতিহাস' : 'Message History'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {messages.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {bn ? 'কোনো বার্তা নেই' : 'No messages yet'}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {messages.map((m: any) => (
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`rounded-2xl p-4 border-0 ${
+                    m.sender_type === 'parent' ? 'bg-primary/5' : 'bg-emerald-500/5'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3 mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={
+                        m.sender_type === 'parent'
+                          ? 'bg-primary/10 text-primary border-primary/20'
+                          : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                      }>
+                        {m.sender_type === 'parent' ? (bn ? 'আপনি' : 'You') : (bn ? 'প্রতিষ্ঠান' : 'Institution')}
+                      </Badge>
+                      <span className="text-sm font-semibold">{m.subject}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {format(new Date(m.created_at), 'dd MMM, hh:mm a')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{m.message}</p>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
