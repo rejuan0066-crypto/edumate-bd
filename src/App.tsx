@@ -39,6 +39,7 @@ import AdminSupportStaffForm from "./pages/admin/AdminSupportStaffForm";
 import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminResults from "./pages/admin/AdminResults";
+import AdminMeritList from "./pages/admin/AdminMeritList";
 import AdminNotices from "./pages/admin/AdminNotices";
 import AdminStudentsFees from "./pages/admin/AdminStudentsFees";
 import AdminFeeTypes from "./pages/admin/AdminFeeTypes";
@@ -260,6 +261,7 @@ const App = () => (
                     <Route path="divisions" element={<ModuleGuard menuPath="/admin/divisions"><AdminDivisions /></ModuleGuard>} />
                     <Route path="subjects" element={<ModuleGuard menuPath="/admin/subjects"><AdminSubjects /></ModuleGuard>} />
                     <Route path="results" element={<ModuleGuard menuPath="/admin/results"><AdminResults /></ModuleGuard>} />
+                    <Route path="merit-list" element={<ModuleGuard menuPath="/admin/merit-list"><AdminMeritList /></ModuleGuard>} />
                     <Route path="notices" element={<ModuleGuard menuPath="/admin/notices"><AdminNotices /></ModuleGuard>} />
                     <Route path="students-fees" element={<ModuleGuard menuPath="/admin/students-fees"><AdminStudentsFees /></ModuleGuard>} />
                     <Route path="fee-types" element={<ModuleGuard menuPath="/admin/fee-types"><AdminFeeTypes /></ModuleGuard>} />
