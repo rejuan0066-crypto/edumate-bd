@@ -155,6 +155,28 @@ const AdminHealthRecords = () => {
     return `${bn ? st.name_bn : (st.name_en || st.name_bn)}${st.staff_id ? ` (${st.staff_id})` : ''}`;
   };
 
+  /**
+   * Render a Student/Staff badge derived strictly from the resolved id field.
+   * Centralises the visual treatment so no health UI surface reads `person_type`
+   * directly to decide which label to show.
+   */
+  const personTypeBadge = (record: PersonTypeInput) => {
+    const { resolvedType, missing, ambiguous, mismatch } = resolvePersonType(record);
+    if (missing) {
+      return <Badge variant="destructive">{bn ? 'অজানা' : 'Unknown'}</Badge>;
+    }
+    const label = resolvedType === 'student'
+      ? (bn ? 'ছাত্র' : 'Student')
+      : (bn ? 'স্টাফ' : 'Staff');
+    const tone = ambiguous || mismatch ? 'secondary' : 'outline';
+    const title = ambiguous
+      ? (bn ? 'উভয় আইডি সেট আছে — id থেকে রিজলভ করা হয়েছে' : 'Both ids set — resolved from id field')
+      : mismatch
+        ? (bn ? 'declared person_type সেট করা আইডির সাথে মিলছে না' : 'declared person_type disagrees with populated id')
+        : undefined;
+    return <Badge variant={tone as any} title={title}>{label}{(ambiguous || mismatch) ? ' ⚠' : ''}</Badge>;
+  };
+
   // ─── Health Profiles ───────────────────────────────────────────────────
   const { data: profiles = [] } = useQuery({
     queryKey: ['health-profiles'],
@@ -654,7 +676,7 @@ const AdminHealthRecords = () => {
                     {profiles.map(p => (
                       <TableRow key={p.id}>
                         <TableCell className="font-medium">{personLabel(p)}</TableCell>
-                        <TableCell><Badge variant="outline">{resolvePersonType(p).resolvedType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')}</Badge></TableCell>
+                        <TableCell>{personTypeBadge(p)}</TableCell>
                         <TableCell>{p.blood_group || '—'}</TableCell>
                         <TableCell>{p.height_cm ? `${p.height_cm}cm` : '—'} / {p.weight_kg ? `${p.weight_kg}kg` : '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
@@ -697,6 +719,7 @@ const AdminHealthRecords = () => {
                     <TableRow>
                       <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                       <TableHead>{bn ? 'ব্যক্তি' : 'Person'}</TableHead>
+                      <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
                       <TableHead>{bn ? 'লক্ষণ' : 'Symptoms'}</TableHead>
                       <TableHead>{bn ? 'ডায়াগনোসিস' : 'Diagnosis'}</TableHead>
                       <TableHead>{bn ? 'গুরুত্ব' : 'Severity'}</TableHead>
@@ -706,12 +729,13 @@ const AdminHealthRecords = () => {
                   </TableHeader>
                   <TableBody>
                     {visits.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ভিজিট নেই' : 'No visits yet'}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ভিজিট নেই' : 'No visits yet'}</TableCell></TableRow>
                     )}
                     {visits.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.visit_date}</TableCell>
                         <TableCell className="font-medium">{personLabel(v)}</TableCell>
+                        <TableCell>{personTypeBadge(v)}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.symptoms || '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{v.diagnosis || '—'}</TableCell>
                         <TableCell><Badge variant={severityVariant(v.severity) as any}>{SEVERITY_OPTIONS.find(s => s.v === v.severity)?.[bn ? 'bn' : 'en']}</Badge></TableCell>
@@ -751,21 +775,24 @@ const AdminHealthRecords = () => {
                     <TableRow>
                       <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
                       <TableHead>{bn ? 'ব্যক্তি' : 'Person'}</TableHead>
+                      <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
                       <TableHead>{bn ? 'টিকার নাম' : 'Vaccine'}</TableHead>
                       <TableHead>{bn ? 'ডোজ' : 'Dose'}</TableHead>
                       <TableHead>{bn ? 'পরবর্তী ডিউ' : 'Next Due'}</TableHead>
                       <TableHead>{bn ? 'প্রদানকারী' : 'By'}</TableHead>
                       <TableHead className="text-right">{bn ? 'কাজ' : 'Actions'}</TableHead>
+                      <TableHead className="text-right">{bn ? 'কাজ' : 'Actions'}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vaccinations.length === 0 && (
-                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো রেকর্ড নেই' : 'No records yet'}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">{bn ? 'কোনো রেকর্ড নেই' : 'No records yet'}</TableCell></TableRow>
                     )}
                     {vaccinations.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.vaccination_date}</TableCell>
                         <TableCell className="font-medium">{personLabel(v)}</TableCell>
+                        <TableCell>{personTypeBadge(v)}</TableCell>
                         <TableCell>{bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name}</TableCell>
                         <TableCell><Badge variant="outline">#{v.dose_number}</Badge></TableCell>
                         <TableCell>{v.next_due_date || '—'}</TableCell>
