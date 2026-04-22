@@ -247,6 +247,7 @@ const DesignAiChatBar = ({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKey}
+                onFocus={() => setFocused(true)}
                 placeholder='AI কে বলুন... যেমন: "একটা ড্যাশবোর্ড সেকশন বানাও" বা "টেবিল কার্ডটি লাল করো"'
                 disabled={disabled || isLoading}
                 rows={1}
