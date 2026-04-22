@@ -109,6 +109,9 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   // হোস্টেল
   { id: 'hostel', path: '/admin/hostel', label_bn: 'হোস্টেল ব্যবস্থাপনা', label_en: 'Hostel Management', icon: 'Building2', visible: true, sort_order: 5.7 },
 
+  // হেলথ ও মেডিকেল
+  { id: 'health-records', path: '/admin/health-records', label_bn: 'হেলথ ও মেডিকেল', label_en: 'Health & Medical', icon: 'HeartPulse', visible: true, sort_order: 5.8 },
+
   // ফি সেটআপ
   { id: 'fee-setup', path: '/admin/fee-types', label_bn: 'ফি সেটআপ', label_en: 'Fee Setup', icon: 'Settings2', visible: true, sort_order: 6.5, children: [
     { id: 'fee-types', path: '/admin/fee-types', label_bn: 'ফি ধরন', label_en: 'Fee Types', icon: 'Settings', visible: true, sort_order: 0 },

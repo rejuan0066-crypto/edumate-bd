@@ -2093,6 +2093,84 @@ export type Database = {
         }
         Relationships: []
       }
+      health_profiles: {
+        Row: {
+          allergies: string | null
+          blood_group: string | null
+          chronic_conditions: string | null
+          created_at: string
+          current_medications: string | null
+          deleted_at: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
+          family_history: string | null
+          height_cm: number | null
+          id: string
+          notes: string | null
+          person_type: string
+          staff_id: string | null
+          student_id: string | null
+          updated_at: string
+          weight_kg: number | null
+        }
+        Insert: {
+          allergies?: string | null
+          blood_group?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          deleted_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          family_history?: string | null
+          height_cm?: number | null
+          id?: string
+          notes?: string | null
+          person_type: string
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Update: {
+          allergies?: string | null
+          blood_group?: string | null
+          chronic_conditions?: string | null
+          created_at?: string
+          current_medications?: string | null
+          deleted_at?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
+          family_history?: string | null
+          height_cm?: number | null
+          id?: string
+          notes?: string | null
+          person_type?: string
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_profiles_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "health_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           approximate: boolean | null
@@ -3126,6 +3204,90 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      medical_visits: {
+        Row: {
+          attended_by: string | null
+          blood_pressure: string | null
+          created_at: string
+          deleted_at: string | null
+          diagnosis: string | null
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          person_type: string
+          prescription: string | null
+          pulse_rate: number | null
+          severity: string | null
+          staff_id: string | null
+          student_id: string | null
+          symptoms: string | null
+          temperature_c: number | null
+          treatment: string | null
+          updated_at: string
+          visit_date: string
+          visit_time: string | null
+        }
+        Insert: {
+          attended_by?: string | null
+          blood_pressure?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          diagnosis?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          person_type: string
+          prescription?: string | null
+          pulse_rate?: number | null
+          severity?: string | null
+          staff_id?: string | null
+          student_id?: string | null
+          symptoms?: string | null
+          temperature_c?: number | null
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string | null
+        }
+        Update: {
+          attended_by?: string | null
+          blood_pressure?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          diagnosis?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          person_type?: string
+          prescription?: string | null
+          pulse_rate?: number | null
+          severity?: string | null
+          staff_id?: string | null
+          student_id?: string | null
+          symptoms?: string | null
+          temperature_c?: number | null
+          treatment?: string | null
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_visits_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "medical_visits_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meeting_participants: {
         Row: {
@@ -6029,6 +6191,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vaccinations: {
+        Row: {
+          administered_by: string | null
+          batch_number: string | null
+          created_at: string
+          deleted_at: string | null
+          dose_number: number | null
+          id: string
+          next_due_date: string | null
+          notes: string | null
+          person_type: string
+          staff_id: string | null
+          student_id: string | null
+          updated_at: string
+          vaccination_date: string
+          vaccine_name: string
+          vaccine_name_bn: string | null
+        }
+        Insert: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dose_number?: number | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          person_type: string
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+          vaccination_date: string
+          vaccine_name: string
+          vaccine_name_bn?: string | null
+        }
+        Update: {
+          administered_by?: string | null
+          batch_number?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          dose_number?: number | null
+          id?: string
+          next_due_date?: string | null
+          notes?: string | null
+          person_type?: string
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+          vaccination_date?: string
+          vaccine_name?: string
+          vaccine_name_bn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaccinations_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vaccinations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       validation_rules: {
         Row: {
