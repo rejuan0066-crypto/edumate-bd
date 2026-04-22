@@ -19,7 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import type { DesignTool, LayerInfo, DesignProject } from '@/components/design-studio/types';
 import {
-  exportSVG, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
+  exportSVG, exportLayeredSVG, exportLayeredPDF, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
 } from '@/components/design-studio/exportUtils';
 import DesignAiChatBar, { type AiChatMessage } from '@/components/design-studio/DesignAiChatBar';
 import {
