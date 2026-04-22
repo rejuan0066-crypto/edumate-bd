@@ -714,7 +714,7 @@ const AdminHealthRecords = () => {
                     {vaccinations.map(v => (
                       <TableRow key={v.id}>
                         <TableCell>{v.vaccination_date}</TableCell>
-                        <TableCell className="font-medium">{personLabel(v.person_type, v.student_id, v.staff_id)}</TableCell>
+                        <TableCell className="font-medium">{personLabel(v)}</TableCell>
                         <TableCell>{bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name}</TableCell>
                         <TableCell><Badge variant="outline">#{v.dose_number}</Badge></TableCell>
                         <TableCell>{v.next_due_date || '—'}</TableCell>
