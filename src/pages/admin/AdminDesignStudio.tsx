@@ -28,6 +28,9 @@ import {
 } from '@/components/design-studio/aiCanvasActions';
 import TemplatesDialog, { type DesignTemplate } from '@/components/design-studio/TemplatesDialog';
 import VersionHistoryDialog, { type VersionEntry } from '@/components/design-studio/VersionHistoryDialog';
+import AiImageHistoryPanel, { type AiImageOp, type AiImageOpKind } from '@/components/design-studio/AiImageHistoryPanel';
+import type { AiCommandEntry } from '@/components/design-studio/AiCommandHistory';
+import { getPromptHints, getSelectionTypeLabel } from '@/components/design-studio/promptHints';
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
