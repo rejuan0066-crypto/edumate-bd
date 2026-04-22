@@ -68,6 +68,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'merit-list', path: '/admin/merit-list', label_bn: 'মেধা তালিকা', label_en: 'Merit List', icon: 'Trophy', visible: true, sort_order: 3 },
     { id: 'question-papers', path: '/admin/question-papers', label_bn: 'প্রশ্নপত্র', label_en: 'Question Papers', icon: 'FileText', visible: true, sort_order: 3 },
     { id: 'online-exams', path: '/admin/online-exams', label_bn: 'অনলাইন পরীক্ষা', label_en: 'Online Exams', icon: 'ListChecks', visible: true, sort_order: 4 },
+    { id: 'admission-tests', path: '/admin/admission-tests', label_bn: 'অনলাইন ভর্তি পরীক্ষা', label_en: 'Admission Tests', icon: 'ClipboardCheck', visible: true, sort_order: 4.5 },
     { id: 'live-classes', path: '/admin/live-classes', label_bn: 'লাইভ ক্লাস', label_en: 'Live Classes', icon: 'Video', visible: true, sort_order: 5 },
     { id: 'meetings', path: '/admin/meetings', label_bn: 'মিটিং', label_en: 'Meetings', icon: 'Briefcase', visible: true, sort_order: 6 },
   ]},
