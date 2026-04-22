@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, MessageCircle, Save, ExternalLink, Phone } from 'lucide-react';
+import { Loader2, MessageCircle, Save, ExternalLink, Phone, Send, CheckCircle2, XCircle } from 'lucide-react';
 import { buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 
 const WhatsAppSettings = () => {
