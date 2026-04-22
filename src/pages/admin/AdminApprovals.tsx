@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ClipboardCheck, Check, X, Loader2, Eye, MessageSquare } from 'lucide-react';
@@ -92,7 +93,15 @@ const AdminApprovals = () => {
   };
 
   const approveMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => {
+    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected'; note?: string }) => {
+      // If rejecting, require a non-empty reason
+      if (status === 'rejected') {
+        const reason = (note ?? '').trim();
+        if (!reason) {
+          throw new Error(bn ? 'প্রত্যাখ্যানের কারণ লিখুন' : 'Please provide a rejection reason');
+        }
+      }
+
       // If approving, execute the actual action first
       if (status === 'approved') {
         const action = actions.find((a: any) => a.id === id) || detailAction;
@@ -105,7 +114,7 @@ const AdminApprovals = () => {
         .from('pending_actions')
         .update({
           status,
-          admin_note: adminNote || null,
+          admin_note: (note ?? '').trim() || null,
           reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -127,6 +136,12 @@ const AdminApprovals = () => {
     },
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
+
+  const handleQuickReject = (action: any) => {
+    setDetailAction(action);
+    setAdminNote(action.admin_note || '');
+    toast.info(bn ? 'প্রত্যাখ্যানের কারণ লিখে নিশ্চিত করুন' : 'Please enter a rejection reason and confirm');
+  };
 
   const pendingCount = actions.filter(a => a.status === 'pending').length;
 
@@ -238,7 +253,7 @@ const AdminApprovals = () => {
                               size="icon"
                               variant="ghost"
                               className="text-destructive hover:bg-destructive/10"
-                              onClick={() => approveMutation.mutate({ id: action.id, status: 'rejected' })}
+                              onClick={() => handleQuickReject(action)}
                               disabled={approveMutation.isPending}
                               title={bn ? 'প্রত্যাখ্যান' : 'Reject'}
                             >
@@ -308,25 +323,47 @@ const AdminApprovals = () => {
                   </pre>
                 </div>
 
-                {/* Admin note */}
+                {/* Admin note / rejection reason input */}
                 {detailAction.status === 'pending' && (
                   <div>
                     <p className="text-sm text-muted-foreground mb-1 flex items-center gap-1">
                       <MessageSquare className="w-3 h-3" />
-                      {bn ? 'অ্যাডমিন নোট (ঐচ্ছিক)' : 'Admin Note (optional)'}
+                      {bn
+                        ? 'অ্যাডমিন নোট / প্রত্যাখ্যানের কারণ'
+                        : 'Admin Note / Rejection Reason'}
+                      <span className="text-xs text-muted-foreground/70 ml-1">
+                        {bn ? '(প্রত্যাখ্যানের ক্ষেত্রে আবশ্যক)' : '(required when rejecting)'}
+                      </span>
                     </p>
-                    <Input
+                    <Textarea
                       value={adminNote}
                       onChange={e => setAdminNote(e.target.value)}
-                      placeholder={bn ? 'নোট লিখুন...' : 'Write a note...'}
+                      placeholder={bn
+                        ? 'অনুমোদনের জন্য ঐচ্ছিক নোট, অথবা প্রত্যাখ্যানের কারণ লিখুন...'
+                        : 'Optional note for approval, or reason for rejection...'}
+                      rows={3}
                     />
                   </div>
                 )}
 
+                {/* Show stored admin note / rejection reason on resolved records */}
                 {detailAction.admin_note && detailAction.status !== 'pending' && (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground mb-1">{bn ? 'অ্যাডমিন নোট' : 'Admin Note'}</p>
-                    <p className="text-sm">{detailAction.admin_note}</p>
+                  <div
+                    className={
+                      detailAction.status === 'rejected'
+                        ? 'bg-destructive/10 border border-destructive/30 rounded-lg p-3'
+                        : 'bg-muted/50 rounded-lg p-3'
+                    }
+                  >
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <MessageSquare className="w-3 h-3" />
+                      {detailAction.status === 'rejected'
+                        ? (bn ? 'প্রত্যাখ্যানের কারণ' : 'Rejection Reason')
+                        : (bn ? 'অ্যাডমিন নোট' : 'Admin Note')}
+                    </p>
+                    <p className={`text-sm ${detailAction.status === 'rejected' ? 'text-destructive font-medium' : ''}`}>
+                      {detailAction.admin_note}
+                    </p>
                   </div>
                 )}
 
@@ -335,7 +372,7 @@ const AdminApprovals = () => {
                   <div className="flex gap-2">
                     <Button
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved' })}
+                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'approved', note: adminNote })}
                       disabled={approveMutation.isPending}
                     >
                       {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
@@ -344,8 +381,9 @@ const AdminApprovals = () => {
                     <Button
                       variant="destructive"
                       className="flex-1"
-                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected' })}
-                      disabled={approveMutation.isPending}
+                      onClick={() => approveMutation.mutate({ id: detailAction.id, status: 'rejected', note: adminNote })}
+                      disabled={approveMutation.isPending || !adminNote.trim()}
+                      title={!adminNote.trim() ? (bn ? 'প্রত্যাখ্যানের কারণ আবশ্যক' : 'Rejection reason is required') : undefined}
                     >
                       {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
                       {bn ? 'প্রত্যাখ্যান করুন' : 'Reject'}
