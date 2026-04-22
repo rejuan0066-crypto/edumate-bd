@@ -266,9 +266,14 @@ const DesignAiChatBar = ({
           </Button>
         </div>
 
-        {/* Smart prompt hints — adapt to selection */}
-        {open && (
-          <div className="px-3 pb-3 flex flex-wrap gap-1.5">
+        {/* Smart prompt hints — only when typing / focused / has selection */}
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300 ease-out',
+            open && revealTools ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
+          <div className="px-3 pb-3 flex flex-wrap gap-1.5 animate-fade-in">
             {(hints && hints.length > 0 ? hints : QUICK_PROMPTS.map((p) => ({ label: p, prompt: p }))).map((q) => (
               <button
                 key={q.label}
