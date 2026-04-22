@@ -83,7 +83,7 @@ const ToolBtn = ({
 );
 
 const Divider = () => (
-  <div className="w-7 h-px bg-gradient-to-r from-transparent via-border to-transparent my-1.5" />
+  <div className="shrink-0 lg:w-7 lg:h-px h-7 w-px lg:my-1.5 lg:mx-0 mx-1.5 bg-gradient-to-r lg:from-transparent lg:via-border lg:to-transparent from-transparent via-border to-transparent" />
 );
 
 const DesignToolbar = ({
