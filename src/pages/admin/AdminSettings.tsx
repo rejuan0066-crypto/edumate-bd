@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
+import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
@@ -231,6 +232,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="sms" className="gap-1.5">
               <MessageSquare className="w-4 h-4" /> {bn ? 'SMS' : 'SMS'}
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="gap-1.5">
+              <MessageSquare className="w-4 h-4" /> WhatsApp
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-1.5">
               <Shield className="w-4 h-4" /> {bn ? 'নিরাপত্তা' : 'Security'}
@@ -539,6 +543,10 @@ const AdminSettings = () => {
 
           <TabsContent value="sms" className="mt-6">
             <SmsGatewaySettings />
+          </TabsContent>
+
+          <TabsContent value="whatsapp" className="mt-6">
+            <WhatsAppSettings />
           </TabsContent>
 
           <TabsContent value="security" className="mt-6">
