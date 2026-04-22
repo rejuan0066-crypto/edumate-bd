@@ -126,6 +126,15 @@ const AdminHealthRecords = () => {
     },
   });
 
+  // Institution info for printable report header
+  const { data: institution } = useQuery({
+    queryKey: ['institution-default-health'],
+    queryFn: async () => {
+      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      return data;
+    },
+  });
+
   const personLabel = (pType: PersonType, sid?: string | null, stfId?: string | null) => {
     if (pType === 'student') {
       const s = students.find(x => x.id === sid);
