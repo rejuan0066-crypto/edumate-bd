@@ -11,7 +11,9 @@ import { Card } from '@/components/ui/card';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts';
-import { toBnDigits } from '@/lib/bnRomanize';
+
+const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+const toBnDigits = (s: string | number) => String(s).replace(/\d/g, (d) => BN_DIGITS[parseInt(d)]);
 
 interface StudentRanking {
   studentId: string;
