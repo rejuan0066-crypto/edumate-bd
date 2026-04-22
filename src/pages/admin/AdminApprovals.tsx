@@ -93,7 +93,15 @@ const AdminApprovals = () => {
   };
 
   const approveMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'approved' | 'rejected' }) => {
+    mutationFn: async ({ id, status, note }: { id: string; status: 'approved' | 'rejected'; note?: string }) => {
+      // If rejecting, require a non-empty reason
+      if (status === 'rejected') {
+        const reason = (note ?? '').trim();
+        if (!reason) {
+          throw new Error(bn ? 'প্রত্যাখ্যানের কারণ লিখুন' : 'Please provide a rejection reason');
+        }
+      }
+
       // If approving, execute the actual action first
       if (status === 'approved') {
         const action = actions.find((a: any) => a.id === id) || detailAction;
@@ -106,7 +114,7 @@ const AdminApprovals = () => {
         .from('pending_actions')
         .update({
           status,
-          admin_note: adminNote || null,
+          admin_note: (note ?? '').trim() || null,
           reviewed_by: user?.id,
           reviewed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -128,6 +136,12 @@ const AdminApprovals = () => {
     },
     onError: (e: any) => toast.error(e.message || (bn ? 'সমস্যা হয়েছে' : 'Error occurred')),
   });
+
+  const handleQuickReject = (action: any) => {
+    setDetailAction(action);
+    setAdminNote(action.admin_note || '');
+    toast.info(bn ? 'প্রত্যাখ্যানের কারণ লিখে নিশ্চিত করুন' : 'Please enter a rejection reason and confirm');
+  };
 
   const pendingCount = actions.filter(a => a.status === 'pending').length;
 
