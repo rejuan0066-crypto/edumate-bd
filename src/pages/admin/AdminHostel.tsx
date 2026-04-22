@@ -18,7 +18,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; address?: string | null; warden_name?: string | null; warden_phone?: string | null; total_capacity: number; is_active: boolean; notes?: string | null };
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
-type Allocation = { id: string; room_id: string; student_id: string; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
+type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
@@ -130,7 +130,34 @@ const AdminHostel = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-min'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en').is('deleted_at', null).limit(1000);
+      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, academic_session_id, class_id').is('deleted_at', null).limit(2000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['staff-min-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('staff').select('id, staff_id, name_bn, name_en').is('deleted_at', null).limit(1000);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: academicSessions = [] } = useQuery({
+    queryKey: ['academic-sessions-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('academic_sessions').select('id, name, name_bn').eq('is_active', true).order('name', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: classesList = [] } = useQuery({
+    queryKey: ['classes-hostel'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('classes').select('id, name, name_bn, sort_order').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
     },
@@ -138,7 +165,7 @@ const AdminHostel = () => {
 
   const [allocDlg, setAllocDlg] = useState(false);
   const [editAlloc, setEditAlloc] = useState<Allocation | null>(null);
-  const [allocForm, setAllocForm] = useState<Partial<Allocation>>({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
+  const [allocForm, setAllocForm] = useState<Partial<Allocation>>({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
   const [delAllocId, setDelAllocId] = useState<string | null>(null);
 
   const saveAlloc = useMutation({
@@ -153,7 +180,7 @@ const AdminHostel = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['hostel-allocations'] });
-      setAllocDlg(false); setEditAlloc(null); setAllocForm({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
+      setAllocDlg(false); setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] });
       toast({ title: bn ? 'বরাদ্দ সংরক্ষিত' : 'Allocation saved' });
     },
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
@@ -214,9 +241,26 @@ const AdminHostel = () => {
   const occupied = allocations.filter(a => a.status === 'active').length;
   const occupancyRate = totalBeds > 0 ? Math.round((occupied / totalBeds) * 100) : 0;
 
-  const studentName = (id: string) => {
+  const studentName = (id?: string | null) => {
+    if (!id) return '—';
     const s: any = students.find((x: any) => x.id === id);
     return s ? (bn ? s.name_bn : (s.name_en || s.name_bn)) + ` (${s.student_id})` : id.slice(0, 8);
+  };
+  const staffName = (id?: string | null) => {
+    if (!id) return '—';
+    const s: any = (staffList as any[]).find((x: any) => x.id === id);
+    return s ? (bn ? s.name_bn : (s.name_en || s.name_bn)) + (s.staff_id ? ` (${s.staff_id})` : '') : id.slice(0, 8);
+  };
+  const occupantLabel = (a: Allocation) => a.occupant_type === 'staff' ? staffName(a.staff_id) : studentName(a.student_id);
+  const sessionLabel = (id?: string | null) => {
+    if (!id) return '—';
+    const s: any = (academicSessions as any[]).find((x: any) => x.id === id);
+    return s ? (bn ? (s.name_bn || s.name) : s.name) : '—';
+  };
+  const classLabel = (id?: string | null) => {
+    if (!id) return '—';
+    const c: any = (classesList as any[]).find((x: any) => x.id === id);
+    return c ? (bn ? c.name_bn : c.name) : '—';
   };
   const roomLabel = (id: string) => {
     const r = rooms.find(x => x.id === id);
@@ -227,6 +271,27 @@ const AdminHostel = () => {
   const hostelLabel = (id: string) => {
     const h = hostels.find(x => x.id === id);
     return h ? (bn ? h.name_bn : h.name) : id.slice(0, 8);
+  };
+
+  // Filter students by selected session/class for allocation form
+  const filteredStudents = (students as any[]).filter((s: any) => {
+    if (allocForm.academic_session_id && s.academic_session_id !== allocForm.academic_session_id) return false;
+    if (allocForm.class_id && s.class_id !== allocForm.class_id) return false;
+    return true;
+  });
+
+  // Auto-calculate net charge based on fee mode + room rent
+  const computeNetCharge = (form: Partial<Allocation>): number => {
+    const room = rooms.find(r => r.id === form.room_id);
+    const base = Number(room?.monthly_rent || 0);
+    if (form.fee_mode === 'free') return 0;
+    if (form.fee_mode === 'discount') {
+      const pct = Number(form.discount_percent || 0);
+      const amt = Number(form.discount_amount || 0);
+      const afterPct = base - (base * pct / 100);
+      return Math.max(0, afterPct - amt);
+    }
+    return base;
   };
 
   return (
@@ -339,17 +404,20 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম বরাদ্দ' : 'Allocations'}</CardTitle>
-              <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
+              <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
                 <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন বরাদ্দ' : 'New Allocation'}
               </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>{bn ? 'ছাত্র' : 'Student'}</TableHead>
+                  <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
+                  <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
+                  <TableHead>{bn ? 'সেশন/শ্রেণী' : 'Session/Class'}</TableHead>
                   <TableHead>{bn ? 'রুম' : 'Room'}</TableHead>
                   <TableHead>{bn ? 'বেড' : 'Bed'}</TableHead>
                   <TableHead>{bn ? 'চেক-ইন' : 'Check-in'}</TableHead>
+                  <TableHead>{bn ? 'ফি মোড' : 'Fee Mode'}</TableHead>
                   <TableHead>{bn ? 'মাসিক চার্জ' : 'Monthly'}</TableHead>
                   <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                   <TableHead className="text-right">{bn ? 'অ্যাকশন' : 'Actions'}</TableHead>
@@ -357,11 +425,29 @@ const AdminHostel = () => {
                 <TableBody>
                   {allocations.map(a => (
                     <TableRow key={a.id}>
-                      <TableCell className="font-medium">{studentName(a.student_id)}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.occupant_type === 'staff' ? 'secondary' : 'outline'}>
+                          {a.occupant_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{occupantLabel(a)}</TableCell>
+                      <TableCell className="text-xs">
+                        {a.occupant_type === 'student' ? (
+                          <>
+                            <div>{sessionLabel(a.academic_session_id)}</div>
+                            <div className="text-muted-foreground">{classLabel(a.class_id)}</div>
+                          </>
+                        ) : '—'}
+                      </TableCell>
                       <TableCell>{roomLabel(a.room_id)}</TableCell>
                       <TableCell>{a.bed_number || '—'}</TableCell>
                       <TableCell>{a.check_in_date}</TableCell>
-                      <TableCell>৳{Number(a.monthly_charge).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.fee_mode === 'free' ? 'default' : a.fee_mode === 'discount' ? 'secondary' : 'outline'}>
+                          {a.fee_mode === 'free' ? (bn ? 'ফ্রি' : 'Free') : a.fee_mode === 'discount' ? (bn ? `ডিসকাউন্ট ${a.discount_percent}%` : `Discount ${a.discount_percent}%`) : (bn ? 'পূর্ণ ফি' : 'Full Fee')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-semibold">৳{Number(a.monthly_charge).toLocaleString()}</TableCell>
                       <TableCell><Badge variant={a.status === 'active' ? 'default' : 'secondary'}>{a.status}</Badge></TableCell>
                       <TableCell className="text-right space-x-1">
                         <Button size="icon" variant="ghost" onClick={() => { setEditAlloc(a); setAllocForm(a); setAllocDlg(true); }}><Pencil className="w-4 h-4" /></Button>
@@ -369,7 +455,7 @@ const AdminHostel = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {allocations.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো বরাদ্দ নেই' : 'No allocations yet'}</TableCell></TableRow>}
+                  {allocations.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{bn ? 'কোনো বরাদ্দ নেই' : 'No allocations yet'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -494,24 +580,138 @@ const AdminHostel = () => {
 
       {/* ALLOCATION DIALOG */}
       <Dialog open={allocDlg} onOpenChange={setAllocDlg}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editAlloc ? (bn ? 'বরাদ্দ সম্পাদনা' : 'Edit Allocation') : (bn ? 'নতুন বরাদ্দ' : 'New Allocation')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{bn ? 'ছাত্র' : 'Student'} *</Label>
-              <Select value={allocForm.student_id || ''} onValueChange={v => setAllocForm({ ...allocForm, student_id: v })}>
-                <SelectTrigger><SelectValue placeholder={bn ? 'ছাত্র বাছাই' : 'Select student'} /></SelectTrigger>
-                <SelectContent className="max-h-60">{(students as any[]).map(s => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))} ({s.student_id})</SelectItem>)}</SelectContent>
+            {/* Occupant Type */}
+            <div>
+              <Label>{bn ? 'আবাসিক ধরন' : 'Occupant Type'} *</Label>
+              <Select
+                value={allocForm.occupant_type || 'student'}
+                onValueChange={(v: 'student' | 'staff') => setAllocForm({ ...allocForm, occupant_type: v, student_id: null, staff_id: null, academic_session_id: null, class_id: null })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">{bn ? 'আবাসিক ছাত্র' : 'Resident Student'}</SelectItem>
+                  <SelectItem value="staff">{bn ? 'আবাসিক স্টাফ' : 'Resident Staff'}</SelectItem>
+                </SelectContent>
               </Select>
             </div>
+
+            {/* Student-only: session + class filter */}
+            {allocForm.occupant_type === 'student' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'শিক্ষাবর্ষ' : 'Academic Session'}</Label>
+                    <Select value={allocForm.academic_session_id || ''} onValueChange={v => setAllocForm({ ...allocForm, academic_session_id: v, student_id: null })}>
+                      <SelectTrigger><SelectValue placeholder={bn ? 'সেশন বাছাই' : 'Select session'} /></SelectTrigger>
+                      <SelectContent>{(academicSessions as any[]).map((s: any) => <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{bn ? 'শ্রেণী' : 'Class'}</Label>
+                    <Select value={allocForm.class_id || ''} onValueChange={v => setAllocForm({ ...allocForm, class_id: v, student_id: null })}>
+                      <SelectTrigger><SelectValue placeholder={bn ? 'শ্রেণী বাছাই' : 'Select class'} /></SelectTrigger>
+                      <SelectContent>{(classesList as any[]).map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>{bn ? 'ছাত্র' : 'Student'} * <span className="text-xs text-muted-foreground">({filteredStudents.length} {bn ? 'জন' : 'available'})</span></Label>
+                  <Select value={allocForm.student_id || ''} onValueChange={v => setAllocForm({ ...allocForm, student_id: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'ছাত্র বাছাই' : 'Select student'} /></SelectTrigger>
+                    <SelectContent className="max-h-60">{filteredStudents.map((s: any) => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))} ({s.student_id})</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {/* Staff selector */}
+            {allocForm.occupant_type === 'staff' && (
+              <div>
+                <Label>{bn ? 'স্টাফ' : 'Staff'} *</Label>
+                <Select value={allocForm.staff_id || ''} onValueChange={v => setAllocForm({ ...allocForm, staff_id: v })}>
+                  <SelectTrigger><SelectValue placeholder={bn ? 'স্টাফ বাছাই' : 'Select staff'} /></SelectTrigger>
+                  <SelectContent className="max-h-60">{(staffList as any[]).map((s: any) => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))}{s.staff_id ? ` (${s.staff_id})` : ''}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div><Label>{bn ? 'রুম' : 'Room'} *</Label>
-              <Select value={allocForm.room_id || ''} onValueChange={v => setAllocForm({ ...allocForm, room_id: v })}>
+              <Select
+                value={allocForm.room_id || ''}
+                onValueChange={v => {
+                  const r = rooms.find(x => x.id === v);
+                  const next = { ...allocForm, room_id: v };
+                  if (r) next.monthly_charge = computeNetCharge({ ...next, room_id: v });
+                  setAllocForm(next);
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder={bn ? 'রুম বাছাই' : 'Select room'} /></SelectTrigger>
-                <SelectContent className="max-h-60">{rooms.map(r => <SelectItem key={r.id} value={r.id}>{roomLabel(r.id)} ({r.bed_count} beds)</SelectItem>)}</SelectContent>
+                <SelectContent className="max-h-60">{rooms.map(r => <SelectItem key={r.id} value={r.id}>{roomLabel(r.id)} (৳{r.monthly_rent}/{r.bed_count} beds)</SelectItem>)}</SelectContent>
               </Select>
             </div>
+
+            {/* Fee Mode */}
+            <div className="rounded-2xl border border-border/40 bg-muted/30 p-4 space-y-3">
+              <Label className="text-sm font-semibold">{bn ? 'ফি ব্যবস্থা' : 'Fee Arrangement'}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['free', 'full', 'discount'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => {
+                      const next = { ...allocForm, fee_mode: mode };
+                      next.monthly_charge = computeNetCharge(next);
+                      setAllocForm(next);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      allocForm.fee_mode === mode
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-background hover:bg-accent border border-border'
+                    }`}
+                  >
+                    {mode === 'free' ? (bn ? '🎁 ফ্রি' : '🎁 Free') : mode === 'full' ? (bn ? '💰 পূর্ণ ফি' : '💰 Full Fee') : (bn ? '🏷️ ডিসকাউন্ট' : '🏷️ Discount')}
+                  </button>
+                ))}
+              </div>
+              {allocForm.fee_mode === 'discount' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'ডিসকাউন্ট %' : 'Discount %'}</Label>
+                    <Input
+                      type="number" min={0} max={100}
+                      value={allocForm.discount_percent ?? 0}
+                      onChange={e => {
+                        const next = { ...allocForm, discount_percent: Number(e.target.value) };
+                        next.monthly_charge = computeNetCharge(next);
+                        setAllocForm(next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'অতিরিক্ত ছাড় (৳)' : 'Flat Discount (৳)'}</Label>
+                    <Input
+                      type="number" min={0}
+                      value={allocForm.discount_amount ?? 0}
+                      onChange={e => {
+                        const next = { ...allocForm, discount_amount: Number(e.target.value) };
+                        next.monthly_charge = computeNetCharge(next);
+                        setAllocForm(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'বেড নং' : 'Bed #'}</Label><Input type="number" value={allocForm.bed_number || ''} onChange={e => setAllocForm({ ...allocForm, bed_number: Number(e.target.value) })} /></div>
-              <div><Label>{bn ? 'মাসিক চার্জ' : 'Monthly Charge'}</Label><Input type="number" value={allocForm.monthly_charge || 0} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} /></div>
+              <div>
+                <Label>{bn ? 'মাসিক চার্জ (৳)' : 'Monthly Charge (৳)'}</Label>
+                <Input type="number" value={allocForm.monthly_charge ?? 0} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'চেক-ইন' : 'Check-in'}</Label><Input type="date" value={allocForm.check_in_date || ''} onChange={e => setAllocForm({ ...allocForm, check_in_date: e.target.value })} /></div>
@@ -530,7 +730,14 @@ const AdminHostel = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAllocDlg(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
-            <Button onClick={() => saveAlloc.mutate(allocForm)} disabled={!allocForm.student_id || !allocForm.room_id}>{bn ? 'সংরক্ষণ' : 'Save'}</Button>
+            <Button
+              onClick={() => saveAlloc.mutate(allocForm)}
+              disabled={
+                !allocForm.room_id ||
+                (allocForm.occupant_type === 'student' && !allocForm.student_id) ||
+                (allocForm.occupant_type === 'staff' && !allocForm.staff_id)
+              }
+            >{bn ? 'সংরক্ষণ' : 'Save'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
