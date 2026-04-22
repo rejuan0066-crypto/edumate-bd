@@ -580,24 +580,138 @@ const AdminHostel = () => {
 
       {/* ALLOCATION DIALOG */}
       <Dialog open={allocDlg} onOpenChange={setAllocDlg}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editAlloc ? (bn ? 'বরাদ্দ সম্পাদনা' : 'Edit Allocation') : (bn ? 'নতুন বরাদ্দ' : 'New Allocation')}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>{bn ? 'ছাত্র' : 'Student'} *</Label>
-              <Select value={allocForm.student_id || ''} onValueChange={v => setAllocForm({ ...allocForm, student_id: v })}>
-                <SelectTrigger><SelectValue placeholder={bn ? 'ছাত্র বাছাই' : 'Select student'} /></SelectTrigger>
-                <SelectContent className="max-h-60">{(students as any[]).map(s => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))} ({s.student_id})</SelectItem>)}</SelectContent>
+            {/* Occupant Type */}
+            <div>
+              <Label>{bn ? 'আবাসিক ধরন' : 'Occupant Type'} *</Label>
+              <Select
+                value={allocForm.occupant_type || 'student'}
+                onValueChange={(v: 'student' | 'staff') => setAllocForm({ ...allocForm, occupant_type: v, student_id: null, staff_id: null, academic_session_id: null, class_id: null })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">{bn ? 'আবাসিক ছাত্র' : 'Resident Student'}</SelectItem>
+                  <SelectItem value="staff">{bn ? 'আবাসিক স্টাফ' : 'Resident Staff'}</SelectItem>
+                </SelectContent>
               </Select>
             </div>
+
+            {/* Student-only: session + class filter */}
+            {allocForm.occupant_type === 'student' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'শিক্ষাবর্ষ' : 'Academic Session'}</Label>
+                    <Select value={allocForm.academic_session_id || ''} onValueChange={v => setAllocForm({ ...allocForm, academic_session_id: v, student_id: null })}>
+                      <SelectTrigger><SelectValue placeholder={bn ? 'সেশন বাছাই' : 'Select session'} /></SelectTrigger>
+                      <SelectContent>{(academicSessions as any[]).map((s: any) => <SelectItem key={s.id} value={s.id}>{bn ? (s.name_bn || s.name) : s.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{bn ? 'শ্রেণী' : 'Class'}</Label>
+                    <Select value={allocForm.class_id || ''} onValueChange={v => setAllocForm({ ...allocForm, class_id: v, student_id: null })}>
+                      <SelectTrigger><SelectValue placeholder={bn ? 'শ্রেণী বাছাই' : 'Select class'} /></SelectTrigger>
+                      <SelectContent>{(classesList as any[]).map((c: any) => <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>{bn ? 'ছাত্র' : 'Student'} * <span className="text-xs text-muted-foreground">({filteredStudents.length} {bn ? 'জন' : 'available'})</span></Label>
+                  <Select value={allocForm.student_id || ''} onValueChange={v => setAllocForm({ ...allocForm, student_id: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'ছাত্র বাছাই' : 'Select student'} /></SelectTrigger>
+                    <SelectContent className="max-h-60">{filteredStudents.map((s: any) => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))} ({s.student_id})</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {/* Staff selector */}
+            {allocForm.occupant_type === 'staff' && (
+              <div>
+                <Label>{bn ? 'স্টাফ' : 'Staff'} *</Label>
+                <Select value={allocForm.staff_id || ''} onValueChange={v => setAllocForm({ ...allocForm, staff_id: v })}>
+                  <SelectTrigger><SelectValue placeholder={bn ? 'স্টাফ বাছাই' : 'Select staff'} /></SelectTrigger>
+                  <SelectContent className="max-h-60">{(staffList as any[]).map((s: any) => <SelectItem key={s.id} value={s.id}>{(bn ? s.name_bn : (s.name_en || s.name_bn))}{s.staff_id ? ` (${s.staff_id})` : ''}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div><Label>{bn ? 'রুম' : 'Room'} *</Label>
-              <Select value={allocForm.room_id || ''} onValueChange={v => setAllocForm({ ...allocForm, room_id: v })}>
+              <Select
+                value={allocForm.room_id || ''}
+                onValueChange={v => {
+                  const r = rooms.find(x => x.id === v);
+                  const next = { ...allocForm, room_id: v };
+                  if (r) next.monthly_charge = computeNetCharge({ ...next, room_id: v });
+                  setAllocForm(next);
+                }}
+              >
                 <SelectTrigger><SelectValue placeholder={bn ? 'রুম বাছাই' : 'Select room'} /></SelectTrigger>
-                <SelectContent className="max-h-60">{rooms.map(r => <SelectItem key={r.id} value={r.id}>{roomLabel(r.id)} ({r.bed_count} beds)</SelectItem>)}</SelectContent>
+                <SelectContent className="max-h-60">{rooms.map(r => <SelectItem key={r.id} value={r.id}>{roomLabel(r.id)} (৳{r.monthly_rent}/{r.bed_count} beds)</SelectItem>)}</SelectContent>
               </Select>
             </div>
+
+            {/* Fee Mode */}
+            <div className="rounded-2xl border border-border/40 bg-muted/30 p-4 space-y-3">
+              <Label className="text-sm font-semibold">{bn ? 'ফি ব্যবস্থা' : 'Fee Arrangement'}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['free', 'full', 'discount'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => {
+                      const next = { ...allocForm, fee_mode: mode };
+                      next.monthly_charge = computeNetCharge(next);
+                      setAllocForm(next);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                      allocForm.fee_mode === mode
+                        ? 'bg-primary text-primary-foreground shadow-md'
+                        : 'bg-background hover:bg-accent border border-border'
+                    }`}
+                  >
+                    {mode === 'free' ? (bn ? '🎁 ফ্রি' : '🎁 Free') : mode === 'full' ? (bn ? '💰 পূর্ণ ফি' : '💰 Full Fee') : (bn ? '🏷️ ডিসকাউন্ট' : '🏷️ Discount')}
+                  </button>
+                ))}
+              </div>
+              {allocForm.fee_mode === 'discount' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'ডিসকাউন্ট %' : 'Discount %'}</Label>
+                    <Input
+                      type="number" min={0} max={100}
+                      value={allocForm.discount_percent ?? 0}
+                      onChange={e => {
+                        const next = { ...allocForm, discount_percent: Number(e.target.value) };
+                        next.monthly_charge = computeNetCharge(next);
+                        setAllocForm(next);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'অতিরিক্ত ছাড় (৳)' : 'Flat Discount (৳)'}</Label>
+                    <Input
+                      type="number" min={0}
+                      value={allocForm.discount_amount ?? 0}
+                      onChange={e => {
+                        const next = { ...allocForm, discount_amount: Number(e.target.value) };
+                        next.monthly_charge = computeNetCharge(next);
+                        setAllocForm(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'বেড নং' : 'Bed #'}</Label><Input type="number" value={allocForm.bed_number || ''} onChange={e => setAllocForm({ ...allocForm, bed_number: Number(e.target.value) })} /></div>
-              <div><Label>{bn ? 'মাসিক চার্জ' : 'Monthly Charge'}</Label><Input type="number" value={allocForm.monthly_charge || 0} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} /></div>
+              <div>
+                <Label>{bn ? 'মাসিক চার্জ (৳)' : 'Monthly Charge (৳)'}</Label>
+                <Input type="number" value={allocForm.monthly_charge ?? 0} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'চেক-ইন' : 'Check-in'}</Label><Input type="date" value={allocForm.check_in_date || ''} onChange={e => setAllocForm({ ...allocForm, check_in_date: e.target.value })} /></div>
@@ -616,7 +730,14 @@ const AdminHostel = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAllocDlg(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
-            <Button onClick={() => saveAlloc.mutate(allocForm)} disabled={!allocForm.student_id || !allocForm.room_id}>{bn ? 'সংরক্ষণ' : 'Save'}</Button>
+            <Button
+              onClick={() => saveAlloc.mutate(allocForm)}
+              disabled={
+                !allocForm.room_id ||
+                (allocForm.occupant_type === 'student' && !allocForm.student_id) ||
+                (allocForm.occupant_type === 'staff' && !allocForm.staff_id)
+              }
+            >{bn ? 'সংরক্ষণ' : 'Save'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
