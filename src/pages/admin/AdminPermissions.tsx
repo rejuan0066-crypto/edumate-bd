@@ -353,8 +353,8 @@ const AdminPermissions = () => {
                           </td>
                         </tr>
                         {group.items.map((item, idx) => {
-                          const perm = localPerms[item.path];
-                          if (!perm) return null;
+                          const perm =
+                            localPerms[item.path] ?? blankRow(item.path);
                           const allChecked =
                             perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
                           return (
