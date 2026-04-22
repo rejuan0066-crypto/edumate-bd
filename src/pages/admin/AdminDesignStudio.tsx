@@ -51,6 +51,10 @@ const AdminDesignStudio = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
 
+  // AI chat state
+  const [aiMessages, setAiMessages] = useState<AiChatMessage[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+
   // Undo / redo
   const historyRef = useRef<string[]>([]);
   const futureRef = useRef<string[]>([]);
