@@ -5300,6 +5300,7 @@ export type Database = {
           template_key: string
           updated_at: string
           use_meta_template: boolean
+          variable_rules: Json
           variables: Json
         }
         Insert: {
@@ -5318,6 +5319,7 @@ export type Database = {
           template_key: string
           updated_at?: string
           use_meta_template?: boolean
+          variable_rules?: Json
           variables?: Json
         }
         Update: {
@@ -5336,6 +5338,7 @@ export type Database = {
           template_key?: string
           updated_at?: string
           use_meta_template?: boolean
+          variable_rules?: Json
           variables?: Json
         }
         Relationships: []
