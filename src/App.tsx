@@ -127,6 +127,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
 import RouteLoader from "./components/RouteLoader";
 import InstallPrompt from "./components/InstallPrompt";
+import NetworkStatusIndicator from "./components/NetworkStatusIndicator";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -220,6 +221,7 @@ const App = () => (
                 <ScrollToTop />
                 <ScrollNavigation />
                 <InstallPrompt />
+                <NetworkStatusIndicator />
                 <FloatingWhatsAppButton />
                 <Routes>
                   <Route path="/" element={<Home />} />
