@@ -404,17 +404,20 @@ const AdminHostel = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{bn ? 'রুম বরাদ্দ' : 'Allocations'}</CardTitle>
-              <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
+              <Button onClick={() => { setEditAlloc(null); setAllocForm({ status: 'active', occupant_type: 'student', fee_mode: 'full', discount_percent: 0, discount_amount: 0, monthly_charge: 0, check_in_date: new Date().toISOString().split('T')[0] }); setAllocDlg(true); }}>
                 <Plus className="w-4 h-4 mr-2" />{bn ? 'নতুন বরাদ্দ' : 'New Allocation'}
               </Button>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>{bn ? 'ছাত্র' : 'Student'}</TableHead>
+                  <TableHead>{bn ? 'ধরন' : 'Type'}</TableHead>
+                  <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
+                  <TableHead>{bn ? 'সেশন/শ্রেণী' : 'Session/Class'}</TableHead>
                   <TableHead>{bn ? 'রুম' : 'Room'}</TableHead>
                   <TableHead>{bn ? 'বেড' : 'Bed'}</TableHead>
                   <TableHead>{bn ? 'চেক-ইন' : 'Check-in'}</TableHead>
+                  <TableHead>{bn ? 'ফি মোড' : 'Fee Mode'}</TableHead>
                   <TableHead>{bn ? 'মাসিক চার্জ' : 'Monthly'}</TableHead>
                   <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                   <TableHead className="text-right">{bn ? 'অ্যাকশন' : 'Actions'}</TableHead>
@@ -422,11 +425,29 @@ const AdminHostel = () => {
                 <TableBody>
                   {allocations.map(a => (
                     <TableRow key={a.id}>
-                      <TableCell className="font-medium">{studentName(a.student_id)}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.occupant_type === 'staff' ? 'secondary' : 'outline'}>
+                          {a.occupant_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{occupantLabel(a)}</TableCell>
+                      <TableCell className="text-xs">
+                        {a.occupant_type === 'student' ? (
+                          <>
+                            <div>{sessionLabel(a.academic_session_id)}</div>
+                            <div className="text-muted-foreground">{classLabel(a.class_id)}</div>
+                          </>
+                        ) : '—'}
+                      </TableCell>
                       <TableCell>{roomLabel(a.room_id)}</TableCell>
                       <TableCell>{a.bed_number || '—'}</TableCell>
                       <TableCell>{a.check_in_date}</TableCell>
-                      <TableCell>৳{Number(a.monthly_charge).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <Badge variant={a.fee_mode === 'free' ? 'default' : a.fee_mode === 'discount' ? 'secondary' : 'outline'}>
+                          {a.fee_mode === 'free' ? (bn ? 'ফ্রি' : 'Free') : a.fee_mode === 'discount' ? (bn ? `ডিসকাউন্ট ${a.discount_percent}%` : `Discount ${a.discount_percent}%`) : (bn ? 'পূর্ণ ফি' : 'Full Fee')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-semibold">৳{Number(a.monthly_charge).toLocaleString()}</TableCell>
                       <TableCell><Badge variant={a.status === 'active' ? 'default' : 'secondary'}>{a.status}</Badge></TableCell>
                       <TableCell className="text-right space-x-1">
                         <Button size="icon" variant="ghost" onClick={() => { setEditAlloc(a); setAllocForm(a); setAllocDlg(true); }}><Pencil className="w-4 h-4" /></Button>
@@ -434,7 +455,7 @@ const AdminHostel = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {allocations.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">{bn ? 'কোনো বরাদ্দ নেই' : 'No allocations yet'}</TableCell></TableRow>}
+                  {allocations.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">{bn ? 'কোনো বরাদ্দ নেই' : 'No allocations yet'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
