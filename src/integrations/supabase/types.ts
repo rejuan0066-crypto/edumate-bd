@@ -518,6 +518,75 @@ export type Database = {
         }
         Relationships: []
       }
+      budgets: {
+        Row: {
+          budget_type: string
+          category_id: string | null
+          created_at: string
+          deleted_at: string | null
+          fiscal_year: string
+          id: string
+          institution_id: string | null
+          name: string
+          name_bn: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          planned_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          budget_type?: string
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fiscal_year: string
+          id?: string
+          institution_id?: string | null
+          name: string
+          name_bn: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          planned_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          budget_type?: string
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          fiscal_year?: string
+          id?: string
+          institution_id?: string | null
+          name?: string
+          name_bn?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          planned_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budgets_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "expense_institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificate_templates: {
         Row: {
           config: Json
@@ -4544,6 +4613,142 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      scholarship_awards: {
+        Row: {
+          academic_session_id: string | null
+          awarded_amount: number
+          awarded_by: string | null
+          awarded_date: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          notes: string | null
+          scholarship_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          academic_session_id?: string | null
+          awarded_amount?: number
+          awarded_by?: string | null
+          awarded_date?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          notes?: string | null
+          scholarship_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          academic_session_id?: string | null
+          awarded_amount?: number
+          awarded_by?: string | null
+          awarded_date?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          notes?: string | null
+          scholarship_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarship_awards_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scholarship_awards_scholarship_id_fkey"
+            columns: ["scholarship_id"]
+            isOneToOne: false
+            referencedRelation: "scholarships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scholarship_awards_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scholarships: {
+        Row: {
+          academic_session_id: string | null
+          class_id: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          eligibility_criteria: string | null
+          id: string
+          is_active: boolean | null
+          max_recipients: number | null
+          name: string
+          name_bn: string
+          scholarship_type: string
+          updated_at: string
+        }
+        Insert: {
+          academic_session_id?: string | null
+          class_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          eligibility_criteria?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_recipients?: number | null
+          name: string
+          name_bn: string
+          scholarship_type?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_session_id?: string | null
+          class_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          eligibility_criteria?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_recipients?: number | null
+          name?: string
+          name_bn?: string
+          scholarship_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scholarships_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scholarships_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_gateway_config: {
         Row: {
