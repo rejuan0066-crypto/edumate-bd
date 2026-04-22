@@ -103,7 +103,7 @@ const DesignToolbar = ({
   toggleGrid,
 }: Props) => {
   return (
-    <div className="flex flex-col items-center gap-0.5 py-3 px-2 bg-card/40 backdrop-blur-2xl border-r border-border/30 w-[60px] shrink-0">
+    <div className="flex lg:flex-col items-center gap-0.5 py-2 px-2 lg:py-3 bg-card/40 backdrop-blur-2xl border-b lg:border-b-0 lg:border-r border-border/30 w-full lg:w-[60px] lg:shrink-0 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto scrollbar-none">
       {tools.map((t) => (
         <ToolBtn
           key={t.id}
@@ -117,7 +117,7 @@ const DesignToolbar = ({
       {/* Image upload */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <label className="h-10 w-10 rounded-2xl flex items-center justify-center cursor-pointer text-foreground/60 hover:bg-foreground/5 hover:text-foreground hover:scale-105 transition-all duration-300">
+          <label className="h-10 w-10 shrink-0 rounded-2xl flex items-center justify-center cursor-pointer text-foreground/60 hover:bg-foreground/5 hover:text-foreground hover:scale-105 transition-all duration-300">
             <ImageIcon className="w-[18px] h-[18px]" strokeWidth={2} />
             <input
               type="file"
