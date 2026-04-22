@@ -1040,6 +1040,70 @@ const AdminHealthRecords = () => {
       <DeleteConfirmDialog open={!!delProfId} onOpenChange={(o) => !o && setDelProfId(null)} onConfirm={() => delProfId && deleteProf.mutate(delProfId)} />
       <DeleteConfirmDialog open={!!delVisitId} onOpenChange={(o) => !o && setDelVisitId(null)} onConfirm={() => delVisitId && deleteVisit.mutate(delVisitId)} />
       <DeleteConfirmDialog open={!!delVaccId} onOpenChange={(o) => !o && setDelVaccId(null)} onConfirm={() => delVaccId && deleteVacc.mutate(delVaccId)} />
+
+      {/* ─── Debug Inspector for Print Summary ──────────────────────── */}
+      <Dialog open={!!debugInfo} onOpenChange={(o) => !o && setDebugInfo(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+              {bn ? 'প্রিন্ট ডিবাগ পরিদর্শক' : 'Print Summary Debug'}
+            </DialogTitle>
+          </DialogHeader>
+          {debugInfo && (() => {
+            const d = debugInfo;
+            const Row = ({ label, value, tone }: { label: string; value: React.ReactNode; tone?: 'ok' | 'warn' | 'bad' }) => (
+              <div className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0">
+                <span className="text-sm text-muted-foreground">{label}</span>
+                <span className={`text-sm font-mono ${
+                  tone === 'bad' ? 'text-destructive font-semibold'
+                  : tone === 'warn' ? 'text-yellow-600 dark:text-yellow-500 font-semibold'
+                  : tone === 'ok' ? 'text-green-600 dark:text-green-500'
+                  : ''
+                }`}>{value}</span>
+              </div>
+            );
+            return (
+              <div className="space-y-3">
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <Row label={bn ? 'প্রোফাইল আইডি' : 'Profile ID'} value={<span className="text-xs">{d.profile.id.slice(0, 8)}…</span>} />
+                  <Row label="person_type" value={d.profile.person_type ?? '—'} tone={d.mismatch ? 'warn' : undefined} />
+                  <Row label="student_id" value={d.hasStudent ? '✓ present' : '✗ empty'} tone={d.hasStudent ? 'ok' : undefined} />
+                  <Row label="staff_id" value={d.hasStaff ? '✓ present' : '✗ empty'} tone={d.hasStaff ? 'ok' : undefined} />
+                  <Row
+                    label={bn ? 'সমাধান হওয়া ধরন' : 'resolvedType'}
+                    value={d.resolvedType}
+                    tone={d.missing ? 'bad' : d.ambiguous ? 'warn' : 'ok'}
+                  />
+                  <Row label={bn ? 'ম্যাচ আইডি' : 'matched id'} value={d.personId ? <span className="text-xs">{d.personId.slice(0, 8)}…</span> : '—'} tone={d.personId ? 'ok' : 'bad'} />
+                </div>
+
+                {(d.ambiguous || d.missing || d.mismatch) && (
+                  <div className={`rounded-lg p-3 text-sm ${d.missing ? 'bg-destructive/10 border border-destructive/30 text-destructive' : 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-500'}`}>
+                    {d.missing
+                      ? (bn ? '⚠️ এই প্রোফাইলে কোনো student_id বা staff_id নেই। ভিজিট/টিকা মেলানো যাবে না।' : '⚠️ Profile has neither student_id nor staff_id. Visits/vaccinations cannot be matched.')
+                      : d.ambiguous
+                      ? (bn ? `⚠️ দুটি আইডিই সেট করা — "${d.resolvedType}" হিসেবে প্রিন্ট হবে।` : `⚠️ Both ids are set — will print as "${d.resolvedType}".`)
+                      : (bn ? `⚠️ person_type ("${d.profile.person_type}") সেট করা আইডির সাথে মিলছে না — id থেকে রিজলভ করা হয়েছে।` : `⚠️ person_type ("${d.profile.person_type}") disagrees with populated id — resolved from id field.`)}
+                  </div>
+                )}
+
+                <div className="rounded-lg bg-muted/40 p-3 space-y-0.5">
+                  <Row label={bn ? 'ম্যাচ হওয়া ভিজিট' : 'Matched visits'} value={d.matchedVisits} tone={d.matchedVisits > 0 ? 'ok' : undefined} />
+                  <Row label={bn ? 'ম্যাচ হওয়া টিকা' : 'Matched vaccinations'} value={d.matchedVaccinations} tone={d.matchedVaccinations > 0 ? 'ok' : undefined} />
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDebugInfo(null)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button onClick={() => { debugInfo?.runPrint(); setDebugInfo(null); }} disabled={debugInfo?.missing}>
+              <Printer className="h-4 w-4 mr-1" />
+              {bn ? 'এভাবেই প্রিন্ট করুন' : 'Print Anyway'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
