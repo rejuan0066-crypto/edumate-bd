@@ -143,6 +143,10 @@ const AdminDesignStudio = () => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const a = fc.getActiveObject();
         if (a && !(a as any).locked) { fc.remove(a); fc.discardActiveObject(); fc.requestRenderAll(); }
+      } else if (meta && e.altKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault(); undoAiCommand();
+      } else if (meta && e.altKey && e.key.toLowerCase() === 'z' && e.shiftKey) {
+        e.preventDefault(); redoAiCommand();
       } else if (meta && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault(); undo();
       } else if (meta && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) {
