@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public can update own attempt" ON public.admission_test_attempts;
