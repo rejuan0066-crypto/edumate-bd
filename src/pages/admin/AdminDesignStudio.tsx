@@ -478,9 +478,52 @@ const AdminDesignStudio = () => {
         selectedFallback: selected,
         templateLoader,
       });
+
+      // Detect image-related actions and capture thumbnails from newly created layers
+      const imageOpsFromActions: AiImageOp[] = [];
+      const createdImageLayer = fc
+        .getObjects()
+        .reverse()
+        .find(
+          (o) =>
+            o.type === 'image' &&
+            createdLayerIds.includes((o as any).layerId),
+        ) as fabric.Image | undefined;
+      const createdThumb = createdImageLayer
+        ? (() => {
+            try {
+              return createdImageLayer.toDataURL({ format: 'png', multiplier: 0.25 });
+            } catch {
+              return null;
+            }
+          })()
+        : null;
+      const selectedThumb = selectedImageToDataUrl(selected);
+
+      const kindOfAction = (a: AiAction): AiImageOpKind | null => {
+        if (a.type === 'add_image') return 'generate';
+        if (a.type === 'replace_selected_image') {
+          // Heuristic: if the prompt mentions background removal we tag it as remove_bg
+          return /background|বিজি|bg|ব্যাকগ্রাউন্ড|রিমুভ|remove\s*bg/i.test(prompt) ? 'remove_bg' : 'edit';
+        }
+        return null;
+      };
+      for (const a of actions) {
+        const kind = kindOfAction(a);
+        if (!kind) continue;
+        imageOpsFromActions.push({
+          id: `op-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          kind,
+          prompt,
+          thumbnail: kind === 'generate' ? createdThumb : selectedThumb,
+          timestamp: Date.now(),
+        });
+      }
+
       // Stage as preview (don't push history yet — wait for Apply)
       setPendingSnapshot(preSnapshot);
       setPendingLayerIds(createdLayerIds);
+      pendingCommandRef.current = { prompt, imageOps: imageOpsFromActions };
       const text = [summary, ...errors].filter(Boolean).join(' · ') || 'Done';
       setAiMessages((m) => [...m, {
         role: 'assistant',
