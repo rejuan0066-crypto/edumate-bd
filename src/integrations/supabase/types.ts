@@ -139,6 +139,214 @@ export type Database = {
           },
         ]
       }
+      admission_test_attempts: {
+        Row: {
+          answers: Json | null
+          applicant_address: string | null
+          applicant_email: string | null
+          applicant_guardian: string | null
+          applicant_name: string
+          applicant_nid_birth: string | null
+          applicant_phone: string | null
+          correct_count: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          id: string
+          ip_address: string | null
+          passed: boolean | null
+          percentage: number | null
+          rank: number | null
+          score: number | null
+          started_at: string | null
+          status: string | null
+          submitted_at: string | null
+          test_id: string
+          total_questions: number | null
+        }
+        Insert: {
+          answers?: Json | null
+          applicant_address?: string | null
+          applicant_email?: string | null
+          applicant_guardian?: string | null
+          applicant_name: string
+          applicant_nid_birth?: string | null
+          applicant_phone?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          ip_address?: string | null
+          passed?: boolean | null
+          percentage?: number | null
+          rank?: number | null
+          score?: number | null
+          started_at?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          test_id: string
+          total_questions?: number | null
+        }
+        Update: {
+          answers?: Json | null
+          applicant_address?: string | null
+          applicant_email?: string | null
+          applicant_guardian?: string | null
+          applicant_name?: string
+          applicant_nid_birth?: string | null
+          applicant_phone?: string | null
+          correct_count?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          ip_address?: string | null
+          passed?: boolean | null
+          percentage?: number | null
+          rank?: number | null
+          score?: number | null
+          started_at?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          test_id?: string
+          total_questions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_test_attempts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_test_questions: {
+        Row: {
+          correct_answer: string
+          created_at: string | null
+          id: string
+          marks: number | null
+          options: Json
+          question_text: string
+          question_text_bn: string | null
+          sort_order: number | null
+          test_id: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string | null
+          id?: string
+          marks?: number | null
+          options?: Json
+          question_text: string
+          question_text_bn?: string | null
+          sort_order?: number | null
+          test_id: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string | null
+          id?: string
+          marks?: number | null
+          options?: Json
+          question_text?: string
+          question_text_bn?: string | null
+          sort_order?: number | null
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_tests: {
+        Row: {
+          academic_session_id: string | null
+          class_id: string | null
+          closes_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          duration_minutes: number
+          id: string
+          instructions: string | null
+          instructions_bn: string | null
+          is_published: boolean | null
+          opens_at: string | null
+          pass_mark: number
+          show_result_immediately: boolean | null
+          shuffle_questions: boolean | null
+          title: string
+          title_bn: string
+          total_marks: number
+          updated_at: string | null
+        }
+        Insert: {
+          academic_session_id?: string | null
+          class_id?: string | null
+          closes_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          duration_minutes?: number
+          id?: string
+          instructions?: string | null
+          instructions_bn?: string | null
+          is_published?: boolean | null
+          opens_at?: string | null
+          pass_mark?: number
+          show_result_immediately?: boolean | null
+          shuffle_questions?: boolean | null
+          title: string
+          title_bn: string
+          total_marks?: number
+          updated_at?: string | null
+        }
+        Update: {
+          academic_session_id?: string | null
+          class_id?: string | null
+          closes_at?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          description_bn?: string | null
+          duration_minutes?: number
+          id?: string
+          instructions?: string | null
+          instructions_bn?: string | null
+          is_published?: boolean | null
+          opens_at?: string | null
+          pass_mark?: number
+          show_result_immediately?: boolean | null
+          shuffle_questions?: boolean | null
+          title?: string
+          title_bn?: string
+          total_marks?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_tests_academic_session_id_fkey"
+            columns: ["academic_session_id"]
+            isOneToOne: false
+            referencedRelation: "academic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_tests_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_verification_config: {
         Row: {
           api_key: string
