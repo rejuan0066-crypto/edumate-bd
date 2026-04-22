@@ -70,7 +70,14 @@ const AdminDesignStudio = () => {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  // Undo / redo
+  // AI image operation history (for re-run)
+  const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
+
+  // AI command undo/redo stack (separate from canvas-level undo)
+  const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
+  const [aiCommandCursor, setAiCommandCursor] = useState(-1); // -1 = nothing applied
+
+  // Undo / redo (canvas-level)
   const historyRef = useRef<string[]>([]);
   const futureRef = useRef<string[]>([]);
   const skipHistoryRef = useRef(false);
