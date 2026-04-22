@@ -3648,6 +3648,73 @@ export type Database = {
           },
         ]
       }
+      parent_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          parent_account_id: string | null
+          parent_thread_id: string | null
+          read_at: string | null
+          sender_name: string | null
+          sender_type: string
+          student_id: string | null
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          parent_account_id?: string | null
+          parent_thread_id?: string | null
+          read_at?: string | null
+          sender_name?: string | null
+          sender_type?: string
+          student_id?: string | null
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          parent_account_id?: string | null
+          parent_thread_id?: string | null
+          read_at?: string | null
+          sender_name?: string | null
+          sender_type?: string
+          student_id?: string | null
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_messages_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "parent_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_messages_parent_thread_id_fkey"
+            columns: ["parent_thread_id"]
+            isOneToOne: false
+            referencedRelation: "parent_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_messages_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_gateway_config: {
         Row: {
           api_key: string
