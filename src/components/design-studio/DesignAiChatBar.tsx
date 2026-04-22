@@ -109,36 +109,37 @@ const DesignAiChatBar = ({
         className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden"
       >
 
-        {/* Pending review + AI cmd history — auto-hidden until focus / selection / typing */}
+        {/* Pending review bar — ALWAYS visible when there are AI changes to review */}
+        {pendingReview && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 animate-fade-in">
+            <div className="flex items-center gap-2 text-xs text-amber-200">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              AI changes are in preview — review before saving.
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={onRevert}
+                className="text-[11px] px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/80 border border-white/10"
+              >
+                Revert
+              </button>
+              <button
+                onClick={onApply}
+                className="text-[11px] px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* AI command undo/redo + history strip — auto-hidden until focus / typing */}
         <div
           className={cn(
             'overflow-hidden transition-all duration-300 ease-out',
-            revealTools ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0',
+            revealTools ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0',
           )}
         >
-          {pendingReview && (
-            <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 animate-fade-in">
-              <div className="flex items-center gap-2 text-xs text-amber-200">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                AI changes are in preview — review before saving.
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={onRevert}
-                  className="text-[11px] px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/80 border border-white/10"
-                >
-                  Revert
-                </button>
-                <button
-                  onClick={onApply}
-                  className="text-[11px] px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium"
-                >
-                  Apply
-                </button>
-              </div>
-            </div>
-          )}
-
           <AiCommandHistory
             history={commandHistory}
             cursor={commandCursor}
