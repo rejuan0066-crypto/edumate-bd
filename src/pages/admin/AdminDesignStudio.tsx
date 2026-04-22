@@ -21,6 +21,10 @@ import type { DesignTool, LayerInfo, DesignProject } from '@/components/design-s
 import {
   exportSVG, exportPNG, exportJPG, exportLayeredPSD, exportFlatPSD, exportJSON,
 } from '@/components/design-studio/exportUtils';
+import DesignAiChatBar, { type AiChatMessage } from '@/components/design-studio/DesignAiChatBar';
+import {
+  applyAiActions, selectedImageToDataUrl, summarizeSelection, type AiAction,
+} from '@/components/design-studio/aiCanvasActions';
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
