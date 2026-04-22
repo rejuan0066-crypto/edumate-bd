@@ -91,6 +91,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'posts', path: '/admin/posts', label_bn: 'পোস্ট', label_en: 'Posts', icon: 'FileText', visible: true, sort_order: 1 },
     { id: 'guardian-notify', path: '/admin/guardian-notify', label_bn: 'অভিভাবক নোটিফিকেশন', label_en: 'Guardian Notify', icon: 'MessageSquare', visible: true, sort_order: 2 },
     { id: 'whatsapp-queue', path: '/admin/whatsapp-queue', label_bn: 'WhatsApp কিউ', label_en: 'WhatsApp Queue', icon: 'MessageCircle', visible: true, sort_order: 3 },
+    { id: 'complaints', path: '/admin/complaints', label_bn: 'অভিযোগ বক্স', label_en: 'Complaint Box', icon: 'Inbox', visible: true, sort_order: 4 },
   ]},
 
   // ওয়েবসাইট ও ডিজাইন
@@ -150,6 +151,7 @@ const DEFAULT_PUBLIC: MenuItemConfig[] = [
   { id: 'fee-payment', path: '/fee-payment', label_bn: 'ফি প্রদান', label_en: 'Fee Payment', icon: '', visible: true, sort_order: 8 },
   { id: 'live-classes-public', path: '/live-classes', label_bn: 'লাইভ ক্লাস', label_en: 'Live Classes', icon: '', visible: true, sort_order: 8.5 },
   { id: 'contact', path: '/contact', label_bn: 'যোগাযোগ', label_en: 'Contact', icon: '', visible: true, sort_order: 9 },
+  { id: 'complaints-public', path: '/complaints', label_bn: 'অভিযোগ বক্স', label_en: 'Complaint Box', icon: '', visible: true, sort_order: 9.5 },
 ];
 
 export const DEFAULT_MENU_CONFIG: MenuConfig = {
