@@ -25,11 +25,21 @@ export function getSelectionTypeLabel(obj: fabric.Object | null): string | null 
 }
 
 const NO_SEL_HINTS: PromptHint[] = [
-  { label: '🪄 Hero section', prompt: 'একটা আধুনিক হিরো সেকশন বানাও — বড় হেডলাইন, সাবটাইটেল ও একটি CTA বাটনসহ' },
+  // Business templates
+  { label: '💼 Visiting card', prompt: 'একটা প্রিমিয়াম ভিজিটিং কার্ড বানাও — নাম, পদবি, ফোন, ইমেইল ও লোগো প্লেসহোল্ডারসহ' },
+  { label: '🧾 Invoice (A4)', prompt: 'একটা প্রফেশনাল A4 ইনভয়েস বানাও — হেডার, বিল-টু, আইটেম টেবিল ও টোটাল সেকশনসহ' },
+  { label: '🧠 Letterhead', prompt: 'একটা কর্পোরেট লেটারহেড বানাও — হেডার লোগো, ঠিকানা ও ফুটারসহ' },
+  { label: '💵 Money receipt', prompt: 'একটা মানি রিসিট বানাও — সিরিয়াল, তারিখ, পরিমাণ ও স্বাক্ষর লাইনসহ' },
+  // Education
+  { label: '🪪 ID card', prompt: 'একটা ছাত্র আইডি কার্ড বানাও — ছবি, নাম, রোল, ক্লাস ও ইনস্টিটিউশন লোগোসহ' },
+  { label: '🏆 Certificate', prompt: 'একটা ল্যান্ডস্কেপ প্রশংসাপত্র বানাও — বর্ডার, টাইটেল, প্রাপকের নাম ও স্বাক্ষরসহ' },
+  { label: '📅 Class routine', prompt: 'একটা সাপ্তাহিক ক্লাস রুটিন টেবিল বানাও — দিন বনাম পিরিয়ড' },
+  // Social media
+  { label: '📘 FB cover', prompt: 'একটা ফেসবুক কভার ব্যানার বানাও — বড় হেডলাইন, সাবটাইটেল ও CTA সহ' },
+  { label: '🖼️ Poster', prompt: 'একটা ইভেন্ট পোস্টার বানাও — তারিখ, ভেন্যু ও বড় টাইটেলসহ' },
+  { label: '▶️ Thumbnail', prompt: 'একটা YouTube থাম্বনেইল বানাও — বড় হেডলাইন ও কন্ট্রাস্ট ব্যাকগ্রাউন্ডসহ' },
+  // Generic UI
   { label: '📊 Dashboard', prompt: 'একটা ৪-কার্ডের stats ড্যাশবোর্ড বানাও আধুনিক রঙে' },
-  { label: '📝 Signup form', prompt: 'নাম, ইমেইল, পাসওয়ার্ড ও সাবমিট বাটনসহ একটা সাইনআপ ফর্ম যোগ করো' },
-  { label: '🎨 Image: sunset', prompt: 'একটা সুন্দর পাহাড়ের উপর সূর্যাস্তের ছবি জেনারেট করে যোগ করো' },
-  { label: '📋 5-col table', prompt: 'হেডার ও ৫টি রো-সহ ৫ কলামের একটা টেবিল বানাও' },
   { label: '🃏 Card grid', prompt: 'আইকন, টাইটেল ও বর্ণনাসহ ৩-কার্ডের একটা গ্রিড বানাও' },
 ];
 
