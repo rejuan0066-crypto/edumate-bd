@@ -156,25 +156,34 @@
   }
 
   /* ── Modern Global Input Styles ──
-     NOTE: `:not(.ai-chat-textarea)` excludes the AI chat composer from all
-     global input theming so it can fully control its own appearance. */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role]):not(.ai-chat-textarea),
-  textarea:not(.ai-chat-textarea),
-  select:not(.ai-chat-textarea) {
+     IMPORTANT: All global input/textarea/select theming uses ONE shared
+     opt-out class — `.chat-composer-input` (alias: `.ai-chat-textarea`).
+     Any element that needs to fully control its own appearance (e.g. the
+     AI chat composer on a dark surface) must add `chat-composer-input`.
+     This single source of truth prevents future regressions where new
+     global rules accidentally re-style the chat input. */
+
+  /* Shared exclusion: a control is "themable" only if it is NOT a
+     checkbox/radio/range, has no ARIA role, and is not opted out via
+     `.chat-composer-input` / `.ai-chat-textarea`. Using `:is()` keeps the
+     selector readable; `:not()` enforces the exclusion. */
+  input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
+  textarea:not(.chat-composer-input):not(.ai-chat-textarea),
+  select:not(.chat-composer-input):not(.ai-chat-textarea) {
     @apply rounded-2xl transition-all duration-300;
     background-color: hsl(0 0% 100%);
     border: 1.5px solid hsl(var(--border));
     box-shadow: inset 0 1px 2px hsl(220 20% 10% / 0.04);
   }
-  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role]):not(.ai-chat-textarea),
-  .dark textarea:not(.ai-chat-textarea),
-  .dark select:not(.ai-chat-textarea) {
+  .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
+  .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea),
+  .dark select:not(.chat-composer-input):not(.ai-chat-textarea) {
     background-color: hsl(var(--muted) / 0.35);
     border-color: hsl(var(--border));
   }
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role]):not(.ai-chat-textarea):focus,
-  textarea:not(.ai-chat-textarea):focus,
-  select:not(.ai-chat-textarea):focus {
+  input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
+  textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
+  select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
     @apply ring-2;
     background-color: hsl(0 0% 100%);
     border-color: hsl(var(--primary) / 0.5);
@@ -182,20 +191,23 @@
     outline: none;
     box-shadow: 0 0 0 4px hsl(var(--primary) / 0.06), var(--shadow-glow-emerald);
   }
-  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role]):not(.ai-chat-textarea):focus,
-  .dark textarea:not(.ai-chat-textarea):focus,
-  .dark select:not(.ai-chat-textarea):focus {
+  .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
+  .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
+  .dark select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
     background-color: hsl(var(--background));
   }
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role]):not(.ai-chat-textarea)::placeholder,
-  textarea:not(.ai-chat-textarea)::placeholder {
+  input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea)::placeholder,
+  textarea:not(.chat-composer-input):not(.ai-chat-textarea)::placeholder {
     color: hsl(var(--muted-foreground) / 0.6);
   }
 
-  /* ── AI chat composer textarea — fully encapsulated styling ──
-     The `:where()` wrapper around the parent keeps specificity at (0,1,1)
-     so component-level Tailwind utilities still win, while the explicit
-     property reset below guarantees no global rule can leak in. */
+  /* ── Chat composer input — fully encapsulated styling ──
+     Applies to any element opted out via `.chat-composer-input` (preferred)
+     or the legacy `.ai-chat-textarea` alias. The `:where()` wrapper around
+     the parent keeps specificity at (0,1,0) so component-level Tailwind
+     utilities still win, while the explicit property reset guarantees no
+     global rule can leak in. */
+  :where(html) :is(textarea, input).chat-composer-input,
   :where(html) textarea.ai-chat-textarea {
     all: unset;
     display: block;
