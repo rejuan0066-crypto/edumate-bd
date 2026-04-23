@@ -269,7 +269,7 @@ const DesignAiChatBar = ({
             disabled={disabled || isLoading}
             rows={1}
             data-ai-chat-input
-            className="ai-chat-textarea flex-1 min-w-0 text-sm leading-6"
+            className="ai-chat-textarea chat-composer-input flex-1 min-w-0 text-sm leading-6"
             style={{ height: '24px' }}
           />
 
