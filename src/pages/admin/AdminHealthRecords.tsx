@@ -107,11 +107,24 @@ const AdminHealthRecords = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('students')
-        .select('id, name_bn, name_en, student_id')
+        .select('id, name_bn, name_en, student_id, class_id, roll_number')
         .is('deleted_at', null)
         .order('name_bn');
       if (error) throw error;
-      return data as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string }>;
+      return data as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string; class_id?: string | null; roll_number?: string | null }>;
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['health-classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, name_bn, sort_order, division_id')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data as Array<{ id: string; name: string; name_bn: string }>;
     },
   });
 
