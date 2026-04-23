@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import type { DesignTool } from './types';
 
 export interface DesignCanvasHandle {
@@ -14,6 +14,7 @@ interface Props {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+  fitToScreen?: boolean;
   onReady: (canvas: fabric.Canvas) => void;
   onSelectionChange: (obj: fabric.Object | null) => void;
   onObjectsChange: () => void;
