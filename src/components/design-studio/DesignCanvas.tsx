@@ -1,5 +1,5 @@
 import { fabric } from 'fabric';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { DesignTool } from './types';
 
 export interface DesignCanvasHandle {
@@ -14,18 +14,21 @@ interface Props {
   showGrid: boolean;
   snapToGrid: boolean;
   gridSize: number;
+  fitToScreen?: boolean;
   onReady: (canvas: fabric.Canvas) => void;
   onSelectionChange: (obj: fabric.Object | null) => void;
   onObjectsChange: () => void;
 }
 
 const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
-  ({ width, height, background, activeTool, showGrid, snapToGrid, gridSize, onReady, onSelectionChange, onObjectsChange }, ref) => {
+  ({ width, height, background, activeTool, showGrid, snapToGrid, gridSize, fitToScreen = true, onReady, onSelectionChange, onObjectsChange }, ref) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
     const toolRef = useRef<DesignTool>(activeTool);
     const snapRef = useRef(snapToGrid);
     const gridRef = useRef(gridSize);
+    const [fitScale, setFitScale] = useState(1);
 
     useImperativeHandle(ref, () => ({ getCanvas: () => fabricRef.current }));
 
@@ -162,14 +165,43 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Sync size & background
     useEffect(() => {
       const fc = fabricRef.current;
       if (!fc) return;
-      fc.setWidth(width);
-      fc.setHeight(height);
-      fc.renderAll();
-    }, [width, height]);
+      fc.setBackgroundColor(background, () => fc.renderAll());
+    }, [background]);
+
+    // Sync size & background — use fabric zoom for fit-to-screen so pointer events stay correct
+    useEffect(() => {
+      const fc = fabricRef.current;
+      if (!fc) return;
+      const apply = () => {
+        const parent = containerRef.current?.parentElement;
+        let scale = 1;
+        if (fitToScreen && parent) {
+          const padding = 48;
+          const availW = Math.max(100, parent.clientWidth - padding);
+          const availH = Math.max(100, parent.clientHeight - padding);
+          scale = Math.min(availW / width, availH / height, 1);
+          if (!isFinite(scale) || scale <= 0) scale = 1;
+        }
+        fc.setZoom(scale);
+        // Set DOM size to scaled, but keep design coordinates intact
+        fc.setWidth(width * scale);
+        fc.setHeight(height * scale);
+        setFitScale(scale);
+        fc.renderAll();
+      };
+      apply();
+      if (!fitToScreen) return;
+      const ro = new ResizeObserver(apply);
+      if (containerRef.current?.parentElement) ro.observe(containerRef.current.parentElement);
+      window.addEventListener('resize', apply);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener('resize', apply);
+      };
+    }, [width, height, fitToScreen]);
 
     useEffect(() => {
       const fc = fabricRef.current;
@@ -178,14 +210,14 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
     }, [background]);
 
     return (
-      <div className="relative inline-block shadow-2xl shadow-black/40">
+      <div ref={containerRef} className="relative inline-block shadow-2xl shadow-black/40">
         {showGrid && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage:
                 'linear-gradient(to right, rgba(127,127,127,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(127,127,127,0.18) 1px, transparent 1px)',
-              backgroundSize: `${gridSize}px ${gridSize}px`,
+              backgroundSize: `${gridSize * fitScale}px ${gridSize * fitScale}px`,
               zIndex: 1,
             }}
           />
