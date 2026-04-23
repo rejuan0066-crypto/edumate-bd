@@ -207,6 +207,7 @@ const AdminHealthRecords = () => {
   const [profDlg, setProfDlg] = useState(false);
   const [editProf, setEditProf] = useState<HealthProfile | null>(null);
   const [profForm, setProfForm] = useState<Partial<HealthProfile>>({ person_type: 'student' });
+  const [profClassFilter, setProfClassFilter] = useState<string>('all');
   const [delProfId, setDelProfId] = useState<string | null>(null);
 
   const saveProf = useMutation({
