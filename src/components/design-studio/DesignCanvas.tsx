@@ -180,20 +180,61 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
       fc.setBackgroundColor(background, () => fc.renderAll());
     }, [background]);
 
+    // Fit-to-screen: compute CSS scale based on container size vs canvas size
+    useLayoutEffect(() => {
+      if (!fitToScreen) { setFitScale(1); return; }
+      const compute = () => {
+        const parent = containerRef.current?.parentElement;
+        if (!parent) return;
+        const padding = 48; // approximate padding inside viewport
+        const availW = Math.max(100, parent.clientWidth - padding);
+        const availH = Math.max(100, parent.clientHeight - padding);
+        const s = Math.min(availW / width, availH / height, 1);
+        setFitScale(s > 0 ? s : 1);
+      };
+      compute();
+      const ro = new ResizeObserver(compute);
+      if (containerRef.current?.parentElement) {
+        ro.observe(containerRef.current.parentElement);
+      }
+      window.addEventListener('resize', compute);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener('resize', compute);
+      };
+    }, [width, height, fitToScreen]);
+
     return (
-      <div className="relative inline-block shadow-2xl shadow-black/40">
-        {showGrid && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage:
-                'linear-gradient(to right, rgba(127,127,127,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(127,127,127,0.18) 1px, transparent 1px)',
-              backgroundSize: `${gridSize}px ${gridSize}px`,
-              zIndex: 1,
-            }}
-          />
-        )}
-        <canvas ref={canvasElRef} className="block" />
+      <div
+        ref={containerRef}
+        className="relative shadow-2xl shadow-black/40"
+        style={{
+          width: width * fitScale,
+          height: height * fitScale,
+        }}
+      >
+        <div
+          style={{
+            width,
+            height,
+            transform: `scale(${fitScale})`,
+            transformOrigin: 'top left',
+            position: 'relative',
+          }}
+        >
+          {showGrid && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage:
+                  'linear-gradient(to right, rgba(127,127,127,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(127,127,127,0.18) 1px, transparent 1px)',
+                backgroundSize: `${gridSize}px ${gridSize}px`,
+                zIndex: 1,
+              }}
+            />
+          )}
+          <canvas ref={canvasElRef} className="block" />
+        </div>
       </div>
     );
   },
