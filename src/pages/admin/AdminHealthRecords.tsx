@@ -102,19 +102,6 @@ const AdminHealthRecords = () => {
   const vaccApproval = useApprovalCheck('/admin/health-records', 'vaccinations');
 
   // ─── Roster (students + staff) ─────────────────────────────────────────
-  const { data: students = [] } = useQuery({
-    queryKey: ['health-students'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('students')
-        .select('id, name_bn, name_en, student_id, class_id, roll_number')
-        .is('deleted_at', null)
-        .order('name_bn');
-      if (error) throw error;
-      return data as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string; class_id?: string | null; roll_number?: string | null }>;
-    },
-  });
-
   const { data: classes = [] } = useQuery({
     queryKey: ['health-classes'],
     queryFn: async () => {
@@ -124,7 +111,39 @@ const AdminHealthRecords = () => {
         .eq('is_active', true)
         .order('sort_order');
       if (error) throw error;
-      return data as Array<{ id: string; name: string; name_bn: string }>;
+      return data as Array<{ id: string; name: string; name_bn: string; sort_order?: number | null }>;
+    },
+  });
+
+  // Numeric extraction helper for roll numbers stored as text
+  // (handles Bengali digits and prefixed/padded values like "0012", "১০০২")
+  const rollNumeric = (r: string | null | undefined): number => {
+    if (!r) return Number.MAX_SAFE_INTEGER;
+    const en = r.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const m = en.match(/\d+/);
+    return m ? parseInt(m[0], 10) : Number.MAX_SAFE_INTEGER;
+  };
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['health-students', classes.map(c => c.id).join(',')],
+    enabled: classes.length > 0 || true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .select('id, name_bn, name_en, student_id, class_id, roll_number')
+        .is('deleted_at', null);
+      if (error) throw error;
+      const sortMap = new Map(classes.map(c => [c.id, c.sort_order ?? 9999]));
+      const rows = (data || []) as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string; class_id?: string | null; roll_number?: string | null }>;
+      return rows.sort((a, b) => {
+        const ca = sortMap.get(a.class_id || '') ?? 9999;
+        const cb = sortMap.get(b.class_id || '') ?? 9999;
+        if (ca !== cb) return ca - cb;
+        const ra = rollNumeric(a.roll_number);
+        const rb = rollNumeric(b.roll_number);
+        if (ra !== rb) return ra - rb;
+        return (a.name_bn || '').localeCompare(b.name_bn || '', 'bn');
+      });
     },
   });
 
