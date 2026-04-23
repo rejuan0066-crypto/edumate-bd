@@ -925,8 +925,8 @@ const AdminDesignStudio = () => {
             </div>
           )}
 
-          {/* Mobile AI Chat sheet */}
-          <Sheet open={aiPanelOpen} onOpenChange={setAiPanelOpen}>
+          {/* Mobile AI Chat sheet — only mount/open on mobile to avoid blocking the desktop side panel */}
+          <Sheet open={aiPanelOpen && !isDesktop} onOpenChange={setAiPanelOpen}>
             <SheetContent side="bottom" className="h-[85vh] p-2 bg-card/95 backdrop-blur-2xl border-t border-border/30 lg:hidden">
               <DesignAiChatBar
                 messages={aiMessages}
