@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown, PanelRight, Layers as LayersIcon } from 'lucide-react';
+import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown, PanelRight, Layers as LayersIcon, Sparkles, X as XIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,6 +74,7 @@ const AdminDesignStudio = () => {
 
   // AI image operation history (for re-run)
   const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   // AI command undo/redo stack (separate from canvas-level undo)
   const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
@@ -836,7 +837,7 @@ const AdminDesignStudio = () => {
 
           {/* Canvas viewport */}
           <div className="relative flex-1 min-h-0 overflow-hidden bg-gradient-to-br from-[#16161c] via-[#1a1a22] to-[#16161c] flex flex-col">
-            <div className="flex-1 overflow-auto flex items-center justify-center p-4 sm:p-6 lg:p-10 pb-32 sm:pb-32">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-4 sm:p-6 lg:p-10">
               <DesignCanvas
                 ref={canvasRef}
                 width={width}
@@ -852,30 +853,94 @@ const AdminDesignStudio = () => {
               />
             </div>
 
-            {/* Floating AI command bar */}
-            <DesignAiChatBar
-              messages={aiMessages}
-              onSubmit={handleAiPrompt}
-              isLoading={aiLoading}
-              disabled={!fc}
-              hasSelection={!!selected}
-              selectionLabel={summarizeSelection(selected) ?? undefined}
-              selectionTypeLabel={getSelectionTypeLabel(selected)}
-              hints={getPromptHints(selected)}
-              scope={aiScope}
-              onScopeChange={setAiScope}
-              pendingReview={!!pendingSnapshot}
-              onApply={applyPending}
-              onRevert={revertPending}
-              onOpenTemplates={() => setTemplatesOpen(true)}
-              onOpenHistory={() => setHistoryOpen(true)}
-              commandHistory={aiCommandStack}
-              commandCursor={aiCommandCursor}
-              onUndoCommand={undoAiCommand}
-              onRedoCommand={redoAiCommand}
-              onReplayCommand={replayAiCommand}
-            />
+            {/* Floating AI toggle button — opens the chat panel */}
+            {!aiPanelOpen && (
+              <button
+                onClick={() => setAiPanelOpen(true)}
+                className="absolute bottom-4 right-4 z-30 h-12 px-4 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-2xl shadow-primary/40 flex items-center gap-2 hover:scale-105 transition-transform border border-primary/30"
+                title="AI সহকারী খুলুন"
+              >
+                <Sparkles className="w-4 h-4" strokeWidth={2.4} />
+                <span className="text-sm font-semibold">AI চ্যাট</span>
+              </button>
+            )}
           </div>
+
+          {/* AI Chat side panel — separate, toggleable */}
+          {aiPanelOpen && (
+            <div className="hidden lg:flex w-80 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex-col">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30">
+                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.4} />
+                  </div>
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">AI</span>
+                    <span className="text-xs font-bold text-foreground">সহকারী</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAiPanelOpen(false)}
+                  className="h-7 w-7 rounded-xl hover:bg-foreground/10 text-foreground/60 hover:text-foreground flex items-center justify-center transition"
+                  title="বন্ধ করুন"
+                >
+                  <XIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0 p-2">
+                <DesignAiChatBar
+                  messages={aiMessages}
+                  onSubmit={handleAiPrompt}
+                  isLoading={aiLoading}
+                  disabled={!fc}
+                  hasSelection={!!selected}
+                  selectionLabel={summarizeSelection(selected) ?? undefined}
+                  selectionTypeLabel={getSelectionTypeLabel(selected)}
+                  hints={getPromptHints(selected)}
+                  scope={aiScope}
+                  onScopeChange={setAiScope}
+                  pendingReview={!!pendingSnapshot}
+                  onApply={applyPending}
+                  onRevert={revertPending}
+                  onOpenTemplates={() => setTemplatesOpen(true)}
+                  onOpenHistory={() => setHistoryOpen(true)}
+                  commandHistory={aiCommandStack}
+                  commandCursor={aiCommandCursor}
+                  onUndoCommand={undoAiCommand}
+                  onRedoCommand={redoAiCommand}
+                  onReplayCommand={replayAiCommand}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Mobile AI Chat sheet */}
+          <Sheet open={aiPanelOpen} onOpenChange={setAiPanelOpen}>
+            <SheetContent side="bottom" className="h-[85vh] p-2 bg-card/95 backdrop-blur-2xl border-t border-border/30 lg:hidden">
+              <DesignAiChatBar
+                messages={aiMessages}
+                onSubmit={handleAiPrompt}
+                isLoading={aiLoading}
+                disabled={!fc}
+                hasSelection={!!selected}
+                selectionLabel={summarizeSelection(selected) ?? undefined}
+                selectionTypeLabel={getSelectionTypeLabel(selected)}
+                hints={getPromptHints(selected)}
+                scope={aiScope}
+                onScopeChange={setAiScope}
+                pendingReview={!!pendingSnapshot}
+                onApply={applyPending}
+                onRevert={revertPending}
+                onOpenTemplates={() => setTemplatesOpen(true)}
+                onOpenHistory={() => setHistoryOpen(true)}
+                commandHistory={aiCommandStack}
+                commandCursor={aiCommandCursor}
+                onUndoCommand={undoAiCommand}
+                onRedoCommand={redoAiCommand}
+                onReplayCommand={replayAiCommand}
+              />
+            </SheetContent>
+          </Sheet>
 
           {/* Right column: Layers + Properties + AI Image History (desktop only) */}
           <div className="hidden lg:flex w-72 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex-col">
