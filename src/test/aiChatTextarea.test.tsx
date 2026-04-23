@@ -81,8 +81,8 @@ describe('AI chat textarea — visibility & input behaviour', () => {
     const styles = window.getComputedStyle(ta);
     // Transparent background means the dark composer behind it shows through.
     expect(styles.backgroundColor).toMatch(/rgba?\(0,\s*0,\s*0,\s*0\)|transparent/);
-    // White text on the dark composer.
-    expect(styles.color.replace(/\s+/g, '')).toBe('rgb(255,255,255)');
+    // White text on the dark composer (accept either rgb() or hex form).
+    expect(styles.color.replace(/\s+/g, '').toLowerCase()).toMatch(/^(rgb\(255,255,255\)|#ffffff)$/);
   });
 
   it('updates value on every keystroke (controlled component sanity check)', () => {
