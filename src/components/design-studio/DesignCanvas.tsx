@@ -165,15 +165,6 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Sync size & background
-    useEffect(() => {
-      const fc = fabricRef.current;
-      if (!fc) return;
-      fc.setWidth(width);
-      fc.setHeight(height);
-      fc.renderAll();
-    }, [width, height]);
-
     useEffect(() => {
       const fc = fabricRef.current;
       if (!fc) return;
