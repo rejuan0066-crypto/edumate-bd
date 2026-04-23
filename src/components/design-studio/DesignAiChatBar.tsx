@@ -103,10 +103,10 @@ const DesignAiChatBar = ({
   };
 
   return (
-    <div ref={wrapperRef} className="pointer-events-none absolute left-1/2 bottom-4 -translate-x-1/2 z-30 w-[min(820px,calc(100%-2rem))]">
+    <div ref={wrapperRef} className="h-full flex flex-col">
       <div
         onClick={() => setFocused(true)}
-        className="pointer-events-auto rounded-3xl bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/60 overflow-hidden"
+        className="flex-1 min-h-0 flex flex-col bg-[#16161b]/95 backdrop-blur-2xl border border-white/10 rounded-2xl overflow-hidden shadow-xl shadow-black/40"
       >
 
         {/* Pending review bar — ALWAYS visible when there are AI changes to review */}
