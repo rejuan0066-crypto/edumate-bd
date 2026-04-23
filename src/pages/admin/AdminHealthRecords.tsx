@@ -663,7 +663,7 @@ const AdminHealthRecords = () => {
                   {bn ? `ডিবাগ: ${debugMode ? 'চালু' : 'বন্ধ'}` : `Debug: ${debugMode ? 'On' : 'Off'}`}
                 </Button>
                 {canAddItem && (
-                  <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
+                  <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfClassFilter('all'); setProfDlg(true); }}>
                     <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
                   </Button>
                 )}
