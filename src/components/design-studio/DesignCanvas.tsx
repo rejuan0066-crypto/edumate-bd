@@ -180,61 +180,58 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
       fc.setBackgroundColor(background, () => fc.renderAll());
     }, [background]);
 
-    // Fit-to-screen: compute CSS scale based on container size vs canvas size
-    useLayoutEffect(() => {
-      if (!fitToScreen) { setFitScale(1); return; }
-      const compute = () => {
+    // Sync size & background — use fabric zoom for fit-to-screen so pointer events stay correct
+    useEffect(() => {
+      const fc = fabricRef.current;
+      if (!fc) return;
+      const apply = () => {
         const parent = containerRef.current?.parentElement;
-        if (!parent) return;
-        const padding = 48; // approximate padding inside viewport
-        const availW = Math.max(100, parent.clientWidth - padding);
-        const availH = Math.max(100, parent.clientHeight - padding);
-        const s = Math.min(availW / width, availH / height, 1);
-        setFitScale(s > 0 ? s : 1);
+        let scale = 1;
+        if (fitToScreen && parent) {
+          const padding = 48;
+          const availW = Math.max(100, parent.clientWidth - padding);
+          const availH = Math.max(100, parent.clientHeight - padding);
+          scale = Math.min(availW / width, availH / height, 1);
+          if (!isFinite(scale) || scale <= 0) scale = 1;
+        }
+        fc.setZoom(scale);
+        // Set DOM size to scaled, but keep design coordinates intact
+        fc.setWidth(width * scale);
+        fc.setHeight(height * scale);
+        setFitScale(scale);
+        fc.renderAll();
       };
-      compute();
-      const ro = new ResizeObserver(compute);
-      if (containerRef.current?.parentElement) {
-        ro.observe(containerRef.current.parentElement);
-      }
-      window.addEventListener('resize', compute);
+      apply();
+      if (!fitToScreen) return;
+      const ro = new ResizeObserver(apply);
+      if (containerRef.current?.parentElement) ro.observe(containerRef.current.parentElement);
+      window.addEventListener('resize', apply);
       return () => {
         ro.disconnect();
-        window.removeEventListener('resize', compute);
+        window.removeEventListener('resize', apply);
       };
     }, [width, height, fitToScreen]);
 
+    useEffect(() => {
+      const fc = fabricRef.current;
+      if (!fc) return;
+      fc.setBackgroundColor(background, () => fc.renderAll());
+    }, [background]);
+
     return (
-      <div
-        ref={containerRef}
-        className="relative shadow-2xl shadow-black/40"
-        style={{
-          width: width * fitScale,
-          height: height * fitScale,
-        }}
-      >
-        <div
-          style={{
-            width,
-            height,
-            transform: `scale(${fitScale})`,
-            transformOrigin: 'top left',
-            position: 'relative',
-          }}
-        >
-          {showGrid && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage:
-                  'linear-gradient(to right, rgba(127,127,127,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(127,127,127,0.18) 1px, transparent 1px)',
-                backgroundSize: `${gridSize}px ${gridSize}px`,
-                zIndex: 1,
-              }}
-            />
-          )}
-          <canvas ref={canvasElRef} className="block" />
-        </div>
+      <div ref={containerRef} className="relative inline-block shadow-2xl shadow-black/40">
+        {showGrid && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(127,127,127,0.18) 1px, transparent 1px), linear-gradient(to bottom, rgba(127,127,127,0.18) 1px, transparent 1px)',
+              backgroundSize: `${gridSize * fitScale}px ${gridSize * fitScale}px`,
+              zIndex: 1,
+            }}
+          />
+        )}
+        <canvas ref={canvasElRef} className="block" />
       </div>
     );
   },
