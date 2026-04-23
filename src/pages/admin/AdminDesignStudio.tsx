@@ -74,6 +74,7 @@ const AdminDesignStudio = () => {
 
   // AI image operation history (for re-run)
   const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
+  const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
   // AI command undo/redo stack (separate from canvas-level undo)
   const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
