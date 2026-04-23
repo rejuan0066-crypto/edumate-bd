@@ -228,6 +228,8 @@
     max-height: 200px;
     overflow-y: auto;
   }
+  :where(html) :is(textarea, input).chat-composer-input:focus,
+  :where(html) :is(textarea, input).chat-composer-input:focus-visible,
   :where(html) textarea.ai-chat-textarea:focus,
   :where(html) textarea.ai-chat-textarea:focus-visible {
     background-color: transparent;
@@ -240,6 +242,7 @@
     --tw-ring-color: transparent;
     --tw-ring-shadow: 0 0 transparent;
   }
+  :where(html) :is(textarea, input).chat-composer-input::placeholder,
   :where(html) textarea.ai-chat-textarea::placeholder {
     color: rgba(255, 255, 255, 0.45);
     -webkit-text-fill-color: rgba(255, 255, 255, 0.45);
