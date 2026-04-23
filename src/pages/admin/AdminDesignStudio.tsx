@@ -76,6 +76,17 @@ const AdminDesignStudio = () => {
   const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
+  // Track desktop (lg breakpoint = 1024px) so we don't open the mobile Sheet on desktop
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true
+  );
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsDesktop(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
   // AI command undo/redo stack (separate from canvas-level undo)
   const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
   const [aiCommandCursor, setAiCommandCursor] = useState(-1); // -1 = nothing applied
