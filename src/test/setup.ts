@@ -13,3 +13,12 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+// happy-dom does not implement document.execCommand. The Bijoy keyboard
+// interceptor calls it first and falls back to native value setters when it
+// returns false — so we stub it to always return false.
+if (typeof document !== "undefined" && typeof document.execCommand !== "function") {
+  // @ts-expect-error: test-only polyfill
+  document.execCommand = () => false;
+}
+
