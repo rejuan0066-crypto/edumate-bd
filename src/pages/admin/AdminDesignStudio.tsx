@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
-import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown, PanelRight, Layers as LayersIcon } from 'lucide-react';
+import { Save, Download, FolderOpen, FilePlus2, Loader2, Palette, ChevronDown, PanelRight, Layers as LayersIcon, Sparkles, X as XIcon } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
