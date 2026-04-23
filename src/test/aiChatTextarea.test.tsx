@@ -102,7 +102,7 @@ describe('AI chat textarea — visibility & input behaviour', () => {
     fireEvent.change(ta, { target: { value: 'abc' } });
 
     const styles = window.getComputedStyle(ta);
-    expect(styles.color.replace(/\s+/g, '')).toBe('rgb(255,255,255)');
+    expect(styles.color.replace(/\s+/g, '').toLowerCase()).toMatch(/^(rgb\(255,255,255\)|#ffffff)$/);
     expect(ta.value).toBe('abc');
   });
 
