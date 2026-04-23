@@ -18,7 +18,6 @@ Object.defineProperty(window, "matchMedia", {
 // interceptor calls it first and falls back to native value setters when it
 // returns false — so we stub it to always return false.
 if (typeof document !== "undefined" && typeof document.execCommand !== "function") {
-  // @ts-expect-error: test-only polyfill
-  document.execCommand = () => false;
+  (document as Document & { execCommand: (...args: unknown[]) => boolean }).execCommand = () => false;
 }
 
