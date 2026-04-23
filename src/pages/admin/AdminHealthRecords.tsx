@@ -700,7 +700,13 @@ const AdminHealthRecords = () => {
                             <Printer className="h-4 w-4 text-primary" />
                           </Button>
                           {canEditItem && (
-                            <Button size="icon" variant="ghost" onClick={() => { setEditProf(p); setProfForm(p); setProfDlg(true); }}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => {
+                              setEditProf(p);
+                              setProfForm(p);
+                              const stu = p.student_id ? students.find(s => s.id === p.student_id) : null;
+                              setProfClassFilter(stu?.class_id || 'all');
+                              setProfDlg(true);
+                            }}><Pencil className="h-4 w-4" /></Button>
                           )}
                           {canDeleteItem && (
                             <Button size="icon" variant="ghost" onClick={() => setDelProfId(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
