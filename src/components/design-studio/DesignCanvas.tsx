@@ -21,12 +21,14 @@ interface Props {
 }
 
 const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
-  ({ width, height, background, activeTool, showGrid, snapToGrid, gridSize, onReady, onSelectionChange, onObjectsChange }, ref) => {
+  ({ width, height, background, activeTool, showGrid, snapToGrid, gridSize, fitToScreen = true, onReady, onSelectionChange, onObjectsChange }, ref) => {
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const canvasElRef = useRef<HTMLCanvasElement | null>(null);
     const fabricRef = useRef<fabric.Canvas | null>(null);
     const toolRef = useRef<DesignTool>(activeTool);
     const snapRef = useRef(snapToGrid);
     const gridRef = useRef(gridSize);
+    const [fitScale, setFitScale] = useState(1);
 
     useImperativeHandle(ref, () => ({ getCanvas: () => fabricRef.current }));
 
