@@ -268,8 +268,9 @@ const DesignAiChatBar = ({
             placeholder="AI কে বার্তা পাঠান…"
             disabled={disabled || isLoading}
             rows={1}
-            className="flex-1 min-w-0 resize-none bg-transparent border-0 outline-none text-sm py-2 px-1 leading-6 max-h-[200px] placeholder:text-white/35"
-            style={{ height: '24px', color: '#ffffff', caretColor: '#ffffff', WebkitTextFillColor: '#ffffff' }}
+            data-ai-chat-input
+            className="ai-chat-textarea flex-1 min-w-0 resize-none border-0 outline-none text-sm py-2 px-1 leading-6 max-h-[200px]"
+            style={{ height: '24px' }}
           />
 
           {/* History/templates inline */}

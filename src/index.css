@@ -190,6 +190,25 @@
     color: hsl(var(--muted-foreground) / 0.6);
   }
 
+  /* AI chat composer textarea — opt out of global input styles */
+  textarea.ai-chat-textarea,
+  .dark textarea.ai-chat-textarea,
+  textarea.ai-chat-textarea:focus,
+  .dark textarea.ai-chat-textarea:focus {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: 0 0 transparent !important;
+  }
+  textarea.ai-chat-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+  }
+
   /* ── Labels ── */
   label {
     color: hsl(var(--foreground));
