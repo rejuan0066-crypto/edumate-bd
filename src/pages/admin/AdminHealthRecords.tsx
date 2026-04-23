@@ -107,11 +107,24 @@ const AdminHealthRecords = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('students')
-        .select('id, name_bn, name_en, student_id')
+        .select('id, name_bn, name_en, student_id, class_id, roll_number')
         .is('deleted_at', null)
         .order('name_bn');
       if (error) throw error;
-      return data as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string }>;
+      return data as Array<{ id: string; name_bn: string; name_en?: string | null; student_id: string; class_id?: string | null; roll_number?: string | null }>;
+    },
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['health-classes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, name_bn, sort_order, division_id')
+        .eq('is_active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data as Array<{ id: string; name: string; name_bn: string }>;
     },
   });
 
@@ -194,6 +207,7 @@ const AdminHealthRecords = () => {
   const [profDlg, setProfDlg] = useState(false);
   const [editProf, setEditProf] = useState<HealthProfile | null>(null);
   const [profForm, setProfForm] = useState<Partial<HealthProfile>>({ person_type: 'student' });
+  const [profClassFilter, setProfClassFilter] = useState<string>('all');
   const [delProfId, setDelProfId] = useState<string | null>(null);
 
   const saveProf = useMutation({
@@ -649,7 +663,7 @@ const AdminHealthRecords = () => {
                   {bn ? `ডিবাগ: ${debugMode ? 'চালু' : 'বন্ধ'}` : `Debug: ${debugMode ? 'On' : 'Off'}`}
                 </Button>
                 {canAddItem && (
-                  <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfDlg(true); }}>
+                  <Button onClick={() => { setEditProf(null); setProfForm({ person_type: 'student' }); setProfClassFilter('all'); setProfDlg(true); }}>
                     <Plus className="h-4 w-4 mr-1" />{bn ? 'নতুন প্রোফাইল' : 'Add Profile'}
                   </Button>
                 )}
@@ -686,7 +700,13 @@ const AdminHealthRecords = () => {
                             <Printer className="h-4 w-4 text-primary" />
                           </Button>
                           {canEditItem && (
-                            <Button size="icon" variant="ghost" onClick={() => { setEditProf(p); setProfForm(p); setProfDlg(true); }}><Pencil className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => {
+                              setEditProf(p);
+                              setProfForm(p);
+                              const stu = p.student_id ? students.find(s => s.id === p.student_id) : null;
+                              setProfClassFilter(stu?.class_id || 'all');
+                              setProfDlg(true);
+                            }}><Pencil className="h-4 w-4" /></Button>
                           )}
                           {canDeleteItem && (
                             <Button size="icon" variant="ghost" onClick={() => setDelProfId(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -824,7 +844,7 @@ const AdminHealthRecords = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>{bn ? 'ব্যক্তির ধরন' : 'Person Type'}</Label>
-              <Select value={profForm.person_type} onValueChange={(v: PersonType) => setProfForm({ ...profForm, person_type: v, student_id: null, staff_id: null })}>
+              <Select value={profForm.person_type} onValueChange={(v: PersonType) => { setProfForm({ ...profForm, person_type: v, student_id: null, staff_id: null }); setProfClassFilter('all'); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
@@ -832,16 +852,42 @@ const AdminHealthRecords = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>{profForm.person_type === 'student' ? (bn ? 'ছাত্র নির্বাচন' : 'Select Student') : (bn ? 'স্টাফ নির্বাচন' : 'Select Staff')}</Label>
+            {profForm.person_type === 'student' && (
+              <div>
+                <Label>{bn ? 'শ্রেণী ফিল্টার' : 'Filter by Class'}</Label>
+                <Select value={profClassFilter} onValueChange={(v) => { setProfClassFilter(v); setProfForm(p => ({ ...p, student_id: null })); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="all">{bn ? 'সব শ্রেণী' : 'All Classes'}</SelectItem>
+                    {classes.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{bn ? c.name_bn : c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className={profForm.person_type === 'student' ? 'md:col-span-2' : ''}>
+              <Label>
+                {profForm.person_type === 'student'
+                  ? `${bn ? 'ছাত্র নির্বাচন' : 'Select Student'} ${(() => {
+                      const count = profClassFilter === 'all' ? students.length : students.filter(s => s.class_id === profClassFilter).length;
+                      return `(${count})`;
+                    })()}`
+                  : (bn ? 'স্টাফ নির্বাচন' : 'Select Staff')}
+              </Label>
               <Select
                 value={profForm.person_type === 'student' ? (profForm.student_id || '') : (profForm.staff_id || '')}
                 onValueChange={(v) => profForm.person_type === 'student' ? setProfForm({ ...profForm, student_id: v }) : setProfForm({ ...profForm, staff_id: v })}
               >
                 <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  {(profForm.person_type === 'student' ? students : staff).map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{bn ? p.name_bn : (p.name_en || p.name_bn)} ({p.student_id || p.staff_id || ''})</SelectItem>
+                  {(profForm.person_type === 'student'
+                    ? (profClassFilter === 'all' ? students : students.filter(s => s.class_id === profClassFilter))
+                    : staff
+                  ).map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {bn ? p.name_bn : (p.name_en || p.name_bn)} ({p.student_id || p.staff_id || ''}{p.roll_number ? ` · ${bn ? 'রোল' : 'Roll'} ${p.roll_number}` : ''})
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
