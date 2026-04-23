@@ -151,34 +151,37 @@ const DesignAiChatBar = ({
 
 
         {/* Conversation history */}
-        {open && messages.length > 0 && (
-          <div ref={scrollRef} className="max-h-52 overflow-y-auto px-4 py-3 space-y-2 border-b border-white/5">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'text-xs leading-relaxed rounded-2xl px-3 py-2 max-w-[85%]',
-                  m.role === 'user'
-                    ? 'bg-primary/15 text-primary-foreground/90 ml-auto'
-                    : 'bg-white/5 text-white/80',
-                  m.status === 'error' && 'bg-red-500/15 text-red-200',
-                  m.status === 'pending-review' && 'bg-amber-500/10 text-amber-100 border border-amber-500/20',
-                )}
-              >
-                {m.text}
-                {typeof m.versionIndex === 'number' && (
-                  <span className="ml-2 text-[10px] opacity-60">v{m.versionIndex + 1}</span>
-                )}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-center gap-2 text-xs text-white/60 px-1">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>AI ভাবছে…</span>
-              </div>
-            )}
-          </div>
-        )}
+        <div ref={scrollRef} className={cn("flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2 border-b border-white/5", !open && "hidden")}>
+          {messages.length === 0 && (
+            <div className="text-[11px] text-white/40 italic px-1 py-6 text-center">
+              AI কে কোনো ডিজাইন তৈরি করতে বলুন…
+            </div>
+          )}
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={cn(
+                'text-xs leading-relaxed rounded-2xl px-3 py-2 max-w-[90%]',
+                m.role === 'user'
+                  ? 'bg-primary/15 text-primary-foreground/90 ml-auto'
+                  : 'bg-white/5 text-white/80',
+                m.status === 'error' && 'bg-red-500/15 text-red-200',
+                m.status === 'pending-review' && 'bg-amber-500/10 text-amber-100 border border-amber-500/20',
+              )}
+            >
+              {m.text}
+              {typeof m.versionIndex === 'number' && (
+                <span className="ml-2 text-[10px] opacity-60">v{m.versionIndex + 1}</span>
+              )}
+            </div>
+          ))}
+          {isLoading && (
+            <div className="flex items-center gap-2 text-xs text-white/60 px-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>AI ভাবছে…</span>
+            </div>
+          )}
+        </div>
 
         {/* Scope picker + tools — auto-hidden until focus / selection / typing */}
         <div
