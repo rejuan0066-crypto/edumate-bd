@@ -877,28 +877,28 @@ const AdminDesignStudio = () => {
             )}
           </div>
 
-          {/* AI Chat side panel — separate, toggleable */}
+          {/* AI Chat side panel — ChatGPT-style, separate & toggleable */}
           {aiPanelOpen && (
-            <div className="hidden lg:flex w-80 shrink-0 border-l border-border/30 bg-card/30 backdrop-blur-2xl flex-col">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30">
-                    <Sparkles className="w-3.5 h-3.5 text-primary-foreground" strokeWidth={2.4} />
+            <div className="hidden lg:flex w-[380px] shrink-0 border-l border-border/30 flex-col relative">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-[#0d0d0f]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <Sparkles className="w-4 h-4 text-white" strokeWidth={2.4} />
                   </div>
                   <div className="flex flex-col leading-tight">
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">AI</span>
-                    <span className="text-xs font-bold text-foreground">সহকারী</span>
+                    <span className="text-sm font-semibold text-white">AI সহকারী</span>
+                    <span className="text-[10px] text-white/40">ডিজাইন কথায় বলুন</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setAiPanelOpen(false)}
-                  className="h-7 w-7 rounded-xl hover:bg-foreground/10 text-foreground/60 hover:text-foreground flex items-center justify-center transition"
+                  className="h-8 w-8 rounded-xl hover:bg-white/10 text-white/50 hover:text-white flex items-center justify-center transition"
                   title="বন্ধ করুন"
                 >
-                  <XIcon className="w-3.5 h-3.5" />
+                  <XIcon className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex-1 min-h-0 p-2">
+              <div className="flex-1 min-h-0">
                 <DesignAiChatBar
                   messages={aiMessages}
                   onSubmit={handleAiPrompt}
