@@ -40,7 +40,7 @@ export const SECTION_ICONS = [
 
 export const DEFAULT_SECTIONS: DashboardSection[] = [
   { id: 'institution', titleBn: 'প্রতিষ্ঠান তথ্য', titleEn: 'Institution Info', visible: true, sort_order: 0, icon: 'Home' },
-  { id: 'profiles', titleBn: 'এডমিন ও স্টাফ প্রোফাইল', titleEn: 'Admin & Staff Profile', visible: true, sort_order: 1, icon: 'UserCog' },
+  { id: 'profiles', titleBn: 'এডমিন ও স্টাফ প্রোফাইল', titleEn: 'Admin & Staff Profile', visible: false, sort_order: 1, icon: 'UserCog' },
   { id: 'search', titleBn: 'সার্চ', titleEn: 'Search', visible: true, sort_order: 2, icon: 'Search' },
   { id: 'main_stats', titleBn: 'মূল পরিসংখ্যান', titleEn: 'Main Statistics', visible: true, sort_order: 3, icon: 'Users', style: { columns: 4, columnsMobile: 2, gap: 12 } },
   { id: 'staff_teacher', titleBn: 'কর্মী ও শিক্ষক পরিসংখ্যান', titleEn: 'Staff & Teacher Stats', visible: true, sort_order: 3, icon: 'UserCog', style: { columns: 5, columnsMobile: 2, gap: 12 } },
