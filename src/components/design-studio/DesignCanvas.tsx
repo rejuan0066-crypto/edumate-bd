@@ -175,22 +175,26 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
     useEffect(() => {
       const fc = fabricRef.current;
       if (!fc) return;
+      let rafId: number | null = null;
       const apply = () => {
-        const parent = containerRef.current?.parentElement;
-        let scale = 1;
-        if (fitToScreen && parent) {
-          const padding = 48;
-          const availW = Math.max(100, parent.clientWidth - padding);
-          const availH = Math.max(100, parent.clientHeight - padding);
-          scale = Math.min(availW / width, availH / height, 1);
-          if (!isFinite(scale) || scale <= 0) scale = 1;
-        }
-        fc.setZoom(scale);
-        // Set DOM size to scaled, but keep design coordinates intact
-        fc.setWidth(width * scale);
-        fc.setHeight(height * scale);
-        setFitScale(scale);
-        fc.renderAll();
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          const parent = containerRef.current?.parentElement;
+          let scale = 1;
+          if (fitToScreen && parent) {
+            const padding = 48;
+            const availW = Math.max(100, parent.clientWidth - padding);
+            const availH = Math.max(100, parent.clientHeight - padding);
+            scale = Math.min(availW / width, availH / height, 1);
+            if (!isFinite(scale) || scale <= 0) scale = 1;
+          }
+          fc.setZoom(scale);
+          fc.setWidth(width * scale);
+          fc.setHeight(height * scale);
+          setFitScale(scale);
+          fc.renderAll();
+        });
       };
       apply();
       if (!fitToScreen) return;
@@ -198,6 +202,7 @@ const DesignCanvas = forwardRef<DesignCanvasHandle, Props>(
       if (containerRef.current?.parentElement) ro.observe(containerRef.current.parentElement);
       window.addEventListener('resize', apply);
       return () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
         ro.disconnect();
         window.removeEventListener('resize', apply);
       };
