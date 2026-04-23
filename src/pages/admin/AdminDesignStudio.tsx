@@ -76,6 +76,17 @@ const AdminDesignStudio = () => {
   const [imageOps, setImageOps] = useState<AiImageOp[]>([]);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
 
+  // Track desktop (lg breakpoint = 1024px) so we don't open the mobile Sheet on desktop
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true
+  );
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsDesktop(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
   // AI command undo/redo stack (separate from canvas-level undo)
   const [aiCommandStack, setAiCommandStack] = useState<AiCommandEntry[]>([]);
   const [aiCommandCursor, setAiCommandCursor] = useState(-1); // -1 = nothing applied
@@ -914,8 +925,8 @@ const AdminDesignStudio = () => {
             </div>
           )}
 
-          {/* Mobile AI Chat sheet */}
-          <Sheet open={aiPanelOpen} onOpenChange={setAiPanelOpen}>
+          {/* Mobile AI Chat sheet — only mount/open on mobile to avoid blocking the desktop side panel */}
+          <Sheet open={aiPanelOpen && !isDesktop} onOpenChange={setAiPanelOpen}>
             <SheetContent side="bottom" className="h-[85vh] p-2 bg-card/95 backdrop-blur-2xl border-t border-border/30 lg:hidden">
               <DesignAiChatBar
                 messages={aiMessages}

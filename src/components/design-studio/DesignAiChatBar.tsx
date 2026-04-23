@@ -262,7 +262,7 @@ const DesignAiChatBar = ({
                 placeholder='AI কে বলুন... যেমন: "একটা ড্যাশবোর্ড সেকশন বানাও" বা "টেবিল কার্ডটি লাল করো"'
                 disabled={disabled || isLoading}
                 rows={1}
-                className="pl-9 pr-3 py-2.5 min-h-[40px] max-h-32 resize-none bg-white/5 border-white/10 text-sm focus-visible:ring-primary/40 rounded-2xl text-black"
+                className="pl-9 pr-3 py-2.5 min-h-[40px] max-h-32 resize-none bg-white/5 border-white/10 text-sm focus-visible:ring-primary/40 rounded-2xl text-white placeholder:text-white/40"
               />
             </div>
           </div>
