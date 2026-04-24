@@ -481,7 +481,21 @@ const AdminExamSessions = () => {
                     <SelectTrigger className="bg-background flex-1"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
                     <SelectContent>
                       {examTypes.filter((t: any) => t.is_active).map((t: any) => (
-                        <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
+                        <SelectItem key={t.id} value={t.key}>
+                          <span className="flex items-center gap-2">
+                            <span>{bn ? t.name_bn : t.name}</span>
+                            {t.name_ar && (
+                              <span
+                                dir="rtl"
+                                lang="ar"
+                                className="text-muted-foreground text-sm"
+                                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                              >
+                                — {t.name_ar}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -849,6 +863,18 @@ const AdminExamSessions = () => {
                 onChange={e => setQuickTypeName(e.target.value)}
                 placeholder="e.g. Selective Exam"
                 className="bg-background"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (আরবি)' : 'Name (Arabic)'}</label>
+              <Input
+                value={quickTypeNameAr}
+                onChange={e => setQuickTypeNameAr(e.target.value)}
+                placeholder="الاسم بالعربية"
+                className="bg-background text-right"
+                dir="rtl"
+                lang="ar"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
               />
             </div>
             <div>
