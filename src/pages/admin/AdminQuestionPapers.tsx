@@ -81,13 +81,26 @@ const ArabicKeyboard = ({
 }: {
   onKeyPress: (char: string) => void; onClose: () => void; highlightedKey: string | null;
 }) => {
-  const [position, setPosition] = useState({ x: 100, y: 300 });
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+  const [position, setPosition] = useState(() => ({
+    x: typeof window !== 'undefined' ? Math.max(8, (window.innerWidth - 520) / 2) : 100,
+    y: typeof window !== 'undefined' ? Math.max(60, window.innerHeight - 320) : 300,
+  }));
   const [dragging, setDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [shifted, setShifted] = useState(false);
   const kbRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
     if ((e.target as HTMLElement).closest('button')) return;
     setDragging(true);
     setDragOffset({ x: e.clientX - position.x, y: e.clientY - position.y });
@@ -112,11 +125,22 @@ const ArabicKeyboard = ({
 
   const rows = shifted ? ARABIC_ROWS_SHIFTED : ARABIC_ROWS_NORMAL;
 
+  // Press handler that works on both touch & mouse without firing twice
+  const pressKey = (char: string) => (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onKeyPress(char);
+  };
+
+  const containerStyle: React.CSSProperties = isMobile
+    ? { left: 4, right: 4, bottom: 4, cursor: 'default' }
+    : { left: position.x, top: position.y, cursor: dragging ? 'grabbing' : 'grab', minWidth: 520 };
+
   return (
     <div
       ref={kbRef}
-      className="fixed z-[100] bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-3 select-none"
-      style={{ left: position.x, top: position.y, cursor: dragging ? 'grabbing' : 'grab', minWidth: 520 }}
+      className={`fixed z-[100] bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl select-none ${isMobile ? 'p-2' : 'p-3'}`}
+      style={containerStyle}
       onMouseDown={handleMouseDown}
     >
       <div className="flex items-center justify-between mb-2 px-1">
@@ -124,14 +148,16 @@ const ArabicKeyboard = ({
         <div className="flex items-center gap-2">
           {shifted && <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">SHIFT</span>}
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}><X className="h-3 w-3" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-3.5 w-3.5" /></Button>
       </div>
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-1 justify-center mb-1" dir="rtl">
+        <div key={ri} className={`flex justify-center mb-1 ${isMobile ? 'gap-[3px]' : 'gap-1'}`} dir="rtl">
           {ri === 3 && (
             <button
-              className={`h-9 px-3 rounded-lg text-[10px] font-bold transition-all ${shifted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/20'}`}
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setShifted(!shifted); }}
+              className={`${isMobile ? 'h-10 px-2 text-[10px]' : 'h-9 px-3 text-[10px]'} rounded-lg font-bold transition-all shrink-0 ${shifted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/20'}`}
+              onTouchStart={pressKey('__SHIFT__')}
+              onMouseDown={(e) => { if (isMobile) return; e.preventDefault(); e.stopPropagation(); setShifted(!shifted); }}
+              onClick={(e) => { if (!isMobile) return; e.preventDefault(); setShifted(!shifted); }}
             >Shift</button>
           )}
           {row.map((char) => {
@@ -139,27 +165,40 @@ const ArabicKeyboard = ({
             return (
               <button
                 key={`${ri}-${char}`}
-                className={`h-9 min-w-[2.2rem] px-1.5 rounded-lg text-base font-medium transition-all duration-100
+                className={`${isMobile ? 'h-10 flex-1 min-w-0 px-0.5 text-sm' : 'h-9 min-w-[2.2rem] px-1.5 text-base'} rounded-lg font-medium transition-all duration-100
                   ${isHighlighted
                     ? 'bg-primary text-primary-foreground scale-110 shadow-md'
                     : 'bg-secondary/80 hover:bg-primary/20 hover:text-primary active:scale-95'
                   }`}
-                onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onKeyPress(char); }}
+                onTouchStart={pressKey(char)}
+                onMouseDown={(e) => { if (isMobile) return; pressKey(char)(e); }}
               >
                 {char}
               </button>
             );
           })}
           {ri === 0 && (
-            <button className="h-9 px-3 rounded-lg bg-muted text-muted-foreground text-[10px] font-bold hover:bg-destructive/20" onMouseDown={(e) => { e.preventDefault(); onKeyPress('BACKSPACE'); }}>⌫</button>
+            <button
+              className={`${isMobile ? 'h-10 px-2 text-[10px]' : 'h-9 px-3 text-[10px]'} rounded-lg bg-muted text-muted-foreground font-bold hover:bg-destructive/20 shrink-0`}
+              onTouchStart={pressKey('BACKSPACE')}
+              onMouseDown={(e) => { if (isMobile) return; pressKey('BACKSPACE')(e); }}
+            >⌫</button>
           )}
           {ri === 2 && (
-            <button className="h-9 px-3 rounded-lg bg-muted text-muted-foreground text-[10px] font-bold" onMouseDown={(e) => { e.preventDefault(); onKeyPress('\n'); }}>Enter ↵</button>
+            <button
+              className={`${isMobile ? 'h-10 px-2 text-[10px]' : 'h-9 px-3 text-[10px]'} rounded-lg bg-muted text-muted-foreground font-bold shrink-0`}
+              onTouchStart={pressKey('\n')}
+              onMouseDown={(e) => { if (isMobile) return; pressKey('\n')(e); }}
+            >Enter ↵</button>
           )}
         </div>
       ))}
       <div className="flex gap-1 justify-center mt-1">
-        <button className="h-9 flex-1 max-w-[280px] rounded-lg bg-secondary/80 hover:bg-primary/20 text-sm transition-colors" onMouseDown={(e) => { e.preventDefault(); onKeyPress(' '); }}>Space</button>
+        <button
+          className={`${isMobile ? 'h-10' : 'h-9'} flex-1 max-w-[280px] rounded-lg bg-secondary/80 hover:bg-primary/20 text-sm transition-colors`}
+          onTouchStart={pressKey(' ')}
+          onMouseDown={(e) => { if (isMobile) return; pressKey(' ')(e); }}
+        >Space</button>
       </div>
     </div>
   );
