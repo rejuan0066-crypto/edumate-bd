@@ -358,6 +358,19 @@ const toBengaliNum = (n: number): string => {
   return String(n).replace(/[0-9]/g, d => digits[parseInt(d)]);
 };
 
+// Convert mixed-script digits (Bengali ০-৯, Arabic-Indic ٠-٩, English 0-9) to a number.
+// Returns 0 when input has no recognizable digits, so the controlled input stays valid.
+const parseMultilingualNum = (s: string): number => {
+  if (!s) return 0;
+  const map: Record<string, string> = {
+    '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9',
+    '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+  };
+  const normalized = s.replace(/[০-৯٠-٩]/g, ch => map[ch] ?? ch);
+  const digitsOnly = normalized.replace(/[^0-9]/g, '');
+  return digitsOnly ? parseInt(digitsOnly, 10) : 0;
+};
+
 const StatusBadge = ({ status, language }: { status: string; language: string }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = config.icon;
@@ -789,6 +802,9 @@ const AdminQuestionPapers = () => {
     instructions: '', instructions_bn: '',
     exam_session_id: '', class_id: '', division_id: '', subject_id: '',
   });
+  // Raw text shown in the marks/duration inputs so users can type Bengali/Arabic/English digits
+  const [marksInput, setMarksInput] = useState('100');
+  const [durationInput, setDurationInput] = useState('120');
 
   const [questions, setQuestions] = useState<Question[]>([]);
 
@@ -917,6 +933,7 @@ const AdminQuestionPapers = () => {
       queryClient.invalidateQueries({ queryKey: ['question-papers'] });
       setShowCreateDialog(false);
       setNewPaper({ title: '', title_bn: '', subject_type: 'bangla', total_marks: 100, duration_minutes: 120, instructions: '', instructions_bn: '', exam_session_id: '', class_id: '', division_id: '', subject_id: '' });
+      setMarksInput('100'); setDurationInput('120');
       toast.success(language === 'bn' ? 'প্রশ্নপত্র তৈরি হয়েছে (অপেক্ষমান)' : 'Paper created (Pending)');
     },
     onError: () => toast.error(language === 'bn' ? 'ত্রুটি হয়েছে' : 'Error'),
@@ -1340,8 +1357,8 @@ const AdminQuestionPapers = () => {
                     <div><Label>{language === 'bn' ? 'শিরোনাম (বাংলা)' : 'Title (Bengali)'}</Label><Input value={newPaper.title_bn} onChange={e => setNewPaper(p => ({ ...p, title_bn: e.target.value }))} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label><Input type="number" value={newPaper.total_marks} onChange={e => setNewPaper(p => ({ ...p, total_marks: Number(e.target.value) }))} /></div>
-                    <div><Label>{language === 'bn' ? 'সময় (মিনিট)' : 'Duration (min)'}</Label><Input type="number" value={newPaper.duration_minutes} onChange={e => setNewPaper(p => ({ ...p, duration_minutes: Number(e.target.value) }))} /></div>
+                    <div><Label>{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label><Input type="text" inputMode="numeric" dir="auto" value={marksInput} onChange={e => { const v = e.target.value; setMarksInput(v); setNewPaper(p => ({ ...p, total_marks: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
+                    <div><Label>{language === 'bn' ? 'সময় (মিনিট)' : 'Duration (min)'}</Label><Input type="text" inputMode="numeric" dir="auto" value={durationInput} onChange={e => { const v = e.target.value; setDurationInput(v); setNewPaper(p => ({ ...p, duration_minutes: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
                   </div>
                   <div><Label>{language === 'bn' ? 'নির্দেশনা (বাংলা)' : 'Instructions (BN)'}</Label><Textarea value={newPaper.instructions_bn} onChange={e => setNewPaper(p => ({ ...p, instructions_bn: e.target.value }))} rows={2} /></div>
                   <div><Label>{language === 'bn' ? 'নির্দেশনা (ইংরেজি)' : 'Instructions (EN)'}</Label><Textarea value={newPaper.instructions} onChange={e => setNewPaper(p => ({ ...p, instructions: e.target.value }))} rows={2} /></div>
