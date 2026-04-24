@@ -933,6 +933,7 @@ const AdminQuestionPapers = () => {
       queryClient.invalidateQueries({ queryKey: ['question-papers'] });
       setShowCreateDialog(false);
       setNewPaper({ title: '', title_bn: '', subject_type: 'bangla', total_marks: 100, duration_minutes: 120, instructions: '', instructions_bn: '', exam_session_id: '', class_id: '', division_id: '', subject_id: '' });
+      setMarksInput('100'); setDurationInput('120');
       toast.success(language === 'bn' ? 'প্রশ্নপত্র তৈরি হয়েছে (অপেক্ষমান)' : 'Paper created (Pending)');
     },
     onError: () => toast.error(language === 'bn' ? 'ত্রুটি হয়েছে' : 'Error'),
