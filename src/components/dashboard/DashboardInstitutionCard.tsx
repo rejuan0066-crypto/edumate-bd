@@ -186,12 +186,20 @@ const DashboardInstitutionCard = () => {
               <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'মাদরাসা স্থাপিত' : 'Established'}</label>
-              <Input value={form.established_year} onChange={e => setForm(f => ({ ...f, established_year: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'যেমন: ১৯৮৫' : 'e.g. 1985'} />
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'মাদরাসা স্থাপিত (বাংলা)' : 'Established (Bangla)'}</label>
+              <Input value={form.established_year} onChange={e => setForm(f => ({ ...f, established_year: e.target.value }))} className="mt-1" placeholder="যেমন: ১৯৮৫" />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'রেজি: নং / EIIN' : 'Reg. No / EIIN'}</label>
-              <Input value={form.registration_number} onChange={e => setForm(f => ({ ...f, registration_number: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'রেজিস্ট্রেশন বা EIIN নম্বর' : 'Registration or EIIN number'} />
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'মাদরাসা স্থাপিত (ইংরেজি)' : 'Established (English)'}</label>
+              <Input value={form.established_year_en} onChange={e => setForm(f => ({ ...f, established_year_en: e.target.value }))} className="mt-1" placeholder="e.g. 1985" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'রেজি: নং / EIIN (বাংলা)' : 'Reg. No / EIIN (Bangla)'}</label>
+              <Input value={form.registration_number} onChange={e => setForm(f => ({ ...f, registration_number: e.target.value }))} className="mt-1" placeholder="রেজিস্ট্রেশন বা EIIN নম্বর" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'রেজি: নং / EIIN (ইংরেজি)' : 'Reg. No / EIIN (English)'}</label>
+              <Input value={form.registration_number_en} onChange={e => setForm(f => ({ ...f, registration_number_en: e.target.value }))} className="mt-1" placeholder="Registration or EIIN number" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
