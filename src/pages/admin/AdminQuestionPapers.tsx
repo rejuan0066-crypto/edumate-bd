@@ -1203,10 +1203,11 @@ const AdminQuestionPapers = () => {
         const dir = isArabic ? 'rtl' : 'ltr';
         const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
         const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+        const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
         const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
           '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
         ).join('') + '</div>' : '';
-        return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span>${serial}। ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
+        return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
       }).join('');
 
       if (ls.columns === 2) {
