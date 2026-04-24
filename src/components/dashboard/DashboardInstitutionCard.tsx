@@ -36,13 +36,14 @@ const DashboardInstitutionCard = () => {
     global_footer_font_size: 10,
   });
 
-  const { data: institution } = useQuery({
+  const { data: institution, isLoading: institutionLoading } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
       const { data, error } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
