@@ -140,6 +140,7 @@ const ArabicKeyboard = ({
   const keyboardUi = (
     <div
       ref={kbRef}
+      data-arabic-keyboard="true"
       className={`fixed z-[100] bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl select-none ${isMobile ? 'p-2' : 'p-3'}`}
       style={containerStyle}
       onMouseDown={handleMouseDown}
@@ -705,6 +706,37 @@ const AdminQuestionPapers = () => {
     document.addEventListener('keydown', handler, true);
     return () => document.removeEventListener('keydown', handler, true);
   }, [bijoyMode]);
+
+  // Auto-open Arabic keyboard on focus of Arabic-marked inputs; auto-close when focus moves elsewhere
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-arabic="true"]')) {
+        setShowArabicKeyboard(true);
+      } else if (!target.closest('[data-arabic-keyboard="true"]')) {
+        // Focus moved to a non-Arabic, non-keyboard element
+        setShowArabicKeyboard(false);
+      }
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Tap outside both an Arabic input and the keyboard → close
+      if (
+        !target.closest('[data-arabic="true"]') &&
+        !target.closest('[data-arabic-keyboard="true"]')
+      ) {
+        setShowArabicKeyboard(false);
+      }
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, []);
 
   const [newPaper, setNewPaper] = useState({
     title: '', title_bn: '', subject_type: 'bangla',
@@ -1484,6 +1516,7 @@ const AdminQuestionPapers = () => {
                       rows={2}
                       className="text-sm pt-6 bg-muted/30 border-border/50 focus:bg-background focus:border-primary/40 rounded-xl resize-none transition-colors"
                       dir="auto"
+                      data-arabic="true"
                       placeholder={language === 'bn' ? 'বাংলা/আরবি প্রশ্ন লিখুন...' : 'Bengali/Arabic question...'}
                       style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
                     />
@@ -1526,7 +1559,7 @@ const AdminQuestionPapers = () => {
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-medium text-muted-foreground">{language === 'bn' ? 'গ্রুপ (বাং)' : 'Group BN'}</span>
-                    <Input value={q.group_label_bn} onChange={e => updateQuestion(qi, 'group_label_bn', e.target.value)} className="h-7 text-[11px] bg-background/80 border-border/40 rounded-lg" placeholder="ক বিভাগ" onFocus={e => setActiveInputRef(e.target)} />
+                    <Input value={q.group_label_bn} onChange={e => updateQuestion(qi, 'group_label_bn', e.target.value)} className="h-7 text-[11px] bg-background/80 border-border/40 rounded-lg" placeholder="ক বিভাগ" onFocus={e => setActiveInputRef(e.target)} data-arabic="true" />
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-medium text-muted-foreground">{language === 'bn' ? 'গ্রুপ (ইং)' : 'Group EN'}</span>
@@ -1550,7 +1583,7 @@ const AdminQuestionPapers = () => {
                     {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => (
                       <div key={oi} className="flex flex-wrap gap-1.5 items-center">
                         <span className="text-xs font-bold text-primary/70 w-5 text-center shrink-0">{String.fromCharCode(65 + oi)}</span>
-                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} />
+                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} data-arabic="true" />
                         <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="English" value={opt.text || ''} onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)} />
                         <label className="flex items-center gap-0.5 text-xs whitespace-nowrap shrink-0">
                           <input type="radio" name={`correct-${qi}`} checked={opt.is_correct} onChange={() => updateMcqOption(qi, oi, 'is_correct', true)} className="accent-primary" />
