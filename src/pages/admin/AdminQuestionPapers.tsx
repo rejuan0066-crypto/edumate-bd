@@ -1484,6 +1484,7 @@ const AdminQuestionPapers = () => {
                       rows={2}
                       className="text-sm pt-6 bg-muted/30 border-border/50 focus:bg-background focus:border-primary/40 rounded-xl resize-none transition-colors"
                       dir="auto"
+                      data-arabic="true"
                       placeholder={language === 'bn' ? 'বাংলা/আরবি প্রশ্ন লিখুন...' : 'Bengali/Arabic question...'}
                       style={bijoyMode ? { fontFamily: 'SutonnyMJ, SutonnyOMJ, "Noto Sans Bengali", sans-serif' } : undefined}
                     />
