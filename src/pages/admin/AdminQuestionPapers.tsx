@@ -707,6 +707,37 @@ const AdminQuestionPapers = () => {
     return () => document.removeEventListener('keydown', handler, true);
   }, [bijoyMode]);
 
+  // Auto-open Arabic keyboard on focus of Arabic-marked inputs; auto-close when focus moves elsewhere
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-arabic="true"]')) {
+        setShowArabicKeyboard(true);
+      } else if (!target.closest('[data-arabic-keyboard="true"]')) {
+        // Focus moved to a non-Arabic, non-keyboard element
+        setShowArabicKeyboard(false);
+      }
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // Tap outside both an Arabic input and the keyboard → close
+      if (
+        !target.closest('[data-arabic="true"]') &&
+        !target.closest('[data-arabic-keyboard="true"]')
+      ) {
+        setShowArabicKeyboard(false);
+      }
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+    };
+  }, []);
+
   const [newPaper, setNewPaper] = useState({
     title: '', title_bn: '', subject_type: 'bangla',
     total_marks: 100, duration_minutes: 120,
