@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { bijoyCharToUnicode, isBijoyKey } from '@/lib/bijoyKeymap';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -136,7 +137,7 @@ const ArabicKeyboard = ({
     ? { left: 4, right: 4, bottom: 4, cursor: 'default' }
     : { left: position.x, top: position.y, cursor: dragging ? 'grabbing' : 'grab', minWidth: 520 };
 
-  return (
+  const keyboardUi = (
     <div
       ref={kbRef}
       className={`fixed z-[100] bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl select-none ${isMobile ? 'p-2' : 'p-3'}`}
@@ -201,6 +202,10 @@ const ArabicKeyboard = ({
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return keyboardUi;
+
+  return createPortal(keyboardUi, document.body);
 };
 
 // ─── Quick Symbols Bar ───
