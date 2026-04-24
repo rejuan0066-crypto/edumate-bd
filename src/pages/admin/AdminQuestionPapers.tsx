@@ -738,6 +738,47 @@ const AdminQuestionPapers = () => {
     };
   }, []);
 
+  // While Arabic keyboard is open, prevent the device's native (mobile) keyboard
+  // from popping up by marking Arabic-capable inputs as readOnly. Our virtual
+  // keyboard writes via the native value setter, so input still works.
+  useEffect(() => {
+    const nodes = Array.from(
+      document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-arabic="true"]')
+    );
+    if (showArabicKeyboard) {
+      nodes.forEach(el => {
+        if (!el.dataset.prevReadonly) {
+          el.dataset.prevReadonly = el.readOnly ? '1' : '0';
+        }
+        el.readOnly = true;
+        // Hint to mobile browsers not to surface autocorrect/keyboard UI
+        el.setAttribute('inputmode', 'none');
+      });
+      // If currently focused element is one of them, blur+refocus to dismiss any open OS keyboard
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active.matches('[data-arabic="true"]')) {
+        active.blur();
+        requestAnimationFrame(() => (active as HTMLElement).focus({ preventScroll: true }));
+      }
+    } else {
+      nodes.forEach(el => {
+        el.readOnly = el.dataset.prevReadonly === '1';
+        delete el.dataset.prevReadonly;
+        el.removeAttribute('inputmode');
+      });
+    }
+    return () => {
+      // Cleanup on unmount: restore
+      nodes.forEach(el => {
+        if (el.dataset.prevReadonly !== undefined) {
+          el.readOnly = el.dataset.prevReadonly === '1';
+          delete el.dataset.prevReadonly;
+        }
+        el.removeAttribute('inputmode');
+      });
+    };
+  }, [showArabicKeyboard]);
+
   const [newPaper, setNewPaper] = useState({
     title: '', title_bn: '', subject_type: 'bangla',
     total_marks: 100, duration_minutes: 120,
