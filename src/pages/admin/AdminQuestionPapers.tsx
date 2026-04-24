@@ -1527,7 +1527,7 @@ const AdminQuestionPapers = () => {
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-medium text-muted-foreground">{language === 'bn' ? 'গ্রুপ (বাং)' : 'Group BN'}</span>
-                    <Input value={q.group_label_bn} onChange={e => updateQuestion(qi, 'group_label_bn', e.target.value)} className="h-7 text-[11px] bg-background/80 border-border/40 rounded-lg" placeholder="ক বিভাগ" onFocus={e => setActiveInputRef(e.target)} />
+                    <Input value={q.group_label_bn} onChange={e => updateQuestion(qi, 'group_label_bn', e.target.value)} className="h-7 text-[11px] bg-background/80 border-border/40 rounded-lg" placeholder="ক বিভাগ" onFocus={e => setActiveInputRef(e.target)} data-arabic="true" />
                   </div>
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-medium text-muted-foreground">{language === 'bn' ? 'গ্রুপ (ইং)' : 'Group EN'}</span>
