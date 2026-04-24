@@ -319,6 +319,13 @@ const DashboardInstitutionCard = () => {
     );
   }
 
+  const displayName = (language === 'bn' ? institution?.name : (institution?.name_en || institution?.name)) || '';
+  const hasName = !!displayName;
+  const hasAnyContact = !!(institution?.address || institution?.phone || institution?.email);
+  const setupHint = isAdmin
+    ? (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য সেট করতে "সম্পাদনা" বাটনে ক্লিক করুন' : 'Click "Edit" to set up institution info')
+    : (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য এখনো সেট করা হয়নি' : 'Institution info not configured yet');
+
   return (
     <div className="card-elevated p-5 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
       <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-xl bg-primary flex items-center justify-center shrink-0 overflow-hidden">
@@ -329,16 +336,24 @@ const DashboardInstitutionCard = () => {
         )}
       </div>
       <div className="flex-1 min-w-0 w-full flex flex-col items-center">
-        <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-5xl">{(language === 'bn' ? institution?.name : (institution?.name_en || institution?.name)) || (language === 'bn' ? 'প্রতিষ্ঠানের নাম' : 'Institution Name')}</h1>
-        {institution?.name_en && institution?.name && (
-          <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-3xl">{language === 'bn' ? institution.name_en : institution.name}</p>
+        {hasName ? (
+          <>
+            <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-5xl">{displayName}</h1>
+            {institution?.name_en && institution?.name && (
+              <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-3xl">{language === 'bn' ? institution.name_en : institution.name}</p>
+            )}
+          </>
+        ) : (
+          <h1 className="text-2xl lg:text-3xl font-display font-semibold text-center text-muted-foreground/80">
+            {language === 'bn' ? 'প্রতিষ্ঠানের নাম যোগ করা হয়নি' : 'Institution name not set'}
+          </h1>
         )}
         <div className="text-sm lg:text-base text-muted-foreground space-y-0.5 lg:space-y-1 w-full">
           {institution?.address && <p className="truncate text-center text-lg lg:text-xl">{institution.address}</p>}
           {institution?.phone && <p className="truncate text-center lg:text-lg">{institution.phone}</p>}
           {institution?.email && <p className="truncate text-center text-base lg:text-lg font-serif">{institution.email}</p>}
-          {!institution?.address && !institution?.phone && !institution?.email && (
-            <p>{language === 'bn' ? 'ঠিকানা, ফোন, ইমেইল' : 'Address, Phone, Email'}</p>
+          {!hasAnyContact && (
+            <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
           )}
         </div>
         {institution?.other_info && <p className="text-xs text-muted-foreground mt-0.5 break-words">{institution.other_info}</p>}
