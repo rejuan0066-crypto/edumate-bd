@@ -167,9 +167,9 @@ const AdminDivisions = () => {
   });
 
   const editClassMutation = useMutation({
-    mutationFn: async ({ id, name_bn, name }: { id: string; name_bn: string; name: string }) => {
-      if (await checkClassApproval('edit', { id, name_bn, name }, id, `শ্রেণী সম্পাদনা: ${name_bn}`)) return;
-      const { error } = await supabase.from('classes').update({ name_bn, name }).eq('id', id);
+    mutationFn: async ({ id, name_bn, name, name_ar }: { id: string; name_bn: string; name: string; name_ar: string }) => {
+      if (await checkClassApproval('edit', { id, name_bn, name, name_ar }, id, `শ্রেণী সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('classes').update({ name_bn, name, name_ar: name_ar || null } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
