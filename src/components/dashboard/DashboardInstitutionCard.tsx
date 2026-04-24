@@ -163,6 +163,18 @@ const DashboardInstitutionCard = () => {
               <Input value={form.name_en || ''} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} className="mt-1" />
             </div>
             <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (আরবি)' : 'Name (Arabic)'}</label>
+              <Input
+                value={form.name_ar}
+                onChange={e => setForm(f => ({ ...f, name_ar: e.target.value }))}
+                className="mt-1 text-right"
+                dir="rtl"
+                lang="ar"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                placeholder="اسم المدرسة بالعربية"
+              />
+            </div>
+            <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (বাংলা)' : 'Address (Bangla)'}</label>
               <Input value={form.address || ''} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="mt-1" />
             </div>
