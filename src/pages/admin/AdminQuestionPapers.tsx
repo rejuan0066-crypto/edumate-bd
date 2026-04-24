@@ -946,6 +946,7 @@ const AdminQuestionPapers = () => {
           paper_id: selectedPaper.id, question_text: q.question_text, question_text_bn: q.question_text_bn,
           question_type: q.question_type, marks: q.marks, sort_order: i,
           group_label: q.group_label, group_label_bn: q.group_label_bn, options: q.options, answer: q.answer,
+          custom_label: q.custom_label || null,
         }));
         const { error } = await supabase.from('questions').insert(rows);
         if (error) throw error;
