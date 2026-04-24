@@ -306,6 +306,19 @@ const DashboardInstitutionCard = () => {
     );
   }
 
+  if (institutionLoading) {
+    return (
+      <div className="card-elevated p-5 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6 animate-pulse">
+        <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-xl bg-muted shrink-0" />
+        <div className="flex-1 w-full space-y-3">
+          <div className="h-8 lg:h-10 bg-muted rounded w-2/3 mx-auto" />
+          <div className="h-4 bg-muted rounded w-1/2 mx-auto" />
+          <div className="h-4 bg-muted rounded w-1/3 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="card-elevated p-5 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
       <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-xl bg-primary flex items-center justify-center shrink-0 overflow-hidden">
