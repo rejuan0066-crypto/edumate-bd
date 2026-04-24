@@ -822,6 +822,55 @@ const AdminExamSessions = () => {
           )}
         </div>
       </div>
+
+      {/* Quick Add Exam Type Dialog */}
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'নতুন পরীক্ষার ধরন যোগ' : 'Add New Exam Type'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</label>
+              <Input
+                value={quickTypeNameBn}
+                onChange={e => setQuickTypeNameBn(e.target.value)}
+                placeholder={bn ? 'যেমন: নির্বাচনী পরীক্ষা' : 'e.g. নির্বাচনী পরীক্ষা'}
+                className="bg-background"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
+              <Input
+                value={quickTypeName}
+                onChange={e => setQuickTypeName(e.target.value)}
+                placeholder="e.g. Selective Exam"
+                className="bg-background"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'কী (ইংরেজি, ইউনিক)' : 'Key (English, unique)'} *</label>
+              <Input
+                value={quickTypeKey}
+                onChange={e => setQuickTypeKey(e.target.value)}
+                placeholder="e.g. selective"
+                className="bg-background"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {bn ? 'সিস্টেম-ইন্টারনাল পরিচায়ক — যেমন: annual, half_yearly' : 'System identifier — e.g. annual, half_yearly'}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickAddOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button className="btn-primary-gradient" onClick={handleQuickAddType} disabled={quickAdding}>
+              {quickAdding && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {bn ? 'যোগ করুন' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
