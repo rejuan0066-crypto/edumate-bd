@@ -184,6 +184,14 @@ const DashboardInstitutionCard = () => {
               <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
             </div>
             <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'মাদরাসা স্থাপিত' : 'Established'}</label>
+              <Input value={form.established_year} onChange={e => setForm(f => ({ ...f, established_year: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'যেমন: ১৯৮৫' : 'e.g. 1985'} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'রেজি: নং / EIIN' : 'Reg. No / EIIN'}</label>
+              <Input value={form.registration_number} onChange={e => setForm(f => ({ ...f, registration_number: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'রেজিস্ট্রেশন বা EIIN নম্বর' : 'Registration or EIIN number'} />
+            </div>
+            <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
               <div className="flex items-center gap-2 mt-1">
                 {form.logo_url && <img src={form.logo_url} alt="Logo" className="w-10 h-10 rounded object-cover" />}
