@@ -474,14 +474,28 @@ const AdminExamSessions = () => {
 
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'পরীক্ষার ধরন' : 'Exam Type'} *</label>
-                <Select value={examType} onValueChange={setExamType}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
-                  <SelectContent>
-                    {examTypes.filter((t: any) => t.is_active).map((t: any) => (
-                      <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={examType} onValueChange={setExamType}>
+                    <SelectTrigger className="bg-background flex-1"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
+                    <SelectContent>
+                      {examTypes.filter((t: any) => t.is_active).map((t: any) => (
+                        <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {canAddItem && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setQuickAddOpen(true)}
+                      title={bn ? 'নতুন ধরন যোগ' : 'Add new type'}
+                      className="shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div>
