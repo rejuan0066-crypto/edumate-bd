@@ -58,6 +58,8 @@ const DashboardInstitutionCard = () => {
         other_info: institution.other_info || '',
         other_info_en: (institution as any).other_info_en || '',
         logo_url: institution.logo_url || '',
+        established_year: (institution as any).established_year || '',
+        registration_number: (institution as any).registration_number || '',
       });
     }
   }, [institution]);
