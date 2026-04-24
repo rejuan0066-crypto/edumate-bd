@@ -319,13 +319,25 @@ const AdminDivisions = () => {
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-secondary/50 space-y-1">
                   <p className="text-xs text-muted-foreground">{language === 'bn' ? 'বাংলা:' : 'BN:'} <span className="text-foreground font-medium">{selected.name_bn}</span> | {language === 'bn' ? 'ইংরেজি:' : 'EN:'} <span className="text-foreground font-medium">{selected.name}</span>{(selected as any).prefix ? <> | {language === 'bn' ? 'প্রিফিক্স:' : 'Prefix:'} <span className="font-mono text-primary font-bold">{(selected as any).prefix}</span></> : null}</p>
+                  {(selected as any).name_ar && (
+                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'আরবি:' : 'AR:'} <span dir="rtl" lang="ar" className="text-foreground font-medium" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(selected as any).name_ar}</span></p>
+                  )}
                   <p className="text-xs"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${selected.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{selected.is_active ? (language === 'bn' ? 'সক্রিয়' : 'Active') : (language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive')}</span></p>
                 </div>
 
                 {canAddItem && (
-                  <div className="flex gap-2">
-                    <Input placeholder={language === 'bn' ? 'শ্রেণীর নাম (বাংলা)' : 'Class Name (BN)'} value={newClassName} onChange={(e) => setNewClassName(e.target.value)} className="bg-background" />
-                    <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newClassNameEn} onChange={(e) => setNewClassNameEn(e.target.value)} className="bg-background" />
+                  <div className="flex flex-wrap gap-2">
+                    <Input placeholder={language === 'bn' ? 'শ্রেণীর নাম (বাংলা)' : 'Class Name (BN)'} value={newClassName} onChange={(e) => setNewClassName(e.target.value)} className="bg-background flex-1 min-w-[120px]" />
+                    <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newClassNameEn} onChange={(e) => setNewClassNameEn(e.target.value)} className="bg-background flex-1 min-w-[120px]" />
+                    <Input
+                      placeholder="الاسم بالعربية"
+                      value={newClassNameAr}
+                      onChange={(e) => setNewClassNameAr(e.target.value)}
+                      className="bg-background flex-1 min-w-[120px] text-right"
+                      dir="rtl"
+                      lang="ar"
+                      style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                    />
                     <Button onClick={() => { if (!newClassName.trim()) { toast.error(language === 'bn' ? 'শ্রেণীর নাম লিখুন' : 'Enter class name'); return; } addClassMutation.mutate(); }} size="sm" className="shrink-0 btn-primary-gradient" disabled={addClassMutation.isPending}>
                       {addClassMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     </Button>
@@ -339,10 +351,19 @@ const AdminDivisions = () => {
                     {classes.map((c: any, idx: number) => (
                       <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                         {editingClassId === c.id ? (
-                          <div className="flex items-center gap-2 flex-1 mr-2">
-                            <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
-                            <Input value={editClassNameEn} onChange={e => setEditClassNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
-                            <button onClick={() => { if (!editClassName.trim()) return; editClassMutation.mutate({ id: c.id, name_bn: editClassName.trim(), name: editClassNameEn.trim() || editClassName.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                          <div className="flex flex-wrap items-center gap-2 flex-1 mr-2">
+                            <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[100px]" placeholder="বাংলা নাম" />
+                            <Input value={editClassNameEn} onChange={e => setEditClassNameEn(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[100px]" placeholder="English" />
+                            <Input
+                              value={editClassNameAr}
+                              onChange={e => setEditClassNameAr(e.target.value)}
+                              className="bg-background h-8 text-sm flex-1 min-w-[100px] text-right"
+                              placeholder="عربي"
+                              dir="rtl"
+                              lang="ar"
+                              style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                            />
+                            <button onClick={() => { if (!editClassName.trim()) return; editClassMutation.mutate({ id: c.id, name_bn: editClassName.trim(), name: editClassNameEn.trim() || editClassName.trim(), name_ar: editClassNameAr.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
                             <button onClick={() => setEditingClassId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                           </div>
                         ) : (
@@ -353,6 +374,9 @@ const AdminDivisions = () => {
                               <div>
                                 <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
                                 <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
+                                {c.name_ar && (
+                                  <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{c.name_ar}</p>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-0.5">
