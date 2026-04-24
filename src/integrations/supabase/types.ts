@@ -2559,6 +2559,7 @@ export type Database = {
           is_default: boolean | null
           logo_url: string | null
           name: string
+          name_ar: string | null
           name_en: string | null
           other_info: string | null
           other_info_en: string | null
@@ -2578,6 +2579,7 @@ export type Database = {
           is_default?: boolean | null
           logo_url?: string | null
           name: string
+          name_ar?: string | null
           name_en?: string | null
           other_info?: string | null
           other_info_en?: string | null
@@ -2597,6 +2599,7 @@ export type Database = {
           is_default?: boolean | null
           logo_url?: string | null
           name?: string
+          name_ar?: string | null
           name_en?: string | null
           other_info?: string | null
           other_info_en?: string | null

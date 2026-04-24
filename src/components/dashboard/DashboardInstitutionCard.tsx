@@ -18,7 +18,7 @@ const DashboardInstitutionCard = () => {
   const queryClient = useQueryClient();
   const { settings, updateMultiple } = useWebsiteSettings();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '', established_year: '', established_year_en: '', registration_number: '', registration_number_en: '' });
+  const [form, setForm] = useState({ name: '', name_en: '', name_ar: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '', established_year: '', established_year_en: '', registration_number: '', registration_number_en: '' });
   const [principalForm, setPrincipalForm] = useState({
     principal_name: '',
     principal_name_en: '',
@@ -51,6 +51,7 @@ const DashboardInstitutionCard = () => {
       setForm({
         name: institution.name || '',
         name_en: institution.name_en || '',
+        name_ar: (institution as any).name_ar || '',
         address: institution.address || '',
         address_en: (institution as any).address_en || '',
         phone: institution.phone || '',
@@ -160,6 +161,18 @@ const DashboardInstitutionCard = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
               <Input value={form.name_en || ''} onChange={e => setForm(f => ({ ...f, name_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'নাম (আরবি)' : 'Name (Arabic)'}</label>
+              <Input
+                value={form.name_ar}
+                onChange={e => setForm(f => ({ ...f, name_ar: e.target.value }))}
+                className="mt-1 text-right"
+                dir="rtl"
+                lang="ar"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                placeholder="اسم المدرسة بالعربية"
+              />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'ঠিকানা (বাংলা)' : 'Address (Bangla)'}</label>
@@ -358,6 +371,16 @@ const DashboardInstitutionCard = () => {
       <div className="flex-1 min-w-0 w-full flex flex-col items-center">
         {hasName ? (
           <>
+            {(institution as any)?.name_ar && (
+              <p
+                dir="rtl"
+                lang="ar"
+                className="text-2xl lg:text-4xl font-semibold text-center text-primary/90 leading-tight mb-1"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+              >
+                {(institution as any).name_ar}
+              </p>
+            )}
             <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-5xl">{displayName}</h1>
             {institution?.name_en && institution?.name && (
               <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-3xl">{language === 'bn' ? institution.name_en : institution.name}</p>
