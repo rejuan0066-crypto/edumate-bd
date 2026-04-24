@@ -1531,14 +1531,21 @@ const AdminQuestionPapers = () => {
           {questions.map((q, qi) => (
             <div key={qi} className="relative group rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
               {/* Serial Badge + Delete */}
-              <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+              <div className="flex items-center justify-between px-4 pt-3 pb-1 gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
                     {language === 'bn' ? toBengaliNum(qi + 1) : qi + 1}
                   </span>
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {language === 'bn' ? 'প্রশ্ন' : 'Question'} #{language === 'bn' ? toBengaliNum(qi + 1) : qi + 1}
-                  </span>
+                  <Input
+                    value={q.custom_label || ''}
+                    onChange={e => updateQuestion(qi, 'custom_label', e.target.value)}
+                    onFocus={e => setActiveInputRef(e.target)}
+                    data-arabic="true"
+                    dir="auto"
+                    placeholder={language === 'bn' ? `প্রশ্ন #${toBengaliNum(qi + 1)}` : `Question #${qi + 1}`}
+                    className="h-7 text-[11px] font-medium bg-transparent border-dashed border-border/40 hover:border-border focus:bg-background rounded-lg px-2 flex-1 min-w-0"
+                    title={language === 'bn' ? 'নিজের পছন্দমতো লিখুন (আরবি/বাংলা/ইংরেজি)' : 'Custom label (Arabic/Bangla/English)'}
+                  />
                 </div>
                 <button
                   onClick={() => removeQuestion(qi)}
