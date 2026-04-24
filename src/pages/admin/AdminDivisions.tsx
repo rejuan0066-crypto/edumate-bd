@@ -255,11 +255,20 @@ const AdminDivisions = () => {
                     onClick={() => { if (editingDivId !== d.id) setSelectedDiv(d.id); }}
                     className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${selectedDiv === d.id ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50 hover:bg-secondary'}`}>
                     {editingDivId === d.id ? (
-                      <div className="flex items-center gap-2 flex-1 mr-2" onClick={e => e.stopPropagation()}>
-                        <Input value={editDivName} onChange={e => setEditDivName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
-                        <Input value={editDivNameEn} onChange={e => setEditDivNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
+                      <div className="flex flex-wrap items-center gap-2 flex-1 mr-2" onClick={e => e.stopPropagation()}>
+                        <Input value={editDivName} onChange={e => setEditDivName(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[110px]" placeholder="বাংলা নাম" />
+                        <Input value={editDivNameEn} onChange={e => setEditDivNameEn(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[110px]" placeholder="English" />
+                        <Input
+                          value={editDivNameAr}
+                          onChange={e => setEditDivNameAr(e.target.value)}
+                          className="bg-background h-8 text-sm flex-1 min-w-[110px] text-right"
+                          placeholder="عربي"
+                          dir="rtl"
+                          lang="ar"
+                          style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                        />
                         <Input value={editDivPrefix} onChange={e => setEditDivPrefix(e.target.value)} className="bg-background h-8 text-sm w-20 shrink-0 uppercase" placeholder="প্রিফিক্স" maxLength={5} />
-                        <button onClick={() => { if (!editDivName.trim()) return; editDivMutation.mutate({ id: d.id, name_bn: editDivName.trim(), name: editDivNameEn.trim() || editDivName.trim(), prefix: editDivPrefix.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                        <button onClick={() => { if (!editDivName.trim()) return; editDivMutation.mutate({ id: d.id, name_bn: editDivName.trim(), name: editDivNameEn.trim() || editDivName.trim(), name_ar: editDivNameAr.trim(), prefix: editDivPrefix.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
                         <button onClick={() => setEditingDivId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                       </div>
                     ) : (
@@ -272,6 +281,9 @@ const AdminDivisions = () => {
                               {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded mr-2">{(d as any).prefix}</span> : null}
                               {language === 'bn' ? d.name_bn : d.name}
                             </p>
+                            {(d as any).name_ar && (
+                              <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(d as any).name_ar}</p>
+                            )}
                             <p className="text-xs text-muted-foreground">{d.description || ''}</p>
                           </div>
                         </div>
