@@ -18,7 +18,7 @@ const DashboardInstitutionCard = () => {
   const queryClient = useQueryClient();
   const { settings, updateMultiple } = useWebsiteSettings();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '' });
+  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '', established_year: '', registration_number: '' });
   const [principalForm, setPrincipalForm] = useState({
     principal_name: '',
     principal_name_en: '',
