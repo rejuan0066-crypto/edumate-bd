@@ -2553,6 +2553,7 @@ export type Database = {
           address_en: string | null
           created_at: string | null
           email: string | null
+          established_year: string | null
           id: string
           is_default: boolean | null
           logo_url: string | null
@@ -2561,6 +2562,7 @@ export type Database = {
           other_info: string | null
           other_info_en: string | null
           phone: string | null
+          registration_number: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2568,6 +2570,7 @@ export type Database = {
           address_en?: string | null
           created_at?: string | null
           email?: string | null
+          established_year?: string | null
           id?: string
           is_default?: boolean | null
           logo_url?: string | null
@@ -2576,6 +2579,7 @@ export type Database = {
           other_info?: string | null
           other_info_en?: string | null
           phone?: string | null
+          registration_number?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2583,6 +2587,7 @@ export type Database = {
           address_en?: string | null
           created_at?: string | null
           email?: string | null
+          established_year?: string | null
           id?: string
           is_default?: boolean | null
           logo_url?: string | null
@@ -2591,6 +2596,7 @@ export type Database = {
           other_info?: string | null
           other_info_en?: string | null
           phone?: string | null
+          registration_number?: string | null
           updated_at?: string | null
         }
         Relationships: []

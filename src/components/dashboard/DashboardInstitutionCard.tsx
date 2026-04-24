@@ -18,7 +18,7 @@ const DashboardInstitutionCard = () => {
   const queryClient = useQueryClient();
   const { settings, updateMultiple } = useWebsiteSettings();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '' });
+  const [form, setForm] = useState({ name: '', name_en: '', address: '', address_en: '', phone: '', email: '', other_info: '', other_info_en: '', logo_url: '', established_year: '', registration_number: '' });
   const [principalForm, setPrincipalForm] = useState({
     principal_name: '',
     principal_name_en: '',
@@ -58,6 +58,8 @@ const DashboardInstitutionCard = () => {
         other_info: institution.other_info || '',
         other_info_en: (institution as any).other_info_en || '',
         logo_url: institution.logo_url || '',
+        established_year: (institution as any).established_year || '',
+        registration_number: (institution as any).registration_number || '',
       });
     }
   }, [institution]);
@@ -180,6 +182,14 @@ const DashboardInstitutionCard = () => {
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অন্যান্য তথ্য (ইংরেজি)' : 'Other Info (English)'}</label>
               <Input value={form.other_info_en || ''} onChange={e => setForm(f => ({ ...f, other_info_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'মাদরাসা স্থাপিত' : 'Established'}</label>
+              <Input value={form.established_year} onChange={e => setForm(f => ({ ...f, established_year: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'যেমন: ১৯৮৫' : 'e.g. 1985'} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'রেজি: নং / EIIN' : 'Reg. No / EIIN'}</label>
+              <Input value={form.registration_number} onChange={e => setForm(f => ({ ...f, registration_number: e.target.value }))} className="mt-1" placeholder={language === 'bn' ? 'রেজিস্ট্রেশন বা EIIN নম্বর' : 'Registration or EIIN number'} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'লোগো' : 'Logo'}</label>
@@ -352,6 +362,22 @@ const DashboardInstitutionCard = () => {
           {institution?.address && <p className="truncate text-center text-lg lg:text-xl">{institution.address}</p>}
           {institution?.phone && <p className="truncate text-center lg:text-lg">{institution.phone}</p>}
           {institution?.email && <p className="truncate text-center text-base lg:text-lg font-serif">{institution.email}</p>}
+          {((institution as any)?.established_year || (institution as any)?.registration_number) && (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1 text-xs lg:text-sm">
+              {(institution as any)?.established_year && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
+                  <span className="opacity-70">{language === 'bn' ? 'স্থাপিত:' : 'Est.'}</span>
+                  <span>{(institution as any).established_year}</span>
+                </span>
+              )}
+              {(institution as any)?.registration_number && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
+                  <span className="opacity-70">{language === 'bn' ? 'রেজি/EIIN:' : 'Reg/EIIN:'}</span>
+                  <span>{(institution as any).registration_number}</span>
+                </span>
+              )}
+            </div>
+          )}
           {!hasAnyContact && (
             <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
           )}
