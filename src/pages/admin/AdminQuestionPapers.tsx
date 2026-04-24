@@ -358,6 +358,19 @@ const toBengaliNum = (n: number): string => {
   return String(n).replace(/[0-9]/g, d => digits[parseInt(d)]);
 };
 
+// Convert mixed-script digits (Bengali ০-৯, Arabic-Indic ٠-٩, English 0-9) to a number.
+// Returns 0 when input has no recognizable digits, so the controlled input stays valid.
+const parseMultilingualNum = (s: string): number => {
+  if (!s) return 0;
+  const map: Record<string, string> = {
+    '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9',
+    '٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9',
+  };
+  const normalized = s.replace(/[০-৯٠-٩]/g, ch => map[ch] ?? ch);
+  const digitsOnly = normalized.replace(/[^0-9]/g, '');
+  return digitsOnly ? parseInt(digitsOnly, 10) : 0;
+};
+
 const StatusBadge = ({ status, language }: { status: string; language: string }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = config.icon;
