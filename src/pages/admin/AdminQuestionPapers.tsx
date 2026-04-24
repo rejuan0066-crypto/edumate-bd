@@ -890,6 +890,7 @@ const AdminQuestionPapers = () => {
         group_label: q.group_label || '', group_label_bn: q.group_label_bn || '',
         group_marks: q.group_marks ?? null,
         options: q.options, answer: q.answer || '',
+        custom_label: q.custom_label || '',
       })));
     }
   }, [selectedPaper?.id, paperQuestions]);
