@@ -202,6 +202,7 @@ const AdminDivisions = () => {
     setEditingDivId(d.id);
     setEditDivName(d.name_bn);
     setEditDivNameEn(d.name);
+    setEditDivNameAr(d.name_ar || '');
     setEditDivPrefix((d as any).prefix || '');
   };
 
@@ -209,6 +210,7 @@ const AdminDivisions = () => {
     setEditingClassId(c.id);
     setEditClassName(c.name_bn);
     setEditClassNameEn(c.name);
+    setEditClassNameAr(c.name_ar || '');
   };
 
   return (
