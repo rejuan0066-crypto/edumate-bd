@@ -1227,10 +1227,11 @@ const AdminQuestionPapers = () => {
           const dir = isArabic ? 'rtl' : 'ltr';
           const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
           const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+          const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
           const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
             '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
           ).join('') + '</div>' : '';
-          const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span>${serial}। ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
+          const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
           if (i < mid) col1 += html; else col2 += html;
         });
         return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div style="border-right:1px solid #ddd;padding-right:12px">${col1}</div><div style="padding-left:4px">${col2}</div></div>`;
