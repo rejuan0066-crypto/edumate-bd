@@ -362,6 +362,22 @@ const DashboardInstitutionCard = () => {
           {institution?.address && <p className="truncate text-center text-lg lg:text-xl">{institution.address}</p>}
           {institution?.phone && <p className="truncate text-center lg:text-lg">{institution.phone}</p>}
           {institution?.email && <p className="truncate text-center text-base lg:text-lg font-serif">{institution.email}</p>}
+          {((institution as any)?.established_year || (institution as any)?.registration_number) && (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1 text-xs lg:text-sm">
+              {(institution as any)?.established_year && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
+                  <span className="opacity-70">{language === 'bn' ? 'স্থাপিত:' : 'Est.'}</span>
+                  <span>{(institution as any).established_year}</span>
+                </span>
+              )}
+              {(institution as any)?.registration_number && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
+                  <span className="opacity-70">{language === 'bn' ? 'রেজি/EIIN:' : 'Reg/EIIN:'}</span>
+                  <span>{(institution as any).registration_number}</span>
+                </span>
+              )}
+            </div>
+          )}
           {!hasAnyContact && (
             <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
           )}
