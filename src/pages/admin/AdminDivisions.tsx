@@ -106,9 +106,9 @@ const AdminDivisions = () => {
   });
 
   const editDivMutation = useMutation({
-    mutationFn: async ({ id, name_bn, name, prefix }: { id: string; name_bn: string; name: string; prefix: string }) => {
-      if (await checkDivApproval('edit', { id, name_bn, name, prefix }, id, `বিভাগ সম্পাদনা: ${name_bn}`)) return;
-      const { error } = await supabase.from('divisions').update({ name_bn, name, prefix: prefix.toUpperCase() }).eq('id', id);
+    mutationFn: async ({ id, name_bn, name, name_ar, prefix }: { id: string; name_bn: string; name: string; name_ar: string; prefix: string }) => {
+      if (await checkDivApproval('edit', { id, name_bn, name, name_ar, prefix }, id, `বিভাগ সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('divisions').update({ name_bn, name, name_ar: name_ar || null, prefix: prefix.toUpperCase() } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
