@@ -19,17 +19,21 @@ const AdminDivisions = () => {
   const [selectedDiv, setSelectedDiv] = useState<string | null>(null);
   const [newDivName, setNewDivName] = useState('');
   const [newDivNameEn, setNewDivNameEn] = useState('');
+  const [newDivNameAr, setNewDivNameAr] = useState('');
   const [newDivPrefix, setNewDivPrefix] = useState('');
   const [newClassName, setNewClassName] = useState('');
   const [newClassNameEn, setNewClassNameEn] = useState('');
+  const [newClassNameAr, setNewClassNameAr] = useState('');
 
   const [editingDivId, setEditingDivId] = useState<string | null>(null);
   const [editDivName, setEditDivName] = useState('');
   const [editDivNameEn, setEditDivNameEn] = useState('');
+  const [editDivNameAr, setEditDivNameAr] = useState('');
   const [editDivPrefix, setEditDivPrefix] = useState('');
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editClassName, setEditClassName] = useState('');
   const [editClassNameEn, setEditClassNameEn] = useState('');
+  const [editClassNameAr, setEditClassNameAr] = useState('');
 
   const { data: divisions = [], isLoading } = useQuery({
     queryKey: ['divisions'],
