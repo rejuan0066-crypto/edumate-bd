@@ -19,17 +19,21 @@ const AdminDivisions = () => {
   const [selectedDiv, setSelectedDiv] = useState<string | null>(null);
   const [newDivName, setNewDivName] = useState('');
   const [newDivNameEn, setNewDivNameEn] = useState('');
+  const [newDivNameAr, setNewDivNameAr] = useState('');
   const [newDivPrefix, setNewDivPrefix] = useState('');
   const [newClassName, setNewClassName] = useState('');
   const [newClassNameEn, setNewClassNameEn] = useState('');
+  const [newClassNameAr, setNewClassNameAr] = useState('');
 
   const [editingDivId, setEditingDivId] = useState<string | null>(null);
   const [editDivName, setEditDivName] = useState('');
   const [editDivNameEn, setEditDivNameEn] = useState('');
+  const [editDivNameAr, setEditDivNameAr] = useState('');
   const [editDivPrefix, setEditDivPrefix] = useState('');
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [editClassName, setEditClassName] = useState('');
   const [editClassNameEn, setEditClassNameEn] = useState('');
+  const [editClassNameAr, setEditClassNameAr] = useState('');
 
   const { data: divisions = [], isLoading } = useQuery({
     queryKey: ['divisions'],
@@ -70,7 +74,7 @@ const AdminDivisions = () => {
 
   const addDivMutation = useMutation({
     mutationFn: async () => {
-      const payload = { name_bn: newDivName.trim(), name: newDivNameEn.trim() || newDivName.trim(), prefix: newDivPrefix.trim().toUpperCase(), sort_order: divisions.length };
+      const payload: any = { name_bn: newDivName.trim(), name: newDivNameEn.trim() || newDivName.trim(), name_ar: newDivNameAr.trim() || null, prefix: newDivPrefix.trim().toUpperCase(), sort_order: divisions.length };
       if (await checkDivApproval('add', payload, undefined, `বিভাগ যোগ: ${newDivName.trim()}`)) return;
       const { error } = await supabase.from('divisions').insert(payload);
       if (error) throw error;
@@ -79,6 +83,7 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['divisions'] });
       setNewDivName('');
       setNewDivNameEn('');
+      setNewDivNameAr('');
       setNewDivPrefix('');
       toast.success(language === 'bn' ? 'বিভাগ যোগ হয়েছে' : 'Division added');
     },
@@ -101,9 +106,9 @@ const AdminDivisions = () => {
   });
 
   const editDivMutation = useMutation({
-    mutationFn: async ({ id, name_bn, name, prefix }: { id: string; name_bn: string; name: string; prefix: string }) => {
-      if (await checkDivApproval('edit', { id, name_bn, name, prefix }, id, `বিভাগ সম্পাদনা: ${name_bn}`)) return;
-      const { error } = await supabase.from('divisions').update({ name_bn, name, prefix: prefix.toUpperCase() }).eq('id', id);
+    mutationFn: async ({ id, name_bn, name, name_ar, prefix }: { id: string; name_bn: string; name: string; name_ar: string; prefix: string }) => {
+      if (await checkDivApproval('edit', { id, name_bn, name, name_ar, prefix }, id, `বিভাগ সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('divisions').update({ name_bn, name, name_ar: name_ar || null, prefix: prefix.toUpperCase() } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -132,7 +137,7 @@ const AdminDivisions = () => {
 
   const addClassMutation = useMutation({
     mutationFn: async () => {
-      const payload = { division_id: selectedDiv!, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), sort_order: classes.length };
+      const payload: any = { division_id: selectedDiv!, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), name_ar: newClassNameAr.trim() || null, sort_order: classes.length };
       if (await checkClassApproval('add', payload, undefined, `শ্রেণী যোগ: ${newClassName.trim()}`)) return;
       const { error } = await supabase.from('classes').insert(payload);
       if (error) throw error;
@@ -141,6 +146,7 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
       setNewClassName('');
       setNewClassNameEn('');
+      setNewClassNameAr('');
       toast.success(language === 'bn' ? 'ক্লাস যোগ হয়েছে' : 'Class added');
     },
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
@@ -161,9 +167,9 @@ const AdminDivisions = () => {
   });
 
   const editClassMutation = useMutation({
-    mutationFn: async ({ id, name_bn, name }: { id: string; name_bn: string; name: string }) => {
-      if (await checkClassApproval('edit', { id, name_bn, name }, id, `শ্রেণী সম্পাদনা: ${name_bn}`)) return;
-      const { error } = await supabase.from('classes').update({ name_bn, name }).eq('id', id);
+    mutationFn: async ({ id, name_bn, name, name_ar }: { id: string; name_bn: string; name: string; name_ar: string }) => {
+      if (await checkClassApproval('edit', { id, name_bn, name, name_ar }, id, `শ্রেণী সম্পাদনা: ${name_bn}`)) return;
+      const { error } = await supabase.from('classes').update({ name_bn, name, name_ar: name_ar || null } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -196,6 +202,7 @@ const AdminDivisions = () => {
     setEditingDivId(d.id);
     setEditDivName(d.name_bn);
     setEditDivNameEn(d.name);
+    setEditDivNameAr(d.name_ar || '');
     setEditDivPrefix((d as any).prefix || '');
   };
 
@@ -203,6 +210,7 @@ const AdminDivisions = () => {
     setEditingClassId(c.id);
     setEditClassName(c.name_bn);
     setEditClassNameEn(c.name);
+    setEditClassNameAr(c.name_ar || '');
   };
 
   return (
@@ -220,9 +228,18 @@ const AdminDivisions = () => {
               {language === 'bn' ? 'বিভাগসমূহ' : 'Divisions'}
             </h3>
             {canAddItem && (
-              <div className="flex gap-2 mb-4">
-                <Input placeholder={language === 'bn' ? 'বিভাগের নাম (বাংলা)' : 'Division Name (BN)'} value={newDivName} onChange={(e) => setNewDivName(e.target.value)} className="bg-background" />
-                <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newDivNameEn} onChange={(e) => setNewDivNameEn(e.target.value)} className="bg-background" />
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Input placeholder={language === 'bn' ? 'বিভাগের নাম (বাংলা)' : 'Division Name (BN)'} value={newDivName} onChange={(e) => setNewDivName(e.target.value)} className="bg-background flex-1 min-w-[140px]" />
+                <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newDivNameEn} onChange={(e) => setNewDivNameEn(e.target.value)} className="bg-background flex-1 min-w-[140px]" />
+                <Input
+                  placeholder="الاسم بالعربية"
+                  value={newDivNameAr}
+                  onChange={(e) => setNewDivNameAr(e.target.value)}
+                  className="bg-background flex-1 min-w-[140px] text-right"
+                  dir="rtl"
+                  lang="ar"
+                  style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                />
                 <Input placeholder={language === 'bn' ? 'প্রিফিক্স' : 'Prefix'} value={newDivPrefix} onChange={(e) => setNewDivPrefix(e.target.value)} className="bg-background w-20 shrink-0 uppercase" maxLength={5} />
                 <Button onClick={() => { if (!newDivName.trim()) { toast.error(language === 'bn' ? 'বিভাগের নাম লিখুন' : 'Enter division name'); return; } addDivMutation.mutate(); }} size="sm" className="shrink-0 btn-primary-gradient" disabled={addDivMutation.isPending}>
                   {addDivMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
@@ -238,11 +255,20 @@ const AdminDivisions = () => {
                     onClick={() => { if (editingDivId !== d.id) setSelectedDiv(d.id); }}
                     className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${selectedDiv === d.id ? 'bg-primary/10 border border-primary/30' : 'bg-secondary/50 hover:bg-secondary'}`}>
                     {editingDivId === d.id ? (
-                      <div className="flex items-center gap-2 flex-1 mr-2" onClick={e => e.stopPropagation()}>
-                        <Input value={editDivName} onChange={e => setEditDivName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
-                        <Input value={editDivNameEn} onChange={e => setEditDivNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
+                      <div className="flex flex-wrap items-center gap-2 flex-1 mr-2" onClick={e => e.stopPropagation()}>
+                        <Input value={editDivName} onChange={e => setEditDivName(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[110px]" placeholder="বাংলা নাম" />
+                        <Input value={editDivNameEn} onChange={e => setEditDivNameEn(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[110px]" placeholder="English" />
+                        <Input
+                          value={editDivNameAr}
+                          onChange={e => setEditDivNameAr(e.target.value)}
+                          className="bg-background h-8 text-sm flex-1 min-w-[110px] text-right"
+                          placeholder="عربي"
+                          dir="rtl"
+                          lang="ar"
+                          style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                        />
                         <Input value={editDivPrefix} onChange={e => setEditDivPrefix(e.target.value)} className="bg-background h-8 text-sm w-20 shrink-0 uppercase" placeholder="প্রিফিক্স" maxLength={5} />
-                        <button onClick={() => { if (!editDivName.trim()) return; editDivMutation.mutate({ id: d.id, name_bn: editDivName.trim(), name: editDivNameEn.trim() || editDivName.trim(), prefix: editDivPrefix.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                        <button onClick={() => { if (!editDivName.trim()) return; editDivMutation.mutate({ id: d.id, name_bn: editDivName.trim(), name: editDivNameEn.trim() || editDivName.trim(), name_ar: editDivNameAr.trim(), prefix: editDivPrefix.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
                         <button onClick={() => setEditingDivId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                       </div>
                     ) : (
@@ -255,6 +281,9 @@ const AdminDivisions = () => {
                               {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded mr-2">{(d as any).prefix}</span> : null}
                               {language === 'bn' ? d.name_bn : d.name}
                             </p>
+                            {(d as any).name_ar && (
+                              <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(d as any).name_ar}</p>
+                            )}
                             <p className="text-xs text-muted-foreground">{d.description || ''}</p>
                           </div>
                         </div>
@@ -290,13 +319,25 @@ const AdminDivisions = () => {
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-secondary/50 space-y-1">
                   <p className="text-xs text-muted-foreground">{language === 'bn' ? 'বাংলা:' : 'BN:'} <span className="text-foreground font-medium">{selected.name_bn}</span> | {language === 'bn' ? 'ইংরেজি:' : 'EN:'} <span className="text-foreground font-medium">{selected.name}</span>{(selected as any).prefix ? <> | {language === 'bn' ? 'প্রিফিক্স:' : 'Prefix:'} <span className="font-mono text-primary font-bold">{(selected as any).prefix}</span></> : null}</p>
+                  {(selected as any).name_ar && (
+                    <p className="text-xs text-muted-foreground">{language === 'bn' ? 'আরবি:' : 'AR:'} <span dir="rtl" lang="ar" className="text-foreground font-medium" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(selected as any).name_ar}</span></p>
+                  )}
                   <p className="text-xs"><span className={`px-2 py-0.5 rounded-full text-xs font-medium ${selected.is_active ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>{selected.is_active ? (language === 'bn' ? 'সক্রিয়' : 'Active') : (language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive')}</span></p>
                 </div>
 
                 {canAddItem && (
-                  <div className="flex gap-2">
-                    <Input placeholder={language === 'bn' ? 'শ্রেণীর নাম (বাংলা)' : 'Class Name (BN)'} value={newClassName} onChange={(e) => setNewClassName(e.target.value)} className="bg-background" />
-                    <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newClassNameEn} onChange={(e) => setNewClassNameEn(e.target.value)} className="bg-background" />
+                  <div className="flex flex-wrap gap-2">
+                    <Input placeholder={language === 'bn' ? 'শ্রেণীর নাম (বাংলা)' : 'Class Name (BN)'} value={newClassName} onChange={(e) => setNewClassName(e.target.value)} className="bg-background flex-1 min-w-[120px]" />
+                    <Input placeholder={language === 'bn' ? 'ইংরেজি নাম' : 'English Name'} value={newClassNameEn} onChange={(e) => setNewClassNameEn(e.target.value)} className="bg-background flex-1 min-w-[120px]" />
+                    <Input
+                      placeholder="الاسم بالعربية"
+                      value={newClassNameAr}
+                      onChange={(e) => setNewClassNameAr(e.target.value)}
+                      className="bg-background flex-1 min-w-[120px] text-right"
+                      dir="rtl"
+                      lang="ar"
+                      style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                    />
                     <Button onClick={() => { if (!newClassName.trim()) { toast.error(language === 'bn' ? 'শ্রেণীর নাম লিখুন' : 'Enter class name'); return; } addClassMutation.mutate(); }} size="sm" className="shrink-0 btn-primary-gradient" disabled={addClassMutation.isPending}>
                       {addClassMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     </Button>
@@ -310,10 +351,19 @@ const AdminDivisions = () => {
                     {classes.map((c: any, idx: number) => (
                       <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
                         {editingClassId === c.id ? (
-                          <div className="flex items-center gap-2 flex-1 mr-2">
-                            <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} className="bg-background h-8 text-sm" placeholder="বাংলা নাম" />
-                            <Input value={editClassNameEn} onChange={e => setEditClassNameEn(e.target.value)} className="bg-background h-8 text-sm" placeholder="English" />
-                            <button onClick={() => { if (!editClassName.trim()) return; editClassMutation.mutate({ id: c.id, name_bn: editClassName.trim(), name: editClassNameEn.trim() || editClassName.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
+                          <div className="flex flex-wrap items-center gap-2 flex-1 mr-2">
+                            <Input value={editClassName} onChange={e => setEditClassName(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[100px]" placeholder="বাংলা নাম" />
+                            <Input value={editClassNameEn} onChange={e => setEditClassNameEn(e.target.value)} className="bg-background h-8 text-sm flex-1 min-w-[100px]" placeholder="English" />
+                            <Input
+                              value={editClassNameAr}
+                              onChange={e => setEditClassNameAr(e.target.value)}
+                              className="bg-background h-8 text-sm flex-1 min-w-[100px] text-right"
+                              placeholder="عربي"
+                              dir="rtl"
+                              lang="ar"
+                              style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                            />
+                            <button onClick={() => { if (!editClassName.trim()) return; editClassMutation.mutate({ id: c.id, name_bn: editClassName.trim(), name: editClassNameEn.trim() || editClassName.trim(), name_ar: editClassNameAr.trim() }); }} className="p-1.5 rounded hover:bg-success/10 text-success"><Check className="w-4 h-4" /></button>
                             <button onClick={() => setEditingClassId(null)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><X className="w-4 h-4" /></button>
                           </div>
                         ) : (
@@ -324,6 +374,9 @@ const AdminDivisions = () => {
                               <div>
                                 <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
                                 <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
+                                {c.name_ar && (
+                                  <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{c.name_ar}</p>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-0.5">

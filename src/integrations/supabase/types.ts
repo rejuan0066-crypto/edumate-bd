@@ -675,6 +675,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          name_ar: string | null
           name_bn: string
           sort_order: number | null
           updated_at: string | null
@@ -685,6 +686,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          name_ar?: string | null
           name_bn: string
           sort_order?: number | null
           updated_at?: string | null
@@ -695,6 +697,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          name_ar?: string | null
           name_bn?: string
           sort_order?: number | null
           updated_at?: string | null
@@ -1151,6 +1154,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          name_ar: string | null
           name_bn: string
           prefix: string | null
           sort_order: number | null
@@ -1162,6 +1166,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          name_ar?: string | null
           name_bn: string
           prefix?: string | null
           sort_order?: number | null
@@ -1173,6 +1178,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          name_ar?: string | null
           name_bn?: string
           prefix?: string | null
           sort_order?: number | null
