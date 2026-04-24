@@ -1387,7 +1387,7 @@ const AdminQuestionPapers = () => {
                 <Slider value={[fontConfig.fontSize]} onValueChange={([v]) => setFontConfig(p => ({ ...p, fontSize: v }))} min={10} max={22} step={1} className="mt-2" />
               </div>
             </div>
-            <div className="flex gap-4 mt-3 pt-2 border-t border-border/50">
+            <div className="flex flex-wrap gap-3 sm:gap-4 mt-3 pt-2 border-t border-border/50">
               <label className="flex items-center gap-2 text-xs">
                 <Switch checked={headerConfig.showLogo} onCheckedChange={v => setHeaderConfig(p => ({ ...p, showLogo: v }))} />
                 {language === 'bn' ? 'লোগো' : 'Logo'}
@@ -1408,7 +1408,7 @@ const AdminQuestionPapers = () => {
       {/* Split View: Editor (left) + Preview (right) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* LEFT: Question Editor */}
-        <div className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
+        <div className="space-y-3 lg:max-h-[75vh] lg:overflow-y-auto lg:pr-1">
           {questions.map((q, qi) => (
             <div key={qi} className="relative group rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
               {/* Serial Badge + Delete */}
@@ -1423,7 +1423,7 @@ const AdminQuestionPapers = () => {
                 </div>
                 <button
                   onClick={() => removeQuestion(qi)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                   title={language === 'bn' ? 'মুছুন' : 'Delete'}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -1464,7 +1464,7 @@ const AdminQuestionPapers = () => {
                 </div>
 
                 {/* Compact Settings Row */}
-                <div className="grid grid-cols-5 gap-1.5 bg-muted/20 rounded-xl p-2 border border-border/30">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 bg-muted/20 rounded-xl p-2 border border-border/30">
                   <div className="space-y-0.5">
                     <span className="text-[10px] font-medium text-muted-foreground">{language === 'bn' ? 'ধরন' : 'Type'}</span>
                     <Select value={q.question_type} onValueChange={v => updateQuestion(qi, 'question_type', v)}>
@@ -1505,15 +1505,15 @@ const AdminQuestionPapers = () => {
                   <div className="space-y-1.5 pl-3 pt-1 border-l-2 border-primary/20">
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{language === 'bn' ? 'অপশনসমূহ' : 'Options'}</span>
                     {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => (
-                      <div key={oi} className="flex gap-1.5 items-center">
-                        <span className="text-xs font-bold text-primary/70 w-5 text-center">{String.fromCharCode(65 + oi)}</span>
-                        <Input className="flex-1 h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} />
-                        <Input className="flex-1 h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="English" value={opt.text || ''} onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)} />
-                        <label className="flex items-center gap-0.5 text-xs whitespace-nowrap">
+                      <div key={oi} className="flex flex-wrap gap-1.5 items-center">
+                        <span className="text-xs font-bold text-primary/70 w-5 text-center shrink-0">{String.fromCharCode(65 + oi)}</span>
+                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} />
+                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="English" value={opt.text || ''} onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)} />
+                        <label className="flex items-center gap-0.5 text-xs whitespace-nowrap shrink-0">
                           <input type="radio" name={`correct-${qi}`} checked={opt.is_correct} onChange={() => updateMcqOption(qi, oi, 'is_correct', true)} className="accent-primary" />
                           ✓
                         </label>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive" onClick={() => removeMcqOption(qi, oi)}><Trash2 className="h-3 w-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0" onClick={() => removeMcqOption(qi, oi)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
                     ))}
                     <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg" onClick={() => addMcqOption(qi)}>
