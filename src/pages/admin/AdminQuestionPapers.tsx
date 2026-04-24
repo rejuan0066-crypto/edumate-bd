@@ -155,9 +155,8 @@ const ArabicKeyboard = ({
           {ri === 3 && (
             <button
               className={`${isMobile ? 'h-10 px-2 text-[10px]' : 'h-9 px-3 text-[10px]'} rounded-lg font-bold transition-all shrink-0 ${shifted ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-primary/20'}`}
-              onTouchStart={pressKey('__SHIFT__')}
-              onMouseDown={(e) => { if (isMobile) return; e.preventDefault(); e.stopPropagation(); setShifted(!shifted); }}
-              onClick={(e) => { if (!isMobile) return; e.preventDefault(); setShifted(!shifted); }}
+              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); setShifted(s => !s); }}
+              onMouseDown={(e) => { if (isMobile) return; e.preventDefault(); e.stopPropagation(); setShifted(s => !s); }}
             >Shift</button>
           )}
           {row.map((char) => {
