@@ -41,6 +41,41 @@ const AdminExamSessions = () => {
   const [editTypeName, setEditTypeName] = useState('');
   const [editTypeNameBn, setEditTypeNameBn] = useState('');
 
+  // Inline quick-add type (from form dropdown)
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickTypeNameBn, setQuickTypeNameBn] = useState('');
+  const [quickTypeName, setQuickTypeName] = useState('');
+  const [quickTypeKey, setQuickTypeKey] = useState('');
+  const [quickAdding, setQuickAdding] = useState(false);
+
+  const handleQuickAddType = async () => {
+    if (!quickTypeNameBn.trim() || !quickTypeKey.trim()) {
+      toast.error(bn ? 'বাংলা নাম ও কী দিন' : 'Bangla name & key required');
+      return;
+    }
+    setQuickAdding(true);
+    try {
+      const key = quickTypeKey.trim().toLowerCase().replace(/\s+/g, '_');
+      const maxSort = examTypes.length > 0 ? Math.max(...examTypes.map((t: any) => t.sort_order || 0)) : 0;
+      const { error } = await supabase.from('exam_types').insert({
+        name: quickTypeName.trim() || quickTypeNameBn.trim(),
+        name_bn: quickTypeNameBn.trim(),
+        key,
+        sort_order: maxSort + 1,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['exam_types'] });
+      setExamType(key); // auto-select newly added type
+      setQuickTypeName(''); setQuickTypeNameBn(''); setQuickTypeKey('');
+      setQuickAddOpen(false);
+      toast.success(bn ? 'নতুন ধরন যোগ হয়েছে ও নির্বাচিত' : 'Type added & selected');
+    } catch (e: any) {
+      toast.error(e.message || 'Error');
+    } finally {
+      setQuickAdding(false);
+    }
+  };
+
   // Fetch exam types from DB
   const { data: examTypes = [] } = useQuery({
     queryKey: ['exam_types'],
