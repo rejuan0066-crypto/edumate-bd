@@ -802,6 +802,9 @@ const AdminQuestionPapers = () => {
     instructions: '', instructions_bn: '',
     exam_session_id: '', class_id: '', division_id: '', subject_id: '',
   });
+  // Raw text shown in the marks/duration inputs so users can type Bengali/Arabic/English digits
+  const [marksInput, setMarksInput] = useState('100');
+  const [durationInput, setDurationInput] = useState('120');
 
   const [questions, setQuestions] = useState<Question[]>([]);
 
