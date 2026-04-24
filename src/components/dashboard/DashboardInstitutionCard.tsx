@@ -371,6 +371,16 @@ const DashboardInstitutionCard = () => {
       <div className="flex-1 min-w-0 w-full flex flex-col items-center">
         {hasName ? (
           <>
+            {(institution as any)?.name_ar && (
+              <p
+                dir="rtl"
+                lang="ar"
+                className="text-2xl lg:text-4xl font-semibold text-center text-primary/90 leading-tight mb-1"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+              >
+                {(institution as any).name_ar}
+              </p>
+            )}
             <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-5xl">{displayName}</h1>
             {institution?.name_en && institution?.name && (
               <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-3xl">{language === 'bn' ? institution.name_en : institution.name}</p>
