@@ -1423,7 +1423,7 @@ const AdminQuestionPapers = () => {
                 </div>
                 <button
                   onClick={() => removeQuestion(qi)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"
+                  className="w-7 h-7 rounded-full flex items-center justify-center bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                   title={language === 'bn' ? 'মুছুন' : 'Delete'}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
