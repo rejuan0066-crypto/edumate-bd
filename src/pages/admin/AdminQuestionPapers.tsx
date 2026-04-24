@@ -1356,8 +1356,8 @@ const AdminQuestionPapers = () => {
                     <div><Label>{language === 'bn' ? 'শিরোনাম (বাংলা)' : 'Title (Bengali)'}</Label><Input value={newPaper.title_bn} onChange={e => setNewPaper(p => ({ ...p, title_bn: e.target.value }))} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label>{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label><Input type="number" value={newPaper.total_marks} onChange={e => setNewPaper(p => ({ ...p, total_marks: Number(e.target.value) }))} /></div>
-                    <div><Label>{language === 'bn' ? 'সময় (মিনিট)' : 'Duration (min)'}</Label><Input type="number" value={newPaper.duration_minutes} onChange={e => setNewPaper(p => ({ ...p, duration_minutes: Number(e.target.value) }))} /></div>
+                    <div><Label>{language === 'bn' ? 'পূর্ণমান' : 'Total Marks'}</Label><Input type="text" inputMode="numeric" dir="auto" value={marksInput} onChange={e => { const v = e.target.value; setMarksInput(v); setNewPaper(p => ({ ...p, total_marks: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
+                    <div><Label>{language === 'bn' ? 'সময় (মিনিট)' : 'Duration (min)'}</Label><Input type="text" inputMode="numeric" dir="auto" value={durationInput} onChange={e => { const v = e.target.value; setDurationInput(v); setNewPaper(p => ({ ...p, duration_minutes: parseMultilingualNum(v) })); }} data-arabic="true" /></div>
                   </div>
                   <div><Label>{language === 'bn' ? 'নির্দেশনা (বাংলা)' : 'Instructions (BN)'}</Label><Textarea value={newPaper.instructions_bn} onChange={e => setNewPaper(p => ({ ...p, instructions_bn: e.target.value }))} rows={2} /></div>
                   <div><Label>{language === 'bn' ? 'নির্দেশনা (ইংরেজি)' : 'Instructions (EN)'}</Label><Textarea value={newPaper.instructions} onChange={e => setNewPaper(p => ({ ...p, instructions: e.target.value }))} rows={2} /></div>
