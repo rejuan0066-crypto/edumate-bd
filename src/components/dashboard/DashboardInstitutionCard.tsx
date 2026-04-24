@@ -51,6 +51,7 @@ const DashboardInstitutionCard = () => {
       setForm({
         name: institution.name || '',
         name_en: institution.name_en || '',
+        name_ar: (institution as any).name_ar || '',
         address: institution.address || '',
         address_en: (institution as any).address_en || '',
         phone: institution.phone || '',
