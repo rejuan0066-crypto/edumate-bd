@@ -980,7 +980,7 @@ const AdminQuestionPapers = () => {
     setQuestions(prev => [...prev, {
       question_text: '', question_text_bn: '', question_type: 'descriptive',
       marks: 0, sort_order: prev.length, group_label: '', group_label_bn: '',
-      group_marks: null, options: null, answer: '',
+      group_marks: null, options: null, answer: '', custom_label: '',
     }]);
   };
 
