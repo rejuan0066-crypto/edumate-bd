@@ -350,6 +350,7 @@ interface Question {
   group_marks: number | null;
   options: any;
   answer: string;
+  custom_label?: string;
 }
 
 const toBengaliNum = (n: number): string => {
@@ -463,7 +464,10 @@ const LivePreview = ({ paper, questions, fontConfig, headerConfig, institution, 
           </div>
         ) : null}
         <div className="flex justify-between text-sm" dir={isArabic ? 'rtl' : 'ltr'}>
-          <span> {qText || (language === 'bn' ? '(প্রশ্ন লিখুন)' : '(Enter question)')}</span>
+          <span>
+            <strong className="mr-1">{q.custom_label?.trim() || `${serial}.`}</strong>
+            {qText || (language === 'bn' ? '(প্রশ্ন লিখুন)' : '(Enter question)')}
+          </span>
           {layout.showQuestionMarks && q.marks > 0 && (
             <span className="text-gray-500 shrink-0 ml-2">[{language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span>
           )}
@@ -889,6 +893,7 @@ const AdminQuestionPapers = () => {
         group_label: q.group_label || '', group_label_bn: q.group_label_bn || '',
         group_marks: q.group_marks ?? null,
         options: q.options, answer: q.answer || '',
+        custom_label: q.custom_label || '',
       })));
     }
   }, [selectedPaper?.id, paperQuestions]);
@@ -944,6 +949,7 @@ const AdminQuestionPapers = () => {
           paper_id: selectedPaper.id, question_text: q.question_text, question_text_bn: q.question_text_bn,
           question_type: q.question_type, marks: q.marks, sort_order: i,
           group_label: q.group_label, group_label_bn: q.group_label_bn, options: q.options, answer: q.answer,
+          custom_label: q.custom_label || null,
         }));
         const { error } = await supabase.from('questions').insert(rows);
         if (error) throw error;
@@ -977,7 +983,7 @@ const AdminQuestionPapers = () => {
     setQuestions(prev => [...prev, {
       question_text: '', question_text_bn: '', question_type: 'descriptive',
       marks: 0, sort_order: prev.length, group_label: '', group_label_bn: '',
-      group_marks: null, options: null, answer: '',
+      group_marks: null, options: null, answer: '', custom_label: '',
     }]);
   };
 
@@ -1197,10 +1203,11 @@ const AdminQuestionPapers = () => {
         const dir = isArabic ? 'rtl' : 'ltr';
         const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
         const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+        const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
         const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
           '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
         ).join('') + '</div>' : '';
-        return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span>${serial}। ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
+        return groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
       }).join('');
 
       if (ls.columns === 2) {
@@ -1220,10 +1227,11 @@ const AdminQuestionPapers = () => {
           const dir = isArabic ? 'rtl' : 'ltr';
           const ff = isArabic ? fontConfig.arabic : effectiveBengaliFont;
           const serial = language === 'bn' ? toBengaliNum(i + 1) : String(i + 1);
+          const labelText = (q.custom_label && q.custom_label.trim()) ? q.custom_label.trim() : `${serial}।`;
           const opts = Array.isArray(q.options) ? '<div class="options">' + q.options.map((o: any, oi: number) =>
             '<span class="option">' + String.fromCharCode(65 + oi) + '. ' + (language === 'bn' ? o.text_bn || o.text : o.text) + '</span>'
           ).join('') + '</div>' : '';
-          const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span>${serial}। ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
+          const html = groupHtml + `<div class="question" style="font-family:'${ff}';direction:${dir}"><div class="q-header"><span><strong>${labelText}</strong> ${qText}</span><span>[${language === 'bn' ? toBengaliNum(q.marks) : q.marks}]</span></div>${opts}</div>`;
           if (i < mid) col1 += html; else col2 += html;
         });
         return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px"><div style="border-right:1px solid #ddd;padding-right:12px">${col1}</div><div style="padding-left:4px">${col2}</div></div>`;
@@ -1528,14 +1536,21 @@ const AdminQuestionPapers = () => {
           {questions.map((q, qi) => (
             <div key={qi} className="relative group rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
               {/* Serial Badge + Delete */}
-              <div className="flex items-center justify-between px-4 pt-3 pb-1">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
+              <div className="flex items-center justify-between px-4 pt-3 pb-1 gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-full bg-primary/10 text-primary text-xs font-bold border border-primary/20">
                     {language === 'bn' ? toBengaliNum(qi + 1) : qi + 1}
                   </span>
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {language === 'bn' ? 'প্রশ্ন' : 'Question'} #{language === 'bn' ? toBengaliNum(qi + 1) : qi + 1}
-                  </span>
+                  <Input
+                    value={q.custom_label || ''}
+                    onChange={e => updateQuestion(qi, 'custom_label', e.target.value)}
+                    onFocus={e => setActiveInputRef(e.target)}
+                    data-arabic="true"
+                    dir="auto"
+                    placeholder={language === 'bn' ? `প্রশ্ন #${toBengaliNum(qi + 1)}` : `Question #${qi + 1}`}
+                    className="h-7 text-[11px] font-medium bg-transparent border-dashed border-border/40 hover:border-border focus:bg-background rounded-lg px-2 flex-1 min-w-0"
+                    title={language === 'bn' ? 'নিজের পছন্দমতো লিখুন (আরবি/বাংলা/ইংরেজি)' : 'Custom label (Arabic/Bangla/English)'}
+                  />
                 </div>
                 <button
                   onClick={() => removeQuestion(qi)}

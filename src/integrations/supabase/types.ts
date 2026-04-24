@@ -4813,6 +4813,7 @@ export type Database = {
         Row: {
           answer: string | null
           created_at: string
+          custom_label: string | null
           group_label: string | null
           group_label_bn: string | null
           id: string
@@ -4828,6 +4829,7 @@ export type Database = {
         Insert: {
           answer?: string | null
           created_at?: string
+          custom_label?: string | null
           group_label?: string | null
           group_label_bn?: string | null
           id?: string
@@ -4843,6 +4845,7 @@ export type Database = {
         Update: {
           answer?: string | null
           created_at?: string
+          custom_label?: string | null
           group_label?: string | null
           group_label_bn?: string | null
           id?: string
