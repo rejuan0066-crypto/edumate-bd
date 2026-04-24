@@ -45,6 +45,7 @@ const AdminExamSessions = () => {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickTypeNameBn, setQuickTypeNameBn] = useState('');
   const [quickTypeName, setQuickTypeName] = useState('');
+  const [quickTypeNameAr, setQuickTypeNameAr] = useState('');
   const [quickTypeKey, setQuickTypeKey] = useState('');
   const [quickAdding, setQuickAdding] = useState(false);
 
@@ -60,13 +61,14 @@ const AdminExamSessions = () => {
       const { error } = await supabase.from('exam_types').insert({
         name: quickTypeName.trim() || quickTypeNameBn.trim(),
         name_bn: quickTypeNameBn.trim(),
+        name_ar: quickTypeNameAr.trim() || null,
         key,
         sort_order: maxSort + 1,
-      });
+      } as any);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ['exam_types'] });
       setExamType(key); // auto-select newly added type
-      setQuickTypeName(''); setQuickTypeNameBn(''); setQuickTypeKey('');
+      setQuickTypeName(''); setQuickTypeNameBn(''); setQuickTypeNameAr(''); setQuickTypeKey('');
       setQuickAddOpen(false);
       toast.success(bn ? 'নতুন ধরন যোগ হয়েছে ও নির্বাচিত' : 'Type added & selected');
     } catch (e: any) {
@@ -479,7 +481,21 @@ const AdminExamSessions = () => {
                     <SelectTrigger className="bg-background flex-1"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
                     <SelectContent>
                       {examTypes.filter((t: any) => t.is_active).map((t: any) => (
-                        <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
+                        <SelectItem key={t.id} value={t.key}>
+                          <span className="flex items-center gap-2">
+                            <span>{bn ? t.name_bn : t.name}</span>
+                            {t.name_ar && (
+                              <span
+                                dir="rtl"
+                                lang="ar"
+                                className="text-muted-foreground text-sm"
+                                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                              >
+                                — {t.name_ar}
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -847,6 +863,18 @@ const AdminExamSessions = () => {
                 onChange={e => setQuickTypeName(e.target.value)}
                 placeholder="e.g. Selective Exam"
                 className="bg-background"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (আরবি)' : 'Name (Arabic)'}</label>
+              <Input
+                value={quickTypeNameAr}
+                onChange={e => setQuickTypeNameAr(e.target.value)}
+                placeholder="الاسم بالعربية"
+                className="bg-background text-right"
+                dir="rtl"
+                lang="ar"
+                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
               />
             </div>
             <div>

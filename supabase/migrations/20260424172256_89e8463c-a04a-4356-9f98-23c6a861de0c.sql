@@ -1,0 +1,1 @@
+ALTER TABLE public.exam_types ADD COLUMN IF NOT EXISTS name_ar TEXT;
