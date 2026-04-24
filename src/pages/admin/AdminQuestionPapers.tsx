@@ -140,6 +140,7 @@ const ArabicKeyboard = ({
   const keyboardUi = (
     <div
       ref={kbRef}
+      data-arabic-keyboard="true"
       className={`fixed z-[100] bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl select-none ${isMobile ? 'p-2' : 'p-3'}`}
       style={containerStyle}
       onMouseDown={handleMouseDown}
