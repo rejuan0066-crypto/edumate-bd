@@ -1551,7 +1551,7 @@ const AdminQuestionPapers = () => {
                     {Array.isArray(q.options) && q.options.map((opt: any, oi: number) => (
                       <div key={oi} className="flex flex-wrap gap-1.5 items-center">
                         <span className="text-xs font-bold text-primary/70 w-5 text-center shrink-0">{String.fromCharCode(65 + oi)}</span>
-                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} />
+                        <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="বাংলা" value={opt.text_bn || ''} onChange={e => updateMcqOption(qi, oi, 'text_bn', e.target.value)} onFocus={e => setActiveInputRef(e.target)} data-arabic="true" />
                         <Input className="flex-1 min-w-[120px] h-7 text-xs rounded-lg bg-muted/30 border-border/40" placeholder="English" value={opt.text || ''} onChange={e => updateMcqOption(qi, oi, 'text', e.target.value)} />
                         <label className="flex items-center gap-0.5 text-xs whitespace-nowrap shrink-0">
                           <input type="radio" name={`correct-${qi}`} checked={opt.is_correct} onChange={() => updateMcqOption(qi, oi, 'is_correct', true)} className="accent-primary" />
