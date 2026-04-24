@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
 import { Plus, Loader2, Trash2, Users, BookOpen, Edit2, Check, X, Settings2, BookMarked, UserMinus, GraduationCap, ChevronDown, ChevronRight, Eye, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -39,6 +40,41 @@ const AdminExamSessions = () => {
   const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
   const [editTypeName, setEditTypeName] = useState('');
   const [editTypeNameBn, setEditTypeNameBn] = useState('');
+
+  // Inline quick-add type (from form dropdown)
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickTypeNameBn, setQuickTypeNameBn] = useState('');
+  const [quickTypeName, setQuickTypeName] = useState('');
+  const [quickTypeKey, setQuickTypeKey] = useState('');
+  const [quickAdding, setQuickAdding] = useState(false);
+
+  const handleQuickAddType = async () => {
+    if (!quickTypeNameBn.trim() || !quickTypeKey.trim()) {
+      toast.error(bn ? 'বাংলা নাম ও কী দিন' : 'Bangla name & key required');
+      return;
+    }
+    setQuickAdding(true);
+    try {
+      const key = quickTypeKey.trim().toLowerCase().replace(/\s+/g, '_');
+      const maxSort = examTypes.length > 0 ? Math.max(...examTypes.map((t: any) => t.sort_order || 0)) : 0;
+      const { error } = await supabase.from('exam_types').insert({
+        name: quickTypeName.trim() || quickTypeNameBn.trim(),
+        name_bn: quickTypeNameBn.trim(),
+        key,
+        sort_order: maxSort + 1,
+      });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ['exam_types'] });
+      setExamType(key); // auto-select newly added type
+      setQuickTypeName(''); setQuickTypeNameBn(''); setQuickTypeKey('');
+      setQuickAddOpen(false);
+      toast.success(bn ? 'নতুন ধরন যোগ হয়েছে ও নির্বাচিত' : 'Type added & selected');
+    } catch (e: any) {
+      toast.error(e.message || 'Error');
+    } finally {
+      setQuickAdding(false);
+    }
+  };
 
   // Fetch exam types from DB
   const { data: examTypes = [] } = useQuery({
@@ -438,14 +474,28 @@ const AdminExamSessions = () => {
 
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-1 block">{bn ? 'পরীক্ষার ধরন' : 'Exam Type'} *</label>
-                <Select value={examType} onValueChange={setExamType}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
-                  <SelectContent>
-                    {examTypes.filter((t: any) => t.is_active).map((t: any) => (
-                      <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={examType} onValueChange={setExamType}>
+                    <SelectTrigger className="bg-background flex-1"><SelectValue placeholder={bn ? 'ধরন নির্বাচন' : 'Select type'} /></SelectTrigger>
+                    <SelectContent>
+                      {examTypes.filter((t: any) => t.is_active).map((t: any) => (
+                        <SelectItem key={t.id} value={t.key}>{bn ? t.name_bn : t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {canAddItem && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setQuickAddOpen(true)}
+                      title={bn ? 'নতুন ধরন যোগ' : 'Add new type'}
+                      className="shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -772,6 +822,55 @@ const AdminExamSessions = () => {
           )}
         </div>
       </div>
+
+      {/* Quick Add Exam Type Dialog */}
+      <Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'নতুন পরীক্ষার ধরন যোগ' : 'Add New Exam Type'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} *</label>
+              <Input
+                value={quickTypeNameBn}
+                onChange={e => setQuickTypeNameBn(e.target.value)}
+                placeholder={bn ? 'যেমন: নির্বাচনী পরীক্ষা' : 'e.g. নির্বাচনী পরীক্ষা'}
+                className="bg-background"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</label>
+              <Input
+                value={quickTypeName}
+                onChange={e => setQuickTypeName(e.target.value)}
+                placeholder="e.g. Selective Exam"
+                className="bg-background"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">{bn ? 'কী (ইংরেজি, ইউনিক)' : 'Key (English, unique)'} *</label>
+              <Input
+                value={quickTypeKey}
+                onChange={e => setQuickTypeKey(e.target.value)}
+                placeholder="e.g. selective"
+                className="bg-background"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {bn ? 'সিস্টেম-ইন্টারনাল পরিচায়ক — যেমন: annual, half_yearly' : 'System identifier — e.g. annual, half_yearly'}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickAddOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button className="btn-primary-gradient" onClick={handleQuickAddType} disabled={quickAdding}>
+              {quickAdding && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {bn ? 'যোগ করুন' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
