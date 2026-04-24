@@ -137,7 +137,7 @@ const AdminDivisions = () => {
 
   const addClassMutation = useMutation({
     mutationFn: async () => {
-      const payload = { division_id: selectedDiv!, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), sort_order: classes.length };
+      const payload: any = { division_id: selectedDiv!, name_bn: newClassName.trim(), name: newClassNameEn.trim() || newClassName.trim(), name_ar: newClassNameAr.trim() || null, sort_order: classes.length };
       if (await checkClassApproval('add', payload, undefined, `শ্রেণী যোগ: ${newClassName.trim()}`)) return;
       const { error } = await supabase.from('classes').insert(payload);
       if (error) throw error;
@@ -146,6 +146,7 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
       setNewClassName('');
       setNewClassNameEn('');
+      setNewClassNameAr('');
       toast.success(language === 'bn' ? 'ক্লাস যোগ হয়েছে' : 'Class added');
     },
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
