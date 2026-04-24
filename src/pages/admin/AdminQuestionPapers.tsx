@@ -350,6 +350,7 @@ interface Question {
   group_marks: number | null;
   options: any;
   answer: string;
+  custom_label?: string;
 }
 
 const toBengaliNum = (n: number): string => {
