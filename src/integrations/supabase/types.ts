@@ -5177,6 +5177,7 @@ export type Database = {
           paid_at: string | null
           present_days: number | null
           remarks: string | null
+          savings_deduction: number
           staff_id: string
           status: string | null
           updated_at: string | null
@@ -5201,6 +5202,7 @@ export type Database = {
           paid_at?: string | null
           present_days?: number | null
           remarks?: string | null
+          savings_deduction?: number
           staff_id: string
           status?: string | null
           updated_at?: string | null
@@ -5225,6 +5227,7 @@ export type Database = {
           paid_at?: string | null
           present_days?: number | null
           remarks?: string | null
+          savings_deduction?: number
           staff_id?: string
           status?: string | null
           updated_at?: string | null
