@@ -78,7 +78,7 @@ const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem } = usePagePermissions('/admin/salary');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/salary');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
@@ -99,6 +99,7 @@ const AdminSalary = () => {
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
+  const [ungenerateConfirmId, setUngenerateConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
@@ -738,6 +739,50 @@ const AdminSalary = () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
       toast.success(bn ? 'অপরিশোধিত ও খরচ থেকে সরানো হয়েছে' : 'Marked as unpaid & expense removed');
     },
+  });
+
+  // Ungenerate (delete) a salary record so it can be regenerated cleanly
+  const ungenerateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const record = salaryRecords.find((r: any) => r.id === id);
+      if (!record) throw new Error('Record not found');
+
+      // If paid, soft-delete the corresponding expense entry first
+      if (record.status === 'paid') {
+        const staffMember = staff.find((s: any) => s.id === record.staff_id);
+        const staffName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+        await supabase.from('expenses')
+          .update({ deleted_at: new Date().toISOString() })
+          .like('description', `%${staffName}%`)
+          .eq('amount', Number(record.net_salary))
+          .is('deleted_at', null);
+      }
+
+      // Remove savings ledger entry for this month if exists
+      const activeSavings = getActiveSavings(record.staff_id);
+      if (activeSavings) {
+        const ledgerEntry = savingsLedger.find((l: any) =>
+          l.savings_id === activeSavings.config.id && l.month_year === record.month_year
+        );
+        if (ledgerEntry) {
+          await supabase.from('salary_savings_ledger').delete().eq('id', ledgerEntry.id);
+          await supabase.from('salary_savings').update({
+            total_saved: Math.max(0, Number(activeSavings.config.total_saved || 0) - Number(ledgerEntry.amount || 0)),
+            updated_at: new Date().toISOString(),
+          }).eq('id', activeSavings.config.id);
+        }
+      }
+
+      const { error } = await supabase.from('salary_records').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      toast.success(bn ? 'বেতন রেকর্ড মুছে ফেলা হয়েছে' : 'Salary record removed');
+    },
+    onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
   });
 
   // Update duty time for a staff member
@@ -1481,6 +1526,11 @@ const AdminSalary = () => {
                                     ) : (
                                       <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
                                         <CheckCircle2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    )}
+                                    {canDeleteItem && (
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30" title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'} onClick={() => setUngenerateConfirmId(rec.id)}>
+                                        <Trash2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
                                   </>
@@ -2245,6 +2295,21 @@ const AdminSalary = () => {
           description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট খরচ থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
           confirmLabel={bn ? 'হ্যাঁ, অপরিশোধিত করুন' : 'Yes, Mark Unpaid'}
           isPending={markUnpaidMutation.isPending}
+        />
+
+        <DeleteConfirmDialog
+          open={!!ungenerateConfirmId}
+          onOpenChange={(o) => { if (!o) setUngenerateConfirmId(null); }}
+          onConfirm={() => {
+            if (ungenerateConfirmId) {
+              ungenerateMutation.mutate(ungenerateConfirmId);
+              setUngenerateConfirmId(null);
+            }
+          }}
+          title={bn ? 'বেতন রেকর্ড মুছবেন?' : 'Ungenerate salary record?'}
+          description={bn ? 'এই বেতন রেকর্ডটি সম্পূর্ণভাবে মুছে ফেলা হবে। পরিশোধিত হলে সংশ্লিষ্ট খরচ ও জমা এন্ট্রিও সরানো হবে। আপনি পুনরায় জেনারেট করতে পারবেন।' : 'This salary record will be permanently deleted. Linked expense and savings entries will also be removed. You can regenerate it later.'}
+          confirmLabel={bn ? 'হ্যাঁ, মুছুন' : 'Yes, Delete'}
+          isPending={ungenerateMutation.isPending}
         />
 
         <DeleteConfirmDialog
