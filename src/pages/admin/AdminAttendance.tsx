@@ -1642,7 +1642,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   </div>
                   {dutyTimes.extra_duty_enabled && (
                     <div>
-                      <Label className="text-xs">{bn ? 'প্রতি ডিউটির নির্ধারিত বেতন (৳)' : 'Pay per duty shift (৳)'}</Label>
+                      <Label className="text-xs">{bn ? 'প্রতি শিফটের মাসিক মোট বেতন (৳)' : 'Monthly total pay per shift (৳)'}</Label>
                       <Input
                         type="number"
                         className="h-8 text-sm mt-1"
@@ -1650,7 +1650,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                         value={dutyTimes.extra_duty_rate || ''}
                         onChange={e => setDutyTimes(p => ({ ...p, extra_duty_rate: Number(e.target.value) }))}
                       />
-                      <p className="text-[10px] text-muted-foreground mt-1">{bn ? 'প্রতিটি সকাল/সন্ধ্যা ডিউটিতে উপস্থিত থাকলে এই পরিমাণ অতিরিক্ত বেতন যোগ হবে' : 'This amount will be added as extra pay for each morning/evening duty attended'}</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {bn
+                          ? `সকাল ও সন্ধ্যা — প্রতি শিফটের জন্য মাসিক মোট। প্রতিদিন উপস্থিতির হিসাবে আনুপাতিক হারে বেতনে যোগ হবে। (প্রতিদিন/প্রতি শিফট ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`
+                          : `Morning & Evening — monthly total per shift. Will be added pro-rata based on daily attendance. (Per day/per shift ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`}
+                      </p>
                     </div>
                   )}
                 </div>

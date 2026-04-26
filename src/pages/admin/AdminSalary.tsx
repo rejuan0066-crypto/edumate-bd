@@ -487,10 +487,17 @@ const AdminSalary = () => {
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
+      // extra_duty_rate এখন প্রতি শিফটের মাসিক মোট বেতন।
+      // প্রতিটি শিফটে প্রকৃত উপস্থিত দিনের অনুপাতে আনুপাতিক বেতন প্রদান করা হবে।
       const staffDutyRecords = dutyAttendanceData.filter((a: any) => a.entity_id === staffMember.id);
       const morningPresent = staffDutyRecords.filter((r: any) => r.shift === 'morning' && ['present', 'late'].includes(r.status)).length;
       const eveningPresent = staffDutyRecords.filter((r: any) => r.shift === 'evening' && ['present', 'late'].includes(r.status)).length;
-      const dutyOvertime = (morningPresent + eveningPresent) * Number(dutySettings.extra_duty_rate);
+      const morningScheduled = Math.max(1, Number(dutySettings.morning_days || 0));
+      const eveningScheduled = Math.max(1, Number(dutySettings.evening_days || 0));
+      const monthlyRatePerShift = Number(dutySettings.extra_duty_rate);
+      const morningEarning = (morningPresent / morningScheduled) * monthlyRatePerShift;
+      const eveningEarning = (eveningPresent / eveningScheduled) * monthlyRatePerShift;
+      const dutyOvertime = morningEarning + eveningEarning;
       overtime += Math.round(dutyOvertime);
     }
 
