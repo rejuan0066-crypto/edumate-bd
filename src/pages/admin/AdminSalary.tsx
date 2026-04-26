@@ -1031,13 +1031,21 @@ const AdminSalary = () => {
 
   // Print salary slip
   const printSlip = (staffMember: any, record: any) => {
-    const totalDeduction = Number(record.late_deduction || 0) + Number(record.absence_deduction || 0) +
-      Number(record.advance_deduction || 0) + Number(record.other_deduction || 0);
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsAmt = activeSavings ? activeSavings.amount : 0;
+
+    // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
+    const attendanceDeductions = Number(record.absence_deduction || 0)
+      + Number(record.late_deduction || 0)
+      + Number(record.other_deduction || 0);
+    const earnedFromAttendance = Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
+
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
-    const totalEarnings = Number(record.base_salary) + totalAllowance;
-    const totalDed = totalDeduction + savingsAmt;
+    const totalEarnings = earnedFromAttendance + totalAllowance;
+
+    // স্লিপের কর্তন কলামে শুধুমাত্র "অতিরিক্ত" কর্তন (অগ্রিম + জমা) দেখাবে।
+    // উপস্থিতি কর্তন (absence/late/other) ইতিমধ্যে আয় থেকে বাদ গেছে — তাই ওগুলো আয়ের অংশে দেখানো হয়েছে।
+    const totalDed = Number(record.advance_deduction || 0) + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
@@ -1045,6 +1053,7 @@ const AdminSalary = () => {
     const inWords = bn
       ? `${numberToBanglaWords(Math.floor(netSalary))} টাকা মাত্র`
       : `${netSalary.toLocaleString()} Taka Only`;
+
 
     const instName = bn
       ? (webSettings?.institution_name || 'প্রতিষ্ঠানের নাম')
