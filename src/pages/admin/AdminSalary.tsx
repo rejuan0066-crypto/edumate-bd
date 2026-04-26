@@ -1260,6 +1260,10 @@ const AdminSalary = () => {
               <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px"><span class="l"><strong>${bn ? 'উপস্থিতি ভিত্তিক আয়' : 'Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
               <div class="ln"><span class="l">${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
               <div class="ln"><span class="l">${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
+              ${dutyBreakdown ? `
+                <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সকাল ডিউটি' : 'Morning Duty'}: ${bn ? toBnDigits(dutyBreakdown.morningPresent) : dutyBreakdown.morningPresent}/${bn ? toBnDigits(dutyBreakdown.morningScheduled) : dutyBreakdown.morningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.morningEarning)}</span></div>
+                <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}: ${bn ? toBnDigits(dutyBreakdown.eveningPresent) : dutyBreakdown.eveningPresent}/${bn ? toBnDigits(dutyBreakdown.eveningScheduled) : dutyBreakdown.eveningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.eveningEarning)}</span></div>
+              ` : ''}
               <div class="ln"><span class="l">${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
             </div>
             <div class="col-foot"><span>${bn ? 'মোট আয়' : 'Total'}</span><span>৳${slipNum(totalEarnings)}</span></div>
