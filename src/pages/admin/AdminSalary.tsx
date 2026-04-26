@@ -609,7 +609,6 @@ const AdminSalary = () => {
   const updateMutation = useMutation({
     mutationFn: async (record: any) => {
       const { staffName, ...cleanRecord } = record;
-      const staffMember = staff.find((s: any) => s.id === cleanRecord.staff_id);
       const activeSavings = getActiveSavings(cleanRecord.staff_id);
       const savingsDed = activeSavings ? activeSavings.amount : 0;
       const netSalary = Math.max(0,
