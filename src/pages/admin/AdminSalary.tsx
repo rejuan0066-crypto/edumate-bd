@@ -81,7 +81,7 @@ const AdminSalary = () => {
   const { canAddItem, canEditItem } = usePagePermissions('/admin/salary');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
-  const { data: webSettings } = useWebsiteSettings();
+  const { settings: webSettings } = useWebsiteSettings();
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));
