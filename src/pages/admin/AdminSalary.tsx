@@ -470,7 +470,7 @@ const AdminSalary = () => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
-    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance + overtime - advanceDeduction - savingsDeduction);
+    const netSalary = Math.max(0, baseSalary + bonus + otherAllowance + overtime - lateDeduction - absenceDeduction - otherDeduction - advanceDeduction - savingsDeduction);
 
     return {
       base_salary: baseSalary,
