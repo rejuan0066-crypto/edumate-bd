@@ -327,7 +327,26 @@ const AdminSalary = () => {
 
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
-    const records = attendanceData.filter((a: any) => a.entity_id === staffMember.id);
+    const rawRecords = attendanceData.filter((a: any) => a.entity_id === staffMember.id);
+
+    // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে শুধুমাত্র একটি গণনা হবে।
+    // অগ্রাধিকার: present > late > half_day > leave > absent (ইতিবাচক স্ট্যাটাস জিতবে)
+    const statusPriority: Record<string, number> = {
+      present: 5, late: 4, half_day: 3, leave: 2, absent: 1,
+    };
+    const byDate = new Map<string, any>();
+    for (const r of rawRecords) {
+      const existing = byDate.get(r.attendance_date);
+      const curPri = statusPriority[r.status] ?? 0;
+      const exPri = existing ? (statusPriority[existing.status] ?? 0) : -1;
+      if (!existing || curPri > exPri) {
+        byDate.set(r.attendance_date, r);
+      }
+    }
+    const records = Array.from(byDate.values()).sort((a, b) =>
+      a.attendance_date.localeCompare(b.attendance_date)
+    );
+
     const present = records.filter((r: any) => r.status === 'present').length;
     const absent = records.filter((r: any) => r.status === 'absent').length;
     const late = records.filter((r: any) => r.status === 'late').length;
