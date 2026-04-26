@@ -551,17 +551,12 @@ const AdminSalary = () => {
         const { id, ...updateData } = rec;
         const activeSavings = getActiveSavings(updateData.staff_id);
         const savingsDed = activeSavings ? activeSavings.amount : 0;
-        const netSalary = Math.max(0,
-          Number(updateData.base_salary || 0) +
-          Number(updateData.bonus || 0) +
-          Number(updateData.overtime || 0) +
-          Number(updateData.other_allowance || 0) -
-          Number(updateData.late_deduction || 0) -
-          Number(updateData.absence_deduction || 0) -
-          Number(updateData.other_deduction || 0) -
-          Number(updateData.advance_deduction || 0) -
-          savingsDed
-        );
+        // calculateSalary already returns the correct additive net_salary.
+        // Add manual extras (bonus / other_allowance) and subtract advance + savings on top.
+        const baseNet = Number(updateData.net_salary || 0);
+        const extras = Number(updateData.bonus || 0) + Number(updateData.other_allowance || 0);
+        const manualDeds = Number(updateData.advance_deduction || 0) + savingsDed;
+        const netSalary = Math.max(0, baseNet + extras - manualDeds);
         updateData.net_salary = netSalary;
         updateData.savings_deduction = savingsDed;
         updateData.updated_at = new Date().toISOString();
