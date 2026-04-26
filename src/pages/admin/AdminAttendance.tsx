@@ -360,6 +360,25 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const saveDutyTimesMutation = useMutation({
     mutationFn: async (times: typeof dutyTimes) => {
+      // Validation: extra_duty_rate must be ≥ 0 and ≤ 10,000,000 if enabled
+      if (times.extra_duty_enabled) {
+        const rate = Number(times.extra_duty_rate);
+        if (!Number.isFinite(rate) || isNaN(rate)) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন একটি বৈধ সংখ্যা হতে হবে' : 'Extra duty rate must be a valid number');
+        }
+        if (rate < 0) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন ঋণাত্মক হতে পারবে না' : 'Extra duty rate cannot be negative');
+        }
+        if (rate === 0) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি চালু থাকলে শূন্যের বেশি বেতন দিতে হবে' : 'Extra duty rate must be greater than 0 when enabled');
+        }
+        if (rate > 10000000) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন ১,০০,০০,০০০ এর বেশি হতে পারবে না' : 'Extra duty rate cannot exceed 10,000,000');
+        }
+        if (Number(times.morning_days) < 0 || Number(times.morning_days) > 31 || Number(times.evening_days) < 0 || Number(times.evening_days) > 31) {
+          throw new Error(bn ? 'ডিউটি দিন ০ থেকে ৩১ এর মধ্যে হতে হবে' : 'Duty days must be between 0 and 31');
+        }
+      }
       const { error } = await supabase.from('website_settings').upsert(
         { key: 'residential_duty_times', value: times, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
@@ -368,7 +387,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['residential-duty-times'] });
+      queryClient.invalidateQueries({ queryKey: ['residential-duty-times-salary'] });
       toast.success(bn ? 'ডিউটি টাইম সেভ হয়েছে' : 'Duty times saved');
+    },
+    onError: (e: any) => {
+      toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save'));
     },
   });
 
@@ -1660,11 +1683,26 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       <Label className="text-xs">{bn ? 'প্রতি শিফটের মাসিক মোট বেতন (৳)' : 'Monthly total pay per shift (৳)'}</Label>
                       <Input
                         type="number"
+                        min={0}
+                        max={10000000}
+                        step={1}
                         className="h-8 text-sm mt-1"
                         placeholder="0"
                         value={dutyTimes.extra_duty_rate || ''}
-                        onChange={e => setDutyTimes(p => ({ ...p, extra_duty_rate: Number(e.target.value) }))}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (raw === '') { setDutyTimes(p => ({ ...p, extra_duty_rate: 0 })); return; }
+                          const n = Number(raw);
+                          if (!Number.isFinite(n)) return;
+                          const clamped = Math.max(0, Math.min(10000000, n));
+                          setDutyTimes(p => ({ ...p, extra_duty_rate: clamped }));
+                        }}
                       />
+                      {dutyTimes.extra_duty_enabled && (!dutyTimes.extra_duty_rate || dutyTimes.extra_duty_rate <= 0) && (
+                        <p className="text-[10px] text-destructive mt-1">
+                          {bn ? '⚠ অতিরিক্ত ডিউটি চালু আছে — শূন্যের বেশি বেতন দিন' : '⚠ Extra duty is enabled — set a value greater than 0'}
+                        </p>
+                      )}
                       <p className="text-[10px] text-muted-foreground mt-1">
                         {bn
                           ? `সকাল ও সন্ধ্যা — প্রতি শিফটের জন্য মাসিক মোট। প্রতিদিন উপস্থিতির হিসাবে আনুপাতিক হারে বেতনে যোগ হবে। (প্রতিদিন/প্রতি শিফট ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`

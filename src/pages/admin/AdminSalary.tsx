@@ -26,7 +26,7 @@ import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, Timer, FolderOpen,
-  PiggyBank, Landmark
+  PiggyBank, Landmark, RefreshCw
 } from 'lucide-react';
 
 const MONTHS = [
@@ -268,6 +268,45 @@ const AdminSalary = () => {
     },
   });
 
+  // Recalculate ALL existing salary records using latest settings (only pending ones, paid stays untouched)
+  const recalculateAllMutation = useMutation({
+    mutationFn: async () => {
+      let updated = 0;
+      let skipped = 0;
+      for (const existing of salaryRecords) {
+        if (existing.status === 'paid') { skipped++; continue; }
+        const staffMember = staff.find((s: any) => s.id === existing.staff_id);
+        if (!staffMember) { skipped++; continue; }
+        const calc = calculateSalary(staffMember);
+        const activeSavings = getActiveSavings(existing.staff_id);
+        const savingsDed = activeSavings ? activeSavings.amount : 0;
+        const baseNet = Number(calc.net_salary || 0);
+        const extras = Number(existing.bonus || 0) + Number(existing.other_allowance || 0);
+        const manualDeds = Number(existing.advance_deduction || 0) + savingsDed;
+        const netSalary = Math.max(0, baseNet + extras - manualDeds);
+        const { error } = await supabase.from('salary_records').update({
+          ...calc,
+          bonus: Number(existing.bonus || 0),
+          other_allowance: Number(existing.other_allowance || 0),
+          advance_deduction: Number(existing.advance_deduction || 0),
+          savings_deduction: savingsDed,
+          net_salary: netSalary,
+          updated_at: new Date().toISOString(),
+        }).eq('id', existing.id);
+        if (error) throw error;
+        updated++;
+      }
+      return { updated, skipped };
+    },
+    onSuccess: ({ updated, skipped }) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      const msg = bn
+        ? `${toBnDigits(updated)} জন রিক্যালকুলেট${skipped > 0 ? ` • ${toBnDigits(skipped)} পরিশোধিত বাদ` : ''}`
+        : `${updated} recalculated${skipped > 0 ? ` • ${skipped} paid skipped` : ''}`;
+      toast.success(msg);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
+  });
 
   const getActiveSavings = (staffId: string): { amount: number; config: any } | null => {
     const configs = savingsConfigs.filter((c: any) => c.staff_id === staffId && c.is_active);
@@ -1103,6 +1142,24 @@ const AdminSalary = () => {
     const totalDed = Number(record.advance_deduction || 0) + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
+    // Per-shift breakdown for residential / extra duty
+    let dutyBreakdown: { rate: number; morningPresent: number; morningScheduled: number; morningEarning: number; eveningPresent: number; eveningScheduled: number; eveningEarning: number } | null = null;
+    if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
+      const staffDutyRecords = dutyAttendanceData.filter((a: any) => a.entity_id === staffMember.id);
+      const morningPresent = staffDutyRecords.filter((r: any) => r.shift === 'morning' && ['present', 'late'].includes(r.status)).length;
+      const eveningPresent = staffDutyRecords.filter((r: any) => r.shift === 'evening' && ['present', 'late'].includes(r.status)).length;
+      const morningScheduled = Math.max(1, Number(dutySettings.morning_days || 0));
+      const eveningScheduled = Math.max(1, Number(dutySettings.evening_days || 0));
+      const rate = Number(dutySettings.extra_duty_rate);
+      dutyBreakdown = {
+        rate,
+        morningPresent, morningScheduled,
+        morningEarning: Math.round((morningPresent / morningScheduled) * rate),
+        eveningPresent, eveningScheduled,
+        eveningEarning: Math.round((eveningPresent / eveningScheduled) * rate),
+      };
+    }
+
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
     const netSalary = Number(record.net_salary);
     const inWords = bn
@@ -1242,6 +1299,10 @@ const AdminSalary = () => {
               <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px"><span class="l"><strong>${bn ? 'উপস্থিতি ভিত্তিক আয়' : 'Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
               <div class="ln"><span class="l">${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
               <div class="ln"><span class="l">${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
+              ${dutyBreakdown ? `
+                <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সকাল ডিউটি' : 'Morning Duty'}: ${bn ? toBnDigits(dutyBreakdown.morningPresent) : dutyBreakdown.morningPresent}/${bn ? toBnDigits(dutyBreakdown.morningScheduled) : dutyBreakdown.morningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.morningEarning)}</span></div>
+                <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}: ${bn ? toBnDigits(dutyBreakdown.eveningPresent) : dutyBreakdown.eveningPresent}/${bn ? toBnDigits(dutyBreakdown.eveningScheduled) : dutyBreakdown.eveningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.eveningEarning)}</span></div>
+              ` : ''}
               <div class="ln"><span class="l">${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
             </div>
             <div class="col-foot"><span>${bn ? 'মোট আয়' : 'Total'}</span><span>৳${slipNum(totalEarnings)}</span></div>
@@ -1379,6 +1440,18 @@ const AdminSalary = () => {
                 {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
                   <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
                 </Button>}
+                {canAddItem && salaryRecords.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => recalculateAllMutation.mutate()}
+                    disabled={recalculateAllMutation.isPending}
+                    title={bn ? 'সর্বশেষ সেটিং দিয়ে সব বকেয়া বেতন আবার হিসাব করুন' : 'Recalculate all pending salaries with latest settings'}
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${recalculateAllMutation.isPending ? 'animate-spin' : ''}`} />
+                    {bn ? 'পুনরায় হিসাব' : 'Recalculate'}
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
