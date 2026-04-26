@@ -610,31 +610,20 @@ const AdminSalary = () => {
     mutationFn: async (record: any) => {
       const { staffName, ...cleanRecord } = record;
       const staffMember = staff.find((s: any) => s.id === cleanRecord.staff_id);
-      let netSalary: number;
-      if (staffMember) {
-        const attStats = getAttendanceStats(staffMember);
-        const activeSavings = getActiveSavings(cleanRecord.staff_id);
-        const savingsDed = activeSavings ? activeSavings.amount : 0;
-        netSalary = Math.max(0,
-          attStats.totalDailyEarnings +
-          Number(cleanRecord.overtime || 0) +
-          Number(cleanRecord.bonus || 0) +
-          Number(cleanRecord.other_allowance || 0) -
-          Number(cleanRecord.advance_deduction || 0) -
-          savingsDed
-        );
-      } else {
-        netSalary = Math.max(0,
-          Number(cleanRecord.base_salary || 0) +
-          Number(cleanRecord.bonus || 0) +
-          Number(cleanRecord.overtime || 0) +
-          Number(cleanRecord.other_allowance || 0) -
-          Number(cleanRecord.late_deduction || 0) -
-          Number(cleanRecord.absence_deduction || 0) -
-          Number(cleanRecord.advance_deduction || 0) -
-          Number(cleanRecord.other_deduction || 0)
-        );
-      }
+      const activeSavings = getActiveSavings(cleanRecord.staff_id);
+      const savingsDed = activeSavings ? activeSavings.amount : 0;
+      const netSalary = Math.max(0,
+        Number(cleanRecord.base_salary || 0) +
+        Number(cleanRecord.bonus || 0) +
+        Number(cleanRecord.overtime || 0) +
+        Number(cleanRecord.other_allowance || 0) -
+        Number(cleanRecord.late_deduction || 0) -
+        Number(cleanRecord.absence_deduction || 0) -
+        Number(cleanRecord.advance_deduction || 0) -
+        Number(cleanRecord.other_deduction || 0) -
+        savingsDed
+      );
+      cleanRecord.savings_deduction = savingsDed;
       const { error } = await supabase.from('salary_records')
         .update({ ...cleanRecord, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
         .eq('id', cleanRecord.id);
