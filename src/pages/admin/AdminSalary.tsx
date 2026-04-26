@@ -2029,6 +2029,34 @@ const AdminSalary = () => {
             })()}
           </DialogContent>
         </Dialog>
+
+        <DeleteConfirmDialog
+          open={!!unpaidConfirmId}
+          onOpenChange={(o) => { if (!o) setUnpaidConfirmId(null); }}
+          onConfirm={() => {
+            if (unpaidConfirmId) {
+              markUnpaidMutation.mutate(unpaidConfirmId);
+              setUnpaidConfirmId(null);
+            }
+          }}
+          title={bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?'}
+          description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট খরচ থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
+          isPending={markUnpaidMutation.isPending}
+        />
+
+        <DeleteConfirmDialog
+          open={!!deleteSavingsId}
+          onOpenChange={(o) => { if (!o) setDeleteSavingsId(null); }}
+          onConfirm={() => {
+            if (deleteSavingsId) {
+              deleteSavingsMutation.mutate(deleteSavingsId);
+              setDeleteSavingsId(null);
+            }
+          }}
+          title={bn ? 'জমা সেটআপ মুছবেন?' : 'Delete savings config?'}
+          description={bn ? 'এই জমা সেটআপটি মুছে ফেলা হবে।' : 'This savings configuration will be deleted.'}
+          isPending={deleteSavingsMutation.isPending}
+        />
       </div>
     </AdminLayout>
   );
