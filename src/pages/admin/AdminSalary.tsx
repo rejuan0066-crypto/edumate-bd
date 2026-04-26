@@ -1040,7 +1040,8 @@ const AdminSalary = () => {
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <style>
       @font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}
-      *{margin:0;padding:0;box-sizing:border-box}
+      *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
+      html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
       body{font-family:'SutonnyOMJ','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
       .slip{max-width:780px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative}
       .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
@@ -1094,6 +1095,7 @@ const AdminSalary = () => {
       .footer{background:#f1f5f9;padding:10px 32px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:30px}
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
       @media print{
+        *,*::before,*::after{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
         body{background:#fff;padding:0}
         .slip{box-shadow:none;border-radius:0;max-width:100%}
         @page{size:A4;margin:8mm}

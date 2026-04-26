@@ -765,3 +765,20 @@
   button, a[role="button"], [role="button"] { min-height: 40px; }
 }
 
+/* ===== GLOBAL PRINT COLOR PRESERVATION =====
+   Forces browsers to print background colors, gradients, and images
+   even when the user has "Background graphics" turned OFF in print dialog.
+   Critical for receipts, salary slips, ID cards, certificates etc. */
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  html, body {
+    background: #ffffff !important;
+  }
+}
+
