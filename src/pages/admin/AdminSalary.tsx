@@ -2032,6 +2032,22 @@ const AdminSalary = () => {
           </DialogContent>
         </Dialog>
 
+        <ConfirmDialog
+          open={!!paidConfirmId}
+          onOpenChange={(o) => { if (!o) setPaidConfirmId(null); }}
+          onConfirm={() => {
+            if (paidConfirmId) {
+              markPaidMutation.mutate(paidConfirmId);
+              setPaidConfirmId(null);
+            }
+          }}
+          title={bn ? 'পরিশোধিত করতে চান?' : 'Mark as paid?'}
+          description={bn ? 'এই বেতন রেকর্ডটি পরিশোধিত হিসেবে চিহ্নিত হবে এবং খরচে যুক্ত হবে।' : 'This salary record will be marked as paid and added to expenses.'}
+          confirmLabel={bn ? 'হ্যাঁ, পরিশোধ করুন' : 'Yes, Mark Paid'}
+          isPending={markPaidMutation.isPending}
+          variant="success"
+        />
+
         <DeleteConfirmDialog
           open={!!unpaidConfirmId}
           onOpenChange={(o) => { if (!o) setUnpaidConfirmId(null); }}
