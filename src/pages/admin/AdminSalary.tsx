@@ -1037,14 +1037,14 @@ const AdminSalary = () => {
     const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
-    const fontHref = `${window.location.origin}/fonts/SutonnyOMJ.ttf`;
+    const fontHref = `${window.location.origin}/fonts/Kalpurush.ttf`;
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
     <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
-      @font-face{font-family:"SutonnyOMJ";src:url("${fontHref}") format("truetype");font-display:block;}
+      @font-face{font-family:"Kalpurush";src:url("${fontHref}") format("truetype");font-display:block;}
       *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
       html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
-      body{font-family:'SutonnyOMJ','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
+      body{font-family:'Kalpurush','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
       .slip{max-width:780px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative}
       .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
       .watermark span{font-size:140px;color:rgba(13,148,136,.06);font-weight:900;letter-spacing:8px;transform:rotate(-28deg);white-space:nowrap}
