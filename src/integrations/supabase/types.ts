@@ -5495,6 +5495,57 @@ export type Database = {
           },
         ]
       }
+      shift_time_audit_log: {
+        Row: {
+          affected_salary_records: number
+          affected_staff_count: number
+          affected_staff_ids: Json | null
+          category_key: string
+          category_label: string | null
+          changed_by: string | null
+          changed_by_name: string | null
+          created_at: string
+          id: string
+          new_end: string | null
+          new_start: string | null
+          notes: string | null
+          old_end: string | null
+          old_start: string | null
+        }
+        Insert: {
+          affected_salary_records?: number
+          affected_staff_count?: number
+          affected_staff_ids?: Json | null
+          category_key: string
+          category_label?: string | null
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          id?: string
+          new_end?: string | null
+          new_start?: string | null
+          notes?: string | null
+          old_end?: string | null
+          old_start?: string | null
+        }
+        Update: {
+          affected_salary_records?: number
+          affected_staff_count?: number
+          affected_staff_ids?: Json | null
+          category_key?: string
+          category_label?: string | null
+          changed_by?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          id?: string
+          new_end?: string | null
+          new_start?: string | null
+          notes?: string | null
+          old_end?: string | null
+          old_start?: string | null
+        }
+        Relationships: []
+      }
       sms_gateway_config: {
         Row: {
           api_key: string

@@ -411,16 +411,126 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const saveCategoryTimesMutation = useMutation({
     mutationFn: async (times: Record<string, { start: string; end: string }>) => {
+      // ===== Validation =====
+      const tToMin = (t: string) => {
+        if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return NaN;
+        const [h, m] = t.split(':').map(Number);
+        if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
+        return h * 60 + m;
+      };
+      const errors: string[] = [];
+      for (const [k, v] of Object.entries(times)) {
+        const label = getCategoryLabel(k) || k;
+        if (!v?.start || !v?.end) {
+          errors.push(`${label}: ${bn ? 'শুরু/শেষ সময় ফাঁকা' : 'start/end empty'}`);
+          continue;
+        }
+        const s = tToMin(v.start);
+        const e = tToMin(v.end);
+        if (isNaN(s) || isNaN(e)) {
+          errors.push(`${label}: ${bn ? 'অবৈধ সময় ফরম্যাট' : 'invalid time format'}`);
+          continue;
+        }
+        if (e <= s) {
+          errors.push(`${label}: ${bn ? 'শেষ সময় শুরুর পরে হতে হবে' : 'end must be after start'}`);
+          continue;
+        }
+        if (e - s < 30) {
+          errors.push(`${label}: ${bn ? 'কমপক্ষে ৩০ মিনিট হতে হবে' : 'minimum 30 minutes required'}`);
+        }
+      }
+      if (errors.length) {
+        throw new Error(errors.join(' • '));
+      }
+
+      // ===== Capture old values for audit =====
+      const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
+
+      // ===== Save settings =====
       const { error } = await supabase.from('website_settings').upsert(
         { key: 'category_shift_times', value: times, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       );
       if (error) throw error;
+
+      // ===== Audit log + auto-recalc per changed category =====
+      const { data: { user } } = await supabase.auth.getUser();
+      let actorName: string | null = null;
+      if (user) {
+        const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+        actorName = (prof as any)?.full_name || user.email || null;
+      }
+
+      const monthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+      let totalRecalc = 0;
+      const auditEntries: any[] = [];
+
+      for (const [catKey, newVal] of Object.entries(times)) {
+        const oldVal = oldTimes[catKey];
+        const changed = !oldVal || oldVal.start !== newVal.start || oldVal.end !== newVal.end;
+        if (!changed) continue;
+
+        // Find affected staff for this category
+        const { data: affectedStaff } = await supabase
+          .from('staff')
+          .select('id')
+          .eq('staff_category', catKey)
+          .is('deleted_at', null);
+        const staffIds = (affectedStaff || []).map((s: any) => s.id);
+
+        // Auto-recalc: touch pending salary records' updated_at so consumers refetch.
+        // Actual recompute happens in AdminSalary using latest shift times when displayed/recalculated.
+        let recalcCount = 0;
+        if (staffIds.length > 0) {
+          const { data: recs } = await supabase
+            .from('salary_records')
+            .select('id')
+            .in('staff_id', staffIds)
+            .eq('month_year', monthYear)
+            .eq('status', 'pending');
+          recalcCount = recs?.length || 0;
+          if (recalcCount > 0) {
+            await supabase
+              .from('salary_records')
+              .update({ updated_at: new Date().toISOString() })
+              .in('id', recs!.map((r: any) => r.id));
+          }
+        }
+        totalRecalc += recalcCount;
+
+        auditEntries.push({
+          category_key: catKey,
+          category_label: getCategoryLabel(catKey) || catKey,
+          old_start: oldVal?.start || null,
+          old_end: oldVal?.end || null,
+          new_start: newVal.start,
+          new_end: newVal.end,
+          changed_by: user?.id || null,
+          changed_by_name: actorName,
+          affected_staff_count: staffIds.length,
+          affected_salary_records: recalcCount,
+          affected_staff_ids: staffIds,
+        });
+      }
+
+      if (auditEntries.length > 0) {
+        await supabase.from('shift_time_audit_log').insert(auditEntries);
+      }
+
+      return { changedCount: auditEntries.length, totalRecalc };
     },
-    onSuccess: () => {
+    onSuccess: ({ changedCount, totalRecalc }) => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
       queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
-      toast.success(bn ? 'ক্যাটাগরি শিফট টাইম সেভ হয়েছে' : 'Category shift times saved');
+      queryClient.invalidateQueries({ queryKey: ['salary-records'] });
+      queryClient.invalidateQueries({ queryKey: ['shift-time-audit-log'] });
+      const msg = bn
+        ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} ক্যাটাগরি পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
+        : `Saved${changedCount > 0 ? ` • ${changedCount} category changes • ${totalRecalc} salary records refreshed` : ''}`;
+      toast.success(msg);
+    },
+    onError: (e: any) => {
+      toast.error(e?.message || (bn ? 'সেভ করা যায়নি' : 'Failed to save'));
     },
   });
 
@@ -1597,9 +1707,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     </div>
                   </div>
                 ))}
-                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)}>
+                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ক্যাটাগরি শিফট সেভ করুন' : 'Save Category Shifts'}
                 </Button>
+                <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
+                  {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
+                </a>
               </div>
               )}
 
