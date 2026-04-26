@@ -470,7 +470,7 @@ const AdminSalary = () => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
-    const netSalary = Math.max(0, totalEarned + bonus + otherAllowance + overtime - advanceDeduction - savingsDeduction);
+    const netSalary = Math.max(0, baseSalary + bonus + otherAllowance + overtime - lateDeduction - absenceDeduction - otherDeduction - advanceDeduction - savingsDeduction);
 
     return {
       base_salary: baseSalary,
@@ -537,13 +537,21 @@ const AdminSalary = () => {
 
       for (const rec of updateRecords) {
         const { id, ...updateData } = rec;
+        const activeSavings = getActiveSavings(updateData.staff_id);
+        const savingsDed = activeSavings ? activeSavings.amount : 0;
         const netSalary = Math.max(0,
-          Number(updateData.net_salary) +
+          Number(updateData.base_salary || 0) +
           Number(updateData.bonus || 0) +
+          Number(updateData.overtime || 0) +
           Number(updateData.other_allowance || 0) -
-          Number(updateData.advance_deduction || 0)
+          Number(updateData.late_deduction || 0) -
+          Number(updateData.absence_deduction || 0) -
+          Number(updateData.other_deduction || 0) -
+          Number(updateData.advance_deduction || 0) -
+          savingsDed
         );
         updateData.net_salary = netSalary;
+        updateData.savings_deduction = savingsDed;
         updateData.updated_at = new Date().toISOString();
 
         const { error } = await supabase.from('salary_records').update(updateData).eq('id', id);
@@ -601,32 +609,20 @@ const AdminSalary = () => {
   const updateMutation = useMutation({
     mutationFn: async (record: any) => {
       const { staffName, ...cleanRecord } = record;
-      const staffMember = staff.find((s: any) => s.id === cleanRecord.staff_id);
-      let netSalary: number;
-      if (staffMember) {
-        const attStats = getAttendanceStats(staffMember);
-        const activeSavings = getActiveSavings(cleanRecord.staff_id);
-        const savingsDed = activeSavings ? activeSavings.amount : 0;
-        netSalary = Math.max(0,
-          attStats.totalDailyEarnings +
-          Number(cleanRecord.overtime || 0) +
-          Number(cleanRecord.bonus || 0) +
-          Number(cleanRecord.other_allowance || 0) -
-          Number(cleanRecord.advance_deduction || 0) -
-          savingsDed
-        );
-      } else {
-        netSalary = Math.max(0,
-          Number(cleanRecord.base_salary || 0) +
-          Number(cleanRecord.bonus || 0) +
-          Number(cleanRecord.overtime || 0) +
-          Number(cleanRecord.other_allowance || 0) -
-          Number(cleanRecord.late_deduction || 0) -
-          Number(cleanRecord.absence_deduction || 0) -
-          Number(cleanRecord.advance_deduction || 0) -
-          Number(cleanRecord.other_deduction || 0)
-        );
-      }
+      const activeSavings = getActiveSavings(cleanRecord.staff_id);
+      const savingsDed = activeSavings ? activeSavings.amount : 0;
+      const netSalary = Math.max(0,
+        Number(cleanRecord.base_salary || 0) +
+        Number(cleanRecord.bonus || 0) +
+        Number(cleanRecord.overtime || 0) +
+        Number(cleanRecord.other_allowance || 0) -
+        Number(cleanRecord.late_deduction || 0) -
+        Number(cleanRecord.absence_deduction || 0) -
+        Number(cleanRecord.advance_deduction || 0) -
+        Number(cleanRecord.other_deduction || 0) -
+        savingsDed
+      );
+      cleanRecord.savings_deduction = savingsDed;
       const { error } = await supabase.from('salary_records')
         .update({ ...cleanRecord, net_salary: Math.max(0, netSalary), updated_at: new Date().toISOString() })
         .eq('id', cleanRecord.id);
