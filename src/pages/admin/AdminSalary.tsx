@@ -328,8 +328,11 @@ const AdminSalary = () => {
 
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
-    const rawRecords = attendanceData.filter((a: any) => a.entity_id === staffMember.id);
-
+    // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
+    const rawRecords = attendanceData.filter((a: any) =>
+      a.entity_id === staffMember.id &&
+      a.shift !== 'morning' && a.shift !== 'evening'
+    );
     // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে শুধুমাত্র একটি গণনা হবে।
     // অগ্রাধিকার: present > late > half_day > leave > absent (ইতিবাচক স্ট্যাটাস জিতবে)
     const statusPriority: Record<string, number> = {
