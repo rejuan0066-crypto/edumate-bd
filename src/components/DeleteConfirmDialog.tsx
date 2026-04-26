@@ -17,6 +17,7 @@ interface DeleteConfirmDialogProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
+  confirmLabel?: string;
   isPending?: boolean;
 }
 
@@ -26,6 +27,7 @@ const DeleteConfirmDialog = ({
   onConfirm,
   title,
   description,
+  confirmLabel,
   isPending,
 }: DeleteConfirmDialogProps) => {
   const { language } = useLanguage();
@@ -51,7 +53,7 @@ const DeleteConfirmDialog = ({
             disabled={isPending}
             className="rounded-full px-6 bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[0_0_15px_hsl(var(--destructive)/0.3)]"
           >
-            {bn ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete'}
+            {confirmLabel || (bn ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete')}
           </AlertDialogAction>
           <AlertDialogCancel className="rounded-full px-6 mt-0">
             {bn ? 'না, থাক' : 'Cancel'}
