@@ -1291,7 +1291,7 @@ const AdminSalary = () => {
                                       <Printer className="h-3 w-3" />
                                     </Button>
                                     {rec.status !== 'paid' ? (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => markPaidMutation.mutate(rec.id)}>
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => setPaidConfirmId(rec.id)}>
                                         <CheckCircle2 className="h-3 w-3" />
                                       </Button>
                                     ) : (
