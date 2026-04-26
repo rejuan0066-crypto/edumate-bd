@@ -360,6 +360,25 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const saveDutyTimesMutation = useMutation({
     mutationFn: async (times: typeof dutyTimes) => {
+      // Validation: extra_duty_rate must be ≥ 0 and ≤ 10,000,000 if enabled
+      if (times.extra_duty_enabled) {
+        const rate = Number(times.extra_duty_rate);
+        if (!Number.isFinite(rate) || isNaN(rate)) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন একটি বৈধ সংখ্যা হতে হবে' : 'Extra duty rate must be a valid number');
+        }
+        if (rate < 0) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন ঋণাত্মক হতে পারবে না' : 'Extra duty rate cannot be negative');
+        }
+        if (rate === 0) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি চালু থাকলে শূন্যের বেশি বেতন দিতে হবে' : 'Extra duty rate must be greater than 0 when enabled');
+        }
+        if (rate > 10000000) {
+          throw new Error(bn ? 'অতিরিক্ত ডিউটি বেতন ১,০০,০০,০০০ এর বেশি হতে পারবে না' : 'Extra duty rate cannot exceed 10,000,000');
+        }
+        if (Number(times.morning_days) < 0 || Number(times.morning_days) > 31 || Number(times.evening_days) < 0 || Number(times.evening_days) > 31) {
+          throw new Error(bn ? 'ডিউটি দিন ০ থেকে ৩১ এর মধ্যে হতে হবে' : 'Duty days must be between 0 and 31');
+        }
+      }
       const { error } = await supabase.from('website_settings').upsert(
         { key: 'residential_duty_times', value: times, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
@@ -368,7 +387,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['residential-duty-times'] });
+      queryClient.invalidateQueries({ queryKey: ['residential-duty-times-salary'] });
       toast.success(bn ? 'ডিউটি টাইম সেভ হয়েছে' : 'Duty times saved');
+    },
+    onError: (e: any) => {
+      toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save'));
     },
   });
 
