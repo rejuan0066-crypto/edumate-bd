@@ -1294,12 +1294,12 @@ const AdminSalary = () => {
                                       <Printer className="h-3 w-3" />
                                     </Button>
                                     {rec.status !== 'paid' ? (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30" title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} onClick={() => setPaidConfirmId(rec.id)}>
-                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30" title={bn ? 'পরিশোধিত করুন' : 'Mark Paid'} onClick={() => setPaidConfirmId(rec.id)}>
+                                        <Clock className="h-3.5 w-3.5" />
                                       </Button>
                                     ) : (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/30" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
-                                        <Clock className="h-3.5 w-3.5" />
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
+                                        <CheckCircle2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
                                   </>
