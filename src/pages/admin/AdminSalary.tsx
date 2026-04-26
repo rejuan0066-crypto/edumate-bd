@@ -186,15 +186,18 @@ const AdminSalary = () => {
 
   // Helper: resolve duty time for a staff member — prefers category shift, falls back to staff record
   const getDutyTime = (staffMember: any): { start: string; end: string } => {
+    return getDutyTimeWithSource(staffMember);
+  };
+  const getDutyTimeWithSource = (staffMember: any): { start: string; end: string; source: 'category' | 'staff' | 'default' } => {
     const catKey = staffMember?.staff_category;
     if (catKey && (categoryShiftTimes as any)[catKey]) {
       const t = (categoryShiftTimes as any)[catKey];
-      if (t.start && t.end) return { start: t.start, end: t.end };
+      if (t.start && t.end) return { start: t.start, end: t.end, source: 'category' };
     }
-    return {
-      start: staffMember?.duty_start_time || '08:00',
-      end: staffMember?.duty_end_time || '17:00',
-    };
+    if (staffMember?.duty_start_time && staffMember?.duty_end_time) {
+      return { start: staffMember.duty_start_time, end: staffMember.duty_end_time, source: 'staff' };
+    }
+    return { start: '08:00', end: '17:00', source: 'default' };
   };
   // Fetch morning/evening duty attendance for overtime calculation
   const { data: dutyAttendanceData = [] } = useQuery({
