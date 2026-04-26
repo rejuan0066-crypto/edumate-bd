@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -94,6 +95,7 @@ const AdminSalary = () => {
   const [bonusYear, setBonusYear] = useState(String(now.getFullYear()));
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
+  const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
@@ -1289,7 +1291,7 @@ const AdminSalary = () => {
                                       <Printer className="h-3 w-3" />
                                     </Button>
                                     {rec.status !== 'paid' ? (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => markPaidMutation.mutate(rec.id)}>
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-emerald-600" title={bn ? 'পরিশোধিত' : 'Mark Paid'} onClick={() => setPaidConfirmId(rec.id)}>
                                         <CheckCircle2 className="h-3 w-3" />
                                       </Button>
                                     ) : (
@@ -2029,6 +2031,22 @@ const AdminSalary = () => {
             })()}
           </DialogContent>
         </Dialog>
+
+        <ConfirmDialog
+          open={!!paidConfirmId}
+          onOpenChange={(o) => { if (!o) setPaidConfirmId(null); }}
+          onConfirm={() => {
+            if (paidConfirmId) {
+              markPaidMutation.mutate(paidConfirmId);
+              setPaidConfirmId(null);
+            }
+          }}
+          title={bn ? 'পরিশোধিত করতে চান?' : 'Mark as paid?'}
+          description={bn ? 'এই বেতন রেকর্ডটি পরিশোধিত হিসেবে চিহ্নিত হবে এবং খরচে যুক্ত হবে।' : 'This salary record will be marked as paid and added to expenses.'}
+          confirmLabel={bn ? 'হ্যাঁ, পরিশোধ করুন' : 'Yes, Mark Paid'}
+          isPending={markPaidMutation.isPending}
+          variant="success"
+        />
 
         <DeleteConfirmDialog
           open={!!unpaidConfirmId}
