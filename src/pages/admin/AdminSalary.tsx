@@ -1440,6 +1440,18 @@ const AdminSalary = () => {
                 {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
                   <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
                 </Button>}
+                {canAddItem && salaryRecords.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => recalculateAllMutation.mutate()}
+                    disabled={recalculateAllMutation.isPending}
+                    title={bn ? 'সর্বশেষ সেটিং দিয়ে সব বকেয়া বেতন আবার হিসাব করুন' : 'Recalculate all pending salaries with latest settings'}
+                  >
+                    <RefreshCw className={`h-3 w-3 mr-1 ${recalculateAllMutation.isPending ? 'animate-spin' : ''}`} />
+                    {bn ? 'পুনরায় হিসাব' : 'Recalculate'}
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
