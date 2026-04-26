@@ -361,7 +361,7 @@ const DashboardInstitutionCard = () => {
 
   return (
     <div className="card-elevated p-5 lg:p-8 flex flex-row items-center gap-4 lg:gap-6">
-      <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
         {institution?.logo_url ? (
           <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
         ) : (
