@@ -383,9 +383,9 @@ const DashboardInstitutionCard = () => {
                 {(institution as any).name_ar}
               </p>
             )}
-            <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-5xl">{displayName}</h1>
+            <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-3xl">{displayName}</h1>
             {institution?.name_en && institution?.name && (
-              <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-3xl">{language === 'bn' ? institution.name_en : institution.name}</p>
+              <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-2xl">{language === 'bn' ? institution.name_en : institution.name}</p>
             )}
           </>
         ) : (
