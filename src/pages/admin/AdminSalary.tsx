@@ -1676,6 +1676,18 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-center">
                               <div className="flex gap-1 justify-center">
+                                {!rec && canAddItem && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
+                                    title={bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary'}
+                                    disabled={generateSingleMutation.isPending}
+                                    onClick={() => generateSingleMutation.mutate(s.id)}
+                                  >
+                                    <Calculator className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
                                 {rec && (
                                   <>
                                     {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...rec, staffName: s.name_bn })}>
