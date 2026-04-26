@@ -1037,9 +1037,11 @@ const AdminSalary = () => {
     const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
+    const fontHref = `${window.location.origin}/fonts/SutonnyOMJ.ttf`;
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
+    <link rel="preload" as="font" type="font/ttf" href="${fontHref}" crossorigin="anonymous">
     <style>
-      @font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}
+      @font-face{font-family:"SutonnyOMJ";src:url("${fontHref}") format("truetype");font-display:block;}
       *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
       html,body{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
       body{font-family:'SutonnyOMJ','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
@@ -1204,7 +1206,16 @@ const AdminSalary = () => {
     if (w) {
       w.document.write(html);
       w.document.close();
-      setTimeout(() => w.print(), 350);
+      const doPrint = () => {
+        const fonts = (w.document as any).fonts;
+        if (fonts && fonts.ready) {
+          fonts.ready.then(() => setTimeout(() => w.print(), 200));
+        } else {
+          setTimeout(() => w.print(), 1200);
+        }
+      };
+      if (w.document.readyState === 'complete') doPrint();
+      else w.addEventListener('load', doPrint);
     }
   };
 
