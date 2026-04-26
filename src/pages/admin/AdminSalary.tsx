@@ -2059,6 +2059,7 @@ const AdminSalary = () => {
           }}
           title={bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?'}
           description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট খরচ থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
+          confirmLabel={bn ? 'হ্যাঁ, অপরিশোধিত করুন' : 'Yes, Mark Unpaid'}
           isPending={markUnpaidMutation.isPending}
         />
 
