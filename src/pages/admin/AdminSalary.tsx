@@ -329,6 +329,58 @@ const AdminSalary = () => {
     onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
   });
 
+  // Generate salary for a single staff (per-row generate)
+  const generateSingleMutation = useMutation({
+    mutationFn: async (staffId: string) => {
+      const s = staff.find((x: any) => x.id === staffId);
+      if (!s) throw new Error('Staff not found');
+      const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+      if (requireAttendance) {
+        const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+        if (!hasAttendance) {
+          throw new Error(bn ? 'এই স্টাফের উপস্থিতি রেকর্ড নেই' : 'No attendance records for this staff');
+        }
+      }
+      const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
+      if (existing) {
+        throw new Error(bn ? 'এই মাসে ইতোমধ্যে জেনারেট করা হয়েছে' : 'Already generated for this month');
+      }
+      const calc = calculateSalary(s);
+      const { error } = await supabase.from('salary_records').insert({
+        staff_id: s.id, month_year: monthYear, ...calc, status: 'pending',
+      });
+      if (error) throw error;
+
+      // Savings ledger
+      const activeSavings = getActiveSavings(s.id);
+      if (activeSavings && activeSavings.amount > 0) {
+        const exists = savingsLedger.find((l: any) =>
+          l.savings_id === activeSavings.config.id && l.month_year === monthYear
+        );
+        if (!exists) {
+          await supabase.from('salary_savings_ledger').insert({
+            savings_id: activeSavings.config.id,
+            staff_id: s.id,
+            month_year: monthYear,
+            amount: activeSavings.amount,
+          });
+          await supabase.from('salary_savings').update({
+            total_saved: Number(activeSavings.config.total_saved || 0) + activeSavings.amount,
+            updated_at: new Date().toISOString(),
+          }).eq('id', activeSavings.config.id);
+        }
+      }
+      return s.name_bn || s.name_en;
+    },
+    onSuccess: (name) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      toast.success(bn ? `${name} এর বেতন জেনারেট হয়েছে` : `Salary generated for ${name}`);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'জেনারেট সমস্যা' : 'Generate failed')),
+  });
+
   const getActiveSavings = (staffId: string): { amount: number; config: any } | null => {
     const configs = savingsConfigs.filter((c: any) => c.staff_id === staffId && c.is_active);
     for (const cfg of configs) {
