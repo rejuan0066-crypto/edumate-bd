@@ -1535,13 +1535,9 @@ const AdminSalary = () => {
                                 })}>
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => {
-                                  if (confirm(bn ? 'এই জমা সেটআপ মুছে ফেলবেন?' : 'Delete this savings config?')) {
-                                    deleteSavingsMutation.mutate(cfg.id);
-                                  }
-                                }}>
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                               </div>
                             </td>
                           </tr>
