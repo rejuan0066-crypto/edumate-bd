@@ -1103,6 +1103,24 @@ const AdminSalary = () => {
     const totalDed = Number(record.advance_deduction || 0) + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
+    // Per-shift breakdown for residential / extra duty
+    let dutyBreakdown: { rate: number; morningPresent: number; morningScheduled: number; morningEarning: number; eveningPresent: number; eveningScheduled: number; eveningEarning: number } | null = null;
+    if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
+      const staffDutyRecords = dutyAttendanceData.filter((a: any) => a.entity_id === staffMember.id);
+      const morningPresent = staffDutyRecords.filter((r: any) => r.shift === 'morning' && ['present', 'late'].includes(r.status)).length;
+      const eveningPresent = staffDutyRecords.filter((r: any) => r.shift === 'evening' && ['present', 'late'].includes(r.status)).length;
+      const morningScheduled = Math.max(1, Number(dutySettings.morning_days || 0));
+      const eveningScheduled = Math.max(1, Number(dutySettings.evening_days || 0));
+      const rate = Number(dutySettings.extra_duty_rate);
+      dutyBreakdown = {
+        rate,
+        morningPresent, morningScheduled,
+        morningEarning: Math.round((morningPresent / morningScheduled) * rate),
+        eveningPresent, eveningScheduled,
+        eveningEarning: Math.round((eveningPresent / eveningScheduled) * rate),
+      };
+    }
+
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
     const netSalary = Number(record.net_salary);
     const inWords = bn
