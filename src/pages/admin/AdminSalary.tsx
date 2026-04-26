@@ -268,6 +268,45 @@ const AdminSalary = () => {
     },
   });
 
+  // Recalculate ALL existing salary records using latest settings (only pending ones, paid stays untouched)
+  const recalculateAllMutation = useMutation({
+    mutationFn: async () => {
+      let updated = 0;
+      let skipped = 0;
+      for (const existing of salaryRecords) {
+        if (existing.status === 'paid') { skipped++; continue; }
+        const staffMember = staff.find((s: any) => s.id === existing.staff_id);
+        if (!staffMember) { skipped++; continue; }
+        const calc = calculateSalary(staffMember);
+        const activeSavings = getActiveSavings(existing.staff_id);
+        const savingsDed = activeSavings ? activeSavings.amount : 0;
+        const baseNet = Number(calc.net_salary || 0);
+        const extras = Number(existing.bonus || 0) + Number(existing.other_allowance || 0);
+        const manualDeds = Number(existing.advance_deduction || 0) + savingsDed;
+        const netSalary = Math.max(0, baseNet + extras - manualDeds);
+        const { error } = await supabase.from('salary_records').update({
+          ...calc,
+          bonus: Number(existing.bonus || 0),
+          other_allowance: Number(existing.other_allowance || 0),
+          advance_deduction: Number(existing.advance_deduction || 0),
+          savings_deduction: savingsDed,
+          net_salary: netSalary,
+          updated_at: new Date().toISOString(),
+        }).eq('id', existing.id);
+        if (error) throw error;
+        updated++;
+      }
+      return { updated, skipped };
+    },
+    onSuccess: ({ updated, skipped }) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      const msg = bn
+        ? `${toBnDigits(updated)} জন রিক্যালকুলেট${skipped > 0 ? ` • ${toBnDigits(skipped)} পরিশোধিত বাদ` : ''}`
+        : `${updated} recalculated${skipped > 0 ? ` • ${skipped} paid skipped` : ''}`;
+      toast.success(msg);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
+  });
 
   const getActiveSavings = (staffId: string): { amount: number; config: any } | null => {
     const configs = savingsConfigs.filter((c: any) => c.staff_id === staffId && c.is_active);
