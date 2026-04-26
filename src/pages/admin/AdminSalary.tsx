@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { numberToBanglaWords } from '@/lib/amountInWords';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -79,6 +81,7 @@ const AdminSalary = () => {
   const { canAddItem, canEditItem } = usePagePermissions('/admin/salary');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
+  const { settings: webSettings } = useWebsiteSettings();
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));
@@ -1010,62 +1013,197 @@ const AdminSalary = () => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsAmt = activeSavings ? activeSavings.amount : 0;
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
+    const totalEarnings = Number(record.base_salary) + totalAllowance;
+    const totalDed = totalDeduction + savingsAmt;
     const monthName = MONTHS.find(m => m.value === selectedMonth);
 
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
+    const netSalary = Number(record.net_salary);
+    const inWords = bn
+      ? `${numberToBanglaWords(Math.floor(netSalary))} টাকা মাত্র`
+      : `${netSalary.toLocaleString()} Taka Only`;
 
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Salary Slip</title><style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
-    <style>body{font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:30px;max-width:700px;margin:auto}
-    .header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}
-    h2{margin:0;font-size:18px}p{margin:4px 0;font-size:13px}
-    table{width:100%;border-collapse:collapse;margin:15px 0}
-    th,td{border:1px solid #ddd;padding:8px 12px;text-align:left;font-size:13px}
-    th{background:#f5f5f5}
-    .total{font-weight:bold;background:#f0f9f0}
-    .savings-row{background:#eff6ff;color:#1e40af}
-    .sig{display:flex;justify-content:space-between;margin-top:60px;font-size:13px}
-    .sig div{text-align:center;border-top:1px solid #333;padding-top:5px;min-width:150px}
-    @media print{body{padding:20px}}</style></head><body>
-    <div class="header">
-      <h2>${bn ? 'বেতন স্লিপ' : 'Salary Slip'}</h2>
-      <p>${bn ? 'মাস' : 'Month'}: ${bn ? monthName?.bn : monthName?.en} ${bn ? toBnDigits(selectedYear) : selectedYear}</p>
-    </div>
-    <table>
-      <tr><th>${bn ? 'নাম' : 'Name'}</th><td>${staffMember.name_bn}</td>
-          <th>${bn ? 'স্টাফ আইডি' : 'Staff ID'}</th><td>${staffMember.staff_id || '-'}</td></tr>
-      <tr><th>${bn ? 'পদবি' : 'Designation'}</th><td>${getDesignation(staffMember.designation)}</td>
-      <tr><th>${bn ? 'বিভাগ' : 'Department'}</th><td>${staffMember.department || '-'}</td>
-          <th>${bn ? 'কর্মদিবস' : 'Working Days'}</th><td>${bn ? toBnDigits(record.working_days) : record.working_days}</td></tr>
-      <tr><th>${bn ? 'উপস্থিত' : 'Present'}</th><td>${bn ? toBnDigits(record.present_days) : record.present_days}</td>
-          <th>${bn ? 'অনুপস্থিত' : 'Absent'}</th><td>${bn ? toBnDigits(record.absent_days) : record.absent_days}</td></tr>
-      <tr><th>${bn ? 'ডিউটি সময়' : 'Duty Time'}</th><td>${fmt(staffMember.duty_start_time || '08:00')} - ${fmt(staffMember.duty_end_time || '17:00')}</td>
-          <th>${bn ? 'বিলম্ব উপস্থিত দিন' : 'Late Present Days'}</th><td>${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)}</td></tr>
-    </table>
-    <table>
-      <tr><th colspan="2" style="text-align:center">${bn ? 'আয়' : 'Earnings'}</th>
-          <th colspan="2" style="text-align:center">${bn ? 'কর্তন' : 'Deductions'}</th></tr>
-      <tr><td>${bn ? 'মূল বেতন' : 'Base Salary'}</td><td>৳${slipNum(Number(record.base_salary))}</td>
-          <td>${bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</td><td>৳${slipNum(Number(record.late_deduction || 0))}</td></tr>
-      <tr><td>${bn ? 'বোনাস' : 'Bonus'}</td><td>৳${slipNum(Number(record.bonus || 0))}</td>
-          <td>${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</td><td>৳${slipNum(Number(record.absence_deduction || 0))}</td></tr>
-      <tr><td>${bn ? 'ওভারটাইম' : 'Overtime'}</td><td>৳${slipNum(Number(record.overtime || 0))}</td>
-          <td>${bn ? 'অগ্রিম কর্তন' : 'Advance Ded.'}</td><td>৳${slipNum(Number(record.advance_deduction || 0))}</td></tr>
-      <tr><td>${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</td><td>৳${slipNum(Number(record.other_allowance || 0))}</td>
-          <td>${bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</td><td>৳${slipNum(Number(record.other_deduction || 0))}</td></tr>
-      ${savingsAmt > 0 ? `<tr class="savings-row"><td colspan="2"></td><td>${bn ? 'বেতন জমা' : 'Salary Savings'}</td><td>৳${slipNum(savingsAmt)}</td></tr>` : ''}
-      <tr class="total"><td>${bn ? 'মোট আয়' : 'Total Earnings'}</td><td>৳${slipNum(Number(record.base_salary) + totalAllowance)}</td>
-          <td>${bn ? 'মোট কর্তন' : 'Total Deductions'}</td><td>৳${slipNum(totalDeduction + savingsAmt)}</td></tr>
-    </table>
-    <table><tr class="total"><td style="text-align:center;font-size:16px" colspan="4">
-      ${bn ? 'নিট বেতন' : 'Net Salary'}: ৳${slipNum(Number(record.net_salary))}</td></tr></table>
-    <div class="sig">
-      <div>${bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature"}</div>
-      <div>${bn ? 'হিসাবরক্ষক' : 'Accountant'}</div>
-      <div>${bn ? 'প্রিন্সিপাল' : 'Principal'}</div>
+    const instName = bn
+      ? (webSettings?.institution_name || 'প্রতিষ্ঠানের নাম')
+      : (webSettings?.institution_name_en || webSettings?.institution_name || 'Institution Name');
+    const instAddr = webSettings?.address || '';
+    const instPhone = webSettings?.phone || '';
+    const instEmail = webSettings?.email || '';
+    const logoUrl = webSettings?.logo_url || '';
+    const principalName = bn
+      ? (webSettings?.principal_name || (bn ? 'প্রিন্সিপাল' : 'Principal'))
+      : (webSettings?.principal_name_en || webSettings?.principal_name || 'Principal');
+
+    const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
+    const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${bn ? 'বেতন স্লিপ' : 'Salary Slip'} - ${staffMember.name_bn}</title>
+    <style>
+      @font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}
+      *{margin:0;padding:0;box-sizing:border-box}
+      body{font-family:'SutonnyOMJ','Noto Sans Bengali','Segoe UI',sans-serif;background:#f8fafc;color:#0f172a;padding:24px;line-height:1.5}
+      .slip{max-width:780px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 20px 50px -15px rgba(15,23,42,.18);position:relative}
+      .watermark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
+      .watermark span{font-size:140px;color:rgba(13,148,136,.06);font-weight:900;letter-spacing:8px;transform:rotate(-28deg);white-space:nowrap}
+      .header{background:linear-gradient(135deg,#0d9488 0%,#0f766e 60%,#115e59 100%);color:#fff;padding:24px 32px;position:relative;overflow:hidden}
+      .header::after{content:"";position:absolute;right:-60px;top:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(255,255,255,.18) 0%,transparent 70%);border-radius:50%}
+      .head-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
+      .logo-wrap{width:64px;height:64px;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;backdrop-filter:blur(8px)}
+      .logo-wrap img{width:100%;height:100%;object-fit:contain}
+      .logo-fallback{font-size:28px;font-weight:800}
+      .inst-info{flex:1}
+      .inst-name{font-size:22px;font-weight:800;letter-spacing:.3px;margin-bottom:2px}
+      .inst-meta{font-size:11.5px;opacity:.92;line-height:1.55}
+      .slip-tag{position:absolute;right:32px;top:24px;z-index:2;text-align:right}
+      .slip-tag .badge{background:rgba(255,255,255,.95);color:#0f766e;font-weight:700;padding:5px 14px;border-radius:999px;font-size:11px;letter-spacing:1.5px;display:inline-block}
+      .slip-tag .id{color:#fff;font-size:10.5px;margin-top:6px;opacity:.92;font-family:monospace}
+      .month-bar{background:linear-gradient(90deg,#f0fdfa 0%,#ccfbf1 50%,#f0fdfa 100%);padding:12px 32px;border-bottom:1px solid #ccfbf1;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#0f766e;font-weight:600;position:relative;z-index:1}
+      .month-bar .month{font-size:15px;font-weight:800;color:#115e59}
+      .body{padding:24px 32px;position:relative;z-index:1}
+      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:18px}
+      .info-cell{padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
+      .info-cell:nth-last-child(-n+2){border-bottom:none}
+      .info-cell:nth-child(odd){border-right:1px solid #e2e8f0}
+      .info-cell .lbl{color:#64748b;font-weight:500}
+      .info-cell .val{color:#0f172a;font-weight:700}
+      .columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+      .col{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+      .col-head{padding:10px 14px;font-size:12px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#fff}
+      .col.earn .col-head{background:linear-gradient(90deg,#10b981,#059669)}
+      .col.ded .col-head{background:linear-gradient(90deg,#f59e0b,#d97706)}
+      .col-body{padding:0}
+      .ln{display:flex;justify-content:space-between;padding:9px 14px;font-size:12.5px;border-bottom:1px dashed #e2e8f0}
+      .ln:last-child{border-bottom:none}
+      .ln .l{color:#475569}
+      .ln .v{color:#0f172a;font-weight:600;font-variant-numeric:tabular-nums}
+      .ln.savings{background:#eff6ff;color:#1e40af}
+      .ln.savings .l,.ln.savings .v{color:#1e40af}
+      .col-foot{padding:11px 14px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;border-top:2px solid;font-variant-numeric:tabular-nums}
+      .col.earn .col-foot{background:#ecfdf5;color:#065f46;border-color:#10b981}
+      .col.ded .col-foot{background:#fffbeb;color:#92400e;border-color:#f59e0b}
+      .net-box{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;border-radius:14px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:6px;box-shadow:0 8px 24px -8px rgba(13,148,136,.45)}
+      .net-box .lbl{font-size:13px;font-weight:600;opacity:.95;letter-spacing:.4px;text-transform:uppercase}
+      .net-box .amt{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
+      .words{margin-top:10px;padding:9px 14px;background:#f8fafc;border-left:3px solid #0d9488;border-radius:6px;font-size:12px;color:#334155;font-style:italic}
+      .words strong{color:#0f766e;font-style:normal;font-weight:700}
+      .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:55px;padding:0 8px}
+      .sig{text-align:center;font-size:11.5px;color:#475569}
+      .sig .line{border-top:1.5px solid #94a3b8;padding-top:6px;margin-top:30px}
+      .sig .role{font-weight:700;color:#0f172a;font-size:12px}
+      .sig .name{font-size:10.5px;color:#64748b;margin-top:2px}
+      .footer{background:#f1f5f9;padding:10px 32px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:30px}
+      .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
+      @media print{
+        body{background:#fff;padding:0}
+        .slip{box-shadow:none;border-radius:0;max-width:100%}
+        @page{size:A4;margin:8mm}
+      }
+    </style></head><body>
+    <div class="slip">
+      <div class="watermark"><span>${bn ? 'বেতন স্লিপ' : 'SALARY'}</span></div>
+      <div class="header">
+        <div class="slip-tag">
+          <div class="badge">${bn ? 'বেতন স্লিপ' : 'PAY SLIP'}</div>
+          <div class="id">${slipId}</div>
+        </div>
+        <div class="head-row">
+          <div class="logo-wrap">
+            ${logoUrl ? `<img src="${logoUrl}" alt="logo"/>` : `<div class="logo-fallback">${(instName || 'A').charAt(0)}</div>`}
+          </div>
+          <div class="inst-info">
+            <div class="inst-name">${instName}</div>
+            <div class="inst-meta">
+              ${instAddr ? `${instAddr}` : ''}
+              ${instPhone ? ` &nbsp;•&nbsp; 📞 ${bn ? toBnDigits(instPhone) : instPhone}` : ''}
+              ${instEmail ? ` &nbsp;•&nbsp; ✉ ${instEmail}` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="month-bar">
+        <span>${bn ? 'বেতন মাস' : 'Salary Period'}: <span class="month">${bn ? monthName?.bn : monthName?.en} ${bn ? toBnDigits(selectedYear) : selectedYear}</span></span>
+        <span>${bn ? 'ইস্যু তারিখ' : 'Issue Date'}: <strong>${issueDate}</strong></span>
+      </div>
+
+      <div class="body">
+        <div class="info-grid">
+          <div class="info-cell"><span class="lbl">${bn ? 'নাম' : 'Name'}</span><span class="val">${staffMember.name_bn}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${staffMember.department || '-'}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${fmt(staffMember.duty_start_time || '08:00')} – ${fmt(staffMember.duty_end_time || '17:00')}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'কর্মদিবস' : 'Working Days'}</span><span class="val">${bn ? toBnDigits(record.working_days) : record.working_days}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'বিলম্ব দিন' : 'Late Days'}</span><span class="val" style="color:#d97706">${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
+        </div>
+
+        <div class="columns">
+          <div class="col earn">
+            <div class="col-head">${bn ? '＋ আয়' : '＋ Earnings'}</div>
+            <div class="col-body">
+              <div class="ln"><span class="l">${bn ? 'মূল বেতন' : 'Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+            </div>
+            <div class="col-foot"><span>${bn ? 'মোট আয়' : 'Total'}</span><span>৳${slipNum(totalEarnings)}</span></div>
+          </div>
+          <div class="col ded">
+            <div class="col-head">${bn ? '－ কর্তন' : '－ Deductions'}</div>
+            <div class="col-body">
+              <div class="ln"><span class="l">${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'}</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>
+              <div class="ln"><span class="l">${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
+              ${savingsAmt > 0 ? `<div class="ln savings"><span class="l">${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>` : ''}
+            </div>
+            <div class="col-foot"><span>${bn ? 'মোট কর্তন' : 'Total'}</span><span>৳${slipNum(totalDed)}</span></div>
+          </div>
+        </div>
+
+        <div class="net-box">
+          <span class="lbl">${bn ? 'নিট বেতন (প্রদেয়)' : 'Net Salary (Payable)'}</span>
+          <span class="amt">৳ ${slipNum(netSalary)}</span>
+        </div>
+        <div class="words">${bn ? 'কথায়' : 'In Words'}: <strong>${inWords}</strong></div>
+
+        <div class="signatures">
+          <div class="sig">
+            <div class="line">
+              <div class="role">${bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature"}</div>
+              <div class="name">${staffMember.name_bn}</div>
+            </div>
+          </div>
+          <div class="sig">
+            <div class="line">
+              <div class="role">${bn ? 'হিসাবরক্ষক' : 'Accountant'}</div>
+              <div class="name">&nbsp;</div>
+            </div>
+          </div>
+          <div class="sig">
+            <div class="line">
+              <div class="role">${bn ? 'প্রিন্সিপাল' : 'Principal'}</div>
+              <div class="name">${principalName}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        ${bn ? 'এটি কম্পিউটার-জেনারেটেড একটি অফিসিয়াল বেতন স্লিপ। স্বাক্ষর ছাড়াও বৈধ।' : 'This is a computer-generated official salary slip. Valid without signature.'}
+        <div class="gen">${bn ? 'জেনারেটর' : 'Generated by'}: ${instName} • ${issueDate}</div>
+      </div>
     </div>
     </body></html>`;
     const w = window.open('', '_blank');
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
+    if (w) {
+      w.document.write(html);
+      w.document.close();
+      setTimeout(() => w.print(), 350);
+    }
   };
 
   // Helper: get month name from month_year string
