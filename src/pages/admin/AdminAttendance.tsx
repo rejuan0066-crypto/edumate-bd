@@ -119,25 +119,40 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   };
   const [categoryShiftTimes, setCategoryShiftTimes] = useState<Record<string, { start: string; end: string }>>(defaultCategoryTimes);
 
-  // Dynamic staff categories from designations table
-  const { data: dynamicStaffCategories = [] } = useQuery({
+  // Dynamic staff categories from staff_categories table (synced with Designations page)
+  const { data: staffCategoriesData = [] } = useQuery({
     queryKey: ['staff-categories-for-shift'],
     queryFn: async () => {
-      const { data } = await supabase.from('designations').select('staff_category').eq('is_active', true);
-      const unique = [...new Set((data || []).map((d: any) => d.staff_category))];
-      // Ensure default categories are always included
-      const defaults = ['teacher', 'administrative', 'support', 'general'];
-      defaults.forEach(d => { if (!unique.includes(d)) unique.push(d); });
-      return unique;
+      const { data } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      return (data || []) as Array<{ key: string; name: string; name_bn: string; sort_order: number }>;
     },
   });
 
-  const categoryLabelMap: Record<string, { bn: string; en: string }> = {
-    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-    administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
-    support: { bn: 'সাপোর্ট স্টাফ', en: 'Support Staff' },
-    general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
-  };
+  const dynamicStaffCategories = useMemo(() => {
+    const keys = staffCategoriesData.map(c => c.key);
+    // Ensure default categories are always included
+    const defaults = ['teacher', 'administrative', 'support', 'general'];
+    defaults.forEach(d => { if (!keys.includes(d)) keys.push(d); });
+    return keys;
+  }, [staffCategoriesData]);
+
+  const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
+    const map: Record<string, { bn: string; en: string }> = {
+      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+      administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
+      support: { bn: 'সাপোর্ট স্টাফ', en: 'Support Staff' },
+      general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+    };
+    // Override / extend with DB values
+    staffCategoriesData.forEach(c => {
+      map[c.key] = { bn: c.name_bn || c.name || c.key, en: c.name || c.name_bn || c.key };
+    });
+    return map;
+  }, [staffCategoriesData]);
   const getCategoryLabel = (key: string) => categoryLabelMap[key] ? (bn ? categoryLabelMap[key].bn : categoryLabelMap[key].en) : key;
   const getCategoryResetTone = (key: string) => {
     const tones: Record<string, string> = {

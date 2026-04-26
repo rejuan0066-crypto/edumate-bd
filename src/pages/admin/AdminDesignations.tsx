@@ -117,13 +117,13 @@ const AdminDesignations = () => {
       if (catEditItem) { const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('staff_categories').insert(record); if (error) throw error; }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); toast.success(catEditItem ? (bn ? 'ক্যাটাগরি আপডেট হয়েছে' : 'Category updated') : (bn ? 'ক্যাটাগরি যোগ হয়েছে' : 'Category added')); setCatDialogOpen(false); resetCatForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(catEditItem ? (bn ? 'ক্যাটাগরি আপডেট হয়েছে' : 'Category updated') : (bn ? 'ক্যাটাগরি যোগ হয়েছে' : 'Category added')); setCatDialogOpen(false); resetCatForm(); },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
   const deleteCatMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('staff_categories').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); toast.success(bn ? 'ক্যাটাগরি মুছে ফেলা হয়েছে' : 'Category deleted'); setCatDeleteId(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(bn ? 'ক্যাটাগরি মুছে ফেলা হয়েছে' : 'Category deleted'); setCatDeleteId(null); },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
