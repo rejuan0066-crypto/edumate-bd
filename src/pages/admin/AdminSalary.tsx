@@ -1302,7 +1302,7 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${staffMember.department || '-'}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${fmt(staffMember.duty_start_time || '08:00')} – ${fmt(staffMember.duty_end_time || '17:00')}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${(() => { const t = getDutyTime(staffMember); return `${fmt(t.start)} – ${fmt(t.end)}`; })()}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'কর্মদিবস' : 'Working Days'}</span><span class="val">${bn ? toBnDigits(record.working_days) : record.working_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
@@ -1545,11 +1545,19 @@ const AdminSalary = () => {
                             <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{s.staff_id || '-'}</td>
                             <td className="px-3 py-2 text-muted-foreground">{getDesignation(s.designation)}</td>
                             <td className="px-3 py-2 text-center">
-                              <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: s.duty_start_time || '08:00', duty_end_time: s.duty_end_time || '17:00' })}
-                                className="text-[10px] text-primary hover:underline">
-                                <Timer className="h-3 w-3 inline mr-0.5" />
-                                {bn ? toBnDigits(`${fmt(s.duty_start_time || '08:00')}-${fmt(s.duty_end_time || '17:00')}`) : `${fmt(s.duty_start_time || '08:00')}-${fmt(s.duty_end_time || '17:00')}`}
-                              </button>
+                              {(() => {
+                                const t = getDutyTime(s);
+                                const fromCategory = !!(s.staff_category && (categoryShiftTimes as any)[s.staff_category]);
+                                return (
+                                  <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: t.start, duty_end_time: t.end })}
+                                    className="text-[10px] text-primary hover:underline"
+                                    title={fromCategory ? (bn ? 'ক্যাটাগরি শিফট থেকে' : 'From category shift') : (bn ? 'স্টাফ-নির্দিষ্ট সময়' : 'Staff-specific time')}>
+                                    <Timer className="h-3 w-3 inline mr-0.5" />
+                                    {bn ? toBnDigits(`${fmt(t.start)}-${fmt(t.end)}`) : `${fmt(t.start)}-${fmt(t.end)}`}
+                                    {fromCategory && <span className="ml-1 text-[8px] text-emerald-600">●</span>}
+                                  </button>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary || s.salary || 0).toLocaleString()) : Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
                             <td className="px-3 py-2 text-center">
