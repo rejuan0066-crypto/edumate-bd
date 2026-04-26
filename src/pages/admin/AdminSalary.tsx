@@ -2298,6 +2298,21 @@ const AdminSalary = () => {
         />
 
         <DeleteConfirmDialog
+          open={!!ungenerateConfirmId}
+          onOpenChange={(o) => { if (!o) setUngenerateConfirmId(null); }}
+          onConfirm={() => {
+            if (ungenerateConfirmId) {
+              ungenerateMutation.mutate(ungenerateConfirmId);
+              setUngenerateConfirmId(null);
+            }
+          }}
+          title={bn ? 'বেতন রেকর্ড মুছবেন?' : 'Ungenerate salary record?'}
+          description={bn ? 'এই বেতন রেকর্ডটি সম্পূর্ণভাবে মুছে ফেলা হবে। পরিশোধিত হলে সংশ্লিষ্ট খরচ ও জমা এন্ট্রিও সরানো হবে। আপনি পুনরায় জেনারেট করতে পারবেন।' : 'This salary record will be permanently deleted. Linked expense and savings entries will also be removed. You can regenerate it later.'}
+          confirmLabel={bn ? 'হ্যাঁ, মুছুন' : 'Yes, Delete'}
+          isPending={ungenerateMutation.isPending}
+        />
+
+        <DeleteConfirmDialog
           open={!!deleteSavingsId}
           onOpenChange={(o) => { if (!o) setDeleteSavingsId(null); }}
           onConfirm={() => {
