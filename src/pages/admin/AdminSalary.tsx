@@ -1528,6 +1528,11 @@ const AdminSalary = () => {
                                         <CheckCircle2 className="h-3.5 w-3.5" />
                                       </Button>
                                     )}
+                                    {canDeleteItem && (
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-red-600 hover:bg-red-100/60 dark:hover:bg-red-900/30" title={bn ? 'আনজেনারেট (মুছুন)' : 'Ungenerate'} onClick={() => setUngenerateConfirmId(rec.id)}>
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    )}
                                   </>
                                 )}
                               </div>
