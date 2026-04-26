@@ -1206,7 +1206,16 @@ const AdminSalary = () => {
     if (w) {
       w.document.write(html);
       w.document.close();
-      setTimeout(() => w.print(), 350);
+      const doPrint = () => {
+        const fonts = (w.document as any).fonts;
+        if (fonts && fonts.ready) {
+          fonts.ready.then(() => setTimeout(() => w.print(), 200));
+        } else {
+          setTimeout(() => w.print(), 1200);
+        }
+      };
+      if (w.document.readyState === 'complete') doPrint();
+      else w.addEventListener('load', doPrint);
     }
   };
 
