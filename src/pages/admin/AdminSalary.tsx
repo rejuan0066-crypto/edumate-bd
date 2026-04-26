@@ -1357,7 +1357,13 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${staffMember.department || '-'}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${(() => { const t = getDutyTime(staffMember); return `${fmt(t.start)} – ${fmt(t.end)}`; })()}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${(() => {
+            const t = getDutyTimeWithSource(staffMember);
+            const srcLabel = t.source === 'category'
+              ? (bn ? 'ক্যাটাগরি শিফট' : 'Category Shift')
+              : t.source === 'staff' ? (bn ? 'স্টাফ ব্যক্তিগত' : 'Staff Personal') : (bn ? 'ডিফল্ট' : 'Default');
+            return `${fmt(t.start)} – ${fmt(t.end)} <span style="font-size:9px;color:#6b7280;font-weight:500">(${srcLabel})</span>`;
+          })()}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'কর্মদিবস' : 'Working Days'}</span><span class="val">${bn ? toBnDigits(record.working_days) : record.working_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
