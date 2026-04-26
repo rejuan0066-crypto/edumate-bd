@@ -1683,11 +1683,26 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       <Label className="text-xs">{bn ? 'প্রতি শিফটের মাসিক মোট বেতন (৳)' : 'Monthly total pay per shift (৳)'}</Label>
                       <Input
                         type="number"
+                        min={0}
+                        max={10000000}
+                        step={1}
                         className="h-8 text-sm mt-1"
                         placeholder="0"
                         value={dutyTimes.extra_duty_rate || ''}
-                        onChange={e => setDutyTimes(p => ({ ...p, extra_duty_rate: Number(e.target.value) }))}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (raw === '') { setDutyTimes(p => ({ ...p, extra_duty_rate: 0 })); return; }
+                          const n = Number(raw);
+                          if (!Number.isFinite(n)) return;
+                          const clamped = Math.max(0, Math.min(10000000, n));
+                          setDutyTimes(p => ({ ...p, extra_duty_rate: clamped }));
+                        }}
                       />
+                      {dutyTimes.extra_duty_enabled && (!dutyTimes.extra_duty_rate || dutyTimes.extra_duty_rate <= 0) && (
+                        <p className="text-[10px] text-destructive mt-1">
+                          {bn ? '⚠ অতিরিক্ত ডিউটি চালু আছে — শূন্যের বেশি বেতন দিন' : '⚠ Extra duty is enabled — set a value greater than 0'}
+                        </p>
+                      )}
                       <p className="text-[10px] text-muted-foreground mt-1">
                         {bn
                           ? `সকাল ও সন্ধ্যা — প্রতি শিফটের জন্য মাসিক মোট। প্রতিদিন উপস্থিতির হিসাবে আনুপাতিক হারে বেতনে যোগ হবে। (প্রতিদিন/প্রতি শিফট ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`
