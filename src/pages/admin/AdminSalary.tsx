@@ -417,8 +417,9 @@ const AdminSalary = () => {
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
     const leave = records.filter((r: any) => r.status === 'leave').length;
 
-    const dutyStart = timeToMinutes(staffMember.duty_start_time || '08:00');
-    const dutyEnd = timeToMinutes(staffMember.duty_end_time || '17:00');
+    const dutyTime = getDutyTime(staffMember);
+    const dutyStart = timeToMinutes(dutyTime.start);
+    const dutyEnd = timeToMinutes(dutyTime.end);
     const scheduledMinutesPerDay = dutyEnd - dutyStart;
 
     let totalLateArrivalMinutes = 0;
