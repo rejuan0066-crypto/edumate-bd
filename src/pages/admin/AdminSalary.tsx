@@ -78,7 +78,7 @@ const AdminSalary = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
-  const { canAddItem, canEditItem } = usePagePermissions('/admin/salary');
+  const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/salary');
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
