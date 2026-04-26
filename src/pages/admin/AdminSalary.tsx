@@ -175,6 +175,27 @@ const AdminSalary = () => {
     },
   });
 
+  // Fetch category shift times (synced with AdminAttendance settings)
+  const { data: categoryShiftTimes = {} } = useQuery({
+    queryKey: ['category-shift-times-salary'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'category_shift_times').maybeSingle();
+      return (data?.value as Record<string, { start: string; end: string }>) || {};
+    },
+  });
+
+  // Helper: resolve duty time for a staff member — prefers category shift, falls back to staff record
+  const getDutyTime = (staffMember: any): { start: string; end: string } => {
+    const catKey = staffMember?.staff_category;
+    if (catKey && (categoryShiftTimes as any)[catKey]) {
+      const t = (categoryShiftTimes as any)[catKey];
+      if (t.start && t.end) return { start: t.start, end: t.end };
+    }
+    return {
+      start: staffMember?.duty_start_time || '08:00',
+      end: staffMember?.duty_end_time || '17:00',
+    };
+  };
   // Fetch morning/evening duty attendance for overtime calculation
   const { data: dutyAttendanceData = [] } = useQuery({
     queryKey: ['salary-duty-attendance', monthYear],
