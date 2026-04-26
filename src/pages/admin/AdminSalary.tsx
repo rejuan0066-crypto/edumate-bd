@@ -439,7 +439,8 @@ const AdminSalary = () => {
     });
   };
 
-  // Calculate salary for a staff member using additive per-day logic
+  // Calculate salary using TRUE additive per-day logic.
+  // Net = সকল উপস্থিত দিনের আয় (অনুপস্থিতি/দেরি ইতিমধ্যে বাদ) + ওভারটাইম + বোনাস − অগ্রিম − জমা
   const calculateSalary = (staffMember: any) => {
     const baseSalary = Number(staffMember.salary) || 0;
     const attStats = getAttendanceStats(staffMember);
@@ -448,14 +449,17 @@ const AdminSalary = () => {
     const month = Number(selectedMonth);
     const workingDays = new Date(year, month, 0).getDate();
 
-    const totalEarned = attStats.totalDailyEarnings;
     const bonus = 0;
     const otherAllowance = 0;
     const advanceDeduction = 0;
 
+    // এগুলো শুধুমাত্র রিপোর্টিং / স্লিপ প্রদর্শনের জন্য সংরক্ষিত — net হিসাবে আবার বাদ যায় না
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
+
+    // মোট অর্জিত আয় (উপস্থিত দিনগুলোর per-day rate, ইতিমধ্যে দেরি/early-exit বাদ)
+    let earnedFromAttendance = Math.round(attStats.totalDailyEarnings);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
@@ -466,11 +470,19 @@ const AdminSalary = () => {
       overtime += Math.round(dutyOvertime);
     }
 
+    // overtime আয়ও earned-এর সাথে যোগ হয় (overtime মিনিট ইতিমধ্যে dailyEarning-এ যোগ আছে কিনা চেক)
+    // getAttendanceStats এ entry.dailyEarning += entry.addition হয়েছে, তাই overtime ইতিমধ্যে totalDailyEarnings-এ অন্তর্ভুক্ত।
+    // শুধু extra_duty (যদি এনাবল) আলাদা যোগ হবে।
+    const extraDutyEarning = overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+
     // Get savings deduction for this month
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
-    const netSalary = Math.max(0, baseSalary + bonus + otherAllowance + overtime - lateDeduction - absenceDeduction - otherDeduction - advanceDeduction - savingsDeduction);
+    const netSalary = Math.max(0,
+      earnedFromAttendance + extraDutyEarning + bonus + otherAllowance
+      - advanceDeduction - savingsDeduction
+    );
 
     return {
       base_salary: baseSalary,
