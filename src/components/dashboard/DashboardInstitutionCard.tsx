@@ -360,12 +360,14 @@ const DashboardInstitutionCard = () => {
     : (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য এখনো সেট করা হয়নি' : 'Institution info not configured yet');
 
   return (
-    <div className="card-elevated p-5 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-      <div className={`w-16 h-16 lg:w-24 lg:h-24 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${institution?.logo_url ? 'bg-transparent' : 'bg-primary'}`}>
+    <div className="card-elevated p-5 lg:p-8 flex flex-row items-center gap-4 lg:gap-6">
+      <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
         {institution?.logo_url ? (
           <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
         ) : (
-          <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
+          <div className="w-full h-full rounded-xl bg-primary flex items-center justify-center">
+            <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
+          </div>
         )}
       </div>
       <div className="flex-1 min-w-0 w-full flex flex-col items-center">
