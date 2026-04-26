@@ -1293,7 +1293,7 @@ const AdminSalary = () => {
                                         <CheckCircle2 className="h-3 w-3" />
                                       </Button>
                                     ) : (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => { if (confirm(bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?')) markUnpaidMutation.mutate(rec.id); }}>
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
                                         <AlertCircle className="h-3 w-3" />
                                       </Button>
                                     )}
