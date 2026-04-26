@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
@@ -92,6 +93,8 @@ const AdminSalary = () => {
   const [mainTab, setMainTab] = useState('salary');
   const [bonusYear, setBonusYear] = useState(String(now.getFullYear()));
   const [bonusPercent, setBonusPercent] = useState(100);
+  const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
+  const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
@@ -1290,7 +1293,7 @@ const AdminSalary = () => {
                                         <CheckCircle2 className="h-3 w-3" />
                                       </Button>
                                     ) : (
-                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => { if (confirm(bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?')) markUnpaidMutation.mutate(rec.id); }}>
+                                      <Button size="icon" variant="ghost" className="h-6 w-6 text-yellow-600" title={bn ? 'অপরিশোধিত করুন' : 'Mark Unpaid'} onClick={() => setUnpaidConfirmId(rec.id)}>
                                         <AlertCircle className="h-3 w-3" />
                                       </Button>
                                     )}
@@ -1532,13 +1535,9 @@ const AdminSalary = () => {
                                 })}>
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => {
-                                  if (confirm(bn ? 'এই জমা সেটআপ মুছে ফেলবেন?' : 'Delete this savings config?')) {
-                                    deleteSavingsMutation.mutate(cfg.id);
-                                  }
-                                }}>
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                               </div>
                             </td>
                           </tr>
@@ -2030,6 +2029,34 @@ const AdminSalary = () => {
             })()}
           </DialogContent>
         </Dialog>
+
+        <DeleteConfirmDialog
+          open={!!unpaidConfirmId}
+          onOpenChange={(o) => { if (!o) setUnpaidConfirmId(null); }}
+          onConfirm={() => {
+            if (unpaidConfirmId) {
+              markUnpaidMutation.mutate(unpaidConfirmId);
+              setUnpaidConfirmId(null);
+            }
+          }}
+          title={bn ? 'অপরিশোধিত করতে চান?' : 'Mark as unpaid?'}
+          description={bn ? 'এই বেতন রেকর্ডটি অপরিশোধিত হিসেবে চিহ্নিত হবে এবং সংশ্লিষ্ট খরচ থেকে সরানো হবে।' : 'This salary record will be marked as unpaid and removed from expenses.'}
+          isPending={markUnpaidMutation.isPending}
+        />
+
+        <DeleteConfirmDialog
+          open={!!deleteSavingsId}
+          onOpenChange={(o) => { if (!o) setDeleteSavingsId(null); }}
+          onConfirm={() => {
+            if (deleteSavingsId) {
+              deleteSavingsMutation.mutate(deleteSavingsId);
+              setDeleteSavingsId(null);
+            }
+          }}
+          title={bn ? 'জমা সেটআপ মুছবেন?' : 'Delete savings config?'}
+          description={bn ? 'এই জমা সেটআপটি মুছে ফেলা হবে।' : 'This savings configuration will be deleted.'}
+          isPending={deleteSavingsMutation.isPending}
+        />
       </div>
     </AdminLayout>
   );
