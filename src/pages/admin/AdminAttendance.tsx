@@ -419,6 +419,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
+      queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
       toast.success(bn ? 'ক্যাটাগরি শিফট টাইম সেভ হয়েছে' : 'Category shift times saved');
     },
   });
