@@ -537,13 +537,21 @@ const AdminSalary = () => {
 
       for (const rec of updateRecords) {
         const { id, ...updateData } = rec;
+        const activeSavings = getActiveSavings(updateData.staff_id);
+        const savingsDed = activeSavings ? activeSavings.amount : 0;
         const netSalary = Math.max(0,
-          Number(updateData.net_salary) +
+          Number(updateData.base_salary || 0) +
           Number(updateData.bonus || 0) +
+          Number(updateData.overtime || 0) +
           Number(updateData.other_allowance || 0) -
-          Number(updateData.advance_deduction || 0)
+          Number(updateData.late_deduction || 0) -
+          Number(updateData.absence_deduction || 0) -
+          Number(updateData.other_deduction || 0) -
+          Number(updateData.advance_deduction || 0) -
+          savingsDed
         );
         updateData.net_salary = netSalary;
+        updateData.savings_deduction = savingsDed;
         updateData.updated_at = new Date().toISOString();
 
         const { error } = await supabase.from('salary_records').update(updateData).eq('id', id);
