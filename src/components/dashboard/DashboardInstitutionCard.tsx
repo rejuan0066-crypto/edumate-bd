@@ -360,8 +360,8 @@ const DashboardInstitutionCard = () => {
     : (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য এখনো সেট করা হয়নি' : 'Institution info not configured yet');
 
   return (
-    <div className="card-elevated p-5 lg:p-8 flex flex-row items-start gap-4 lg:gap-6">
-      <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+    <div className="card-elevated p-3 sm:p-5 lg:p-8 flex flex-row items-start gap-3 sm:gap-5 lg:gap-6">
+      <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
         {institution?.logo_url ? (
           <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
         ) : (
