@@ -1273,8 +1273,10 @@ const AdminSalary = () => {
                               {rec ? (
                                 <Badge className={rec.status === 'paid'
                                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 inline-flex items-center gap-1'
-                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}>
-                                  {rec.status === 'paid' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 inline-flex items-center gap-1'}>
+                                  {rec.status === 'paid'
+                                    ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                                    : <Clock className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />}
                                   {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
                                 </Badge>
                               ) : (
