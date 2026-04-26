@@ -361,9 +361,9 @@ const DashboardInstitutionCard = () => {
 
   return (
     <div className="card-elevated p-5 lg:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
-      <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-xl bg-primary flex items-center justify-center shrink-0 overflow-hidden">
+      <div className={`w-16 h-16 lg:w-24 lg:h-24 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${institution?.logo_url ? 'bg-transparent' : 'bg-primary'}`}>
         {institution?.logo_url ? (
-          <img src={institution.logo_url} alt="Logo" className="w-full h-full object-cover" />
+          <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
         ) : (
           <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
         )}
