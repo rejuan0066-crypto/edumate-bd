@@ -46,9 +46,6 @@ const DeleteConfirmDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex-row gap-3 sm:justify-center pt-2">
-          <AlertDialogCancel className="rounded-full px-6 mt-0">
-            {bn ? 'না, থাক' : 'Cancel'}
-          </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isPending}
@@ -56,6 +53,9 @@ const DeleteConfirmDialog = ({
           >
             {bn ? 'হ্যাঁ, ডিলিট করুন' : 'Yes, Delete'}
           </AlertDialogAction>
+          <AlertDialogCancel className="rounded-full px-6 mt-0">
+            {bn ? 'না, থাক' : 'Cancel'}
+          </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
