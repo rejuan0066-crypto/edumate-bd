@@ -99,6 +99,7 @@ const AdminSalary = () => {
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
+  const [ungenerateConfirmId, setUngenerateConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
