@@ -95,6 +95,7 @@ const AdminSalary = () => {
   const [bonusYear, setBonusYear] = useState(String(now.getFullYear()));
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
+  const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
