@@ -1707,9 +1707,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     </div>
                   </div>
                 ))}
-                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)}>
+                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ক্যাটাগরি শিফট সেভ করুন' : 'Save Category Shifts'}
                 </Button>
+                <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
+                  {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
+                </a>
               </div>
               )}
 
