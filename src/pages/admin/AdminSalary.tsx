@@ -453,10 +453,11 @@ const AdminSalary = () => {
     const otherAllowance = 0;
     const advanceDeduction = 0;
 
-    // এগুলো শুধুমাত্র রিপোর্টিং / স্লিপ প্রদর্শনের জন্য সংরক্ষিত — net হিসাবে আবার বাদ যায় না
-    const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
+    // Additive মডেলে absent/half-day-এর জন্য আয় ০ ধরা হয় — তাই আলাদা "কর্তন" দেখানো হয় না।
+    // শুধু late/early-exit (আংশিক দিন কর্তন) প্রকৃত deduction হিসেবে গণ্য।
+    const absenceDeduction = 0;
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
-    const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
+    const otherDeduction = 0;
 
     // মোট অর্জিত আয় (উপস্থিত দিনগুলোর per-day rate, ইতিমধ্যে দেরি/early-exit বাদ)
     let earnedFromAttendance = Math.round(attStats.totalDailyEarnings);
