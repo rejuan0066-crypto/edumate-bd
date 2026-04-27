@@ -266,9 +266,24 @@ const AdminEmailDeliveryLog = () => {
                         {r.status === 'failed' ? (r.error_message || '-') : (r.subject || '-')}
                       </td>
                       <td className="py-3 px-4 last:rounded-r-[20px] text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(r)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {r.status === 'failed' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRetryOne(r)}
+                              disabled={retryingId === r.id || bulkRetrying}
+                              title={bn ? 'পুনরায় পাঠান' : 'Resend'}
+                            >
+                              {retryingId === r.id
+                                ? <Loader2 className="w-4 h-4 animate-spin" />
+                                : <Send className="w-4 h-4 text-emerald-600" />}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => setSelected(r)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
