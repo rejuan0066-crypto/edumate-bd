@@ -57,8 +57,8 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
   };
 
   const handleResetPassword = async () => {
-    if (newPassword.length < 6) {
-      toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে' : 'Password must be at least 6 characters');
+    if (!isPasswordStrong(newPassword)) {
+      toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements');
       return;
     }
     if (newPassword !== confirmPassword) {
