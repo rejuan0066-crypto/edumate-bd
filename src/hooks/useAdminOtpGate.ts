@@ -1,10 +1,14 @@
 import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchOtpRequirements, isOtpRequiredFor } from "@/hooks/useOtpRequirements";
 
 /**
- * Simple 2FA gate for sensitive committee actions (Undo, Approve overlap,
+ * Simple 2FA gate for sensitive admin actions (Undo, Approve overlap,
  * History export). Caches a successful verification for `cacheMs` so the admin
  * isn't prompted on every click.
+ *
+ * Honours the global "Require OTP for login / 2-step verification" toggle in
+ * /admin/settings — when disabled, actions execute without prompting.
  */
 export function useAdminOtpGate(cacheMs = 5 * 60 * 1000) {
   const [email, setEmail] = useState<string>("");
@@ -19,11 +23,21 @@ export function useAdminOtpGate(cacheMs = 5 * 60 * 1000) {
   }, []);
 
   const requireOtp = useCallback(
-    (action: () => void | Promise<void>) => {
+    async (action: () => void | Promise<void>) => {
       if (Date.now() < verifiedUntil) {
         // Still in trusted window — run immediately
         void action();
         return;
+      }
+      // Honour global admin setting — if 2-step / login OTP is disabled, skip the gate
+      try {
+        const reqs = await fetchOtpRequirements();
+        if (!isOtpRequiredFor(reqs, "login")) {
+          void action();
+          return;
+        }
+      } catch {
+        // fall through to normal OTP flow
       }
       if (!email) {
         // Fallback: cannot OTP, just run (auth missing)
