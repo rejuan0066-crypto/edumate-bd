@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,26 @@ import { GraduationCap, Lock, User, Loader2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import LanguageToggle from '@/components/LanguageToggle';
 import ForgotPasswordDialog from '@/components/ForgotPasswordDialog';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
 import PageLoader from '@/components/PageLoader';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
+import { supabase } from '@/integrations/supabase/client';
+
+const LOGIN_OTP_FLAG = 'pending_login_otp_v1';
+
+function mapRoleToOtpScope(role: string | null | undefined): OtpRoleScope | undefined {
+  if (!role) return undefined;
+  const r = role.toLowerCase();
+  if (r === 'super_admin' || r === 'admin') return 'admin';
+  if (r === 'parent' || r === 'guardian') return 'parent';
+  if (r === 'student') return 'student';
+  // teacher / staff / accountant / employee / librarian / etc.
+  return 'staff';
+}
 
 const Login = () => {
   const { t, language } = useLanguage();
