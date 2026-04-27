@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
+import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support';
 
