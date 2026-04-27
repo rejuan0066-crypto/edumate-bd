@@ -135,10 +135,11 @@ export default function AdminCommittees() {
 
   const saveMember = useMutation({
     mutationFn: async (m: Partial<Member> & { _confirmDuplicate?: boolean }) => {
-      // Duplicate-committee guard: warn if this staff is already an active member of another committee
-      if (m.staff_id && !m.id && !m._confirmDuplicate) {
+      let allowOverlap = false;
+      // Client-side guard: warn if this staff is already an active member of another committee
+      if (m.staff_id && (m.is_active !== false)) {
         const existing = members.filter(
-          (x) => x.staff_id === m.staff_id && x.is_active && x.committee_id !== m.committee_id
+          (x) => x.staff_id === m.staff_id && x.is_active && x.committee_id !== m.committee_id && x.id !== m.id
         );
         if (existing.length > 0) {
           const names = existing
@@ -151,12 +152,14 @@ export default function AdminCommittees() {
           if (!window.confirm(msg)) {
             throw new Error("__cancelled__");
           }
+          allowOverlap = true;
         }
       }
       const payload: any = { ...m };
       delete payload._confirmDuplicate;
       payload.joining_date = m.joining_date || null;
       payload.sort_order = Number(m.sort_order || 0);
+      payload.allow_overlap = allowOverlap;
       if (m.id) {
         const { error } = await supabase.from("committee_members").update(payload).eq("id", m.id);
         if (error) throw error;
@@ -176,7 +179,13 @@ export default function AdminCommittees() {
       toast.success(bn ? "সংরক্ষিত হয়েছে" : "Saved");
     },
     onError: (e: any) => {
-      if (e.message !== "__cancelled__") toast.error(e.message);
+      if (e.message === "__cancelled__") return;
+      const msg = e.message || "";
+      if (msg.includes("OVERLAP_BLOCKED")) {
+        toast.error(bn ? "ওভারল্যাপ ব্লক: এই স্টাফ ইতিমধ্যে অন্য কমিটিতে সক্রিয়" : "Overlap blocked: staff is already in another active committee");
+      } else {
+        toast.error(msg);
+      }
     },
   });
 

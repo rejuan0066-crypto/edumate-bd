@@ -1,59 +1,90 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-/**
- * Download a staff member's committee membership history as CSV.
- * Includes active and inactive periods (joining/removal events from audit log).
- */
-export async function exportStaffCommitteeHistoryCSV(
-  staffId: string,
-  staffName: string
-) {
-  // Current memberships
-  const { data: current } = await supabase
-    .from("committee_members" as any)
-    .select("committee_id, designation, joining_date, is_active, deleted_at, created_at, updated_at, committee:committees(name, name_en)")
-    .eq("staff_id", staffId);
+export interface HistoryFilters {
+  startDate?: string; // yyyy-MM-dd
+  endDate?: string;
+  status?: "all" | "active" | "inactive";
+}
 
-  // Audit history
-  const { data: audit } = await supabase
-    .from("committee_audit_log" as any)
-    .select("*")
-    .eq("staff_id", staffId)
-    .order("created_at", { ascending: true });
+interface HistoryRow {
+  committee: string;
+  designation: string;
+  action: string;
+  status: string;
+  date: string;
+  performedBy: string;
+  rawDate: Date;
+}
 
-  const rows: string[][] = [
-    ["Committee", "Designation", "Action", "Status", "Date", "Performed By"],
-  ];
+async function buildHistoryRows(staffId: string, f: HistoryFilters): Promise<HistoryRow[]> {
+  const [{ data: current }, { data: audit }] = await Promise.all([
+    supabase
+      .from("committee_members" as any)
+      .select("committee_id, designation, joining_date, is_active, deleted_at, created_at, committee:committees(name, name_en)")
+      .eq("staff_id", staffId),
+    supabase
+      .from("committee_audit_log" as any)
+      .select("*")
+      .eq("staff_id", staffId)
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const rows: HistoryRow[] = [];
 
   (current || []).forEach((m: any) => {
-    const status = m.deleted_at
-      ? "Removed"
-      : m.is_active
-      ? "Active"
-      : "Inactive";
-    rows.push([
-      m.committee?.name || m.committee?.name_en || "—",
-      m.designation || "—",
-      "Current Record",
+    const status = m.deleted_at ? "Removed" : m.is_active ? "Active" : "Inactive";
+    const d = m.joining_date ? new Date(m.joining_date) : new Date(m.created_at);
+    rows.push({
+      committee: m.committee?.name || m.committee?.name_en || "—",
+      designation: m.designation || "—",
+      action: "Current Record",
       status,
-      m.joining_date ? format(new Date(m.joining_date), "dd/MM/yyyy") : "—",
-      "—",
-    ]);
+      date: format(d, "dd/MM/yyyy"),
+      performedBy: "—",
+      rawDate: d,
+    });
   });
 
   (audit || []).forEach((a: any) => {
-    rows.push([
-      a.committee_name || "—",
-      a.designation || "—",
-      a.action,
-      "—",
-      format(new Date(a.created_at), "dd/MM/yyyy HH:mm"),
-      a.performed_by_email || "system",
-    ]);
+    const d = new Date(a.created_at);
+    rows.push({
+      committee: a.committee_name || "—",
+      designation: a.designation || "—",
+      action: a.action,
+      status: "—",
+      date: format(d, "dd/MM/yyyy HH:mm"),
+      performedBy: a.performed_by_email || "system",
+      rawDate: d,
+    });
   });
 
-  const csv = rows
+  // Apply filters
+  return rows.filter((r) => {
+    if (f.startDate && r.rawDate < new Date(f.startDate)) return false;
+    if (f.endDate) {
+      const end = new Date(f.endDate);
+      end.setHours(23, 59, 59, 999);
+      if (r.rawDate > end) return false;
+    }
+    if (f.status && f.status !== "all") {
+      if (f.status === "active" && r.status !== "Active") return false;
+      if (f.status === "inactive" && !["Inactive", "Removed"].includes(r.status)) return false;
+    }
+    return true;
+  });
+}
+
+export async function exportStaffCommitteeHistoryCSV(
+  staffId: string,
+  staffName: string,
+  filters: HistoryFilters = {}
+) {
+  const rows = await buildHistoryRows(staffId, filters);
+  const head = ["Committee", "Designation", "Action", "Status", "Date", "Performed By"];
+  const csv = [head, ...rows.map((r) => [r.committee, r.designation, r.action, r.status, r.date, r.performedBy])]
     .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
     .join("\n");
 
@@ -64,4 +95,37 @@ export async function exportStaffCommitteeHistoryCSV(
   a.download = `committee-history-${staffName.replace(/\s+/g, "_")}-${format(new Date(), "yyyyMMdd")}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export async function exportStaffCommitteeHistoryPDF(
+  staffId: string,
+  staffName: string,
+  filters: HistoryFilters = {}
+) {
+  const rows = await buildHistoryRows(staffId, filters);
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+  doc.setFontSize(16);
+  doc.text("Committee Membership History", 40, 40);
+  doc.setFontSize(10);
+  doc.text(`Staff: ${staffName}`, 40, 60);
+  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 75);
+  if (filters.startDate || filters.endDate) {
+    doc.text(
+      `Period: ${filters.startDate || "—"} to ${filters.endDate || "—"} | Status: ${filters.status || "all"}`,
+      40,
+      90
+    );
+  }
+
+  autoTable(doc, {
+    startY: 105,
+    head: [["Committee", "Designation", "Action", "Status", "Date", "Performed By"]],
+    body: rows.map((r) => [r.committee, r.designation, r.action, r.status, r.date, r.performedBy]),
+    styles: { fontSize: 9, cellPadding: 5 },
+    headStyles: { fillColor: [6, 78, 59] as any, textColor: 255 },
+    alternateRowStyles: { fillColor: [245, 250, 248] },
+  });
+
+  doc.save(`committee-history-${staffName.replace(/\s+/g, "_")}-${format(new Date(), "yyyyMMdd")}.pdf`);
 }
