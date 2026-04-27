@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal } from 'lucide-react';
+import { Users, Plus, Loader2, Trash2, Eye, EyeOff, AlertTriangle, KeyRound, Save, Pencil, ShieldCheck, Tag, Shield, UserCircle, Mail, SendHorizonal, UserPlus, Users2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import AccessControlTab from '@/components/admin/AccessControlTab';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -99,6 +100,7 @@ const AdminUserManagement = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
   const { role: currentUserRole } = useAuth();
 
@@ -691,6 +693,26 @@ const AdminUserManagement = () => {
                                 <AlertTriangle className="w-4 h-4" />
                               </Button>
                             )}
+                            {/* Quick: Add to Staff */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
+                              title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
+                            >
+                              <UserPlus className="w-4 h-4" />
+                            </Button>
+                            {/* Quick: Add to Committee */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(u.full_name || '')}`)}
+                              title={bn ? 'কমিটিতে যোগ করুন' : 'Add to Committee'}
+                            >
+                              <Users2 className="w-4 h-4" />
+                            </Button>
                             {/* Role edit */}
                             <Button
                               size="icon"

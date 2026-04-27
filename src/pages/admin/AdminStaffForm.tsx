@@ -16,7 +16,7 @@ import { Plus, AlertCircle, CheckCircle, Loader2, Upload, Trash2, Eye, Printer, 
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useValidationRules } from '@/hooks/useValidationRules';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
@@ -89,6 +89,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
+  const [searchParams] = useSearchParams();
   const { validate, validateAll } = useValidationRules('staff');
   const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const { isFieldActive, isFieldRequired, getField, isLoaded: staffConfigLoaded } = useStaffFormConfig();
@@ -125,6 +126,21 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
+
+  // Prefill from URL query params (?email=&full_name=) when creating new staff from User Management
+  useEffect(() => {
+    if (isEditMode) return;
+    const qEmail = searchParams.get('email');
+    const qName = searchParams.get('full_name');
+    if (qEmail) setStaffEmail((prev) => prev || qEmail);
+    if (qName) {
+      const parts = qName.trim().split(/\s+/);
+      setFirstName((prev) => prev || (parts[0] || ''));
+      setLastName((prev) => prev || (parts.slice(1).join(' ') || ''));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [emailVerified, setEmailVerified] = useState(false);
   const [showOtpDialog, setShowOtpDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
