@@ -1323,7 +1323,7 @@ const AdminUserManagement = () => {
                                 const { data, error } = await supabase.functions.invoke('manage-users', {
                                   body: { action: 'update_email', user_id: profileUser.id, new_email: profileEditEmail.trim() },
                                 });
-                                if (error || !data?.success) throw new Error(data?.error || error?.message);
+                                if (error || !data?.success) throw new Error((bn ? data?.message_bn : data?.message) || data?.error || error?.message);
                                 toast.success(bn ? '✅ ইমেইল আপডেট হয়েছে' : '✅ Email updated');
                                 setProfileUser({ ...profileUser, email: profileEditEmail.trim() });
                                 setEmailOtpStep(false); setEmailOtpEnabled(false); setEmailOtpSent(false); setEmailOtpCode('');
