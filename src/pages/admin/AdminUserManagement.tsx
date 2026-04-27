@@ -693,7 +693,7 @@ const AdminUserManagement = () => {
                         <p className={`text-xs mt-1 flex items-center gap-1 ${(emailDup === 'dup' || emailDup === 'invalid') ? 'text-destructive' : emailDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {emailDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
                           {emailDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ইমেইল ফরম্যাট নয়' : '⚠️ Invalid email format'}</>}
-                          {emailDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this email already exists'}</>}
+                          {emailDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this email already exists'} <button type="button" onClick={() => showConflict('email', email)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
                           {emailDup === 'ok' && <>✓ {bn ? 'ইমেইল উপলব্ধ' : 'Email available'}</>}
                         </p>
                       )}
