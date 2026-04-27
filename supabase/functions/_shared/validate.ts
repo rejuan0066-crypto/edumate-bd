@@ -1,0 +1,163 @@
+// Shared request validation wrapper for edge functions.
+// Provides a structured 422 response with per-field errors so the client
+// can render inline validation messages instead of generic failures.
+//
+// Usage:
+//   import { z } from "https://esm.sh/zod@3.23.8";
+//   import { validateBody, jsonError, corsHeaders } from "../_shared/validate.ts";
+//
+//   const Schema = z.object({
+//     email: z.string().email(),
+//     code:  z.string().length(6),
+//   });
+//
+//   Deno.serve(async (req) => {
+//     if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+//     const parsed = await validateBody(req, Schema);
+//     if (!parsed.ok) return parsed.response;     // 422 with field errors
+//     const { email, code } = parsed.data;
+//     // ... business logic
+//   });
+
+import { z, ZodError, ZodIssue, ZodTypeAny } from "https://esm.sh/zod@3.23.8";
+
+export const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Methods": "POST, GET, PUT, DELETE, PATCH, OPTIONS",
+};
+
+export type FieldError = {
+  field: string;        // dotted path, e.g. "user.email" or "items.0.qty"
+  message: string;
+  code: string;         // zod issue code, e.g. "invalid_type", "too_small"
+  expected?: unknown;
+  received?: unknown;
+};
+
+export type ValidationFailure = {
+  ok: false;
+  response: Response;
+};
+
+export type ValidationSuccess<T> = {
+  ok: true;
+  data: T;
+};
+
+export type ValidationResult<T> = ValidationSuccess<T> | ValidationFailure;
+
+/** Build a uniform JSON error response. */
+export function jsonError(
+  status: number,
+  message: string,
+  extras: Record<string, unknown> = {},
+): Response {
+  return new Response(
+    JSON.stringify({
+      ok: false,
+      error: message,
+      ...extras,
+    }),
+    {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
+}
+
+/** Build a uniform JSON success response. */
+export function jsonOk(
+  data: unknown,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+): Response {
+  return new Response(
+    JSON.stringify({ ok: true, data }),
+    {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json", ...extraHeaders },
+    },
+  );
+}
+
+/** Convert a ZodError into a stable, client-friendly array. */
+export function zodErrorsToFields(err: ZodError): FieldError[] {
+  return err.issues.map((issue: ZodIssue) => {
+    const field = issue.path.length ? issue.path.map(String).join(".") : "(root)";
+    const out: FieldError = {
+      field,
+      message: issue.message,
+      code: issue.code,
+    };
+    // Attach expected/received info when available (best-effort across zod issue variants)
+    const anyIssue = issue as unknown as Record<string, unknown>;
+    if ("expected" in anyIssue) out.expected = anyIssue.expected;
+    if ("received" in anyIssue) out.received = anyIssue.received;
+    return out;
+  });
+}
+
+/** Build the standard 422 validation response. */
+export function validationFailureResponse(errors: FieldError[]): Response {
+  return new Response(
+    JSON.stringify({
+      ok: false,
+      error: "Validation failed",
+      code: "VALIDATION_ERROR",
+      field_count: errors.length,
+      errors,
+      // Convenience map: { fieldPath: "first message" } for quick UI lookup
+      field_errors: errors.reduce<Record<string, string>>((acc, e) => {
+        if (!(e.field in acc)) acc[e.field] = e.message;
+        return acc;
+      }, {}),
+    }),
+    {
+      status: 422,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    },
+  );
+}
+
+/** Validate a parsed value against a zod schema. */
+export function validate<T extends ZodTypeAny>(
+  schema: T,
+  value: unknown,
+): ValidationResult<z.infer<T>> {
+  const result = schema.safeParse(value);
+  if (result.success) return { ok: true, data: result.data };
+  return { ok: false, response: validationFailureResponse(zodErrorsToFields(result.error)) };
+}
+
+/** Read JSON body and validate it. Returns 422 with field errors on failure,
+ *  or 400 if the body itself is not valid JSON. */
+export async function validateBody<T extends ZodTypeAny>(
+  req: Request,
+  schema: T,
+): Promise<ValidationResult<z.infer<T>>> {
+  let raw: unknown;
+  try {
+    raw = await req.json();
+  } catch {
+    return {
+      ok: false,
+      response: jsonError(400, "Request body must be valid JSON", { code: "INVALID_JSON" }),
+    };
+  }
+  return validate(schema, raw);
+}
+
+/** Validate URL query parameters against a zod schema (string-only inputs). */
+export function validateQuery<T extends ZodTypeAny>(
+  req: Request,
+  schema: T,
+): ValidationResult<z.infer<T>> {
+  const url = new URL(req.url);
+  const obj: Record<string, string> = {};
+  for (const [k, v] of url.searchParams.entries()) obj[k] = v;
+  return validate(schema, obj);
+}
+
+export { z };
