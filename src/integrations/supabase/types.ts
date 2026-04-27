@@ -6070,6 +6070,10 @@ export type Database = {
           from_name: string
           id: string
           is_enabled: boolean
+          name: string
+          notes: string | null
+          priority: number
+          purpose: string
           smtp_host: string
           smtp_password: string
           smtp_port: number
@@ -6083,6 +6087,10 @@ export type Database = {
           from_name?: string
           id?: string
           is_enabled?: boolean
+          name?: string
+          notes?: string | null
+          priority?: number
+          purpose?: string
           smtp_host?: string
           smtp_password?: string
           smtp_port?: number
@@ -6096,6 +6104,10 @@ export type Database = {
           from_name?: string
           id?: string
           is_enabled?: boolean
+          name?: string
+          notes?: string | null
+          priority?: number
+          purpose?: string
           smtp_host?: string
           smtp_password?: string
           smtp_port?: number

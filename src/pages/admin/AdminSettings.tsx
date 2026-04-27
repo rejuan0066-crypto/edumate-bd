@@ -46,8 +46,28 @@ const AdminSettings = () => {
   const [testEmailDialog, setTestEmailDialog] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
-  // SMTP config
-  const [smtp, setSmtp] = useState({
+  // SMTP profiles (multi)
+  type SmtpProfile = {
+    id?: string;
+    name: string;
+    purpose: 'all' | 'otp' | 'welcome' | 'notice' | 'bulk' | 'transactional' | 'auth';
+    priority: number;
+    smtp_host: string;
+    smtp_port: number;
+    smtp_username: string;
+    smtp_password: string;
+    from_email: string;
+    from_name: string;
+    is_enabled: boolean;
+    use_tls: boolean;
+    notes?: string | null;
+    _new?: boolean;
+    _dirty?: boolean;
+  };
+  const newSmtpProfile = (overrides: Partial<SmtpProfile> = {}): SmtpProfile => ({
+    name: 'New SMTP Profile',
+    purpose: 'all',
+    priority: 0,
     smtp_host: '',
     smtp_port: 587,
     smtp_username: '',
@@ -56,14 +76,20 @@ const AdminSettings = () => {
     from_name: '',
     is_enabled: false,
     use_tls: true,
+    notes: '',
+    _new: true,
+    _dirty: true,
+    ...overrides,
   });
+  const [smtpProfiles, setSmtpProfiles] = useState<SmtpProfile[]>([]);
   const [smtpLoading, setSmtpLoading] = useState(true);
-  const [smtpSaving, setSmtpSaving] = useState(false);
-  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
-  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [savingProfileIdx, setSavingProfileIdx] = useState<number | null>(null);
+  const [showSmtpPasswordIdx, setShowSmtpPasswordIdx] = useState<number | null>(null);
   const [smtpTestDialog, setSmtpTestDialog] = useState(false);
   const [smtpTestEmail, setSmtpTestEmail] = useState('');
-  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
+  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestProfileIdx, setSmtpTestProfileIdx] = useState<number | null>(null);
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string; profile?: string } | null>(null);
 
   // OTP test (live end-to-end via send-otp)
   const [otpTestDialog, setOtpTestDialog] = useState(false);
@@ -197,80 +223,172 @@ const AdminSettings = () => {
     const { data } = await supabase
       .from('smtp_config')
       .select('*')
-      .limit(1)
-      .maybeSingle();
-    if (data) {
-      setSmtp({
-        smtp_host: data.smtp_host,
-        smtp_port: data.smtp_port,
-        smtp_username: data.smtp_username,
-        smtp_password: data.smtp_password,
-        from_email: data.from_email,
-        from_name: data.from_name,
-        is_enabled: data.is_enabled,
-        use_tls: data.use_tls,
-      });
-      if (data.is_enabled) setEmailProvider('custom_domain');
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: true });
+    if (data && data.length > 0) {
+      setSmtpProfiles(
+        data.map((d: any) => ({
+          id: d.id,
+          name: d.name || 'Default',
+          purpose: (d.purpose || 'all') as SmtpProfile['purpose'],
+          priority: d.priority ?? 0,
+          smtp_host: d.smtp_host,
+          smtp_port: d.smtp_port,
+          smtp_username: d.smtp_username,
+          smtp_password: d.smtp_password,
+          from_email: d.from_email,
+          from_name: d.from_name,
+          is_enabled: d.is_enabled,
+          use_tls: d.use_tls,
+          notes: d.notes,
+          _new: false,
+          _dirty: false,
+        }))
+      );
+      if (data.some((d: any) => d.is_enabled)) setEmailProvider('custom_domain');
+    } else {
+      setSmtpProfiles([]);
     }
     setSmtpLoading(false);
   };
 
-  const saveSmtpConfig = async () => {
-    setSmtpSaving(true);
-    const { data: existing } = await supabase
-      .from('smtp_config')
-      .select('id')
-      .limit(1)
-      .maybeSingle();
+  const updateSmtpProfile = (idx: number, patch: Partial<SmtpProfile>) => {
+    setSmtpProfiles((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, ...patch, _dirty: true } : p))
+    );
+  };
 
-    let error;
-    if (existing) {
-      ({ error } = await supabase
-        .from('smtp_config')
-        .update({ ...smtp, updated_at: new Date().toISOString() })
-        .eq('id', existing.id));
-    } else {
-      ({ error } = await supabase.from('smtp_config').insert(smtp));
+  const addSmtpProfile = () => {
+    setSmtpProfiles((prev) => [...prev, newSmtpProfile({ name: `SMTP Profile ${prev.length + 1}` })]);
+  };
+
+  const removeSmtpProfile = async (idx: number) => {
+    const target = smtpProfiles[idx];
+    if (!confirm(bn ? 'এই SMTP প্রোফাইলটি মুছবেন?' : 'Delete this SMTP profile?')) return;
+    if (target.id && !target._new) {
+      const { error } = await supabase.from('smtp_config').delete().eq('id', target.id);
+      if (error) {
+        toast.error(bn ? 'মুছতে ব্যর্থ' : 'Failed to delete');
+        return;
+      }
     }
+    setSmtpProfiles((prev) => prev.filter((_, i) => i !== idx));
+    toast.success(bn ? 'প্রোফাইল মুছে ফেলা হয়েছে' : 'Profile deleted');
+  };
 
-    setSmtpSaving(false);
+  const saveSmtpProfile = async (idx: number) => {
+    const profile = smtpProfiles[idx];
+    if (!profile.name?.trim()) {
+      toast.error(bn ? 'প্রোফাইলের নাম দিন' : 'Enter profile name');
+      return;
+    }
+    setSavingProfileIdx(idx);
+    const payload: any = {
+      name: profile.name,
+      purpose: profile.purpose,
+      priority: profile.priority,
+      smtp_host: profile.smtp_host,
+      smtp_port: profile.smtp_port,
+      smtp_username: profile.smtp_username,
+      smtp_password: profile.smtp_password,
+      from_email: profile.from_email,
+      from_name: profile.from_name,
+      is_enabled: profile.is_enabled,
+      use_tls: profile.use_tls,
+      notes: profile.notes ?? '',
+      updated_at: new Date().toISOString(),
+    };
+    let error;
+    let savedId = profile.id;
+    if (profile.id && !profile._new) {
+      ({ error } = await supabase.from('smtp_config').update(payload).eq('id', profile.id));
+    } else {
+      const { data, error: insErr } = await supabase
+        .from('smtp_config')
+        .insert(payload)
+        .select('id')
+        .single();
+      error = insErr;
+      savedId = data?.id;
+    }
+    setSavingProfileIdx(null);
     if (error) {
       toast.error(bn ? 'সংরক্ষণ ব্যর্থ' : 'Failed to save');
     } else {
-      toast.success(bn ? 'SMTP সেটিংস সংরক্ষিত' : 'SMTP settings saved');
+      setSmtpProfiles((prev) =>
+        prev.map((p, i) =>
+          i === idx ? { ...p, id: savedId || p.id, _new: false, _dirty: false } : p
+        )
+      );
+      toast.success(bn ? `✅ "${profile.name}" সংরক্ষিত` : `✅ "${profile.name}" saved`);
     }
   };
 
-  const testSmtpConnection = async () => {
-    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.smtp_password || !smtp.from_email) {
-      toast.error(bn ? 'প্রথমে SMTP হোস্ট, ইউজারনেম, পাসওয়ার্ড ও From ইমেইল পূরণ করুন' : 'Please fill SMTP host, username, password and from email first');
+  const toggleSmtpEnabled = async (idx: number, value: boolean) => {
+    const profile = smtpProfiles[idx];
+    updateSmtpProfile(idx, { is_enabled: value });
+    if (profile.id && !profile._new) {
+      const { error } = await supabase
+        .from('smtp_config')
+        .update({ is_enabled: value, updated_at: new Date().toISOString() })
+        .eq('id', profile.id);
+      if (error) {
+        toast.error(bn ? 'টগল ব্যর্থ' : 'Toggle failed');
+        updateSmtpProfile(idx, { is_enabled: !value });
+      } else {
+        setSmtpProfiles((prev) =>
+          prev.map((p, i) => (i === idx ? { ...p, _dirty: false } : p))
+        );
+        toast.success(value
+          ? (bn ? '✅ সক্রিয় করা হয়েছে' : '✅ Enabled')
+          : (bn ? '⏸ নিষ্ক্রিয় করা হয়েছে' : '⏸ Disabled'));
+      }
+    }
+  };
+
+  const openSmtpTest = (idx: number) => {
+    const profile = smtpProfiles[idx];
+    if (!profile.smtp_host || !profile.smtp_username || !profile.smtp_password || !profile.from_email) {
+      toast.error(bn ? 'প্রথমে এই প্রোফাইলের সব তথ্য পূরণ ও সংরক্ষণ করুন' : 'Fill and save profile fields first');
       return;
     }
+    setSmtpTestProfileIdx(idx);
     setSmtpTestResult(null);
     setSmtpTestDialog(true);
   };
 
   const runSmtpTest = async () => {
+    if (smtpTestProfileIdx === null) return;
     if (!smtpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpTestEmail)) {
       toast.error(bn ? 'বৈধ টেস্ট ইমেইল দিন' : 'Enter a valid test email');
       return;
     }
+    const profile = smtpProfiles[smtpTestProfileIdx];
     setSmtpTesting(true);
     setSmtpTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('test-smtp', {
-        body: { ...smtp, test_email: smtpTestEmail },
+        body: {
+          smtp_host: profile.smtp_host,
+          smtp_port: profile.smtp_port,
+          smtp_username: profile.smtp_username,
+          smtp_password: profile.smtp_password,
+          from_email: profile.from_email,
+          from_name: profile.from_name,
+          use_tls: profile.use_tls,
+          test_email: smtpTestEmail,
+        },
       });
       if (error) {
-        setSmtpTestResult({ success: false, message: error.message || 'Function call failed' });
+        setSmtpTestResult({ success: false, message: error.message || 'Function call failed', profile: profile.name });
       } else if (data?.success) {
-        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent') });
-        toast.success(bn ? `✅ টেস্ট ইমেইল পাঠানো হয়েছে: ${smtpTestEmail}` : `✅ Test email sent to ${smtpTestEmail}`);
+        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent'), profile: profile.name });
+        toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
       } else {
-        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint });
+        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint, profile: profile.name });
       }
     } catch (e: any) {
-      setSmtpTestResult({ success: false, message: e?.message || 'Network error' });
+      setSmtpTestResult({ success: false, message: e?.message || 'Network error', profile: profile.name });
     }
     setSmtpTesting(false);
   };
@@ -386,132 +504,223 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        {/* Custom SMTP Configuration */}
+        {/* Custom SMTP Configuration — Multi-profile */}
         {emailProvider === 'custom_domain' && (
           <div className="card-elevated p-5">
-            <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" /> {bn ? 'SMTP কনফিগারেশন' : 'SMTP Configuration'}
-            </h3>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+              <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" /> {bn ? 'SMTP কনফিগারেশন (একাধিক প্রোফাইল)' : 'SMTP Configuration (Multi-profile)'}
+              </h3>
+              <Button onClick={addSmtpProfile} size="sm" className="btn-primary-gradient">
+                + {bn ? 'নতুন SMTP যোগ করুন' : 'Add SMTP Profile'}
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground mb-4">
               {bn
-                ? 'আপনার ইমেইল প্রোভাইডারের SMTP সেটিংস দিন (যেমন: Gmail, Zoho, Outlook, বা যেকোনো কাস্টম ডোমেইন)।'
-                : 'Enter your email provider SMTP settings (e.g., Gmail, Zoho, Outlook, or any custom domain).'}
+                ? 'প্রতিটি প্রোফাইলের জন্য আলাদা “উদ্দেশ্য” (যেমন OTP, Welcome, Notice) সেট করতে পারেন। সিস্টেম প্রথমে সেই উদ্দেশ্যের সক্রিয় প্রোফাইল খুঁজবে; না পেলে “সব ধরন (all)” এর প্রোফাইলে fallback করবে।'
+                : 'Set a “purpose” per profile (OTP, Welcome, Notice, …). The system first looks for an enabled profile matching that purpose, then falls back to a profile with purpose = “all”.'}
             </p>
 
             {smtpLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
+            ) : smtpProfiles.length === 0 ? (
+              <div className="text-center py-8 border border-dashed rounded-xl border-border/60">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {bn ? 'কোনো SMTP প্রোফাইল নেই। নতুন একটি যোগ করুন।' : 'No SMTP profiles yet. Add one to get started.'}
+                </p>
+                <Button onClick={addSmtpProfile} className="btn-primary-gradient">
+                  + {bn ? 'প্রথম SMTP যোগ করুন' : 'Add first SMTP profile'}
+                </Button>
+              </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{bn ? 'SMTP সক্রিয়' : 'SMTP Enabled'}</p>
-                    <p className="text-xs text-muted-foreground">{bn ? 'কাস্টম SMTP দিয়ে ইমেইল পাঠানো চালু/বন্ধ' : 'Enable/disable custom SMTP emails'}</p>
-                  </div>
-                  <Switch
-                    checked={smtp.is_enabled}
-                    onCheckedChange={(v) => setSmtp({ ...smtp, is_enabled: v })}
-                  />
-                </div>
+              <div className="space-y-5">
+                {smtpProfiles.map((p, idx) => (
+                  <div
+                    key={p.id || `new-${idx}`}
+                    className={`rounded-2xl border p-4 space-y-4 transition-colors ${
+                      p.is_enabled ? 'border-primary/40 bg-primary/[0.03]' : 'border-border/60 bg-muted/20'
+                    }`}
+                  >
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        <Switch
+                          checked={p.is_enabled}
+                          onCheckedChange={(v) => toggleSmtpEnabled(idx, v)}
+                        />
+                        <div className="flex-1">
+                          <Input
+                            value={p.name}
+                            onChange={(e) => updateSmtpProfile(idx, { name: e.target.value })}
+                            placeholder={bn ? 'প্রোফাইলের নাম' : 'Profile name'}
+                            className="font-medium bg-background"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                          p.is_enabled ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {p.is_enabled ? (bn ? 'সক্রিয়' : 'ENABLED') : (bn ? 'নিষ্ক্রিয়' : 'DISABLED')}
+                        </span>
+                        {p._dirty && (
+                          <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium">
+                            {bn ? 'অসংরক্ষিত' : 'UNSAVED'}
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSmtpProfile(idx)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          {bn ? 'মুছুন' : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'SMTP হোস্ট' : 'SMTP Host'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_host}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_host: e.target.value })}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'SMTP পোর্ট' : 'SMTP Port'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      type="number"
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_port}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_port: parseInt(e.target.value) || 587 })}
-                      placeholder="587"
-                    />
-                  </div>
-                </div>
+                    {/* Purpose + priority */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <Label>{bn ? 'উদ্দেশ্য (Purpose)' : 'Purpose'}</Label>
+                        <select
+                          className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                          value={p.purpose}
+                          onChange={(e) => updateSmtpProfile(idx, { purpose: e.target.value as SmtpProfile['purpose'] })}
+                        >
+                          <option value="all">{bn ? 'সব ধরন (Default fallback)' : 'All (default fallback)'}</option>
+                          <option value="otp">OTP</option>
+                          <option value="welcome">{bn ? 'স্বাগত (Welcome)' : 'Welcome'}</option>
+                          <option value="notice">{bn ? 'নোটিশ' : 'Notice'}</option>
+                          <option value="bulk">{bn ? 'বাল্ক/মাস ইমেইল' : 'Bulk'}</option>
+                          <option value="transactional">{bn ? 'ট্রানজেকশনাল' : 'Transactional'}</option>
+                          <option value="auth">{bn ? 'অথ/সিস্টেম' : 'Auth/System'}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'প্রাধান্য' : 'Priority'}</Label>
+                        <Input
+                          type="number"
+                          className="mt-1 bg-background"
+                          value={p.priority}
+                          onChange={(e) => updateSmtpProfile(idx, { priority: parseInt(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-md bg-secondary/40">
+                        <div>
+                          <p className="text-xs font-medium">{bn ? 'TLS/SSL' : 'TLS/SSL'}</p>
+                          <p className="text-[10px] text-muted-foreground">{bn ? 'নিরাপদ সংযোগ' : 'Secure connection'}</p>
+                        </div>
+                        <Switch
+                          checked={p.use_tls}
+                          onCheckedChange={(v) => updateSmtpProfile(idx, { use_tls: v })}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'SMTP ইউজারনেম' : 'SMTP Username'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_username}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_username: e.target.value })}
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'SMTP পাসওয়ার্ড' : 'SMTP Password'} <span className="text-destructive">*</span></Label>
-                    <div className="relative mt-1">
-                      <Input
-                        className="bg-background pr-10"
-                        type={showSmtpPassword ? 'text' : 'password'}
-                        value={smtp.smtp_password}
-                        onChange={(e) => setSmtp({ ...smtp, smtp_password: e.target.value })}
-                        placeholder={bn ? 'অ্যাপ পাসওয়ার্ড ব্যবহার করুন' : 'Use app password'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    {/* Host / port */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'SMTP হোস্ট' : 'SMTP Host'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.smtp_host}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_host: e.target.value })}
+                          placeholder="smtp.gmail.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'SMTP পোর্ট' : 'SMTP Port'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          type="number"
+                          className="mt-1 bg-background"
+                          value={p.smtp_port}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_port: parseInt(e.target.value) || 587 })}
+                          placeholder="587"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Username / password */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'SMTP ইউজারনেম' : 'SMTP Username'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.smtp_username}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_username: e.target.value })}
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'SMTP পাসওয়ার্ড' : 'SMTP Password'} <span className="text-destructive">*</span></Label>
+                        <div className="relative mt-1">
+                          <Input
+                            className="bg-background pr-10"
+                            type={showSmtpPasswordIdx === idx ? 'text' : 'password'}
+                            value={p.smtp_password}
+                            onChange={(e) => updateSmtpProfile(idx, { smtp_password: e.target.value })}
+                            placeholder={bn ? 'অ্যাপ পাসওয়ার্ড ব্যবহার করুন' : 'Use app password'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSmtpPasswordIdx(showSmtpPasswordIdx === idx ? null : idx)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showSmtpPasswordIdx === idx ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* From email/name */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'প্রেরকের ইমেইল' : 'From Email'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.from_email}
+                          onChange={(e) => updateSmtpProfile(idx, { from_email: e.target.value })}
+                          placeholder="noreply@yourdomain.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'প্রেরকের নাম' : 'From Name'}</Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.from_name}
+                          onChange={(e) => updateSmtpProfile(idx, { from_name: e.target.value })}
+                          placeholder={bn ? 'আপনার প্রতিষ্ঠানের নাম' : 'Your Institution Name'}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action buttons per profile */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        onClick={() => saveSmtpProfile(idx)}
+                        disabled={savingProfileIdx === idx}
+                        className="btn-primary-gradient"
+                        size="sm"
                       >
-                        {showSmtpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                        {savingProfileIdx === idx ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        {bn ? 'সংরক্ষণ' : 'Save'}
+                      </Button>
+                      <Button onClick={() => openSmtpTest(idx)} variant="outline" size="sm">
+                        <Mail className="w-4 h-4 mr-2" />
+                        {bn ? 'এই প্রোফাইল টেস্ট' : 'Test this profile'}
+                      </Button>
                     </div>
                   </div>
-                </div>
+                ))}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'প্রেরকের ইমেইল' : 'From Email'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.from_email}
-                      onChange={(e) => setSmtp({ ...smtp, from_email: e.target.value })}
-                      placeholder="noreply@yourdomain.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'প্রেরকের নাম' : 'From Name'}</Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.from_name}
-                      onChange={(e) => setSmtp({ ...smtp, from_name: e.target.value })}
-                      placeholder={bn ? 'আপনার প্রতিষ্ঠানের নাম' : 'Your Institution Name'}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{bn ? 'TLS/SSL ব্যবহার করুন' : 'Use TLS/SSL'}</p>
-                    <p className="text-xs text-muted-foreground">{bn ? 'নিরাপদ সংযোগ (সাধারণত চালু রাখুন)' : 'Secure connection (usually keep on)'}</p>
-                  </div>
-                  <Switch
-                    checked={smtp.use_tls}
-                    onCheckedChange={(v) => setSmtp({ ...smtp, use_tls: v })}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={saveSmtpConfig} disabled={smtpSaving} className="btn-primary-gradient flex-1">
-                    {smtpSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    {bn ? 'SMTP সেটিংস সংরক্ষণ' : 'Save SMTP Settings'}
-                  </Button>
-                  <Button onClick={testSmtpConnection} disabled={smtpTesting} variant="outline">
-                    {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-                    {bn ? 'টেস্ট' : 'Test'}
-                  </Button>
+                <div className="flex gap-2 pt-2 border-t border-border/40">
                   <Button onClick={() => { setOtpTestResult(null); setOtpTestDialog(true); }} variant="outline">
                     <Send className="w-4 h-4 mr-2" />
-                    {bn ? 'OTP টেস্ট' : 'Test OTP'}
+                    {bn ? 'লাইভ OTP ফ্লো টেস্ট' : 'Test live OTP flow'}
                   </Button>
                 </div>
 
@@ -521,7 +730,7 @@ const AdminSettings = () => {
                     <p><span className="font-medium">Gmail:</span> smtp.gmail.com : 587 (TLS) — {bn ? 'অ্যাপ পাসওয়ার্ড প্রয়োজন' : 'App password required'}</p>
                     <p><span className="font-medium">Zoho:</span> smtp.zoho.com : 587 (TLS)</p>
                     <p><span className="font-medium">Outlook:</span> smtp.office365.com : 587 (TLS)</p>
-                    <p><span className="font-medium">Yahoo:</span> smtp.mail.yahoo.com : 587 (TLS)</p>
+                    <p><span className="font-medium">Mailtrap:</span> sandbox.smtp.mailtrap.io : 2525</p>
                   </div>
                 </div>
               </div>
@@ -848,10 +1057,20 @@ const AdminSettings = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {smtpTestProfileIdx !== null && smtpProfiles[smtpTestProfileIdx] && (
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                <p className="font-medium text-foreground">
+                  {bn ? 'প্রোফাইল:' : 'Profile:'} {smtpProfiles[smtpTestProfileIdx].name}
+                </p>
+                <p className="text-muted-foreground mt-0.5">
+                  {smtpProfiles[smtpTestProfileIdx].smtp_host}:{smtpProfiles[smtpTestProfileIdx].smtp_port} · purpose: <span className="font-medium">{smtpProfiles[smtpTestProfileIdx].purpose}</span>
+                </p>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               {bn
-                ? 'কনফিগার করা SMTP দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও পাঠানো — উভয়ই যাচাই করবে।'
-                : 'A real test email will be sent using the configured SMTP. This verifies both authentication and delivery.'}
+                ? 'এই প্রোফাইলের কনফিগ দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও ডেলিভারি উভয়ই যাচাই করবে।'
+                : 'A real test email will be sent using THIS profile’s config. This verifies both authentication and delivery.'}
             </p>
             <div>
               <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { rateLimitResponse, otpErrorResponse } from "../_shared/validate.ts";
 import { sendViaSMTP } from "../_shared/smtp.ts";
+import { resolveSmtpProfile } from "../_shared/smtp-resolver.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -152,12 +153,8 @@ Deno.serve(async (req) => {
     // Generate 6-digit code
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
-    // Check SMTP config first
-    const { data: smtpConfig } = await supabase
-      .from("smtp_config")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
+    // Resolve SMTP profile by purpose (otp -> fallback to 'all')
+    const smtpConfig = await resolveSmtpProfile(supabase, "otp");
 
     // Check EmailJS config
     const { data: emailjsConfig } = await supabase
@@ -166,7 +163,7 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const useSmtp = smtpConfig?.is_enabled;
+    const useSmtp = !!smtpConfig;
     const useEmailjs = emailjsConfig?.is_enabled;
 
     if (!useSmtp && !useEmailjs) {
@@ -204,11 +201,16 @@ Deno.serve(async (req) => {
     if (useSmtp) {
       try {
         const subject = purpose === "password_reset" ? "Password Reset Code" : "Email Verification Code";
-        const html = generateOtpEmailHtml(code, expiryMinutes, purpose, smtpConfig.from_name);
+        const html = generateOtpEmailHtml(code, expiryMinutes, purpose, smtpConfig!.from_name);
         await sendViaSMTP(smtpConfig, email, subject, html);
 
         return new Response(
-          JSON.stringify({ success: true, method: "smtp", expiry_minutes: expiryMinutes }),
+          JSON.stringify({
+            success: true,
+            method: "smtp",
+            smtp_profile: { name: smtpConfig!.name, purpose: smtpConfig!.purpose, resolved_via: smtpConfig!.resolved_via },
+            expiry_minutes: expiryMinutes,
+          }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (smtpError) {
