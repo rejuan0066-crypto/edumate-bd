@@ -411,6 +411,49 @@ export default function AdminCommittees() {
                 </label>
               </div>
 
+              {/* Link to existing staff */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-2">
+                <Label className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  {bn ? "প্রতিষ্ঠানের স্টাফ থেকে যুক্ত করুন (ঐচ্ছিক)" : "Link to Institution Staff (Optional)"}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {bn
+                    ? "স্টাফ সিলেক্ট করলে নাম, পদবি ও ছবি স্বয়ংক্রিয়ভাবে পূরণ হবে। এই স্টাফ বেতন ও হাজিরা তালিকা থেকে বাদ পড়বে।"
+                    : "Selecting a staff auto-fills info. The staff will be excluded from salary & attendance lists."}
+                </p>
+                <select
+                  className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                  value={editingMember.staff_id || ""}
+                  onChange={(e) => {
+                    const sid = e.target.value || null;
+                    if (!sid) { setEditingMember({ ...editingMember, staff_id: null }); return; }
+                    const s = staffOptions.find((x: any) => x.id === sid);
+                    if (s) {
+                      setEditingMember({
+                        ...editingMember,
+                        staff_id: sid,
+                        name: s.name_bn || editingMember.name,
+                        name_en: s.name_en || editingMember.name_en,
+                        designation: editingMember.designation || s.designation || "",
+                        photo_url: s.photo_url || editingMember.photo_url,
+                        phone: s.phone || editingMember.phone,
+                        email: s.email || editingMember.email,
+                        address: s.address || editingMember.address,
+                      });
+                    } else {
+                      setEditingMember({ ...editingMember, staff_id: sid });
+                    }
+                  }}
+                >
+                  <option value="">{bn ? "— বহিরাগত সদস্য (স্টাফ নয়) —" : "— External member (not staff) —"}</option>
+                  {staffOptions.map((s: any) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name_bn || s.name_en}{s.designation ? ` — ${s.designation}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>{bn ? "নাম (বাংলা) *" : "Name (Bangla) *"}</Label>
