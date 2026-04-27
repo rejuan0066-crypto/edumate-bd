@@ -197,7 +197,7 @@ const AdminUserManagement = () => {
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
-    if (!password || password.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    if (!isPasswordStrong(password)) { toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements'); return; }
 
     // Find the base role for custom roles (role can be empty/'none' for permission-only users)
     const effectiveRole = (role && role !== 'none') ? role : '';
