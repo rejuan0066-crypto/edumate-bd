@@ -1637,6 +1637,12 @@ const AdminSalary = () => {
           </div>
         </div>
 
+        {committeeHiddenCount > 0 && (
+          <div className="flex justify-end">
+            <CommitteeExclusionNotice count={committeeHiddenCount} />
+          </div>
+        )}
+
         {/* Premium Stats Cards — Banking grade */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
