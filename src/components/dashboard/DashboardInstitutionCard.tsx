@@ -81,6 +81,10 @@ const DashboardInstitutionCard = () => {
         principal_message_bn: settings.principal_message_bn || '',
         principal_message_en: settings.principal_message_en || '',
         principal_photo_url: settings.principal_photo_url || '',
+        accountant_name: (settings as any).accountant_name || '',
+        accountant_name_en: (settings as any).accountant_name_en || '',
+        verifier_name: (settings as any).verifier_name || '',
+        verifier_name_en: (settings as any).verifier_name_en || '',
       });
       setFooterForm({
         global_footer_text_bn: (settings as any).global_footer_text_bn || '',
