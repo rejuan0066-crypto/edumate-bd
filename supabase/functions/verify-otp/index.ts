@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const DAILY_LIMIT = 100;        // max verify attempts per day
 
     const nowMs = Date.now();
-    const cooldownSince = new Date(nowMs - COOLDOWN_SECONDS * 1000).toISOString();
+    
     const minuteSince = new Date(nowMs - 60 * 1000).toISOString();
     const hourSince = new Date(nowMs - 60 * 60 * 1000).toISOString();
     const daySince = new Date(nowMs - 24 * 60 * 60 * 1000).toISOString();
