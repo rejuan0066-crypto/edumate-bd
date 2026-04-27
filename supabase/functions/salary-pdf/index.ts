@@ -61,27 +61,19 @@ Deno.serve(async (req) => {
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
 
-    // Generate HTML for PDF
+    // Official govt-grade rows (no color pills)
     const staffRows = staff.map((s: any, i: number) => `
       <tr>
         <td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>
         <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
         <td class="c-desig">${s.designation}</td>
-        <td class="c-amt">৳${fmtNum(Number(s.base_salary))}</td>
-        <td class="c-pal">
-          <span class="pill p-p">${bn ? toBnDigits(s.present) : s.present}</span>
-          <span class="pill p-a">${bn ? toBnDigits(s.absent) : s.absent}</span>
-          <span class="pill p-l">${bn ? toBnDigits(s.late) : s.late}</span>
-        </td>
-        <td class="c-amt c-neg">${Number(s.deductions) > 0 ? `৳${fmtNum(Number(s.deductions))}` : "—"}</td>
-        <td class="c-amt c-pos-soft">${Number(s.overtime || 0) > 0 ? `৳${fmtNum(Number(s.overtime))}` : "—"}</td>
-        <td class="c-amt c-neg">${Number(s.advance || 0) > 0 ? `৳${fmtNum(Number(s.advance))}` : "—"}</td>
-        <td class="c-amt c-net">৳${fmtNum(Number(s.net_salary))}</td>
-        <td class="c-status">
-          ${s.status === 'paid'
-            ? `<span class="badge b-paid">${bn ? '✓ পরিশোধিত' : '✓ Paid'}</span>`
-            : `<span class="badge b-pend">${bn ? '⏳ বকেয়া' : '⏳ Pending'}</span>`}
-        </td>
+        <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
+        <td class="c-pal"><span>${bn ? toBnDigits(s.present) : s.present}</span> / <span>${bn ? toBnDigits(s.absent) : s.absent}</span> / <span>${bn ? toBnDigits(s.late) : s.late}</span></td>
+        <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
+        <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
+        <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
+        <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
+        <td class="c-status">${s.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}</td>
       </tr>
     `).join("");
 
