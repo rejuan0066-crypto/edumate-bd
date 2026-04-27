@@ -56,12 +56,13 @@ export const useOtpService = () => {
   const sendOtp = async (
     email: string,
     purpose: 'email_verification' | 'password_reset',
-    recipientName?: string
+    recipientName?: string,
+    scope?: 'login' | 'password_reset' | 'email_change' | 'password_change'
   ): Promise<SendOtpResult> => {
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email, purpose },
+        body: { email, purpose, scope },
       });
 
       // Handle non-2xx (rate limit, validation, etc.) — read structured envelope
