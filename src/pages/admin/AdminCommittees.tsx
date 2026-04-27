@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Users, Calendar, Phone, Mail, MapPin, Briefcase, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 
 type Committee = {
   id: string;
