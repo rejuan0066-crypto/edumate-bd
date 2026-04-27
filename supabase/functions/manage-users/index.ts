@@ -266,6 +266,24 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
+      try {
+        const origin = req.headers.get("origin") || req.headers.get("referer") || "";
+        const loginUrl = origin ? `${new URL(origin).origin}/login` : undefined;
+        await supabaseAdmin.functions.invoke("send-welcome-email", {
+          body: {
+            email,
+            full_name: full_name || undefined,
+            role: role || undefined,
+            password,
+            kind: "user",
+            login_url: loginUrl,
+          },
+        });
+      } catch (mailErr) {
+        console.error("send-welcome-email failed (non-fatal):", mailErr);
+      }
+
       return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

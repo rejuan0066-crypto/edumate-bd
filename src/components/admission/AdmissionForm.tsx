@@ -494,6 +494,23 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
         approval_status: 'pending',
       } as any);
       if (error) throw error;
+      // Best-effort welcome email via SMTP (Mailtrap)
+      const recipientEmail = (payload as any).email;
+      if (recipientEmail) {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: recipientEmail,
+              full_name: (payload as any).name_en || (payload as any).name_bn,
+              kind: 'student',
+              student_id: studentId,
+              login_url: `${window.location.origin}/parent-portal`,
+            },
+          });
+        } catch (mailErr) {
+          console.error('send-welcome-email failed (non-fatal):', mailErr);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
