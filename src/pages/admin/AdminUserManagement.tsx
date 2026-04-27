@@ -298,11 +298,11 @@ const AdminUserManagement = () => {
     const emailLc = email.trim().toLowerCase();
     const nameLc = fullName.trim().toLowerCase();
     if (users.some(u => u.email?.toLowerCase() === emailLc)) {
-      toast.error(bn ? 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : 'A user with this email already exists');
+      showConflict('email', email);
       return;
     }
     if (users.some(u => (u.full_name || '').toLowerCase() === nameLc)) {
-      toast.error(bn ? 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' : 'A user with this name already exists');
+      showConflict('name', fullName);
       return;
     }
 
@@ -317,6 +317,9 @@ const AdminUserManagement = () => {
         body: { action: 'create', email: email.trim(), password, role: actualRole || undefined, full_name: fullName.trim() },
       });
       if (error || !data?.success) {
+        const code = data?.error;
+        if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
+        if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
         const msg = (bn ? data?.message_bn : data?.message) || data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
         toast.error(msg);
         setCreating(false);
