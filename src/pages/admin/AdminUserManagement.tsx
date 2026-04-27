@@ -21,6 +21,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
+import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
 
 interface UserItem {
   id: string;
