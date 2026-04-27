@@ -693,6 +693,26 @@ const AdminUserManagement = () => {
                                 <AlertTriangle className="w-4 h-4" />
                               </Button>
                             )}
+                            {/* Quick: Add to Staff */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
+                              title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
+                            >
+                              <UserPlus className="w-4 h-4" />
+                            </Button>
+                            {/* Quick: Add to Committee */}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(u.full_name || '')}`)}
+                              title={bn ? 'কমিটিতে যোগ করুন' : 'Add to Committee'}
+                            >
+                              <Users2 className="w-4 h-4" />
+                            </Button>
                             {/* Role edit */}
                             <Button
                               size="icon"
