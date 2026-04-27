@@ -958,6 +958,76 @@ const AdminSalary = () => {
   // Get record for a staff
   const getRecord = (staffId: string) => salaryRecords.find((r: any) => r.staff_id === staffId);
 
+  // Eligibility check: returns null if eligible, or a human reason why generation would fail
+  const getEligibilityReason = (s: any): string | null => {
+    const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+    if (requireAttendance) {
+      const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+      if (!hasAttendance) return bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records';
+    }
+    if (!s.salary || Number(s.salary) <= 0) {
+      return bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set';
+    }
+    const dt = getDutyTimeWithSource(s);
+    if (dt.source === 'default') {
+      // Not strictly blocking, but flag it as a warning reason for users
+      return bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) — সেট করুন' : 'Duty time using default — please set';
+    }
+    return null;
+  };
+
+  // Audit log query
+  const { data: auditLogs = [] } = useQuery({
+    queryKey: ['salary-generation-log', monthYear],
+    enabled: auditLogOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('salary_generation_log' as any)
+        .select('*')
+        .eq('month_year', monthYear)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  // Helper: write to salary generation audit log (best-effort, never throws)
+  const logSalaryGeneration = async (entry: {
+    staff_id?: string | null;
+    staff_name?: string | null;
+    action: 'generate' | 'auto_generate' | 'recalculate' | 'ungenerate' | 'bulk_generate';
+    source: 'manual' | 'bulk' | 'auto_attendance';
+    success: boolean;
+    reason?: string | null;
+    net_salary?: number | null;
+    metadata?: Record<string, any>;
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let userName: string | null = null;
+      if (user?.id) {
+        const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+        userName = prof?.full_name || user.email || null;
+      }
+      await supabase.from('salary_generation_log' as any).insert({
+        generated_by: user?.id || null,
+        generated_by_name: userName,
+        staff_id: entry.staff_id || null,
+        staff_name: entry.staff_name || null,
+        month_year: monthYear,
+        action: entry.action,
+        source: entry.source,
+        success: entry.success,
+        reason: entry.reason || null,
+        net_salary: entry.net_salary ?? null,
+        metadata: entry.metadata || {},
+      });
+    } catch (e) {
+      console.error('audit log failed', e);
+    }
+  };
+
   // Stats
   const stats = useMemo(() => {
     const totalBase = salaryRecords.reduce((s: number, r: any) => s + Number(r.base_salary || 0), 0);
