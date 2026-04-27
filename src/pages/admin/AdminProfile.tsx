@@ -498,11 +498,24 @@ const AdminProfile = () => {
             <div className="space-y-5">
               {isAdmin && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted/15 border border-border/15">
-                  <Switch checked={usePwOtp} onCheckedChange={setUsePwOtp} />
+                  <Switch
+                    checked={usePwOtp}
+                    onCheckedChange={setUsePwOtp}
+                    disabled={passwordOtpRequired}
+                  />
                   <div>
-                    <p className="text-sm font-semibold">{bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}</p>
+                    <p className="text-sm font-semibold">
+                      {bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}
+                      {passwordOtpRequired && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-bold">
+                          {bn ? '(বাধ্যতামূলক)' : '(Required)'}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {usePwOtp ? (bn ? 'ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to your email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only')}
+                      {passwordOtpRequired
+                        ? (bn ? 'অ্যাডমিন সেটিংস অনুযায়ী পাসওয়ার্ড পরিবর্তনে OTP বাধ্যতামূলক।' : 'OTP is required for password change per admin settings.')
+                        : (usePwOtp ? (bn ? 'ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to your email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only'))}
                     </p>
                   </div>
                 </div>
