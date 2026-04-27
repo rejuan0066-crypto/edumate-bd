@@ -2558,6 +2558,7 @@ export type Database = {
       }
       institutions: {
         Row: {
+          accountant_name: string | null
           address: string | null
           address_en: string | null
           created_at: string | null
@@ -2573,11 +2574,14 @@ export type Database = {
           other_info: string | null
           other_info_en: string | null
           phone: string | null
+          principal_name: string | null
           registration_number: string | null
           registration_number_en: string | null
           updated_at: string | null
+          verifier_name: string | null
         }
         Insert: {
+          accountant_name?: string | null
           address?: string | null
           address_en?: string | null
           created_at?: string | null
@@ -2593,11 +2597,14 @@ export type Database = {
           other_info?: string | null
           other_info_en?: string | null
           phone?: string | null
+          principal_name?: string | null
           registration_number?: string | null
           registration_number_en?: string | null
           updated_at?: string | null
+          verifier_name?: string | null
         }
         Update: {
+          accountant_name?: string | null
           address?: string | null
           address_en?: string | null
           created_at?: string | null
@@ -2613,9 +2620,11 @@ export type Database = {
           other_info?: string | null
           other_info_en?: string | null
           phone?: string | null
+          principal_name?: string | null
           registration_number?: string | null
           registration_number_en?: string | null
           updated_at?: string | null
+          verifier_name?: string | null
         }
         Relationships: []
       }
