@@ -153,12 +153,8 @@ Deno.serve(async (req) => {
     // Generate 6-digit code
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
-    // Check SMTP config first
-    const { data: smtpConfig } = await supabase
-      .from("smtp_config")
-      .select("*")
-      .limit(1)
-      .maybeSingle();
+    // Resolve SMTP profile by purpose (otp -> fallback to 'all')
+    const smtpConfig = await resolveSmtpProfile(supabase, "otp");
 
     // Check EmailJS config
     const { data: emailjsConfig } = await supabase
@@ -167,7 +163,7 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const useSmtp = smtpConfig?.is_enabled;
+    const useSmtp = !!smtpConfig;
     const useEmailjs = emailjsConfig?.is_enabled;
 
     if (!useSmtp && !useEmailjs) {
