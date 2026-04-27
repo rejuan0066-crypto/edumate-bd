@@ -124,6 +124,7 @@ import AdminBudgets from "./pages/admin/AdminBudgets";
 import AdminComplaints from "./pages/admin/AdminComplaints";
 import AdminHostel from "@/pages/admin/AdminHostel";
 import AdminHealthRecords from "@/pages/admin/AdminHealthRecords";
+import AdminCommittees from "@/pages/admin/AdminCommittees";
 import ComplaintPage from "./pages/ComplaintPage";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
