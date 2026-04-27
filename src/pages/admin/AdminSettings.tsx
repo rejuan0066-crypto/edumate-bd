@@ -1057,10 +1057,20 @@ const AdminSettings = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {smtpTestProfileIdx !== null && smtpProfiles[smtpTestProfileIdx] && (
+              <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 text-xs">
+                <p className="font-medium text-foreground">
+                  {bn ? 'প্রোফাইল:' : 'Profile:'} {smtpProfiles[smtpTestProfileIdx].name}
+                </p>
+                <p className="text-muted-foreground mt-0.5">
+                  {smtpProfiles[smtpTestProfileIdx].smtp_host}:{smtpProfiles[smtpTestProfileIdx].smtp_port} · purpose: <span className="font-medium">{smtpProfiles[smtpTestProfileIdx].purpose}</span>
+                </p>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               {bn
-                ? 'কনফিগার করা SMTP দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও পাঠানো — উভয়ই যাচাই করবে।'
-                : 'A real test email will be sent using the configured SMTP. This verifies both authentication and delivery.'}
+                ? 'এই প্রোফাইলের কনফিগ দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও ডেলিভারি উভয়ই যাচাই করবে।'
+                : 'A real test email will be sent using THIS profile’s config. This verifies both authentication and delivery.'}
             </p>
             <div>
               <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
