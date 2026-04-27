@@ -4510,6 +4510,7 @@ export type Database = {
           require_for_login: boolean
           require_for_password_change: boolean
           require_for_password_reset: boolean
+          role_overrides: Json
           updated_at: string
         }
         Insert: {
@@ -4524,6 +4525,7 @@ export type Database = {
           require_for_login?: boolean
           require_for_password_change?: boolean
           require_for_password_reset?: boolean
+          role_overrides?: Json
           updated_at?: string
         }
         Update: {
@@ -4538,6 +4540,7 @@ export type Database = {
           require_for_login?: boolean
           require_for_password_change?: boolean
           require_for_password_reset?: boolean
+          role_overrides?: Json
           updated_at?: string
         }
         Relationships: []
