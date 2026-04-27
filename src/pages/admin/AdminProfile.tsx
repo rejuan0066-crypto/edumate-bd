@@ -10,6 +10,7 @@ import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck,
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOtpService } from '@/hooks/useOtpService';
+import { useOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
