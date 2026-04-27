@@ -4488,6 +4488,10 @@ export type Database = {
           id: number
           is_enabled: boolean
           max_attempts: number
+          require_for_email_change: boolean
+          require_for_login: boolean
+          require_for_password_change: boolean
+          require_for_password_reset: boolean
           updated_at: string
         }
         Insert: {
@@ -4498,6 +4502,10 @@ export type Database = {
           id?: number
           is_enabled?: boolean
           max_attempts?: number
+          require_for_email_change?: boolean
+          require_for_login?: boolean
+          require_for_password_change?: boolean
+          require_for_password_reset?: boolean
           updated_at?: string
         }
         Update: {
@@ -4508,6 +4516,10 @@ export type Database = {
           id?: number
           is_enabled?: boolean
           max_attempts?: number
+          require_for_email_change?: boolean
+          require_for_login?: boolean
+          require_for_password_change?: boolean
+          require_for_password_reset?: boolean
           updated_at?: string
         }
         Relationships: []
