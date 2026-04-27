@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
@@ -101,8 +101,24 @@ const AdminSalary = () => {
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
   const [ungenerateConfirmId, setUngenerateConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
+  const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
+  const [auditLogOpen, setAuditLogOpen] = useState(false);
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
+
+  // Auto-refresh salary records when the auto-attendance trigger inserts new rows for this month
+  useEffect(() => {
+    const channel = supabase
+      .channel(`salary-records-${monthYear}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'salary_records', filter: `month_year=eq.${monthYear}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+          queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [monthYear, queryClient]);
 
   // Fetch designations for Bengali name lookup
   const { data: designationsList = [] } = useQuery({
@@ -337,22 +353,30 @@ const AdminSalary = () => {
     mutationFn: async (staffId: string) => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
+      const sName = s.name_bn || s.name_en;
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       if (requireAttendance) {
         const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
         if (!hasAttendance) {
-          throw new Error(bn ? 'এই স্টাফের উপস্থিতি রেকর্ড নেই' : 'No attendance records for this staff');
+          const reason = bn ? 'এই স্টাফের উপস্থিতি রেকর্ড নেই' : 'No attendance records for this staff';
+          await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+          throw new Error(reason);
         }
       }
       const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
       if (existing) {
-        throw new Error(bn ? 'এই মাসে ইতোমধ্যে জেনারেট করা হয়েছে' : 'Already generated for this month');
+        const reason = bn ? 'এই মাসে ইতোমধ্যে জেনারেট করা হয়েছে' : 'Already generated for this month';
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+        throw new Error(reason);
       }
       const calc = calculateSalary(s);
       const { error } = await supabase.from('salary_records').insert({
         staff_id: s.id, month_year: monthYear, ...calc, status: 'pending',
       });
-      if (error) throw error;
+      if (error) {
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason: error.message });
+        throw error;
+      }
 
       // Savings ledger
       const activeSavings = getActiveSavings(s.id);
@@ -373,12 +397,17 @@ const AdminSalary = () => {
           }).eq('id', activeSavings.config.id);
         }
       }
-      return s.name_bn || s.name_en;
+      await logSalaryGeneration({
+        staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual',
+        success: true, net_salary: Number(calc.net_salary || 0),
+      });
+      return sName;
     },
     onSuccess: (name) => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
       toast.success(bn ? `${name} এর বেতন জেনারেট হয়েছে` : `Salary generated for ${name}`);
     },
     onError: (e: any) => toast.error(e?.message || (bn ? 'জেনারেট সমস্যা' : 'Generate failed')),
@@ -664,6 +693,10 @@ const AdminSalary = () => {
           const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
           if (!hasAttendance) {
             skippedNames.push(s.name_bn || s.name_en || 'Unknown');
+            await logSalaryGeneration({
+              staff_id: s.id, staff_name: s.name_bn || s.name_en, action: 'bulk_generate', source: 'bulk',
+              success: false, reason: bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records',
+            });
             continue;
           }
         }
@@ -720,6 +753,22 @@ const AdminSalary = () => {
       if (newRecords.length > 0) {
         const { error } = await supabase.from('salary_records').insert(newRecords);
         if (error) throw error;
+        for (const rec of newRecords) {
+          const sm = staff.find((x: any) => x.id === rec.staff_id);
+          await logSalaryGeneration({
+            staff_id: rec.staff_id, staff_name: sm?.name_bn || sm?.name_en,
+            action: 'bulk_generate', source: 'bulk', success: true,
+            net_salary: Number(rec.net_salary || 0),
+          });
+        }
+      }
+      for (const rec of updateRecords) {
+        const sm = staff.find((x: any) => x.id === rec.staff_id);
+        await logSalaryGeneration({
+          staff_id: rec.staff_id, staff_name: sm?.name_bn || sm?.name_en,
+          action: 'recalculate', source: 'bulk', success: true,
+          net_salary: Number(rec.net_salary || 0),
+        });
       }
 
       // Record savings ledger entries for new records
@@ -755,6 +804,7 @@ const AdminSalary = () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error generating salary'),
   });
@@ -947,14 +997,95 @@ const AdminSalary = () => {
     },
   });
 
-  // Filter staff
+  // Filter staff (search + eligibility/status filter)
   const filtered = staff.filter((s: any) => {
     const q = searchQuery.toLowerCase();
-    return (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
+    const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+    if (eligibilityFilter === 'all') return true;
+    const rec = salaryRecords.find((r: any) => r.staff_id === s.id);
+    const requireAttendance = (settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value as any)?.enabled !== false;
+    const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+    const isEligible = (!requireAttendance || hasAttendance) && Number(s.salary || 0) > 0;
+    if (eligibilityFilter === 'eligible') return !rec && isEligible;
+    if (eligibilityFilter === 'not_generated') return !rec;
+    if (eligibilityFilter === 'pending') return rec && rec.status === 'pending';
+    if (eligibilityFilter === 'paid') return rec && rec.status === 'paid';
+    return true;
   });
 
   // Get record for a staff
   const getRecord = (staffId: string) => salaryRecords.find((r: any) => r.staff_id === staffId);
+
+  // Eligibility check: returns null if eligible, or a human reason why generation would fail
+  const getEligibilityReason = (s: any): string | null => {
+    const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+    if (requireAttendance) {
+      const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+      if (!hasAttendance) return bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records';
+    }
+    if (!s.salary || Number(s.salary) <= 0) {
+      return bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set';
+    }
+    const dt = getDutyTimeWithSource(s);
+    if (dt.source === 'default') {
+      // Not strictly blocking, but flag it as a warning reason for users
+      return bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) — সেট করুন' : 'Duty time using default — please set';
+    }
+    return null;
+  };
+
+  // Audit log query
+  const { data: auditLogs = [] } = useQuery({
+    queryKey: ['salary-generation-log', monthYear],
+    enabled: auditLogOpen,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('salary_generation_log' as any)
+        .select('*')
+        .eq('month_year', monthYear)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  // Helper: write to salary generation audit log (best-effort, never throws)
+  const logSalaryGeneration = async (entry: {
+    staff_id?: string | null;
+    staff_name?: string | null;
+    action: 'generate' | 'auto_generate' | 'recalculate' | 'ungenerate' | 'bulk_generate';
+    source: 'manual' | 'bulk' | 'auto_attendance';
+    success: boolean;
+    reason?: string | null;
+    net_salary?: number | null;
+    metadata?: Record<string, any>;
+  }) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      let userName: string | null = null;
+      if (user?.id) {
+        const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+        userName = prof?.full_name || user.email || null;
+      }
+      await supabase.from('salary_generation_log' as any).insert({
+        generated_by: user?.id || null,
+        generated_by_name: userName,
+        staff_id: entry.staff_id || null,
+        staff_name: entry.staff_name || null,
+        month_year: monthYear,
+        action: entry.action,
+        source: entry.source,
+        success: entry.success,
+        reason: entry.reason || null,
+        net_salary: entry.net_salary ?? null,
+        metadata: entry.metadata || {},
+      });
+    } catch (e) {
+      console.error('audit log failed', e);
+    }
+  };
 
   // Stats
   const stats = useMemo(() => {
@@ -1519,6 +1650,19 @@ const AdminSalary = () => {
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
 
+              <Select value={eligibilityFilter} onValueChange={(v: any) => setEligibilityFilter(v)}>
+                <SelectTrigger className="w-44 h-8 text-sm shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{bn ? 'সব স্টাফ' : 'All staff'}</SelectItem>
+                  <SelectItem value="eligible">{bn ? 'শুধু যোগ্য (জেনারেটের জন্য)' : 'Eligible only'}</SelectItem>
+                  <SelectItem value="not_generated">{bn ? 'জেনারেট হয়নি' : 'Not generated'}</SelectItem>
+                  <SelectItem value="pending">{bn ? 'বকেয়া' : 'Pending'}</SelectItem>
+                  <SelectItem value="paid">{bn ? 'পরিশোধিত' : 'Paid'}</SelectItem>
+                </SelectContent>
+              </Select>
+
               <div className="flex gap-2 shrink-0 flex-wrap">
                 {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
                   <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
@@ -1535,6 +1679,9 @@ const AdminSalary = () => {
                     {bn ? 'পুনরায় হিসাব' : 'Recalculate'}
                   </Button>
                 )}
+                <Button size="sm" variant="outline" onClick={() => setAuditLogOpen(true)} title={bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary generation audit log'}>
+                  <FileText className="h-3 w-3 mr-1" /> {bn ? 'অডিট লগ' : 'Audit Log'}
+                </Button>
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
@@ -1596,6 +1743,13 @@ const AdminSalary = () => {
                         const displayNet = rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0);
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
+                        const eligibilityReason = !rec ? getEligibilityReason(s) : null;
+                        const isHardBlocked = !rec && eligibilityReason !== null && (
+                          eligibilityReason.includes('উপস্থিতি') ||
+                          eligibilityReason.toLowerCase().includes('attendance') ||
+                          eligibilityReason.includes('মূল বেতন') ||
+                          eligibilityReason.toLowerCase().includes('base salary')
+                        );
 
                         return (
                           <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
@@ -1685,7 +1839,18 @@ const AdminSalary = () => {
                                   {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[10px]">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                                <div className="flex flex-col items-center gap-1">
+                                  <Badge variant="outline" className="text-[10px]">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                                  {eligibilityReason && (
+                                    <span
+                                      className={`text-[9px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}
+                                      title={eligibilityReason}
+                                    >
+                                      <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
+                                      {eligibilityReason}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center">
@@ -1694,9 +1859,11 @@ const AdminSalary = () => {
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
-                                    title={bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary'}
-                                    disabled={generateSingleMutation.isPending}
+                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 disabled:opacity-40"
+                                    title={isHardBlocked
+                                      ? (bn ? `জেনারেট করা যাবে না: ${eligibilityReason}` : `Cannot generate: ${eligibilityReason}`)
+                                      : (bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary')}
+                                    disabled={generateSingleMutation.isPending || isHardBlocked}
                                     onClick={() => generateSingleMutation.mutate(s.id)}
                                   >
                                     <Calculator className="h-3.5 w-3.5" />
@@ -2516,6 +2683,77 @@ const AdminSalary = () => {
           description={bn ? 'এই জমা সেটআপটি মুছে ফেলা হবে।' : 'This savings configuration will be deleted.'}
           isPending={deleteSavingsMutation.isPending}
         />
+
+        {/* Salary Generation Audit Log Dialog */}
+        <Dialog open={auditLogOpen} onOpenChange={setAuditLogOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                {bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary Generation Audit Log'}
+                <span className="text-xs text-muted-foreground font-normal">
+                  ({MONTHS.find(m => m.value === selectedMonth)?.[bn ? 'bn' : 'en']} {bn ? toBnDigits(selectedYear) : selectedYear})
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-1 -mx-6 px-6">
+              {auditLogs.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  {bn ? 'এই মাসের জন্য কোন লগ এন্ট্রি নেই' : 'No log entries for this month'}
+                </p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-muted/80 backdrop-blur">
+                    <tr className="border-b">
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'সময়' : 'Time'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'স্টাফ' : 'Staff'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'কে করেছেন' : 'By'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'উৎস' : 'Source'}</th>
+                      <th className="px-2 py-2 text-center font-medium">{bn ? 'ফলাফল' : 'Result'}</th>
+                      <th className="px-2 py-2 text-right font-medium">{bn ? 'নিট বেতন' : 'Net'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'মন্তব্য' : 'Note'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map((log: any) => (
+                      <tr key={log.id} className="border-b hover:bg-muted/30">
+                        <td className="px-2 py-1.5 text-muted-foreground whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleString(bn ? 'bn-BD' : 'en-US', {
+                            day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="px-2 py-1.5">{log.staff_name || '—'}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{log.generated_by_name || (log.source === 'auto_attendance' ? (bn ? 'সিস্টেম (অটো)' : 'System (auto)') : '—')}</td>
+                        <td className="px-2 py-1.5">
+                          <Badge variant="outline" className="text-[10px]">{log.action}</Badge>
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{log.source}</td>
+                        <td className="px-2 py-1.5 text-center">
+                          {log.success ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">
+                              {bn ? 'সফল' : 'Success'}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px]">
+                              {bn ? 'ব্যর্থ' : 'Failed'}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono">
+                          {log.net_salary != null ? `৳${bn ? toBnDigits(Number(log.net_salary).toLocaleString()) : Number(log.net_salary).toLocaleString()}` : '—'}
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground max-w-[240px] truncate" title={log.reason || ''}>{log.reason || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AdminLayout>
   );
