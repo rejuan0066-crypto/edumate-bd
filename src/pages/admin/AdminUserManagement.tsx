@@ -1369,6 +1369,7 @@ const AdminUserManagement = () => {
                           </button>
                         </div>
                         <PasswordStrengthMeter password={profileNewPassword} bn={bn} />
+                      </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
                         <div className="relative">
