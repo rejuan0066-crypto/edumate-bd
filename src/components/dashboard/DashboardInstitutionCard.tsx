@@ -27,6 +27,10 @@ const DashboardInstitutionCard = () => {
     principal_message_bn: '',
     principal_message_en: '',
     principal_photo_url: '',
+    accountant_name: '',
+    accountant_name_en: '',
+    verifier_name: '',
+    verifier_name_en: '',
   });
   const [footerForm, setFooterForm] = useState({
     global_footer_text_bn: '',
