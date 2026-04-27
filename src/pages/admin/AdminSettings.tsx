@@ -189,11 +189,13 @@ const AdminSettings = () => {
     if (next.hourly_limit > next.daily_limit) next.hourly_limit = next.daily_limit;
 
     // If master is OFF → all per-flow toggles forced OFF (prevent stale "required" state)
+    // and per-role overrides are cleared (they would have no effect anyway).
     if (!next.is_enabled) {
       next.require_for_login = false;
       next.require_for_password_reset = false;
       next.require_for_email_change = false;
       next.require_for_password_change = false;
+      next.role_overrides = {} as typeof next.role_overrides;
     }
     return next;
   };
