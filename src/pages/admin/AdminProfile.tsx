@@ -13,6 +13,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
 
 const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
   <div className="relative">
