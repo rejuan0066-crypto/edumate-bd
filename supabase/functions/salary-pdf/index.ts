@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const staffRows = staff.map((s: any, i: number) => `
       <tr>
         <td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>
-        <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
+        <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
         <td class="c-desig">${s.designation}</td>
         <td class="c-amt">৳${fmtNum(Number(s.base_salary))}</td>
         <td class="c-pal">
