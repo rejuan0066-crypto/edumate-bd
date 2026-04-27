@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
 import PageLoader from '@/components/PageLoader';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 const Login = () => {
   const { t, language } = useLanguage();
