@@ -78,6 +78,24 @@ export default function AdminCommittees() {
   const [deleteCommittee, setDeleteCommittee] = useState<Committee | null>(null);
   const [deleteMember, setDeleteMember] = useState<Member | null>(null);
   const otpGate = useAdminOtpGate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Prefill member dialog when navigated from User Management with ?prefill_email=&prefill_name=
+  useEffect(() => {
+    const pEmail = searchParams.get("prefill_email");
+    const pName = searchParams.get("prefill_name");
+    if (pEmail || pName) {
+      setEditingMember({ ...emptyMember, name: pName || "", email: pEmail || "" });
+      setMemberDialog(true);
+      // Clean URL so it doesn't reopen on next render
+      const next = new URLSearchParams(searchParams);
+      next.delete("prefill_email");
+      next.delete("prefill_name");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const { data: committees = [], isLoading: loadingC } = useQuery({
     queryKey: ["committees"],
