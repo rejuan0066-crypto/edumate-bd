@@ -739,6 +739,22 @@ const AdminSalary = () => {
       if (newRecords.length > 0) {
         const { error } = await supabase.from('salary_records').insert(newRecords);
         if (error) throw error;
+        for (const rec of newRecords) {
+          const sm = staff.find((x: any) => x.id === rec.staff_id);
+          await logSalaryGeneration({
+            staff_id: rec.staff_id, staff_name: sm?.name_bn || sm?.name_en,
+            action: 'bulk_generate', source: 'bulk', success: true,
+            net_salary: Number(rec.net_salary || 0),
+          });
+        }
+      }
+      for (const rec of updateRecords) {
+        const sm = staff.find((x: any) => x.id === rec.staff_id);
+        await logSalaryGeneration({
+          staff_id: rec.staff_id, staff_name: sm?.name_bn || sm?.name_en,
+          action: 'recalculate', source: 'bulk', success: true,
+          net_salary: Number(rec.net_salary || 0),
+        });
       }
 
       // Record savings ledger entries for new records
