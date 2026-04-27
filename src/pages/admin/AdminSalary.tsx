@@ -2683,6 +2683,77 @@ const AdminSalary = () => {
           description={bn ? 'এই জমা সেটআপটি মুছে ফেলা হবে।' : 'This savings configuration will be deleted.'}
           isPending={deleteSavingsMutation.isPending}
         />
+
+        {/* Salary Generation Audit Log Dialog */}
+        <Dialog open={auditLogOpen} onOpenChange={setAuditLogOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                {bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary Generation Audit Log'}
+                <span className="text-xs text-muted-foreground font-normal">
+                  ({MONTHS.find(m => m.value === selectedMonth)?.[bn ? 'bn' : 'en']} {bn ? toBnDigits(selectedYear) : selectedYear})
+                </span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-1 -mx-6 px-6">
+              {auditLogs.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  {bn ? 'এই মাসের জন্য কোন লগ এন্ট্রি নেই' : 'No log entries for this month'}
+                </p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-muted/80 backdrop-blur">
+                    <tr className="border-b">
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'সময়' : 'Time'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'স্টাফ' : 'Staff'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'কে করেছেন' : 'By'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'অ্যাকশন' : 'Action'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'উৎস' : 'Source'}</th>
+                      <th className="px-2 py-2 text-center font-medium">{bn ? 'ফলাফল' : 'Result'}</th>
+                      <th className="px-2 py-2 text-right font-medium">{bn ? 'নিট বেতন' : 'Net'}</th>
+                      <th className="px-2 py-2 text-left font-medium">{bn ? 'মন্তব্য' : 'Note'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map((log: any) => (
+                      <tr key={log.id} className="border-b hover:bg-muted/30">
+                        <td className="px-2 py-1.5 text-muted-foreground whitespace-nowrap">
+                          {new Date(log.created_at).toLocaleString(bn ? 'bn-BD' : 'en-US', {
+                            day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="px-2 py-1.5">{log.staff_name || '—'}</td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{log.generated_by_name || (log.source === 'auto_attendance' ? (bn ? 'সিস্টেম (অটো)' : 'System (auto)') : '—')}</td>
+                        <td className="px-2 py-1.5">
+                          <Badge variant="outline" className="text-[10px]">{log.action}</Badge>
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground">{log.source}</td>
+                        <td className="px-2 py-1.5 text-center">
+                          {log.success ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">
+                              {bn ? 'সফল' : 'Success'}
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px]">
+                              {bn ? 'ব্যর্থ' : 'Failed'}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-right font-mono">
+                          {log.net_salary != null ? `৳${bn ? toBnDigits(Number(log.net_salary).toLocaleString()) : Number(log.net_salary).toLocaleString()}` : '—'}
+                        </td>
+                        <td className="px-2 py-1.5 text-muted-foreground max-w-[240px] truncate" title={log.reason || ''}>{log.reason || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AdminLayout>
   );
