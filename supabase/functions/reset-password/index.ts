@@ -18,12 +18,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (new_password.length < 6) {
-      return otpErrorResponse({
-        status: 400,
-        code: "WEAK_PASSWORD",
-        message: "Password must be at least 6 characters",
-      });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const pwCheck = await enforcePasswordPolicy(supabase, new_password);
+    if (!pwCheck.ok) {
+      await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email, reason: 'forgot_password_reset', details: pwCheck.body, req });
+      return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
