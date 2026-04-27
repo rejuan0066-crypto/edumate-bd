@@ -223,80 +223,172 @@ const AdminSettings = () => {
     const { data } = await supabase
       .from('smtp_config')
       .select('*')
-      .limit(1)
-      .maybeSingle();
-    if (data) {
-      setSmtp({
-        smtp_host: data.smtp_host,
-        smtp_port: data.smtp_port,
-        smtp_username: data.smtp_username,
-        smtp_password: data.smtp_password,
-        from_email: data.from_email,
-        from_name: data.from_name,
-        is_enabled: data.is_enabled,
-        use_tls: data.use_tls,
-      });
-      if (data.is_enabled) setEmailProvider('custom_domain');
+      .order('priority', { ascending: false })
+      .order('created_at', { ascending: true });
+    if (data && data.length > 0) {
+      setSmtpProfiles(
+        data.map((d: any) => ({
+          id: d.id,
+          name: d.name || 'Default',
+          purpose: (d.purpose || 'all') as SmtpProfile['purpose'],
+          priority: d.priority ?? 0,
+          smtp_host: d.smtp_host,
+          smtp_port: d.smtp_port,
+          smtp_username: d.smtp_username,
+          smtp_password: d.smtp_password,
+          from_email: d.from_email,
+          from_name: d.from_name,
+          is_enabled: d.is_enabled,
+          use_tls: d.use_tls,
+          notes: d.notes,
+          _new: false,
+          _dirty: false,
+        }))
+      );
+      if (data.some((d: any) => d.is_enabled)) setEmailProvider('custom_domain');
+    } else {
+      setSmtpProfiles([]);
     }
     setSmtpLoading(false);
   };
 
-  const saveSmtpConfig = async () => {
-    setSmtpSaving(true);
-    const { data: existing } = await supabase
-      .from('smtp_config')
-      .select('id')
-      .limit(1)
-      .maybeSingle();
+  const updateSmtpProfile = (idx: number, patch: Partial<SmtpProfile>) => {
+    setSmtpProfiles((prev) =>
+      prev.map((p, i) => (i === idx ? { ...p, ...patch, _dirty: true } : p))
+    );
+  };
 
-    let error;
-    if (existing) {
-      ({ error } = await supabase
-        .from('smtp_config')
-        .update({ ...smtp, updated_at: new Date().toISOString() })
-        .eq('id', existing.id));
-    } else {
-      ({ error } = await supabase.from('smtp_config').insert(smtp));
+  const addSmtpProfile = () => {
+    setSmtpProfiles((prev) => [...prev, newSmtpProfile({ name: `SMTP Profile ${prev.length + 1}` })]);
+  };
+
+  const removeSmtpProfile = async (idx: number) => {
+    const target = smtpProfiles[idx];
+    if (!confirm(bn ? 'এই SMTP প্রোফাইলটি মুছবেন?' : 'Delete this SMTP profile?')) return;
+    if (target.id && !target._new) {
+      const { error } = await supabase.from('smtp_config').delete().eq('id', target.id);
+      if (error) {
+        toast.error(bn ? 'মুছতে ব্যর্থ' : 'Failed to delete');
+        return;
+      }
     }
+    setSmtpProfiles((prev) => prev.filter((_, i) => i !== idx));
+    toast.success(bn ? 'প্রোফাইল মুছে ফেলা হয়েছে' : 'Profile deleted');
+  };
 
-    setSmtpSaving(false);
+  const saveSmtpProfile = async (idx: number) => {
+    const profile = smtpProfiles[idx];
+    if (!profile.name?.trim()) {
+      toast.error(bn ? 'প্রোফাইলের নাম দিন' : 'Enter profile name');
+      return;
+    }
+    setSavingProfileIdx(idx);
+    const payload: any = {
+      name: profile.name,
+      purpose: profile.purpose,
+      priority: profile.priority,
+      smtp_host: profile.smtp_host,
+      smtp_port: profile.smtp_port,
+      smtp_username: profile.smtp_username,
+      smtp_password: profile.smtp_password,
+      from_email: profile.from_email,
+      from_name: profile.from_name,
+      is_enabled: profile.is_enabled,
+      use_tls: profile.use_tls,
+      notes: profile.notes ?? '',
+      updated_at: new Date().toISOString(),
+    };
+    let error;
+    let savedId = profile.id;
+    if (profile.id && !profile._new) {
+      ({ error } = await supabase.from('smtp_config').update(payload).eq('id', profile.id));
+    } else {
+      const { data, error: insErr } = await supabase
+        .from('smtp_config')
+        .insert(payload)
+        .select('id')
+        .single();
+      error = insErr;
+      savedId = data?.id;
+    }
+    setSavingProfileIdx(null);
     if (error) {
       toast.error(bn ? 'সংরক্ষণ ব্যর্থ' : 'Failed to save');
     } else {
-      toast.success(bn ? 'SMTP সেটিংস সংরক্ষিত' : 'SMTP settings saved');
+      setSmtpProfiles((prev) =>
+        prev.map((p, i) =>
+          i === idx ? { ...p, id: savedId || p.id, _new: false, _dirty: false } : p
+        )
+      );
+      toast.success(bn ? `✅ "${profile.name}" সংরক্ষিত` : `✅ "${profile.name}" saved`);
     }
   };
 
-  const testSmtpConnection = async () => {
-    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.smtp_password || !smtp.from_email) {
-      toast.error(bn ? 'প্রথমে SMTP হোস্ট, ইউজারনেম, পাসওয়ার্ড ও From ইমেইল পূরণ করুন' : 'Please fill SMTP host, username, password and from email first');
+  const toggleSmtpEnabled = async (idx: number, value: boolean) => {
+    const profile = smtpProfiles[idx];
+    updateSmtpProfile(idx, { is_enabled: value });
+    if (profile.id && !profile._new) {
+      const { error } = await supabase
+        .from('smtp_config')
+        .update({ is_enabled: value, updated_at: new Date().toISOString() })
+        .eq('id', profile.id);
+      if (error) {
+        toast.error(bn ? 'টগল ব্যর্থ' : 'Toggle failed');
+        updateSmtpProfile(idx, { is_enabled: !value });
+      } else {
+        setSmtpProfiles((prev) =>
+          prev.map((p, i) => (i === idx ? { ...p, _dirty: false } : p))
+        );
+        toast.success(value
+          ? (bn ? '✅ সক্রিয় করা হয়েছে' : '✅ Enabled')
+          : (bn ? '⏸ নিষ্ক্রিয় করা হয়েছে' : '⏸ Disabled'));
+      }
+    }
+  };
+
+  const openSmtpTest = (idx: number) => {
+    const profile = smtpProfiles[idx];
+    if (!profile.smtp_host || !profile.smtp_username || !profile.smtp_password || !profile.from_email) {
+      toast.error(bn ? 'প্রথমে এই প্রোফাইলের সব তথ্য পূরণ ও সংরক্ষণ করুন' : 'Fill and save profile fields first');
       return;
     }
+    setSmtpTestProfileIdx(idx);
     setSmtpTestResult(null);
     setSmtpTestDialog(true);
   };
 
   const runSmtpTest = async () => {
+    if (smtpTestProfileIdx === null) return;
     if (!smtpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpTestEmail)) {
       toast.error(bn ? 'বৈধ টেস্ট ইমেইল দিন' : 'Enter a valid test email');
       return;
     }
+    const profile = smtpProfiles[smtpTestProfileIdx];
     setSmtpTesting(true);
     setSmtpTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('test-smtp', {
-        body: { ...smtp, test_email: smtpTestEmail },
+        body: {
+          smtp_host: profile.smtp_host,
+          smtp_port: profile.smtp_port,
+          smtp_username: profile.smtp_username,
+          smtp_password: profile.smtp_password,
+          from_email: profile.from_email,
+          from_name: profile.from_name,
+          use_tls: profile.use_tls,
+          test_email: smtpTestEmail,
+        },
       });
       if (error) {
-        setSmtpTestResult({ success: false, message: error.message || 'Function call failed' });
+        setSmtpTestResult({ success: false, message: error.message || 'Function call failed', profile: profile.name });
       } else if (data?.success) {
-        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent') });
-        toast.success(bn ? `✅ টেস্ট ইমেইল পাঠানো হয়েছে: ${smtpTestEmail}` : `✅ Test email sent to ${smtpTestEmail}`);
+        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent'), profile: profile.name });
+        toast.success(bn ? `✅ "${profile.name}" → ${smtpTestEmail}` : `✅ "${profile.name}" → ${smtpTestEmail}`);
       } else {
-        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint });
+        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint, profile: profile.name });
       }
     } catch (e: any) {
-      setSmtpTestResult({ success: false, message: e?.message || 'Network error' });
+      setSmtpTestResult({ success: false, message: e?.message || 'Network error', profile: profile.name });
     }
     setSmtpTesting(false);
   };
