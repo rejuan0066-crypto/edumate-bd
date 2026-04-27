@@ -181,6 +181,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordStrengthMeter password={newPassword} bn={bn} />
               </div>
               <div>
                 <Label className="flex items-center gap-2 mb-1.5">
