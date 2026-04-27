@@ -142,6 +142,12 @@ const AdminSettings = () => {
     require_for_password_reset: true,
     require_for_email_change: true,
     require_for_password_change: true,
+    // Per-role overrides: { admin: { login, password_reset, email_change, password_change }, ... }
+    // null/undefined value at any leaf = inherit global require_for_* flag.
+    role_overrides: {} as Record<
+      'admin' | 'parent' | 'staff' | 'student',
+      Partial<Record<'login' | 'password_reset' | 'email_change' | 'password_change', boolean>>
+    >,
   });
   const [otpCfgLoading, setOtpCfgLoading] = useState(true);
   const [otpCfgSaving, setOtpCfgSaving] = useState(false);
@@ -161,6 +167,7 @@ const AdminSettings = () => {
         require_for_password_reset: d.require_for_password_reset ?? true,
         require_for_email_change: d.require_for_email_change ?? true,
         require_for_password_change: d.require_for_password_change ?? true,
+        role_overrides: (d.role_overrides && typeof d.role_overrides === 'object') ? d.role_overrides : {},
       });
     }
     setOtpCfgLoading(false);
