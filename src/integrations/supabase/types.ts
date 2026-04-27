@@ -712,6 +712,51 @@ export type Database = {
           },
         ]
       }
+      committee_audit_log: {
+        Row: {
+          action: string
+          committee_id: string | null
+          committee_name: string | null
+          created_at: string
+          designation: string | null
+          details: Json | null
+          id: string
+          member_id: string | null
+          member_name: string | null
+          performed_by: string | null
+          performed_by_email: string | null
+          staff_id: string | null
+        }
+        Insert: {
+          action: string
+          committee_id?: string | null
+          committee_name?: string | null
+          created_at?: string
+          designation?: string | null
+          details?: Json | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          staff_id?: string | null
+        }
+        Update: {
+          action?: string
+          committee_id?: string | null
+          committee_name?: string | null
+          created_at?: string
+          designation?: string | null
+          details?: Json | null
+          id?: string
+          member_id?: string | null
+          member_name?: string | null
+          performed_by?: string | null
+          performed_by_email?: string | null
+          staff_id?: string | null
+        }
+        Relationships: []
+      }
       committee_members: {
         Row: {
           address: string | null

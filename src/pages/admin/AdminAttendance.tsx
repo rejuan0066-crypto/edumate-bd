@@ -207,7 +207,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
 
   // Fetch staff
-  const committeeStaffIds = useCommitteeStaffIds();
+  const committeeInfo = useCommitteeStaffIds();
+  const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
   const { data: allStaffRaw = [] } = useQuery({
     queryKey: ['staff'],
     queryFn: async () => {
@@ -216,8 +217,10 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     enabled: entityType === 'staff',
   });
-  const allStaff = (allStaffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
-  const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
+  const allStaff = showCommitteeStaff
+    ? (allStaffRaw as any[])
+    : (allStaffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+  const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
   const sessionOptions = useMemo(() => {
@@ -1193,7 +1196,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             </p>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            {entityType === 'staff' && <CommitteeExclusionNotice count={committeeHiddenCount} />}
+            {entityType === 'staff' && (
+              <CommitteeExclusionNotice
+                count={committeeHiddenCount}
+                info={committeeInfo}
+                hiddenStaff={(allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id))}
+                showAll={showCommitteeStaff}
+                onToggleShowAll={setShowCommitteeStaff}
+              />
+            )}
             {entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
