@@ -185,7 +185,23 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Create auth user
+      // Duplicate name check (case-insensitive) — DB also enforces via unique index
+      if (full_name && full_name.trim()) {
+        const trimmedName = full_name.trim();
+        const { data: dupName } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', trimmedName)
+          .limit(1)
+          .maybeSingle();
+        if (dupName) {
+          return new Response(JSON.stringify({ error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Create auth user (email uniqueness enforced by Supabase Auth)
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
