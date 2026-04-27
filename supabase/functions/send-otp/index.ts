@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
+import { rateLimitResponse } from "../_shared/validate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
