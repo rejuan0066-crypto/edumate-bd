@@ -1839,7 +1839,18 @@ const AdminSalary = () => {
                                   {rec.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[10px]">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                                <div className="flex flex-col items-center gap-1">
+                                  <Badge variant="outline" className="text-[10px]">{bn ? 'জেনারেট হয়নি' : 'Not Generated'}</Badge>
+                                  {eligibilityReason && (
+                                    <span
+                                      className={`text-[9px] leading-tight ${isHardBlocked ? 'text-red-600' : 'text-amber-600'}`}
+                                      title={eligibilityReason}
+                                    >
+                                      <AlertCircle className="h-2.5 w-2.5 inline mr-0.5" />
+                                      {eligibilityReason}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </td>
                             <td className="px-3 py-2 text-center">
@@ -1848,9 +1859,11 @@ const AdminSalary = () => {
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30"
-                                    title={bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary'}
-                                    disabled={generateSingleMutation.isPending}
+                                    className="h-6 w-6 text-emerald-600 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 disabled:opacity-40"
+                                    title={isHardBlocked
+                                      ? (bn ? `জেনারেট করা যাবে না: ${eligibilityReason}` : `Cannot generate: ${eligibilityReason}`)
+                                      : (bn ? 'এই স্টাফের বেতন জেনারেট করুন' : 'Generate salary')}
+                                    disabled={generateSingleMutation.isPending || isHardBlocked}
                                     onClick={() => generateSingleMutation.mutate(s.id)}
                                   >
                                     <Calculator className="h-3.5 w-3.5" />
