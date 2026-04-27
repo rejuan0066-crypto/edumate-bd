@@ -59,7 +59,15 @@ const AdminProfile = () => {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [usePwOtp, setUsePwOtp] = useState(false);
+  const [usePwOtp, setUsePwOtp] = useState(true);
+
+  // Sync per-flow OTP toggle with admin global config when it loads/changes
+  useEffect(() => {
+    if (otpReqs) {
+      setUseOtp(emailOtpRequired);
+      setUsePwOtp(passwordOtpRequired);
+    }
+  }, [otpReqs, emailOtpRequired, passwordOtpRequired]);
   const [pwStep, setPwStep] = useState<'form' | 'otp' | 'done'>('form');
   const [pwOtpCode, setPwOtpCode] = useState('');
   const [pwCountdown, setPwCountdown] = useState(0);
