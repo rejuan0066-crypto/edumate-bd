@@ -210,8 +210,12 @@ Deno.serve(async (req) => {
       });
 
       if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(createError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: createError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
