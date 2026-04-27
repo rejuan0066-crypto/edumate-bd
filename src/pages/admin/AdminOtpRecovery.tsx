@@ -95,34 +95,35 @@ export default function AdminOtpRecovery() {
       return;
     }
 
-    // Identity verification: require admin OTP before destructive recovery
-    const verified = await ensureOtp("OTP Recovery action");
-    if (!verified) return;
+    const runAction = async () => {
+      setWorking(true);
+      try {
+        const actionMap = {
+          reset: "reset_attempts",
+          revoke: "revoke_sessions",
+          full: "full_recover",
+        } as const;
+        const { data, error } = await supabase.functions.invoke("admin-otp-recovery", {
+          body: {
+            action: actionMap[dialog.action!],
+            email: dialog.user!.email,
+            reason: reason.trim(),
+          },
+        });
+        if (error) throw error;
+        if (!data?.ok) throw new Error(data?.error || "Action failed");
+        toast.success(data.message || "Action completed");
+        setDialog({ open: false });
+        await load();
+      } catch (e: any) {
+        toast.error(e?.message || "Action failed");
+      } finally {
+        setWorking(false);
+      }
+    };
 
-    setWorking(true);
-    try {
-      const actionMap = {
-        reset: "reset_attempts",
-        revoke: "revoke_sessions",
-        full: "full_recover",
-      } as const;
-      const { data, error } = await supabase.functions.invoke("admin-otp-recovery", {
-        body: {
-          action: actionMap[dialog.action],
-          email: dialog.user.email,
-          reason: reason.trim(),
-        },
-      });
-      if (error) throw error;
-      if (!data?.ok) throw new Error(data?.error || "Action failed");
-      toast.success(data.message || "Action completed");
-      setDialog({ open: false });
-      await load();
-    } catch (e: any) {
-      toast.error(e?.message || "Action failed");
-    } finally {
-      setWorking(false);
-    }
+    // Identity verification: require admin OTP before destructive recovery
+    await otpGate.requireOtp(runAction);
   };
 
   const filtered = list.filter((u) =>
