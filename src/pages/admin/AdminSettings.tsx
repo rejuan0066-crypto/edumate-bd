@@ -529,6 +529,94 @@ const AdminSettings = () => {
           </div>
         )}
 
+        {/* OTP Configuration */}
+        <div className="card-elevated p-5">
+          <h3 className="font-display font-bold text-foreground mb-1 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" /> {bn ? 'OTP কনফিগারেশন' : 'OTP Configuration'}
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            {bn
+              ? 'অ্যাডমিন ২-ধাপ লগইন, পাসওয়ার্ড রিসেট ও ইমেইল ভেরিফিকেশনের জন্য OTP সিস্টেম নিয়ন্ত্রণ করুন।'
+              : 'Control OTP system for admin 2-step login, password reset, and email verification.'}
+          </p>
+          {otpCfgLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading…
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/50">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{bn ? 'OTP সক্রিয়' : 'OTP Enabled'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {bn
+                      ? 'বন্ধ থাকলে কোনো OTP ইমেইল পাঠানো হবে না (অ্যাডমিন ২-ধাপ ভেরিফিকেশনও নিষ্ক্রিয়)।'
+                      : 'When off, no OTP emails will be sent (admin 2-step verification disabled too).'}
+                  </p>
+                </div>
+                <Switch
+                  checked={otpCfg.is_enabled}
+                  onCheckedChange={(v) => setOtpCfg({ ...otpCfg, is_enabled: v })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-xs">{bn ? 'মেয়াদ (মিনিট)' : 'Expiry (min)'}</Label>
+                  <Input
+                    type="number" min={1} max={60}
+                    value={otpCfg.expiry_minutes}
+                    onChange={(e) => setOtpCfg({ ...otpCfg, expiry_minutes: parseInt(e.target.value) || 10 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'সর্বোচ্চ চেষ্টা' : 'Max attempts'}</Label>
+                  <Input
+                    type="number" min={1} max={10}
+                    value={otpCfg.max_attempts}
+                    onChange={(e) => setOtpCfg({ ...otpCfg, max_attempts: parseInt(e.target.value) || 3 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'কুলডাউন (সেকেন্ড)' : 'Cooldown (sec)'}</Label>
+                  <Input
+                    type="number" min={10} max={600}
+                    value={otpCfg.cooldown_seconds}
+                    onChange={(e) => setOtpCfg({ ...otpCfg, cooldown_seconds: parseInt(e.target.value) || 60 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'ঘণ্টায় সর্বোচ্চ' : 'Hourly limit'}</Label>
+                  <Input
+                    type="number" min={1} max={50}
+                    value={otpCfg.hourly_limit}
+                    onChange={(e) => setOtpCfg({ ...otpCfg, hourly_limit: parseInt(e.target.value) || 5 })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'দৈনিক সর্বোচ্চ' : 'Daily limit'}</Label>
+                  <Input
+                    type="number" min={1} max={200}
+                    value={otpCfg.daily_limit}
+                    onChange={(e) => setOtpCfg({ ...otpCfg, daily_limit: parseInt(e.target.value) || 15 })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={saveOtpConfig} disabled={otpCfgSaving} className="btn-primary-gradient flex-1 min-w-[180px]">
+                  {otpCfgSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  {bn ? 'OTP সেটিংস সংরক্ষণ' : 'Save OTP Settings'}
+                </Button>
+                <Button onClick={() => { setOtpTestResult(null); setOtpTestDialog(true); }} variant="outline">
+                  <Send className="w-4 h-4 mr-2" />
+                  {bn ? 'OTP টেস্ট ইমেইল' : 'Test OTP Email'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* EmailJS Configuration */}
         <div className="card-elevated p-5">
           <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
