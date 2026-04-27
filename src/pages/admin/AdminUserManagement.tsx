@@ -199,7 +199,20 @@ const AdminUserManagement = () => {
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
+    if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
     if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
+
+    // Client-side duplicate guard against currently loaded users
+    const emailLc = email.trim().toLowerCase();
+    const nameLc = fullName.trim().toLowerCase();
+    if (users.some(u => u.email?.toLowerCase() === emailLc)) {
+      toast.error(bn ? 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : 'A user with this email already exists');
+      return;
+    }
+    if (users.some(u => (u.full_name || '').toLowerCase() === nameLc)) {
+      toast.error(bn ? 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' : 'A user with this name already exists');
+      return;
+    }
 
     // Find the base role for custom roles (role can be empty/'none' for permission-only users)
     const effectiveRole = (role && role !== 'none') ? role : '';
@@ -212,7 +225,8 @@ const AdminUserManagement = () => {
         body: { action: 'create', email: email.trim(), password, role: actualRole || undefined, full_name: fullName.trim() },
       });
       if (error || !data?.success) {
-        toast.error(data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user'));
+        const msg = (bn ? data?.message_bn : data?.message) || data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
+        toast.error(msg);
         setCreating(false);
         return;
       }
