@@ -126,6 +126,21 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
+
+  // Prefill from URL query params (?email=&full_name=) when creating new staff from User Management
+  useEffect(() => {
+    if (isEditMode) return;
+    const qEmail = searchParams.get('email');
+    const qName = searchParams.get('full_name');
+    if (qEmail) setStaffEmail((prev) => prev || qEmail);
+    if (qName) {
+      const parts = qName.trim().split(/\s+/);
+      setFirstName((prev) => prev || (parts[0] || ''));
+      setLastName((prev) => prev || (parts.slice(1).join(' ') || ''));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [emailVerified, setEmailVerified] = useState(false);
   const [showOtpDialog, setShowOtpDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
