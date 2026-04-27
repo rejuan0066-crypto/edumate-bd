@@ -48,6 +48,59 @@ export type ValidationSuccess<T> = {
 
 export type ValidationResult<T> = ValidationSuccess<T> | ValidationFailure;
 
+/** Standard rate-limit codes used across OTP and other throttled endpoints. */
+export type RateLimitCode =
+  | "COOLDOWN_ACTIVE"
+  | "HOURLY_LIMIT_EXCEEDED"
+  | "DAILY_LIMIT_EXCEEDED"
+  | "RATE_LIMITED";
+
+/**
+ * Build a uniform 429 rate-limit response.
+ *
+ * Always returns:
+ *   {
+ *     ok: false,
+ *     error: "Rate limited",
+ *     code: <RateLimitCode>,
+ *     message: <human readable, safe to show user>,
+ *     retry_after_seconds: <integer>,
+ *     retry_after_iso: <ISO timestamp when client may retry>,
+ *     limit?: number,
+ *     scope?: string,
+ *   }
+ * with the `Retry-After` HTTP header set to the same number of seconds.
+ */
+export function rateLimitResponse(opts: {
+  code: RateLimitCode;
+  message: string;
+  retryAfterSeconds: number;
+  limit?: number;
+  scope?: string;
+  extras?: Record<string, unknown>;
+}): Response {
+  const retry = Math.max(1, Math.ceil(opts.retryAfterSeconds));
+  const body = {
+    ok: false,
+    error: "Rate limited",
+    code: opts.code,
+    message: opts.message,
+    retry_after_seconds: retry,
+    retry_after_iso: new Date(Date.now() + retry * 1000).toISOString(),
+    ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
+    ...(opts.scope ? { scope: opts.scope } : {}),
+    ...(opts.extras ?? {}),
+  };
+  return new Response(JSON.stringify(body), {
+    status: 429,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+      "Retry-After": String(retry),
+    },
+  });
+}
+
 /** Build a uniform JSON error response. */
 export function jsonError(
   status: number,
