@@ -48,6 +48,7 @@ const OtpVerificationDialog = ({
   onVerified,
   title,
   description,
+  scope,
 }: OtpVerificationDialogProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
