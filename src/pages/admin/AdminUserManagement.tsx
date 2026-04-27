@@ -137,6 +137,9 @@ const AdminUserManagement = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Real-time duplicate check
+  const [emailDup, setEmailDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
+  const [nameDup, setNameDup] = useState<'idle' | 'checking' | 'ok' | 'dup'>('idle');
 
   // Role edit
   const [roleEditOpen, setRoleEditOpen] = useState(false);
