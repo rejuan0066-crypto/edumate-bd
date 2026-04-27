@@ -504,132 +504,223 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        {/* Custom SMTP Configuration */}
+        {/* Custom SMTP Configuration — Multi-profile */}
         {emailProvider === 'custom_domain' && (
           <div className="card-elevated p-5">
-            <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" /> {bn ? 'SMTP কনফিগারেশন' : 'SMTP Configuration'}
-            </h3>
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
+              <h3 className="font-display font-bold text-foreground flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" /> {bn ? 'SMTP কনফিগারেশন (একাধিক প্রোফাইল)' : 'SMTP Configuration (Multi-profile)'}
+              </h3>
+              <Button onClick={addSmtpProfile} size="sm" className="btn-primary-gradient">
+                + {bn ? 'নতুন SMTP যোগ করুন' : 'Add SMTP Profile'}
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground mb-4">
               {bn
-                ? 'আপনার ইমেইল প্রোভাইডারের SMTP সেটিংস দিন (যেমন: Gmail, Zoho, Outlook, বা যেকোনো কাস্টম ডোমেইন)।'
-                : 'Enter your email provider SMTP settings (e.g., Gmail, Zoho, Outlook, or any custom domain).'}
+                ? 'প্রতিটি প্রোফাইলের জন্য আলাদা “উদ্দেশ্য” (যেমন OTP, Welcome, Notice) সেট করতে পারেন। সিস্টেম প্রথমে সেই উদ্দেশ্যের সক্রিয় প্রোফাইল খুঁজবে; না পেলে “সব ধরন (all)” এর প্রোফাইলে fallback করবে।'
+                : 'Set a “purpose” per profile (OTP, Welcome, Notice, …). The system first looks for an enabled profile matching that purpose, then falls back to a profile with purpose = “all”.'}
             </p>
 
             {smtpLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
+            ) : smtpProfiles.length === 0 ? (
+              <div className="text-center py-8 border border-dashed rounded-xl border-border/60">
+                <p className="text-sm text-muted-foreground mb-3">
+                  {bn ? 'কোনো SMTP প্রোফাইল নেই। নতুন একটি যোগ করুন।' : 'No SMTP profiles yet. Add one to get started.'}
+                </p>
+                <Button onClick={addSmtpProfile} className="btn-primary-gradient">
+                  + {bn ? 'প্রথম SMTP যোগ করুন' : 'Add first SMTP profile'}
+                </Button>
+              </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{bn ? 'SMTP সক্রিয়' : 'SMTP Enabled'}</p>
-                    <p className="text-xs text-muted-foreground">{bn ? 'কাস্টম SMTP দিয়ে ইমেইল পাঠানো চালু/বন্ধ' : 'Enable/disable custom SMTP emails'}</p>
-                  </div>
-                  <Switch
-                    checked={smtp.is_enabled}
-                    onCheckedChange={(v) => setSmtp({ ...smtp, is_enabled: v })}
-                  />
-                </div>
+              <div className="space-y-5">
+                {smtpProfiles.map((p, idx) => (
+                  <div
+                    key={p.id || `new-${idx}`}
+                    className={`rounded-2xl border p-4 space-y-4 transition-colors ${
+                      p.is_enabled ? 'border-primary/40 bg-primary/[0.03]' : 'border-border/60 bg-muted/20'
+                    }`}
+                  >
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3 flex-1 min-w-[200px]">
+                        <Switch
+                          checked={p.is_enabled}
+                          onCheckedChange={(v) => toggleSmtpEnabled(idx, v)}
+                        />
+                        <div className="flex-1">
+                          <Input
+                            value={p.name}
+                            onChange={(e) => updateSmtpProfile(idx, { name: e.target.value })}
+                            placeholder={bn ? 'প্রোফাইলের নাম' : 'Profile name'}
+                            className="font-medium bg-background"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                          p.is_enabled ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {p.is_enabled ? (bn ? 'সক্রিয়' : 'ENABLED') : (bn ? 'নিষ্ক্রিয়' : 'DISABLED')}
+                        </span>
+                        {p._dirty && (
+                          <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium">
+                            {bn ? 'অসংরক্ষিত' : 'UNSAVED'}
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSmtpProfile(idx)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          {bn ? 'মুছুন' : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'SMTP হোস্ট' : 'SMTP Host'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_host}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_host: e.target.value })}
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'SMTP পোর্ট' : 'SMTP Port'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      type="number"
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_port}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_port: parseInt(e.target.value) || 587 })}
-                      placeholder="587"
-                    />
-                  </div>
-                </div>
+                    {/* Purpose + priority */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div>
+                        <Label>{bn ? 'উদ্দেশ্য (Purpose)' : 'Purpose'}</Label>
+                        <select
+                          className="mt-1 w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                          value={p.purpose}
+                          onChange={(e) => updateSmtpProfile(idx, { purpose: e.target.value as SmtpProfile['purpose'] })}
+                        >
+                          <option value="all">{bn ? 'সব ধরন (Default fallback)' : 'All (default fallback)'}</option>
+                          <option value="otp">OTP</option>
+                          <option value="welcome">{bn ? 'স্বাগত (Welcome)' : 'Welcome'}</option>
+                          <option value="notice">{bn ? 'নোটিশ' : 'Notice'}</option>
+                          <option value="bulk">{bn ? 'বাল্ক/মাস ইমেইল' : 'Bulk'}</option>
+                          <option value="transactional">{bn ? 'ট্রানজেকশনাল' : 'Transactional'}</option>
+                          <option value="auth">{bn ? 'অথ/সিস্টেম' : 'Auth/System'}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'প্রাধান্য' : 'Priority'}</Label>
+                        <Input
+                          type="number"
+                          className="mt-1 bg-background"
+                          value={p.priority}
+                          onChange={(e) => updateSmtpProfile(idx, { priority: parseInt(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-md bg-secondary/40">
+                        <div>
+                          <p className="text-xs font-medium">{bn ? 'TLS/SSL' : 'TLS/SSL'}</p>
+                          <p className="text-[10px] text-muted-foreground">{bn ? 'নিরাপদ সংযোগ' : 'Secure connection'}</p>
+                        </div>
+                        <Switch
+                          checked={p.use_tls}
+                          onCheckedChange={(v) => updateSmtpProfile(idx, { use_tls: v })}
+                        />
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'SMTP ইউজারনেম' : 'SMTP Username'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.smtp_username}
-                      onChange={(e) => setSmtp({ ...smtp, smtp_username: e.target.value })}
-                      placeholder="your@email.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'SMTP পাসওয়ার্ড' : 'SMTP Password'} <span className="text-destructive">*</span></Label>
-                    <div className="relative mt-1">
-                      <Input
-                        className="bg-background pr-10"
-                        type={showSmtpPassword ? 'text' : 'password'}
-                        value={smtp.smtp_password}
-                        onChange={(e) => setSmtp({ ...smtp, smtp_password: e.target.value })}
-                        placeholder={bn ? 'অ্যাপ পাসওয়ার্ড ব্যবহার করুন' : 'Use app password'}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSmtpPassword(!showSmtpPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    {/* Host / port */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'SMTP হোস্ট' : 'SMTP Host'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.smtp_host}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_host: e.target.value })}
+                          placeholder="smtp.gmail.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'SMTP পোর্ট' : 'SMTP Port'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          type="number"
+                          className="mt-1 bg-background"
+                          value={p.smtp_port}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_port: parseInt(e.target.value) || 587 })}
+                          placeholder="587"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Username / password */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'SMTP ইউজারনেম' : 'SMTP Username'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.smtp_username}
+                          onChange={(e) => updateSmtpProfile(idx, { smtp_username: e.target.value })}
+                          placeholder="your@email.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'SMTP পাসওয়ার্ড' : 'SMTP Password'} <span className="text-destructive">*</span></Label>
+                        <div className="relative mt-1">
+                          <Input
+                            className="bg-background pr-10"
+                            type={showSmtpPasswordIdx === idx ? 'text' : 'password'}
+                            value={p.smtp_password}
+                            onChange={(e) => updateSmtpProfile(idx, { smtp_password: e.target.value })}
+                            placeholder={bn ? 'অ্যাপ পাসওয়ার্ড ব্যবহার করুন' : 'Use app password'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSmtpPasswordIdx(showSmtpPasswordIdx === idx ? null : idx)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showSmtpPasswordIdx === idx ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* From email/name */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{bn ? 'প্রেরকের ইমেইল' : 'From Email'} <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.from_email}
+                          onChange={(e) => updateSmtpProfile(idx, { from_email: e.target.value })}
+                          placeholder="noreply@yourdomain.com"
+                        />
+                      </div>
+                      <div>
+                        <Label>{bn ? 'প্রেরকের নাম' : 'From Name'}</Label>
+                        <Input
+                          className="mt-1 bg-background"
+                          value={p.from_name}
+                          onChange={(e) => updateSmtpProfile(idx, { from_name: e.target.value })}
+                          placeholder={bn ? 'আপনার প্রতিষ্ঠানের নাম' : 'Your Institution Name'}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action buttons per profile */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        onClick={() => saveSmtpProfile(idx)}
+                        disabled={savingProfileIdx === idx}
+                        className="btn-primary-gradient"
+                        size="sm"
                       >
-                        {showSmtpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                        {savingProfileIdx === idx ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                        {bn ? 'সংরক্ষণ' : 'Save'}
+                      </Button>
+                      <Button onClick={() => openSmtpTest(idx)} variant="outline" size="sm">
+                        <Mail className="w-4 h-4 mr-2" />
+                        {bn ? 'এই প্রোফাইল টেস্ট' : 'Test this profile'}
+                      </Button>
                     </div>
                   </div>
-                </div>
+                ))}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'প্রেরকের ইমেইল' : 'From Email'} <span className="text-destructive">*</span></Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.from_email}
-                      onChange={(e) => setSmtp({ ...smtp, from_email: e.target.value })}
-                      placeholder="noreply@yourdomain.com"
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'প্রেরকের নাম' : 'From Name'}</Label>
-                    <Input
-                      className="mt-1 bg-background"
-                      value={smtp.from_name}
-                      onChange={(e) => setSmtp({ ...smtp, from_name: e.target.value })}
-                      placeholder={bn ? 'আপনার প্রতিষ্ঠানের নাম' : 'Your Institution Name'}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{bn ? 'TLS/SSL ব্যবহার করুন' : 'Use TLS/SSL'}</p>
-                    <p className="text-xs text-muted-foreground">{bn ? 'নিরাপদ সংযোগ (সাধারণত চালু রাখুন)' : 'Secure connection (usually keep on)'}</p>
-                  </div>
-                  <Switch
-                    checked={smtp.use_tls}
-                    onCheckedChange={(v) => setSmtp({ ...smtp, use_tls: v })}
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <Button onClick={saveSmtpConfig} disabled={smtpSaving} className="btn-primary-gradient flex-1">
-                    {smtpSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    {bn ? 'SMTP সেটিংস সংরক্ষণ' : 'Save SMTP Settings'}
-                  </Button>
-                  <Button onClick={testSmtpConnection} disabled={smtpTesting} variant="outline">
-                    {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-                    {bn ? 'টেস্ট' : 'Test'}
-                  </Button>
+                <div className="flex gap-2 pt-2 border-t border-border/40">
                   <Button onClick={() => { setOtpTestResult(null); setOtpTestDialog(true); }} variant="outline">
                     <Send className="w-4 h-4 mr-2" />
-                    {bn ? 'OTP টেস্ট' : 'Test OTP'}
+                    {bn ? 'লাইভ OTP ফ্লো টেস্ট' : 'Test live OTP flow'}
                   </Button>
                 </div>
 
@@ -639,7 +730,7 @@ const AdminSettings = () => {
                     <p><span className="font-medium">Gmail:</span> smtp.gmail.com : 587 (TLS) — {bn ? 'অ্যাপ পাসওয়ার্ড প্রয়োজন' : 'App password required'}</p>
                     <p><span className="font-medium">Zoho:</span> smtp.zoho.com : 587 (TLS)</p>
                     <p><span className="font-medium">Outlook:</span> smtp.office365.com : 587 (TLS)</p>
-                    <p><span className="font-medium">Yahoo:</span> smtp.mail.yahoo.com : 587 (TLS)</p>
+                    <p><span className="font-medium">Mailtrap:</span> sandbox.smtp.mailtrap.io : 2525</p>
                   </div>
                 </div>
               </div>
