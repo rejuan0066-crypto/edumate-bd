@@ -39,6 +39,12 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
       toast.error(bn ? 'ইমেইল দিন' : 'Enter email');
       return;
     }
+    // Check if OTP is required for this flow; if not, skip straight to new password
+    const reqs = await fetchOtpRequirements();
+    if (!isOtpRequiredFor(reqs, 'password_reset')) {
+      setStep('newPassword');
+      return;
+    }
     const result = await sendOtp(email.trim(), 'password_reset');
     if (result.success) {
       setStep('otp');
