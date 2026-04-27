@@ -65,6 +65,45 @@ const AdminSettings = () => {
   const [smtpTestEmail, setSmtpTestEmail] = useState('');
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
 
+  // OTP test (live end-to-end via send-otp)
+  const [otpTestDialog, setOtpTestDialog] = useState(false);
+  const [otpTestEmail, setOtpTestEmail] = useState('');
+  const [otpTesting, setOtpTesting] = useState(false);
+  const [otpTestResult, setOtpTestResult] = useState<{ success: boolean; method?: string; message: string } | null>(null);
+
+  const runOtpTest = async () => {
+    if (!otpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpTestEmail)) {
+      toast.error(bn ? 'সঠিক ইমেইল দিন' : 'Enter a valid email');
+      return;
+    }
+    setOtpTesting(true);
+    setOtpTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { email: otpTestEmail, purpose: 'email_verification' },
+      });
+      if (error) throw new Error(error.message || 'Edge function error');
+      if (data?.error) throw new Error(data.error);
+      const method = data?.method || 'unknown';
+      setOtpTestResult({
+        success: true,
+        method,
+        message: bn
+          ? `OTP পাঠানো হয়েছে — পথ: ${method.toUpperCase()}। ইনবক্স/স্প্যাম দেখুন।`
+          : `OTP sent — path: ${method.toUpperCase()}. Check inbox/spam.`,
+      });
+      toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${method})` : `✅ OTP sent via ${method}`);
+    } catch (e: any) {
+      setOtpTestResult({
+        success: false,
+        message: e?.message || (bn ? 'OTP পাঠানো ব্যর্থ' : 'Failed to send OTP'),
+      });
+      toast.error(bn ? 'OTP টেস্ট ব্যর্থ' : 'OTP test failed');
+    } finally {
+      setOtpTesting(false);
+    }
+  };
+
   useEffect(() => {
     loadEmailjsConfig();
     loadSmtpConfig();
@@ -431,6 +470,10 @@ const AdminSettings = () => {
                     {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
                     {bn ? 'টেস্ট' : 'Test'}
                   </Button>
+                  <Button onClick={() => { setOtpTestResult(null); setOtpTestDialog(true); }} variant="outline">
+                    <Send className="w-4 h-4 mr-2" />
+                    {bn ? 'OTP টেস্ট' : 'Test OTP'}
+                  </Button>
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground space-y-2">
@@ -715,6 +758,59 @@ const AdminSettings = () => {
             <Button onClick={runSmtpTest} disabled={smtpTesting} className="w-full btn-primary-gradient">
               {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
               {bn ? 'টেস্ট ইমেইল পাঠান' : 'Send Test Email'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* OTP End-to-End Test Dialog */}
+      <Dialog open={otpTestDialog} onOpenChange={(o) => { setOtpTestDialog(o); if (!o) setOtpTestResult(null); }}>
+        <DialogContent className="rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              {bn ? 'OTP ইমেইল টেস্ট' : 'Test OTP Email'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'এটি প্রকৃত send-otp ফাংশন কল করবে এবং দেখাবে কোন পথ (SMTP / EmailJS) ব্যবহৃত হয়েছে।'
+                : 'This invokes the real send-otp function and shows which path (SMTP / EmailJS) was used.'}
+            </p>
+            <div>
+              <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
+              <Input
+                type="email"
+                value={otpTestEmail}
+                onChange={(e) => setOtpTestEmail(e.target.value)}
+                placeholder="recipient@example.com"
+                disabled={otpTesting}
+              />
+            </div>
+            {otpTestResult && (
+              <div className={`p-3 rounded-xl text-sm ${otpTestResult.success ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}>
+                <div className="flex items-start gap-2">
+                  {otpTestResult.success
+                    ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    : <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />}
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {otpTestResult.success ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}
+                      {otpTestResult.method && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-emerald-600 text-white">
+                          {otpTestResult.method}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs break-words">{otpTestResult.message}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <Button onClick={runOtpTest} disabled={otpTesting} className="w-full btn-primary-gradient">
+              {otpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {bn ? 'OTP পাঠান' : 'Send OTP'}
             </Button>
           </div>
         </DialogContent>
