@@ -263,7 +263,7 @@ const AdminProfile = () => {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword.trim() });
     if (signInError) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড ভুল' : 'Current password incorrect'); setChangingPassword(false); return; }
 
-    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail, 'password_change');
     setChangingPassword(false);
     if (result.success) {
       setPwStep('otp');
