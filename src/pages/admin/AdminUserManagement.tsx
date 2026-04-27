@@ -1381,7 +1381,7 @@ const AdminUserManagement = () => {
                       </div>
                       <Button
                         className="w-full btn-primary-gradient"
-                        disabled={profileSaving === 'password' || profileNewPassword.length < 6 || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
+                        disabled={profileSaving === 'password' || !isPasswordStrong(profileNewPassword) || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
                         onClick={async () => {
                           if (profileConfirmPassword && profileNewPassword !== profileConfirmPassword) {
                             toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match');
