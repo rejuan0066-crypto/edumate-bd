@@ -201,11 +201,16 @@ Deno.serve(async (req) => {
     if (useSmtp) {
       try {
         const subject = purpose === "password_reset" ? "Password Reset Code" : "Email Verification Code";
-        const html = generateOtpEmailHtml(code, expiryMinutes, purpose, smtpConfig.from_name);
+        const html = generateOtpEmailHtml(code, expiryMinutes, purpose, smtpConfig!.from_name);
         await sendViaSMTP(smtpConfig, email, subject, html);
 
         return new Response(
-          JSON.stringify({ success: true, method: "smtp", expiry_minutes: expiryMinutes }),
+          JSON.stringify({
+            success: true,
+            method: "smtp",
+            smtp_profile: { name: smtpConfig!.name, purpose: smtpConfig!.purpose, resolved_via: smtpConfig!.resolved_via },
+            expiry_minutes: expiryMinutes,
+          }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (smtpError) {
