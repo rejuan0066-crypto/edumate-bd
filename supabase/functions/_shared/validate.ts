@@ -120,6 +120,66 @@ export function jsonError(
   );
 }
 
+/** Standard OTP error codes used across OTP-related endpoints. */
+export type OtpErrorCode =
+  | "INVALID_REQUEST"
+  | "INVALID_PURPOSE"
+  | "EMAIL_SERVICE_UNCONFIGURED"
+  | "UNAUTHORIZED"
+  | "FORBIDDEN"
+  | "ADMIN_REQUIRED"
+  | "OTP_NOT_FOUND"
+  | "OTP_EXPIRED"
+  | "OTP_INVALID"
+  | "OTP_MAX_ATTEMPTS"
+  | "OTP_SESSION_EXPIRED"
+  | "OTP_NOT_VERIFIED"
+  | "INVALID_PASSWORD"
+  | "WEAK_PASSWORD"
+  | "USER_NOT_FOUND";
+
+/**
+ * Build a uniform OTP error response (4xx).
+ *
+ * Always returns:
+ *   {
+ *     ok: false,
+ *     error: <short error label>,
+ *     code: <OtpErrorCode>,
+ *     message: <human readable, safe to show user>,
+ *     retry_after_seconds: <integer | null>,
+ *     ...extras (e.g. attempts_remaining, valid:false)
+ *   }
+ *
+ * For 429 responses prefer `rateLimitResponse` instead — it sets the
+ * `Retry-After` header. This helper is for non-rate-limit OTP failures
+ * (400/401/403) so that every OTP endpoint speaks the same shape.
+ */
+export function otpErrorResponse(opts: {
+  status: 400 | 401 | 403 | 404;
+  code: OtpErrorCode;
+  message: string;
+  retryAfterSeconds?: number | null;
+  extras?: Record<string, unknown>;
+}): Response {
+  const body = {
+    ok: false,
+    error: opts.message,
+    code: opts.code,
+    message: opts.message,
+    retry_after_seconds: opts.retryAfterSeconds ?? null,
+    ...(opts.extras ?? {}),
+  };
+  const headers: Record<string, string> = {
+    ...corsHeaders,
+    "Content-Type": "application/json",
+  };
+  if (opts.retryAfterSeconds && opts.retryAfterSeconds > 0) {
+    headers["Retry-After"] = String(Math.ceil(opts.retryAfterSeconds));
+  }
+  return new Response(JSON.stringify(body), { status: opts.status, headers });
+}
+
 /** Build a uniform JSON success response. */
 export function jsonOk(
   data: unknown,
@@ -154,11 +214,14 @@ export function zodErrorsToFields(err: ZodError): FieldError[] {
 
 /** Build the standard 422 validation response. */
 export function validationFailureResponse(errors: FieldError[]): Response {
+  const firstMsg = errors[0]?.message ?? "Validation failed";
   return new Response(
     JSON.stringify({
       ok: false,
       error: "Validation failed",
       code: "VALIDATION_ERROR",
+      message: firstMsg,
+      retry_after_seconds: null,
       field_count: errors.length,
       errors,
       // Convenience map: { fieldPath: "first message" } for quick UI lookup

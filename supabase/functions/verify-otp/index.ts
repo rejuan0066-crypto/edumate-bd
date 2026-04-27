@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-import { corsHeaders, validateBody, jsonError, z } from "../_shared/validate.ts";
+import { corsHeaders, validateBody, otpErrorResponse, z } from "../_shared/validate.ts";
 
 const VerifyOtpSchema = z.object({
   email: z.string().trim().toLowerCase().email("Must be a valid email address").max(255),
@@ -35,27 +35,33 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (error || !otpRecord) {
-      return new Response(JSON.stringify({ error: "No valid OTP found", valid: false }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "OTP_NOT_FOUND",
+        message: "No valid OTP found. Please request a new code.",
+        extras: { valid: false },
       });
     }
 
     // Check expiry
     if (new Date(otpRecord.expires_at) < new Date()) {
       await supabase.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-      return new Response(JSON.stringify({ error: "OTP has expired", valid: false }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "OTP_EXPIRED",
+        message: "This OTP has expired. Please request a new code.",
+        extras: { valid: false },
       });
     }
 
     // Check max attempts
     if (otpRecord.attempts >= otpRecord.max_attempts) {
       await supabase.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-      return new Response(JSON.stringify({ error: "Maximum attempts exceeded", valid: false }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "OTP_MAX_ATTEMPTS",
+        message: "Maximum attempts exceeded. Please request a new code.",
+        extras: { valid: false, attempts_remaining: 0 },
       });
     }
 
@@ -68,26 +74,38 @@ Deno.serve(async (req) => {
     // Check code
     if (otpRecord.code !== code) {
       const remaining = otpRecord.max_attempts - otpRecord.attempts - 1;
-      return new Response(
-        JSON.stringify({ error: `Invalid code. ${remaining} attempts remaining.`, valid: false }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return otpErrorResponse({
+        status: 400,
+        code: "OTP_INVALID",
+        message: `Invalid code. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`,
+        extras: { valid: false, attempts_remaining: Math.max(0, remaining) },
+      });
     }
 
     // Mark as used
     await supabase.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
 
-    return new Response(JSON.stringify({ valid: true, message: "OTP verified successfully" }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: "Internal server error", valid: false }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, valid: true, message: "OTP verified successfully" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  } catch (_error) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+        message: "Something went wrong while verifying the code.",
+        retry_after_seconds: null,
+        valid: false,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-import { rateLimitResponse } from "../_shared/validate.ts";
+import { rateLimitResponse, otpErrorResponse } from "../_shared/validate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -164,17 +164,19 @@ Deno.serve(async (req) => {
     const { email, purpose } = await req.json();
 
     if (!email || !purpose) {
-      return new Response(JSON.stringify({ error: "Email and purpose are required" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "INVALID_REQUEST",
+        message: "Email and purpose are required",
       });
     }
 
     const validPurposes = ["email_verification", "password_reset"];
     if (!validPurposes.includes(purpose)) {
-      return new Response(JSON.stringify({ error: "Invalid purpose" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "INVALID_PURPOSE",
+        message: "Invalid purpose. Must be 'email_verification' or 'password_reset'.",
       });
     }
 
@@ -273,9 +275,10 @@ Deno.serve(async (req) => {
     const useEmailjs = emailjsConfig?.is_enabled;
 
     if (!useSmtp && !useEmailjs) {
-      return new Response(JSON.stringify({ error: "No email service configured" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "EMAIL_SERVICE_UNCONFIGURED",
+        message: "No email service is configured. Please contact an administrator.",
       });
     }
 

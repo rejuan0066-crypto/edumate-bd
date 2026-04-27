@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.100.1/cors";
+import { corsHeaders, otpErrorResponse } from "../_shared/validate.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -10,16 +10,18 @@ Deno.serve(async (req) => {
     const { email, new_password } = await req.json();
 
     if (!email || !new_password) {
-      return new Response(JSON.stringify({ error: "Email and new password are required" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "INVALID_REQUEST",
+        message: "Email and new password are required",
       });
     }
 
     if (new_password.length < 6) {
-      return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "WEAK_PASSWORD",
+        message: "Password must be at least 6 characters",
       });
     }
 
@@ -39,9 +41,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!otpRecord) {
-      return new Response(JSON.stringify({ error: "No verified OTP found. Please verify your email first." }), {
+      return otpErrorResponse({
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "OTP_NOT_VERIFIED",
+        message: "No verified OTP found. Please verify your email first.",
       });
     }
 
@@ -49,26 +52,34 @@ Deno.serve(async (req) => {
     const verifiedAt = new Date(otpRecord.created_at);
     const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
     if (verifiedAt < fifteenMinutesAgo) {
-      return new Response(JSON.stringify({ error: "OTP session expired. Please request a new code." }), {
+      return otpErrorResponse({
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "OTP_SESSION_EXPIRED",
+        message: "OTP session expired. Please request a new code.",
       });
     }
 
     // Find user by email using admin API
     const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
     if (listError) {
-      return new Response(JSON.stringify({ error: "Failed to look up user" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "Failed to look up user",
+          code: "INTERNAL_ERROR",
+          message: "We couldn't look up the account. Please try again.",
+          retry_after_seconds: null,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     const user = users.find((u: any) => u.email === email);
     if (!user) {
-      return new Response(JSON.stringify({ error: "User not found" }), {
+      return otpErrorResponse({
         status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "USER_NOT_FOUND",
+        message: "No account found for this email.",
       });
     }
 
@@ -78,20 +89,32 @@ Deno.serve(async (req) => {
     });
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: updateError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: updateError.message,
+          code: "INTERNAL_ERROR",
+          message: "We couldn't update your password. Please try again.",
+          retry_after_seconds: null,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, success: true, message: "Password reset successfully" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (_error) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+        message: "Something went wrong. Please try again.",
+        retry_after_seconds: null,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });
