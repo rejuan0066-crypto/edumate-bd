@@ -89,6 +89,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
+  const [searchParams] = useSearchParams();
   const { validate, validateAll } = useValidationRules('staff');
   const { data: apiVerifyEnabled } = useApiVerificationEnabled();
   const { isFieldActive, isFieldRequired, getField, isLoaded: staffConfigLoaded } = useStaffFormConfig();
