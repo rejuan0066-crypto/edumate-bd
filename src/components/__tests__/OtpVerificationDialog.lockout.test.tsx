@@ -155,36 +155,30 @@ describe('OtpVerificationDialog — standardized lockout codes', () => {
   });
 
   it('auto-unlocks when retry_after_seconds counts down to zero', async () => {
-    vi.useFakeTimers();
-    try {
-      verifyOtpMock.mockResolvedValue({
-        valid: false,
-        error: 'Locked: OTP_MAX_ATTEMPTS',
-        errorCode: 'OTP_MAX_ATTEMPTS',
-        retryAfterSeconds: 2,
-      });
+    verifyOtpMock.mockResolvedValue({
+      valid: false,
+      error: 'Locked: OTP_MAX_ATTEMPTS',
+      errorCode: 'OTP_MAX_ATTEMPTS',
+      retryAfterSeconds: 2,
+    });
 
-      render(<OtpVerificationDialog {...baseProps} />);
-      await waitFor(() => expect(sendOtpMock).toHaveBeenCalled());
+    render(<OtpVerificationDialog {...baseProps} />);
+    await waitFor(() => expect(sendOtpMock).toHaveBeenCalled());
 
-      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-      const hidden = document.querySelector('input') as HTMLInputElement;
-      await user.click(hidden);
-      await user.type(hidden, '123456');
-      await user.click(await screen.findByRole('button', { name: /verify code/i }));
+    const user = userEvent.setup();
+    const hidden = document.querySelector('input') as HTMLInputElement;
+    await user.click(hidden);
+    await user.type(hidden, '123456');
+    await user.click(await screen.findByRole('button', { name: /verify code/i }));
 
-      await screen.findByRole('alert');
+    await screen.findByRole('alert');
 
-      // Advance past the retry window
-      await act(async () => {
-        vi.advanceTimersByTime(3000);
-      });
-
-      await waitFor(() => {
+    // Real timers: wait ~3s for the lockout countdown to drain to 0
+    await waitFor(
+      () => {
         expect(screen.queryByRole('alert')).toBeNull();
-      });
-    } finally {
-      vi.useRealTimers();
-    }
-  });
+      },
+      { timeout: 4000, interval: 200 },
+    );
+  }, 10000);
 });
