@@ -46,8 +46,28 @@ const AdminSettings = () => {
   const [testEmailDialog, setTestEmailDialog] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
-  // SMTP config
-  const [smtp, setSmtp] = useState({
+  // SMTP profiles (multi)
+  type SmtpProfile = {
+    id?: string;
+    name: string;
+    purpose: 'all' | 'otp' | 'welcome' | 'notice' | 'bulk' | 'transactional' | 'auth';
+    priority: number;
+    smtp_host: string;
+    smtp_port: number;
+    smtp_username: string;
+    smtp_password: string;
+    from_email: string;
+    from_name: string;
+    is_enabled: boolean;
+    use_tls: boolean;
+    notes?: string | null;
+    _new?: boolean;
+    _dirty?: boolean;
+  };
+  const newSmtpProfile = (overrides: Partial<SmtpProfile> = {}): SmtpProfile => ({
+    name: 'New SMTP Profile',
+    purpose: 'all',
+    priority: 0,
     smtp_host: '',
     smtp_port: 587,
     smtp_username: '',
@@ -56,14 +76,20 @@ const AdminSettings = () => {
     from_name: '',
     is_enabled: false,
     use_tls: true,
+    notes: '',
+    _new: true,
+    _dirty: true,
+    ...overrides,
   });
+  const [smtpProfiles, setSmtpProfiles] = useState<SmtpProfile[]>([]);
   const [smtpLoading, setSmtpLoading] = useState(true);
-  const [smtpSaving, setSmtpSaving] = useState(false);
-  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
-  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [savingProfileIdx, setSavingProfileIdx] = useState<number | null>(null);
+  const [showSmtpPasswordIdx, setShowSmtpPasswordIdx] = useState<number | null>(null);
   const [smtpTestDialog, setSmtpTestDialog] = useState(false);
   const [smtpTestEmail, setSmtpTestEmail] = useState('');
-  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
+  const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestProfileIdx, setSmtpTestProfileIdx] = useState<number | null>(null);
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string; profile?: string } | null>(null);
 
   // OTP test (live end-to-end via send-otp)
   const [otpTestDialog, setOtpTestDialog] = useState(false);
