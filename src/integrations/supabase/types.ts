@@ -5181,6 +5181,62 @@ export type Database = {
           },
         ]
       }
+      salary_generation_log: {
+        Row: {
+          action: string
+          created_at: string
+          generated_by: string | null
+          generated_by_name: string | null
+          id: string
+          metadata: Json | null
+          month_year: string
+          net_salary: number | null
+          reason: string | null
+          source: string
+          staff_id: string | null
+          staff_name: string | null
+          success: boolean
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          generated_by?: string | null
+          generated_by_name?: string | null
+          id?: string
+          metadata?: Json | null
+          month_year: string
+          net_salary?: number | null
+          reason?: string | null
+          source?: string
+          staff_id?: string | null
+          staff_name?: string | null
+          success?: boolean
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          generated_by?: string | null
+          generated_by_name?: string | null
+          id?: string
+          metadata?: Json | null
+          month_year?: string
+          net_salary?: number | null
+          reason?: string | null
+          source?: string
+          staff_id?: string | null
+          staff_name?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_generation_log_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salary_records: {
         Row: {
           absence_deduction: number | null
