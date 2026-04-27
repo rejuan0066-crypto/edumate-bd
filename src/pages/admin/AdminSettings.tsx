@@ -937,6 +937,101 @@ const AdminSettings = () => {
                   )}
               </div>
 
+              {/* Per-role × per-flow OTP override matrix */}
+              <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-3 mb-4">
+                <div>
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                    {bn ? 'রোল-ভিত্তিক OTP ম্যাট্রিক্স' : 'Per-Role OTP Matrix'}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {bn
+                      ? 'প্রতিটি রোলের জন্য আলাদাভাবে OTP চালু/বন্ধ করুন। "—" মানে উপরের গ্লোবাল সেটিংস অনুসরণ করবে।'
+                      : 'Override OTP per role × flow. "—" means the global per-flow setting above is used.'}
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-separate" style={{ borderSpacing: '0 6px' }}>
+                    <thead>
+                      <tr className="text-muted-foreground">
+                        <th className="text-left font-medium px-2 py-1">{bn ? 'রোল' : 'Role'}</th>
+                        {([
+                          { k: 'login', bn: 'লগইন', en: 'Login' },
+                          { k: 'password_reset', bn: 'পাস. রিসেট', en: 'Pwd Reset' },
+                          { k: 'email_change', bn: 'ইমেইল পরিবর্তন', en: 'Email Chg' },
+                          { k: 'password_change', bn: 'পাস. পরিবর্তন', en: 'Pwd Chg' },
+                        ] as const).map((f) => (
+                          <th key={f.k} className="text-center font-medium px-2 py-1">{bn ? f.bn : f.en}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {([
+                        { role: 'admin', bn: 'অ্যাডমিন', en: 'Admin' },
+                        { role: 'parent', bn: 'অভিভাবক', en: 'Parent' },
+                        { role: 'staff', bn: 'স্টাফ', en: 'Staff' },
+                        { role: 'student', bn: 'ছাত্র', en: 'Student' },
+                      ] as const).map((r) => (
+                        <tr key={r.role} className="bg-muted/30 hover:bg-muted/50 transition-colors">
+                          <td className="px-2 py-2 rounded-l-lg text-foreground font-medium">{bn ? r.bn : r.en}</td>
+                          {(['login', 'password_reset', 'email_change', 'password_change'] as const).map((flow, idx, arr) => {
+                            const current = (otpCfg.role_overrides as any)?.[r.role]?.[flow];
+                            const tri: 'inherit' | 'on' | 'off' =
+                              typeof current === 'boolean' ? (current ? 'on' : 'off') : 'inherit';
+                            const cycle = () => {
+                              const next: 'inherit' | 'on' | 'off' =
+                                tri === 'inherit' ? 'on' : tri === 'on' ? 'off' : 'inherit';
+                              setOtpCfg((prev) => {
+                                const ro: any = { ...(prev.role_overrides || {}) };
+                                const roleCfg: any = { ...(ro[r.role] || {}) };
+                                if (next === 'inherit') {
+                                  delete roleCfg[flow];
+                                } else {
+                                  roleCfg[flow] = next === 'on';
+                                }
+                                if (Object.keys(roleCfg).length === 0) {
+                                  delete ro[r.role];
+                                } else {
+                                  ro[r.role] = roleCfg;
+                                }
+                                return { ...prev, role_overrides: ro };
+                              });
+                            };
+                            const isLast = idx === arr.length - 1;
+                            const cls =
+                              tri === 'on'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/40'
+                                : tri === 'off'
+                                ? 'bg-destructive/15 text-destructive border-destructive/40'
+                                : 'bg-muted/40 text-muted-foreground border-border/60';
+                            const label =
+                              tri === 'on' ? (bn ? 'চালু' : 'ON') : tri === 'off' ? (bn ? 'বন্ধ' : 'OFF') : '—';
+                            return (
+                              <td key={flow} className={`px-2 py-2 text-center ${isLast ? 'rounded-r-lg' : ''}`}>
+                                <button
+                                  type="button"
+                                  onClick={cycle}
+                                  disabled={!otpCfg.is_enabled}
+                                  className={`inline-flex items-center justify-center min-w-[56px] px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-all ${cls} ${!otpCfg.is_enabled ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105'}`}
+                                  title={bn ? 'ক্লিক করে পরিবর্তন: চালু → বন্ধ → ইনহেরিট' : 'Click to cycle: ON → OFF → Inherit'}
+                                >
+                                  {label}
+                                </button>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {bn
+                    ? 'টিপ: সেলে ক্লিক করলে পরিবর্তন হবে — চালু (সবুজ) → বন্ধ (লাল) → ইনহেরিট (—)। ইনহেরিট মানে গ্লোবাল সেটিংস কার্যকর।'
+                    : 'Tip: click a cell to cycle — ON (green) → OFF (red) → Inherit (—). Inherit defers to the global per-flow toggle.'}
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div>
                   <Label className="text-xs">{bn ? 'মেয়াদ (মিনিট)' : 'Expiry (min)'}</Label>
