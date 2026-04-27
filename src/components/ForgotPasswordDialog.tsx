@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
+import { fetchOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
