@@ -213,7 +213,7 @@ const AdminProfile = () => {
   // ─── Password Change: validate common fields ───
   const validatePwFields = () => {
     if (!currentPassword.trim()) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড দিন' : 'Enter current password'); return false; }
-    if (newPassword.length < 6) { toast.error(bn ? 'নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে' : 'New password must be at least 6 characters'); return false; }
+    if (!isPasswordStrong(newPassword)) { toast.error(bn ? 'নতুন পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'New password does not meet all requirements'); return false; }
     if (newPassword !== confirmPassword) { toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return false; }
     return true;
   };
