@@ -1,5 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.100.1/cors";
+import { corsHeaders, validateBody, jsonError, z } from "../_shared/validate.ts";
+
+const VerifyOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Must be a valid email address").max(255),
+  code: z.string().trim().regex(/^\d{6}$/, "Code must be exactly 6 digits"),
+  purpose: z.enum(["email_verification", "password_reset"], {
+    errorMap: () => ({ message: "Purpose must be 'email_verification' or 'password_reset'" }),
+  }),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -7,14 +15,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, code, purpose } = await req.json();
-
-    if (!email || !code || !purpose) {
-      return new Response(JSON.stringify({ error: "Email, code, and purpose are required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const parsed = await validateBody(req, VerifyOtpSchema);
+    if (!parsed.ok) return parsed.response;
+    const { email, code, purpose } = parsed.data;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
