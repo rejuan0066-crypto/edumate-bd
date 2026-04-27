@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Mail, RefreshCw, Search, AlertCircle, CheckCircle2, Loader2, Eye } from 'lucide-react';
+import { Mail, RefreshCw, Search, AlertCircle, CheckCircle2, Loader2, Eye, Send, RotateCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { toast } from '@/hooks/use-toast';
 
 interface LogRow {
   id: string;
@@ -31,6 +32,68 @@ const AdminEmailDeliveryLog = () => {
   const [kindFilter, setKindFilter] = useState<'all' | 'user' | 'student' | 'other'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<LogRow | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [bulkRetrying, setBulkRetrying] = useState(false);
+
+  const retryOne = async (row: LogRow): Promise<{ ok: boolean; error?: string }> => {
+    const meta = (row.metadata && typeof row.metadata === 'object') ? row.metadata : {};
+    const kind = row.template_kind === 'other' ? 'user' : row.template_kind;
+    const { data, error } = await supabase.functions.invoke('send-welcome-email', {
+      body: {
+        email: row.recipient_email,
+        full_name: row.recipient_name || undefined,
+        kind,
+        role: (meta as any).role,
+        student_id: (meta as any).student_id,
+      },
+    });
+    if (error) return { ok: false, error: error.message };
+    if (data?.error) return { ok: false, error: data.error };
+    return { ok: true };
+  };
+
+  const handleRetryOne = async (row: LogRow) => {
+    setRetryingId(row.id);
+    const res = await retryOne(row);
+    setRetryingId(null);
+    if (res.ok) {
+      toast({ title: bn ? 'পুনরায় পাঠানো হয়েছে' : 'Resent', description: row.recipient_email });
+    } else {
+      toast({ title: bn ? 'ব্যর্থ' : 'Failed', description: res.error, variant: 'destructive' });
+    }
+    load();
+  };
+
+  const handleBulkRetry = async () => {
+    const failed = filtered.filter(r => r.status === 'failed');
+    if (failed.length === 0) {
+      toast({ title: bn ? 'কোনো ব্যর্থ ইমেইল নেই' : 'No failed emails to retry' });
+      return;
+    }
+    setBulkRetrying(true);
+    let ok = 0, fail = 0;
+    // Dedupe by email+kind so we don't spam the same recipient
+    const seen = new Set<string>();
+    const queue = failed.filter(r => {
+      const key = `${r.template_kind}:${r.recipient_email.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    for (const row of queue) {
+      const res = await retryOne(row);
+      if (res.ok) ok++; else fail++;
+    }
+    setBulkRetrying(false);
+    toast({
+      title: bn ? 'পুনঃপ্রেরণ সম্পন্ন' : 'Retry complete',
+      description: bn
+        ? `সফল: ${ok}, ব্যর্থ: ${fail} (${queue.length} জন প্রাপক)`
+        : `Sent: ${ok}, Failed: ${fail} (${queue.length} recipients)`,
+      variant: fail > 0 ? 'destructive' : 'default',
+    });
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
@@ -88,10 +151,22 @@ const AdminEmailDeliveryLog = () => {
               </p>
             </div>
           </div>
-          <Button onClick={load} variant="outline" disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            {bn ? 'রিফ্রেশ' : 'Refresh'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleBulkRetry}
+              variant="default"
+              disabled={bulkRetrying || loading || filtered.filter(r => r.status === 'failed').length === 0}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {bulkRetrying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCw className="w-4 h-4 mr-2" />}
+              {bn ? 'ব্যর্থগুলো পুনরায় পাঠান' : 'Retry failed'}
+              {` (${filtered.filter(r => r.status === 'failed').length})`}
+            </Button>
+            <Button onClick={load} variant="outline" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              {bn ? 'রিফ্রেশ' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
@@ -191,9 +266,24 @@ const AdminEmailDeliveryLog = () => {
                         {r.status === 'failed' ? (r.error_message || '-') : (r.subject || '-')}
                       </td>
                       <td className="py-3 px-4 last:rounded-r-[20px] text-right">
-                        <Button size="sm" variant="ghost" onClick={() => setSelected(r)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {r.status === 'failed' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRetryOne(r)}
+                              disabled={retryingId === r.id || bulkRetrying}
+                              title={bn ? 'পুনরায় পাঠান' : 'Resend'}
+                            >
+                              {retryingId === r.id
+                                ? <Loader2 className="w-4 h-4 animate-spin" />
+                                : <Send className="w-4 h-4 text-emerald-600" />}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="ghost" onClick={() => setSelected(r)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
