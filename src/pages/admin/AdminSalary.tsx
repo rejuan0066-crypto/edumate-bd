@@ -106,6 +106,20 @@ const AdminSalary = () => {
 
   const monthYear = `${selectedYear}-${selectedMonth}`;
 
+  // Auto-refresh salary records when the auto-attendance trigger inserts new rows for this month
+  useEffect(() => {
+    const channel = supabase
+      .channel(`salary-records-${monthYear}`)
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'salary_records', filter: `month_year=eq.${monthYear}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+          queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [monthYear, queryClient]);
+
   // Fetch designations for Bengali name lookup
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-list'],
