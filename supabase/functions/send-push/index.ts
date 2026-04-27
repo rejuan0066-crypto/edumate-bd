@@ -1,10 +1,9 @@
 // Edge Function: send-push
 // Sends Web Push notifications using VAPID. Reads private/public keys from Supabase secrets.
 // Body: { title, body, link?, category?, target?: 'all' | 'user', user_id?, icon? }
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-// @ts-ignore — Deno-compatible web-push fork
-import webpush from "npm:web-push@3.6.7";
+// @ts-ignore — Deno-compatible web-push via esm.sh
+import webpush from "https://esm.sh/web-push@3.6.7?target=deno";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
