@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, purpose } = await req.json();
+    const { email, purpose, scope } = await req.json();
 
     if (!email || !purpose) {
       return otpErrorResponse({
@@ -35,6 +35,14 @@ Deno.serve(async (req) => {
         message: "Invalid purpose. Must be 'email_verification' or 'password_reset'.",
       });
     }
+
+    // Optional fine-grained scope: 'login' | 'password_reset' | 'email_change' | 'password_change'
+    // Falls back to a sensible default derived from `purpose` when not supplied.
+    const validScopes = ["login", "password_reset", "email_change", "password_change"];
+    const effectiveScope: string =
+      typeof scope === "string" && validScopes.includes(scope)
+        ? scope
+        : (purpose === "password_reset" ? "password_reset" : "email_change");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
