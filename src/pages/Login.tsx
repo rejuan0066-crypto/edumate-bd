@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
 import PageLoader from '@/components/PageLoader';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 const Login = () => {
   const { t, language } = useLanguage();
@@ -117,7 +118,7 @@ const Login = () => {
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
               placeholder="••••••••"
               className="bg-background"
               name="password"

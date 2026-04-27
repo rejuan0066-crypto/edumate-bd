@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -170,7 +171,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => setNewPassword(sanitizePasswordInput(e.target.value))}
                     placeholder="••••••••"
                     className="bg-background pr-10"
                   />
@@ -191,7 +192,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                 <Input
                   type="password"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => setConfirmPassword(sanitizePasswordInput(e.target.value))}
                   placeholder="••••••••"
                   className="bg-background"
                 />

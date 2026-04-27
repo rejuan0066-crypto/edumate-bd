@@ -22,6 +22,7 @@ import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 interface UserItem {
   id: string;
@@ -576,7 +577,7 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
                       <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
@@ -1364,7 +1365,7 @@ const AdminUserManagement = () => {
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'নতুন পাসওয়ার্ড' : 'New Password'}</Label>
                         <div className="relative">
-                          <Input type={profileShowPw ? 'text' : 'password'} value={profileNewPassword} onChange={e => setProfileNewPassword(e.target.value)} placeholder={bn ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New password (min 6 chars)'} className="pr-10" />
+                          <Input type={profileShowPw ? 'text' : 'password'} value={profileNewPassword} onChange={e => setProfileNewPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New password (min 6 chars)'} className="pr-10" />
                           <button type="button" onClick={() => setProfileShowPw(!profileShowPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             {profileShowPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
@@ -1374,7 +1375,7 @@ const AdminUserManagement = () => {
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
                         <div className="relative">
-                          <Input type={profileShowPw ? 'text' : 'password'} value={profileConfirmPassword} onChange={e => setProfileConfirmPassword(e.target.value)} placeholder={bn ? 'নতুন পাসওয়ার্ড পুনরায় দিন' : 'Re-enter new password'} className="pr-10" />
+                          <Input type={profileShowPw ? 'text' : 'password'} value={profileConfirmPassword} onChange={e => setProfileConfirmPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'নতুন পাসওয়ার্ড পুনরায় দিন' : 'Re-enter new password'} className="pr-10" />
                           <button type="button" onClick={() => setProfileShowPw(!profileShowPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             {profileShowPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
