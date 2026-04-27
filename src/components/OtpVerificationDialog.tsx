@@ -362,6 +362,7 @@ const OtpVerificationDialog = ({
                 size="sm"
                 disabled
                 className="gap-2 text-muted-foreground"
+                aria-describedby="otp-lockout-message otp-lockout-countdown"
               >
                 <ShieldAlert className="w-4 h-4" />
                 {bn ? 'রিসেন্ড লক করা হয়েছে' : 'Resend locked'}
