@@ -174,7 +174,7 @@ const OtpVerificationDialog = ({
   };
 
   const handleInitialSend = async () => {
-    const result = await sendOtp(email, purpose, recipientName);
+    const result = await sendOtp(email, purpose, recipientName, scope);
     if (result.success) {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
@@ -197,7 +197,7 @@ const OtpVerificationDialog = ({
   };
 
   const handleResend = async () => {
-    const result = await sendOtp(email, purpose, recipientName);
+    const result = await sendOtp(email, purpose, recipientName, scope);
     if (!result.success) {
       applyLockout(
         result.errorCode,
