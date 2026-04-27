@@ -196,7 +196,39 @@ const AdminSettings = () => {
       next.require_for_email_change = false;
       next.require_for_password_change = false;
       next.role_overrides = {} as typeof next.role_overrides;
+      return next;
     }
+
+    // ---- Normalize role_overrides matrix ----
+    // Rules:
+    //  1) Drop any role/flow whose value matches the global flag (no-op override → keep "Inherit").
+    //  2) Drop any non-boolean value.
+    //  3) Drop empty role buckets so payload stays clean.
+    //  4) Restrict to known roles & flows.
+    const VALID_ROLES = ['admin', 'parent', 'staff', 'student'] as const;
+    const FLOW_TO_GLOBAL: Record<string, keyof typeof next> = {
+      login: 'require_for_login',
+      password_reset: 'require_for_password_reset',
+      email_change: 'require_for_email_change',
+      password_change: 'require_for_password_change',
+    };
+    const cleaned: Record<string, Record<string, boolean>> = {};
+    const src = (next.role_overrides || {}) as Record<string, Record<string, unknown>>;
+    for (const role of VALID_ROLES) {
+      const bucket = src[role];
+      if (!bucket || typeof bucket !== 'object') continue;
+      const out: Record<string, boolean> = {};
+      for (const [flow, globalKey] of Object.entries(FLOW_TO_GLOBAL)) {
+        const v = bucket[flow];
+        if (typeof v !== 'boolean') continue;
+        // Drop overrides that match the global value (no-op)
+        if (v === Boolean((next as any)[globalKey])) continue;
+        out[flow] = v;
+      }
+      if (Object.keys(out).length > 0) cleaned[role] = out;
+    }
+    next.role_overrides = cleaned as typeof next.role_overrides;
+
     return next;
   };
 
@@ -229,6 +261,31 @@ const AdminSettings = () => {
         bn
           ? 'সতর্কতা: লগইনে OTP বন্ধ কিন্তু পাসওয়ার্ড রিসেটে চালু — এটি 2FA এর কার্যকারিতা কমাতে পারে। চালিয়ে যাবেন?'
           : 'Warning: Login OTP is OFF but Password Reset OTP is ON — this weakens 2FA. Continue anyway?'
+      );
+      if (!ok) return;
+    }
+
+    // Per-role conflict: if a role disables BOTH login and password_reset OTP, warn.
+    const ROLES = ['admin', 'parent', 'staff', 'student'] as const;
+    const roleEffective = (role: string, flow: 'login' | 'password_reset' | 'email_change' | 'password_change') => {
+      const ov = (normalized.role_overrides as any)?.[role]?.[flow];
+      if (typeof ov === 'boolean') return ov;
+      const map: Record<string, boolean> = {
+        login: normalized.require_for_login,
+        password_reset: normalized.require_for_password_reset,
+        email_change: normalized.require_for_email_change,
+        password_change: normalized.require_for_password_change,
+      };
+      return map[flow];
+    };
+    const weakRoles = ROLES.filter(
+      (r) => !roleEffective(r, 'login') && roleEffective(r, 'password_reset')
+    );
+    if (weakRoles.length > 0) {
+      const ok = window.confirm(
+        bn
+          ? `সতর্কতা: ${weakRoles.join(', ')} রোলে লগইন OTP বন্ধ কিন্তু পাসওয়ার্ড রিসেট OTP চালু — 2FA দুর্বল হবে। চালিয়ে যাবেন?`
+          : `Warning: For role(s) ${weakRoles.join(', ')}, Login OTP is OFF but Password Reset OTP is ON — this weakens 2FA. Continue anyway?`
       );
       if (!ok) return;
     }
