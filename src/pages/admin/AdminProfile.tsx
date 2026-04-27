@@ -188,7 +188,7 @@ const AdminProfile = () => {
   }, [newEmail, emailPassword, currentEmail, bn, sendOtp]);
 
   const handleResendOtp = useCallback(async () => {
-    const result = await sendOtp(newEmail.trim(), 'email_verification', newEmail.trim());
+    const result = await sendOtp(newEmail.trim(), 'email_verification', newEmail.trim(), 'email_change');
     if (result.success) { setCountdown(60); setOtpCode(''); toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent'); }
   }, [newEmail, bn, sendOtp]);
 
