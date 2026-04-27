@@ -30,6 +30,7 @@ type Committee = {
 type Member = {
   id: string;
   committee_id: string;
+  staff_id: string | null;
   name: string;
   name_en: string | null;
   designation: string;
@@ -53,6 +54,7 @@ const emptyCommittee: Partial<Committee> = {
 };
 
 const emptyMember: Partial<Member> = {
+  staff_id: null,
   name: "", name_en: "", designation: "", designation_en: "",
   phone: "", email: "", address: "", occupation: "", occupation_en: "",
   photo_url: "", joining_date: "", is_active: true, sort_order: 0, notes: "",
