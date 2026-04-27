@@ -980,6 +980,12 @@ const AdminSettings = () => {
                   <Send className="w-4 h-4 mr-2" />
                   {bn ? 'OTP টেস্ট ইমেইল' : 'Test OTP Email'}
                 </Button>
+                <Button asChild variant="outline">
+                  <a href="/admin/otp-recovery">
+                    <Shield className="w-4 h-4 mr-2" />
+                    {bn ? 'OTP রিকভারি' : 'OTP Recovery'}
+                  </a>
+                </Button>
               </div>
             </div>
           )}
