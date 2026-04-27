@@ -5,7 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
-import { fetchOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
+import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
 import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
@@ -23,6 +23,9 @@ interface OtpVerificationDialogProps {
   /** Fine-grained flow scope so the dialog can honour the admin's per-flow OTP toggle.
    *  When the admin has disabled OTP for this scope, the dialog auto-passes (no email sent). */
   scope?: 'login' | 'password_reset' | 'email_change' | 'password_change';
+  /** Target user's role — enables per-role OTP overrides set in admin settings.
+   *  Falls back to the global per-flow flag when not provided. */
+  role?: OtpRoleScope;
 }
 
 /** Codes that should fully lock the verify action until a fresh code is requested
@@ -49,6 +52,7 @@ const OtpVerificationDialog = ({
   title,
   description,
   scope,
+  role,
 }: OtpVerificationDialogProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -79,7 +83,7 @@ const OtpVerificationDialog = ({
         const effectiveScope = scope ?? (purpose === 'password_reset' ? 'password_reset' : 'email_change');
         try {
           const reqs = await fetchOtpRequirements();
-          if (!isOtpRequiredFor(reqs, effectiveScope)) {
+          if (!isOtpRequiredFor(reqs, effectiveScope, role)) {
             onOpenChange(false);
             onVerified();
             return;
