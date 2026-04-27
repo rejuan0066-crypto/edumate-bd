@@ -45,7 +45,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
       setStep('newPassword');
       return;
     }
-    const result = await sendOtp(email.trim(), 'password_reset');
+    const result = await sendOtp(email.trim(), 'password_reset', undefined, 'password_reset');
     if (result.success) {
       setStep('otp');
     }
