@@ -1196,7 +1196,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             </p>
           </div>
           <div className="flex gap-2 flex-wrap items-center">
-            {entityType === 'staff' && <CommitteeExclusionNotice count={committeeHiddenCount} />}
+            {entityType === 'staff' && (
+              <CommitteeExclusionNotice
+                count={committeeHiddenCount}
+                info={committeeInfo}
+                hiddenStaff={(allStaffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id))}
+                showAll={showCommitteeStaff}
+                onToggleShowAll={setShowCommitteeStaff}
+              />
+            )}
             {entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
