@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
