@@ -546,7 +546,26 @@ export default function AdminCommittees() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setMemberDialog(false)}>{bn ? "বাতিল" : "Cancel"}</Button>
-            <Button onClick={() => editingMember && saveMember.mutate(editingMember)} disabled={!editingMember?.name || !editingMember?.designation || saveMember.isPending}>
+            <Button
+              onClick={() => {
+                if (!editingMember) return;
+                // Detect overlap to decide whether OTP is required
+                const isOverlap =
+                  editingMember.staff_id &&
+                  editingMember.is_active !== false &&
+                  members.some(
+                    (x) =>
+                      x.staff_id === editingMember.staff_id &&
+                      x.is_active &&
+                      x.committee_id !== editingMember.committee_id &&
+                      x.id !== editingMember.id
+                  );
+                const run = () => saveMember.mutate(editingMember);
+                if (isOverlap) otpGate.requireOtp(run);
+                else run();
+              }}
+              disabled={!editingMember?.name || !editingMember?.designation || saveMember.isPending}
+            >
               {bn ? "সংরক্ষণ" : "Save"}
             </Button>
           </DialogFooter>
