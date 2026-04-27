@@ -4384,6 +4384,39 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_config: {
+        Row: {
+          cooldown_seconds: number
+          daily_limit: number
+          expiry_minutes: number
+          hourly_limit: number
+          id: number
+          is_enabled: boolean
+          max_attempts: number
+          updated_at: string
+        }
+        Insert: {
+          cooldown_seconds?: number
+          daily_limit?: number
+          expiry_minutes?: number
+          hourly_limit?: number
+          id?: number
+          is_enabled?: boolean
+          max_attempts?: number
+          updated_at?: string
+        }
+        Update: {
+          cooldown_seconds?: number
+          daily_limit?: number
+          expiry_minutes?: number
+          hourly_limit?: number
+          id?: number
+          is_enabled?: boolean
+          max_attempts?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       otp_verify_attempts: {
         Row: {
           created_at: string
