@@ -23,6 +23,7 @@ import {
   Search,
 } from "lucide-react";
 import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
+import OtpVerificationDialog from "@/components/OtpVerificationDialog";
 import { format } from "date-fns";
 
 type LockedUser = {
