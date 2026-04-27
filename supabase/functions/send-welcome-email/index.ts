@@ -3,6 +3,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { sendViaSMTP, welcomeEmailHtml } from "../_shared/smtp.ts";
+import { resolveSmtpProfile } from "../_shared/smtp-resolver.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
