@@ -63,6 +63,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ---- Per-flow OTP requirement check (admin-controlled) ----
+    const scopeFlagMap: Record<string, string> = {
+      login: "require_for_login",
+      password_reset: "require_for_password_reset",
+      email_change: "require_for_email_change",
+      password_change: "require_for_password_change",
+    };
+    const scopeFlag = scopeFlagMap[effectiveScope];
+    if (otpCfg && scopeFlag && (otpCfg as any)[scopeFlag] === false) {
+      return otpErrorResponse({
+        status: 403,
+        code: "OTP_NOT_REQUIRED_FOR_SCOPE",
+        message: `OTP is disabled for ${effectiveScope} by the administrator.`,
+      });
+    }
+
     // ---- Rate limiting & cooldown (from config or defaults) ----
     const COOLDOWN_SECONDS = otpCfg?.cooldown_seconds ?? 60;
     const HOURLY_LIMIT = otpCfg?.hourly_limit ?? 5;
