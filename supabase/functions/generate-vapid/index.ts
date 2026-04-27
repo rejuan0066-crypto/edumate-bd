@@ -1,6 +1,5 @@
 // Edge Function: generate-vapid
 // Generates a VAPID key pair (P-256) using Web Crypto. Returns base64url publicKey/privateKey.
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
