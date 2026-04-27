@@ -171,7 +171,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
+                    onChange={(e) => setNewPassword(sanitizePasswordInput(e.target.value))}
                     placeholder="••••••••"
                     className="bg-background pr-10"
                   />
