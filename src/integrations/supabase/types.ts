@@ -1548,6 +1548,56 @@ export type Database = {
         }
         Relationships: []
       }
+      email_template_versions: {
+        Row: {
+          brand_color: string | null
+          change_note: string | null
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          html_body: string
+          id: string
+          subject: string
+          template_id: string
+          template_key: string
+          version_number: number
+        }
+        Insert: {
+          brand_color?: string | null
+          change_note?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          html_body: string
+          id?: string
+          subject: string
+          template_id: string
+          template_key: string
+          version_number: number
+        }
+        Update: {
+          brand_color?: string | null
+          change_note?: string | null
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          html_body?: string
+          id?: string
+          subject?: string
+          template_id?: string
+          template_key?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           brand_color: string | null
