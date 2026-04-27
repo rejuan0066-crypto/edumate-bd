@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { corsHeaders, otpErrorResponse } from "../_shared/validate.ts";
+import { enforcePasswordPolicy, logSecurityEvent } from "../_shared/password.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -17,17 +18,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (new_password.length < 6) {
-      return otpErrorResponse({
-        status: 400,
-        code: "WEAK_PASSWORD",
-        message: "Password must be at least 6 characters",
-      });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const pwCheck = await enforcePasswordPolicy(supabase, new_password);
+    if (!pwCheck.ok) {
+      await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email, reason: 'forgot_password_reset', details: pwCheck.body, req });
+      return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+
+
 
     // Verify that an OTP was recently verified for this email + password_reset
     const { data: otpRecord } = await supabase

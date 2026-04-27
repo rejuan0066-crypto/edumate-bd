@@ -13,7 +13,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
+import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 
 const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
   <div className="relative">
@@ -27,6 +27,7 @@ const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value
 const AdminProfile = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const policy = usePasswordPolicy();
   const { sendOtp, sending } = useOtpService();
   const { user, role } = useAuth();
   const isAdmin = role === 'admin' || role === 'super_admin';
@@ -213,7 +214,7 @@ const AdminProfile = () => {
   // ─── Password Change: validate common fields ───
   const validatePwFields = () => {
     if (!currentPassword.trim()) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড দিন' : 'Enter current password'); return false; }
-    if (!isPasswordStrong(newPassword)) { toast.error(bn ? 'নতুন পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'New password does not meet all requirements'); return false; }
+    if (!isPasswordStrongAgainst(newPassword, policy)) { toast.error(firstFailedRuleMessage(newPassword, policy, bn) || (bn ? 'নতুন পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'New password does not meet requirements')); return false; }
     if (newPassword !== confirmPassword) { toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match'); return false; }
     return true;
   };

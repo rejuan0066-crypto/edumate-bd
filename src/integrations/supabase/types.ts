@@ -4504,6 +4504,42 @@ export type Database = {
           },
         ]
       }
+      password_policy: {
+        Row: {
+          block_leaked_passwords: boolean
+          id: number
+          min_length: number
+          require_lowercase: boolean
+          require_number: boolean
+          require_special: boolean
+          require_uppercase: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          block_leaked_passwords?: boolean
+          id?: number
+          min_length?: number
+          require_lowercase?: boolean
+          require_number?: boolean
+          require_special?: boolean
+          require_uppercase?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          block_leaked_passwords?: boolean
+          id?: number
+          min_length?: number
+          require_lowercase?: boolean
+          require_number?: boolean
+          require_special?: boolean
+          require_uppercase?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       payment_gateway_config: {
         Row: {
           api_key: string
@@ -5823,6 +5859,48 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          created_at: string
+          details: Json | null
+          email: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          reason: string | null
+          severity: string
+          target_user_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          severity?: string
+          target_user_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          email?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          reason?: string | null
+          severity?: string
+          target_user_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       shift_time_audit_log: {
         Row: {
           affected_salary_records: number
@@ -7052,6 +7130,10 @@ export type Database = {
           p_expected_deleted?: boolean
           p_expected_is_active?: boolean
         }
+        Returns: Json
+      }
+      validate_password_strength: {
+        Args: { p_password: string }
         Returns: Json
       }
     }

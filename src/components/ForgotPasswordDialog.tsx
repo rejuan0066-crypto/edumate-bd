@@ -9,7 +9,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
+import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -22,6 +22,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { sendOtp, verifyOtp, sending, verifying } = useOtpService();
+  const policy = usePasswordPolicy();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -57,8 +58,8 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
   };
 
   const handleResetPassword = async () => {
-    if (!isPasswordStrong(newPassword)) {
-      toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements');
+    if (!isPasswordStrongAgainst(newPassword, policy)) {
+      toast.error(firstFailedRuleMessage(newPassword, policy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements'));
       return;
     }
     if (newPassword !== confirmPassword) {

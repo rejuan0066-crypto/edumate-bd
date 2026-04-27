@@ -21,7 +21,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
-import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
+import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 
 interface UserItem {
   id: string;
@@ -100,6 +100,7 @@ const MENU_PATHS = [
 const AdminUserManagement = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const passwordPolicy = usePasswordPolicy();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/user-management');
@@ -197,7 +198,7 @@ const AdminUserManagement = () => {
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
-    if (!isPasswordStrong(password)) { toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements'); return; }
+    if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
 
     // Find the base role for custom roles (role can be empty/'none' for permission-only users)
     const effectiveRole = (role && role !== 'none') ? role : '';
@@ -1381,7 +1382,7 @@ const AdminUserManagement = () => {
                       </div>
                       <Button
                         className="w-full btn-primary-gradient"
-                        disabled={profileSaving === 'password' || !isPasswordStrong(profileNewPassword) || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
+                        disabled={profileSaving === 'password' || !isPasswordStrongAgainst(profileNewPassword, passwordPolicy) || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
                         onClick={async () => {
                           if (profileConfirmPassword && profileNewPassword !== profileConfirmPassword) {
                             toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match');
