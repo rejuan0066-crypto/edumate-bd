@@ -104,9 +104,48 @@ const AdminSettings = () => {
     }
   };
 
+  // OTP global config
+  const [otpCfg, setOtpCfg] = useState({
+    is_enabled: true,
+    expiry_minutes: 10,
+    max_attempts: 3,
+    cooldown_seconds: 60,
+    hourly_limit: 5,
+    daily_limit: 15,
+  });
+  const [otpCfgLoading, setOtpCfgLoading] = useState(true);
+  const [otpCfgSaving, setOtpCfgSaving] = useState(false);
+
+  const loadOtpConfig = async () => {
+    const { data } = await supabase.from('otp_config').select('*').eq('id', 1).maybeSingle();
+    if (data) {
+      setOtpCfg({
+        is_enabled: data.is_enabled,
+        expiry_minutes: data.expiry_minutes,
+        max_attempts: data.max_attempts,
+        cooldown_seconds: data.cooldown_seconds,
+        hourly_limit: data.hourly_limit,
+        daily_limit: data.daily_limit,
+      });
+    }
+    setOtpCfgLoading(false);
+  };
+
+  const saveOtpConfig = async () => {
+    setOtpCfgSaving(true);
+    const { error } = await supabase
+      .from('otp_config')
+      .update({ ...otpCfg, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+    setOtpCfgSaving(false);
+    if (error) toast.error(bn ? 'OTP সেটিংস সংরক্ষণ ব্যর্থ' : 'Failed to save OTP settings');
+    else toast.success(bn ? 'OTP সেটিংস সংরক্ষিত' : 'OTP settings saved');
+  };
+
   useEffect(() => {
     loadEmailjsConfig();
     loadSmtpConfig();
+    loadOtpConfig();
   }, []);
 
   const loadEmailjsConfig = async () => {
