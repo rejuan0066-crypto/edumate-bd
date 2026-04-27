@@ -265,6 +265,31 @@ const AdminSettings = () => {
       if (!ok) return;
     }
 
+    // Per-role conflict: if a role disables BOTH login and password_reset OTP, warn.
+    const ROLES = ['admin', 'parent', 'staff', 'student'] as const;
+    const roleEffective = (role: string, flow: 'login' | 'password_reset' | 'email_change' | 'password_change') => {
+      const ov = (normalized.role_overrides as any)?.[role]?.[flow];
+      if (typeof ov === 'boolean') return ov;
+      const map: Record<string, boolean> = {
+        login: normalized.require_for_login,
+        password_reset: normalized.require_for_password_reset,
+        email_change: normalized.require_for_email_change,
+        password_change: normalized.require_for_password_change,
+      };
+      return map[flow];
+    };
+    const weakRoles = ROLES.filter(
+      (r) => !roleEffective(r, 'login') && roleEffective(r, 'password_reset')
+    );
+    if (weakRoles.length > 0) {
+      const ok = window.confirm(
+        bn
+          ? `সতর্কতা: ${weakRoles.join(', ')} রোলে লগইন OTP বন্ধ কিন্তু পাসওয়ার্ড রিসেট OTP চালু — 2FA দুর্বল হবে। চালিয়ে যাবেন?`
+          : `Warning: For role(s) ${weakRoles.join(', ')}, Login OTP is OFF but Password Reset OTP is ON — this weakens 2FA. Continue anyway?`
+      );
+      if (!ok) return;
+    }
+
     setOtpCfg(normalized);
     setOtpCfgSaving(true);
     const { error } = await supabase
