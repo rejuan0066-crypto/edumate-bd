@@ -779,7 +779,38 @@ const AdminSettings = () => {
                       ? 'বন্ধ থাকলে কোনো OTP ইমেইল পাঠানো হবে না (অ্যাডমিন ২-ধাপ ভেরিফিকেশনও নিষ্ক্রিয়)।'
                       : 'When off, no OTP emails will be sent (admin 2-step verification disabled too).'}
                   </p>
-                </div>
+              </div>
+
+              {/* Per-flow OTP requirement toggles */}
+              <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                  {bn ? 'কোন কাজে OTP লাগবে?' : 'Where to require OTP?'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn
+                    ? 'নিচের প্রতিটি ফ্লোতে আলাদাভাবে OTP চালু/বন্ধ করুন। OTP মূল সুইচ বন্ধ থাকলে এগুলোর কোনোটিই কাজ করবে না।'
+                    : 'Toggle OTP independently per flow. If the master OTP switch is OFF, none of these apply.'}
+                </p>
+
+                {[
+                  { key: 'require_for_login', bn: 'অ্যাডমিন লগইনে (২-ধাপ ভেরিফিকেশন)', en: 'Admin Login (2-step verification)' },
+                  { key: 'require_for_password_reset', bn: 'পাসওয়ার্ড ফরগেট-এ', en: 'Forgot Password' },
+                  { key: 'require_for_email_change', bn: 'ইমেইল পরিবর্তনে', en: 'Email Change' },
+                  { key: 'require_for_password_change', bn: 'পাসওয়ার্ড পরিবর্তনে', en: 'Password Change' },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <p className="text-sm text-foreground">{bn ? item.bn : item.en}</p>
+                    <Switch
+                      checked={(otpCfg as any)[item.key]}
+                      disabled={!otpCfg.is_enabled}
+                      onCheckedChange={(v) => setOtpCfg({ ...otpCfg, [item.key]: v } as any)}
+                    />
+                  </div>
+                ))}
+              </div>
                 <Switch
                   checked={otpCfg.is_enabled}
                   onCheckedChange={(v) => setOtpCfg({ ...otpCfg, is_enabled: v })}
