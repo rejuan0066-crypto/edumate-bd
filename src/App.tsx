@@ -125,6 +125,7 @@ import AdminComplaints from "./pages/admin/AdminComplaints";
 import AdminHostel from "@/pages/admin/AdminHostel";
 import AdminHealthRecords from "@/pages/admin/AdminHealthRecords";
 import AdminCommittees from "@/pages/admin/AdminCommittees";
+import AdminCommitteeAuditLog from "@/pages/admin/AdminCommitteeAuditLog";
 import ComplaintPage from "./pages/ComplaintPage";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
@@ -266,6 +267,7 @@ const App = () => (
                     <Route path="hostel" element={<AdminHostel />} />
                     <Route path="health-records" element={<AdminHealthRecords />} />
                     <Route path="committees" element={<AdminCommittees />} />
+                    <Route path="committee-audit-log" element={<AdminCommitteeAuditLog />} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
                     <Route path="staff/add" element={<ModuleGuard menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
