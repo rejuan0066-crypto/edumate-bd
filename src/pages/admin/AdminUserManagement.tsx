@@ -1209,7 +1209,7 @@ const AdminUserManagement = () => {
                           const { data, error } = await supabase.functions.invoke('manage-users', {
                             body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditName.trim() },
                           });
-                          if (error || !data?.success) throw new Error(data?.error || error?.message);
+                          if (error || !data?.success) throw new Error((bn ? data?.message_bn : data?.message) || data?.error || error?.message);
                           toast.success(bn ? '✅ নাম আপডেট হয়েছে' : '✅ Name updated');
                           setProfileUser({ ...profileUser, full_name: profileEditName.trim() });
                           fetchUsers();
