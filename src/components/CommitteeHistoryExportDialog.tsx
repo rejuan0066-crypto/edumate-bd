@@ -104,6 +104,7 @@ export default function CommitteeHistoryExportDialog({ open, onOpenChange, staff
         onOpenChange={otpGate.setOpen}
         email={otpGate.email}
         purpose="email_verification"
+        scope="login"
         onVerified={otpGate.onVerified}
         title={bn ? "সংবেদনশীল কাজ যাচাই" : "Verify Sensitive Action"}
         description={bn ? "কমিটি ইতিহাস ডাউনলোডের আগে ওটিপি দিন।" : "Enter OTP to authorize committee history download."}
