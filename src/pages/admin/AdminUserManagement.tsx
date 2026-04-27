@@ -683,7 +683,7 @@ const AdminUserManagement = () => {
                         </p>
                       )}
                     </div>
-                    <Button onClick={handleCreate} disabled={creating} className="w-full btn-primary-gradient">
+                    <Button onClick={handleCreate} disabled={creating || emailDup === 'dup' || emailDup === 'invalid' || emailDup === 'checking' || nameDup === 'dup' || nameDup === 'checking'} className="w-full btn-primary-gradient">
                       {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                       {bn ? 'ইউজার তৈরি করুন' : 'Create User'}
                     </Button>
