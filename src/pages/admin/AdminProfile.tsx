@@ -273,7 +273,7 @@ const AdminProfile = () => {
   }, [currentPassword, newPassword, confirmPassword, currentEmail, bn, sendOtp]);
 
   const handlePwResendOtp = useCallback(async () => {
-    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail, 'password_change');
     if (result.success) { setPwCountdown(60); setPwOtpCode(''); toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent'); }
   }, [currentEmail, bn, sendOtp]);
 
