@@ -61,6 +61,9 @@ const AdminSettings = () => {
   const [smtpSaving, setSmtpSaving] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestDialog, setSmtpTestDialog] = useState(false);
+  const [smtpTestEmail, setSmtpTestEmail] = useState('');
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
 
   useEffect(() => {
     loadEmailjsConfig();
@@ -161,23 +164,35 @@ const AdminSettings = () => {
   };
 
   const testSmtpConnection = async () => {
-    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.from_email) {
-      toast.error(bn ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all required fields');
+    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.smtp_password || !smtp.from_email) {
+      toast.error(bn ? 'প্রথমে SMTP হোস্ট, ইউজারনেম, পাসওয়ার্ড ও From ইমেইল পূরণ করুন' : 'Please fill SMTP host, username, password and from email first');
+      return;
+    }
+    setSmtpTestResult(null);
+    setSmtpTestDialog(true);
+  };
+
+  const runSmtpTest = async () => {
+    if (!smtpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpTestEmail)) {
+      toast.error(bn ? 'বৈধ টেস্ট ইমেইল দিন' : 'Enter a valid test email');
       return;
     }
     setSmtpTesting(true);
+    setSmtpTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('test-smtp', {
-        body: { ...smtp },
+        body: { ...smtp, test_email: smtpTestEmail },
       });
-      if (error) throw error;
-      if (data?.success) {
-        toast.success(bn ? 'SMTP সংযোগ সফল!' : 'SMTP connection successful!');
+      if (error) {
+        setSmtpTestResult({ success: false, message: error.message || 'Function call failed' });
+      } else if (data?.success) {
+        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent') });
+        toast.success(bn ? `✅ টেস্ট ইমেইল পাঠানো হয়েছে: ${smtpTestEmail}` : `✅ Test email sent to ${smtpTestEmail}`);
       } else {
-        toast.error(data?.error || (bn ? 'সংযোগ ব্যর্থ' : 'Connection failed'));
+        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint });
       }
-    } catch {
-      toast.error(bn ? 'SMTP টেস্ট ব্যর্থ' : 'SMTP test failed');
+    } catch (e: any) {
+      setSmtpTestResult({ success: false, message: e?.message || 'Network error' });
     }
     setSmtpTesting(false);
   };
