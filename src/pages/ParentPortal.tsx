@@ -246,7 +246,7 @@ const ParentPortal = () => {
                           type="password"
                           placeholder="••••••••"
                           value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
+                          onChange={(e) => setLoginPassword(sanitizePasswordInput(e.target.value))}
                           className="rounded-xl h-12"
                         />
                       </div>
