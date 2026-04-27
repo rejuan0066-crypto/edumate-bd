@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         });
       }
     } catch (connError) {
-      return new Response(JSON.stringify({ success: false, error: `Cannot connect to ${smtp_host}:${smtp_port} - ${connError.message}` }), {
+      return new Response(JSON.stringify({ success: false, error: `Cannot connect to ${smtp_host}:${smtp_port} - ${(connError as Error).message}` }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
