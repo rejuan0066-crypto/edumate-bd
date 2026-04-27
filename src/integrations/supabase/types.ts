@@ -712,6 +712,128 @@ export type Database = {
           },
         ]
       }
+      committee_members: {
+        Row: {
+          address: string | null
+          committee_id: string
+          created_at: string
+          deleted_at: string | null
+          designation: string
+          designation_en: string | null
+          email: string | null
+          id: string
+          is_active: boolean
+          joining_date: string | null
+          name: string
+          name_en: string | null
+          notes: string | null
+          occupation: string | null
+          occupation_en: string | null
+          phone: string | null
+          photo_url: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          committee_id: string
+          created_at?: string
+          deleted_at?: string | null
+          designation: string
+          designation_en?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          joining_date?: string | null
+          name: string
+          name_en?: string | null
+          notes?: string | null
+          occupation?: string | null
+          occupation_en?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          committee_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          designation?: string
+          designation_en?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          joining_date?: string | null
+          name?: string
+          name_en?: string | null
+          notes?: string | null
+          occupation?: string | null
+          occupation_en?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_members_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committees: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          description_en: string | null
+          expiry_date: string | null
+          formation_date: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_en: string | null
+          sort_order: number
+          tenure_months: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          description_en?: string | null
+          expiry_date?: string | null
+          formation_date?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_en?: string | null
+          sort_order?: number
+          tenure_months?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          description_en?: string | null
+          expiry_date?: string | null
+          formation_date?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_en?: string | null
+          sort_order?: number
+          tenure_months?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       complaints: {
         Row: {
           assigned_to: string | null
