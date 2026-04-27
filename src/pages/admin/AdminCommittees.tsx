@@ -94,6 +94,18 @@ export default function AdminCommittees() {
     },
   });
 
+  const { data: staffOptions = [] } = useQuery({
+    queryKey: ["committee-staff-options"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("staff")
+        .select("id, name_bn, name_en, designation, photo_url, phone, email, address")
+        .order("name_bn");
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
   const saveCommittee = useMutation({
     mutationFn: async (c: Partial<Committee>) => {
       const payload = {
