@@ -837,6 +837,42 @@ const AdminSettings = () => {
                       ? 'বন্ধ থাকলে কোনো OTP ইমেইল পাঠানো হবে না (অ্যাডমিন ২-ধাপ ভেরিফিকেশনও নিষ্ক্রিয়)।'
                       : 'When off, no OTP emails will be sent (admin 2-step verification disabled too).'}
                   </p>
+                </div>
+                <Switch
+                  checked={otpCfg.is_enabled}
+                  onCheckedChange={(v) => {
+                    if (!v) {
+                      // Master OFF → cascade all per-flow toggles OFF
+                      setOtpCfg({
+                        ...otpCfg,
+                        is_enabled: false,
+                        require_for_login: false,
+                        require_for_password_reset: false,
+                        require_for_email_change: false,
+                        require_for_password_change: false,
+                      });
+                    } else {
+                      // Master ON → restore safe defaults if everything was off
+                      const allOff =
+                        !otpCfg.require_for_login &&
+                        !otpCfg.require_for_password_reset &&
+                        !otpCfg.require_for_email_change &&
+                        !otpCfg.require_for_password_change;
+                      setOtpCfg({
+                        ...otpCfg,
+                        is_enabled: true,
+                        ...(allOff
+                          ? {
+                              require_for_login: true,
+                              require_for_password_reset: true,
+                              require_for_email_change: true,
+                              require_for_password_change: true,
+                            }
+                          : {}),
+                      });
+                    }
+                  }}
+                />
               </div>
 
               {/* Per-flow OTP requirement toggles */}
@@ -868,11 +904,28 @@ const AdminSettings = () => {
                     />
                   </div>
                 ))}
-              </div>
-                <Switch
-                  checked={otpCfg.is_enabled}
-                  onCheckedChange={(v) => setOtpCfg({ ...otpCfg, is_enabled: v })}
-                />
+
+                {/* Inline conflict warning */}
+                {otpCfg.is_enabled &&
+                  !otpCfg.require_for_login &&
+                  !otpCfg.require_for_password_reset &&
+                  !otpCfg.require_for_email_change &&
+                  !otpCfg.require_for_password_change && (
+                    <div className="mt-2 p-2 rounded-lg bg-destructive/10 border border-destructive/30 text-xs text-destructive">
+                      {bn
+                        ? '⚠️ OTP চালু আছে কিন্তু কোনো ফ্লোতে প্রয়োগ হবে না। সংরক্ষণ ব্লক হবে।'
+                        : '⚠️ OTP is ON but no flow uses it. Save will be blocked.'}
+                    </div>
+                  )}
+                {otpCfg.is_enabled &&
+                  !otpCfg.require_for_login &&
+                  otpCfg.require_for_password_reset && (
+                    <div className="mt-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-xs text-yellow-700 dark:text-yellow-400">
+                      {bn
+                        ? '⚠️ লগইন OTP বন্ধ কিন্তু পাসওয়ার্ড রিসেট OTP চালু — 2FA দুর্বল হতে পারে।'
+                        : '⚠️ Login OTP OFF but Password Reset OTP ON — weakens 2FA.'}
+                    </div>
+                  )}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
