@@ -18,6 +18,7 @@ import { isAdminRole } from '@/lib/roles';
 import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support';
 
