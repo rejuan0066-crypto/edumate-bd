@@ -214,11 +214,14 @@ export function zodErrorsToFields(err: ZodError): FieldError[] {
 
 /** Build the standard 422 validation response. */
 export function validationFailureResponse(errors: FieldError[]): Response {
+  const firstMsg = errors[0]?.message ?? "Validation failed";
   return new Response(
     JSON.stringify({
       ok: false,
       error: "Validation failed",
       code: "VALIDATION_ERROR",
+      message: firstMsg,
+      retry_after_seconds: null,
       field_count: errors.length,
       errors,
       // Convenience map: { fieldPath: "first message" } for quick UI lookup
