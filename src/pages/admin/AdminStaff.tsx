@@ -77,8 +77,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [accCreating, setAccCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [generatingIds, setGeneratingIds] = useState(false);
+  const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
 
-  const committeeStaffIds = useCommitteeStaffIds();
+  const committeeInfo = useCommitteeStaffIds();
   const { data: staffListRaw = [], isLoading } = useQuery({
     queryKey: ['staff'],
     queryFn: async () => {
@@ -87,8 +88,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       return data;
     },
   });
-  const staffList = (staffListRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
-  const committeeHiddenCount = (staffListRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
+  const staffList = showCommitteeStaff
+    ? (staffListRaw as any[])
+    : (staffListRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+  const committeeHiddenCount = (staffListRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
