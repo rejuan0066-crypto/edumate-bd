@@ -43,7 +43,7 @@ const AdminProfile = () => {
   const [newEmail, setNewEmail] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
   const [showEmailPassword, setShowEmailPassword] = useState(false);
-  const [useOtp, setUseOtp] = useState(false);
+  const [useOtp, setUseOtp] = useState(true);
   const [step, setStep] = useState<'form' | 'otp' | 'done'>('form');
   const [otpCode, setOtpCode] = useState('');
   const [verifying, setVerifying] = useState(false);
