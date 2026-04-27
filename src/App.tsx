@@ -357,6 +357,7 @@ const App = () => (
                     <Route path="complaints" element={<AdminComplaints />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
+                    <Route path="otp-recovery" element={<AdminOtpRecovery />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
