@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
         );
       } catch (sendErr) {
         const msg = (sendErr as Error).message || String(sendErr);
+        console.error("[test-smtp] send failed:", msg);
         return new Response(
           JSON.stringify({
             success: false,
