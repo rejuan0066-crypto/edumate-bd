@@ -1,5 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-import { corsHeaders, validateBody, otpErrorResponse, z } from "../_shared/validate.ts";
+import {
+  corsHeaders,
+  validateBody,
+  otpErrorResponse,
+  rateLimitResponse,
+  z,
+} from "../_shared/validate.ts";
 
 const VerifyOtpSchema = z.object({
   email: z.string().trim().toLowerCase().email("Must be a valid email address").max(255),
