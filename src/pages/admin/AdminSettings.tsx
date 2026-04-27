@@ -470,6 +470,10 @@ const AdminSettings = () => {
                     {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
                     {bn ? 'টেস্ট' : 'Test'}
                   </Button>
+                  <Button onClick={() => { setOtpTestResult(null); setOtpTestDialog(true); }} variant="outline">
+                    <Send className="w-4 h-4 mr-2" />
+                    {bn ? 'OTP টেস্ট' : 'Test OTP'}
+                  </Button>
                 </div>
 
                 <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground space-y-2">
