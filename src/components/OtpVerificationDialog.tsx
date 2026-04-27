@@ -70,10 +70,25 @@ const OtpVerificationDialog = ({
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resendApiRef = useRef<{ startCooldown: (s: number) => void } | null>(null);
 
-  // Initial send when dialog opens
+  // Initial send when dialog opens — but first check if OTP is required for this scope
   useEffect(() => {
     if (open && !otpSent) {
-      void handleInitialSend();
+      void (async () => {
+        // Honour admin per-flow OTP toggle. If disabled for this scope, skip the
+        // entire OTP exchange and call onVerified() so the calling flow proceeds.
+        const effectiveScope = scope ?? (purpose === 'password_reset' ? 'password_reset' : 'email_change');
+        try {
+          const reqs = await fetchOtpRequirements();
+          if (!isOtpRequiredFor(reqs, effectiveScope)) {
+            onOpenChange(false);
+            onVerified();
+            return;
+          }
+        } catch {
+          // If we cannot determine, fall through to normal OTP flow (safer default)
+        }
+        void handleInitialSend();
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
