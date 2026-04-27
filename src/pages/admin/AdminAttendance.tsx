@@ -30,6 +30,7 @@ import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
+import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
