@@ -50,23 +50,24 @@ async function buildHistoryRows(
   f: HistoryFilters
 ): Promise<HistoryRow[]> {
   // If staffId is provided → per-staff history. Otherwise → global audit log.
-  const auditQ = supabase
+  let auditBuilder = supabase
     .from("committee_audit_log" as any)
     .select("*")
     .order("created_at", { ascending: true });
+  if (staffId) auditBuilder = auditBuilder.eq("staff_id", staffId);
 
-  if (staffId) auditQ.eq("staff_id", staffId);
-
-  const promises: Promise<any>[] = [auditQ];
+  const promises: Promise<any>[] = [Promise.resolve(auditBuilder)];
 
   if (staffId) {
     promises.unshift(
-      supabase
-        .from("committee_members" as any)
-        .select(
-          "committee_id, designation, joining_date, is_active, deleted_at, created_at, committee:committees(name, name_en)"
-        )
-        .eq("staff_id", staffId)
+      Promise.resolve(
+        supabase
+          .from("committee_members" as any)
+          .select(
+            "committee_id, designation, joining_date, is_active, deleted_at, created_at, committee:committees(name, name_en)"
+          )
+          .eq("staff_id", staffId)
+      )
     );
   }
 
