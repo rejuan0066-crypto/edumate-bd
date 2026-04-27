@@ -9,6 +9,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
