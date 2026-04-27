@@ -73,7 +73,6 @@ Deno.serve(async (req) => {
         <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
         <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
-        <td class="c-status">${s.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : (bn ? 'বকেয়া' : 'Pending')}</td>
       </tr>
     `).join("");
 
@@ -366,7 +365,6 @@ Deno.serve(async (req) => {
           <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
           <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
           <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
-          <th class="center">${bn ? "অবস্থা" : "Status"}</th>
         </tr>
       </thead>
       <tbody>
@@ -379,7 +377,6 @@ Deno.serve(async (req) => {
           <td></td>
           <td></td>
           <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
-          <td></td>
         </tr>
       </tbody>
     </table>
