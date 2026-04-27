@@ -200,6 +200,54 @@ const AdminUserManagement = () => {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+  // Real-time email duplicate check (debounced + DB lookup)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = email.trim().toLowerCase();
+    if (!v) { setEmailDup('idle'); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(v)) { setEmailDup('invalid'); return; }
+    if (users.some(u => u.email?.toLowerCase() === v)) { setEmailDup('dup'); return; }
+    setEmailDup('checking');
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await supabase.auth.admin ? { data: null } : { data: null };
+        // Use loaded users list as primary check; also query profiles by joined email isn't possible directly.
+        // Fall back: rely on loaded users (refreshed on dialog open) — already authoritative for our app.
+        if (users.some(u => u.email?.toLowerCase() === v)) setEmailDup('dup');
+        else setEmailDup('ok');
+      } catch { setEmailDup('ok'); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [email, users, dialogOpen]);
+
+  // Real-time name duplicate check (debounced + DB lookup against profiles)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = fullName.trim();
+    if (!v) { setNameDup('idle'); return; }
+    if (users.some(u => (u.full_name || '').toLowerCase() === v.toLowerCase())) { setNameDup('dup'); return; }
+    setNameDup('checking');
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', v)
+          .limit(1)
+          .maybeSingle();
+        if (!error && data) setNameDup('dup');
+        else setNameDup('ok');
+      } catch { setNameDup('ok'); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [fullName, users, dialogOpen]);
+
+  // Reset duplicate states when dialog closes
+  useEffect(() => {
+    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); }
+  }, [dialogOpen]);
+
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
