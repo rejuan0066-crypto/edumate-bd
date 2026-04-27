@@ -760,6 +760,7 @@ export type Database = {
       committee_members: {
         Row: {
           address: string | null
+          allow_overlap: boolean
           committee_id: string
           created_at: string
           deleted_at: string | null
@@ -782,6 +783,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          allow_overlap?: boolean
           committee_id: string
           created_at?: string
           deleted_at?: string | null
@@ -804,6 +806,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          allow_overlap?: boolean
           committee_id?: string
           created_at?: string
           deleted_at?: string | null
