@@ -51,6 +51,7 @@ import AdminFeeCategories from "./pages/admin/AdminFeeCategories";
 import AdminStudentCategories from "./pages/admin/AdminStudentCategories";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminDonors from "./pages/admin/AdminDonors";
 import AdminProfile from "./pages/admin/AdminProfile";
@@ -355,6 +356,7 @@ const App = () => (
                     <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
                     <Route path="complaints" element={<AdminComplaints />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="email-templates" element={<AdminEmailTemplates />} />
                   </Route>
 
                   <Route path="*" element={<NotFound />} />
