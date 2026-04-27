@@ -175,9 +175,15 @@ Deno.serve(async (req) => {
     // If SMTP is enabled, send directly via SMTP
     if (useSmtp) {
       try {
-        const subject = purpose === "password_reset" ? "Password Reset Code" : "Email Verification Code";
-        const html = generateOtpEmailHtml(code, expiryMinutes, purpose, smtpConfig!.from_name);
-        await sendViaSMTP(smtpConfig, email, subject, html);
+        const tplKey = purpose === "password_reset" ? "password_reset" : "otp";
+        const rendered = await renderEmailTemplate(supabase, tplKey, {
+          otp: code,
+          reset_code: code,
+          expiry_minutes: expiryMinutes,
+          user_name: email.split("@")[0],
+          institution_name: smtpConfig!.from_name || "Subhani Madrasah",
+        }, { subject: "Your Verification Code", html: FALLBACK_OTP_HTML });
+        await sendViaSMTP(smtpConfig, email, rendered.subject, rendered.html);
 
         return new Response(
           JSON.stringify({
