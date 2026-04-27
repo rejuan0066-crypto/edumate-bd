@@ -355,6 +355,23 @@ const AdmissionPage = () => {
       };
       const { error } = await supabase.from('students').insert(payload as any);
       if (error) throw error;
+      // Best-effort welcome email via SMTP (Mailtrap)
+      const recipientEmail = (payload as any).email;
+      if (recipientEmail) {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              email: recipientEmail,
+              full_name: (payload as any).name_en || (payload as any).name_bn,
+              kind: 'student',
+              student_id: studentId,
+              login_url: `${window.location.origin}/parent-portal`,
+            },
+          });
+        } catch (mailErr) {
+          console.error('send-welcome-email failed (non-fatal):', mailErr);
+        }
+      }
       return payload;
     },
     onSuccess: (payload) => {
