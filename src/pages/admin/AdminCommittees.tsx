@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
 import OtpVerificationDialog from "@/components/OtpVerificationDialog";
 import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
+import CommitteeAttachments from "@/components/CommitteeAttachments";
 
 type Committee = {
   id: string;
