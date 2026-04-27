@@ -53,10 +53,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: smtpConfig, error: smtpErr } = await supabase
-      .from("smtp_config").select("*").limit(1).maybeSingle();
+    const smtpConfig = await resolveSmtpProfile(supabase, "welcome");
 
-    if (smtpErr || !smtpConfig || !smtpConfig.is_enabled) {
+    if (!smtpConfig) {
       await logDelivery('failed', 'SMTP not configured or disabled', { code: 'SMTP_DISABLED' });
       return new Response(JSON.stringify({
         error: "SMTP not configured or disabled",
