@@ -1642,7 +1642,13 @@ const AdminSalary = () => {
 
         {committeeHiddenCount > 0 && (
           <div className="flex justify-end">
-            <CommitteeExclusionNotice count={committeeHiddenCount} />
+            <CommitteeExclusionNotice
+              count={committeeHiddenCount}
+              info={committeeInfo}
+              hiddenStaff={(staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id))}
+              showAll={showCommitteeStaff}
+              onToggleShowAll={setShowCommitteeStaff}
+            />
           </div>
         )}
 
