@@ -434,7 +434,6 @@ Deno.serve(async (req) => {
 </head><body>
 <div class="sheet">
   <div class="watermark">${bn ? "গোপনীয়" : "CONFIDENTIAL"}</div>
-<div class="sheet">
   <div class="hdr">
     <div class="hdr-row">
       <div class="logo-wrap">${logoBlock}</div>
@@ -448,14 +447,17 @@ Deno.serve(async (req) => {
       </div>
       <div class="doc-tag">
         <div class="badge">${bn ? "বেতন শিট" : "SALARY SHEET"}</div>
-        <div class="id">${sheetId}</div>
+        <div class="id">Ref: <strong style="color:#0b1727">${sheetId}</strong></div>
       </div>
     </div>
   </div>
 
   <div class="period-bar">
-    <span class="ttl">${bn ? "বেতন শিট" : "Salary Sheet"} — ${monthLabel} ${bn ? toBnDigits(year) : year}</span>
-    <span>${bn ? "ইস্যু তারিখ" : "Issue Date"}: <strong>${issueDate}</strong> &nbsp;•&nbsp; ${bn ? "মোট স্টাফ" : "Total Staff"}: <strong>${bn ? toBnDigits(staff.length) : staff.length}</strong></span>
+    <span class="ttl">${bn ? "বেতন বিবরণী" : "Payroll Statement"} <span>— ${monthLabel} ${bn ? toBnDigits(year) : year}</span></span>
+    <span class="meta-r">
+      <span>${bn ? "ইস্যু তারিখ" : "Issue Date"}<strong>${issueDate}</strong></span>
+      <span>${bn ? "মোট স্টাফ" : "Total Staff"}<strong>${bn ? toBnDigits(staff.length) : staff.length}</strong></span>
+    </span>
   </div>
 
   <div class="body">
