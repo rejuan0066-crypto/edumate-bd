@@ -584,6 +584,15 @@ export default function AdminCommittees() {
         onConfirm={() => { if (deleteMember) { removeMember.mutate(deleteMember.id); setDeleteMember(null); } }}
         description={bn ? `সদস্য "${deleteMember?.name}" মুছে ফেলা হবে।` : `Member "${deleteMember?.name}" will be removed.`}
       />
+      <OtpVerificationDialog
+        open={otpGate.open}
+        onOpenChange={otpGate.setOpen}
+        email={otpGate.email}
+        purpose="email_verification"
+        onVerified={otpGate.onVerified}
+        title={bn ? "ওভারল্যাপ অনুমোদন যাচাই" : "Verify Overlap Approval"}
+        description={bn ? "ওভারল্যাপ অনুমোদনের আগে ওটিপি দিন।" : "Enter OTP to authorize multi-committee membership."}
+      />
     </div>
   );
 }
