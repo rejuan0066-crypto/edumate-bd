@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import PublicLayout from '@/components/PublicLayout';
