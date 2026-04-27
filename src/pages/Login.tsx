@@ -31,18 +31,63 @@ function mapRoleToOtpScope(role: string | null | undefined): OtpRoleScope | unde
 
 const Login = () => {
   const { t, language } = useLanguage();
-  const { signIn, user, loading: authLoading, role, userStatus } = useAuth();
+  const { signIn, signOut, user, loading: authLoading, role, userStatus } = useAuth();
   const { settings } = useWebsiteSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
 
-  if (authLoading || (user && !hasResolvedAuthRedirectState({ role, userStatus }))) {
+  // OTP 2FA gate
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpRole, setOtpRole] = useState<OtpRoleScope | undefined>(undefined);
+  const [otpVerified, setOtpVerified] = useState(false);
+  // Track that the current authenticated session is awaiting OTP. Persist in
+  // sessionStorage so a refresh during the gate keeps blocking until verified.
+  const [pendingOtp, setPendingOtp] = useState<boolean>(() => {
+    try { return sessionStorage.getItem(LOGIN_OTP_FLAG) === '1'; } catch { return false; }
+  });
+
+  // When pendingOtp is set and a user/role becomes available, decide whether
+  // OTP is actually required for this role. If not, clear the flag so redirect
+  // can proceed. If required, open the dialog.
+  useEffect(() => {
+    if (!pendingOtp || !user) return;
+    let cancelled = false;
+    void (async () => {
+      const mapped = mapRoleToOtpScope(role);
+      try {
+        const reqs = await fetchOtpRequirements(true);
+        if (!isOtpRequiredFor(reqs, 'login', mapped)) {
+          if (cancelled) return;
+          setPendingOtp(false);
+          setOtpVerified(true);
+          try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
+          return;
+        }
+      } catch {
+        // Fall through and require OTP (safer default)
+      }
+      if (cancelled) return;
+      setOtpEmail(user.email || '');
+      setOtpRole(mapped);
+      setOtpOpen(true);
+    })();
+    return () => { cancelled = true; };
+  }, [pendingOtp, user, role]);
+
+  // Block render until role resolved (so OTP scope decision is correct), but
+  // when an OTP gate is active we DO NOT redirect — we render the dialog.
+  if (authLoading || (user && !pendingOtp && !hasResolvedAuthRedirectState({ role, userStatus }))) {
     return <PageLoader />;
   }
 
-  if (user) {
+  if (user && !pendingOtp && otpVerified === false && !sessionStorage.getItem(LOGIN_OTP_FLAG)) {
+    // Normal redirect path (no pending OTP)
+    return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
+  }
+  if (user && otpVerified) {
     return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
   }
 
@@ -53,11 +98,41 @@ const Login = () => {
       return;
     }
     setLoading(true);
+    // Mark the upcoming session as OTP-pending BEFORE signIn so the redirect
+    // guard above blocks navigation as soon as the user state hydrates.
+    try { sessionStorage.setItem(LOGIN_OTP_FLAG, '1'); } catch { /* ignore */ }
+    setPendingOtp(true);
     const { error } = await signIn(email, password);
     setLoading(false);
     if (error) {
+      try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
+      setPendingOtp(false);
       toast.error(language === 'bn' ? 'ইউজারনেম বা পাসওয়ার্ড ভুল' : 'Invalid credentials');
     }
+    // On success: useEffect above will resolve role and open OTP dialog if needed.
+  };
+
+  const handleOtpVerified = () => {
+    try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
+    setPendingOtp(false);
+    setOtpOpen(false);
+    setOtpVerified(true);
+  };
+
+  const handleOtpDialogChange = async (open: boolean) => {
+    if (!open && pendingOtp && !otpVerified) {
+      // User cancelled the OTP gate — sign them out for safety.
+      try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
+      setOtpOpen(false);
+      setPendingOtp(false);
+      try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
+      try { await signOut(); } catch { /* ignore */ }
+      toast.error(language === 'bn'
+        ? 'OTP যাচাই বাতিল করা হয়েছে — পুনরায় লগইন করুন'
+        : 'OTP verification cancelled — please sign in again');
+      return;
+    }
+    setOtpOpen(open);
   };
 
   const loginLogo = settings.favicon_url || settings.logo_url;
