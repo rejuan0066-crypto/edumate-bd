@@ -1,131 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { rateLimitResponse, otpErrorResponse } from "../_shared/validate.ts";
+import { sendViaSMTP } from "../_shared/smtp.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-async function sendViaSMTP(smtpConfig: any, to: string, subject: string, htmlBody: string) {
-  const { smtp_host, smtp_port, smtp_username, smtp_password, from_email, from_name, use_tls } = smtpConfig;
-
-  const conn = await Deno.connect({
-    hostname: smtp_host,
-    port: smtp_port || 587,
-  });
-
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const buf = new Uint8Array(4096);
-
-  async function readResponse(): Promise<string> {
-    const n = await conn.read(buf);
-    return decoder.decode(buf.subarray(0, n || 0));
-  }
-
-  async function sendCommand(cmd: string): Promise<string> {
-    await conn.write(encoder.encode(cmd + "\r\n"));
-    return await readResponse();
-  }
-
-  // Read greeting
-  await readResponse();
-
-  // EHLO
-  await sendCommand("EHLO localhost");
-
-  if (use_tls) {
-    const starttlsResp = await sendCommand("STARTTLS");
-    if (starttlsResp.startsWith("220")) {
-      const tlsConn = await Deno.startTls(conn, { hostname: smtp_host });
-
-      async function readTls(): Promise<string> {
-        const b = new Uint8Array(4096);
-        const n = await tlsConn.read(b);
-        return decoder.decode(b.subarray(0, n || 0));
-      }
-
-      async function sendTls(cmd: string): Promise<string> {
-        await tlsConn.write(encoder.encode(cmd + "\r\n"));
-        return await readTls();
-      }
-
-      await sendTls("EHLO localhost");
-
-      // AUTH LOGIN
-      await sendTls("AUTH LOGIN");
-      await sendTls(btoa(smtp_username));
-      const authResp = await sendTls(btoa(smtp_password));
-
-      if (!authResp.startsWith("235")) {
-        tlsConn.close();
-        throw new Error("SMTP authentication failed");
-      }
-
-      const fromHeader = from_name ? `"${from_name}" <${from_email}>` : from_email;
-      await sendTls(`MAIL FROM:<${from_email}>`);
-      await sendTls(`RCPT TO:<${to}>`);
-      await sendTls("DATA");
-
-      const message = [
-        `From: ${fromHeader}`,
-        `To: ${to}`,
-        `Subject: ${subject}`,
-        `MIME-Version: 1.0`,
-        `Content-Type: text/html; charset=UTF-8`,
-        ``,
-        htmlBody,
-        `.`,
-      ].join("\r\n");
-
-      const dataResp = await sendTls(message);
-      await sendTls("QUIT");
-      tlsConn.close();
-
-      if (!dataResp.startsWith("250")) {
-        throw new Error("Failed to send email: " + dataResp);
-      }
-
-      return true;
-    }
-  }
-
-  // Non-TLS fallback (AUTH LOGIN)
-  await sendCommand("AUTH LOGIN");
-  await sendCommand(btoa(smtp_username));
-  const authResp = await sendCommand(btoa(smtp_password));
-
-  if (!authResp.startsWith("235")) {
-    conn.close();
-    throw new Error("SMTP authentication failed");
-  }
-
-  const fromHeader = from_name ? `"${from_name}" <${from_email}>` : from_email;
-  await sendCommand(`MAIL FROM:<${from_email}>`);
-  await sendCommand(`RCPT TO:<${to}>`);
-  await sendCommand("DATA");
-
-  const message = [
-    `From: ${fromHeader}`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    htmlBody,
-    `.`,
-  ].join("\r\n");
-
-  const dataResp = await sendCommand(message);
-  await sendCommand("QUIT");
-  conn.close();
-
-  if (!dataResp.startsWith("250")) {
-    throw new Error("Failed to send email: " + dataResp);
-  }
-
-  return true;
-}
 
 function generateOtpEmailHtml(code: string, expiryMinutes: number, purpose: string, fromName: string) {
   const purposeText = purpose === "password_reset" ? "Password Reset" : "Email Verification";
@@ -317,7 +197,8 @@ Deno.serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (smtpError) {
-        console.error("SMTP send failed:", smtpError);
+        const errMsg = smtpError instanceof Error ? smtpError.message : String(smtpError);
+        console.error("SMTP send failed:", errMsg);
         // Fall back to EmailJS if available
         if (useEmailjs) {
           return new Response(
