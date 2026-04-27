@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { corsHeaders, otpErrorResponse } from "../_shared/validate.ts";
+import { enforcePasswordPolicy, logSecurityEvent } from "../_shared/password.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
