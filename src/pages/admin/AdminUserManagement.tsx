@@ -681,7 +681,7 @@ const AdminUserManagement = () => {
                       {fullName.trim() && (
                         <p className={`text-xs mt-1 flex items-center gap-1 ${nameDup === 'dup' ? 'text-destructive' : nameDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                           {nameDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
-                          {nameDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই নামে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this name already exists'}</>}
+                          {nameDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই নামে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this name already exists'} <button type="button" onClick={() => showConflict('name', fullName)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
                           {nameDup === 'ok' && <>✓ {bn ? 'নাম উপলব্ধ' : 'Name available'}</>}
                         </p>
                       )}
