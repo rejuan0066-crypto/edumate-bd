@@ -9,6 +9,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Mail, Lock, ShieldCheck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -56,8 +57,8 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
   };
 
   const handleResetPassword = async () => {
-    if (newPassword.length < 6) {
-      toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে' : 'Password must be at least 6 characters');
+    if (!isPasswordStrong(newPassword)) {
+      toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -180,6 +181,7 @@ const ForgotPasswordDialog = ({ open, onOpenChange }: ForgotPasswordDialogProps)
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                <PasswordStrengthMeter password={newPassword} bn={bn} />
               </div>
               <div>
                 <Label className="flex items-center gap-2 mb-1.5">

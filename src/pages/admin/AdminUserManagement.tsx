@@ -21,6 +21,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
+import PasswordStrengthMeter, { isPasswordStrong } from '@/components/PasswordStrengthMeter';
 
 interface UserItem {
   id: string;
@@ -196,7 +197,7 @@ const AdminUserManagement = () => {
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
-    if (!password || password.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    if (!isPasswordStrong(password)) { toast.error(bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet all requirements'); return; }
 
     // Find the base role for custom roles (role can be empty/'none' for permission-only users)
     const effectiveRole = (role && role !== 'none') ? role : '';
@@ -574,11 +575,12 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
                       <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      <PasswordStrengthMeter password={password} bn={bn} />
                     </div>
                     <div>
                       <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
@@ -1366,6 +1368,7 @@ const AdminUserManagement = () => {
                             {profileShowPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
+                        <PasswordStrengthMeter password={profileNewPassword} bn={bn} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
@@ -1378,7 +1381,7 @@ const AdminUserManagement = () => {
                       </div>
                       <Button
                         className="w-full btn-primary-gradient"
-                        disabled={profileSaving === 'password' || profileNewPassword.length < 6 || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
+                        disabled={profileSaving === 'password' || !isPasswordStrong(profileNewPassword) || (profileConfirmPassword !== '' && profileNewPassword !== profileConfirmPassword)}
                         onClick={async () => {
                           if (profileConfirmPassword && profileNewPassword !== profileConfirmPassword) {
                             toast.error(bn ? 'পাসওয়ার্ড মিলছে না' : 'Passwords do not match');
