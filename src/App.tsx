@@ -78,6 +78,7 @@ import AdminWidgetBuilder from "./pages/admin/AdminWidgetBuilder";
 import AdminBackup from "./pages/admin/AdminBackup";
 import AdminRecycleBin from "./pages/admin/AdminRecycleBin";
 import AdminSystemLogs from "./pages/admin/AdminSystemLogs";
+import AdminEmailDeliveryLog from "./pages/admin/AdminEmailDeliveryLog";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import AdminWhatsAppQueue from "./pages/admin/AdminWhatsAppQueue";
@@ -319,6 +320,7 @@ const App = () => (
                     <Route path="backup" element={<AdminBackup />} />
                     <Route path="recycle-bin" element={<AdminRecycleBin />} />
                     <Route path="system-logs" element={<AdminSystemLogs />} />
+                    <Route path="email-delivery-log" element={<AdminEmailDeliveryLog />} />
                     <Route path="inventory" element={<AdminInventory />} />
                     <Route path="guardian-notify" element={<AdminGuardianNotifications />} />
                     <Route path="whatsapp-queue" element={<AdminWhatsAppQueue />} />
