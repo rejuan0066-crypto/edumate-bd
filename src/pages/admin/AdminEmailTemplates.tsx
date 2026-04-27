@@ -81,6 +81,9 @@ export default function AdminEmailTemplates() {
   const [saving, setSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
+  // Session-level guard: max 5 test sends per browser tab session
+  const SESSION_MAX = 5;
+  const [sessionAttempts, setSessionAttempts] = useState(0);
   const [edits, setEdits] = useState<Record<string, Partial<EmailTemplate>>>({});
 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
