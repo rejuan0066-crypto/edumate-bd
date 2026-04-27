@@ -265,6 +265,7 @@ const App = () => (
                     <Route path="bulk-import" element={<AdminBulkImport />} />
                     <Route path="hostel" element={<AdminHostel />} />
                     <Route path="health-records" element={<AdminHealthRecords />} />
+                    <Route path="committees" element={<AdminCommittees />} />
                     <Route path="students" element={<ModuleGuard menuPath="/admin/students"><AdminStudents /></ModuleGuard>} />
                     <Route path="staff" element={<ModuleGuard menuPath="/admin/staff"><AdminStaff staffType="all" /></ModuleGuard>} />
                     <Route path="staff/add" element={<ModuleGuard menuPath="/admin/staff"><AdminStaffForm /></ModuleGuard>} />
