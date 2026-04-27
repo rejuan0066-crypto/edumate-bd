@@ -29,6 +29,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
+import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -205,7 +206,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
 
   // Fetch staff
-  const { data: allStaff = [] } = useQuery({
+  const committeeStaffIds = useCommitteeStaffIds();
+  const { data: allStaffRaw = [] } = useQuery({
     queryKey: ['staff'],
     queryFn: async () => {
       const { data } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
@@ -213,6 +215,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     enabled: entityType === 'staff',
   });
+  const allStaff = (allStaffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
 
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
   const sessionOptions = useMemo(() => {
