@@ -143,7 +143,8 @@ const AdminSalary = () => {
     }
   };
 
-  const committeeStaffIds = useCommitteeStaffIds();
+  const committeeInfo = useCommitteeStaffIds();
+  const [showCommitteeStaff, setShowCommitteeStaff] = useState(false);
   const { data: staffRaw = [] } = useQuery({
     queryKey: ['salary-staff'],
     queryFn: async () => {
@@ -152,8 +153,10 @@ const AdminSalary = () => {
       return data;
     },
   });
-  const staff = (staffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
-  const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
+  const staff = showCommitteeStaff
+    ? (staffRaw as any[])
+    : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
+  const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
