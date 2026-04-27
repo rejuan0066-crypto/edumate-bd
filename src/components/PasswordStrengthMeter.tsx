@@ -51,14 +51,10 @@ const PasswordStrengthMeter = ({ password, bn = true, className }: PasswordStren
   );
 };
 
-// Backwards-compatible exports — use the live policy from the DB cache.
-export const isPasswordStrong = (password: string, policy?: PasswordPolicy): boolean => {
-  if (policy) return isPasswordStrongAgainst(password, policy);
-  // Sync fallback uses default policy if cache not yet populated.
-  // Callers that need the live policy should use isPasswordStrongAgainst with usePasswordPolicy().
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { DEFAULT_POLICY } = require('@/hooks/usePasswordPolicy');
-  return isPasswordStrongAgainst(password, DEFAULT_POLICY);
+// Backwards-compatible export — uses default policy synchronously.
+// For live policy enforcement at submit time, use isPasswordStrongAgainst with usePasswordPolicy().
+export const isPasswordStrong = (password: string, policy: PasswordPolicy = DEFAULT_POLICY): boolean => {
+  return isPasswordStrongAgainst(password, policy);
 };
 
 export { firstFailedRuleMessage, isPasswordStrongAgainst, usePasswordPolicy };
