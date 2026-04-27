@@ -667,6 +667,58 @@ const AdminSettings = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* SMTP Test Dialog */}
+      <Dialog open={smtpTestDialog} onOpenChange={(o) => { setSmtpTestDialog(o); if (!o) setSmtpTestResult(null); }}>
+        <DialogContent className="sm:max-w-md rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              {bn ? 'SMTP টেস্ট ইমেইল পাঠান' : 'Send SMTP Test Email'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {bn
+                ? 'কনফিগার করা SMTP দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও পাঠানো — উভয়ই যাচাই করবে।'
+                : 'A real test email will be sent using the configured SMTP. This verifies both authentication and delivery.'}
+            </p>
+            <div>
+              <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
+              <Input
+                className="mt-1"
+                type="email"
+                value={smtpTestEmail}
+                onChange={(e) => setSmtpTestEmail(e.target.value)}
+                placeholder={bn ? 'আপনার ইমেইল দিন' : 'Enter your email'}
+                disabled={smtpTesting}
+              />
+            </div>
+
+            {smtpTestResult && (
+              <div className={`p-3 rounded-xl text-sm ${smtpTestResult.success ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}>
+                <div className="flex items-start gap-2">
+                  {smtpTestResult.success
+                    ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+                  <div className="space-y-1">
+                    <p className="font-medium">{smtpTestResult.success ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}</p>
+                    <p className="text-xs break-words">{smtpTestResult.message}</p>
+                    {smtpTestResult.hint && (
+                      <p className="text-xs italic opacity-80">💡 {smtpTestResult.hint}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={runSmtpTest} disabled={smtpTesting} className="w-full btn-primary-gradient">
+              {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {bn ? 'টেস্ট ইমেইল পাঠান' : 'Send Test Email'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
