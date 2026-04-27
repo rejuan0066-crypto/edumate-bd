@@ -17,12 +17,68 @@ Deno.serve(async (req) => {
   try {
     const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
     const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-    const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@subhania.local";
+    const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "";
 
-    if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+    // ---- VAPID validation ----
+    const vapidErrors: { field: string; message: string }[] = [];
+
+    // base64url byte-length checker
+    const b64urlByteLen = (s: string): number => {
+      if (!/^[A-Za-z0-9_-]+$/.test(s)) return -1;
+      // base64url decoded byte length = floor(len * 3 / 4) accounting for padding stripping
+      const padded = s + "=".repeat((4 - (s.length % 4)) % 4);
+      try {
+        const bin = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+        return bin.length;
+      } catch {
+        return -1;
+      }
+    };
+
+    if (!VAPID_PUBLIC) {
+      vapidErrors.push({ field: "VAPID_PUBLIC_KEY", message: "Missing. Set the VAPID_PUBLIC_KEY secret." });
+    } else {
+      const len = b64urlByteLen(VAPID_PUBLIC);
+      if (len !== 65) {
+        vapidErrors.push({
+          field: "VAPID_PUBLIC_KEY",
+          message: `Invalid format. Expected base64url-encoded uncompressed P-256 public key (65 bytes); got ${len < 0 ? "non-base64url string" : `${len} bytes`}.`,
+        });
+      }
+    }
+
+    if (!VAPID_PRIVATE) {
+      vapidErrors.push({ field: "VAPID_PRIVATE_KEY", message: "Missing. Set the VAPID_PRIVATE_KEY secret." });
+    } else {
+      const len = b64urlByteLen(VAPID_PRIVATE);
+      if (len !== 32) {
+        vapidErrors.push({
+          field: "VAPID_PRIVATE_KEY",
+          message: `Invalid format. Expected base64url-encoded P-256 private scalar (32 bytes); got ${len < 0 ? "non-base64url string" : `${len} bytes`}.`,
+        });
+      }
+    }
+
+    if (!VAPID_SUBJECT) {
+      vapidErrors.push({
+        field: "VAPID_SUBJECT",
+        message: "Missing. Set VAPID_SUBJECT to a 'mailto:you@domain.com' or 'https://your-site.com' URI (RFC 8292).",
+      });
+    } else if (!/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https?:\/\/[^\s]+)$/i.test(VAPID_SUBJECT)) {
+      vapidErrors.push({
+        field: "VAPID_SUBJECT",
+        message: `Invalid format: "${VAPID_SUBJECT}". Must be a 'mailto:' email URI or an 'https://' URL.`,
+      });
+    }
+
+    if (vapidErrors.length) {
       return new Response(
-        JSON.stringify({ error: "VAPID keys not configured. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY secrets." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "VAPID configuration invalid",
+          details: vapidErrors,
+          hint: "Generate a fresh key pair via the 'generate-vapid' edge function and store the values as project secrets.",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
