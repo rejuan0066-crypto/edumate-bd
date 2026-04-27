@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
+import { fetchOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
@@ -19,6 +20,9 @@ interface OtpVerificationDialogProps {
   onVerified: () => void;
   title?: string;
   description?: string;
+  /** Fine-grained flow scope so the dialog can honour the admin's per-flow OTP toggle.
+   *  When the admin has disabled OTP for this scope, the dialog auto-passes (no email sent). */
+  scope?: 'login' | 'password_reset' | 'email_change' | 'password_change';
 }
 
 /** Codes that should fully lock the verify action until a fresh code is requested
