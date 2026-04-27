@@ -339,22 +339,30 @@ const AdminSalary = () => {
     mutationFn: async (staffId: string) => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
+      const sName = s.name_bn || s.name_en;
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       if (requireAttendance) {
         const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
         if (!hasAttendance) {
-          throw new Error(bn ? 'এই স্টাফের উপস্থিতি রেকর্ড নেই' : 'No attendance records for this staff');
+          const reason = bn ? 'এই স্টাফের উপস্থিতি রেকর্ড নেই' : 'No attendance records for this staff';
+          await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+          throw new Error(reason);
         }
       }
       const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
       if (existing) {
-        throw new Error(bn ? 'এই মাসে ইতোমধ্যে জেনারেট করা হয়েছে' : 'Already generated for this month');
+        const reason = bn ? 'এই মাসে ইতোমধ্যে জেনারেট করা হয়েছে' : 'Already generated for this month';
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+        throw new Error(reason);
       }
       const calc = calculateSalary(s);
       const { error } = await supabase.from('salary_records').insert({
         staff_id: s.id, month_year: monthYear, ...calc, status: 'pending',
       });
-      if (error) throw error;
+      if (error) {
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason: error.message });
+        throw error;
+      }
 
       // Savings ledger
       const activeSavings = getActiveSavings(s.id);
@@ -375,12 +383,17 @@ const AdminSalary = () => {
           }).eq('id', activeSavings.config.id);
         }
       }
-      return s.name_bn || s.name_en;
+      await logSalaryGeneration({
+        staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual',
+        success: true, net_salary: Number(calc.net_salary || 0),
+      });
+      return sName;
     },
     onSuccess: (name) => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
       toast.success(bn ? `${name} এর বেতন জেনারেট হয়েছে` : `Salary generated for ${name}`);
     },
     onError: (e: any) => toast.error(e?.message || (bn ? 'জেনারেট সমস্যা' : 'Generate failed')),
