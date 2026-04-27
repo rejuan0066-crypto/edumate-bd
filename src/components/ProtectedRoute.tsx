@@ -15,6 +15,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // If a login OTP gate is still pending for this session, force back to /login
+  // so the OTP dialog can complete (or the user can sign out / retry).
+  let pendingLoginOtp = false;
+  try { pendingLoginOtp = sessionStorage.getItem('pending_login_otp_v1') === '1'; } catch { /* ignore */ }
+  if (pendingLoginOtp && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
   if (!hasResolvedAuthRedirectState({ role, userStatus })) {
     return <PageLoader />;
   }
