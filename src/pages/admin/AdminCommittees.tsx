@@ -75,6 +75,7 @@ export default function AdminCommittees() {
   const [activeCommitteeId, setActiveCommitteeId] = useState<string | null>(null);
   const [deleteCommittee, setDeleteCommittee] = useState<Committee | null>(null);
   const [deleteMember, setDeleteMember] = useState<Member | null>(null);
+  const otpGate = useAdminOtpGate();
 
   const { data: committees = [], isLoading: loadingC } = useQuery({
     queryKey: ["committees"],
