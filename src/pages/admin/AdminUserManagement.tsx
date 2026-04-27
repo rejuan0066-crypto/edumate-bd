@@ -575,11 +575,12 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
                       <div className="relative mt-1">
-                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                        <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      <PasswordStrengthMeter password={password} bn={bn} />
                     </div>
                     <div>
                       <Label>{bn ? 'রোল' : 'Role'} <span className="text-xs text-muted-foreground">({bn ? 'ঐচ্ছিক' : 'Optional'})</span></Label>
