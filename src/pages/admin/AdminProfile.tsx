@@ -497,7 +497,7 @@ const AdminProfile = () => {
               </div>
               <div>
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
-                <Input className="mt-1.5" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={bn ? 'আবার নতুন পাসওয়ার্ড দিন' : 'Re-enter new password'} />
+                <Input className="mt-1.5" type="password" value={confirmPassword} onChange={e => setConfirmPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'আবার নতুন পাসওয়ার্ড দিন' : 'Re-enter new password'} />
               </div>
               {usePwOtp ? (
                 <Button onClick={handlePwSendOtp} disabled={changingPassword || sending} className="rounded-full px-8 py-3 font-semibold transition-all duration-500 hover:-translate-y-0.5" style={{ background: 'linear-gradient(135deg, #059669, #0d9488)', boxShadow: '0 6px 25px -5px rgba(5, 150, 105, 0.4)', color: 'white' }}>
