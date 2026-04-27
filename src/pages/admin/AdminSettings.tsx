@@ -762,6 +762,59 @@ const AdminSettings = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* OTP End-to-End Test Dialog */}
+      <Dialog open={otpTestDialog} onOpenChange={(o) => { setOtpTestDialog(o); if (!o) setOtpTestResult(null); }}>
+        <DialogContent className="rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-primary" />
+              {bn ? 'OTP ইমেইল টেস্ট' : 'Test OTP Email'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'এটি প্রকৃত send-otp ফাংশন কল করবে এবং দেখাবে কোন পথ (SMTP / EmailJS) ব্যবহৃত হয়েছে।'
+                : 'This invokes the real send-otp function and shows which path (SMTP / EmailJS) was used.'}
+            </p>
+            <div>
+              <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
+              <Input
+                type="email"
+                value={otpTestEmail}
+                onChange={(e) => setOtpTestEmail(e.target.value)}
+                placeholder="recipient@example.com"
+                disabled={otpTesting}
+              />
+            </div>
+            {otpTestResult && (
+              <div className={`p-3 rounded-xl text-sm ${otpTestResult.success ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}>
+                <div className="flex items-start gap-2">
+                  {otpTestResult.success
+                    ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    : <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />}
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {otpTestResult.success ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}
+                      {otpTestResult.method && (
+                        <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-emerald-600 text-white">
+                          {otpTestResult.method}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs break-words">{otpTestResult.message}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <Button onClick={runOtpTest} disabled={otpTesting} className="w-full btn-primary-gradient">
+              {otpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {bn ? 'OTP পাঠান' : 'Send OTP'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
