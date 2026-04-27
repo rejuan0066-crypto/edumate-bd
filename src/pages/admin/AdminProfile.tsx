@@ -33,6 +33,9 @@ const AdminProfile = () => {
   const { sendOtp, sending } = useOtpService();
   const { user, role } = useAuth();
   const isAdmin = role === 'admin' || role === 'super_admin';
+  const { reqs: otpReqs } = useOtpRequirements();
+  const emailOtpRequired = isOtpRequiredFor(otpReqs, 'email_change');
+  const passwordOtpRequired = isOtpRequiredFor(otpReqs, 'password_change');
 
   const [currentEmail, setCurrentEmail] = useState('');
 
