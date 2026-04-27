@@ -123,7 +123,7 @@ export async function exportStaffCommitteeHistoryPDF(
     head: [["Committee", "Designation", "Action", "Status", "Date", "Performed By"]],
     body: rows.map((r) => [r.committee, r.designation, r.action, r.status, r.date, r.performedBy]),
     styles: { fontSize: 9, cellPadding: 5 },
-    headStyles: { fillBytes: [6, 78, 59] as any, fillColor: [6, 78, 59], textColor: 255 },
+    headStyles: { fillColor: [6, 78, 59] as any, textColor: 255 },
     alternateRowStyles: { fillColor: [245, 250, 248] },
   });
 
