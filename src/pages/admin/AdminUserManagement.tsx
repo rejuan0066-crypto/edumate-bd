@@ -209,15 +209,11 @@ const AdminUserManagement = () => {
     if (!emailRegex.test(v)) { setEmailDup('invalid'); return; }
     if (users.some(u => u.email?.toLowerCase() === v)) { setEmailDup('dup'); return; }
     setEmailDup('checking');
-    const t = setTimeout(async () => {
-      try {
-        const { data } = await supabase.auth.admin ? { data: null } : { data: null };
-        // Use loaded users list as primary check; also query profiles by joined email isn't possible directly.
-        // Fall back: rely on loaded users (refreshed on dialog open) — already authoritative for our app.
-        if (users.some(u => u.email?.toLowerCase() === v)) setEmailDup('dup');
-        else setEmailDup('ok');
-      } catch { setEmailDup('ok'); }
-    }, 400);
+    const t = setTimeout(() => {
+      // Authoritative check against freshly-loaded users list
+      if (users.some(u => u.email?.toLowerCase() === v)) setEmailDup('dup');
+      else setEmailDup('ok');
+    }, 300);
     return () => clearTimeout(t);
   }, [email, users, dialogOpen]);
 
