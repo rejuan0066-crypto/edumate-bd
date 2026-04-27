@@ -32,8 +32,68 @@ const AdminEmailDeliveryLog = () => {
   const [kindFilter, setKindFilter] = useState<'all' | 'user' | 'student' | 'other'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<LogRow | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [bulkRetrying, setBulkRetrying] = useState(false);
 
-  const load = async () => {
+  const retryOne = async (row: LogRow): Promise<{ ok: boolean; error?: string }> => {
+    const meta = (row.metadata && typeof row.metadata === 'object') ? row.metadata : {};
+    const kind = row.template_kind === 'other' ? 'user' : row.template_kind;
+    const { data, error } = await supabase.functions.invoke('send-welcome-email', {
+      body: {
+        email: row.recipient_email,
+        full_name: row.recipient_name || undefined,
+        kind,
+        role: (meta as any).role,
+        student_id: (meta as any).student_id,
+      },
+    });
+    if (error) return { ok: false, error: error.message };
+    if (data?.error) return { ok: false, error: data.error };
+    return { ok: true };
+  };
+
+  const handleRetryOne = async (row: LogRow) => {
+    setRetryingId(row.id);
+    const res = await retryOne(row);
+    setRetryingId(null);
+    if (res.ok) {
+      toast({ title: bn ? 'পুনরায় পাঠানো হয়েছে' : 'Resent', description: row.recipient_email });
+    } else {
+      toast({ title: bn ? 'ব্যর্থ' : 'Failed', description: res.error, variant: 'destructive' });
+    }
+    load();
+  };
+
+  const handleBulkRetry = async () => {
+    const failed = filtered.filter(r => r.status === 'failed');
+    if (failed.length === 0) {
+      toast({ title: bn ? 'কোনো ব্যর্থ ইমেইল নেই' : 'No failed emails to retry' });
+      return;
+    }
+    setBulkRetrying(true);
+    let ok = 0, fail = 0;
+    // Dedupe by email+kind so we don't spam the same recipient
+    const seen = new Set<string>();
+    const queue = failed.filter(r => {
+      const key = `${r.template_kind}:${r.recipient_email.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    for (const row of queue) {
+      const res = await retryOne(row);
+      if (res.ok) ok++; else fail++;
+    }
+    setBulkRetrying(false);
+    toast({
+      title: bn ? 'পুনঃপ্রেরণ সম্পন্ন' : 'Retry complete',
+      description: bn
+        ? `সফল: ${ok}, ব্যর্থ: ${fail} (${queue.length} জন প্রাপক)`
+        : `Sent: ${ok}, Failed: ${fail} (${queue.length} recipients)`,
+      variant: fail > 0 ? 'destructive' : 'default',
+    });
+    load();
+  };
     setLoading(true);
     const { data } = await supabase
       .from('email_delivery_log')
