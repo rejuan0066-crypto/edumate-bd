@@ -1,5 +1,5 @@
-// Shared SMTP sender (works with Mailtrap and other STARTTLS SMTP providers).
-// Reads credentials from the `smtp_config` table.
+// Shared SMTP sender (works with Mailtrap, Gmail, and other STARTTLS/SSL SMTP providers).
+// Properly handles SMTP response codes at every stage and surfaces detailed errors.
 
 export interface SmtpConfig {
   smtp_host: string;
@@ -12,6 +12,40 @@ export interface SmtpConfig {
   is_enabled?: boolean;
 }
 
+type Conn = Deno.Conn | Deno.TlsConn;
+
+async function readAll(conn: Conn): Promise<string> {
+  // Read until we get a final SMTP line (NNN<space>...) or no more data.
+  const decoder = new TextDecoder();
+  let acc = "";
+  const buf = new Uint8Array(4096);
+  // Single read is usually enough for SMTP; loop a couple times to drain multi-line responses.
+  for (let i = 0; i < 5; i++) {
+    const n = await Promise.race([
+      conn.read(buf),
+      new Promise<number | null>((resolve) => setTimeout(() => resolve(null), 4000)),
+    ]);
+    if (n === null || n === 0 || n === undefined) break;
+    acc += decoder.decode(buf.subarray(0, n));
+    // SMTP final-line marker: "NNN " (space after code) at the start of any line
+    if (/(^|\n)\d{3} /m.test(acc)) break;
+  }
+  return acc;
+}
+
+async function send(conn: Conn, cmd: string): Promise<string> {
+  const encoder = new TextEncoder();
+  await conn.write(encoder.encode(cmd + "\r\n"));
+  return await readAll(conn);
+}
+
+function expect(resp: string, codes: string[], stage: string) {
+  const code = resp.match(/(\d{3})/)?.[1];
+  if (!code || !codes.includes(code)) {
+    throw new Error(`SMTP ${stage} failed (got "${resp.trim().substring(0, 200)}")`);
+  }
+}
+
 export async function sendViaSMTP(
   smtpConfig: SmtpConfig,
   to: string,
@@ -19,98 +53,79 @@ export async function sendViaSMTP(
   htmlBody: string,
 ) {
   const { smtp_host, smtp_port, smtp_username, smtp_password, from_email, from_name, use_tls } = smtpConfig;
+  const port = smtp_port || 587;
+  const wantTls = use_tls !== false;
 
-  const conn = await Deno.connect({ hostname: smtp_host, port: smtp_port || 587 });
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const buf = new Uint8Array(4096);
+  // Port 465 = implicit TLS; everything else = plain then optional STARTTLS
+  let conn: Conn;
+  if (port === 465) {
+    conn = await Deno.connectTls({ hostname: smtp_host, port });
+  } else {
+    conn = await Deno.connect({ hostname: smtp_host, port });
+  }
 
-  const readResponse = async () => {
-    const n = await conn.read(buf);
-    return decoder.decode(buf.subarray(0, n || 0));
-  };
-  const sendCommand = async (cmd: string) => {
-    await conn.write(encoder.encode(cmd + "\r\n"));
-    return await readResponse();
-  };
+  try {
+    const greeting = await readAll(conn);
+    expect(greeting, ["220"], "greeting");
 
-  await readResponse();
-  await sendCommand("EHLO localhost");
+    let ehlo = await send(conn, "EHLO localhost");
+    expect(ehlo, ["250"], "EHLO");
 
-  if (use_tls) {
-    const starttls = await sendCommand("STARTTLS");
-    if (starttls.startsWith("220")) {
-      const tlsConn = await Deno.startTls(conn, { hostname: smtp_host });
-      const readTls = async () => {
-        const b = new Uint8Array(4096);
-        const n = await tlsConn.read(b);
-        return decoder.decode(b.subarray(0, n || 0));
-      };
-      const sendTls = async (cmd: string) => {
-        await tlsConn.write(encoder.encode(cmd + "\r\n"));
-        return await readTls();
-      };
-
-      await sendTls("EHLO localhost");
-      await sendTls("AUTH LOGIN");
-      await sendTls(btoa(smtp_username));
-      const authResp = await sendTls(btoa(smtp_password));
-      if (!authResp.startsWith("235")) {
-        try { tlsConn.close(); } catch (_) {}
-        throw new Error("SMTP authentication failed");
-      }
-
-      const fromHeader = from_name ? `"${from_name}" <${from_email}>` : from_email;
-      await sendTls(`MAIL FROM:<${from_email}>`);
-      await sendTls(`RCPT TO:<${to}>`);
-      await sendTls("DATA");
-
-      const message = [
-        `From: ${fromHeader}`,
-        `To: ${to}`,
-        `Subject: ${subject}`,
-        `MIME-Version: 1.0`,
-        `Content-Type: text/html; charset=UTF-8`,
-        ``,
-        htmlBody,
-        `.`,
-      ].join("\r\n");
-
-      const dataResp = await sendTls(message);
-      await sendTls("QUIT");
-      try { tlsConn.close(); } catch (_) {}
-      if (!dataResp.startsWith("250")) throw new Error("Failed to send email: " + dataResp);
-      return true;
+    // STARTTLS upgrade if not already TLS
+    if (port !== 465 && wantTls) {
+      const starttls = await send(conn, "STARTTLS");
+      expect(starttls, ["220"], "STARTTLS");
+      conn = await Deno.startTls(conn as Deno.Conn, { hostname: smtp_host });
+      ehlo = await send(conn, "EHLO localhost");
+      expect(ehlo, ["250"], "EHLO (post-TLS)");
     }
-  }
 
-  await sendCommand("AUTH LOGIN");
-  await sendCommand(btoa(smtp_username));
-  const authResp = await sendCommand(btoa(smtp_password));
-  if (!authResp.startsWith("235")) {
+    // AUTH LOGIN
+    const authStart = await send(conn, "AUTH LOGIN");
+    expect(authStart, ["334"], "AUTH LOGIN");
+    const userResp = await send(conn, btoa(smtp_username));
+    expect(userResp, ["334"], "AUTH username");
+    const passResp = await send(conn, btoa(smtp_password));
+    expect(passResp, ["235"], "AUTH password");
+
+    const fromHeader = from_name ? `"${from_name}" <${from_email}>` : from_email;
+    const mailFrom = await send(conn, `MAIL FROM:<${from_email}>`);
+    expect(mailFrom, ["250"], "MAIL FROM");
+    const rcptTo = await send(conn, `RCPT TO:<${to}>`);
+    expect(rcptTo, ["250", "251"], "RCPT TO");
+
+    // DATA — must wait for 354 prompt BEFORE sending the body
+    const dataPrompt = await send(conn, "DATA");
+    expect(dataPrompt, ["354"], "DATA prompt");
+
+    // Dot-stuffing: lines starting with '.' must be escaped to '..'
+    const safeBody = htmlBody.replace(/\r?\n\./g, "\n..");
+    const messageId = `<${crypto.randomUUID()}@${(from_email.split("@")[1] || "local")}>`;
+    const dateStr = new Date().toUTCString();
+    const message = [
+      `From: ${fromHeader}`,
+      `To: ${to}`,
+      `Subject: ${subject}`,
+      `Date: ${dateStr}`,
+      `Message-ID: ${messageId}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/html; charset=UTF-8`,
+      `Content-Transfer-Encoding: 8bit`,
+      ``,
+      safeBody,
+      `.`,
+    ].join("\r\n");
+
+    const dataResp = await send(conn, message);
+    expect(dataResp, ["250"], "DATA accept");
+
+    try { await send(conn, "QUIT"); } catch (_) {}
     try { conn.close(); } catch (_) {}
-    throw new Error("SMTP authentication failed");
+    return true;
+  } catch (e) {
+    try { conn.close(); } catch (_) {}
+    throw e;
   }
-
-  const fromHeader = from_name ? `"${from_name}" <${from_email}>` : from_email;
-  await sendCommand(`MAIL FROM:<${from_email}>`);
-  await sendCommand(`RCPT TO:<${to}>`);
-  await sendCommand("DATA");
-  const message = [
-    `From: ${fromHeader}`,
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: text/html; charset=UTF-8`,
-    ``,
-    htmlBody,
-    `.`,
-  ].join("\r\n");
-  const dataResp = await sendCommand(message);
-  await sendCommand("QUIT");
-  try { conn.close(); } catch (_) {}
-  if (!dataResp.startsWith("250")) throw new Error("Failed to send email: " + dataResp);
-  return true;
 }
 
 export function welcomeEmailHtml(opts: {
