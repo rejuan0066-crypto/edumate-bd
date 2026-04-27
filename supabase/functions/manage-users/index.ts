@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
+import { enforcePasswordPolicy, logSecurityEvent } from "../_shared/password.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -178,10 +179,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (password.length < 6) {
-        return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const pwCheck = await enforcePasswordPolicy(supabaseAdmin, password);
+      if (!pwCheck.ok) {
+        await logSecurityEvent(supabaseAdmin, { event_type: 'weak_password_rejected', severity: 'warning', user_id: userId, email, reason: 'create_user', details: pwCheck.body, req });
+        return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       // Create auth user
@@ -500,19 +501,21 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (new_password.length < 6) {
-        return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      const pwCheck2 = await enforcePasswordPolicy(supabaseAdmin, new_password);
+      if (!pwCheck2.ok) {
+        await logSecurityEvent(supabaseAdmin, { event_type: 'weak_password_rejected', severity: 'warning', user_id: userId, target_user_id: targetUserId, reason: 'admin_password_reset', details: pwCheck2.body, req });
+        return new Response(JSON.stringify(pwCheck2.body), { status: pwCheck2.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
         password: new_password,
       });
       if (pwError) {
+        await logSecurityEvent(supabaseAdmin, { event_type: 'password_change_failed', severity: 'warning', user_id: userId, target_user_id: targetUserId, reason: pwError.message, req });
         return new Response(JSON.stringify({ error: pwError.message }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      await logSecurityEvent(supabaseAdmin, { event_type: 'password_change_success', severity: 'info', user_id: userId, target_user_id: targetUserId, reason: 'admin_reset', req });
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
