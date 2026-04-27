@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, otpErrorResponse } from "../_shared/validate.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,25 +9,28 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return otpErrorResponse({
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "UNAUTHORIZED",
+        message: "You must be signed in to change your password.",
       });
     }
 
     const { current_password, new_password, otp_code } = await req.json();
 
     if (!current_password || !new_password) {
-      return new Response(JSON.stringify({ error: "current_password and new_password are required" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "INVALID_REQUEST",
+        message: "current_password and new_password are required",
       });
     }
 
     if (new_password.length < 6) {
-      return new Response(JSON.stringify({ error: "Password must be at least 6 characters" }), {
+      return otpErrorResponse({
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "WEAK_PASSWORD",
+        message: "Password must be at least 6 characters",
       });
     }
 
@@ -45,9 +44,10 @@ Deno.serve(async (req) => {
     // Get current user
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      return otpErrorResponse({
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "UNAUTHORIZED",
+        message: "Your session is no longer valid. Please sign in again.",
       });
     }
 
@@ -60,9 +60,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!roleData) {
-      return new Response(JSON.stringify({ error: "Admin access required" }), {
+      return otpErrorResponse({
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "ADMIN_REQUIRED",
+        message: "Admin access is required to change password.",
       });
     }
 
@@ -74,9 +75,10 @@ Deno.serve(async (req) => {
     });
 
     if (signInError) {
-      return new Response(JSON.stringify({ error: "Current password is incorrect" }), {
+      return otpErrorResponse({
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        code: "INVALID_PASSWORD",
+        message: "Current password is incorrect.",
       });
     }
 
@@ -93,25 +95,29 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!otpRecord) {
-        return new Response(JSON.stringify({ error: "No valid OTP found." }), {
+        return otpErrorResponse({
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          code: "OTP_NOT_FOUND",
+          message: "No valid OTP found. Please request a new code.",
         });
       }
 
       if (new Date(otpRecord.expires_at) < new Date()) {
         await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-        return new Response(JSON.stringify({ error: "OTP has expired" }), {
+        return otpErrorResponse({
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          code: "OTP_EXPIRED",
+          message: "This OTP has expired. Please request a new code.",
         });
       }
 
       if (otpRecord.attempts >= otpRecord.max_attempts) {
         await supabaseAdmin.from("otp_codes").update({ is_used: true }).eq("id", otpRecord.id);
-        return new Response(JSON.stringify({ error: "Maximum attempts exceeded" }), {
+        return otpErrorResponse({
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          code: "OTP_MAX_ATTEMPTS",
+          message: "Maximum attempts exceeded. Please request a new code.",
+          extras: { attempts_remaining: 0 },
         });
       }
 
@@ -122,9 +128,11 @@ Deno.serve(async (req) => {
 
       if (otpRecord.code !== otp_code) {
         const remaining = otpRecord.max_attempts - otpRecord.attempts - 1;
-        return new Response(JSON.stringify({ error: `Invalid code. ${remaining} attempts remaining.` }), {
+        return otpErrorResponse({
           status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          code: "OTP_INVALID",
+          message: `Invalid code. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`,
+          extras: { attempts_remaining: Math.max(0, remaining) },
         });
       }
 
@@ -137,21 +145,33 @@ Deno.serve(async (req) => {
     });
 
     if (updateError) {
-      return new Response(JSON.stringify({ error: "Failed to update password: " + updateError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          error: "Failed to update password: " + updateError.message,
+          code: "INTERNAL_ERROR",
+          message: "We couldn't update your password. Please try again.",
+          retry_after_seconds: null,
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ ok: true, success: true, message: "Password updated successfully" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (error) {
     console.error("Change password error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "Internal server error",
+        code: "INTERNAL_ERROR",
+        message: "Something went wrong. Please try again.",
+        retry_after_seconds: null,
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });
