@@ -56,9 +56,24 @@ Deno.serve(async (req) => {
     const instPhone = (institution as any)?.phone || "";
     const instEmail = (institution as any)?.email || "";
     const instLogo = (institution as any)?.logo_url || "";
-    const principalName = (institution as any)?.principal_name || (bn ? "প্রিন্সিপাল" : "Principal");
-    const accountantName = (institution as any)?.accountant_name || "";
-    const verifierName = (institution as any)?.verifier_name || "";
+    // Fetch principal/accountant/verifier from website_settings (key-value)
+    const { data: wsRows } = await supabase
+      .from("website_settings")
+      .select("key,value")
+      .in("key", [
+        "principal_name", "principal_name_en",
+        "accountant_name", "accountant_name_en",
+        "verifier_name", "verifier_name_en",
+      ]);
+    const ws: Record<string, string> = {};
+    (wsRows || []).forEach((r: any) => { ws[r.key] = r.value || ""; });
+    const pickName = (bnKey: string, enKey: string, fallback: string) =>
+      (bn ? (ws[bnKey] || ws[enKey]) : (ws[enKey] || ws[bnKey])) ||
+      (institution as any)?.[bnKey] || fallback;
+
+    const principalName = pickName("principal_name", "principal_name_en", bn ? "প্রিন্সিপাল" : "Principal");
+    const accountantName = pickName("accountant_name", "accountant_name_en", "");
+    const verifierName = pickName("verifier_name", "verifier_name_en", "");
 
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
