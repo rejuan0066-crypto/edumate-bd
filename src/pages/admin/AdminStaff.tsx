@@ -273,7 +273,13 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
-            <CommitteeExclusionNotice count={committeeHiddenCount} />
+            <CommitteeExclusionNotice
+              count={committeeHiddenCount}
+              info={committeeInfo}
+              hiddenStaff={(staffListRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id))}
+              showAll={showCommitteeStaff}
+              onToggleShowAll={setShowCommitteeStaff}
+            />
             {missingIdCount > 0 && isAdminRole(role) && (
               <Button variant="outline" onClick={handleBulkGenerateIds} disabled={generatingIds} className="flex items-center gap-2">
                 {generatingIds ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
