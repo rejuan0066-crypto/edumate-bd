@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, purpose, scope } = await req.json();
+    const { email, purpose, scope, role } = await req.json();
 
     if (!email || !purpose) {
       return otpErrorResponse({
@@ -64,18 +64,33 @@ Deno.serve(async (req) => {
     }
 
     // ---- Per-flow OTP requirement check (admin-controlled) ----
+    // Per-role overrides take precedence over the global per-flow flag.
     const scopeFlagMap: Record<string, string> = {
       login: "require_for_login",
       password_reset: "require_for_password_reset",
       email_change: "require_for_email_change",
       password_change: "require_for_password_change",
     };
-    const scopeFlag = scopeFlagMap[effectiveScope];
-    if (otpCfg && scopeFlag && (otpCfg as any)[scopeFlag] === false) {
+    const validRoles = ["admin", "parent", "staff", "student"];
+    const effectiveRole: string | null =
+      typeof role === "string" && validRoles.includes(role) ? role : null;
+
+    let isRequired: boolean | null = null;
+    if (effectiveRole && otpCfg && (otpCfg as any).role_overrides) {
+      const ro = (otpCfg as any).role_overrides;
+      const v = ro?.[effectiveRole]?.[effectiveScope];
+      if (typeof v === "boolean") isRequired = v;
+    }
+    if (isRequired === null) {
+      const scopeFlag = scopeFlagMap[effectiveScope];
+      if (otpCfg && scopeFlag) isRequired = (otpCfg as any)[scopeFlag] !== false;
+    }
+
+    if (isRequired === false) {
       return otpErrorResponse({
         status: 403,
         code: "OTP_NOT_REQUIRED_FOR_SCOPE",
-        message: `OTP is disabled for ${effectiveScope} by the administrator.`,
+        message: `OTP is disabled for ${effectiveScope}${effectiveRole ? ` (role=${effectiveRole})` : ""} by the administrator.`,
       });
     }
 
