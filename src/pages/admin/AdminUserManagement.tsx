@@ -140,6 +140,51 @@ const AdminUserManagement = () => {
   // Real-time duplicate check
   const [emailDup, setEmailDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
   const [nameDup, setNameDup] = useState<'idle' | 'checking' | 'ok' | 'dup'>('idle');
+  // Duplicate conflict modal
+  const [conflictOpen, setConflictOpen] = useState(false);
+  const [conflictType, setConflictType] = useState<'email' | 'name'>('email');
+  const [conflictUser, setConflictUser] = useState<{ full_name: string; email: string; role: string; phone: string; status: string } | null>(null);
+  const [conflictLoading, setConflictLoading] = useState(false);
+
+  const showConflict = useCallback(async (type: 'email' | 'name', value: string) => {
+    setConflictType(type);
+    setConflictOpen(true);
+    setConflictLoading(true);
+    setConflictUser(null);
+    try {
+      const v = value.trim().toLowerCase();
+      const existing = users.find(u =>
+        type === 'email'
+          ? u.email?.toLowerCase() === v
+          : (u.full_name || '').toLowerCase() === v
+      );
+      let phone = '';
+      if (existing?.id) {
+        const { data: prof } = await supabase.from('profiles').select('phone').eq('id', existing.id).maybeSingle();
+        phone = prof?.phone || '';
+      } else if (type === 'name') {
+        // Server-side fallback when not in loaded list
+        const { data: prof } = await supabase.from('profiles').select('id, full_name, phone, status').ilike('full_name', value.trim()).maybeSingle();
+        if (prof) {
+          setConflictUser({ full_name: prof.full_name || '', email: '', role: '—', phone: prof.phone || '', status: prof.status || '' });
+          setConflictLoading(false);
+          return;
+        }
+      }
+      if (existing) {
+        setConflictUser({
+          full_name: existing.full_name || '—',
+          email: existing.email || '',
+          role: existing.role || '—',
+          phone,
+          status: existing.status || '',
+        });
+      }
+    } finally {
+      setConflictLoading(false);
+    }
+  }, [users]);
+
 
   // Role edit
   const [roleEditOpen, setRoleEditOpen] = useState(false);
