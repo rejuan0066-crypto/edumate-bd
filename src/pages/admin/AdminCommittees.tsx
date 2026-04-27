@@ -612,6 +612,7 @@ export default function AdminCommittees() {
         onOpenChange={otpGate.setOpen}
         email={otpGate.email}
         purpose="email_verification"
+        scope="login"
         onVerified={otpGate.onVerified}
         title={bn ? "ওভারল্যাপ অনুমোদন যাচাই" : "Verify Overlap Approval"}
         description={bn ? "ওভারল্যাপ অনুমোদনের আগে ওটিপি দিন।" : "Enter OTP to authorize multi-committee membership."}

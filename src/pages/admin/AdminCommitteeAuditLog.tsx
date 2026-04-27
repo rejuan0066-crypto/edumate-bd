@@ -589,6 +589,7 @@ export default function AdminCommitteeAuditLog() {
         onOpenChange={otpGate.setOpen}
         email={otpGate.email}
         purpose="email_verification"
+        scope="login"
         onVerified={otpGate.onVerified}
         title={bn ? "সংবেদনশীল কাজ যাচাই" : "Verify Sensitive Action"}
         description={

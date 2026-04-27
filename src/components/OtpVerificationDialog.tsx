@@ -5,6 +5,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
+import { fetchOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
@@ -19,6 +20,9 @@ interface OtpVerificationDialogProps {
   onVerified: () => void;
   title?: string;
   description?: string;
+  /** Fine-grained flow scope so the dialog can honour the admin's per-flow OTP toggle.
+   *  When the admin has disabled OTP for this scope, the dialog auto-passes (no email sent). */
+  scope?: 'login' | 'password_reset' | 'email_change' | 'password_change';
 }
 
 /** Codes that should fully lock the verify action until a fresh code is requested
@@ -44,6 +48,7 @@ const OtpVerificationDialog = ({
   onVerified,
   title,
   description,
+  scope,
 }: OtpVerificationDialogProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -65,10 +70,25 @@ const OtpVerificationDialog = ({
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resendApiRef = useRef<{ startCooldown: (s: number) => void } | null>(null);
 
-  // Initial send when dialog opens
+  // Initial send when dialog opens — but first check if OTP is required for this scope
   useEffect(() => {
     if (open && !otpSent) {
-      void handleInitialSend();
+      void (async () => {
+        // Honour admin per-flow OTP toggle. If disabled for this scope, skip the
+        // entire OTP exchange and call onVerified() so the calling flow proceeds.
+        const effectiveScope = scope ?? (purpose === 'password_reset' ? 'password_reset' : 'email_change');
+        try {
+          const reqs = await fetchOtpRequirements();
+          if (!isOtpRequiredFor(reqs, effectiveScope)) {
+            onOpenChange(false);
+            onVerified();
+            return;
+          }
+        } catch {
+          // If we cannot determine, fall through to normal OTP flow (safer default)
+        }
+        void handleInitialSend();
+      })();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -154,7 +174,7 @@ const OtpVerificationDialog = ({
   };
 
   const handleInitialSend = async () => {
-    const result = await sendOtp(email, purpose, recipientName);
+    const result = await sendOtp(email, purpose, recipientName, scope);
     if (result.success) {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
@@ -177,7 +197,7 @@ const OtpVerificationDialog = ({
   };
 
   const handleResend = async () => {
-    const result = await sendOtp(email, purpose, recipientName);
+    const result = await sendOtp(email, purpose, recipientName, scope);
     if (!result.success) {
       applyLockout(
         result.errorCode,
