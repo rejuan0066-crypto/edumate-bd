@@ -64,11 +64,26 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // ---- Rate limiting & cooldown ----
-    // Tunables
-    const COOLDOWN_SECONDS = 60;   // min gap between two OTP requests for the same email+purpose
-    const HOURLY_LIMIT = 5;        // max OTP requests per email+purpose in last 60 minutes
-    const DAILY_LIMIT = 15;        // max OTP requests per email+purpose in last 24 hours
+    // ---- Load OTP config (toggle + dynamic limits) ----
+    const { data: otpCfg } = await supabase
+      .from("otp_config")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (otpCfg && otpCfg.is_enabled === false) {
+      return otpErrorResponse({
+        status: 403,
+        code: "OTP_DISABLED",
+        message: "OTP verification is currently disabled by the administrator.",
+      });
+    }
+
+    // ---- Rate limiting & cooldown (from config or defaults) ----
+    const COOLDOWN_SECONDS = otpCfg?.cooldown_seconds ?? 60;
+    const HOURLY_LIMIT = otpCfg?.hourly_limit ?? 5;
+    const DAILY_LIMIT = otpCfg?.daily_limit ?? 15;
+    const CONFIG_EXPIRY_MIN = otpCfg?.expiry_minutes ?? 10;
 
     const nowMs = Date.now();
     const cooldownSince = new Date(nowMs - COOLDOWN_SECONDS * 1000).toISOString();
