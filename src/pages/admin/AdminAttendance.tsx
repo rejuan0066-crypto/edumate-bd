@@ -217,6 +217,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     enabled: entityType === 'staff',
   });
   const allStaff = (allStaffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
+  const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
 
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
   const sessionOptions = useMemo(() => {
