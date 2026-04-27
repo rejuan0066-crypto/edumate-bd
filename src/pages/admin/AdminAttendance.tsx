@@ -1192,7 +1192,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
               {bn ? 'ছাত্র ও স্টাফের দৈনিক উপস্থিতি ট্র্যাক করুন' : 'Track daily attendance for students & staff'}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {entityType === 'staff' && <CommitteeExclusionNotice count={committeeHiddenCount} />}
             {entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
