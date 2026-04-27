@@ -5,6 +5,7 @@ import {
   evaluatePassword,
   isPasswordStrongAgainst,
   firstFailedRuleMessage,
+  DEFAULT_POLICY,
   type PasswordPolicy,
 } from '@/hooks/usePasswordPolicy';
 
