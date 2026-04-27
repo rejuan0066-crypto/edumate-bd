@@ -55,7 +55,7 @@ export default function AdminOtpRecovery() {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [working, setWorking] = useState(false);
 
-  const { ensure: ensureOtp } = useAdminOtpGate();
+  const otpGate = useAdminOtpGate();
 
   const load = async () => {
     setLoading(true);
