@@ -489,8 +489,9 @@ const AdminProfile = () => {
               <div>
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'নতুন পাসওয়ার্ড' : 'New Password'}</Label>
                 <div className="mt-1.5">
-                  <PasswordInput value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder={bn ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)' : 'New password (min 6 chars)'} />
+                  <PasswordInput value={newPassword} onChange={setNewPassword} show={showNewPw} onToggle={() => setShowNewPw(!showNewPw)} placeholder={bn ? 'নতুন পাসওয়ার্ড' : 'New password'} />
                 </div>
+                <PasswordStrengthMeter password={newPassword} bn={bn} />
               </div>
               <div>
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
