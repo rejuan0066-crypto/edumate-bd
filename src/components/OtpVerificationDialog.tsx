@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useOtpService } from '@/hooks/useOtpService';
-import { Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
 
@@ -18,6 +19,20 @@ interface OtpVerificationDialogProps {
   title?: string;
   description?: string;
 }
+
+/** Codes that should fully lock the verify action until a fresh code is requested
+ *  or the rate-limit window passes. */
+const VERIFY_LOCKOUT_CODES = new Set([
+  'OTP_MAX_ATTEMPTS',
+  'HOURLY_LIMIT_EXCEEDED',
+  'DAILY_LIMIT_EXCEEDED',
+]);
+
+/** Codes that should also lock the resend action (full account-level lockouts). */
+const RESEND_LOCKOUT_CODES = new Set([
+  'HOURLY_LIMIT_EXCEEDED',
+  'DAILY_LIMIT_EXCEEDED',
+]);
 
 const OtpVerificationDialog = ({
   open,
@@ -36,7 +51,17 @@ const OtpVerificationDialog = ({
   const [otpSent, setOtpSent] = useState(false);
   const [expiryMinutes, setExpiryMinutes] = useState(10);
   const [verifyCooldown, setVerifyCooldown] = useState(0);
+
+  // Lockout state — populated whenever the API returns a lockout code.
+  const [lockout, setLockout] = useState<{
+    scope: 'verify' | 'both';
+    code: string;
+    message: string;
+    retryAfterSeconds?: number;
+  } | null>(null);
+
   const verifyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resendApiRef = useRef<{ startCooldown: (s: number) => void } | null>(null);
 
   // Initial send when dialog opens
@@ -47,7 +72,7 @@ const OtpVerificationDialog = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Verify endpoint cooldown ticker (for 429 from verify-otp)
+  // Verify endpoint cooldown ticker (short cooldown from verify-otp 429)
   useEffect(() => {
     if (verifyCooldown <= 0) {
       if (verifyTimerRef.current) {
@@ -67,22 +92,99 @@ const OtpVerificationDialog = ({
     };
   }, [verifyCooldown]);
 
+  // Lockout countdown ticker — auto-clears the lockout when the window passes
+  useEffect(() => {
+    if (!lockout?.retryAfterSeconds || lockout.retryAfterSeconds <= 0) {
+      if (lockoutTimerRef.current) {
+        clearInterval(lockoutTimerRef.current);
+        lockoutTimerRef.current = null;
+      }
+      return;
+    }
+    lockoutTimerRef.current = setInterval(() => {
+      setLockout(prev => {
+        if (!prev?.retryAfterSeconds) return prev;
+        const next = prev.retryAfterSeconds - 1;
+        if (next <= 0) return null; // lift the lockout
+        return { ...prev, retryAfterSeconds: next };
+      });
+    }, 1000);
+    return () => {
+      if (lockoutTimerRef.current) {
+        clearInterval(lockoutTimerRef.current);
+        lockoutTimerRef.current = null;
+      }
+    };
+  }, [lockout?.retryAfterSeconds]);
+
+  /** Apply a lockout based on an API error code. */
+  const applyLockout = (
+    code: string | undefined,
+    message: string | undefined,
+    retryAfterSeconds: number | undefined,
+    fallbackMsg: string,
+  ) => {
+    if (!code) return false;
+    if (RESEND_LOCKOUT_CODES.has(code)) {
+      setLockout({
+        scope: 'both',
+        code,
+        message: message || fallbackMsg,
+        retryAfterSeconds,
+      });
+      return true;
+    }
+    if (VERIFY_LOCKOUT_CODES.has(code)) {
+      setLockout({
+        scope: 'verify',
+        code,
+        message: message || fallbackMsg,
+        retryAfterSeconds,
+      });
+      return true;
+    }
+    return false;
+  };
+
   const handleInitialSend = async () => {
     const result = await sendOtp(email, purpose, recipientName);
     if (result.success) {
       setOtpSent(true);
       setExpiryMinutes(result.expiryMinutes || 10);
-      // Kick off the resend cooldown
       resendApiRef.current?.startCooldown(result.retryAfterSeconds ?? 30);
       toast.success(bn ? `${email} এ কোড পাঠানো হয়েছে` : `Code sent to ${email}`);
-    } else if (result.retryAfterSeconds) {
-      // Initial send was rate-limited — honor server cooldown
-      resendApiRef.current?.startCooldown(result.retryAfterSeconds);
-      setOtpSent(true); // show the OTP UI so the user can still try to verify a previously-sent code
+      return;
     }
+    // Failed initial send — check for lockout
+    const locked = applyLockout(
+      result.errorCode,
+      result.message,
+      result.retryAfterSeconds,
+      bn ? 'অ্যাকাউন্ট সাময়িকভাবে লক করা হয়েছে' : 'Account temporarily locked',
+    );
+    if (result.retryAfterSeconds) {
+      resendApiRef.current?.startCooldown(result.retryAfterSeconds);
+    }
+    // Show OTP UI either way so user can verify a previously issued code
+    if (!locked || locked) setOtpSent(true);
   };
 
-  const handleResend = () => sendOtp(email, purpose, recipientName);
+  const handleResend = async () => {
+    const result = await sendOtp(email, purpose, recipientName);
+    if (!result.success) {
+      applyLockout(
+        result.errorCode,
+        result.message,
+        result.retryAfterSeconds,
+        bn ? 'অনেক বেশি অনুরোধ' : 'Too many requests',
+      );
+    } else {
+      // A fresh code was issued — clear any prior verify-only lockout
+      setLockout(prev => (prev?.scope === 'verify' ? null : prev));
+      setVerifyCooldown(0);
+    }
+    return result;
+  };
 
   const handleVerify = async () => {
     if (otpValue.length !== 6) {
@@ -94,15 +196,27 @@ const OtpVerificationDialog = ({
       toast.success(bn ? 'যাচাই সফল!' : 'Verification successful!');
       setOtpValue('');
       setOtpSent(false);
+      setLockout(null);
       onVerified();
       onOpenChange(false);
       return;
     }
-    // 429 from verify-otp → disable verify button for retry_after_seconds
-    if (result.retryAfterSeconds && result.retryAfterSeconds > 0) {
+
+    const locked = applyLockout(
+      result.errorCode,
+      result.error,
+      result.retryAfterSeconds,
+      bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked',
+    );
+
+    // Non-lockout 429 (short cooldown) → just disable verify briefly
+    if (!locked && result.retryAfterSeconds && result.retryAfterSeconds > 0) {
       setVerifyCooldown(Math.ceil(result.retryAfterSeconds));
     }
-    toast.error(result.error || (bn ? 'কোড ভুল' : 'Invalid code'));
+
+    if (!locked) {
+      toast.error(result.error || (bn ? 'কোড ভুল' : 'Invalid code'));
+    }
   };
 
   const handleClose = (val: boolean) => {
@@ -110,11 +224,30 @@ const OtpVerificationDialog = ({
       setOtpValue('');
       setOtpSent(false);
       setVerifyCooldown(0);
+      setLockout(null);
     }
     onOpenChange(val);
   };
 
-  const verifyDisabled = verifying || otpValue.length !== 6 || verifyCooldown > 0;
+  const verifyLocked = !!lockout; // both scopes lock verify
+  const resendLocked = lockout?.scope === 'both';
+
+  const verifyDisabled =
+    verifying || otpValue.length !== 6 || verifyCooldown > 0 || verifyLocked;
+
+  const lockoutCountdownLabel = (() => {
+    if (!lockout?.retryAfterSeconds || lockout.retryAfterSeconds <= 0) return null;
+    const s = lockout.retryAfterSeconds;
+    if (s >= 3600) {
+      const h = Math.ceil(s / 3600);
+      return bn ? `${h} ঘণ্টা পর আবার চেষ্টা করুন` : `Try again in ${h}h`;
+    }
+    if (s >= 60) {
+      const m = Math.ceil(s / 60);
+      return bn ? `${m} মিনিট পর আবার চেষ্টা করুন` : `Try again in ${m}m`;
+    }
+    return bn ? `${s} সেকেন্ড পর আবার চেষ্টা করুন` : `Try again in ${s}s`;
+  })();
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -137,8 +270,28 @@ const OtpVerificationDialog = ({
             <span className="text-foreground font-medium">{email}</span>
           </div>
 
+          {lockout && (
+            <Alert variant="destructive" className="border-destructive/40">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertDescription className="space-y-1">
+                <p className="font-medium">{lockout.message}</p>
+                {lockoutCountdownLabel && (
+                  <p className="text-xs opacity-80">{lockoutCountdownLabel}</p>
+                )}
+                <p className="text-[10px] uppercase tracking-wide opacity-60">
+                  {lockout.code}
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="flex justify-center">
-            <InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
+            <InputOTP
+              maxLength={6}
+              value={otpValue}
+              onChange={setOtpValue}
+              disabled={verifyLocked}
+            >
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
@@ -156,19 +309,33 @@ const OtpVerificationDialog = ({
             className="btn-primary-gradient w-full"
           >
             {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {verifyCooldown > 0
-              ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
-              : (bn ? 'যাচাই করুন' : 'Verify Code')}
+            {verifyLocked
+              ? (bn ? 'যাচাইকরণ লক করা হয়েছে' : 'Verification locked')
+              : verifyCooldown > 0
+                ? (bn ? `${verifyCooldown}s পর আবার চেষ্টা করুন` : `Retry in ${verifyCooldown}s`)
+                : (bn ? 'যাচাই করুন' : 'Verify Code')}
           </Button>
 
           <div className="flex items-center justify-center">
-            <OtpResendButton
-              onResend={handleResend}
-              sending={sending}
-              initialCooldown={0}
-              defaultCooldown={30}
-              onReady={(api) => { resendApiRef.current = api; }}
-            />
+            {resendLocked ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled
+                className="gap-2 text-muted-foreground"
+              >
+                <ShieldAlert className="w-4 h-4" />
+                {bn ? 'রিসেন্ড লক করা হয়েছে' : 'Resend locked'}
+              </Button>
+            ) : (
+              <OtpResendButton
+                onResend={handleResend}
+                sending={sending}
+                initialCooldown={0}
+                defaultCooldown={30}
+                onReady={(api) => { resendApiRef.current = api; }}
+              />
+            )}
           </div>
         </div>
       </DialogContent>
