@@ -185,7 +185,23 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // Create auth user
+      // Duplicate name check (case-insensitive) — DB also enforces via unique index
+      if (full_name && full_name.trim()) {
+        const trimmedName = full_name.trim();
+        const { data: dupName } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', trimmedName)
+          .limit(1)
+          .maybeSingle();
+        if (dupName) {
+          return new Response(JSON.stringify({ error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Create auth user (email uniqueness enforced by Supabase Auth)
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -194,8 +210,12 @@ Deno.serve(async (req) => {
       });
 
       if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(createError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: createError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
@@ -484,8 +504,12 @@ Deno.serve(async (req) => {
         email_confirm: true,
       });
       if (emailError) {
-        return new Response(JSON.stringify({ error: emailError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(emailError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: emailError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       return new Response(JSON.stringify({ success: true }), {
@@ -529,10 +553,29 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const { error: nameError } = await supabaseAdmin.from("profiles").update({ full_name }).eq("id", targetUserId);
+      const trimmedName = (full_name || '').trim();
+      if (trimmedName) {
+        const { data: dupName } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', trimmedName)
+          .neq('id', targetUserId)
+          .limit(1)
+          .maybeSingle();
+        if (dupName) {
+          return new Response(JSON.stringify({ error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      const { error: nameError } = await supabaseAdmin.from("profiles").update({ full_name: trimmedName || null }).eq("id", targetUserId);
       if (nameError) {
-        return new Response(JSON.stringify({ error: nameError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /duplicate|unique/i.test(nameError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: nameError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       // Also update auth user metadata
