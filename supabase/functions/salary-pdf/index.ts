@@ -394,13 +394,13 @@ Deno.serve(async (req) => {
       <div class="sig">
         <div class="line">
           <div class="role">${bn ? "প্রস্তুতকারী (হিসাবরক্ষক)" : "Prepared by (Accountant)"}</div>
-          <div class="name">${bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date"}</div>
+          <div class="name">${accountantName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
         <div class="line">
           <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-          <div class="name">${bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date"}</div>
+          <div class="name">${verifierName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
