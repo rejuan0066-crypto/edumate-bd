@@ -56,7 +56,24 @@ Deno.serve(async (req) => {
     const instPhone = (institution as any)?.phone || "";
     const instEmail = (institution as any)?.email || "";
     const instLogo = (institution as any)?.logo_url || "";
-    const principalName = (institution as any)?.principal_name || (bn ? "প্রিন্সিপাল" : "Principal");
+    // Fetch principal/accountant/verifier from website_settings (key-value)
+    const { data: wsRows } = await supabase
+      .from("website_settings")
+      .select("key,value")
+      .in("key", [
+        "principal_name", "principal_name_en",
+        "accountant_name", "accountant_name_en",
+        "verifier_name", "verifier_name_en",
+      ]);
+    const ws: Record<string, string> = {};
+    (wsRows || []).forEach((r: any) => { ws[r.key] = r.value || ""; });
+    const pickName = (bnKey: string, enKey: string, fallback: string) =>
+      (bn ? (ws[bnKey] || ws[enKey]) : (ws[enKey] || ws[bnKey])) ||
+      (institution as any)?.[bnKey] || fallback;
+
+    const principalName = pickName("principal_name", "principal_name_en", bn ? "প্রিন্সিপাল" : "Principal");
+    const accountantName = pickName("accountant_name", "accountant_name_en", "");
+    const verifierName = pickName("verifier_name", "verifier_name_en", "");
 
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
@@ -392,13 +409,13 @@ Deno.serve(async (req) => {
       <div class="sig">
         <div class="line">
           <div class="role">${bn ? "প্রস্তুতকারী (হিসাবরক্ষক)" : "Prepared by (Accountant)"}</div>
-          <div class="name">${bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date"}</div>
+          <div class="name">${accountantName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
         <div class="line">
           <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-          <div class="name">${bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date"}</div>
+          <div class="name">${verifierName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">

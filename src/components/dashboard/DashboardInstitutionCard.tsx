@@ -27,6 +27,10 @@ const DashboardInstitutionCard = () => {
     principal_message_bn: '',
     principal_message_en: '',
     principal_photo_url: '',
+    accountant_name: '',
+    accountant_name_en: '',
+    verifier_name: '',
+    verifier_name_en: '',
   });
   const [footerForm, setFooterForm] = useState({
     global_footer_text_bn: '',
@@ -77,6 +81,10 @@ const DashboardInstitutionCard = () => {
         principal_message_bn: settings.principal_message_bn || '',
         principal_message_en: settings.principal_message_en || '',
         principal_photo_url: settings.principal_photo_url || '',
+        accountant_name: (settings as any).accountant_name || '',
+        accountant_name_en: (settings as any).accountant_name_en || '',
+        verifier_name: (settings as any).verifier_name || '',
+        verifier_name_en: (settings as any).verifier_name_en || '',
       });
       setFooterForm({
         global_footer_text_bn: (settings as any).global_footer_text_bn || '',
@@ -264,6 +272,29 @@ const DashboardInstitutionCard = () => {
             <div className="sm:col-span-2 lg:col-span-3">
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের বাণী (ইংরেজি)' : "Principal's Message (English)"}</label>
               <Textarea rows={3} value={principalForm.principal_message_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_message_en: e.target.value }))} className="mt-1" />
+            </div>
+          </div>
+        </div>
+
+        {/* Accountant & Verifier (used in Salary Sheet & official documents) */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'হিসাবরক্ষক ও যাচাইকারী (বেতন বিবরণী ও অফিসিয়াল ডকুমেন্টে ব্যবহৃত হবে)' : 'Accountant & Verifier (used in Salary Sheet & official documents)'}</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'হিসাবরক্ষকের নাম (বাংলা)' : 'Accountant Name (Bangla)'}</label>
+              <Input value={principalForm.accountant_name} onChange={e => setPrincipalForm(f => ({ ...f, accountant_name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'হিসাবরক্ষকের নাম (ইংরেজি)' : 'Accountant Name (English)'}</label>
+              <Input value={principalForm.accountant_name_en} onChange={e => setPrincipalForm(f => ({ ...f, accountant_name_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'যাচাইকারীর নাম (বাংলা)' : 'Verifier Name (Bangla)'}</label>
+              <Input value={principalForm.verifier_name} onChange={e => setPrincipalForm(f => ({ ...f, verifier_name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'যাচাইকারীর নাম (ইংরেজি)' : 'Verifier Name (English)'}</label>
+              <Input value={principalForm.verifier_name_en} onChange={e => setPrincipalForm(f => ({ ...f, verifier_name_en: e.target.value }))} className="mt-1" />
             </div>
           </div>
         </div>
