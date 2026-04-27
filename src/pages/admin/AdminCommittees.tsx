@@ -466,13 +466,13 @@ export default function AdminCommittees() {
         open={!!deleteCommittee}
         onOpenChange={(o) => !o && setDeleteCommittee(null)}
         onConfirm={() => { if (deleteCommittee) { removeCommittee.mutate(deleteCommittee.id); setDeleteCommittee(null); } }}
-        itemName={deleteCommittee?.name || ""}
+        description={bn ? `"${deleteCommittee?.name}" কমিটি ও এর সকল সদস্য মুছে ফেলা হবে।` : `Committee "${deleteCommittee?.name}" and all its members will be removed.`}
       />
       <DeleteConfirmDialog
         open={!!deleteMember}
         onOpenChange={(o) => !o && setDeleteMember(null)}
         onConfirm={() => { if (deleteMember) { removeMember.mutate(deleteMember.id); setDeleteMember(null); } }}
-        itemName={deleteMember?.name || ""}
+        description={bn ? `সদস্য "${deleteMember?.name}" মুছে ফেলা হবে।` : `Member "${deleteMember?.name}" will be removed.`}
       />
     </div>
   );
