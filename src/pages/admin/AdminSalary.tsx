@@ -1650,6 +1650,19 @@ const AdminSalary = () => {
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
 
+              <Select value={eligibilityFilter} onValueChange={(v: any) => setEligibilityFilter(v)}>
+                <SelectTrigger className="w-44 h-8 text-sm shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{bn ? 'সব স্টাফ' : 'All staff'}</SelectItem>
+                  <SelectItem value="eligible">{bn ? 'শুধু যোগ্য (জেনারেটের জন্য)' : 'Eligible only'}</SelectItem>
+                  <SelectItem value="not_generated">{bn ? 'জেনারেট হয়নি' : 'Not generated'}</SelectItem>
+                  <SelectItem value="pending">{bn ? 'বকেয়া' : 'Pending'}</SelectItem>
+                  <SelectItem value="paid">{bn ? 'পরিশোধিত' : 'Paid'}</SelectItem>
+                </SelectContent>
+              </Select>
+
               <div className="flex gap-2 shrink-0 flex-wrap">
                 {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
                   <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
@@ -1666,6 +1679,9 @@ const AdminSalary = () => {
                     {bn ? 'পুনরায় হিসাব' : 'Recalculate'}
                   </Button>
                 )}
+                <Button size="sm" variant="outline" onClick={() => setAuditLogOpen(true)} title={bn ? 'বেতন জেনারেশন অডিট লগ' : 'Salary generation audit log'}>
+                  <FileText className="h-3 w-3 mr-1" /> {bn ? 'অডিট লগ' : 'Audit Log'}
+                </Button>
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
