@@ -280,14 +280,33 @@ const OtpVerificationDialog = ({
           </div>
 
           {lockout && (
-            <Alert variant="destructive" className="border-destructive/40">
+            <Alert
+              variant="destructive"
+              className="border-destructive/40"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              id="otp-lockout-alert"
+            >
               <ShieldAlert className="h-4 w-4" />
               <AlertDescription className="space-y-1">
-                <p className="font-medium">{lockout.message}</p>
+                <p className="font-medium" id="otp-lockout-message">
+                  {lockout.message}
+                </p>
                 {lockoutCountdownLabel && (
-                  <p className="text-xs opacity-80">{lockoutCountdownLabel}</p>
+                  <p
+                    className="text-xs opacity-80"
+                    id="otp-lockout-countdown"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {lockoutCountdownLabel}
+                  </p>
                 )}
-                <p className="text-[10px] uppercase tracking-wide opacity-60">
+                <p
+                  className="text-[10px] uppercase tracking-wide opacity-60"
+                  id="otp-lockout-code"
+                >
                   {lockout.code}
                 </p>
               </AlertDescription>
@@ -300,6 +319,12 @@ const OtpVerificationDialog = ({
               value={otpValue}
               onChange={setOtpValue}
               disabled={verifyLocked}
+              aria-describedby={
+                verifyLocked
+                  ? 'otp-lockout-message otp-lockout-countdown otp-lockout-code'
+                  : undefined
+              }
+              aria-invalid={verifyLocked || undefined}
             >
               <InputOTPGroup>
                 <InputOTPSlot index={0} />
@@ -316,6 +341,11 @@ const OtpVerificationDialog = ({
             onClick={handleVerify}
             disabled={verifyDisabled}
             className="btn-primary-gradient w-full"
+            aria-describedby={
+              verifyLocked
+                ? 'otp-lockout-message otp-lockout-countdown'
+                : undefined
+            }
           >
             {verifying && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {verifyLocked
