@@ -149,13 +149,18 @@ const AdminSettings = () => {
   const loadOtpConfig = async () => {
     const { data } = await supabase.from('otp_config').select('*').eq('id', 1).maybeSingle();
     if (data) {
+      const d = data as any;
       setOtpCfg({
-        is_enabled: data.is_enabled,
-        expiry_minutes: data.expiry_minutes,
-        max_attempts: data.max_attempts,
-        cooldown_seconds: data.cooldown_seconds,
-        hourly_limit: data.hourly_limit,
-        daily_limit: data.daily_limit,
+        is_enabled: d.is_enabled,
+        expiry_minutes: d.expiry_minutes,
+        max_attempts: d.max_attempts,
+        cooldown_seconds: d.cooldown_seconds,
+        hourly_limit: d.hourly_limit,
+        daily_limit: d.daily_limit,
+        require_for_login: d.require_for_login ?? true,
+        require_for_password_reset: d.require_for_password_reset ?? true,
+        require_for_email_change: d.require_for_email_change ?? true,
+        require_for_password_change: d.require_for_password_change ?? true,
       });
     }
     setOtpCfgLoading(false);
