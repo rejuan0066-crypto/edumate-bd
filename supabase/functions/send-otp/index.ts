@@ -181,6 +181,93 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // ---- Rate limiting & cooldown ----
+    // Tunables
+    const COOLDOWN_SECONDS = 60;   // min gap between two OTP requests for the same email+purpose
+    const HOURLY_LIMIT = 5;        // max OTP requests per email+purpose in last 60 minutes
+    const DAILY_LIMIT = 15;        // max OTP requests per email+purpose in last 24 hours
+
+    const nowMs = Date.now();
+    const cooldownSince = new Date(nowMs - COOLDOWN_SECONDS * 1000).toISOString();
+    const hourSince = new Date(nowMs - 60 * 60 * 1000).toISOString();
+    const daySince = new Date(nowMs - 24 * 60 * 60 * 1000).toISOString();
+
+    // Most recent OTP for cooldown check
+    const { data: lastOtp } = await supabase
+      .from("otp_codes")
+      .select("created_at")
+      .eq("email", email)
+      .eq("purpose", purpose)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastOtp?.created_at) {
+      const lastMs = new Date(lastOtp.created_at).getTime();
+      const elapsed = Math.floor((nowMs - lastMs) / 1000);
+      if (elapsed < COOLDOWN_SECONDS) {
+        const retryAfter = COOLDOWN_SECONDS - elapsed;
+        return new Response(
+          JSON.stringify({
+            error: `Please wait ${retryAfter} seconds before requesting another code.`,
+            code: "COOLDOWN_ACTIVE",
+            retry_after_seconds: retryAfter,
+          }),
+          {
+            status: 429,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": "application/json",
+              "Retry-After": String(retryAfter),
+            },
+          },
+        );
+      }
+    }
+
+    // Hourly + daily counts
+    const { count: hourCount } = await supabase
+      .from("otp_codes")
+      .select("id", { count: "exact", head: true })
+      .eq("email", email)
+      .eq("purpose", purpose)
+      .gte("created_at", hourSince);
+
+    if ((hourCount ?? 0) >= HOURLY_LIMIT) {
+      return new Response(
+        JSON.stringify({
+          error: `Too many OTP requests. Limit is ${HOURLY_LIMIT} per hour for this address. Try again later.`,
+          code: "HOURLY_LIMIT_EXCEEDED",
+          retry_after_seconds: 60 * 60,
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+        },
+      );
+    }
+
+    const { count: dayCount } = await supabase
+      .from("otp_codes")
+      .select("id", { count: "exact", head: true })
+      .eq("email", email)
+      .eq("purpose", purpose)
+      .gte("created_at", daySince);
+
+    if ((dayCount ?? 0) >= DAILY_LIMIT) {
+      return new Response(
+        JSON.stringify({
+          error: `Daily OTP limit (${DAILY_LIMIT}) reached for this address. Please contact support if you need help.`,
+          code: "DAILY_LIMIT_EXCEEDED",
+          retry_after_seconds: 24 * 60 * 60,
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "86400" },
+        },
+      );
+    }
+
     // Generate 6-digit code
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
