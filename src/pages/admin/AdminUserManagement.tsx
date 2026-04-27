@@ -22,6 +22,7 @@ import { isAdminRole } from '@/lib/roles';
 import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 interface UserItem {
   id: string;
