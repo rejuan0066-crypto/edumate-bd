@@ -504,8 +504,12 @@ Deno.serve(async (req) => {
         email_confirm: true,
       });
       if (emailError) {
-        return new Response(JSON.stringify({ error: emailError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(emailError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: emailError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       return new Response(JSON.stringify({ success: true }), {
