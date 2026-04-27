@@ -6990,6 +6990,14 @@ export type Database = {
         Args: { p_amount: number; p_item_id: string }
         Returns: undefined
       }
+      undo_committee_change: {
+        Args: {
+          p_audit_id: string
+          p_expected_deleted?: boolean
+          p_expected_is_active?: boolean
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

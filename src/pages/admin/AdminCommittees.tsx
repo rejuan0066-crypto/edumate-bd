@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Users, Calendar, Phone, Mail, MapPin, Briefcase, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import OtpVerificationDialog from "@/components/OtpVerificationDialog";
+import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
 
 type Committee = {
   id: string;
@@ -73,6 +75,7 @@ export default function AdminCommittees() {
   const [activeCommitteeId, setActiveCommitteeId] = useState<string | null>(null);
   const [deleteCommittee, setDeleteCommittee] = useState<Committee | null>(null);
   const [deleteMember, setDeleteMember] = useState<Member | null>(null);
+  const otpGate = useAdminOtpGate();
 
   const { data: committees = [], isLoading: loadingC } = useQuery({
     queryKey: ["committees"],
@@ -543,7 +546,26 @@ export default function AdminCommittees() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setMemberDialog(false)}>{bn ? "বাতিল" : "Cancel"}</Button>
-            <Button onClick={() => editingMember && saveMember.mutate(editingMember)} disabled={!editingMember?.name || !editingMember?.designation || saveMember.isPending}>
+            <Button
+              onClick={() => {
+                if (!editingMember) return;
+                // Detect overlap to decide whether OTP is required
+                const isOverlap =
+                  editingMember.staff_id &&
+                  editingMember.is_active !== false &&
+                  members.some(
+                    (x) =>
+                      x.staff_id === editingMember.staff_id &&
+                      x.is_active &&
+                      x.committee_id !== editingMember.committee_id &&
+                      x.id !== editingMember.id
+                  );
+                const run = () => saveMember.mutate(editingMember);
+                if (isOverlap) otpGate.requireOtp(run);
+                else run();
+              }}
+              disabled={!editingMember?.name || !editingMember?.designation || saveMember.isPending}
+            >
               {bn ? "সংরক্ষণ" : "Save"}
             </Button>
           </DialogFooter>
@@ -561,6 +583,15 @@ export default function AdminCommittees() {
         onOpenChange={(o) => !o && setDeleteMember(null)}
         onConfirm={() => { if (deleteMember) { removeMember.mutate(deleteMember.id); setDeleteMember(null); } }}
         description={bn ? `সদস্য "${deleteMember?.name}" মুছে ফেলা হবে।` : `Member "${deleteMember?.name}" will be removed.`}
+      />
+      <OtpVerificationDialog
+        open={otpGate.open}
+        onOpenChange={otpGate.setOpen}
+        email={otpGate.email}
+        purpose="email_verification"
+        onVerified={otpGate.onVerified}
+        title={bn ? "ওভারল্যাপ অনুমোদন যাচাই" : "Verify Overlap Approval"}
+        description={bn ? "ওভারল্যাপ অনুমোদনের আগে ওটিপি দিন।" : "Enter OTP to authorize multi-committee membership."}
       />
     </div>
   );
