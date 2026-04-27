@@ -276,6 +276,29 @@ const DashboardInstitutionCard = () => {
           </div>
         </div>
 
+        {/* Accountant & Verifier (used in Salary Sheet & official documents) */}
+        <div className="space-y-3 pt-4 border-t border-border">
+          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'হিসাবরক্ষক ও যাচাইকারী (বেতন বিবরণী ও অফিসিয়াল ডকুমেন্টে ব্যবহৃত হবে)' : 'Accountant & Verifier (used in Salary Sheet & official documents)'}</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'হিসাবরক্ষকের নাম (বাংলা)' : 'Accountant Name (Bangla)'}</label>
+              <Input value={principalForm.accountant_name} onChange={e => setPrincipalForm(f => ({ ...f, accountant_name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'হিসাবরক্ষকের নাম (ইংরেজি)' : 'Accountant Name (English)'}</label>
+              <Input value={principalForm.accountant_name_en} onChange={e => setPrincipalForm(f => ({ ...f, accountant_name_en: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'যাচাইকারীর নাম (বাংলা)' : 'Verifier Name (Bangla)'}</label>
+              <Input value={principalForm.verifier_name} onChange={e => setPrincipalForm(f => ({ ...f, verifier_name: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'যাচাইকারীর নাম (ইংরেজি)' : 'Verifier Name (English)'}</label>
+              <Input value={principalForm.verifier_name_en} onChange={e => setPrincipalForm(f => ({ ...f, verifier_name_en: e.target.value }))} className="mt-1" />
+            </div>
+          </div>
+        </div>
+
         {/* Global Footer (used in all forms & templates) */}
         <div className="space-y-3 pt-4 border-t border-border">
           <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'গ্লোবাল ফুটার (সকল ফর্ম ও টেমপ্লেটে ব্যবহৃত হবে)' : 'Global Footer (used in all forms & templates)'}</h4>
