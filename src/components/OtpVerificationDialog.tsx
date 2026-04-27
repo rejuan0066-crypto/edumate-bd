@@ -8,6 +8,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { Loader2, Mail, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import OtpResendButton from '@/components/OtpResendButton';
+import { trackOtpLockout } from '@/lib/otpAnalytics';
 
 interface OtpVerificationDialogProps {
   open: boolean;
@@ -132,6 +133,9 @@ const OtpVerificationDialog = ({
         message: message || fallbackMsg,
         retryAfterSeconds,
       });
+      void trackOtpLockout({
+        code, scope: 'both', retryAfterSeconds, purpose, email,
+      });
       return true;
     }
     if (VERIFY_LOCKOUT_CODES.has(code)) {
@@ -140,6 +144,9 @@ const OtpVerificationDialog = ({
         code,
         message: message || fallbackMsg,
         retryAfterSeconds,
+      });
+      void trackOtpLockout({
+        code, scope: 'verify', retryAfterSeconds, purpose, email,
       });
       return true;
     }
@@ -179,9 +186,11 @@ const OtpVerificationDialog = ({
         bn ? 'অনেক বেশি অনুরোধ' : 'Too many requests',
       );
     } else {
-      // A fresh code was issued — clear any prior verify-only lockout
+      // A fresh code was issued by the server — clear any verify-only lockout
+      // immediately (e.g. after OTP_MAX_ATTEMPTS) so the user can try the new code.
       setLockout(prev => (prev?.scope === 'verify' ? null : prev));
       setVerifyCooldown(0);
+      setOtpValue('');
     }
     return result;
   };
