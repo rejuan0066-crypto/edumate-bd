@@ -115,6 +115,9 @@ describe('OtpVerificationDialog — standardized lockout codes', () => {
   }
 
   it('clears verify-only lockout after a successful resend (OTP_MAX_ATTEMPTS)', async () => {
+    // Initial send with 0 cooldown so the resend button is immediately clickable
+    sendOtpMock.mockReset();
+    sendOtpMock.mockResolvedValueOnce({ success: true, expiryMinutes: 10, retryAfterSeconds: 0 });
     verifyOtpMock.mockResolvedValue({
       valid: false,
       error: 'Locked: OTP_MAX_ATTEMPTS',
