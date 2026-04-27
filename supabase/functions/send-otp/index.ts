@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { email, purpose } = await req.json();
+    const { email, purpose, scope } = await req.json();
 
     if (!email || !purpose) {
       return otpErrorResponse({
@@ -36,6 +36,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Optional fine-grained scope: 'login' | 'password_reset' | 'email_change' | 'password_change'
+    // Falls back to a sensible default derived from `purpose` when not supplied.
+    const validScopes = ["login", "password_reset", "email_change", "password_change"];
+    const effectiveScope: string =
+      typeof scope === "string" && validScopes.includes(scope)
+        ? scope
+        : (purpose === "password_reset" ? "password_reset" : "email_change");
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -52,6 +60,22 @@ Deno.serve(async (req) => {
         status: 403,
         code: "OTP_DISABLED",
         message: "OTP verification is currently disabled by the administrator.",
+      });
+    }
+
+    // ---- Per-flow OTP requirement check (admin-controlled) ----
+    const scopeFlagMap: Record<string, string> = {
+      login: "require_for_login",
+      password_reset: "require_for_password_reset",
+      email_change: "require_for_email_change",
+      password_change: "require_for_password_change",
+    };
+    const scopeFlag = scopeFlagMap[effectiveScope];
+    if (otpCfg && scopeFlag && (otpCfg as any)[scopeFlag] === false) {
+      return otpErrorResponse({
+        status: 403,
+        code: "OTP_NOT_REQUIRED_FOR_SCOPE",
+        message: `OTP is disabled for ${effectiveScope} by the administrator.`,
       });
     }
 

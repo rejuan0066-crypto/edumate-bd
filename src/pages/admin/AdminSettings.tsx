@@ -138,6 +138,10 @@ const AdminSettings = () => {
     cooldown_seconds: 60,
     hourly_limit: 5,
     daily_limit: 15,
+    require_for_login: true,
+    require_for_password_reset: true,
+    require_for_email_change: true,
+    require_for_password_change: true,
   });
   const [otpCfgLoading, setOtpCfgLoading] = useState(true);
   const [otpCfgSaving, setOtpCfgSaving] = useState(false);
@@ -145,13 +149,18 @@ const AdminSettings = () => {
   const loadOtpConfig = async () => {
     const { data } = await supabase.from('otp_config').select('*').eq('id', 1).maybeSingle();
     if (data) {
+      const d = data as any;
       setOtpCfg({
-        is_enabled: data.is_enabled,
-        expiry_minutes: data.expiry_minutes,
-        max_attempts: data.max_attempts,
-        cooldown_seconds: data.cooldown_seconds,
-        hourly_limit: data.hourly_limit,
-        daily_limit: data.daily_limit,
+        is_enabled: d.is_enabled,
+        expiry_minutes: d.expiry_minutes,
+        max_attempts: d.max_attempts,
+        cooldown_seconds: d.cooldown_seconds,
+        hourly_limit: d.hourly_limit,
+        daily_limit: d.daily_limit,
+        require_for_login: d.require_for_login ?? true,
+        require_for_password_reset: d.require_for_password_reset ?? true,
+        require_for_email_change: d.require_for_email_change ?? true,
+        require_for_password_change: d.require_for_password_change ?? true,
       });
     }
     setOtpCfgLoading(false);
@@ -770,7 +779,38 @@ const AdminSettings = () => {
                       ? 'বন্ধ থাকলে কোনো OTP ইমেইল পাঠানো হবে না (অ্যাডমিন ২-ধাপ ভেরিফিকেশনও নিষ্ক্রিয়)।'
                       : 'When off, no OTP emails will be sent (admin 2-step verification disabled too).'}
                   </p>
-                </div>
+              </div>
+
+              {/* Per-flow OTP requirement toggles */}
+              <div className="rounded-xl border border-border/60 bg-background/40 p-3 space-y-2">
+                <p className="text-xs font-semibold text-foreground uppercase tracking-wide">
+                  {bn ? 'কোন কাজে OTP লাগবে?' : 'Where to require OTP?'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn
+                    ? 'নিচের প্রতিটি ফ্লোতে আলাদাভাবে OTP চালু/বন্ধ করুন। OTP মূল সুইচ বন্ধ থাকলে এগুলোর কোনোটিই কাজ করবে না।'
+                    : 'Toggle OTP independently per flow. If the master OTP switch is OFF, none of these apply.'}
+                </p>
+
+                {[
+                  { key: 'require_for_login', bn: 'অ্যাডমিন লগইনে (২-ধাপ ভেরিফিকেশন)', en: 'Admin Login (2-step verification)' },
+                  { key: 'require_for_password_reset', bn: 'পাসওয়ার্ড ফরগেট-এ', en: 'Forgot Password' },
+                  { key: 'require_for_email_change', bn: 'ইমেইল পরিবর্তনে', en: 'Email Change' },
+                  { key: 'require_for_password_change', bn: 'পাসওয়ার্ড পরিবর্তনে', en: 'Password Change' },
+                ].map((item) => (
+                  <div
+                    key={item.key}
+                    className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <p className="text-sm text-foreground">{bn ? item.bn : item.en}</p>
+                    <Switch
+                      checked={(otpCfg as any)[item.key]}
+                      disabled={!otpCfg.is_enabled}
+                      onCheckedChange={(v) => setOtpCfg({ ...otpCfg, [item.key]: v } as any)}
+                    />
+                  </div>
+                ))}
+              </div>
                 <Switch
                   checked={otpCfg.is_enabled}
                   onCheckedChange={(v) => setOtpCfg({ ...otpCfg, is_enabled: v })}

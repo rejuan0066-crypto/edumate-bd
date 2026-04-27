@@ -10,6 +10,7 @@ import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck,
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOtpService } from '@/hooks/useOtpService';
+import { useOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +33,9 @@ const AdminProfile = () => {
   const { sendOtp, sending } = useOtpService();
   const { user, role } = useAuth();
   const isAdmin = role === 'admin' || role === 'super_admin';
+  const { reqs: otpReqs } = useOtpRequirements();
+  const emailOtpRequired = isOtpRequiredFor(otpReqs, 'email_change');
+  const passwordOtpRequired = isOtpRequiredFor(otpReqs, 'password_change');
 
   const [currentEmail, setCurrentEmail] = useState('');
 
@@ -39,7 +43,7 @@ const AdminProfile = () => {
   const [newEmail, setNewEmail] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
   const [showEmailPassword, setShowEmailPassword] = useState(false);
-  const [useOtp, setUseOtp] = useState(false);
+  const [useOtp, setUseOtp] = useState(true);
   const [step, setStep] = useState<'form' | 'otp' | 'done'>('form');
   const [otpCode, setOtpCode] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -55,7 +59,15 @@ const AdminProfile = () => {
   const [showCurrentPw, setShowCurrentPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [usePwOtp, setUsePwOtp] = useState(false);
+  const [usePwOtp, setUsePwOtp] = useState(true);
+
+  // Sync per-flow OTP toggle with admin global config when it loads/changes
+  useEffect(() => {
+    if (otpReqs) {
+      setUseOtp(emailOtpRequired);
+      setUsePwOtp(passwordOtpRequired);
+    }
+  }, [otpReqs, emailOtpRequired, passwordOtpRequired]);
   const [pwStep, setPwStep] = useState<'form' | 'otp' | 'done'>('form');
   const [pwOtpCode, setPwOtpCode] = useState('');
   const [pwCountdown, setPwCountdown] = useState(0);
@@ -166,7 +178,7 @@ const AdminProfile = () => {
     setVerifyingPassword(false);
     if (signInError) { toast.error(bn ? 'পাসওয়ার্ড ভুল' : 'Incorrect password'); return; }
 
-    const result = await sendOtp(targetEmail, 'email_verification', targetEmail);
+    const result = await sendOtp(targetEmail, 'email_verification', targetEmail, 'email_change');
     if (result.success) {
       setExpiryMinutes(result.expiryMinutes || 10);
       setStep('otp');
@@ -176,7 +188,7 @@ const AdminProfile = () => {
   }, [newEmail, emailPassword, currentEmail, bn, sendOtp]);
 
   const handleResendOtp = useCallback(async () => {
-    const result = await sendOtp(newEmail.trim(), 'email_verification', newEmail.trim());
+    const result = await sendOtp(newEmail.trim(), 'email_verification', newEmail.trim(), 'email_change');
     if (result.success) { setCountdown(60); setOtpCode(''); toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent'); }
   }, [newEmail, bn, sendOtp]);
 
@@ -251,7 +263,7 @@ const AdminProfile = () => {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email: currentEmail, password: currentPassword.trim() });
     if (signInError) { toast.error(bn ? 'বর্তমান পাসওয়ার্ড ভুল' : 'Current password incorrect'); setChangingPassword(false); return; }
 
-    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail, 'password_change');
     setChangingPassword(false);
     if (result.success) {
       setPwStep('otp');
@@ -261,7 +273,7 @@ const AdminProfile = () => {
   }, [currentPassword, newPassword, confirmPassword, currentEmail, bn, sendOtp]);
 
   const handlePwResendOtp = useCallback(async () => {
-    const result = await sendOtp(currentEmail, 'password_reset', currentEmail);
+    const result = await sendOtp(currentEmail, 'password_reset', currentEmail, 'password_change');
     if (result.success) { setPwCountdown(60); setPwOtpCode(''); toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent'); }
   }, [currentEmail, bn, sendOtp]);
 
@@ -387,11 +399,24 @@ const AdminProfile = () => {
             <div className="space-y-5">
               {isAdmin && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted/15 border border-border/15">
-                  <Switch checked={useOtp} onCheckedChange={setUseOtp} />
+                  <Switch
+                    checked={useOtp}
+                    onCheckedChange={setUseOtp}
+                    disabled={emailOtpRequired}
+                  />
                   <div>
-                    <p className="text-sm font-semibold">{bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}</p>
+                    <p className="text-sm font-semibold">
+                      {bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}
+                      {emailOtpRequired && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-bold">
+                          {bn ? '(বাধ্যতামূলক)' : '(Required)'}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {useOtp ? (bn ? 'নতুন ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to new email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only')}
+                      {emailOtpRequired
+                        ? (bn ? 'অ্যাডমিন সেটিংস অনুযায়ী ইমেইল পরিবর্তনে OTP বাধ্যতামূলক।' : 'OTP is required for email change per admin settings.')
+                        : (useOtp ? (bn ? 'নতুন ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to new email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only'))}
                     </p>
                   </div>
                 </div>
@@ -473,11 +498,24 @@ const AdminProfile = () => {
             <div className="space-y-5">
               {isAdmin && (
                 <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted/15 border border-border/15">
-                  <Switch checked={usePwOtp} onCheckedChange={setUsePwOtp} />
+                  <Switch
+                    checked={usePwOtp}
+                    onCheckedChange={setUsePwOtp}
+                    disabled={passwordOtpRequired}
+                  />
                   <div>
-                    <p className="text-sm font-semibold">{bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}</p>
+                    <p className="text-sm font-semibold">
+                      {bn ? 'OTP যাচাই ব্যবহার করুন' : 'Use OTP Verification'}
+                      {passwordOtpRequired && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-primary font-bold">
+                          {bn ? '(বাধ্যতামূলক)' : '(Required)'}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {usePwOtp ? (bn ? 'ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to your email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only')}
+                      {passwordOtpRequired
+                        ? (bn ? 'অ্যাডমিন সেটিংস অনুযায়ী পাসওয়ার্ড পরিবর্তনে OTP বাধ্যতামূলক।' : 'OTP is required for password change per admin settings.')
+                        : (usePwOtp ? (bn ? 'ইমেইলে OTP কোড পাঠিয়ে যাচাই করা হবে' : 'OTP code will be sent to your email') : (bn ? 'শুধুমাত্র বর্তমান পাসওয়ার্ড দিয়ে পরিবর্তন হবে' : 'Change with current password only'))}
                     </p>
                   </div>
                 </div>
