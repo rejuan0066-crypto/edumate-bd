@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
     const instEmail = (institution as any)?.email || "";
     const instLogo = (institution as any)?.logo_url || "";
     const principalName = (institution as any)?.principal_name || (bn ? "প্রিন্সিপাল" : "Principal");
+    const accountantName = (institution as any)?.accountant_name || "";
+    const verifierName = (institution as any)?.verifier_name || "";
 
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
