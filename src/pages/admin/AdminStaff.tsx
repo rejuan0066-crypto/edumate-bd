@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
+import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
 export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support';
 
@@ -87,6 +88,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     },
   });
   const staffList = (staffListRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
+  const committeeHiddenCount = (staffListRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
 
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
@@ -267,7 +269,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <CommitteeExclusionNotice count={committeeHiddenCount} />
             {missingIdCount > 0 && isAdminRole(role) && (
               <Button variant="outline" onClick={handleBulkGenerateIds} disabled={generatingIds} className="flex items-center gap-2">
                 {generatingIds ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}

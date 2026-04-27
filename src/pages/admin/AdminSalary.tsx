@@ -23,6 +23,7 @@ import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
+import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
@@ -152,6 +153,7 @@ const AdminSalary = () => {
     },
   });
   const staff = (staffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
+  const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
@@ -1634,6 +1636,12 @@ const AdminSalary = () => {
             </div>
           </div>
         </div>
+
+        {committeeHiddenCount > 0 && (
+          <div className="flex justify-end">
+            <CommitteeExclusionNotice count={committeeHiddenCount} />
+          </div>
+        )}
 
         {/* Premium Stats Cards — Banking grade */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

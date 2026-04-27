@@ -30,6 +30,7 @@ import ClassQRPoster from '@/components/attendance/ClassQRPoster';
 import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceManager';
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
+import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -216,6 +217,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     enabled: entityType === 'staff',
   });
   const allStaff = (allStaffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
+  const committeeHiddenCount = (allStaffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
 
   // Build session options: prefer academic_sessions (id-based), fallback to legacy session_year text
   const sessionOptions = useMemo(() => {
@@ -1190,7 +1192,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
               {bn ? 'ছাত্র ও স্টাফের দৈনিক উপস্থিতি ট্র্যাক করুন' : 'Track daily attendance for students & staff'}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
+            {entityType === 'staff' && <CommitteeExclusionNotice count={committeeHiddenCount} />}
             {entityType === 'student' && (
               <>
                 <Button variant="outline" size="sm" onClick={() => setQrPosterOpen(true)}>
