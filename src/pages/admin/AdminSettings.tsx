@@ -196,7 +196,39 @@ const AdminSettings = () => {
       next.require_for_email_change = false;
       next.require_for_password_change = false;
       next.role_overrides = {} as typeof next.role_overrides;
+      return next;
     }
+
+    // ---- Normalize role_overrides matrix ----
+    // Rules:
+    //  1) Drop any role/flow whose value matches the global flag (no-op override → keep "Inherit").
+    //  2) Drop any non-boolean value.
+    //  3) Drop empty role buckets so payload stays clean.
+    //  4) Restrict to known roles & flows.
+    const VALID_ROLES = ['admin', 'parent', 'staff', 'student'] as const;
+    const FLOW_TO_GLOBAL: Record<string, keyof typeof next> = {
+      login: 'require_for_login',
+      password_reset: 'require_for_password_reset',
+      email_change: 'require_for_email_change',
+      password_change: 'require_for_password_change',
+    };
+    const cleaned: Record<string, Record<string, boolean>> = {};
+    const src = (next.role_overrides || {}) as Record<string, Record<string, unknown>>;
+    for (const role of VALID_ROLES) {
+      const bucket = src[role];
+      if (!bucket || typeof bucket !== 'object') continue;
+      const out: Record<string, boolean> = {};
+      for (const [flow, globalKey] of Object.entries(FLOW_TO_GLOBAL)) {
+        const v = bucket[flow];
+        if (typeof v !== 'boolean') continue;
+        // Drop overrides that match the global value (no-op)
+        if (v === Boolean((next as any)[globalKey])) continue;
+        out[flow] = v;
+      }
+      if (Object.keys(out).length > 0) cleaned[role] = out;
+    }
+    next.role_overrides = cleaned as typeof next.role_overrides;
+
     return next;
   };
 
