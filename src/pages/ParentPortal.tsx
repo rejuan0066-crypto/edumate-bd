@@ -272,7 +272,7 @@ const ParentPortal = () => {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="su-pwd">{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
-                        <Input id="su-pwd" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} className="rounded-xl h-11" />
+                        <Input id="su-pwd" type="password" value={signupPassword} onChange={(e) => setSignupPassword(sanitizePasswordInput(e.target.value))} className="rounded-xl h-11" />
                       </div>
                       <div className="border-t pt-3 mt-3">
                         <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
