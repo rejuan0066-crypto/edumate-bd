@@ -790,6 +790,7 @@ const AdminSalary = () => {
       queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
       queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error generating salary'),
   });
