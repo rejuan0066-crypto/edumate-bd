@@ -153,6 +153,7 @@ const AdminSalary = () => {
     },
   });
   const staff = (staffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
+  const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeStaffIds.has(s.id)).length;
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
