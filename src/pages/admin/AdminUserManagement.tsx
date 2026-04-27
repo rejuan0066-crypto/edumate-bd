@@ -1604,6 +1604,64 @@ const AdminUserManagement = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Duplicate Conflict Modal */}
+        <Dialog open={conflictOpen} onOpenChange={setConflictOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                {bn ? 'ডুপ্লিকেট পাওয়া গেছে' : 'Duplicate Found'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <p className="text-sm text-muted-foreground">
+                {conflictType === 'email'
+                  ? (bn ? 'এই ইমেইল ইতিমধ্যে নিচের ইউজার ব্যবহার করছেন:' : 'This email is already used by the following user:')
+                  : (bn ? 'এই নাম ইতিমধ্যে নিচের ইউজার ব্যবহার করছেন:' : 'This name is already used by the following user:')}
+              </p>
+              {conflictLoading ? (
+                <div className="flex items-center justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+              ) : conflictUser ? (
+                <div className="rounded-2xl border border-border/60 bg-muted/30 p-4 space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <UserCircle className="w-9 h-9 text-primary shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-semibold truncate">{conflictUser.full_name || '—'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{conflictUser.email || '—'}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/40">
+                    <div>
+                      <p className="text-muted-foreground">{bn ? 'রোল' : 'Role'}</p>
+                      <p className="font-medium capitalize">{conflictUser.role || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{bn ? 'মোবাইল' : 'Mobile'}</p>
+                      <p className="font-medium">{conflictUser.phone || '—'}</p>
+                    </div>
+                    {conflictUser.status && (
+                      <div className="col-span-2">
+                        <p className="text-muted-foreground">{bn ? 'স্ট্যাটাস' : 'Status'}</p>
+                        <Badge variant="outline" className="mt-0.5 capitalize">{conflictUser.status}</Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground italic">{bn ? 'বিদ্যমান ইউজারের তথ্য পাওয়া যায়নি' : 'Existing user details not available'}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {bn ? '💡 অনুগ্রহ করে ভিন্ন ' : '💡 Please use a different '}
+                {conflictType === 'email' ? (bn ? 'ইমেইল' : 'email') : (bn ? 'নাম' : 'name')}
+                {bn ? ' ব্যবহার করুন।' : '.'}
+              </p>
+              <Button onClick={() => setConflictOpen(false)} className="w-full" variant="outline">
+                {bn ? 'বুঝেছি' : 'Got it'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
