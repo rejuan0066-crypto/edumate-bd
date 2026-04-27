@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
+import { rateLimitResponse } from "../_shared/validate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -207,21 +208,12 @@ Deno.serve(async (req) => {
       const elapsed = Math.floor((nowMs - lastMs) / 1000);
       if (elapsed < COOLDOWN_SECONDS) {
         const retryAfter = COOLDOWN_SECONDS - elapsed;
-        return new Response(
-          JSON.stringify({
-            error: `Please wait ${retryAfter} seconds before requesting another code.`,
-            code: "COOLDOWN_ACTIVE",
-            retry_after_seconds: retryAfter,
-          }),
-          {
-            status: 429,
-            headers: {
-              ...corsHeaders,
-              "Content-Type": "application/json",
-              "Retry-After": String(retryAfter),
-            },
-          },
-        );
+        return rateLimitResponse({
+          code: "COOLDOWN_ACTIVE",
+          message: `Please wait ${retryAfter} seconds before requesting another code.`,
+          retryAfterSeconds: retryAfter,
+          scope: `${purpose}:${email}`,
+        });
       }
     }
 
@@ -234,17 +226,13 @@ Deno.serve(async (req) => {
       .gte("created_at", hourSince);
 
     if ((hourCount ?? 0) >= HOURLY_LIMIT) {
-      return new Response(
-        JSON.stringify({
-          error: `Too many OTP requests. Limit is ${HOURLY_LIMIT} per hour for this address. Try again later.`,
-          code: "HOURLY_LIMIT_EXCEEDED",
-          retry_after_seconds: 60 * 60,
-        }),
-        {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
-        },
-      );
+      return rateLimitResponse({
+        code: "HOURLY_LIMIT_EXCEEDED",
+        message: `Too many OTP requests. Limit is ${HOURLY_LIMIT} per hour for this address. Try again later.`,
+        retryAfterSeconds: 60 * 60,
+        limit: HOURLY_LIMIT,
+        scope: `${purpose}:${email}`,
+      });
     }
 
     const { count: dayCount } = await supabase
@@ -255,17 +243,13 @@ Deno.serve(async (req) => {
       .gte("created_at", daySince);
 
     if ((dayCount ?? 0) >= DAILY_LIMIT) {
-      return new Response(
-        JSON.stringify({
-          error: `Daily OTP limit (${DAILY_LIMIT}) reached for this address. Please contact support if you need help.`,
-          code: "DAILY_LIMIT_EXCEEDED",
-          retry_after_seconds: 24 * 60 * 60,
-        }),
-        {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "86400" },
-        },
-      );
+      return rateLimitResponse({
+        code: "DAILY_LIMIT_EXCEEDED",
+        message: `Daily OTP limit (${DAILY_LIMIT}) reached for this address. Please contact support if you need help.`,
+        retryAfterSeconds: 24 * 60 * 60,
+        limit: DAILY_LIMIT,
+        scope: `${purpose}:${email}`,
+      });
     }
 
     // Generate 6-digit code
