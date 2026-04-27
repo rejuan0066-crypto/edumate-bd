@@ -1548,6 +1548,51 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          brand_color: string | null
+          created_at: string
+          description: string | null
+          html_body: string
+          id: string
+          is_enabled: boolean
+          is_system: boolean
+          name: string
+          subject: string
+          template_key: string
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          brand_color?: string | null
+          created_at?: string
+          description?: string | null
+          html_body: string
+          id?: string
+          is_enabled?: boolean
+          is_system?: boolean
+          name: string
+          subject: string
+          template_key: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          brand_color?: string | null
+          created_at?: string
+          description?: string | null
+          html_body?: string
+          id?: string
+          is_enabled?: boolean
+          is_system?: boolean
+          name?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       emailjs_config: {
         Row: {
           created_at: string

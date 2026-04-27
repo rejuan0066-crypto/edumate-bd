@@ -432,7 +432,15 @@ const AdminSettings = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'সেটিংস' : 'Settings'}</h1>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'সেটিংস' : 'Settings'}</h1>
+          <a
+            href="/admin/email-templates"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium shadow-md hover:shadow-lg transition-all"
+          >
+            <Mail className="w-4 h-4" /> {bn ? 'ইমেইল টেমপ্লেট ম্যানেজ করুন' : 'Manage Email Templates'}
+          </a>
+        </div>
 
         <Tabs defaultValue="email" className="w-full">
           <TabsList className="w-full justify-start overflow-x-auto">

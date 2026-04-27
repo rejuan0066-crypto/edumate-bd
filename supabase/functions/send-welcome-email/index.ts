@@ -4,6 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { sendViaSMTP, welcomeEmailHtml } from "../_shared/smtp.ts";
 import { resolveSmtpProfile } from "../_shared/smtp-resolver.ts";
+import { renderEmailTemplate } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,23 +73,25 @@ Deno.serve(async (req) => {
       brandName = smtpConfig.from_name;
     }
 
-    subject = kind === 'student'
+    const fallbackHtml = welcomeEmailHtml({
+      fullName: full_name, role, email, password,
+      loginUrl: login_url, brandName,
+      kind: kind as 'user' | 'student', studentId: student_id,
+    });
+    const fallbackSubject = kind === 'student'
       ? `Welcome to ${brandName || 'our institution'} — Admission Confirmed`
       : `Welcome to ${brandName || 'our system'} — Your Account is Ready`;
 
-    const html = welcomeEmailHtml({
-      fullName: full_name,
-      role,
-      email,
-      password,
-      loginUrl: login_url,
-      brandName,
-      kind: kind as 'user' | 'student',
-      studentId: student_id,
-    });
+    const rendered = await renderEmailTemplate(supabase, "welcome", {
+      user_name: full_name || email.split("@")[0],
+      institution_name: brandName || "Subhani Madrasah",
+      login_url: login_url || "#",
+      support_email: email,
+    }, { subject: fallbackSubject, html: fallbackHtml });
 
-    await sendViaSMTP(smtpConfig as any, email, subject, html);
-    await logDelivery('sent', undefined, { role, has_password: !!password, student_id });
+    subject = rendered.subject;
+    await sendViaSMTP(smtpConfig as any, email, rendered.subject, rendered.html);
+    await logDelivery('sent', undefined, { role, has_password: !!password, student_id, used_db_template: rendered.used_db_template });
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
