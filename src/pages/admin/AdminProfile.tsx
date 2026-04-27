@@ -178,7 +178,7 @@ const AdminProfile = () => {
     setVerifyingPassword(false);
     if (signInError) { toast.error(bn ? 'পাসওয়ার্ড ভুল' : 'Incorrect password'); return; }
 
-    const result = await sendOtp(targetEmail, 'email_verification', targetEmail);
+    const result = await sendOtp(targetEmail, 'email_verification', targetEmail, 'email_change');
     if (result.success) {
       setExpiryMinutes(result.expiryMinutes || 10);
       setStep('otp');
