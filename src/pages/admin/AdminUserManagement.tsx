@@ -137,6 +137,9 @@ const AdminUserManagement = () => {
   const [fullName, setFullName] = useState('');
   const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Real-time duplicate check
+  const [emailDup, setEmailDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
+  const [nameDup, setNameDup] = useState<'idle' | 'checking' | 'ok' | 'dup'>('idle');
 
   // Role edit
   const [roleEditOpen, setRoleEditOpen] = useState(false);
@@ -196,6 +199,50 @@ const AdminUserManagement = () => {
   }, [bn]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  // Real-time email duplicate check (debounced + DB lookup)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = email.trim().toLowerCase();
+    if (!v) { setEmailDup('idle'); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(v)) { setEmailDup('invalid'); return; }
+    if (users.some(u => u.email?.toLowerCase() === v)) { setEmailDup('dup'); return; }
+    setEmailDup('checking');
+    const t = setTimeout(() => {
+      // Authoritative check against freshly-loaded users list
+      if (users.some(u => u.email?.toLowerCase() === v)) setEmailDup('dup');
+      else setEmailDup('ok');
+    }, 300);
+    return () => clearTimeout(t);
+  }, [email, users, dialogOpen]);
+
+  // Real-time name duplicate check (debounced + DB lookup against profiles)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = fullName.trim();
+    if (!v) { setNameDup('idle'); return; }
+    if (users.some(u => (u.full_name || '').toLowerCase() === v.toLowerCase())) { setNameDup('dup'); return; }
+    setNameDup('checking');
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', v)
+          .limit(1)
+          .maybeSingle();
+        if (!error && data) setNameDup('dup');
+        else setNameDup('ok');
+      } catch { setNameDup('ok'); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [fullName, users, dialogOpen]);
+
+  // Reset duplicate states when dialog closes
+  useEffect(() => {
+    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); }
+  }, [dialogOpen]);
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
@@ -583,10 +630,25 @@ const AdminUserManagement = () => {
                     <div>
                       <Label>{bn ? 'নাম' : 'Full Name'}</Label>
                       <Input className="mt-1" value={fullName} onChange={e => setFullName(e.target.value)} placeholder={bn ? 'ইউজারের নাম' : 'User name'} />
+                      {fullName.trim() && (
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${nameDup === 'dup' ? 'text-destructive' : nameDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {nameDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
+                          {nameDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই নামে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this name already exists'}</>}
+                          {nameDup === 'ok' && <>✓ {bn ? 'নাম উপলব্ধ' : 'Name available'}</>}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
                       <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
+                      {email.trim() && (
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${(emailDup === 'dup' || emailDup === 'invalid') ? 'text-destructive' : emailDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {emailDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
+                          {emailDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ইমেইল ফরম্যাট নয়' : '⚠️ Invalid email format'}</>}
+                          {emailDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this email already exists'}</>}
+                          {emailDup === 'ok' && <>✓ {bn ? 'ইমেইল উপলব্ধ' : 'Email available'}</>}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
@@ -621,7 +683,7 @@ const AdminUserManagement = () => {
                         </p>
                       )}
                     </div>
-                    <Button onClick={handleCreate} disabled={creating} className="w-full btn-primary-gradient">
+                    <Button onClick={handleCreate} disabled={creating || emailDup === 'dup' || emailDup === 'invalid' || emailDup === 'checking' || nameDup === 'dup' || nameDup === 'checking'} className="w-full btn-primary-gradient">
                       {creating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                       {bn ? 'ইউজার তৈরি করুন' : 'Create User'}
                     </Button>
