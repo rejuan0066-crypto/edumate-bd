@@ -269,7 +269,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center flex-wrap">
+            <CommitteeExclusionNotice count={committeeHiddenCount} />
             {missingIdCount > 0 && isAdminRole(role) && (
               <Button variant="outline" onClick={handleBulkGenerateIds} disabled={generatingIds} className="flex items-center gap-2">
                 {generatingIds ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
