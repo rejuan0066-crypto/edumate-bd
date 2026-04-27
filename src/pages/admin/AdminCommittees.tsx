@@ -360,6 +360,9 @@ export default function AdminCommittees() {
                         ))}
                       </div>
                     )}
+                    <div className="mt-4">
+                      <CommitteeAttachments committeeId={c.id} committeeName={c.name} />
+                    </div>
                   </div>
                 )}
               </Card>
