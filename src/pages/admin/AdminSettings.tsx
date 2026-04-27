@@ -138,6 +138,10 @@ const AdminSettings = () => {
     cooldown_seconds: 60,
     hourly_limit: 5,
     daily_limit: 15,
+    require_for_login: true,
+    require_for_password_reset: true,
+    require_for_email_change: true,
+    require_for_password_change: true,
   });
   const [otpCfgLoading, setOtpCfgLoading] = useState(true);
   const [otpCfgSaving, setOtpCfgSaving] = useState(false);
