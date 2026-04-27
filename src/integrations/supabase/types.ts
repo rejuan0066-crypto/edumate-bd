@@ -1467,14 +1467,20 @@ export type Database = {
           donation_date: string | null
           donation_type: string | null
           email: string | null
+          failed_reason: string | null
           id: string
           name_bn: string
           name_en: string | null
           notes: string | null
+          payment_status: string
           phone: string | null
           purpose: string | null
+          receipt_number: string | null
+          receipt_sent_at: string | null
           status: string | null
           updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           address?: string | null
@@ -1484,14 +1490,20 @@ export type Database = {
           donation_date?: string | null
           donation_type?: string | null
           email?: string | null
+          failed_reason?: string | null
           id?: string
           name_bn: string
           name_en?: string | null
           notes?: string | null
+          payment_status?: string
           phone?: string | null
           purpose?: string | null
+          receipt_number?: string | null
+          receipt_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           address?: string | null
@@ -1501,14 +1513,20 @@ export type Database = {
           donation_date?: string | null
           donation_type?: string | null
           email?: string | null
+          failed_reason?: string | null
           id?: string
           name_bn?: string
           name_en?: string | null
           notes?: string | null
+          payment_status?: string
           phone?: string | null
           purpose?: string | null
+          receipt_number?: string | null
+          receipt_sent_at?: string | null
           status?: string | null
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: []
       }

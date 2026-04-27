@@ -81,6 +81,9 @@ export default function AdminEmailTemplates() {
   const [saving, setSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
+  // Session-level guard: max 5 test sends per browser tab session
+  const SESSION_MAX = 5;
+  const [sessionAttempts, setSessionAttempts] = useState(0);
   const [edits, setEdits] = useState<Record<string, Partial<EmailTemplate>>>({});
 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
@@ -171,6 +174,17 @@ export default function AdminEmailTemplates() {
   const sendTest = async () => {
     if (!active || !edit) return;
     if (!testEmail || !/^\S+@\S+\.\S+$/.test(testEmail)) { toast.error("সঠিক ইমেইল দিন"); return; }
+    if (sessionAttempts >= SESSION_MAX) {
+      toast.error(`এই সেশনে সর্বোচ্চ ${SESSION_MAX}টি টেস্ট ইমেইল পাঠানো যাবে। পেজ রিলোড করুন।`);
+      return;
+    }
+    // Confirm-once gate to prevent unauthorized rapid testing
+    const confirmed = window.confirm(
+      `টেস্ট ইমেইল পাঠানো হবে: ${testEmail}\n\n` +
+      `সেশনে বাকি: ${SESSION_MAX - sessionAttempts} বার\nচালিয়ে যেতে চান?`
+    );
+    if (!confirmed) return;
+
     setSending(true);
     try {
       const sample = SAMPLE_VARS[active.template_key] || SAMPLE_VARS.welcome;
@@ -179,9 +193,20 @@ export default function AdminEmailTemplates() {
       const { data, error } = await supabase.functions.invoke("test-email-template", {
         body: { to: testEmail, subject, html, template_key: active.template_key },
       });
-      if (error) throw error;
-      if ((data as any)?.success) toast.success(`টেস্ট ইমেইল পাঠানো হয়েছে → ${testEmail}`);
-      else throw new Error((data as any)?.error || "Unknown error");
+      if (error) {
+        // Try to read structured error for rate limits
+        const ctxBody = await (error as any)?.context?.json?.().catch(() => null);
+        if (ctxBody?.error === "RATE_LIMIT_EXCEEDED") {
+          toast.error(ctxBody.message || "সার্ভার রেট-লিমিট পৌঁছে গেছে");
+          return;
+        }
+        throw error;
+      }
+      if ((data as any)?.success) {
+        setSessionAttempts((n) => n + 1);
+        const remaining = (data as any).remaining;
+        toast.success(`টেস্ট ইমেইল পাঠানো হয়েছে → ${testEmail}` + (typeof remaining === "number" ? ` (সার্ভার বাকি: ${remaining})` : ""));
+      } else throw new Error((data as any)?.error || "Unknown error");
     } catch (e: any) {
       toast.error("টেস্ট ব্যর্থ: " + (e?.message || e));
     } finally { setSending(false); }
