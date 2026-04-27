@@ -2,39 +2,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
 import { rateLimitResponse, otpErrorResponse } from "../_shared/validate.ts";
 import { sendViaSMTP } from "../_shared/smtp.ts";
 import { resolveSmtpProfile } from "../_shared/smtp-resolver.ts";
+import { renderEmailTemplate } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function generateOtpEmailHtml(code: string, expiryMinutes: number, purpose: string, fromName: string) {
-  const purposeText = purpose === "password_reset" ? "Password Reset" : "Email Verification";
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f4f4f7;font-family:Arial,sans-serif;">
-  <div style="max-width:480px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-    <div style="background:linear-gradient(135deg,#1a7f64,#2da882);padding:32px 24px;text-align:center;">
-      <h1 style="color:#ffffff;margin:0;font-size:22px;">${fromName || 'Verification'}</h1>
-      <p style="color:#d4f5e9;margin:8px 0 0;font-size:13px;">${purposeText}</p>
-    </div>
-    <div style="padding:32px 24px;text-align:center;">
-      <p style="color:#333;font-size:15px;margin:0 0 24px;">Your verification code is:</p>
-      <div style="background:#f0faf6;border:2px dashed #1a7f64;border-radius:12px;padding:20px;margin:0 auto;max-width:240px;">
-        <span style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#1a7f64;">${code}</span>
-      </div>
-      <p style="color:#666;font-size:13px;margin:24px 0 0;">This code will expire in <strong>${expiryMinutes} minutes</strong>.</p>
-      <p style="color:#999;font-size:12px;margin:16px 0 0;">If you didn't request this, please ignore this email.</p>
-    </div>
-    <div style="background:#f9fafb;padding:16px 24px;text-align:center;border-top:1px solid #eee;">
-      <p style="color:#aaa;font-size:11px;margin:0;">Sent securely • Do not share this code</p>
-    </div>
-  </div>
-</body>
-</html>`;
-}
+const FALLBACK_OTP_HTML = `<!DOCTYPE html><html><body style="font-family:Arial;background:#f4f4f7;padding:40px;"><div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;text-align:center;"><h2 style="color:#1a7f64;">Verification Code</h2><div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#1a7f64;background:#f0faf6;padding:20px;border-radius:12px;margin:20px 0;">{{otp}}</div><p>Expires in {{expiry_minutes}} minutes.</p></div></body></html>`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
