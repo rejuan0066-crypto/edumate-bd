@@ -61,6 +61,9 @@ const AdminSettings = () => {
   const [smtpSaving, setSmtpSaving] = useState(false);
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [smtpTesting, setSmtpTesting] = useState(false);
+  const [smtpTestDialog, setSmtpTestDialog] = useState(false);
+  const [smtpTestEmail, setSmtpTestEmail] = useState('');
+  const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
 
   useEffect(() => {
     loadEmailjsConfig();
@@ -161,23 +164,35 @@ const AdminSettings = () => {
   };
 
   const testSmtpConnection = async () => {
-    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.from_email) {
-      toast.error(bn ? 'সব ফিল্ড পূরণ করুন' : 'Please fill all required fields');
+    if (!smtp.smtp_host || !smtp.smtp_username || !smtp.smtp_password || !smtp.from_email) {
+      toast.error(bn ? 'প্রথমে SMTP হোস্ট, ইউজারনেম, পাসওয়ার্ড ও From ইমেইল পূরণ করুন' : 'Please fill SMTP host, username, password and from email first');
+      return;
+    }
+    setSmtpTestResult(null);
+    setSmtpTestDialog(true);
+  };
+
+  const runSmtpTest = async () => {
+    if (!smtpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpTestEmail)) {
+      toast.error(bn ? 'বৈধ টেস্ট ইমেইল দিন' : 'Enter a valid test email');
       return;
     }
     setSmtpTesting(true);
+    setSmtpTestResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('test-smtp', {
-        body: { ...smtp },
+        body: { ...smtp, test_email: smtpTestEmail },
       });
-      if (error) throw error;
-      if (data?.success) {
-        toast.success(bn ? 'SMTP সংযোগ সফল!' : 'SMTP connection successful!');
+      if (error) {
+        setSmtpTestResult({ success: false, message: error.message || 'Function call failed' });
+      } else if (data?.success) {
+        setSmtpTestResult({ success: true, message: data.message || (bn ? 'টেস্ট ইমেইল পাঠানো হয়েছে' : 'Test email sent') });
+        toast.success(bn ? `✅ টেস্ট ইমেইল পাঠানো হয়েছে: ${smtpTestEmail}` : `✅ Test email sent to ${smtpTestEmail}`);
       } else {
-        toast.error(data?.error || (bn ? 'সংযোগ ব্যর্থ' : 'Connection failed'));
+        setSmtpTestResult({ success: false, message: data?.error || (bn ? 'অজানা ত্রুটি' : 'Unknown error'), hint: data?.hint });
       }
-    } catch {
-      toast.error(bn ? 'SMTP টেস্ট ব্যর্থ' : 'SMTP test failed');
+    } catch (e: any) {
+      setSmtpTestResult({ success: false, message: e?.message || 'Network error' });
     }
     setSmtpTesting(false);
   };
@@ -647,6 +662,58 @@ const AdminSettings = () => {
             </div>
             <Button onClick={testEmailjs} disabled={emailjsTesting} className="w-full btn-primary-gradient">
               {emailjsTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              {bn ? 'টেস্ট ইমেইল পাঠান' : 'Send Test Email'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* SMTP Test Dialog */}
+      <Dialog open={smtpTestDialog} onOpenChange={(o) => { setSmtpTestDialog(o); if (!o) setSmtpTestResult(null); }}>
+        <DialogContent className="sm:max-w-md rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-primary" />
+              {bn ? 'SMTP টেস্ট ইমেইল পাঠান' : 'Send SMTP Test Email'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {bn
+                ? 'কনফিগার করা SMTP দিয়ে একটি প্রকৃত টেস্ট ইমেইল পাঠানো হবে। এটি লগইন ও পাঠানো — উভয়ই যাচাই করবে।'
+                : 'A real test email will be sent using the configured SMTP. This verifies both authentication and delivery.'}
+            </p>
+            <div>
+              <Label>{bn ? 'প্রাপকের ইমেইল' : 'Recipient Email'}</Label>
+              <Input
+                className="mt-1"
+                type="email"
+                value={smtpTestEmail}
+                onChange={(e) => setSmtpTestEmail(e.target.value)}
+                placeholder={bn ? 'আপনার ইমেইল দিন' : 'Enter your email'}
+                disabled={smtpTesting}
+              />
+            </div>
+
+            {smtpTestResult && (
+              <div className={`p-3 rounded-xl text-sm ${smtpTestResult.success ? 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/30' : 'bg-destructive/10 text-destructive border border-destructive/30'}`}>
+                <div className="flex items-start gap-2">
+                  {smtpTestResult.success
+                    ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+                  <div className="space-y-1">
+                    <p className="font-medium">{smtpTestResult.success ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}</p>
+                    <p className="text-xs break-words">{smtpTestResult.message}</p>
+                    {smtpTestResult.hint && (
+                      <p className="text-xs italic opacity-80">💡 {smtpTestResult.hint}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button onClick={runSmtpTest} disabled={smtpTesting} className="w-full btn-primary-gradient">
+              {smtpTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
               {bn ? 'টেস্ট ইমেইল পাঠান' : 'Send Test Email'}
             </Button>
           </div>
