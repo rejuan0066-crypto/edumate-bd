@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const expiryMinutes = useSmtp ? 10 : (emailjsConfig?.otp_expiry_minutes || 10);
+    const expiryMinutes = CONFIG_EXPIRY_MIN;
     const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
 
     // Invalidate old unused OTPs
