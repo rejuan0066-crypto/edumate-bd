@@ -77,17 +77,15 @@ const Login = () => {
     return () => { cancelled = true; };
   }, [pendingOtp, user, role]);
 
-  // Block render until role resolved (so OTP scope decision is correct), but
-  // when an OTP gate is active we DO NOT redirect — we render the dialog.
-  if (authLoading || (user && !pendingOtp && !hasResolvedAuthRedirectState({ role, userStatus }))) {
+  // While an OTP gate is active we render the form + dialog (no redirect).
+  // Otherwise behave as before: wait for role to resolve, then redirect.
+  const otpGateActive = pendingOtp && !otpVerified;
+
+  if (authLoading || (user && !otpGateActive && !hasResolvedAuthRedirectState({ role, userStatus }))) {
     return <PageLoader />;
   }
 
-  if (user && !pendingOtp && otpVerified === false && !sessionStorage.getItem(LOGIN_OTP_FLAG)) {
-    // Normal redirect path (no pending OTP)
-    return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
-  }
-  if (user && otpVerified) {
+  if (user && !otpGateActive) {
     return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
   }
 
