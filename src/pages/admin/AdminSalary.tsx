@@ -956,7 +956,7 @@ const AdminSalary = () => {
     if (!matchesSearch) return false;
     if (eligibilityFilter === 'all') return true;
     const rec = salaryRecords.find((r: any) => r.staff_id === s.id);
-    const requireAttendance = settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value?.enabled !== false;
+    const requireAttendance = (settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value as any)?.enabled !== false;
     const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
     const isEligible = (!requireAttendance || hasAttendance) && Number(s.salary || 0) > 0;
     if (eligibilityFilter === 'eligible') return !rec && isEligible;
