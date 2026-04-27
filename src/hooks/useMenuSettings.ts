@@ -113,6 +113,9 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   // হেলথ ও মেডিকেল
   { id: 'health-records', path: '/admin/health-records', label_bn: 'হেলথ ও মেডিকেল', label_en: 'Health & Medical', icon: 'HeartPulse', visible: true, sort_order: 5.8 },
 
+  // কমিটি ব্যবস্থাপনা
+  { id: 'committees', path: '/admin/committees', label_bn: 'কমিটি ব্যবস্থাপনা', label_en: 'Committees', icon: 'Users', visible: true, sort_order: 5.9 },
+
   // ফি সেটআপ
   { id: 'fee-setup', path: '/admin/fee-types', label_bn: 'ফি সেটআপ', label_en: 'Fee Setup', icon: 'Settings2', visible: true, sort_order: 6.5, children: [
     { id: 'fee-types', path: '/admin/fee-types', label_bn: 'ফি ধরন', label_en: 'Fee Types', icon: 'Settings', visible: true, sort_order: 0 },
