@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Users, Calendar, Phone, Mail, MapPin, Briefcase, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { toast } from "sonner";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import OtpVerificationDialog from "@/components/OtpVerificationDialog";
+import { useAdminOtpGate } from "@/hooks/useAdminOtpGate";
 
 type Committee = {
   id: string;
