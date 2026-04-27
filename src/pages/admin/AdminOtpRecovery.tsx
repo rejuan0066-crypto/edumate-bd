@@ -291,6 +291,17 @@ export default function AdminOtpRecovery() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <OtpVerificationDialog
+        open={otpGate.open}
+        onOpenChange={otpGate.setOpen}
+        email={otpGate.email}
+        purpose="email_verification"
+        onVerified={otpGate.onVerified}
+        title="Verify recovery action"
+        description="Enter the OTP sent to your admin email to authorize this OTP-recovery action."
+      />
     </div>
   );
 }
+
