@@ -28,9 +28,8 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+
 
     // Verify that an OTP was recently verified for this email + password_reset
     const { data: otpRecord } = await supabase
