@@ -679,6 +679,10 @@ const AdminSalary = () => {
           const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
           if (!hasAttendance) {
             skippedNames.push(s.name_bn || s.name_en || 'Unknown');
+            await logSalaryGeneration({
+              staff_id: s.id, staff_name: s.name_bn || s.name_en, action: 'bulk_generate', source: 'bulk',
+              success: false, reason: bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records',
+            });
             continue;
           }
         }
