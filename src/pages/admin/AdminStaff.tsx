@@ -76,7 +76,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [generatingIds, setGeneratingIds] = useState(false);
 
-  const { data: staffList = [], isLoading } = useQuery({
+  const committeeStaffIds = useCommitteeStaffIds();
+  const { data: staffListRaw = [], isLoading } = useQuery({
     queryKey: ['staff'],
     queryFn: async () => {
       const { data, error } = await supabase.from('staff').select('*').order('staff_id', { ascending: true, nullsFirst: false });
@@ -84,6 +85,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       return data;
     },
   });
+  const staffList = (staffListRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
 
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
