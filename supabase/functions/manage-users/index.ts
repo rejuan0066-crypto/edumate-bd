@@ -553,10 +553,29 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const { error: nameError } = await supabaseAdmin.from("profiles").update({ full_name }).eq("id", targetUserId);
+      const trimmedName = (full_name || '').trim();
+      if (trimmedName) {
+        const { data: dupName } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .ilike('full_name', trimmedName)
+          .neq('id', targetUserId)
+          .limit(1)
+          .maybeSingle();
+        if (dupName) {
+          return new Response(JSON.stringify({ error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      const { error: nameError } = await supabaseAdmin.from("profiles").update({ full_name: trimmedName || null }).eq("id", targetUserId);
       if (nameError) {
-        return new Response(JSON.stringify({ error: nameError.message }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        const isDup = /duplicate|unique/i.test(nameError.message);
+        const payload = isDup
+          ? { error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }
+          : { error: nameError.message };
+        return new Response(JSON.stringify(payload), {
+          status: isDup ? 409 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       // Also update auth user metadata
