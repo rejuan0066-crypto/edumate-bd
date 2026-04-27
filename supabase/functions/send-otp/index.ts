@@ -197,7 +197,8 @@ Deno.serve(async (req) => {
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (smtpError) {
-        console.error("SMTP send failed:", smtpError);
+        const errMsg = smtpError instanceof Error ? smtpError.message : String(smtpError);
+        console.error("SMTP send failed:", errMsg);
         // Fall back to EmailJS if available
         if (useEmailjs) {
           return new Response(
