@@ -732,6 +732,7 @@ export type Database = {
           phone: string | null
           photo_url: string | null
           sort_order: number
+          staff_id: string | null
           updated_at: string
         }
         Insert: {
@@ -753,6 +754,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           sort_order?: number
+          staff_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -774,6 +776,7 @@ export type Database = {
           phone?: string | null
           photo_url?: string | null
           sort_order?: number
+          staff_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -782,6 +785,13 @@ export type Database = {
             columns: ["committee_id"]
             isOneToOne: false
             referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_members_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
             referencedColumns: ["id"]
           },
         ]
@@ -6894,7 +6904,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      committee_staff_ids: {
+        Row: {
+          staff_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_members_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       generate_staff_id: {

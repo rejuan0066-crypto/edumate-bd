@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
+import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
@@ -141,8 +142,8 @@ const AdminSalary = () => {
     }
   };
 
-  // Fetch active staff
-  const { data: staff = [] } = useQuery({
+  const committeeStaffIds = useCommitteeStaffIds();
+  const { data: staffRaw = [] } = useQuery({
     queryKey: ['salary-staff'],
     queryFn: async () => {
       const { data, error } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
@@ -150,6 +151,7 @@ const AdminSalary = () => {
       return data;
     },
   });
+  const staff = (staffRaw as any[]).filter((s: any) => !committeeStaffIds.has(s.id));
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
