@@ -150,7 +150,7 @@ export default function AdminCommittees() {
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["committee-members"] });
+      qc.invalidateQueries({ queryKey: ["committee-members"] }); qc.invalidateQueries({ queryKey: ["committee-staff-ids"] }); qc.invalidateQueries({ queryKey: ["staff"] }); qc.invalidateQueries({ queryKey: ["salary-staff"] });
       setMemberDialog(false);
       setEditingMember(null);
       toast.success(bn ? "সংরক্ষিত হয়েছে" : "Saved");
@@ -175,7 +175,7 @@ export default function AdminCommittees() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["committee-members"] });
+      qc.invalidateQueries({ queryKey: ["committee-members"] }); qc.invalidateQueries({ queryKey: ["committee-staff-ids"] }); qc.invalidateQueries({ queryKey: ["staff"] }); qc.invalidateQueries({ queryKey: ["salary-staff"] });
       toast.success(bn ? "মুছে ফেলা হয়েছে" : "Deleted");
     },
   });
