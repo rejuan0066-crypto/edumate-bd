@@ -134,28 +134,50 @@ export default function AdminCommittees() {
   });
 
   const saveMember = useMutation({
-    mutationFn: async (m: Partial<Member>) => {
-      const payload = {
-        ...m,
-        joining_date: m.joining_date || null,
-        sort_order: Number(m.sort_order || 0),
-      };
+    mutationFn: async (m: Partial<Member> & { _confirmDuplicate?: boolean }) => {
+      // Duplicate-committee guard: warn if this staff is already an active member of another committee
+      if (m.staff_id && !m.id && !m._confirmDuplicate) {
+        const existing = members.filter(
+          (x) => x.staff_id === m.staff_id && x.is_active && x.committee_id !== m.committee_id
+        );
+        if (existing.length > 0) {
+          const names = existing
+            .map((x) => committees.find((c) => c.id === x.committee_id)?.name)
+            .filter(Boolean)
+            .join(", ");
+          const msg = bn
+            ? `এই স্টাফ ইতিমধ্যে এই কমিটিগুলোতে আছেন: ${names}\n\nতবুও যোগ করবেন?`
+            : `This staff is already in: ${names}\n\nAdd anyway?`;
+          if (!window.confirm(msg)) {
+            throw new Error("__cancelled__");
+          }
+        }
+      }
+      const payload: any = { ...m };
+      delete payload._confirmDuplicate;
+      payload.joining_date = m.joining_date || null;
+      payload.sort_order = Number(m.sort_order || 0);
       if (m.id) {
         const { error } = await supabase.from("committee_members").update(payload).eq("id", m.id);
         if (error) throw error;
       } else {
-        delete (payload as any).id;
-        const { error } = await supabase.from("committee_members").insert(payload as any);
+        delete payload.id;
+        const { error } = await supabase.from("committee_members").insert(payload);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["committee-members"] }); qc.invalidateQueries({ queryKey: ["committee-staff-ids"] }); qc.invalidateQueries({ queryKey: ["staff"] }); qc.invalidateQueries({ queryKey: ["salary-staff"] });
+      qc.invalidateQueries({ queryKey: ["committee-members"] });
+      qc.invalidateQueries({ queryKey: ["committee-staff-ids"] });
+      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: ["salary-staff"] });
       setMemberDialog(false);
       setEditingMember(null);
       toast.success(bn ? "সংরক্ষিত হয়েছে" : "Saved");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      if (e.message !== "__cancelled__") toast.error(e.message);
+    },
   });
 
   const removeCommittee = useMutation({
