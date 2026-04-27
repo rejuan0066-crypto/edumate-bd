@@ -151,10 +151,22 @@ const AdminEmailDeliveryLog = () => {
               </p>
             </div>
           </div>
-          <Button onClick={load} variant="outline" disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            {bn ? 'রিফ্রেশ' : 'Refresh'}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleBulkRetry}
+              variant="default"
+              disabled={bulkRetrying || loading || filtered.filter(r => r.status === 'failed').length === 0}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {bulkRetrying ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCw className="w-4 h-4 mr-2" />}
+              {bn ? 'ব্যর্থগুলো পুনরায় পাঠান' : 'Retry failed'}
+              {` (${filtered.filter(r => r.status === 'failed').length})`}
+            </Button>
+            <Button onClick={load} variant="outline" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              {bn ? 'রিফ্রেশ' : 'Refresh'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
