@@ -238,6 +238,25 @@ const Login = () => {
       </div>
 
       <ForgotPasswordDialog open={forgotOpen} onOpenChange={setForgotOpen} />
+
+      {otpEmail && (
+        <OtpVerificationDialog
+          open={otpOpen}
+          onOpenChange={handleOtpDialogChange}
+          email={otpEmail}
+          purpose="email_verification"
+          scope="login"
+          role={otpRole}
+          recipientName={user?.user_metadata?.full_name || otpEmail}
+          onVerified={handleOtpVerified}
+          title={language === 'bn' ? 'লগইন যাচাইকরণ (2FA)' : 'Login Verification (2FA)'}
+          description={
+            language === 'bn'
+              ? `নিরাপত্তার জন্য ${otpEmail} এ পাঠানো ৬-ডিজিটের কোডটি দিন।`
+              : `For your security, enter the 6-digit code sent to ${otpEmail}.`
+          }
+        />
+      )}
     </div>
   );
 };
