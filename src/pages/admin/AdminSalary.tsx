@@ -949,10 +949,21 @@ const AdminSalary = () => {
     },
   });
 
-  // Filter staff
+  // Filter staff (search + eligibility/status filter)
   const filtered = staff.filter((s: any) => {
     const q = searchQuery.toLowerCase();
-    return (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
+    const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+    if (eligibilityFilter === 'all') return true;
+    const rec = salaryRecords.find((r: any) => r.staff_id === s.id);
+    const requireAttendance = settings.find((st: any) => st.setting_key === 'require_attendance')?.setting_value?.enabled !== false;
+    const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
+    const isEligible = (!requireAttendance || hasAttendance) && Number(s.salary || 0) > 0;
+    if (eligibilityFilter === 'eligible') return !rec && isEligible;
+    if (eligibilityFilter === 'not_generated') return !rec;
+    if (eligibilityFilter === 'pending') return rec && rec.status === 'pending';
+    if (eligibilityFilter === 'paid') return rec && rec.status === 'paid';
+    return true;
   });
 
   // Get record for a staff
