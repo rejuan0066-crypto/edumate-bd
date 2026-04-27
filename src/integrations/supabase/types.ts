@@ -4103,6 +4103,30 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_verify_attempts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          purpose: string
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          purpose: string
+          success?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          purpose?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
       parent_accounts: {
         Row: {
           approved_at: string | null
