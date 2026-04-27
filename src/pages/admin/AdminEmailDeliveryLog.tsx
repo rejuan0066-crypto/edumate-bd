@@ -94,6 +94,8 @@ const AdminEmailDeliveryLog = () => {
     });
     load();
   };
+
+  const load = async () => {
     setLoading(true);
     const { data } = await supabase
       .from('email_delivery_log')
