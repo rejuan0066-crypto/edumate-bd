@@ -65,6 +65,45 @@ const AdminSettings = () => {
   const [smtpTestEmail, setSmtpTestEmail] = useState('');
   const [smtpTestResult, setSmtpTestResult] = useState<{ success: boolean; message: string; hint?: string } | null>(null);
 
+  // OTP test (live end-to-end via send-otp)
+  const [otpTestDialog, setOtpTestDialog] = useState(false);
+  const [otpTestEmail, setOtpTestEmail] = useState('');
+  const [otpTesting, setOtpTesting] = useState(false);
+  const [otpTestResult, setOtpTestResult] = useState<{ success: boolean; method?: string; message: string } | null>(null);
+
+  const runOtpTest = async () => {
+    if (!otpTestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(otpTestEmail)) {
+      toast.error(bn ? 'সঠিক ইমেইল দিন' : 'Enter a valid email');
+      return;
+    }
+    setOtpTesting(true);
+    setOtpTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-otp', {
+        body: { email: otpTestEmail, purpose: 'email_verification' },
+      });
+      if (error) throw new Error(error.message || 'Edge function error');
+      if (data?.error) throw new Error(data.error);
+      const method = data?.method || 'unknown';
+      setOtpTestResult({
+        success: true,
+        method,
+        message: bn
+          ? `OTP পাঠানো হয়েছে — পথ: ${method.toUpperCase()}। ইনবক্স/স্প্যাম দেখুন।`
+          : `OTP sent — path: ${method.toUpperCase()}. Check inbox/spam.`,
+      });
+      toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${method})` : `✅ OTP sent via ${method}`);
+    } catch (e: any) {
+      setOtpTestResult({
+        success: false,
+        message: e?.message || (bn ? 'OTP পাঠানো ব্যর্থ' : 'Failed to send OTP'),
+      });
+      toast.error(bn ? 'OTP টেস্ট ব্যর্থ' : 'OTP test failed');
+    } finally {
+      setOtpTesting(false);
+    }
+  };
+
   useEffect(() => {
     loadEmailjsConfig();
     loadSmtpConfig();
