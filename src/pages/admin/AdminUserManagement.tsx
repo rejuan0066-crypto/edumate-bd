@@ -1375,7 +1375,7 @@ const AdminUserManagement = () => {
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন' : 'Confirm New Password'}</Label>
                         <div className="relative">
-                          <Input type={profileShowPw ? 'text' : 'password'} value={profileConfirmPassword} onChange={e => setProfileConfirmPassword(e.target.value)} placeholder={bn ? 'নতুন পাসওয়ার্ড পুনরায় দিন' : 'Re-enter new password'} className="pr-10" />
+                          <Input type={profileShowPw ? 'text' : 'password'} value={profileConfirmPassword} onChange={e => setProfileConfirmPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'নতুন পাসওয়ার্ড পুনরায় দিন' : 'Re-enter new password'} className="pr-10" />
                           <button type="button" onClick={() => setProfileShowPw(!profileShowPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             {profileShowPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
