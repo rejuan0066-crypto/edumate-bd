@@ -454,16 +454,67 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
             {salaryHistory.length > 0 && (
               <div className="pt-2">
                 <h4 className="text-sm font-semibold mb-2">{bn ? 'বেতন পরিবর্তনের ইতিহাস' : 'Salary Change History'}</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {salaryHistory.map((h: any) => (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {salaryHistory.map((h: any) => editingSalaryId === h.id ? (
+                    <div key={h.id} className="rounded-[16px] bg-card border p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">{bn ? 'পূর্বের বেতন' : 'Old Salary'}</Label>
+                          <Input type="number" className="mt-1 h-8 text-xs" value={editSalary.old_salary ?? ''} onChange={e => setEditSalary({ ...editSalary, old_salary: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'নতুন বেতন' : 'New Salary'}</Label>
+                          <Input type="number" className="mt-1 h-8 text-xs" value={editSalary.new_salary ?? ''} onChange={e => setEditSalary({ ...editSalary, new_salary: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'ধরন' : 'Type'}</Label>
+                          <Select value={editSalary.change_type || 'increase'} onValueChange={(v) => setEditSalary({ ...editSalary, change_type: v })}>
+                            <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="increase">{bn ? 'বৃদ্ধি' : 'Increase'}</SelectItem>
+                              <SelectItem value="decrease">{bn ? 'হ্রাস' : 'Decrease'}</SelectItem>
+                              <SelectItem value="adjustment">{bn ? 'সমন্বয়' : 'Adjustment'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
+                          <Input type="date" className="mt-1 h-8 text-xs" value={editSalary.effective_date || ''} onChange={e => setEditSalary({ ...editSalary, effective_date: e.target.value })} />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">{bn ? 'স্মারক নং' : 'Letter No'}</Label>
+                          <Input className="mt-1 h-8 text-xs" value={editSalary.letter_number || ''} onChange={e => setEditSalary({ ...editSalary, letter_number: e.target.value })} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{bn ? 'কারণ' : 'Reason'}</Label>
+                        <Textarea rows={2} className="mt-1 text-xs" value={editSalary.reason || ''} onChange={e => setEditSalary({ ...editSalary, reason: e.target.value })} />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="outline" onClick={() => setEditingSalaryId(null)}><X className="w-3 h-3 mr-1" />{bn ? 'বাতিল' : 'Cancel'}</Button>
+                        <Button size="sm" onClick={() => updateSalaryMutation.mutate()} disabled={updateSalaryMutation.isPending}>
+                          {updateSalaryMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                          {bn ? 'সংরক্ষণ' : 'Save'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <div key={h.id} className="rounded-[16px] bg-card border p-2 text-xs flex items-center gap-2">
                       <span className="text-muted-foreground">{format(new Date(h.effective_date), 'dd/MM/yyyy')}</span>
                       <span>৳ {Number(h.old_salary || 0).toLocaleString()}</span>
                       <ArrowRight className="w-3 h-3 text-primary shrink-0" />
                       <span className="font-semibold text-primary">৳ {Number(h.new_salary).toLocaleString()}</span>
-                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${h.change_type === 'increase' ? 'bg-success/10 text-success' : h.change_type === 'decrease' ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${h.change_type === 'increase' ? 'bg-success/10 text-success' : h.change_type === 'decrease' ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
                         {h.change_type === 'increase' ? (bn ? 'বৃদ্ধি' : 'Increase') : h.change_type === 'decrease' ? (bn ? 'হ্রাস' : 'Decrease') : (bn ? 'সমন্বয়' : 'Adjust')}
                       </span>
+                      <div className="ml-auto flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintSalary(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
+                          <Printer className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingSalaryId(h.id); setEditSalary({ ...h }); }} title={bn ? 'এডিট' : 'Edit'}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
