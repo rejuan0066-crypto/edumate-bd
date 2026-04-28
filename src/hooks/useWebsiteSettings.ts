@@ -260,6 +260,7 @@ export interface WebsiteSettings {
   global_footer_spacing_top: number;    // mm — padding above footer on prints/PDFs
   global_footer_spacing_bottom: number; // mm — bottom margin from page edge
   global_footer_font_size: number;      // pt — footer text size on prints
+  signatory_edit_super_admin_only: boolean; // when true, only super_admin can edit principal/accountant/verifier
 }
 
 const DEFAULT_SETTINGS: WebsiteSettings = {
@@ -386,6 +387,7 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   global_footer_spacing_top: 8,
   global_footer_spacing_bottom: 6,
   global_footer_font_size: 10,
+  signatory_edit_super_admin_only: false,
 };
 
 const parseSettingsData = (data: any[] | null): WebsiteSettings => {

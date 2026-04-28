@@ -19,6 +19,8 @@ import { Json } from '@/integrations/supabase/types';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
+import { useAuth } from '@/hooks/useAuth';
+import { Lock } from 'lucide-react';
 
 const AVAILABLE_PAGES = [
   { path: '/', label_bn: 'হোম', label_en: 'Home' },
@@ -45,9 +47,15 @@ const AdminWebsite = () => {
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
   const { canEditItem } = usePagePermissions('/admin/website');
   const { menuConfig, saveMenuConfig } = useMenuSettings();
+  const { role } = useAuth();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<WebsiteSettings | null>(null);
   const [publicMenu, setPublicMenu] = useState<MenuItemConfig[]>([]);
   const [saving, setSaving] = useState(false);
+  const isSuperAdmin = role === 'super_admin';
+  const signatoryLocked = !!(settings?.signatory_edit_super_admin_only);
+  // Admins can edit only when not locked; super_admin always can.
+  const canEditSignatories = isSuperAdmin || !signatoryLocked;
 
   useEffect(() => {
     if (settings && !form) {
@@ -264,6 +272,12 @@ const AdminWebsite = () => {
   // AND website_settings (legacy fallback) so every printable doc & edge function picks them up.
   const saveSignatories = async () => {
     if (!form) return;
+    if (!canEditSignatories) {
+      toast.error(language === 'bn'
+        ? 'আপনার এই তথ্য সম্পাদনার অনুমতি নেই। সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।'
+        : 'You do not have permission to edit signatories. Contact the Super Admin.');
+      return;
+    }
     setSaving(true);
     try {
       const principal = (form.principal_name || '').trim();
@@ -296,10 +310,40 @@ const AdminWebsite = () => {
         { key: 'verifier_name', value: verifier as Json },
       ]);
 
-      toast.success(language === 'bn' ? 'অনুমোদনকারী/স্বাক্ষরকারীর তথ্য সংরক্ষিত!' : 'Signatories saved!');
+      // 3) Force every consumer (certificates, marksheets, ID cards, salary sheets,
+      //    receipts, edge-driven PDFs) to pick up the new names *immediately*.
+      await queryClient.invalidateQueries({ queryKey: ['website-settings'] });
+      await queryClient.refetchQueries({ queryKey: ['website-settings'] });
+      await queryClient.invalidateQueries({ queryKey: ['institutions'] });
+      // Broadcast for any non-React-Query consumer (print preview iframes, open windows)
+      window.dispatchEvent(new CustomEvent('institution-info-updated', {
+        detail: { principal_name: principal, accountant_name: accountant, verifier_name: verifier },
+      }));
+
+      toast.success(language === 'bn'
+        ? 'সংরক্ষিত! পরবর্তী সার্টিফিকেট/মার্কশিট/আইডি কার্ডে নতুন নাম দেখাবে।'
+        : 'Saved! New names will show on the next certificate / marksheet / ID card.');
     } catch (err) {
       console.error(err);
       toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Save failed');
+    }
+    setSaving(false);
+  };
+
+  // Super-admin-only: toggle whether regular admins can edit signatory fields.
+  const toggleSignatoryLock = async (locked: boolean) => {
+    if (!isSuperAdmin) return;
+    setSaving(true);
+    try {
+      await updateMultiple.mutateAsync([
+        { key: 'signatory_edit_super_admin_only', value: locked as unknown as Json },
+      ]);
+      await queryClient.invalidateQueries({ queryKey: ['website-settings'] });
+      toast.success(locked
+        ? (language === 'bn' ? 'এখন থেকে শুধু সুপার অ্যাডমিন স্বাক্ষরকারী সম্পাদনা করতে পারবে' : 'Locked: only Super Admin can edit signatories')
+        : (language === 'bn' ? 'অ্যাডমিনদেরও সম্পাদনার অনুমতি দেওয়া হলো' : 'Unlocked: Admins can edit signatories'));
+    } catch {
+      toast.error(language === 'bn' ? 'পরিবর্তন ব্যর্থ' : 'Update failed');
     }
     setSaving(false);
   };
@@ -455,35 +499,66 @@ const AdminWebsite = () => {
 
               <hr className="my-4 border-border" />
 
-              <h4 className="text-sm font-semibold text-foreground mb-1">
-                {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
-              </h4>
+              <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
+                  {signatoryLocked && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
+                      <Lock className="w-3 h-3" />
+                      {language === 'bn' ? 'সুপার অ্যাডমিন কেবল' : 'Super Admin only'}
+                    </span>
+                  )}
+                </h4>
+                {isSuperAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sig-lock" className="text-xs text-muted-foreground">
+                      {language === 'bn' ? 'সম্পাদনা সীমাবদ্ধ করুন (শুধু সুপার অ্যাডমিন)' : 'Restrict editing (Super Admin only)'}
+                    </Label>
+                    <Switch
+                      id="sig-lock"
+                      checked={signatoryLocked}
+                      onCheckedChange={toggleSignatoryLock}
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mb-3">
                 {language === 'bn'
-                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে।'
-                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures.'}
+                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে। সংরক্ষণের পর পরবর্তী জেনারেট করা ডকুমেন্টে নতুন নাম দেখাবে।'
+                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures. New names take effect on the next generated document.'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
-                  <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+              {!canEditSignatories && (
+                <div className="text-xs rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-2 mb-3 flex items-center gap-2">
+                  <Lock className="w-3 h-3" />
+                  {language === 'bn'
+                    ? 'এই অংশটি লক করা — শুধু সুপার অ্যাডমিন সম্পাদনা করতে পারবেন।'
+                    : 'This section is locked — only a Super Admin can edit it.'}
                 </div>
-                <div>
-                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
-                  <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+              )}
+              <fieldset disabled={!canEditSignatories} className={!canEditSignatories ? 'opacity-60' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
+                    <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
+                    <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
+                  </div>
                 </div>
-                <div>
-                  <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
-                  <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
-                </div>
-                <div>
-                  <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
-                  <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
-                </div>
-              </div>
-              <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving}>
-                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'স্বাক্ষরকারী সংরক্ষণ' : 'Save Signatories'}
-              </Button>
+                <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving || !canEditSignatories}>
+                  <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ ও প্রিভিউ রিফ্রেশ' : 'Save & Refresh Preview'}
+                </Button>
+              </fieldset>
 
               <hr className="my-4 border-border" />
 
