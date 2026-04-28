@@ -106,30 +106,38 @@ Deno.serve(async (req) => {
     const staffIdTxt = staff.staff_id || '-';
     const currentDesig = staff.designation || '';
 
+    const esc = (s: any) => String(s ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string));
+    const richText = (s: string) => esc(s).replace(/\n/g, '<br/>');
+
     let bodyHtml = '';
     if (isPromotion) {
+      const defaultIntroBn = `আপনাকে অবগত করা যাইতেছে যে, প্রতিষ্ঠানের পরিচালনা কর্তৃপক্ষের সিদ্ধান্ত মোতাবেক <strong>${fmtDate(effective_date)}</strong> তারিখ হইতে আপনার পদবি নিম্নরূপে পরিবর্তন করা হইল —`;
+      const defaultIntroEn = `We are pleased to inform you that, as per the decision of the management, your designation has been revised with effect from <strong>${fmtDate(effective_date)}</strong> as follows —`;
+      const defaultClosingBn = `আশা করা যায়, আপনি নতুন দায়িত্বে দক্ষতা ও আন্তরিকতার সহিত কর্ম সম্পাদন করিয়া প্রতিষ্ঠানের সুনাম বৃদ্ধিতে ভূমিকা রাখিবেন। প্রতিষ্ঠানের সকল নিয়ম-কানুন যথাযথভাবে মানিয়া চলিতে অনুরোধ করা হইল।\n\nআপনার নতুন দায়িত্বের জন্য শুভকামনা রহিল।`;
+      const defaultClosingEn = `We expect you to discharge your new responsibilities with dedication and integrity, and uphold the institution's values and policies.\n\nBest wishes for your new role.`;
+      const introHtml = intro_text ? richText(intro_text) : (bn ? defaultIntroBn : defaultIntroEn);
+      const closingHtml = closing_text ? richText(closing_text) : (bn ? defaultClosingBn : defaultClosingEn);
+
       bodyHtml = bn ? `
         <p>প্রিয় <strong>${staffName}</strong> (আইডি: ${staffIdTxt}),</p>
-        <p>আপনাকে অবগত করা যাইতেছে যে, প্রতিষ্ঠানের পরিচালনা কর্তৃপক্ষের সিদ্ধান্ত মোতাবেক <strong>${fmtDate(effective_date)}</strong> তারিখ হইতে আপনার পদবি নিম্নরূপে পরিবর্তন করা হইল —</p>
+        <p>${introHtml}</p>
         <table class="info">
           <tr><th>পূর্বের পদবি</th><td>${old_designation || currentDesig || '—'}</td></tr>
           <tr><th>নতুন পদবি</th><td><strong>${new_designation || '—'}</strong></td></tr>
           <tr><th>কার্যকর তারিখ</th><td>${fmtDate(effective_date)}</td></tr>
-          ${reason ? `<tr><th>কারণ / মন্তব্য</th><td>${reason}</td></tr>` : ''}
+          ${reason ? `<tr><th>কারণ / মন্তব্য</th><td>${esc(reason)}</td></tr>` : ''}
         </table>
-        <p>আশা করা যায়, আপনি নতুন দায়িত্বে দক্ষতা ও আন্তরিকতার সহিত কর্ম সম্পাদন করিয়া প্রতিষ্ঠানের সুনাম বৃদ্ধিতে ভূমিকা রাখিবেন। প্রতিষ্ঠানের সকল নিয়ম-কানুন যথাযথভাবে মানিয়া চলিতে অনুরোধ করা হইল।</p>
-        <p>আপনার নতুন দায়িত্বের জন্য শুভকামনা রহিল।</p>
+        <p>${closingHtml}</p>
       ` : `
         <p>Dear <strong>${staffName}</strong> (ID: ${staffIdTxt}),</p>
-        <p>We are pleased to inform you that, as per the decision of the management, your designation has been revised with effect from <strong>${fmtDate(effective_date)}</strong> as follows —</p>
+        <p>${introHtml}</p>
         <table class="info">
           <tr><th>Previous Designation</th><td>${old_designation || currentDesig || '—'}</td></tr>
           <tr><th>New Designation</th><td><strong>${new_designation || '—'}</strong></td></tr>
           <tr><th>Effective Date</th><td>${fmtDate(effective_date)}</td></tr>
-          ${reason ? `<tr><th>Reason / Remarks</th><td>${reason}</td></tr>` : ''}
+          ${reason ? `<tr><th>Reason / Remarks</th><td>${esc(reason)}</td></tr>` : ''}
         </table>
-        <p>We expect you to discharge your new responsibilities with dedication and integrity, and uphold the institution's values and policies.</p>
-        <p>Best wishes for your new role.</p>
+        <p>${closingHtml}</p>
       `;
     } else {
       const isInc = change_type === 'increase';
@@ -139,28 +147,36 @@ Deno.serve(async (req) => {
         : (isInc ? 'Increase' : isDec ? 'Decrease' : 'Adjustment');
       const diff = Number(new_salary || 0) - Number(old_salary || 0);
       const diffAbs = Math.abs(diff);
+
+      const defaultIntroBn = `প্রতিষ্ঠানের পরিচালনা কর্তৃপক্ষের সিদ্ধান্ত মোতাবেক <strong>${fmtDate(effective_date)}</strong> তারিখ হইতে আপনার মাসিক বেতন <strong>${changeLabel}</strong> করিয়া নিম্নরূপ নির্ধারণ করা হইল —`;
+      const defaultIntroEn = `As per the decision of the management, your monthly salary has been <strong>${changeLabel.toLowerCase()}d</strong> with effect from <strong>${fmtDate(effective_date)}</strong> as follows —`;
+      const defaultClosingBn = `উক্ত সিদ্ধান্ত অনুযায়ী পরবর্তী মাস হইতে আপনার বেতন নতুন হারে প্রদান করা হইবে। প্রতিষ্ঠানের সকল নিয়ম-কানুন যথাযথভাবে মানিয়া চলিতে অনুরোধ করা হইল।`;
+      const defaultClosingEn = `The revised salary will be effective from the next pay cycle. Please continue to abide by all institutional policies.`;
+      const introHtml = intro_text ? richText(intro_text) : (bn ? defaultIntroBn : defaultIntroEn);
+      const closingHtml = closing_text ? richText(closing_text) : (bn ? defaultClosingBn : defaultClosingEn);
+
       bodyHtml = bn ? `
         <p>প্রিয় <strong>${staffName}</strong> (আইডি: ${staffIdTxt}, পদবি: ${currentDesig || '—'}),</p>
-        <p>প্রতিষ্ঠানের পরিচালনা কর্তৃপক্ষের সিদ্ধান্ত মোতাবেক <strong>${fmtDate(effective_date)}</strong> তারিখ হইতে আপনার মাসিক বেতন <strong>${changeLabel}</strong> করিয়া নিম্নরূপ নির্ধারণ করা হইল —</p>
+        <p>${introHtml}</p>
         <table class="info">
           <tr><th>পূর্বের বেতন</th><td>৳ ${fmtNum(Number(old_salary || 0))}</td></tr>
           <tr><th>নতুন বেতন</th><td><strong>৳ ${fmtNum(Number(new_salary || 0))}</strong></td></tr>
           <tr><th>${isDec ? 'হ্রাসকৃত পরিমাণ' : 'বৃদ্ধির পরিমাণ'}</th><td>৳ ${fmtNum(diffAbs)}</td></tr>
           <tr><th>কার্যকর তারিখ</th><td>${fmtDate(effective_date)}</td></tr>
-          ${reason ? `<tr><th>কারণ / মন্তব্য</th><td>${reason}</td></tr>` : ''}
+          ${reason ? `<tr><th>কারণ / মন্তব্য</th><td>${esc(reason)}</td></tr>` : ''}
         </table>
-        <p>উক্ত সিদ্ধান্ত অনুযায়ী পরবর্তী মাস হইতে আপনার বেতন নতুন হারে প্রদান করা হইবে। প্রতিষ্ঠানের সকল নিয়ম-কানুন যথাযথভাবে মানিয়া চলিতে অনুরোধ করা হইল।</p>
+        <p>${closingHtml}</p>
       ` : `
         <p>Dear <strong>${staffName}</strong> (ID: ${staffIdTxt}, Designation: ${currentDesig || '—'}),</p>
-        <p>As per the decision of the management, your monthly salary has been <strong>${changeLabel.toLowerCase()}d</strong> with effect from <strong>${fmtDate(effective_date)}</strong> as follows —</p>
+        <p>${introHtml}</p>
         <table class="info">
           <tr><th>Previous Salary</th><td>BDT ${fmtNum(Number(old_salary || 0))}</td></tr>
           <tr><th>Revised Salary</th><td><strong>BDT ${fmtNum(Number(new_salary || 0))}</strong></td></tr>
           <tr><th>${isDec ? 'Reduction Amount' : 'Increment Amount'}</th><td>BDT ${fmtNum(diffAbs)}</td></tr>
           <tr><th>Effective Date</th><td>${fmtDate(effective_date)}</td></tr>
-          ${reason ? `<tr><th>Reason / Remarks</th><td>${reason}</td></tr>` : ''}
+          ${reason ? `<tr><th>Reason / Remarks</th><td>${esc(reason)}</td></tr>` : ''}
         </table>
-        <p>The revised salary will be effective from the next pay cycle. Please continue to abide by all institutional policies.</p>
+        <p>${closingHtml}</p>
       `;
     }
 
