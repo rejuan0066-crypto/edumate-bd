@@ -67,16 +67,20 @@ export const useOtpService = () => {
   ): Promise<SendOtpResult> => {
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email, purpose, scope },
+      const { status, data, networkError } = await callEdgeFunction('send-otp', {
+        email, purpose, scope,
       });
 
-      // Handle non-2xx (rate limit, validation, etc.) — read structured envelope
-      if (error) {
-        const body = await readErrorBody(error);
-        const retry = Number(body?.retry_after_seconds) || undefined;
-        const message = body?.message || body?.error || 'Failed to send code';
-        const code = body?.code as string | undefined;
+      if (networkError) {
+        toast.error('Failed to send verification email');
+        return { success: false };
+      }
+
+      // Non-2xx — structured error envelope from the edge function
+      if (status < 200 || status >= 300) {
+        const retry = Number(data?.retry_after_seconds) || undefined;
+        const message = data?.message || data?.error || 'Failed to send code';
+        const code = data?.code as string | undefined;
         if (code !== 'COOLDOWN_ACTIVE') {
           toast.error(message);
         }
@@ -110,20 +114,6 @@ export const useOtpService = () => {
       );
 
       return { success: true, expiryMinutes: expiry_minutes };
-    } catch (err: any) {
-      console.error('OTP send error:', err);
-      const body = await readErrorBody(err);
-      if (body) {
-        const retry = Number(body.retry_after_seconds) || undefined;
-        return {
-          success: false,
-          errorCode: body.code,
-          message: body.message || body.error,
-          retryAfterSeconds: retry,
-        };
-      }
-      toast.error('Failed to send verification email');
-      return { success: false };
     } finally {
       setSending(false);
     }
@@ -136,19 +126,22 @@ export const useOtpService = () => {
   ): Promise<VerifyOtpResult> => {
     setVerifying(true);
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email, code, purpose },
+      const { status, data, networkError } = await callEdgeFunction('verify-otp', {
+        email, code, purpose,
       });
 
-      if (error) {
-        const body = await readErrorBody(error);
+      if (networkError) {
+        return { valid: false, error: 'Verification failed' };
+      }
+
+      if (status < 200 || status >= 300) {
         return {
           valid: false,
-          error: body?.message || body?.error || 'Verification failed',
-          errorCode: body?.code,
-          retryAfterSeconds: Number(body?.retry_after_seconds) || undefined,
-          attemptsRemaining: typeof body?.attempts_remaining === 'number'
-            ? body.attempts_remaining : undefined,
+          error: data?.message || data?.error || 'Verification failed',
+          errorCode: data?.code,
+          retryAfterSeconds: Number(data?.retry_after_seconds) || undefined,
+          attemptsRemaining: typeof data?.attempts_remaining === 'number'
+            ? data.attempts_remaining : undefined,
         };
       }
 
@@ -157,14 +150,6 @@ export const useOtpService = () => {
         error: data?.error || data?.message,
         errorCode: data?.code,
       };
-    } catch (err: any) {
-      const body = await readErrorBody(err);
-      return {
-        valid: false,
-        error: body?.message || body?.error || 'Verification failed',
-        errorCode: body?.code,
-        retryAfterSeconds: Number(body?.retry_after_seconds) || undefined,
-      };
     } finally {
       setVerifying(false);
     }
@@ -172,6 +157,3 @@ export const useOtpService = () => {
 
   return { sendOtp, verifyOtp, sending, verifying };
 };
-
-// Suppress unused warning for kept-for-future helper.
-void extractErrorBody;
