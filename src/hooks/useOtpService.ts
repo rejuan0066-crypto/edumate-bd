@@ -22,31 +22,37 @@ export interface VerifyOtpResult {
   attemptsRemaining?: number;
 }
 
-/** Extract the standardized error envelope from a Supabase functions.invoke error. */
-function extractErrorBody(err: any): Record<string, any> | null {
-  // supabase-js wraps non-2xx responses in FunctionsHttpError with a context.response
-  const ctx = err?.context;
-  if (ctx && typeof ctx.json === 'function') {
-    // can't await synchronously; caller handles via the typed helper below
-    return null;
-  }
-  return null;
-}
+const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-async function readErrorBody(err: any): Promise<Record<string, any> | null> {
+/**
+ * Direct fetch to an edge function — bypasses supabase-js's `functions.invoke`,
+ * which logs every non-2xx response to console.error (caught by the runtime
+ * error tracker as a "blank screen" runtime error even when handled).
+ * Returns parsed JSON body and the HTTP status. Never throws on 4xx/5xx.
+ */
+async function callEdgeFunction(
+  name: string,
+  body: Record<string, unknown>,
+): Promise<{ status: number; data: any | null; networkError?: unknown }> {
   try {
-    const ctx = err?.context;
-    if (ctx && typeof ctx.json === 'function') {
-      return await ctx.json();
-    }
-    if (ctx && typeof ctx.text === 'function') {
-      const t = await ctx.text();
-      try { return JSON.parse(t); } catch { return null; }
-    }
-  } catch {
-    // ignore
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token || ANON_KEY;
+    const res = await fetch(`${FUNCTIONS_BASE}/${name}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    let data: any = null;
+    try { data = await res.json(); } catch { /* non-JSON */ }
+    return { status: res.status, data };
+  } catch (networkError) {
+    return { status: 0, data: null, networkError };
   }
-  return null;
 }
 
 export const useOtpService = () => {
