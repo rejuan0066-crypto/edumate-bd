@@ -283,6 +283,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   principal_message_bn: '',
   principal_message_en: '',
   principal_photo_url: '',
+  accountant_name: '',
+  verifier_name: '',
   admin_name: '',
   admin_title_bn: '',
   admin_title_en: '',
