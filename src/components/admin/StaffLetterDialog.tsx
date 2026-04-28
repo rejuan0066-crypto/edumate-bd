@@ -377,6 +377,21 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
               <Label>{bn ? 'কারণ / মন্তব্য' : 'Reason / Remarks'}</Label>
               <Textarea value={pReason} onChange={e => setPReason(e.target.value)} rows={2} className="mt-1" />
             </div>
+            <details className="rounded-[16px] border bg-secondary/20 p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                {bn ? '✏️ পত্রের টেক্সট কাস্টমাইজ করুন (ঐচ্ছিক)' : '✏️ Customize Letter Text (optional)'}
+              </summary>
+              <div className="mt-3 space-y-2">
+                <div>
+                  <Label className="text-xs">{bn ? 'শুরুর অনুচ্ছেদ (খালি রাখলে ডিফল্ট ব্যবহার হবে)' : 'Opening paragraph (leave blank for default)'}</Label>
+                  <Textarea value={pIntroText} onChange={e => setPIntroText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'আপনাকে অবগত করা যাইতেছে যে...' : 'We are pleased to inform you...'} />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'শেষের অনুচ্ছেদ' : 'Closing paragraph'}</Label>
+                  <Textarea value={pClosingText} onChange={e => setPClosingText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'আশা করা যায়, আপনি নতুন দায়িত্বে...' : 'We expect you to discharge...'} />
+                </div>
+              </div>
+            </details>
 
             <Button onClick={() => promotionMutation.mutate()} disabled={promotionMutation.isPending} className="w-full btn-primary-gradient">
               {promotionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
