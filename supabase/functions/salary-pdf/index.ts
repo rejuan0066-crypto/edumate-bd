@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const instPhone = (institution as any)?.phone || "";
     const instEmail = (institution as any)?.email || "";
     const instLogo = (institution as any)?.logo_url || "";
-    // Fetch principal/accountant/verifier from website_settings (key-value)
+    // Names: priority is institutions table (প্রতিষ্ঠানের তথ্য সম্পাদনা) → website_settings → fallback
     const { data: wsRows } = await supabase
       .from("website_settings")
       .select("key,value")
@@ -67,13 +67,14 @@ Deno.serve(async (req) => {
       ]);
     const ws: Record<string, string> = {};
     (wsRows || []).forEach((r: any) => { ws[r.key] = r.value || ""; });
-    const pickName = (bnKey: string, enKey: string, fallback: string) =>
-      (bn ? (ws[bnKey] || ws[enKey]) : (ws[enKey] || ws[bnKey])) ||
-      (institution as any)?.[bnKey] || fallback;
+    const inst: any = institution || {};
+    const pickName = (key: string, fallback: string) =>
+      (inst[key] && String(inst[key]).trim()) ||
+      ws[key] || ws[`${key}_en`] || fallback;
 
-    const principalName = pickName("principal_name", "principal_name_en", bn ? "প্রিন্সিপাল" : "Principal");
-    const accountantName = pickName("accountant_name", "accountant_name_en", "");
-    const verifierName = pickName("verifier_name", "verifier_name_en", "");
+    const principalName = pickName("principal_name", bn ? "প্রিন্সিপাল" : "Principal");
+    const accountantName = pickName("accountant_name", "");
+    const verifierName = pickName("verifier_name", "");
 
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
