@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { monthYear, monthLabel, year, language, staff, totals,
       prepared_by, prepared_by_role, verified_by, verified_by_role,
-      approved_by, approved_by_role } = body;
+      approved_by, approved_by_role, paid_by, paid_by_role } = body;
 
     if (!staff || !Array.isArray(staff)) {
       return new Response(JSON.stringify({ error: "Invalid data" }), { status: 400, headers: corsHeaders });
