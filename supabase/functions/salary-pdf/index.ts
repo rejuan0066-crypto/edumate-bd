@@ -488,21 +488,21 @@ Deno.serve(async (req) => {
     <div class="signatures">
       <div class="sig">
         <div class="sig-line"></div>
-        <div class="sig-name">${accountantName || "&nbsp;"}</div>
+        <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
         <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-        <div class="role-meta">${bn ? "(কোষাধক্য)" : "(Accountant)"}</div>
+        <div class="role-meta">${(prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধক্য)" : "(Accountant)")}</div>
       </div>
       <div class="sig">
         <div class="sig-line"></div>
-        <div class="sig-name">${verifierName || "&nbsp;"}</div>
+        <div class="sig-name">${(verified_by && String(verified_by).trim()) || verifierName || "&nbsp;"}</div>
         <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-        <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
+        <div class="role-meta">${(verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)")}</div>
       </div>
       <div class="sig">
         <div class="sig-line"></div>
-        <div class="sig-name">${principalName || "&nbsp;"}</div>
+        <div class="sig-name">${(approved_by && String(approved_by).trim()) || principalName || "&nbsp;"}</div>
         <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-        <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
+        <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
       </div>
     </div>
 
