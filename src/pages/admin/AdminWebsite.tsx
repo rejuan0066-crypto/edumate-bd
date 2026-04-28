@@ -499,35 +499,66 @@ const AdminWebsite = () => {
 
               <hr className="my-4 border-border" />
 
-              <h4 className="text-sm font-semibold text-foreground mb-1">
-                {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
-              </h4>
+              <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
+                  {signatoryLocked && (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/30">
+                      <Lock className="w-3 h-3" />
+                      {language === 'bn' ? 'সুপার অ্যাডমিন কেবল' : 'Super Admin only'}
+                    </span>
+                  )}
+                </h4>
+                {isSuperAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="sig-lock" className="text-xs text-muted-foreground">
+                      {language === 'bn' ? 'সম্পাদনা সীমাবদ্ধ করুন (শুধু সুপার অ্যাডমিন)' : 'Restrict editing (Super Admin only)'}
+                    </Label>
+                    <Switch
+                      id="sig-lock"
+                      checked={signatoryLocked}
+                      onCheckedChange={toggleSignatoryLock}
+                      disabled={saving}
+                    />
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mb-3">
                 {language === 'bn'
-                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে।'
-                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures.'}
+                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে। সংরক্ষণের পর পরবর্তী জেনারেট করা ডকুমেন্টে নতুন নাম দেখাবে।'
+                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures. New names take effect on the next generated document.'}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
-                  <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+              {!canEditSignatories && (
+                <div className="text-xs rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 px-3 py-2 mb-3 flex items-center gap-2">
+                  <Lock className="w-3 h-3" />
+                  {language === 'bn'
+                    ? 'এই অংশটি লক করা — শুধু সুপার অ্যাডমিন সম্পাদনা করতে পারবেন।'
+                    : 'This section is locked — only a Super Admin can edit it.'}
                 </div>
-                <div>
-                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
-                  <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+              )}
+              <fieldset disabled={!canEditSignatories} className={!canEditSignatories ? 'opacity-60' : ''}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
+                    <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
+                    <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
+                  </div>
+                  <div>
+                    <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
+                    <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
+                  </div>
                 </div>
-                <div>
-                  <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
-                  <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
-                </div>
-                <div>
-                  <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
-                  <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
-                </div>
-              </div>
-              <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving}>
-                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'স্বাক্ষরকারী সংরক্ষণ' : 'Save Signatories'}
-              </Button>
+                <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving || !canEditSignatories}>
+                  <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'সংরক্ষণ ও প্রিভিউ রিফ্রেশ' : 'Save & Refresh Preview'}
+                </Button>
+              </fieldset>
 
               <hr className="my-4 border-border" />
 
