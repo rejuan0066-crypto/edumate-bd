@@ -191,6 +191,8 @@ export interface WebsiteSettings {
   principal_message_bn: string;
   principal_message_en: string;
   principal_photo_url: string;
+  accountant_name: string;
+  verifier_name: string;
   admin_name: string;
   admin_title_bn: string;
   admin_title_en: string;
@@ -281,6 +283,8 @@ const DEFAULT_SETTINGS: WebsiteSettings = {
   principal_message_bn: '',
   principal_message_en: '',
   principal_photo_url: '',
+  accountant_name: '',
+  verifier_name: '',
   admin_name: '',
   admin_title_bn: '',
   admin_title_en: '',
@@ -436,10 +440,27 @@ export const useWebsiteSettings = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['website-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('website_settings')
-        .select('key, value');
-      
+      const [{ data, error }, { data: instData }] = await Promise.all([
+        supabase.from('website_settings').select('key, value'),
+        supabase.from('institutions')
+          .select('principal_name, accountant_name, verifier_name, name, name_en, address, address_en, phone, email, logo_url')
+          .eq('is_default', true).maybeSingle(),
+      ]);
+
+      const applyInstitutionOverrides = (parsed: WebsiteSettings): WebsiteSettings => {
+        if (!instData) return parsed;
+        const pick = (instVal: any, current: any) => {
+          const v = instVal != null ? String(instVal).trim() : '';
+          return v ? v : current;
+        };
+        return {
+          ...parsed,
+          principal_name: pick((instData as any).principal_name, parsed.principal_name),
+          accountant_name: pick((instData as any).accountant_name, (parsed as any).accountant_name),
+          verifier_name: pick((instData as any).verifier_name, (parsed as any).verifier_name),
+        } as WebsiteSettings;
+      };
+
       if (error) {
         console.warn('Website settings fetch error:', error.message);
         if (error.message?.includes('JWT') || error.code === 'PGRST301' || error.code === '401') {
@@ -447,16 +468,17 @@ export const useWebsiteSettings = () => {
             .from('website_settings')
             .select('key, value');
           if (retryError) {
-            return readCache();
+            const cached = readCache();
+            return cached ? applyInstitutionOverrides(cached) : cached;
           }
-          const parsed = parseSettingsData(retryData);
+          const parsed = applyInstitutionOverrides(parseSettingsData(retryData));
           writeCache(parsed);
           return parsed;
         }
         throw error;
       }
-      
-      const parsed = parseSettingsData(data);
+
+      const parsed = applyInstitutionOverrides(parseSettingsData(data));
       writeCache(parsed);
       return parsed;
     },
