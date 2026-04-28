@@ -208,6 +208,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         effective_date: sEffectiveDate,
         reason: sReason,
         letter_number: sLetterNo,
+        intro_text: sIntroText || undefined,
+        closing_text: sClosingText || undefined,
       });
       const { data: { user } } = await supabase.auth.getUser();
       const { error: histErr } = await supabase.from('staff_salary_changes').insert({
