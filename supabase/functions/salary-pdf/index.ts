@@ -102,231 +102,406 @@ Deno.serve(async (req) => {
 <html><head><meta charset="utf-8">
 <title>${bn ? "বেতন বিবরণী" : "Salary Statement"} — ${monthLabel} ${year}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Times+New+Roman&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
   *,*::before,*::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  html, body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body {
-    font-family: 'Noto Serif Bengali', 'Times New Roman', Times, serif;
-    background: #ffffff;
-    color: #000000;
-    padding: 24px;
+    font-family: 'Noto Serif Bengali', 'Inter', 'Times New Roman', serif;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 28px 20px;
     line-height: 1.45;
     font-size: 12px;
   }
   .sheet {
-    max-width: 1180px;
+    max-width: 1200px;
     margin: 0 auto;
     background: #ffffff;
-    border: 1.5px solid #000000;
-    padding: 22px 30px 18px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -25px rgba(15, 23, 42, .25), 0 0 0 1px rgba(15, 23, 42, .05);
     position: relative;
-  }
-  /* Inner double-rule frame */
-  .sheet::before {
-    content: "";
-    position: absolute;
-    top: 5px; left: 5px; right: 5px; bottom: 5px;
-    border: 0.5px solid #000000;
-    pointer-events: none;
   }
 
-  /* ===== Letterhead ===== */
+  /* Subtle diagonal watermark */
+  .sheet::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      135deg,
+      transparent 0,
+      transparent 80px,
+      rgba(13, 148, 136, .015) 80px,
+      rgba(13, 148, 136, .015) 160px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== Premium Letterhead ===== */
   .letterhead {
-    text-align: center;
-    padding: 4px 0 14px;
-    border-bottom: 1px solid #000;
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 45%, #047857 100%);
+    color: #ffffff;
+    padding: 22px 32px 18px;
     position: relative;
+    overflow: hidden;
+  }
+  .letterhead::before {
+    content: "";
+    position: absolute;
+    right: -100px; top: -100px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 65%);
+    border-radius: 50%;
+  }
+  .letterhead::after {
+    content: "";
+    position: absolute;
+    left: -80px; bottom: -120px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(16,185,129,.25) 0%, transparent 65%);
+    border-radius: 50%;
   }
   .letterhead-row {
     display: flex; align-items: center; justify-content: center;
-    gap: 18px; margin-bottom: 4px;
+    gap: 22px;
+    position: relative; z-index: 1;
   }
   .logo-wrap {
-    width: 70px; height: 70px;
-    border: 1px solid #000;
+    width: 86px; height: 86px;
+    background: rgba(255,255,255,.96);
+    border: 3px solid rgba(255,255,255,.5);
+    border-radius: 16px;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
-    background: #fff;
+    box-shadow: 0 8px 24px -6px rgba(0,0,0,.35);
   }
-  .logo-img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
-  .logo-fallback { font-size: 32px; font-weight: 700; color: #000; font-family: 'Noto Serif Bengali', serif; }
-  .inst-block { text-align: center; }
+  .logo-img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+  .logo-fallback {
+    font-size: 38px; font-weight: 800;
+    color: #047857;
+    font-family: 'Noto Serif Bengali', serif;
+  }
+  .inst-block { text-align: center; max-width: 720px; }
   .inst-name {
-    font-family: 'Noto Serif Bengali', 'Times New Roman', serif;
-    font-size: 24px; font-weight: 700;
-    color: #000; line-height: 1.2;
+    font-family: 'Noto Serif Bengali', serif;
+    font-size: 26px; font-weight: 800;
+    color: #ffffff;
+    line-height: 1.18;
     letter-spacing: .3px;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,.18);
   }
   .inst-meta {
-    font-size: 11px; color: #000;
-    line-height: 1.45;
+    font-size: 11.5px;
+    color: rgba(255,255,255,.92);
+    line-height: 1.55;
+    font-weight: 500;
   }
-  .inst-meta span { margin: 0 6px; }
-  .estd { font-size: 10px; color: #000; margin-top: 2px; font-style: italic; }
+  .inst-meta span { margin: 0 7px; }
+  .inst-meta .sep { opacity: .5; }
 
-  /* Document title — official statement caption */
-  .doc-title {
-    text-align: center;
-    margin: 14px 0 4px;
+  /* Document title bar */
+  .doc-title-bar {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid #047857;
+    padding: 14px 32px 12px;
     position: relative;
+    z-index: 1;
+  }
+  .doc-title-bar::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #047857 30%, #047857 70%, transparent 100%);
+  }
+  .doc-title-inner {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 20px; flex-wrap: wrap;
   }
   .doc-title h2 {
-    display: inline-block;
     font-family: 'Noto Serif Bengali', serif;
-    font-size: 16px; font-weight: 700;
-    color: #000;
-    padding: 4px 18px;
-    border: 1px solid #000;
-    letter-spacing: .5px;
-    background: #fff;
+    font-size: 18px; font-weight: 800;
+    color: #064e3b;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 22px;
+    background: #ffffff;
+    border: 2px solid #047857;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(4,120,87,.12);
   }
-  .doc-meta-row {
-    display: flex; justify-content: space-between;
-    margin: 10px 2px 0;
-    font-size: 11px; color: #000;
+  .doc-meta {
+    display: flex; gap: 14px; align-items: center;
+    flex-wrap: wrap;
+    font-size: 11px; color: #334155;
   }
-  .doc-meta-row .left, .doc-meta-row .right {
-    display: flex; gap: 16px;
+  .doc-meta .chip {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    padding: 5px 11px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
   }
-  .doc-meta-row strong { font-weight: 700; }
+  .doc-meta .chip strong {
+    color: #047857;
+    font-weight: 700;
+    margin-right: 5px;
+  }
 
   /* ===== Body ===== */
-  .body { padding: 14px 0 4px; }
+  .body {
+    padding: 22px 32px 18px;
+    position: relative;
+    z-index: 1;
+  }
 
-  /* ===== Summary (clean inline grid) ===== */
+  /* ===== Premium summary cards ===== */
   .summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    border: 1px solid #000;
-    margin-bottom: 14px;
+    gap: 14px;
+    margin-bottom: 18px;
   }
   .s-card {
-    padding: 10px 14px;
-    border-right: 1px solid #000;
-    text-align: center;
+    padding: 14px 18px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
   }
-  .s-card:last-child { border-right: none; }
+  .s-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: #94a3b8;
+  }
+  .s-card.base::before { background: linear-gradient(180deg, #3b82f6, #1d4ed8); }
+  .s-card.ded::before { background: linear-gradient(180deg, #f59e0b, #b45309); }
+  .s-card.net {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #10b981;
+  }
+  .s-card.net::before { background: linear-gradient(180deg, #10b981, #047857); }
   .s-card .lbl {
-    font-size: 11px; font-weight: 600;
-    color: #000; margin-bottom: 4px;
-    letter-spacing: .2px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 6px;
   }
+  .s-card.net .lbl { color: #065f46; }
   .s-card .val {
-    font-family: 'Noto Sans Bengali', 'Times New Roman', serif;
-    font-size: 18px; font-weight: 700;
-    color: #000; font-variant-numeric: tabular-nums;
+    font-family: 'Noto Sans Bengali', 'Inter', serif;
+    font-size: 22px; font-weight: 800;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.3px;
   }
-  .s-card.net { background: #f4f4f4; }
-  .s-card.net .val { font-size: 19px; }
+  .s-card.net .val { color: #064e3b; font-size: 24px; }
 
-  /* ===== Table — official ledger style ===== */
+  /* ===== Premium table ===== */
+  .table-wrap {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 1px 3px rgba(15,23,42,.05);
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
-    border: 1px solid #000;
+    font-size: 11.5px;
+    background: #ffffff;
   }
   thead th {
-    background: #e8e8e8;
-    color: #000;
+    background: linear-gradient(180deg, #064e3b 0%, #047857 100%);
+    color: #ffffff;
     font-weight: 700;
-    padding: 8px 6px;
+    padding: 11px 8px;
     text-align: left;
     font-size: 11px;
-    border: 1px solid #000;
+    letter-spacing: .4px;
+    border-right: 1px solid rgba(255,255,255,.12);
     font-family: 'Noto Serif Bengali', serif;
+    text-transform: uppercase;
   }
+  thead th:last-child { border-right: none; }
   thead th.center { text-align: center; }
   thead th.right { text-align: right; }
   tbody td {
-    padding: 7px 6px;
-    border: 1px solid #000;
+    padding: 10px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #f1f5f9;
     vertical-align: middle;
-    color: #000;
+    color: #1e293b;
   }
-  .c-num { text-align: center; width: 32px; font-variant-numeric: tabular-nums; }
-  .c-name .nm { font-weight: 700; color: #000; }
+  tbody td:last-child { border-right: none; }
+  tbody tr:nth-child(even) td { background: #f8fafc; }
+  tbody tr:hover td { background: #f0fdf4; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .c-num {
+    text-align: center;
+    width: 38px;
+    font-weight: 700;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-name .nm {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 12px;
+  }
   .c-name .sid {
-    font-size: 9.5px; color: #333;
-    margin-top: 1px; font-family: 'Times New Roman', serif;
-    letter-spacing: .2px;
+    font-size: 9.5px;
+    color: #64748b;
+    margin-top: 2px;
+    font-family: 'Inter', monospace;
+    letter-spacing: .3px;
+    font-weight: 500;
   }
-  .c-desig { color: #000; }
+  .c-desig { color: #334155; font-weight: 500; }
   .c-amt {
     text-align: right;
     font-variant-numeric: tabular-nums;
-    color: #000;
+    color: #0f172a;
+    font-weight: 500;
   }
-  .c-net { font-weight: 700; }
-  .c-pal { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .c-status { text-align: center; font-size: 10.5px; }
+  .c-net {
+    font-weight: 800;
+    color: #047857;
+    font-size: 12.5px;
+  }
+  .c-pal {
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    font-family: 'Inter', sans-serif;
+    color: #475569;
+    font-weight: 600;
+  }
+  .c-pal .pal-p { color: #059669; }
+  .c-pal .pal-a { color: #dc2626; }
+  .c-pal .pal-l { color: #d97706; }
+  .c-pal .pal-sep { color: #cbd5e1; margin: 0 3px; }
 
   /* Totals row */
   .totals td {
-    background: #d8d8d8;
-    font-weight: 700;
-    font-size: 12px;
-    padding: 9px 6px;
-    border: 1px solid #000;
-    color: #000;
+    background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    font-weight: 800;
+    font-size: 12.5px;
+    padding: 12px 8px;
+    border-top: 2px solid #047857;
+    color: #064e3b;
   }
   .totals .c-amt { text-align: right; }
-  .totals .c-net { font-size: 13px; }
+  .totals .c-net { font-size: 14px; color: #064e3b; }
+  .totals td:first-child {
+    text-align: center;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    font-family: 'Noto Serif Bengali', serif;
+  }
 
   /* ===== Note + Signatures ===== */
   .note {
-    margin: 12px 0 0;
-    padding: 8px 12px;
-    font-size: 10.5px;
-    color: #000;
-    border: 1px solid #000;
-    background: #fafafa;
+    margin: 16px 0 0;
+    padding: 11px 16px;
+    font-size: 11px;
+    color: #1e293b;
+    border-left: 4px solid #047857;
+    background: linear-gradient(90deg, #ecfdf5 0%, #f8fafc 100%);
+    border-radius: 6px;
+    line-height: 1.55;
   }
-  .note strong { font-weight: 700; }
+  .note strong { font-weight: 700; color: #064e3b; }
 
   .signatures {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 30px;
-    margin: 60px 4px 8px;
+    gap: 36px;
+    margin: 60px 8px 16px;
   }
-  .sig { text-align: center; font-size: 11px; color: #000; }
+  .sig {
+    text-align: center;
+    font-size: 11px;
+    color: #475569;
+  }
   .sig .sig-name {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    color: #000;
-    min-height: 18px;
-    padding: 0 6px 4px;
+    color: #0f172a;
+    min-height: 20px;
+    padding: 0 6px 6px;
+    font-family: 'Noto Serif Bengali', serif;
   }
   .sig .line {
-    border-top: 1px solid #000;
-    padding-top: 6px;
+    border-top: 1.5px solid #0f172a;
+    padding-top: 8px;
     margin-top: 0;
+    position: relative;
   }
-  .sig .role { font-weight: 700; color: #000; font-size: 12px; }
-
-  /* ===== Footer (official seal line) ===== */
-  .footer {
-    margin-top: 18px;
-    padding: 8px 0 4px;
-    border-top: 1px solid #000;
-    text-align: center;
-    font-size: 10px;
-    color: #000;
-    font-style: italic;
+  .sig .line::before {
+    content: "";
+    position: absolute;
+    top: -3px; left: 50%;
+    transform: translateX(-50%);
+    width: 6px; height: 6px;
+    background: #047857;
+    border-radius: 50%;
   }
-  .footer .ref {
-    margin-top: 3px;
-    font-style: normal;
-    font-family: 'Times New Roman', serif;
-    font-size: 9.5px;
+  .sig .role {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 11.5px;
     letter-spacing: .3px;
   }
+  .sig .role-meta {
+    font-size: 9.5px;
+    color: #64748b;
+    margin-top: 2px;
+    font-style: italic;
+    font-weight: 500;
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    margin-top: 22px;
+    padding: 12px 32px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 10.5px;
+    color: #475569;
+    position: relative;
+    z-index: 1;
+  }
+  .footer .copy { font-weight: 600; color: #334155; }
+  .footer .ref {
+    margin-top: 4px;
+    font-family: 'Inter', monospace;
+    font-size: 9.5px;
+    letter-spacing: .3px;
+    color: #64748b;
+  }
+  .footer .ref strong { color: #047857; }
 
   @media print {
-    body { padding: 0; }
-    .sheet { border: 1.5px solid #000; max-width: 100%; }
-    @page { size: A4 landscape; margin: 10mm; }
+    body { padding: 0; background: #fff; }
+    .sheet {
+      box-shadow: none;
+      border-radius: 0;
+      max-width: 100%;
+      border: none;
+    }
+    tbody tr:hover td { background: inherit; }
+    @page { size: A4 landscape; margin: 8mm; }
   }
 </style>
 </head><body>
@@ -340,23 +515,24 @@ Deno.serve(async (req) => {
           ${instAddress ? `<span>${instAddress}</span>` : ""}
         </div>
         <div class="inst-meta">
-          ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
-          ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
+          ${instPhone ? `<span>${bn ? "📞" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
+          ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
+          ${instEmail ? `<span>${bn ? "✉" : "E-mail"}: ${instEmail}</span>` : ""}
         </div>
       </div>
     </div>
   </div>
 
-  <div class="doc-title">
-    <h2>${bn ? "বেতন বিবরণী" : "SALARY STATEMENT"}</h2>
-    <div class="doc-meta-row">
-      <div class="left">
-        <span><strong>${bn ? "মাস:" : "Period:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</span>
-        <span><strong>${bn ? "মোট কর্মী:" : "Total Staff:"}</strong> ${bn ? toBnDigits(staff.length) : staff.length}</span>
+  <div class="doc-title-bar">
+    <div class="doc-title-inner">
+      <div class="doc-title">
+        <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
       </div>
-      <div class="right">
-        <span><strong>${bn ? "স্মারক নং:" : "Memo No.:"}</strong> ${sheetId}</span>
-        <span><strong>${bn ? "ইস্যু তারিখ:" : "Issue Date:"}</strong> ${issueDate}</span>
+      <div class="doc-meta">
+        <span class="chip"><strong>${bn ? "মাস:" : "Period:"}</strong>${monthLabel} ${bn ? toBnDigits(year) : year}</span>
+        <span class="chip"><strong>${bn ? "মোট কর্মী:" : "Staff:"}</strong>${bn ? toBnDigits(staff.length) : staff.length}</span>
+        <span class="chip"><strong>${bn ? "স্মারক:" : "Memo:"}</strong>${sheetId}</span>
+        <span class="chip"><strong>${bn ? "তারিখ:" : "Date:"}</strong>${issueDate}</span>
       </div>
     </div>
   </div>
@@ -372,41 +548,55 @@ Deno.serve(async (req) => {
         <div class="val">৳ ${fmtNum(Number(totals?.deductions || 0))}</div>
       </div>
       <div class="s-card net">
-        <div class="lbl">${bn ? "মোট নিট বেতন (প্রদেয়)" : "Total Net Payable"}</div>
+        <div class="lbl">${bn ? "নিট প্রদেয় বেতন" : "Total Net Payable"}</div>
         <div class="val">৳ ${fmtNum(Number(totals?.net || 0))}</div>
       </div>
     </div>
 
-    <table>
-      <thead>
-        <tr>
-          <th class="center" style="width:32px">${bn ? "ক্রঃ" : "SL"}</th>
-          <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
-          <th>${bn ? "পদবি" : "Designation"}</th>
-          <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-          <th class="center">${bn ? "উপ/অনু/বি" : "P / A / L"}</th>
-          <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
-          <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
-          <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
-          <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${staffRows}
-        <tr class="totals">
-          <td colspan="3" style="text-align:center">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
-          <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
-          <td></td>
-          <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
-          <td></td>
-          <td></td>
-          <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="center" style="width:38px">${bn ? "ক্রঃ" : "SL"}</th>
+            <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
+            <th>${bn ? "পদবি" : "Designation"}</th>
+            <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
+            <th class="center">${bn ? "উপ / অনু / বি" : "P / A / L"}</th>
+            <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
+            <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
+            <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
+            <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${staff.map((s: any, i: number) => `
+            <tr>
+              <td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>
+              <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
+              <td class="c-desig">${s.designation}</td>
+              <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
+              <td class="c-pal"><span class="pal-p">${bn ? toBnDigits(s.present) : s.present}</span><span class="pal-sep">/</span><span class="pal-a">${bn ? toBnDigits(s.absent) : s.absent}</span><span class="pal-sep">/</span><span class="pal-l">${bn ? toBnDigits(s.late) : s.late}</span></td>
+              <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
+              <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
+              <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
+              <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
+            </tr>
+          `).join("")}
+          <tr class="totals">
+            <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
+            <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
+            <td></td>
+            <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
+            <td></td>
+            <td></td>
+            <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="note">
-      <strong>${bn ? "নোট:" : "Note:"}</strong>
+      <strong>${bn ? "নোটঃ" : "Note:"}</strong>
       ${bn
         ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। হিসাবরক্ষক কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
         : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
@@ -414,29 +604,32 @@ Deno.serve(async (req) => {
 
     <div class="signatures">
       <div class="sig">
-        <div class="sig-name">${accountantName || ""}</div>
+        <div class="sig-name">${accountantName || "&nbsp;"}</div>
         <div class="line">
-          <div class="role">${bn ? "প্রস্তুতকারী (হিসাবরক্ষক)" : "Prepared by (Accountant)"}</div>
+          <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+          <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
         </div>
       </div>
       <div class="sig">
-        <div class="sig-name">${verifierName || ""}</div>
+        <div class="sig-name">${verifierName || "&nbsp;"}</div>
         <div class="line">
           <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+          <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
         </div>
       </div>
       <div class="sig">
-        <div class="sig-name">${principalName || ""}</div>
+        <div class="sig-name">${principalName || "&nbsp;"}</div>
         <div class="line">
-          <div class="role">${bn ? "অনুমোদনকারী (প্রিন্সিপাল)" : "Approved by (Principal)"}</div>
+          <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+          <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
         </div>
       </div>
     </div>
   </div>
 
   <div class="footer">
-    <div>${bn ? `© ${instName} — সমস্ত অধিকার সংরক্ষিত।` : `© ${instName} — All rights reserved.`}</div>
-    <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ তারিখ:" : "Printed on:"} ${issueDate}</div>
+    <div class="copy">${bn ? `© ${instName} — সমস্ত অধিকার সংরক্ষিত।` : `© ${instName} — All rights reserved.`}</div>
+    <div class="ref">${bn ? "স্মারক নং:" : "Ref:"} <strong>${sheetId}</strong> &nbsp;•&nbsp; ${bn ? "মুদ্রণ তারিখ:" : "Printed on:"} ${issueDate}</div>
   </div>
 </div>
 
