@@ -395,6 +395,8 @@ Deno.serve(async (req) => {
         <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
         <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
         <td></td>
+        <td></td>
+        <td></td>
         <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
         <td></td>
         <td></td>
