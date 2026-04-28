@@ -77,6 +77,12 @@ Deno.serve(async (req) => {
     const instPhone = pick("phone", "phone", "");
     const instEmail = pick("email", "email", "");
     const instLogo = pick("logo_url", "logo_url", "");
+    const instEstablished = bn
+      ? pick("established_year", "established_year", "")
+      : (pick("established_year_en", "established_year_en", "") || pick("established_year", "established_year", ""));
+    const instRegNo = bn
+      ? pick("registration_number", "registration_number", "")
+      : (pick("registration_number_en", "registration_number_en", "") || pick("registration_number", "registration_number", ""));
 
     const principalName = pick("principal_name", "principal_name", bn ? "প্রিন্সিপাল" : "Principal");
     const accountantName = pick("accountant_name", "accountant_name", "");
@@ -371,6 +377,12 @@ Deno.serve(async (req) => {
         ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
         ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
       </div>
+      ${(instEstablished || instRegNo) ? `
+      <div class="inst-contact">
+        ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${bn ? toBnDigits(instEstablished) : instEstablished}</span>` : ""}
+        ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
+        ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${bn ? toBnDigits(instRegNo) : instRegNo}</span>` : ""}
+      </div>` : ""}
     </div>
 
     <div class="doc-title">
