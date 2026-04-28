@@ -73,10 +73,20 @@ const OtpVerificationDialog = ({
   const verifyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resendApiRef = useRef<{ startCooldown: (s: number) => void } | null>(null);
+  // Guard against double-fire of the initial send (StrictMode / re-renders).
+  const initialSendStartedRef = useRef(false);
+
+  // Reset the guard whenever the dialog closes so a future open re-sends.
+  useEffect(() => {
+    if (!open) {
+      initialSendStartedRef.current = false;
+    }
+  }, [open]);
 
   // Initial send when dialog opens — but first check if OTP is required for this scope
   useEffect(() => {
-    if (open && !otpSent) {
+    if (open && !otpSent && !initialSendStartedRef.current) {
+      initialSendStartedRef.current = true;
       void (async () => {
         // Honour admin per-flow OTP toggle. If disabled for this scope, skip the
         // entire OTP exchange and call onVerified() so the calling flow proceeds.
