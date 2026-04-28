@@ -248,15 +248,15 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     { value: 'other', bn: 'অন্যান্য', en: 'Other' },
   ];
 
-  // Load designations from DB filtered by staff_category
+  // Load all active designations (no category filter so user can pick any title)
   const { data: dbDesignations = [] } = useQuery({
-    queryKey: ['designations-for-form', staffCategory],
+    queryKey: ['designations-for-form-all'],
     queryFn: async () => {
-      let query = supabase.from('designations').select('*').eq('is_active', true).order('sort_order');
-      if (staffCategory !== 'all') {
-        query = query.eq('staff_category', staffCategory);
-      }
-      const { data, error } = await query;
+      const { data, error } = await supabase
+        .from('designations')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
       if (error) throw error;
       return data;
     },
