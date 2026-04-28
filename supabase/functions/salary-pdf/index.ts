@@ -366,7 +366,9 @@ Deno.serve(async (req) => {
         <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
         <th>${bn ? "পদবি" : "Designation"}</th>
         <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center">${bn ? "উপ/অনু/বি" : "P/A/L"}</th>
+        <th class="center" style="width:30pt">${bn ? "উপ" : "P"}</th>
+        <th class="center" style="width:30pt">${bn ? "অনু" : "A"}</th>
+        <th class="center" style="width:30pt">${bn ? "বি" : "L"}</th>
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
         <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
