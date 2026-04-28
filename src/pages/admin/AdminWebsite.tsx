@@ -19,6 +19,8 @@ import { Json } from '@/integrations/supabase/types';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
+import { useAuth } from '@/hooks/useAuth';
+import { Lock } from 'lucide-react';
 
 const AVAILABLE_PAGES = [
   { path: '/', label_bn: 'হোম', label_en: 'Home' },
@@ -45,9 +47,15 @@ const AdminWebsite = () => {
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
   const { canEditItem } = usePagePermissions('/admin/website');
   const { menuConfig, saveMenuConfig } = useMenuSettings();
+  const { role } = useAuth();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<WebsiteSettings | null>(null);
   const [publicMenu, setPublicMenu] = useState<MenuItemConfig[]>([]);
   const [saving, setSaving] = useState(false);
+  const isSuperAdmin = role === 'super_admin';
+  const signatoryLocked = !!(settings?.signatory_edit_super_admin_only);
+  // Admins can edit only when not locked; super_admin always can.
+  const canEditSignatories = isSuperAdmin || !signatoryLocked;
 
   useEffect(() => {
     if (settings && !form) {
