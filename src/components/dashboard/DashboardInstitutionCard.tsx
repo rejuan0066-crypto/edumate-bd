@@ -114,7 +114,10 @@ const DashboardInstitutionCard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['institution-default'] });
+      queryClient.invalidateQueries({ queryKey: ['institution-info'] });
+      queryClient.invalidateQueries({ queryKey: ['institution-info-merged'] });
       queryClient.invalidateQueries({ queryKey: ['website-settings'] });
+      window.dispatchEvent(new CustomEvent('institution-info-updated'));
       setEditing(false);
       toast.success(language === 'bn' ? 'তথ্য সংরক্ষিত' : 'Info saved');
     },
