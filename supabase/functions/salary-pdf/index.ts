@@ -277,6 +277,15 @@ Deno.serve(async (req) => {
   }
   .note strong { font-weight: 700; }
 
+  /* ===== Page Header (repeats on every printed page) ===== */
+  .page-header {
+    position: fixed;
+    top: 3mm;
+    left: 5mm;
+    right: 5mm;
+    background: #fff;
+    z-index: 10;
+  }
   /* ===== Page Footer (repeats on every printed page) ===== */
   .page-footer {
     position: fixed;
@@ -284,6 +293,7 @@ Deno.serve(async (req) => {
     right: 5mm;
     bottom: 3mm;
     background: #fff;
+    z-index: 10;
   }
   .signatures {
     display: grid;
