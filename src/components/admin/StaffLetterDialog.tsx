@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface StaffLetterDialogProps {
@@ -89,7 +89,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     enabled: open && !!staff?.id,
   });
 
-  const generateLetter = async (payload: any) => {
+  const generateLetter = async (payload: any): Promise<string | null> => {
     const { data: { session } } = await supabase.auth.getSession();
     const url = `https://wwhunyzobtuibhvkipwk.supabase.co/functions/v1/staff-letter-pdf`;
     const res = await fetch(url, {
@@ -102,12 +102,34 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     });
     if (!res.ok) throw new Error('Letter generation failed');
     const html = await res.text();
+
+    // 1) Open in new window for print
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
       setTimeout(() => win.print(), 500);
     }
+
+    // 2) Upload HTML to storage so it persists as a file
+    let publicUrl: string | null = null;
+    try {
+      const safeId = (staff.staff_id || staff.id || 'staff').toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const ts = Date.now();
+      const path = `${safeId}/${payload.type}-${ts}.html`;
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+      const { error: upErr } = await supabase.storage.from('staff-letters').upload(path, blob, {
+        contentType: 'text/html; charset=utf-8',
+        upsert: false,
+      });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('staff-letters').getPublicUrl(path);
+        publicUrl = urlData.publicUrl;
+      }
+    } catch (e) {
+      console.warn('Letter file upload failed:', e);
+    }
+    return publicUrl;
   };
 
   const promotionMutation = useMutation({
@@ -119,20 +141,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         .update({ designation: newDesignation })
         .eq('id', staff.id);
       if (updErr) throw updErr;
-      // 2) insert history
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: histErr } = await supabase.from('staff_promotions').insert({
-        staff_id: staff.id,
-        old_designation: oldDesig,
-        new_designation: newDesignation,
-        effective_date: pEffectiveDate,
-        reason: pReason || null,
-        letter_number: pLetterNo || null,
-        created_by: user?.id,
-      });
-      if (histErr) throw histErr;
-      // 3) generate letter
-      await generateLetter({
+      // 2) generate + upload letter (gets file URL)
+      const fileUrl = await generateLetter({
         type: 'promotion',
         language: bn ? 'bn' : 'en',
         staff: {
@@ -146,6 +156,19 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         reason: pReason,
         letter_number: pLetterNo,
       });
+      // 3) insert history with file URL
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: histErr } = await supabase.from('staff_promotions').insert({
+        staff_id: staff.id,
+        old_designation: oldDesig,
+        new_designation: newDesignation,
+        effective_date: pEffectiveDate,
+        reason: pReason || null,
+        letter_number: pLetterNo || null,
+        letter_file_url: fileUrl,
+        created_by: user?.id,
+      });
+      if (histErr) throw histErr;
     },
     onSuccess: () => {
       toast.success(bn ? 'পদোন্নতি পত্র তৈরি ও সংরক্ষণ সম্পন্ন' : 'Promotion letter generated & saved');
@@ -164,19 +187,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         .update({ salary: newSal })
         .eq('id', staff.id);
       if (updErr) throw updErr;
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: histErr } = await supabase.from('staff_salary_changes').insert({
-        staff_id: staff.id,
-        old_salary: oldSal,
-        new_salary: newSal,
-        change_type: changeType,
-        effective_date: sEffectiveDate,
-        reason: sReason || null,
-        letter_number: sLetterNo || null,
-        created_by: user?.id,
-      });
-      if (histErr) throw histErr;
-      await generateLetter({
+      // Generate + upload letter first to get file URL
+      const fileUrl = await generateLetter({
         type: 'salary_change',
         language: bn ? 'bn' : 'en',
         staff: {
@@ -191,6 +203,19 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         reason: sReason,
         letter_number: sLetterNo,
       });
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: histErr } = await supabase.from('staff_salary_changes').insert({
+        staff_id: staff.id,
+        old_salary: oldSal,
+        new_salary: newSal,
+        change_type: changeType,
+        effective_date: sEffectiveDate,
+        reason: sReason || null,
+        letter_number: sLetterNo || null,
+        letter_file_url: fileUrl,
+        created_by: user?.id,
+      });
+      if (histErr) throw histErr;
     },
     onSuccess: () => {
       toast.success(bn ? 'বেতন পরিবর্তন পত্র তৈরি ও সংরক্ষণ সম্পন্ন' : 'Salary change letter generated & saved');
@@ -242,36 +267,48 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
-  const reprintPromo = (h: any) => generateLetter({
-    type: 'promotion',
-    language: bn ? 'bn' : 'en',
-    staff: {
-      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
-      staff_id: staff.staff_id,
-      designation: h.old_designation,
-    },
-    old_designation: h.old_designation,
-    new_designation: h.new_designation,
-    effective_date: h.effective_date,
-    reason: h.reason,
-    letter_number: h.letter_number,
-  });
+  const reprintPromo = async (h: any) => {
+    const fileUrl = await generateLetter({
+      type: 'promotion',
+      language: bn ? 'bn' : 'en',
+      staff: {
+        name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+        staff_id: staff.staff_id,
+        designation: h.old_designation,
+      },
+      old_designation: h.old_designation,
+      new_designation: h.new_designation,
+      effective_date: h.effective_date,
+      reason: h.reason,
+      letter_number: h.letter_number,
+    });
+    if (fileUrl) {
+      await supabase.from('staff_promotions').update({ letter_file_url: fileUrl }).eq('id', h.id);
+      qc.invalidateQueries({ queryKey: ['staff-promotions', staff.id] });
+    }
+  };
 
-  const reprintSalary = (h: any) => generateLetter({
-    type: 'salary_change',
-    language: bn ? 'bn' : 'en',
-    staff: {
-      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
-      staff_id: staff.staff_id,
-      designation: staff.designation,
-    },
-    old_salary: h.old_salary,
-    new_salary: h.new_salary,
-    change_type: h.change_type,
-    effective_date: h.effective_date,
-    reason: h.reason,
-    letter_number: h.letter_number,
-  });
+  const reprintSalary = async (h: any) => {
+    const fileUrl = await generateLetter({
+      type: 'salary_change',
+      language: bn ? 'bn' : 'en',
+      staff: {
+        name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+        staff_id: staff.staff_id,
+        designation: staff.designation,
+      },
+      old_salary: h.old_salary,
+      new_salary: h.new_salary,
+      change_type: h.change_type,
+      effective_date: h.effective_date,
+      reason: h.reason,
+      letter_number: h.letter_number,
+    });
+    if (fileUrl) {
+      await supabase.from('staff_salary_changes').update({ letter_file_url: fileUrl }).eq('id', h.id);
+      qc.invalidateQueries({ queryKey: ['staff-salary-changes', staff.id] });
+    }
+  };
 
   if (!staff) return null;
 
@@ -389,6 +426,13 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                       <ArrowRight className="w-3 h-3 text-primary shrink-0" />
                       <span className="font-semibold text-primary">{h.new_designation}</span>
                       <div className="ml-auto flex gap-1">
+                        {h.letter_file_url && (
+                          <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
+                            <a href={h.letter_file_url} target="_blank" rel="noopener noreferrer" download>
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintPromo(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
                           <Printer className="w-3.5 h-3.5" />
                         </Button>
@@ -510,6 +554,13 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                         {h.change_type === 'increase' ? (bn ? 'বৃদ্ধি' : 'Increase') : h.change_type === 'decrease' ? (bn ? 'হ্রাস' : 'Decrease') : (bn ? 'সমন্বয়' : 'Adjust')}
                       </span>
                       <div className="ml-auto flex gap-1">
+                        {h.letter_file_url && (
+                          <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
+                            <a href={h.letter_file_url} target="_blank" rel="noopener noreferrer" download>
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintSalary(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
                           <Printer className="w-3.5 h-3.5" />
                         </Button>
