@@ -1389,9 +1389,16 @@ const AdminSalary = () => {
     const instPhone = webSettings?.phone || '';
     const instEmail = webSettings?.email || '';
     const logoUrl = webSettings?.logo_url || '';
-    const principalName = bn
-      ? (webSettings?.principal_name || (bn ? 'প্রিন্সিপাল' : 'Principal'))
-      : (webSettings?.principal_name_en || webSettings?.principal_name || 'Principal');
+    // Names: priority is institutions table → website_settings → fallback
+    const { data: instRow } = await supabase
+      .from('institutions')
+      .select('principal_name, accountant_name, verifier_name')
+      .eq('is_default', true)
+      .maybeSingle();
+    const principalName =
+      (instRow?.principal_name && String(instRow.principal_name).trim()) ||
+      (bn ? webSettings?.principal_name : (webSettings?.principal_name_en || webSettings?.principal_name)) ||
+      (bn ? 'প্রিন্সিপাল' : 'Principal');
 
     const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
