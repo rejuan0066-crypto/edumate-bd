@@ -142,10 +142,7 @@ const AdminIdCards = () => {
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
+    queryFn: fetchInstitutionInfo,
   });
 
   // Fetch active academic session for valid-until
