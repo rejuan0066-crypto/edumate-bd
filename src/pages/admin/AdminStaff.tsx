@@ -432,6 +432,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           </>
                         )}
                         <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                        {canEditItem && s.status === 'active' && (
+                          <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
+                        )}
                         {canEditItem && (
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
