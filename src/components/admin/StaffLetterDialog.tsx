@@ -89,7 +89,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     enabled: open && !!staff?.id,
   });
 
-  const generateLetter = async (payload: any) => {
+  const generateLetter = async (payload: any): Promise<string | null> => {
     const { data: { session } } = await supabase.auth.getSession();
     const url = `https://wwhunyzobtuibhvkipwk.supabase.co/functions/v1/staff-letter-pdf`;
     const res = await fetch(url, {
@@ -102,12 +102,34 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     });
     if (!res.ok) throw new Error('Letter generation failed');
     const html = await res.text();
+
+    // 1) Open in new window for print
     const win = window.open('', '_blank');
     if (win) {
       win.document.write(html);
       win.document.close();
       setTimeout(() => win.print(), 500);
     }
+
+    // 2) Upload HTML to storage so it persists as a file
+    let publicUrl: string | null = null;
+    try {
+      const safeId = (staff.staff_id || staff.id || 'staff').toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const ts = Date.now();
+      const path = `${safeId}/${payload.type}-${ts}.html`;
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+      const { error: upErr } = await supabase.storage.from('staff-letters').upload(path, blob, {
+        contentType: 'text/html; charset=utf-8',
+        upsert: false,
+      });
+      if (!upErr) {
+        const { data: urlData } = supabase.storage.from('staff-letters').getPublicUrl(path);
+        publicUrl = urlData.publicUrl;
+      }
+    } catch (e) {
+      console.warn('Letter file upload failed:', e);
+    }
+    return publicUrl;
   };
 
   const promotionMutation = useMutation({
