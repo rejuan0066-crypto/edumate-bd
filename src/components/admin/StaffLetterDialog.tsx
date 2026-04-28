@@ -28,6 +28,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [pEffectiveDate, setPEffectiveDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [pReason, setPReason] = useState('');
   const [pLetterNo, setPLetterNo] = useState('');
+  const [pIntroText, setPIntroText] = useState('');
+  const [pClosingText, setPClosingText] = useState('');
 
   // Salary form
   const [newSalary, setNewSalary] = useState<string>('');
@@ -35,6 +37,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [sEffectiveDate, setSEffectiveDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [sReason, setSReason] = useState('');
   const [sLetterNo, setSLetterNo] = useState('');
+  const [sIntroText, setSIntroText] = useState('');
+  const [sClosingText, setSClosingText] = useState('');
 
   // Edit states for history
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
@@ -46,8 +50,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     if (open) {
       setNewDesignation('');
       setNewSalary('');
-      setPReason(''); setPLetterNo('');
-      setSReason(''); setSLetterNo('');
+      setPReason(''); setPLetterNo(''); setPIntroText(''); setPClosingText('');
+      setSReason(''); setSLetterNo(''); setSIntroText(''); setSClosingText('');
       setPEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setSEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setChangeType('increase');
@@ -155,6 +159,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         effective_date: pEffectiveDate,
         reason: pReason,
         letter_number: pLetterNo,
+        intro_text: pIntroText || undefined,
+        closing_text: pClosingText || undefined,
       });
       // 3) insert history with file URL
       const { data: { user } } = await supabase.auth.getUser();
@@ -202,6 +208,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         effective_date: sEffectiveDate,
         reason: sReason,
         letter_number: sLetterNo,
+        intro_text: sIntroText || undefined,
+        closing_text: sClosingText || undefined,
       });
       const { data: { user } } = await supabase.auth.getUser();
       const { error: histErr } = await supabase.from('staff_salary_changes').insert({
@@ -369,6 +377,21 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
               <Label>{bn ? 'কারণ / মন্তব্য' : 'Reason / Remarks'}</Label>
               <Textarea value={pReason} onChange={e => setPReason(e.target.value)} rows={2} className="mt-1" />
             </div>
+            <details className="rounded-[16px] border bg-secondary/20 p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                {bn ? '✏️ পত্রের টেক্সট কাস্টমাইজ করুন (ঐচ্ছিক)' : '✏️ Customize Letter Text (optional)'}
+              </summary>
+              <div className="mt-3 space-y-2">
+                <div>
+                  <Label className="text-xs">{bn ? 'শুরুর অনুচ্ছেদ (খালি রাখলে ডিফল্ট ব্যবহার হবে)' : 'Opening paragraph (leave blank for default)'}</Label>
+                  <Textarea value={pIntroText} onChange={e => setPIntroText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'আপনাকে অবগত করা যাইতেছে যে...' : 'We are pleased to inform you...'} />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'শেষের অনুচ্ছেদ' : 'Closing paragraph'}</Label>
+                  <Textarea value={pClosingText} onChange={e => setPClosingText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'আশা করা যায়, আপনি নতুন দায়িত্বে...' : 'We expect you to discharge...'} />
+                </div>
+              </div>
+            </details>
 
             <Button onClick={() => promotionMutation.mutate()} disabled={promotionMutation.isPending} className="w-full btn-primary-gradient">
               {promotionMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
@@ -491,6 +514,21 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
               <Label>{bn ? 'কারণ / মন্তব্য' : 'Reason / Remarks'}</Label>
               <Textarea value={sReason} onChange={e => setSReason(e.target.value)} rows={2} className="mt-1" />
             </div>
+            <details className="rounded-[16px] border bg-secondary/20 p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                {bn ? '✏️ পত্রের টেক্সট কাস্টমাইজ করুন (ঐচ্ছিক)' : '✏️ Customize Letter Text (optional)'}
+              </summary>
+              <div className="mt-3 space-y-2">
+                <div>
+                  <Label className="text-xs">{bn ? 'শুরুর অনুচ্ছেদ' : 'Opening paragraph'}</Label>
+                  <Textarea value={sIntroText} onChange={e => setSIntroText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'প্রতিষ্ঠানের সিদ্ধান্ত মোতাবেক...' : 'As per management decision...'} />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'শেষের অনুচ্ছেদ' : 'Closing paragraph'}</Label>
+                  <Textarea value={sClosingText} onChange={e => setSClosingText(e.target.value)} rows={3} className="mt-1 text-sm" placeholder={bn ? 'উক্ত সিদ্ধান্ত অনুযায়ী...' : 'The revised salary will...'} />
+                </div>
+              </div>
+            </details>
 
             <Button onClick={() => salaryMutation.mutate()} disabled={salaryMutation.isPending} className="w-full btn-primary-gradient">
               {salaryMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Printer className="w-4 h-4 mr-2" />}
