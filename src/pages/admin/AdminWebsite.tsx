@@ -455,6 +455,38 @@ const AdminWebsite = () => {
 
               <hr className="my-4 border-border" />
 
+              <h4 className="text-sm font-semibold text-foreground mb-1">
+                {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
+              </h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                {language === 'bn'
+                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে।'
+                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures.'}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
+                  <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
+                  <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
+                  <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
+                  <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
+                </div>
+              </div>
+              <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'স্বাক্ষরকারী সংরক্ষণ' : 'Save Signatories'}
+              </Button>
+
+              <hr className="my-4 border-border" />
+
               <h4 className="text-sm font-semibold text-foreground mb-3">{language === 'bn' ? 'লোগো ও ব্র্যান্ডিং' : 'Logo & Branding'}</h4>
               <div className="grid grid-cols-3 gap-4">
                 {/* Main Logo */}
