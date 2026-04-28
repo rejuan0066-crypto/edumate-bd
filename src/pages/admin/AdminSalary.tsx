@@ -1339,7 +1339,7 @@ const AdminSalary = () => {
   };
 
   // Print salary slip
-  const printSlip = (staffMember: any, record: any) => {
+  const printSlip = async (staffMember: any, record: any) => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsAmt = activeSavings ? activeSavings.amount : 0;
 
