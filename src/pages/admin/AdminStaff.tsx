@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
+import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -67,6 +68,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
+  const [letterStaff, setLetterStaff] = useState<any>(null);
 
   // Account creation dialog state
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -430,6 +432,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                           </>
                         )}
                         <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
+                        {canEditItem && s.status === 'active' && (
+                          <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
+                        )}
                         {canEditItem && (
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
@@ -527,6 +532,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             {viewStaff && <StaffProfileModal staff={viewStaff} bn={bn} />}
           </DialogContent>
         </Dialog>
+
+        {/* Promotion / Salary Letter Dialog */}
+        <StaffLetterDialog open={!!letterStaff} onOpenChange={(o) => { if (!o) setLetterStaff(null); }} staff={letterStaff} bn={bn} />
       </div>
     </AdminLayout>
   );
