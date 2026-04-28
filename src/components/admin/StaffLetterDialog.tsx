@@ -267,36 +267,48 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
-  const reprintPromo = (h: any) => generateLetter({
-    type: 'promotion',
-    language: bn ? 'bn' : 'en',
-    staff: {
-      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
-      staff_id: staff.staff_id,
-      designation: h.old_designation,
-    },
-    old_designation: h.old_designation,
-    new_designation: h.new_designation,
-    effective_date: h.effective_date,
-    reason: h.reason,
-    letter_number: h.letter_number,
-  });
+  const reprintPromo = async (h: any) => {
+    const fileUrl = await generateLetter({
+      type: 'promotion',
+      language: bn ? 'bn' : 'en',
+      staff: {
+        name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+        staff_id: staff.staff_id,
+        designation: h.old_designation,
+      },
+      old_designation: h.old_designation,
+      new_designation: h.new_designation,
+      effective_date: h.effective_date,
+      reason: h.reason,
+      letter_number: h.letter_number,
+    });
+    if (fileUrl) {
+      await supabase.from('staff_promotions').update({ letter_file_url: fileUrl }).eq('id', h.id);
+      qc.invalidateQueries({ queryKey: ['staff-promotions', staff.id] });
+    }
+  };
 
-  const reprintSalary = (h: any) => generateLetter({
-    type: 'salary_change',
-    language: bn ? 'bn' : 'en',
-    staff: {
-      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
-      staff_id: staff.staff_id,
-      designation: staff.designation,
-    },
-    old_salary: h.old_salary,
-    new_salary: h.new_salary,
-    change_type: h.change_type,
-    effective_date: h.effective_date,
-    reason: h.reason,
-    letter_number: h.letter_number,
-  });
+  const reprintSalary = async (h: any) => {
+    const fileUrl = await generateLetter({
+      type: 'salary_change',
+      language: bn ? 'bn' : 'en',
+      staff: {
+        name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+        staff_id: staff.staff_id,
+        designation: staff.designation,
+      },
+      old_salary: h.old_salary,
+      new_salary: h.new_salary,
+      change_type: h.change_type,
+      effective_date: h.effective_date,
+      reason: h.reason,
+      letter_number: h.letter_number,
+    });
+    if (fileUrl) {
+      await supabase.from('staff_salary_changes').update({ letter_file_url: fileUrl }).eq('id', h.id);
+      qc.invalidateQueries({ queryKey: ['staff-salary-changes', staff.id] });
+    }
+  };
 
   if (!staff) return null;
 
