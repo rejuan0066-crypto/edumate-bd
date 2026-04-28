@@ -277,12 +277,19 @@ Deno.serve(async (req) => {
   }
   .note strong { font-weight: 700; }
 
-  /* ===== Signatures ===== */
+  /* ===== Page Footer (repeats on every printed page) ===== */
+  .page-footer {
+    position: fixed;
+    left: 5mm;
+    right: 5mm;
+    bottom: 3mm;
+    background: #fff;
+  }
   .signatures {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 10mm;
-    margin: 12mm 4mm 2mm;
+    margin: 8mm 4mm 2mm;
   }
   .sig {
     text-align: center;
@@ -332,10 +339,12 @@ Deno.serve(async (req) => {
 
   @media print {
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 60mm; }
     @page { size: A4 landscape; margin: 5mm; }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
+    thead { display: table-header-group; }
+    .page-footer { position: fixed; bottom: 3mm; left: 5mm; right: 5mm; }
   }
 </style>
 </head><body>
@@ -428,30 +437,32 @@ Deno.serve(async (req) => {
       : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
   </div>
 
-  <div class="signatures">
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${accountantName || "&nbsp;"}</div>
-      <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-      <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+  <div class="page-footer">
+    <div class="signatures">
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${accountantName || "&nbsp;"}</div>
+        <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+        <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${verifierName || "&nbsp;"}</div>
+        <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+        <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${principalName || "&nbsp;"}</div>
+        <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+        <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
+      </div>
     </div>
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${verifierName || "&nbsp;"}</div>
-      <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-      <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
-    </div>
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${principalName || "&nbsp;"}</div>
-      <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-      <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
-    </div>
-  </div>
 
-  <div class="footer">
-    <div>${bn ? `© ${instName}` : `© ${instName}`}</div>
-    <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
+    <div class="footer">
+      <div>${bn ? `© ${instName}` : `© ${instName}`}</div>
+      <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
+    </div>
   </div>
 
 </div>
