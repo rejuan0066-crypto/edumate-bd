@@ -549,22 +549,22 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
         {/* Bottom - user profile + logout */}
         {(sidebarOpen || mobile) && (
-          <div className="px-3 py-2.5 border-t border-white/8 shrink-0">
-            <div className="flex items-center gap-2 px-1.5 py-1.5 rounded-xl bg-white/5 backdrop-blur-sm">
-              <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
+          <div className="px-2 py-1.5 border-t border-white/8 shrink-0">
+            <div className="flex items-center gap-2 px-1.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm">
+              <div className="w-6 h-6 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
                 {sidebarStaffPhoto?.photo_url ? (
                   <img src={sidebarStaffPhoto.photo_url} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[11px] font-bold text-sidebar-primary-foreground">
+                  <span className="text-[9px] font-bold text-sidebar-primary-foreground">
                     {user?.email?.charAt(0).toUpperCase() || 'A'}
                   </span>
                 )}
               </div>
-              <div className="flex-1 min-w-0 leading-tight">
-                <p className="text-[12px] font-semibold text-sidebar-foreground truncate">
+              <div className="flex-1 min-w-0 leading-none">
+                <p className="text-[11px] font-semibold text-sidebar-foreground truncate">
                   {(language === 'bn' ? sidebarStaffPhoto?.name_bn : sidebarStaffPhoto?.name_en) || sidebarStaffPhoto?.name_bn || sidebarProfile?.full_name || user?.email?.split('@')[0] || 'User'}
                 </p>
-                <span className="text-[10px] text-sidebar-foreground/60 truncate block">{(() => {
+                <span className="text-[9px] text-sidebar-foreground/55 truncate block mt-0.5">{(() => {
                   const roleLabels: Record<string, { bn: string; en: string }> = {
                     super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
                     admin: { bn: 'অ্যাডমিন', en: 'Admin' },
@@ -578,10 +578,10 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
               </div>
               <button
                 onClick={async () => { await signOut(); navigate('/login'); }}
-                className="p-1.5 rounded-lg hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive transition-all"
+                className="p-1 rounded-md hover:bg-destructive/20 text-sidebar-foreground/50 hover:text-destructive transition-all"
                 title={language === 'bn' ? 'লগআউট' : 'Logout'}
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3 h-3" />
               </button>
             </div>
           </div>
