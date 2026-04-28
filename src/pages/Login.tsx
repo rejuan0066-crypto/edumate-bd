@@ -114,6 +114,7 @@ const Login = () => {
   };
 
   const handleOtpVerified = () => {
+    otpVerifiedRef.current = true;
     try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
     setPendingOtp(false);
     setOtpOpen(false);
@@ -121,7 +122,10 @@ const Login = () => {
   };
 
   const handleOtpDialogChange = async (open: boolean) => {
-    if (!open && pendingOtp && !otpVerified) {
+    // Read the synchronous ref instead of state — avoids the race where
+    // onVerified() schedules state updates but onOpenChange(false) fires
+    // immediately after with stale otpVerified=false.
+    if (!open && pendingOtp && !otpVerifiedRef.current) {
       // User cancelled the OTP gate — sign them out for safety.
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
       setOtpOpen(false);
