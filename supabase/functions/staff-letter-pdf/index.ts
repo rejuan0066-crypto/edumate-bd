@@ -42,6 +42,10 @@ Deno.serve(async (req) => {
       reason,
       letter_number,
       issued_by,
+      // editable text overrides
+      intro_text,
+      closing_text,
+      subject_text,
     } = body || {};
 
     if (!type || !staff) {
