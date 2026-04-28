@@ -371,7 +371,7 @@ Deno.serve(async (req) => {
         <th class="center" style="width:30pt">${bn ? "বি" : "L"}</th>
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
-        <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
+        <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
         <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
       </tr>
     </thead>
