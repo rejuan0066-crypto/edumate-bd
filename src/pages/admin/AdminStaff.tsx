@@ -532,6 +532,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
             {viewStaff && <StaffProfileModal staff={viewStaff} bn={bn} />}
           </DialogContent>
         </Dialog>
+
+        {/* Promotion / Salary Letter Dialog */}
+        <StaffLetterDialog open={!!letterStaff} onOpenChange={(o) => { if (!o) setLetterStaff(null); }} staff={letterStaff} bn={bn} />
       </div>
     </AdminLayout>
   );
