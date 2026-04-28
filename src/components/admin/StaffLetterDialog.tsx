@@ -273,6 +273,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     letter_number: h.letter_number,
   });
 
+  if (!staff) return null;
+
   const staffName = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
   return (
