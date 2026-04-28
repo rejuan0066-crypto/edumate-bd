@@ -50,8 +50,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     if (open) {
       setNewDesignation('');
       setNewSalary('');
-      setPReason(''); setPLetterNo('');
-      setSReason(''); setSLetterNo('');
+      setPReason(''); setPLetterNo(''); setPIntroText(''); setPClosingText('');
+      setSReason(''); setSLetterNo(''); setSIntroText(''); setSClosingText('');
       setPEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setSEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setChangeType('increase');
