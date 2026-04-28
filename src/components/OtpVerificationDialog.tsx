@@ -258,6 +258,24 @@ const OtpVerificationDialog = ({
       return;
     }
 
+    // OTP_NOT_FOUND → previous code expired/used. Auto-request a fresh one.
+    if (result.errorCode === 'OTP_NOT_FOUND') {
+      toast.info(bn
+        ? 'কোডটি মেয়াদোত্তীর্ণ — নতুন কোড পাঠানো হচ্ছে...'
+        : 'Code expired — sending a new one...');
+      setOtpValue('');
+      const fresh = await sendOtp(email, purpose, recipientName, scope);
+      if (fresh.success) {
+        setExpiryMinutes(fresh.expiryMinutes || 10);
+        resendApiRef.current?.startCooldown(fresh.retryAfterSeconds ?? 30);
+        toast.success(bn ? 'নতুন কোড পাঠানো হয়েছে' : 'New code sent');
+      } else if (fresh.retryAfterSeconds) {
+        resendApiRef.current?.startCooldown(fresh.retryAfterSeconds);
+        toast.error(fresh.message || (bn ? 'অপেক্ষা করুন' : 'Please wait'));
+      }
+      return;
+    }
+
     const locked = applyLockout(
       result.errorCode,
       result.error,
