@@ -554,6 +554,13 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                         {h.change_type === 'increase' ? (bn ? 'বৃদ্ধি' : 'Increase') : h.change_type === 'decrease' ? (bn ? 'হ্রাস' : 'Decrease') : (bn ? 'সমন্বয়' : 'Adjust')}
                       </span>
                       <div className="ml-auto flex gap-1">
+                        {h.letter_file_url && (
+                          <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
+                            <a href={h.letter_file_url} target="_blank" rel="noopener noreferrer" download>
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintSalary(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
                           <Printer className="w-3.5 h-3.5" />
                         </Button>
