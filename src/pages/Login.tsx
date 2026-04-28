@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,9 @@ const Login = () => {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpRole, setOtpRole] = useState<OtpRoleScope | undefined>(undefined);
   const [otpVerified, setOtpVerified] = useState(false);
+  // Synchronous flag — set the instant verification succeeds so the dialog's
+  // immediate onOpenChange(false) callback does NOT mistake it for a cancel.
+  const otpVerifiedRef = useRef(false);
   // Track that the current authenticated session is awaiting OTP. Persist in
   // sessionStorage so a refresh during the gate keeps blocking until verified.
   const [pendingOtp, setPendingOtp] = useState<boolean>(() => {
@@ -111,6 +114,7 @@ const Login = () => {
   };
 
   const handleOtpVerified = () => {
+    otpVerifiedRef.current = true;
     try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
     setPendingOtp(false);
     setOtpOpen(false);
@@ -118,7 +122,10 @@ const Login = () => {
   };
 
   const handleOtpDialogChange = async (open: boolean) => {
-    if (!open && pendingOtp && !otpVerified) {
+    // Read the synchronous ref instead of state — avoids the race where
+    // onVerified() schedules state updates but onOpenChange(false) fires
+    // immediately after with stale otpVerified=false.
+    if (!open && pendingOtp && !otpVerifiedRef.current) {
       // User cancelled the OTP gate — sign them out for safety.
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
       setOtpOpen(false);
