@@ -289,6 +289,11 @@ Deno.serve(async (req) => {
     font-size: 10.5pt;
     color: #000;
   }
+  .sig .sig-line {
+    border-top: 1pt solid #000;
+    margin-bottom: 4pt;
+    height: 0;
+  }
   .sig .sig-name {
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
     font-size: 11pt;
@@ -296,10 +301,6 @@ Deno.serve(async (req) => {
     min-height: 14pt;
     margin-bottom: 2pt;
     color: #000;
-  }
-  .sig .line {
-    border-top: 1pt solid #000;
-    padding-top: 4pt;
   }
   .sig .role {
     font-weight: 700;
@@ -414,25 +415,22 @@ Deno.serve(async (req) => {
 
   <div class="signatures">
     <div class="sig">
+      <div class="sig-line"></div>
       <div class="sig-name">${accountantName || "&nbsp;"}</div>
-      <div class="line">
-        <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-        <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
-      </div>
+      <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+      <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
     </div>
     <div class="sig">
+      <div class="sig-line"></div>
       <div class="sig-name">${verifierName || "&nbsp;"}</div>
-      <div class="line">
-        <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-        <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
-      </div>
+      <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+      <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
     </div>
     <div class="sig">
+      <div class="sig-line"></div>
       <div class="sig-name">${principalName || "&nbsp;"}</div>
-      <div class="line">
-        <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-        <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
-      </div>
+      <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+      <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
     </div>
   </div>
 
