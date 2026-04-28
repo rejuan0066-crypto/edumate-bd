@@ -14,8 +14,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   ClipboardEdit, Send, ShieldCheck, BadgeCheck, Wallet, History,
-  CheckCircle2, Circle, ArrowRight, RotateCcw,
+  CheckCircle2, Circle, ArrowRight, RotateCcw, Zap,
 } from 'lucide-react';
+import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -306,6 +307,31 @@ export default function SalaryWorkflowPanel({
       onChanged?.();
       setActionDialog(null);
     },
+  });
+
+  const autoAdvanceMutation = useMutation({
+    mutationFn: async () => {
+      const verifier = pickDefaultActor(wfSettings, 'verifier');
+      const approver = pickDefaultActor(wfSettings, 'approver');
+      const treasurer = pickDefaultActor(wfSettings, 'treasurer');
+      const res = await autoAdvanceMonth({
+        monthYear,
+        records,
+        userId: user?.id || null,
+        preparerName: currentUserName,
+        preparerRole: bn ? 'প্রস্তুতকারী' : 'Prepared by',
+        verifier, approver, treasurer,
+      });
+      if (!res.ok) throw new Error(res.error || 'Auto-advance failed');
+      return res;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'সকল ধাপ স্বয়ংক্রিয়ভাবে সম্পন্ন — পরিশোধিত' : 'Auto-advanced through all stages — Paid');
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-history', monthYear] });
+      onChanged?.();
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error'),
   });
 
   const handlePrint = () => {
