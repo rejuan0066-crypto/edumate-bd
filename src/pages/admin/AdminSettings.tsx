@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { otpService } from '@/hooks/useOtpService';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
