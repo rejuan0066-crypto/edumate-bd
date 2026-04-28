@@ -529,6 +529,18 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     e.preventDefault();
     const errors: Record<string, string> = {};
 
+    // Admin bypass: skip all field validation (still requires saveMutation server-side checks)
+    if (isAdmin) {
+      // If email provided and not verified (and not edit mode), still require OTP
+      if (staffEmail.trim() && !emailVerified && !isEditMode) {
+        setPendingSave(true);
+        setShowOtpDialog(true);
+        return;
+      }
+      saveMutation.mutate();
+      return;
+    }
+
     // Helper: only validate if field is active AND required (from custom builder config)
     const reqCheck = (key: string, value: string, msgBn: string, msgEn: string) => {
       if (isFieldActive(key) && isFieldRequired(key) && !value.trim()) {
