@@ -196,8 +196,21 @@ const OtpVerificationDialog = ({
       toast.success(bn ? `${email} এ কোড পাঠানো হয়েছে` : `Code sent to ${email}`);
       return;
     }
+    // COOLDOWN_ACTIVE on initial send means a code was issued moments ago and
+    // is still valid — show the verify UI so the user can enter that code.
+    if (result.errorCode === 'COOLDOWN_ACTIVE') {
+      setOtpSent(true);
+      setExpiryMinutes(result.expiryMinutes || 10);
+      if (result.retryAfterSeconds) {
+        resendApiRef.current?.startCooldown(result.retryAfterSeconds);
+      }
+      toast.info(bn
+        ? `${email} এ পাঠানো পূর্বের কোডটি ব্যবহার করুন`
+        : `Enter the code already sent to ${email}`);
+      return;
+    }
     // Failed initial send — check for lockout
-    const locked = applyLockout(
+    applyLockout(
       result.errorCode,
       result.message,
       result.retryAfterSeconds,
@@ -206,8 +219,8 @@ const OtpVerificationDialog = ({
     if (result.retryAfterSeconds) {
       resendApiRef.current?.startCooldown(result.retryAfterSeconds);
     }
-    // Show OTP UI either way so user can verify a previously issued code
-    if (!locked || locked) setOtpSent(true);
+    // Show OTP UI so user can verify a previously issued code
+    setOtpSent(true);
   };
 
   const handleResend = async () => {
