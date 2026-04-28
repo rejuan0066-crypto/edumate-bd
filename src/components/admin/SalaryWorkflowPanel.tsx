@@ -448,6 +448,23 @@ export default function SalaryWorkflowPanel({
                 <Wallet className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ সম্পন্ন (কোষাধ্যক্ষ)' : 'Mark Paid (Treasurer)'}
               </Button>
             )}
+            {sheetStage !== 'paid' && verifiers.length > 0 && approvers.length > 0 && treasurers.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                disabled={autoAdvanceMutation.isPending}
+                onClick={() => {
+                  if (confirm(bn
+                    ? 'ডিফল্ট যাচাইকারী/অনুমোদনকারী/কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
+                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.')) {
+                    autoAdvanceMutation.mutate();
+                  }
+                }}
+              >
+                <Zap className="h-3 w-3 mr-1" /> {bn ? 'সকল ধাপ অটো-সম্পন্ন' : 'Auto-Advance All Stages'}
+              </Button>
+            )}
             {sheetStage === 'paid' && (
               <Badge className="bg-green-100 text-green-800 border-green-300">
                 ✓ {bn ? 'সম্পূর্ণ ওয়ার্কফ্লো সম্পন্ন' : 'Workflow Complete'}
