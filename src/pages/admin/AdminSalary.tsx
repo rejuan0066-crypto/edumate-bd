@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
+import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
