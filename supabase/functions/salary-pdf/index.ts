@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
         <div class="sig-line"></div>
         <div class="sig-name">${accountantName || "&nbsp;"}</div>
         <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-        <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+        <div class="role-meta">${bn ? "(কোষাধক্য)" : "(Accountant)"}</div>
       </div>
       <div class="sig">
         <div class="sig-line"></div>
