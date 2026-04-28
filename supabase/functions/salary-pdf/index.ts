@@ -366,7 +366,9 @@ Deno.serve(async (req) => {
         <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
         <th>${bn ? "পদবি" : "Designation"}</th>
         <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center">${bn ? "উপ/অনু/বি" : "P/A/L"}</th>
+        <th class="center" style="width:30pt">${bn ? "উপ" : "P"}</th>
+        <th class="center" style="width:30pt">${bn ? "অনু" : "A"}</th>
+        <th class="center" style="width:30pt">${bn ? "বি" : "L"}</th>
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
         <th class="right">${bn ? "অগ্রিম (৳)" : "Advance"}</th>
@@ -380,7 +382,9 @@ Deno.serve(async (req) => {
           <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
           <td>${s.designation}</td>
           <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
-          <td class="c-pal">${bn ? toBnDigits(s.present) : s.present}<span class="pal-sep">/</span>${bn ? toBnDigits(s.absent) : s.absent}<span class="pal-sep">/</span>${bn ? toBnDigits(s.late) : s.late}</td>
+          <td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>
+          <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
+          <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
           <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
           <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
           <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
@@ -390,6 +394,8 @@ Deno.serve(async (req) => {
       <tr class="totals">
         <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
         <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
+        <td></td>
+        <td></td>
         <td></td>
         <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
         <td></td>
