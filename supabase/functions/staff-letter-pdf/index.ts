@@ -168,47 +168,237 @@ Deno.serve(async (req) => {
 <html><head><meta charset="utf-8">
 <title>${titleText} — ${staffName}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@500;600;700&display=swap');
+  /* Kalpurush — Bangla unicode font (Omicron Lab CDN, jsDelivr mirror) */
+  @font-face {
+    font-family: 'Kalpurush';
+    src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/Kalpurush/kalpurush.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/Kalpurush/kalpurush.woff') format('woff'),
+         url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/Kalpurush/kalpurush.ttf') format('truetype');
+    font-weight: 400 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
   *,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-  html, body { background:#fff; color:#000; font-family:'Noto Serif Bengali','Tinos','Times New Roman',serif; font-size:12pt; line-height:1.55; }
+  :root {
+    --ink: #0b0b0b;
+    --ink-soft: #2a2a2a;
+    --muted: #555;
+    --accent: #1f4d3a;        /* deep emerald — institutional */
+    --accent-soft: #e8efe9;
+    --line: #1a1a1a;
+    --hairline: #cfcfcf;
+  }
+  html, body {
+    background:#fff;
+    color: var(--ink);
+    font-family: 'Kalpurush','Tinos','Times New Roman','Cormorant Garamond', serif;
+    font-size: 12.5pt;
+    line-height: 1.65;
+    font-feature-settings: "liga", "kern";
+  }
   body { padding: 14mm 14mm; }
-  .sheet { max-width: 190mm; margin:0 auto; background:#fff; border:1.5pt solid #000; padding:10mm 14mm 14mm; position:relative; min-height: 260mm; }
 
-  .letterhead { text-align:center; border-bottom:2pt double #000; padding-bottom:8pt; margin-bottom:10pt; position:relative; min-height:78px; }
-  .logo-wrap { position:absolute; left:0; top:2pt; width:78px; height:78px; border:1pt solid #000; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fff; }
-  .logo-img { width:100%; height:100%; object-fit:contain; padding:2px; }
-  .logo-fallback { font-size:36px; font-weight:700; color:#000; }
-  .inst-name { font-size:22pt; font-weight:700; line-height:1.15; letter-spacing:.2pt; margin:0 0 4pt; }
-  .inst-address { font-size:11pt; line-height:1.35; }
-  .inst-contact { font-size:10.5pt; margin-top:2pt; }
-  .inst-contact .sep { margin:0 6pt; }
+  .sheet {
+    max-width: 190mm;
+    margin: 0 auto;
+    background: #fff;
+    padding: 12mm 16mm 14mm;
+    position: relative;
+    min-height: 260mm;
+    border: 0.6pt solid var(--hairline);
+    box-shadow: 0 0 0 3pt #fff, 0 0 0 3.4pt var(--accent);
+  }
+  /* faint diagonal watermark of institute name */
+  .sheet::before {
+    content: "${instName.replace(/"/g, '\\"')}";
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Kalpurush','Tinos', serif;
+    font-size: 60pt;
+    font-weight: 700;
+    color: var(--accent);
+    opacity: 0.04;
+    transform: rotate(-28deg);
+    pointer-events: none;
+    letter-spacing: 4pt;
+    white-space: nowrap;
+    overflow: hidden;
+  }
 
-  .doc-title { text-align:center; margin: 10pt 0 8pt; }
-  .doc-title h2 { font-size:15pt; font-weight:700; letter-spacing:1pt; text-transform:uppercase; display:inline-block; padding:4pt 22pt; border:1.25pt solid #000; border-radius:2pt; }
+  /* === Letterhead === */
+  .letterhead {
+    text-align: center;
+    padding: 4pt 0 10pt;
+    margin-bottom: 6pt;
+    position: relative;
+    min-height: 84px;
+    border-bottom: 1.5pt solid var(--accent);
+  }
+  .letterhead::after {
+    content: "";
+    display: block;
+    height: 1.2pt;
+    background: var(--accent);
+    margin-top: 2pt;
+    opacity: 0.35;
+  }
+  .logo-wrap {
+    position: absolute; left: 0; top: 0;
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    border: 1.25pt solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; background: #fff;
+    box-shadow: 0 0 0 2pt #fff, 0 0 0 2.4pt var(--accent-soft);
+  }
+  .logo-img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
+  .logo-fallback { font-size: 38px; font-weight: 700; color: var(--accent); font-family: 'Kalpurush','Tinos',serif; }
 
-  .memo-row { display:flex; justify-content:space-between; font-size:10.5pt; margin: 8pt 0 14pt; }
-  .memo-row strong { font-weight:700; }
+  .inst-name {
+    font-size: 24pt;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: .3pt;
+    color: var(--accent);
+    margin: 0 0 3pt;
+  }
+  .inst-tagline {
+    font-size: 9.5pt;
+    letter-spacing: 5pt;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1pt 0 4pt;
+  }
+  .inst-address { font-size: 10.5pt; color: var(--ink-soft); line-height: 1.4; }
+  .inst-contact { font-size: 10pt; color: var(--muted); margin-top: 2pt; }
+  .inst-contact .sep { margin: 0 6pt; color: var(--accent); }
 
-  .body-content p { margin: 6pt 0; text-align: justify; }
-  .body-content table.info { width: 100%; border-collapse: collapse; margin: 8pt 0 10pt; font-size:11pt; }
-  .body-content table.info th, .body-content table.info td { border: 0.6pt solid #000; padding: 5pt 8pt; text-align: left; vertical-align: middle; }
-  .body-content table.info th { background:#f1f1f1; width: 38%; font-weight:700; }
+  /* === Title === */
+  .doc-title { text-align: center; margin: 14pt 0 10pt; position: relative; }
+  .doc-title h2 {
+    display: inline-block;
+    font-size: 14.5pt;
+    font-weight: 700;
+    letter-spacing: 2.5pt;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 5pt 26pt;
+    border-top: 0.8pt solid var(--accent);
+    border-bottom: 0.8pt solid var(--accent);
+    background: linear-gradient(180deg, transparent 0%, var(--accent-soft) 100%);
+  }
 
-  .closing { margin-top: 18pt; }
-  .closing p { margin: 4pt 0; }
+  /* === Memo row === */
+  .memo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5pt;
+    margin: 10pt 0 16pt;
+    padding: 6pt 10pt;
+    background: var(--accent-soft);
+    border-left: 3pt solid var(--accent);
+    border-radius: 2pt;
+  }
+  .memo-row strong { font-weight: 700; color: var(--accent); margin-right: 4pt; }
 
-  .signature-block { margin-top: 28mm; display:flex; justify-content: flex-end; }
-  .signature-block .sig { text-align:center; min-width: 70mm; }
-  .signature-block .sig-line { border-top: 1pt solid #000; margin-bottom: 4pt; }
-  .signature-block .sig-name { font-weight:700; font-size: 11.5pt; }
-  .signature-block .role { font-size: 10.5pt; font-style: italic; margin-top: 1pt; }
+  /* === Body === */
+  .body-content p {
+    margin: 7pt 0;
+    text-align: justify;
+    text-justify: inter-word;
+    text-indent: 0;
+  }
+  .body-content p strong { color: var(--accent); }
 
-  .footer { margin-top: 14pt; padding-top: 6pt; border-top: 0.5pt solid #000; text-align:center; font-size:9pt; }
-  .footer .ref { margin-top:2pt; font-size:8.5pt; color:#333; }
+  .body-content table.info {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12pt 0;
+    font-size: 11pt;
+    box-shadow: 0 0 0 0.4pt var(--hairline);
+  }
+  .body-content table.info th,
+  .body-content table.info td {
+    border: 0.5pt solid var(--hairline);
+    padding: 7pt 10pt;
+    text-align: left;
+    vertical-align: middle;
+  }
+  .body-content table.info th {
+    background: var(--accent);
+    color: #fff;
+    width: 38%;
+    font-weight: 600;
+    letter-spacing: .2pt;
+  }
+  .body-content table.info tr:nth-child(even) td { background: #fafafa; }
+
+  /* === Closing & signature === */
+  .closing { margin-top: 20pt; }
+  .closing p { margin: 4pt 0; font-style: italic; color: var(--ink-soft); }
+
+  .signature-block {
+    margin-top: 26mm;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+  }
+  .signature-block .sig {
+    text-align: center;
+    min-width: 76mm;
+    position: relative;
+  }
+  .signature-block .sig::before {
+    content: "";
+    display: block;
+    width: 90%;
+    margin: 0 auto 4pt;
+    border-top: 1pt solid var(--ink);
+  }
+  .signature-block .sig-name {
+    font-weight: 700;
+    font-size: 12pt;
+    color: var(--accent);
+    letter-spacing: .3pt;
+  }
+  .signature-block .role {
+    font-size: 10pt;
+    font-style: italic;
+    color: var(--muted);
+    margin-top: 1pt;
+  }
+  .signature-block .role.inst { color: var(--ink-soft); font-style: normal; font-weight: 600; }
+
+  /* Decorative ornament */
+  .ornament {
+    text-align: center;
+    margin: 8pt 0;
+    color: var(--accent);
+    letter-spacing: 12pt;
+    font-size: 11pt;
+    opacity: 0.6;
+  }
+
+  /* === Footer === */
+  .footer {
+    position: absolute;
+    left: 16mm; right: 16mm; bottom: 8mm;
+    padding-top: 6pt;
+    border-top: 0.4pt solid var(--accent);
+    text-align: center;
+    font-size: 8.5pt;
+    color: var(--muted);
+  }
+  .footer .brand { color: var(--accent); font-weight: 600; letter-spacing: .5pt; }
+  .footer .ref { margin-top: 2pt; font-size: 8pt; }
 
   @media print {
-    body { padding:0; background:#fff; }
-    .sheet { border:1.25pt solid #000; max-width:100%; min-height: auto; }
+    body { padding: 0; background: #fff; }
+    .sheet { border: none; box-shadow: 0 0 0 2pt var(--accent); max-width: 100%; min-height: auto; }
     @page { size: A4 portrait; margin: 12mm; }
   }
 </style></head><body>
@@ -216,10 +406,11 @@ Deno.serve(async (req) => {
   <div class="letterhead">
     <div class="logo-wrap">${logoBlock}</div>
     <div class="inst-name">${instName}</div>
+    <div class="inst-tagline">${bn ? 'অফিসিয়াল পত্র' : 'Official Correspondence'}</div>
     ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ''}
     <div class="inst-contact">
       ${instPhone ? `<span>${bn ? 'ফোন' : 'Phone'}: ${bn ? toBn(instPhone) : instPhone}</span>` : ''}
-      ${instPhone && instEmail ? `<span class="sep">|</span>` : ''}
+      ${instPhone && instEmail ? `<span class="sep">◆</span>` : ''}
       ${instEmail ? `<span>${bn ? 'ইমেইল' : 'E-mail'}: ${instEmail}</span>` : ''}
     </div>
   </div>
@@ -239,18 +430,19 @@ Deno.serve(async (req) => {
     <p>${bn ? 'ধন্যবাদান্তে,' : 'Sincerely,'}</p>
   </div>
 
+  <div class="ornament">✦ ✦ ✦</div>
+
   <div class="signature-block">
     <div class="sig">
-      <div class="sig-line"></div>
       <div class="sig-name">${principalName || '&nbsp;'}</div>
       <div class="role">${issued_by ? issued_by : (bn ? 'প্রিন্সিপাল' : 'Principal')}</div>
-      <div class="role">${instName}</div>
+      <div class="role inst">${instName}</div>
     </div>
   </div>
 
   <div class="footer">
-    <div>© ${instName}</div>
-    <div class="ref">${bn ? 'স্মারক:' : 'Ref:'} ${memoNo} &nbsp;•&nbsp; ${bn ? 'মুদ্রণ:' : 'Printed:'} ${issueDate}</div>
+    <div class="brand">${instName}</div>
+    <div class="ref">${bn ? 'স্মারক:' : 'Ref:'} ${memoNo} &nbsp;•&nbsp; ${bn ? 'মুদ্রণ' : 'Printed'}: ${issueDate}</div>
   </div>
 </div>
 </body></html>`;
