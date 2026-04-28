@@ -377,6 +377,12 @@ Deno.serve(async (req) => {
         ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
         ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
       </div>
+      ${(instEstablished || instRegNo) ? `
+      <div class="inst-contact">
+        ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${bn ? toBnDigits(instEstablished) : instEstablished}</span>` : ""}
+        ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
+        ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${bn ? toBnDigits(instRegNo) : instRegNo}</span>` : ""}
+      </div>` : ""}
     </div>
 
     <div class="doc-title">
