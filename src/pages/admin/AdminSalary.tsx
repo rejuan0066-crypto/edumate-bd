@@ -2873,6 +2873,53 @@ const AdminSalary = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Signature Override Dialog for PDF */}
+        <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
+          <DialogContent className="max-w-lg rounded-[38px]">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'স্বাক্ষরকারীর তথ্য' : 'Signatory Information'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-xs text-muted-foreground">
+                {bn ? 'খালি রাখলে সেটিংস থেকে ডিফল্ট নাম ব্যবহার হবে।' : 'Leave empty to use defaults from settings.'}
+              </p>
+
+              <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
+                <Label className="text-sm font-semibold">{bn ? 'প্রস্তুতকারী' : 'Prepared by'}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder={bn ? 'নাম' : 'Name'} value={sigPreparedBy} onChange={(e) => setSigPreparedBy(e.target.value)} />
+                  <Input placeholder={bn ? 'পদবি' : 'Designation'} value={sigPreparedRole} onChange={(e) => setSigPreparedRole(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
+                <Label className="text-sm font-semibold">{bn ? 'যাচাইকারী' : 'Verified by'}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder={bn ? 'নাম' : 'Name'} value={sigVerifiedBy} onChange={(e) => setSigVerifiedBy(e.target.value)} />
+                  <Input placeholder={bn ? 'পদবি' : 'Designation'} value={sigVerifiedRole} onChange={(e) => setSigVerifiedRole(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
+                <Label className="text-sm font-semibold">{bn ? 'অনুমোদনকারী' : 'Approved by'}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input placeholder={bn ? 'নাম' : 'Name'} value={sigApprovedBy} onChange={(e) => setSigApprovedBy(e.target.value)} />
+                  <Input placeholder={bn ? 'পদবি' : 'Designation'} value={sigApprovedRole} onChange={(e) => setSigApprovedRole(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setSigDialogOpen(false)}>
+                  {bn ? 'বাতিল' : 'Cancel'}
+                </Button>
+                <Button onClick={() => { setSigDialogOpen(false); exportPDF(); }} disabled={pdfLoading}>
+                  <FileText className="h-3 w-3 mr-1" /> {bn ? 'PDF তৈরি করুন' : 'Generate PDF'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </AdminLayout>
   );
