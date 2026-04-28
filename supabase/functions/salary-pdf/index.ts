@@ -277,6 +277,15 @@ Deno.serve(async (req) => {
   }
   .note strong { font-weight: 700; }
 
+  /* ===== Page Header (repeats on every printed page) ===== */
+  .page-header {
+    position: fixed;
+    top: 3mm;
+    left: 5mm;
+    right: 5mm;
+    background: #fff;
+    z-index: 10;
+  }
   /* ===== Page Footer (repeats on every printed page) ===== */
   .page-footer {
     position: fixed;
@@ -284,6 +293,7 @@ Deno.serve(async (req) => {
     right: 5mm;
     bottom: 3mm;
     background: #fff;
+    z-index: 10;
   }
   .signatures {
     display: grid;
@@ -339,36 +349,39 @@ Deno.serve(async (req) => {
 
   @media print {
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 60mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 50mm 5mm 60mm; }
     @page { size: A4 landscape; margin: 5mm; }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
+    .page-header { position: fixed; top: 3mm; left: 5mm; right: 5mm; }
     .page-footer { position: fixed; bottom: 3mm; left: 5mm; right: 5mm; }
   }
 </style>
 </head><body>
 <div class="sheet">
 
-  <div class="letterhead">
-    <div class="logo-wrap">${logoBlock}</div>
-    <div class="inst-name">${instName}</div>
-    ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ""}
-    <div class="inst-contact">
-      ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
-      ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
-      ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
+  <div class="page-header">
+    <div class="letterhead">
+      <div class="logo-wrap">${logoBlock}</div>
+      <div class="inst-name">${instName}</div>
+      ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ""}
+      <div class="inst-contact">
+        ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
+        ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
+        ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
+      </div>
     </div>
-  </div>
 
-  <div class="doc-title">
-    <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
-    <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</div>
-  </div>
+    <div class="doc-title">
+      <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
+      <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</div>
+    </div>
 
-  <div class="memo-row">
-    <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${sheetId}</span>
-    <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${issueDate}</span>
+    <div class="memo-row">
+      <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${sheetId}</span>
+      <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${issueDate}</span>
+    </div>
   </div>
 
   <table>
