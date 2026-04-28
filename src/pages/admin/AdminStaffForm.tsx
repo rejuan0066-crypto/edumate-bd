@@ -23,6 +23,8 @@ import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useStaffFormConfig } from '@/hooks/useStaffFormConfig';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -87,6 +89,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const queryClient = useQueryClient();
   const backPath = CATEGORY_BACK_PATH[staffCategory];
   const { canAddItem, canEditItem } = usePagePermissions(backPath);
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
@@ -524,6 +528,18 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const errors: Record<string, string> = {};
+
+    // Admin bypass: skip all field validation (still requires saveMutation server-side checks)
+    if (isAdmin) {
+      // If email provided and not verified (and not edit mode), still require OTP
+      if (staffEmail.trim() && !emailVerified && !isEditMode) {
+        setPendingSave(true);
+        setShowOtpDialog(true);
+        return;
+      }
+      saveMutation.mutate();
+      return;
+    }
 
     // Helper: only validate if field is active AND required (from custom builder config)
     const reqCheck = (key: string, value: string, msgBn: string, msgEn: string) => {
