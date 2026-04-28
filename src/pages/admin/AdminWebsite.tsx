@@ -260,6 +260,50 @@ const AdminWebsite = () => {
     setSaving(false);
   };
 
+  // Saves principal/accountant/verifier names to BOTH institutions table (priority source)
+  // AND website_settings (legacy fallback) so every printable doc & edge function picks them up.
+  const saveSignatories = async () => {
+    if (!form) return;
+    setSaving(true);
+    try {
+      const principal = (form.principal_name || '').trim();
+      const accountant = ((form as any).accountant_name || '').trim();
+      const verifier = ((form as any).verifier_name || '').trim();
+
+      // 1) Update default institution row
+      const { data: instRow } = await supabase
+        .from('institutions')
+        .select('id')
+        .eq('is_default', true)
+        .maybeSingle();
+      if (instRow?.id) {
+        const { error: instErr } = await supabase
+          .from('institutions')
+          .update({
+            principal_name: principal || null,
+            accountant_name: accountant || null,
+            verifier_name: verifier || null,
+          })
+          .eq('id', instRow.id);
+        if (instErr) throw instErr;
+      }
+
+      // 2) Mirror to website_settings for legacy callers
+      await updateMultiple.mutateAsync([
+        { key: 'principal_name', value: principal as Json },
+        { key: 'principal_name_en', value: (form.principal_name_en || '') as Json },
+        { key: 'accountant_name', value: accountant as Json },
+        { key: 'verifier_name', value: verifier as Json },
+      ]);
+
+      toast.success(language === 'bn' ? 'অনুমোদনকারী/স্বাক্ষরকারীর তথ্য সংরক্ষিত!' : 'Signatories saved!');
+    } catch (err) {
+      console.error(err);
+      toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Save failed');
+    }
+    setSaving(false);
+  };
+
   const saveNavigation = async () => {
     setSaving(true);
     try {
