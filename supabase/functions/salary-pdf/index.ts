@@ -413,21 +413,21 @@ Deno.serve(async (req) => {
 
     <div class="signatures">
       <div class="sig">
+        <div class="sig-name">${accountantName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "প্রস্তুতকারী (হিসাবরক্ষক)" : "Prepared by (Accountant)"}</div>
-          <div class="name">${accountantName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
+        <div class="sig-name">${verifierName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-          <div class="name">${verifierName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
+        <div class="sig-name">${principalName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "অনুমোদনকারী (প্রিন্সিপাল)" : "Approved by (Principal)"}</div>
-          <div class="name">${principalName}</div>
         </div>
       </div>
     </div>
