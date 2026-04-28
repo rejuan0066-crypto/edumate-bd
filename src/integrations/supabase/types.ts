@@ -6392,6 +6392,121 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_promotions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_date: string
+          id: string
+          issued_by: string | null
+          letter_number: string | null
+          new_designation: string
+          notes: string | null
+          old_designation: string | null
+          reason: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_date?: string
+          id?: string
+          issued_by?: string | null
+          letter_number?: string | null
+          new_designation: string
+          notes?: string | null
+          old_designation?: string | null
+          reason?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_date?: string
+          id?: string
+          issued_by?: string | null
+          letter_number?: string | null
+          new_designation?: string
+          notes?: string | null
+          old_designation?: string | null
+          reason?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_promotions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_salary_changes: {
+        Row: {
+          change_type: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          effective_date: string
+          id: string
+          issued_by: string | null
+          letter_number: string | null
+          new_salary: number
+          notes: string | null
+          old_salary: number | null
+          reason: string | null
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          change_type: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_date?: string
+          id?: string
+          issued_by?: string | null
+          letter_number?: string | null
+          new_salary: number
+          notes?: string | null
+          old_salary?: number | null
+          reason?: string | null
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          effective_date?: string
+          id?: string
+          issued_by?: string | null
+          letter_number?: string | null
+          new_salary?: number
+          notes?: string | null
+          old_salary?: number | null
+          reason?: string | null
+          staff_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_salary_changes_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_categories: {
         Row: {
           created_at: string | null
