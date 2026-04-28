@@ -26,7 +26,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
-  CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
+  CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, Timer, FolderOpen,
   PiggyBank, Landmark, RefreshCw
 } from 'lucide-react';
@@ -148,7 +148,12 @@ const AdminSalary = () => {
   const { data: staffRaw = [] } = useQuery({
     queryKey: ['salary-staff'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
+      const { data, error } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('status', 'active')
+        .order('salary_order', { ascending: true, nullsFirst: false })
+        .order('name_bn', { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -157,6 +162,34 @@ const AdminSalary = () => {
     ? (staffRaw as any[])
     : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
+
+  // Reorder staff in salary list (swap salary_order with neighbor)
+  const reorderStaffMutation = useMutation({
+    mutationFn: async ({ direction, currentId }: { direction: 'up' | 'down'; currentId: string }) => {
+      const list = (staffRaw as any[]).filter((s: any) => showCommitteeStaff || !committeeInfo.ids.has(s.id));
+      const idx = list.findIndex((s) => s.id === currentId);
+      if (idx === -1) return;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= list.length) return;
+      const a = list[idx];
+      const b = list[swapIdx];
+      const aOrder = a.salary_order ?? (idx + 1) * 10;
+      const bOrder = b.salary_order ?? (swapIdx + 1) * 10;
+      // If equal, force a difference
+      const newA = bOrder;
+      const newB = aOrder === bOrder ? aOrder + (direction === 'up' ? 1 : -1) : aOrder;
+      const { error: e1 } = await supabase.from('staff').update({ salary_order: newA }).eq('id', a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from('staff').update({ salary_order: newB }).eq('id', b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+    },
+    onError: (err: any) => {
+      toast.error(bn ? 'সিরিয়াল পরিবর্তন ব্যর্থ' : 'Reorder failed', { description: err?.message });
+    },
+  });
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
@@ -1802,7 +1835,31 @@ const AdminSalary = () => {
 
                         return (
                           <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
-                            <td className="px-3 py-2 text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
+                            <td className="px-2 py-2 text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <div className="flex flex-col">
+                                  <button
+                                    type="button"
+                                    onClick={() => reorderStaffMutation.mutate({ direction: 'up', currentId: s.id })}
+                                    disabled={idx === 0 || reorderStaffMutation.isPending}
+                                    className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                    title={bn ? 'উপরে নিন' : 'Move up'}
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => reorderStaffMutation.mutate({ direction: 'down', currentId: s.id })}
+                                    disabled={idx === filtered.length - 1 || reorderStaffMutation.isPending}
+                                    className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                    title={bn ? 'নিচে নিন' : 'Move down'}
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <span className="text-xs">{bn ? toBnDigits(idx + 1) : idx + 1}</span>
+                              </div>
+                            </td>
                             <td className="px-3 py-2">
                               <p className="font-medium">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
                             </td>

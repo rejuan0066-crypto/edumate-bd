@@ -6270,6 +6270,7 @@ export type Database = {
           religion: string | null
           residence_type: string | null
           salary: number | null
+          salary_order: number | null
           staff_category: string
           staff_data: Json | null
           staff_id: string | null
@@ -6301,6 +6302,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           salary?: number | null
+          salary_order?: number | null
           staff_category?: string
           staff_data?: Json | null
           staff_id?: string | null
@@ -6332,6 +6334,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           salary?: number | null
+          salary_order?: number | null
           staff_category?: string
           staff_data?: Json | null
           staff_id?: string | null
