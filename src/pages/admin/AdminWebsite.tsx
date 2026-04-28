@@ -272,6 +272,12 @@ const AdminWebsite = () => {
   // AND website_settings (legacy fallback) so every printable doc & edge function picks them up.
   const saveSignatories = async () => {
     if (!form) return;
+    if (!canEditSignatories) {
+      toast.error(language === 'bn'
+        ? 'আপনার এই তথ্য সম্পাদনার অনুমতি নেই। সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।'
+        : 'You do not have permission to edit signatories. Contact the Super Admin.');
+      return;
+    }
     setSaving(true);
     try {
       const principal = (form.principal_name || '').trim();
@@ -304,10 +310,40 @@ const AdminWebsite = () => {
         { key: 'verifier_name', value: verifier as Json },
       ]);
 
-      toast.success(language === 'bn' ? 'অনুমোদনকারী/স্বাক্ষরকারীর তথ্য সংরক্ষিত!' : 'Signatories saved!');
+      // 3) Force every consumer (certificates, marksheets, ID cards, salary sheets,
+      //    receipts, edge-driven PDFs) to pick up the new names *immediately*.
+      await queryClient.invalidateQueries({ queryKey: ['website-settings'] });
+      await queryClient.refetchQueries({ queryKey: ['website-settings'] });
+      await queryClient.invalidateQueries({ queryKey: ['institutions'] });
+      // Broadcast for any non-React-Query consumer (print preview iframes, open windows)
+      window.dispatchEvent(new CustomEvent('institution-info-updated', {
+        detail: { principal_name: principal, accountant_name: accountant, verifier_name: verifier },
+      }));
+
+      toast.success(language === 'bn'
+        ? 'সংরক্ষিত! পরবর্তী সার্টিফিকেট/মার্কশিট/আইডি কার্ডে নতুন নাম দেখাবে।'
+        : 'Saved! New names will show on the next certificate / marksheet / ID card.');
     } catch (err) {
       console.error(err);
       toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Save failed');
+    }
+    setSaving(false);
+  };
+
+  // Super-admin-only: toggle whether regular admins can edit signatory fields.
+  const toggleSignatoryLock = async (locked: boolean) => {
+    if (!isSuperAdmin) return;
+    setSaving(true);
+    try {
+      await updateMultiple.mutateAsync([
+        { key: 'signatory_edit_super_admin_only', value: locked as unknown as Json },
+      ]);
+      await queryClient.invalidateQueries({ queryKey: ['website-settings'] });
+      toast.success(locked
+        ? (language === 'bn' ? 'এখন থেকে শুধু সুপার অ্যাডমিন স্বাক্ষরকারী সম্পাদনা করতে পারবে' : 'Locked: only Super Admin can edit signatories')
+        : (language === 'bn' ? 'অ্যাডমিনদেরও সম্পাদনার অনুমতি দেওয়া হলো' : 'Unlocked: Admins can edit signatories'));
+    } catch {
+      toast.error(language === 'bn' ? 'পরিবর্তন ব্যর্থ' : 'Update failed');
     }
     setSaving(false);
   };
