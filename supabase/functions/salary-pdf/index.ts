@@ -437,30 +437,32 @@ Deno.serve(async (req) => {
       : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
   </div>
 
-  <div class="signatures">
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${accountantName || "&nbsp;"}</div>
-      <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-      <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+  <div class="page-footer">
+    <div class="signatures">
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${accountantName || "&nbsp;"}</div>
+        <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+        <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${verifierName || "&nbsp;"}</div>
+        <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+        <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
+      </div>
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${principalName || "&nbsp;"}</div>
+        <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+        <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
+      </div>
     </div>
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${verifierName || "&nbsp;"}</div>
-      <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-      <div class="role-meta">${bn ? "(নিরীক্ষক)" : "(Auditor)"}</div>
-    </div>
-    <div class="sig">
-      <div class="sig-line"></div>
-      <div class="sig-name">${principalName || "&nbsp;"}</div>
-      <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-      <div class="role-meta">${bn ? "(প্রিন্সিপাল)" : "(Principal)"}</div>
-    </div>
-  </div>
 
-  <div class="footer">
-    <div>${bn ? `© ${instName}` : `© ${instName}`}</div>
-    <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
+    <div class="footer">
+      <div>${bn ? `© ${instName}` : `© ${instName}`}</div>
+      <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
+    </div>
   </div>
 
 </div>
