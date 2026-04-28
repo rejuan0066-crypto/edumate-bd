@@ -163,6 +163,34 @@ const AdminSalary = () => {
     : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
+  // Reorder staff in salary list (swap salary_order with neighbor)
+  const reorderStaffMutation = useMutation({
+    mutationFn: async ({ direction, currentId }: { direction: 'up' | 'down'; currentId: string }) => {
+      const list = (staffRaw as any[]).filter((s: any) => showCommitteeStaff || !committeeInfo.ids.has(s.id));
+      const idx = list.findIndex((s) => s.id === currentId);
+      if (idx === -1) return;
+      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= list.length) return;
+      const a = list[idx];
+      const b = list[swapIdx];
+      const aOrder = a.salary_order ?? (idx + 1) * 10;
+      const bOrder = b.salary_order ?? (swapIdx + 1) * 10;
+      // If equal, force a difference
+      const newA = bOrder;
+      const newB = aOrder === bOrder ? aOrder + (direction === 'up' ? 1 : -1) : aOrder;
+      const { error: e1 } = await supabase.from('staff').update({ salary_order: newA }).eq('id', a.id);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase.from('staff').update({ salary_order: newB }).eq('id', b.id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+    },
+    onError: (err: any) => {
+      toast.error(bn ? 'সিরিয়াল পরিবর্তন ব্যর্থ' : 'Reorder failed', { description: err?.message });
+    },
+  });
+
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
     queryKey: ['salary-records', monthYear],
