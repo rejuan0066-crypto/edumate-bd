@@ -12,6 +12,7 @@ import StaffIdCard from '@/components/idcard/StaffIdCard';
 import { printIdCard, printMultipleIdCards } from '@/lib/idCardPrint';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
