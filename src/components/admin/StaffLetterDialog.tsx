@@ -28,6 +28,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [pEffectiveDate, setPEffectiveDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [pReason, setPReason] = useState('');
   const [pLetterNo, setPLetterNo] = useState('');
+  const [pIntroText, setPIntroText] = useState('');
+  const [pClosingText, setPClosingText] = useState('');
 
   // Salary form
   const [newSalary, setNewSalary] = useState<string>('');
@@ -35,6 +37,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [sEffectiveDate, setSEffectiveDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [sReason, setSReason] = useState('');
   const [sLetterNo, setSLetterNo] = useState('');
+  const [sIntroText, setSIntroText] = useState('');
+  const [sClosingText, setSClosingText] = useState('');
 
   // Edit states for history
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
