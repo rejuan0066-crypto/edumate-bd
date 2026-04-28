@@ -1835,7 +1835,31 @@ const AdminSalary = () => {
 
                         return (
                           <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
-                            <td className="px-3 py-2 text-muted-foreground">{bn ? toBnDigits(idx + 1) : idx + 1}</td>
+                            <td className="px-2 py-2 text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <div className="flex flex-col">
+                                  <button
+                                    type="button"
+                                    onClick={() => reorderStaffMutation.mutate({ direction: 'up', currentId: s.id })}
+                                    disabled={idx === 0 || reorderStaffMutation.isPending}
+                                    className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                    title={bn ? 'উপরে নিন' : 'Move up'}
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => reorderStaffMutation.mutate({ direction: 'down', currentId: s.id })}
+                                    disabled={idx === filtered.length - 1 || reorderStaffMutation.isPending}
+                                    className="text-muted-foreground hover:text-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                    title={bn ? 'নিচে নিন' : 'Move down'}
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <span className="text-xs">{bn ? toBnDigits(idx + 1) : idx + 1}</span>
+                              </div>
+                            </td>
                             <td className="px-3 py-2">
                               <p className="font-medium">{bn ? s.name_bn : (s.name_en || s.name_bn)}</p>
                             </td>
