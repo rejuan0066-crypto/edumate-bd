@@ -1797,6 +1797,19 @@ const AdminSalary = () => {
           </CardContent>
         </Card>
 
+        {/* Salary Approval Workflow */}
+        {mainTab === 'salary' && (
+          <SalaryWorkflowPanel
+            monthYear={monthYear}
+            monthLabel={(bn ? MONTHS.find(m => m.value === selectedMonth)?.bn : MONTHS.find(m => m.value === selectedMonth)?.en) || ''}
+            year={selectedYear}
+            records={salaryRecords as any[]}
+            eligibleIds={(salaryRecords as any[]).map((r: any) => r.id)}
+            onChanged={() => queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] })}
+            onPrintWithWorkflow={(sig) => exportPDF(sig)}
+          />
+        )}
+
         {/* Main Tabs: Floating Segmented Control */}
         <Tabs value={mainTab} onValueChange={setMainTab}>
           <SegmentedTabs
