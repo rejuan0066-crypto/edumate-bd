@@ -106,27 +106,25 @@ const AdminSettings = () => {
     setOtpTesting(true);
     setOtpTestResult(null);
     try {
-      // Direct fetch to bypass supabase-js auto console.error on 4xx (e.g. 429 cooldown),
-      // which the runtime tracker mis-reports as a blank-screen error.
-      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL as string;
-      const ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-      const { data: sess } = await supabase.auth.getSession();
-      const token = sess.session?.access_token || ANON;
-      const res = await fetch(`${SUPA_URL}/functions/v1/send-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: ANON,
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email: otpTestEmail, purpose: 'email_verification' }),
-      });
-      const data: any = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.message || data?.error || `Edge function returned ${res.status}`);
+      // Use the SHARED OTP service — never call the edge function directly.
+      // This guarantees identical cooldown / rate-limit / EmailJS handling
+      // as every other OTP flow in the app.
+      const result = await otpService.testSendOtp(otpTestEmail);
+
+      if (!result.success) {
+        const msg = result.message || (bn ? 'OTP পাঠানো ব্যর্থ' : 'Failed to send OTP');
+        setOtpTestResult({ success: false, message: msg });
+        if (result.errorCode === 'COOLDOWN_ACTIVE' && result.retryAfterSeconds) {
+          toast.error(bn
+            ? `কুলডাউন সক্রিয় — ${result.retryAfterSeconds} সেকেন্ড অপেক্ষা করুন`
+            : `Cooldown active — wait ${result.retryAfterSeconds}s`);
+        } else {
+          toast.error(bn ? 'OTP টেস্ট ব্যর্থ' : 'OTP test failed');
+        }
+        return;
       }
-      if (data?.error) throw new Error(data.error);
-      const method = data?.method || 'unknown';
+
+      const method = result.method || 'unknown';
       setOtpTestResult({
         success: true,
         method,
