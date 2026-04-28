@@ -22,31 +22,37 @@ export interface VerifyOtpResult {
   attemptsRemaining?: number;
 }
 
-/** Extract the standardized error envelope from a Supabase functions.invoke error. */
-function extractErrorBody(err: any): Record<string, any> | null {
-  // supabase-js wraps non-2xx responses in FunctionsHttpError with a context.response
-  const ctx = err?.context;
-  if (ctx && typeof ctx.json === 'function') {
-    // can't await synchronously; caller handles via the typed helper below
-    return null;
-  }
-  return null;
-}
+const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-async function readErrorBody(err: any): Promise<Record<string, any> | null> {
+/**
+ * Direct fetch to an edge function — bypasses supabase-js's `functions.invoke`,
+ * which logs every non-2xx response to console.error (caught by the runtime
+ * error tracker as a "blank screen" runtime error even when handled).
+ * Returns parsed JSON body and the HTTP status. Never throws on 4xx/5xx.
+ */
+async function callEdgeFunction(
+  name: string,
+  body: Record<string, unknown>,
+): Promise<{ status: number; data: any | null; networkError?: unknown }> {
   try {
-    const ctx = err?.context;
-    if (ctx && typeof ctx.json === 'function') {
-      return await ctx.json();
-    }
-    if (ctx && typeof ctx.text === 'function') {
-      const t = await ctx.text();
-      try { return JSON.parse(t); } catch { return null; }
-    }
-  } catch {
-    // ignore
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token || ANON_KEY;
+    const res = await fetch(`${FUNCTIONS_BASE}/${name}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: ANON_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    let data: any = null;
+    try { data = await res.json(); } catch { /* non-JSON */ }
+    return { status: res.status, data };
+  } catch (networkError) {
+    return { status: 0, data: null, networkError };
   }
-  return null;
 }
 
 export const useOtpService = () => {
@@ -61,16 +67,20 @@ export const useOtpService = () => {
   ): Promise<SendOtpResult> => {
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email, purpose, scope },
+      const { status, data, networkError } = await callEdgeFunction('send-otp', {
+        email, purpose, scope,
       });
 
-      // Handle non-2xx (rate limit, validation, etc.) — read structured envelope
-      if (error) {
-        const body = await readErrorBody(error);
-        const retry = Number(body?.retry_after_seconds) || undefined;
-        const message = body?.message || body?.error || 'Failed to send code';
-        const code = body?.code as string | undefined;
+      if (networkError) {
+        toast.error('Failed to send verification email');
+        return { success: false };
+      }
+
+      // Non-2xx — structured error envelope from the edge function
+      if (status < 200 || status >= 300) {
+        const retry = Number(data?.retry_after_seconds) || undefined;
+        const message = data?.message || data?.error || 'Failed to send code';
+        const code = data?.code as string | undefined;
         if (code !== 'COOLDOWN_ACTIVE') {
           toast.error(message);
         }
@@ -104,20 +114,6 @@ export const useOtpService = () => {
       );
 
       return { success: true, expiryMinutes: expiry_minutes };
-    } catch (err: any) {
-      console.error('OTP send error:', err);
-      const body = await readErrorBody(err);
-      if (body) {
-        const retry = Number(body.retry_after_seconds) || undefined;
-        return {
-          success: false,
-          errorCode: body.code,
-          message: body.message || body.error,
-          retryAfterSeconds: retry,
-        };
-      }
-      toast.error('Failed to send verification email');
-      return { success: false };
     } finally {
       setSending(false);
     }
@@ -130,19 +126,22 @@ export const useOtpService = () => {
   ): Promise<VerifyOtpResult> => {
     setVerifying(true);
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { email, code, purpose },
+      const { status, data, networkError } = await callEdgeFunction('verify-otp', {
+        email, code, purpose,
       });
 
-      if (error) {
-        const body = await readErrorBody(error);
+      if (networkError) {
+        return { valid: false, error: 'Verification failed' };
+      }
+
+      if (status < 200 || status >= 300) {
         return {
           valid: false,
-          error: body?.message || body?.error || 'Verification failed',
-          errorCode: body?.code,
-          retryAfterSeconds: Number(body?.retry_after_seconds) || undefined,
-          attemptsRemaining: typeof body?.attempts_remaining === 'number'
-            ? body.attempts_remaining : undefined,
+          error: data?.message || data?.error || 'Verification failed',
+          errorCode: data?.code,
+          retryAfterSeconds: Number(data?.retry_after_seconds) || undefined,
+          attemptsRemaining: typeof data?.attempts_remaining === 'number'
+            ? data.attempts_remaining : undefined,
         };
       }
 
@@ -151,14 +150,6 @@ export const useOtpService = () => {
         error: data?.error || data?.message,
         errorCode: data?.code,
       };
-    } catch (err: any) {
-      const body = await readErrorBody(err);
-      return {
-        valid: false,
-        error: body?.message || body?.error || 'Verification failed',
-        errorCode: body?.code,
-        retryAfterSeconds: Number(body?.retry_after_seconds) || undefined,
-      };
     } finally {
       setVerifying(false);
     }
@@ -166,6 +157,3 @@ export const useOtpService = () => {
 
   return { sendOtp, verifyOtp, sending, verifying };
 };
-
-// Suppress unused warning for kept-for-future helper.
-void extractErrorBody;
