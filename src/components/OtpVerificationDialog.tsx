@@ -439,6 +439,7 @@ const OtpVerificationDialog = ({
                 initialCooldown={0}
                 defaultCooldown={30}
                 onReady={(api) => { resendApiRef.current = api; }}
+                persistKey={`${email}:${purpose}:${scope ?? 'default'}`}
               />
             )}
           </div>
