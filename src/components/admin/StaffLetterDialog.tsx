@@ -36,6 +36,12 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [sReason, setSReason] = useState('');
   const [sLetterNo, setSLetterNo] = useState('');
 
+  // Edit states for history
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  const [editPromo, setEditPromo] = useState<any>({});
+  const [editingSalaryId, setEditingSalaryId] = useState<string | null>(null);
+  const [editSalary, setEditSalary] = useState<any>({});
+
   useEffect(() => {
     if (open) {
       setNewDesignation('');
@@ -45,6 +51,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
       setPEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setSEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setChangeType('increase');
+      setEditingPromoId(null);
+      setEditingSalaryId(null);
     }
   }, [open]);
 
