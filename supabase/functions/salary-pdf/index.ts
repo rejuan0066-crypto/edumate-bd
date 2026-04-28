@@ -77,6 +77,12 @@ Deno.serve(async (req) => {
     const instPhone = pick("phone", "phone", "");
     const instEmail = pick("email", "email", "");
     const instLogo = pick("logo_url", "logo_url", "");
+    const instEstablished = bn
+      ? pick("established_year", "established_year", "")
+      : (pick("established_year_en", "established_year_en", "") || pick("established_year", "established_year", ""));
+    const instRegNo = bn
+      ? pick("registration_number", "registration_number", "")
+      : (pick("registration_number_en", "registration_number_en", "") || pick("registration_number", "registration_number", ""));
 
     const principalName = pick("principal_name", "principal_name", bn ? "প্রিন্সিপাল" : "Principal");
     const accountantName = pick("accountant_name", "accountant_name", "");
