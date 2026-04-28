@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Trash2, Plus, ShieldCheck, BadgeCheck, Wallet } from 'lucide-react';
+import { Trash2, Plus, ShieldCheck, BadgeCheck, Wallet, Star } from 'lucide-react';
 
 type Role = 'verifier' | 'approver' | 'treasurer';
 
@@ -85,6 +85,28 @@ export default function SalaryWorkflowSettings() {
     },
   });
 
+  const setDefaultMutation = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: Role }) => {
+      // Clear other defaults in same role, then mark this one default
+      const { error: e1 } = await supabase
+        .from('salary_workflow_settings')
+        .update({ is_default: false })
+        .eq('role', role);
+      if (e1) throw e1;
+      const { error: e2 } = await supabase
+        .from('salary_workflow_settings')
+        .update({ is_default: true, is_active: true })
+        .eq('id', id);
+      if (e2) throw e2;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-settings-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-settings'] });
+      toast.success(bn ? 'ডিফল্ট হিসেবে সেট হয়েছে' : 'Set as default');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error'),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('salary_workflow_settings').delete().eq('id', id);
@@ -148,6 +170,15 @@ export default function SalaryWorkflowSettings() {
                   {item.designation && <div className="text-xs text-muted-foreground">{item.designation}</div>}
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    title={bn ? 'অটো-অ্যাডভান্সে ডিফল্ট হিসেবে ব্যবহার করুন' : 'Use as default for auto-advance'}
+                    onClick={() => setDefaultMutation.mutate({ id: item.id, role })}
+                  >
+                    <Star className={`h-3.5 w-3.5 ${item.is_default ? 'fill-amber-400 text-amber-500' : 'text-muted-foreground'}`} />
+                  </Button>
                   <Switch
                     checked={item.is_active}
                     onCheckedChange={(v) => toggleMutation.mutate({ id: item.id, is_active: v })}
