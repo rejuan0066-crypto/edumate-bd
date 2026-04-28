@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, Printer, LayoutGrid, List } from 'lucide-react';
 import MasterRoutineView from '@/components/routine/MasterRoutineView';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday' },
@@ -56,7 +57,7 @@ const AdminClassRoutine = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('name, name_en, logo_url, address, phone').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     staleTime: 10 * 60 * 1000,

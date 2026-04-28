@@ -13,6 +13,7 @@ import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { buildSingleStudentPrintHtml, ReceiptData, ReceiptStyleConfig } from '@/components/fees/receiptPrintLayouts';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const DEFAULT_STYLE: ReceiptStyleConfig = {
   primaryColor: '#1a5c2e',
@@ -32,7 +33,7 @@ const ReceiptDesignerMain = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution_designer'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

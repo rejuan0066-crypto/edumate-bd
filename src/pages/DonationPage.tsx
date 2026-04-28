@@ -10,6 +10,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const generateDonationTrxId = () => {
   const now = new Date();
@@ -59,7 +60,7 @@ const DonationPage = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-donation-public'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('name, name_en, phone, address').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

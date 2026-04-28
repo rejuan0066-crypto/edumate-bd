@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface ReceiptData {
   id: string;
@@ -34,7 +35,7 @@ const FeePaymentPage = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-receipt-public'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     }
   });

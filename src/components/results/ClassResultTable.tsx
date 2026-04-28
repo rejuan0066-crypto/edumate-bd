@@ -6,6 +6,7 @@ import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { exportResultCSV, exportResultPDF } from '@/lib/resultExport';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 // Legacy export for backward compat
 const getGrade = (avg: number) => {
@@ -38,7 +39,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('name, name_en, logo_url, address, phone').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     staleTime: 10 * 60 * 1000,

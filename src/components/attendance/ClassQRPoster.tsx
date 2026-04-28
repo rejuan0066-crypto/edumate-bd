@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Printer, QrCode } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface ClassQRPosterProps {
   open: boolean;
@@ -32,7 +33,7 @@ const ClassQRPoster = ({ open, onOpenChange }: ClassQRPosterProps) => {
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     enabled: open,

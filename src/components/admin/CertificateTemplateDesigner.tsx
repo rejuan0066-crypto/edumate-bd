@@ -15,6 +15,7 @@ import { Loader2, Save, RotateCcw, Award, FileText, ScrollText } from 'lucide-re
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
   CertType, CertTemplateConfig, DEFAULT_TEMPLATE, mergeTemplate, renderCertificateHTML,
 } from '@/lib/certificateTemplate';
 
@@ -121,7 +122,7 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
   const { data: liveInstitution } = useQuery({
     queryKey: ['designer-institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     enabled: open,
