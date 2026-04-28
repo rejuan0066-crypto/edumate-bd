@@ -446,7 +446,7 @@ Deno.serve(async (req) => {
   <div class="note">
     <strong>${bn ? "নোটঃ" : "Note:"}</strong>
     ${bn
-      ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। হিসাবরক্ষক কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
+      ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধক্য কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
       : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
   </div>
 
@@ -456,7 +456,7 @@ Deno.serve(async (req) => {
         <div class="sig-line"></div>
         <div class="sig-name">${accountantName || "&nbsp;"}</div>
         <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-        <div class="role-meta">${bn ? "(হিসাবরক্ষক)" : "(Accountant)"}</div>
+        <div class="role-meta">${bn ? "(কোষাধক্য)" : "(Accountant)"}</div>
       </div>
       <div class="sig">
         <div class="sig-line"></div>
