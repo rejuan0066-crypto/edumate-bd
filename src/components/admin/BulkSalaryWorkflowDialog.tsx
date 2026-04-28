@@ -231,7 +231,7 @@ export default function BulkSalaryWorkflowDialog() {
                           res.ok ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-600" titleAccess={res.error} />
+                            <span title={res.error}><XCircle className="h-4 w-4 text-red-600" /></span>
                           )
                         )}
                       </div>
