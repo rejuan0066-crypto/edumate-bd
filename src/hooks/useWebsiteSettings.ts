@@ -191,6 +191,8 @@ export interface WebsiteSettings {
   principal_message_bn: string;
   principal_message_en: string;
   principal_photo_url: string;
+  accountant_name: string;
+  verifier_name: string;
   admin_name: string;
   admin_title_bn: string;
   admin_title_en: string;
