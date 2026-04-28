@@ -35,6 +35,9 @@ export default function BulkSalaryWorkflowDialog() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<Record<string, { ok: boolean; error?: string; finalStage?: string }>>({});
   const currentUserName = (user?.user_metadata as any)?.full_name || user?.email || 'Admin';
+  const { isSuperAdmin } = useSalaryWorkflowGating();
+
+  if (!isSuperAdmin) return null;
 
   // Last 12 months of records — group by month_year
   const { data: records = [], isLoading } = useQuery({
