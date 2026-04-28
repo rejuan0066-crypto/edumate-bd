@@ -187,19 +187,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         .update({ salary: newSal })
         .eq('id', staff.id);
       if (updErr) throw updErr;
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error: histErr } = await supabase.from('staff_salary_changes').insert({
-        staff_id: staff.id,
-        old_salary: oldSal,
-        new_salary: newSal,
-        change_type: changeType,
-        effective_date: sEffectiveDate,
-        reason: sReason || null,
-        letter_number: sLetterNo || null,
-        created_by: user?.id,
-      });
-      if (histErr) throw histErr;
-      await generateLetter({
+      // Generate + upload letter first to get file URL
+      const fileUrl = await generateLetter({
         type: 'salary_change',
         language: bn ? 'bn' : 'en',
         staff: {
@@ -214,6 +203,19 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         reason: sReason,
         letter_number: sLetterNo,
       });
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error: histErr } = await supabase.from('staff_salary_changes').insert({
+        staff_id: staff.id,
+        old_salary: oldSal,
+        new_salary: newSal,
+        change_type: changeType,
+        effective_date: sEffectiveDate,
+        reason: sReason || null,
+        letter_number: sLetterNo || null,
+        letter_file_url: fileUrl,
+        created_by: user?.id,
+      });
+      if (histErr) throw histErr;
     },
     onSuccess: () => {
       toast.success(bn ? 'বেতন পরিবর্তন পত্র তৈরি ও সংরক্ষণ সম্পন্ন' : 'Salary change letter generated & saved');
