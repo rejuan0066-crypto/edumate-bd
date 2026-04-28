@@ -1355,6 +1355,10 @@ const AdminSettings = () => {
               </Button>
             </div>
           </TabsContent>
+
+          <TabsContent value="salary_workflow" className="mt-6">
+            <SalaryWorkflowSettings />
+          </TabsContent>
         </Tabs>
       </div>
 
