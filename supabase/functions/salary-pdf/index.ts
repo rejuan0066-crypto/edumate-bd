@@ -355,7 +355,7 @@ Deno.serve(async (req) => {
 
   @media print {
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 50mm 5mm 60mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 62mm 5mm 70mm; }
     @page {
       size: A4 landscape;
       margin: 5mm;
@@ -370,9 +370,19 @@ Deno.serve(async (req) => {
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
-    .page-header { position: fixed; top: 3mm; left: 5mm; right: 5mm; }
-    .page-footer { position: fixed; bottom: 3mm; left: 5mm; right: 5mm; }
+    tfoot { display: table-footer-group; }
+    .page-header {
+      position: fixed; top: 3mm; left: 5mm; right: 5mm;
+      max-height: 56mm; overflow: hidden;
+      background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm;
+    }
+    .page-footer {
+      position: fixed; bottom: 3mm; left: 5mm; right: 5mm;
+      max-height: 64mm; overflow: hidden;
+      background: #fff; border-top: 0.6pt solid #000; padding-top: 2mm;
+    }
   }
+
 </style>
 </head><body>
 <div class="sheet">
