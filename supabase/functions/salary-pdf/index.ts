@@ -305,8 +305,8 @@ Deno.serve(async (req) => {
   }
   .signatures {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10mm;
+    grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
+    gap: 8mm;
     margin: 8mm 4mm 2mm;
   }
   .sig {
