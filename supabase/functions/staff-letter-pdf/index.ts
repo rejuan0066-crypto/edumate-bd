@@ -251,10 +251,10 @@ Deno.serve(async (req) => {
   /* === Letterhead === */
   .letterhead {
     text-align: center;
-    padding: 4pt 0 10pt;
+    padding: 6pt 0 12pt 100px;
     margin-bottom: 6pt;
     position: relative;
-    min-height: 84px;
+    min-height: 96px;
     border-bottom: 1.5pt solid var(--accent);
   }
   .letterhead::after {
@@ -266,8 +266,8 @@ Deno.serve(async (req) => {
     opacity: 0.35;
   }
   .logo-wrap {
-    position: absolute; left: 0; top: 0;
-    width: 84px; height: 84px;
+    position: absolute; left: 0; top: 4pt;
+    width: 88px; height: 88px;
     border-radius: 50%;
     border: 1.25pt solid var(--accent);
     display: flex; align-items: center; justify-content: center;
