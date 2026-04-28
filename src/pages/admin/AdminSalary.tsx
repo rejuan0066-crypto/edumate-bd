@@ -25,6 +25,7 @@ import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
+import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -1799,15 +1800,20 @@ const AdminSalary = () => {
 
         {/* Salary Approval Workflow */}
         {mainTab === 'salary' && (
-          <SalaryWorkflowPanel
-            monthYear={monthYear}
-            monthLabel={(bn ? MONTHS.find(m => m.value === selectedMonth)?.bn : MONTHS.find(m => m.value === selectedMonth)?.en) || ''}
-            year={selectedYear}
-            records={salaryRecords as any[]}
-            eligibleIds={(salaryRecords as any[]).map((r: any) => r.id)}
-            onChanged={() => queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] })}
-            onPrintWithWorkflow={(sig) => exportPDF(sig)}
-          />
+          <div className="space-y-3">
+            <div className="flex justify-end">
+              <BulkSalaryWorkflowDialog />
+            </div>
+            <SalaryWorkflowPanel
+              monthYear={monthYear}
+              monthLabel={(bn ? MONTHS.find(m => m.value === selectedMonth)?.bn : MONTHS.find(m => m.value === selectedMonth)?.en) || ''}
+              year={selectedYear}
+              records={salaryRecords as any[]}
+              eligibleIds={(salaryRecords as any[]).map((r: any) => r.id)}
+              onChanged={() => queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] })}
+              onPrintWithWorkflow={(sig) => exportPDF(sig)}
+            />
+          </div>
         )}
 
         {/* Main Tabs: Floating Segmented Control */}

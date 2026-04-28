@@ -6043,6 +6043,7 @@ export type Database = {
           display_name: string | null
           id: string
           is_active: boolean
+          is_default: boolean
           role: string
           sort_order: number
           staff_id: string
@@ -6054,6 +6055,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean
           role: string
           sort_order?: number
           staff_id: string
@@ -6065,6 +6067,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_active?: boolean
+          is_default?: boolean
           role?: string
           sort_order?: number
           staff_id?: string

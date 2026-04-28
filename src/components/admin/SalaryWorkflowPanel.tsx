@@ -14,8 +14,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import {
   ClipboardEdit, Send, ShieldCheck, BadgeCheck, Wallet, History,
-  CheckCircle2, Circle, ArrowRight, RotateCcw,
+  CheckCircle2, Circle, ArrowRight, RotateCcw, Zap,
 } from 'lucide-react';
+import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -308,6 +309,31 @@ export default function SalaryWorkflowPanel({
     },
   });
 
+  const autoAdvanceMutation = useMutation({
+    mutationFn: async () => {
+      const verifier = pickDefaultActor(wfSettings, 'verifier');
+      const approver = pickDefaultActor(wfSettings, 'approver');
+      const treasurer = pickDefaultActor(wfSettings, 'treasurer');
+      const res = await autoAdvanceMonth({
+        monthYear,
+        records,
+        userId: user?.id || null,
+        preparerName: currentUserName,
+        preparerRole: bn ? 'প্রস্তুতকারী' : 'Prepared by',
+        verifier, approver, treasurer,
+      });
+      if (!res.ok) throw new Error(res.error || 'Auto-advance failed');
+      return res;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'সকল ধাপ স্বয়ংক্রিয়ভাবে সম্পন্ন — পরিশোধিত' : 'Auto-advanced through all stages — Paid');
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-history', monthYear] });
+      onChanged?.();
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error'),
+  });
+
   const handlePrint = () => {
     onPrintWithWorkflow({
       prepared_by: wf.prepared_by_name || undefined,
@@ -420,6 +446,23 @@ export default function SalaryWorkflowPanel({
             {canMarkPaid && (
               <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setActionDialog({ type: 'mark_paid' })}>
                 <Wallet className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ সম্পন্ন (কোষাধ্যক্ষ)' : 'Mark Paid (Treasurer)'}
+              </Button>
+            )}
+            {sheetStage !== 'paid' && verifiers.length > 0 && approvers.length > 0 && treasurers.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                disabled={autoAdvanceMutation.isPending}
+                onClick={() => {
+                  if (confirm(bn
+                    ? 'ডিফল্ট যাচাইকারী/অনুমোদনকারী/কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
+                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.')) {
+                    autoAdvanceMutation.mutate();
+                  }
+                }}
+              >
+                <Zap className="h-3 w-3 mr-1" /> {bn ? 'সকল ধাপ অটো-সম্পন্ন' : 'Auto-Advance All Stages'}
               </Button>
             )}
             {sheetStage === 'paid' && (
