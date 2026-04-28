@@ -89,6 +89,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const queryClient = useQueryClient();
   const backPath = CATEGORY_BACK_PATH[staffCategory];
   const { canAddItem, canEditItem } = usePagePermissions(backPath);
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
   const navigate = useNavigate();
   const { id: editId } = useParams<{ id: string }>();
   const isEditMode = !!editId;
