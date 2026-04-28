@@ -6404,6 +6404,7 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string | null
+          custom_role_id: string | null
           date_of_birth: string | null
           deleted_at: string | null
           department: string | null
@@ -6415,6 +6416,8 @@ export type Database = {
           employment_type: string | null
           experience: string | null
           id: string
+          include_in_attendance: boolean
+          include_in_payroll: boolean
           joining_date: string | null
           name_bn: string
           name_en: string | null
@@ -6436,6 +6439,7 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string | null
+          custom_role_id?: string | null
           date_of_birth?: string | null
           deleted_at?: string | null
           department?: string | null
@@ -6447,6 +6451,8 @@ export type Database = {
           employment_type?: string | null
           experience?: string | null
           id?: string
+          include_in_attendance?: boolean
+          include_in_payroll?: boolean
           joining_date?: string | null
           name_bn: string
           name_en?: string | null
@@ -6468,6 +6474,7 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string | null
+          custom_role_id?: string | null
           date_of_birth?: string | null
           deleted_at?: string | null
           department?: string | null
@@ -6479,6 +6486,8 @@ export type Database = {
           employment_type?: string | null
           experience?: string | null
           id?: string
+          include_in_attendance?: boolean
+          include_in_payroll?: boolean
           joining_date?: string | null
           name_bn?: string
           name_en?: string | null
@@ -6497,7 +6506,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "staff_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_categories: {
         Row: {
