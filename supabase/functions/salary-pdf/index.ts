@@ -382,7 +382,9 @@ Deno.serve(async (req) => {
           <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
           <td>${s.designation}</td>
           <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
-          <td class="c-pal">${bn ? toBnDigits(s.present) : s.present}<span class="pal-sep">/</span>${bn ? toBnDigits(s.absent) : s.absent}<span class="pal-sep">/</span>${bn ? toBnDigits(s.late) : s.late}</td>
+          <td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>
+          <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
+          <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
           <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
           <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
           <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
