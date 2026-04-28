@@ -610,6 +610,9 @@ const AdminSettings = () => {
             <TabsTrigger value="general" className="gap-1.5">
               <Palette className="w-4 h-4" /> {bn ? 'সাধারণ' : 'General'}
             </TabsTrigger>
+            <TabsTrigger value="salary_workflow" className="gap-1.5">
+              <Wallet className="w-4 h-4" /> {bn ? 'বেতন ওয়ার্কফ্লো' : 'Salary Workflow'}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="email" className="mt-6">
