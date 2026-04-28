@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface StaffLetterDialogProps {
@@ -36,6 +36,12 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
   const [sReason, setSReason] = useState('');
   const [sLetterNo, setSLetterNo] = useState('');
 
+  // Edit states for history
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  const [editPromo, setEditPromo] = useState<any>({});
+  const [editingSalaryId, setEditingSalaryId] = useState<string | null>(null);
+  const [editSalary, setEditSalary] = useState<any>({});
+
   useEffect(() => {
     if (open) {
       setNewDesignation('');
@@ -45,6 +51,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
       setPEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setSEffectiveDate(format(new Date(), 'yyyy-MM-dd'));
       setChangeType('increase');
+      setEditingPromoId(null);
+      setEditingSalaryId(null);
     }
   }, [open]);
 
@@ -192,7 +200,78 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
-  if (!staff) return null;
+  // Update existing promotion record
+  const updatePromoMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingPromoId) return;
+      const { error } = await supabase.from('staff_promotions').update({
+        old_designation: editPromo.old_designation || null,
+        new_designation: editPromo.new_designation,
+        effective_date: editPromo.effective_date,
+        reason: editPromo.reason || null,
+        letter_number: editPromo.letter_number || null,
+      }).eq('id', editingPromoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'পত্র আপডেট হয়েছে' : 'Letter updated');
+      setEditingPromoId(null);
+      qc.invalidateQueries({ queryKey: ['staff-promotions', staff.id] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const updateSalaryMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingSalaryId) return;
+      const { error } = await supabase.from('staff_salary_changes').update({
+        old_salary: Number(editSalary.old_salary || 0),
+        new_salary: Number(editSalary.new_salary || 0),
+        change_type: editSalary.change_type,
+        effective_date: editSalary.effective_date,
+        reason: editSalary.reason || null,
+        letter_number: editSalary.letter_number || null,
+      }).eq('id', editingSalaryId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'পত্র আপডেট হয়েছে' : 'Letter updated');
+      setEditingSalaryId(null);
+      qc.invalidateQueries({ queryKey: ['staff-salary-changes', staff.id] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const reprintPromo = (h: any) => generateLetter({
+    type: 'promotion',
+    language: bn ? 'bn' : 'en',
+    staff: {
+      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+      staff_id: staff.staff_id,
+      designation: h.old_designation,
+    },
+    old_designation: h.old_designation,
+    new_designation: h.new_designation,
+    effective_date: h.effective_date,
+    reason: h.reason,
+    letter_number: h.letter_number,
+  });
+
+  const reprintSalary = (h: any) => generateLetter({
+    type: 'salary_change',
+    language: bn ? 'bn' : 'en',
+    staff: {
+      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+      staff_id: staff.staff_id,
+      designation: staff.designation,
+    },
+    old_salary: h.old_salary,
+    new_salary: h.new_salary,
+    change_type: h.change_type,
+    effective_date: h.effective_date,
+    reason: h.reason,
+    letter_number: h.letter_number,
+  });
 
   const staffName = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
@@ -261,13 +340,60 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
             {promotionHistory.length > 0 && (
               <div className="pt-2">
                 <h4 className="text-sm font-semibold mb-2">{bn ? 'পদোন্নতির ইতিহাস' : 'Promotion History'}</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {promotionHistory.map((h: any) => (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {promotionHistory.map((h: any) => editingPromoId === h.id ? (
+                    <div key={h.id} className="rounded-[16px] bg-card border p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">{bn ? 'পূর্বের পদবি' : 'Old Designation'}</Label>
+                          <Input className="mt-1 h-8 text-xs" value={editPromo.old_designation || ''} onChange={e => setEditPromo({ ...editPromo, old_designation: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'নতুন পদবি' : 'New Designation'}</Label>
+                          <Select value={editPromo.new_designation || ''} onValueChange={(v) => setEditPromo({ ...editPromo, new_designation: v })}>
+                            <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {designations.map((d: any) => (
+                                <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>{bn ? d.name_bn : d.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
+                          <Input type="date" className="mt-1 h-8 text-xs" value={editPromo.effective_date || ''} onChange={e => setEditPromo({ ...editPromo, effective_date: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'স্মারক নং' : 'Letter No'}</Label>
+                          <Input className="mt-1 h-8 text-xs" value={editPromo.letter_number || ''} onChange={e => setEditPromo({ ...editPromo, letter_number: e.target.value })} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{bn ? 'কারণ' : 'Reason'}</Label>
+                        <Textarea rows={2} className="mt-1 text-xs" value={editPromo.reason || ''} onChange={e => setEditPromo({ ...editPromo, reason: e.target.value })} />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="outline" onClick={() => setEditingPromoId(null)}><X className="w-3 h-3 mr-1" />{bn ? 'বাতিল' : 'Cancel'}</Button>
+                        <Button size="sm" onClick={() => updatePromoMutation.mutate()} disabled={updatePromoMutation.isPending}>
+                          {updatePromoMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                          {bn ? 'সংরক্ষণ' : 'Save'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <div key={h.id} className="rounded-[16px] bg-card border p-2 text-xs flex items-center gap-2">
                       <span className="text-muted-foreground">{format(new Date(h.effective_date), 'dd/MM/yyyy')}</span>
                       <span>{h.old_designation || '—'}</span>
                       <ArrowRight className="w-3 h-3 text-primary shrink-0" />
                       <span className="font-semibold text-primary">{h.new_designation}</span>
+                      <div className="ml-auto flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintPromo(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
+                          <Printer className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingPromoId(h.id); setEditPromo({ ...h }); }} title={bn ? 'এডিট' : 'Edit'}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -328,16 +454,67 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
             {salaryHistory.length > 0 && (
               <div className="pt-2">
                 <h4 className="text-sm font-semibold mb-2">{bn ? 'বেতন পরিবর্তনের ইতিহাস' : 'Salary Change History'}</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {salaryHistory.map((h: any) => (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {salaryHistory.map((h: any) => editingSalaryId === h.id ? (
+                    <div key={h.id} className="rounded-[16px] bg-card border p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">{bn ? 'পূর্বের বেতন' : 'Old Salary'}</Label>
+                          <Input type="number" className="mt-1 h-8 text-xs" value={editSalary.old_salary ?? ''} onChange={e => setEditSalary({ ...editSalary, old_salary: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'নতুন বেতন' : 'New Salary'}</Label>
+                          <Input type="number" className="mt-1 h-8 text-xs" value={editSalary.new_salary ?? ''} onChange={e => setEditSalary({ ...editSalary, new_salary: e.target.value })} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'ধরন' : 'Type'}</Label>
+                          <Select value={editSalary.change_type || 'increase'} onValueChange={(v) => setEditSalary({ ...editSalary, change_type: v })}>
+                            <SelectTrigger className="mt-1 h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="increase">{bn ? 'বৃদ্ধি' : 'Increase'}</SelectItem>
+                              <SelectItem value="decrease">{bn ? 'হ্রাস' : 'Decrease'}</SelectItem>
+                              <SelectItem value="adjustment">{bn ? 'সমন্বয়' : 'Adjustment'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-xs">{bn ? 'কার্যকর তারিখ' : 'Effective Date'}</Label>
+                          <Input type="date" className="mt-1 h-8 text-xs" value={editSalary.effective_date || ''} onChange={e => setEditSalary({ ...editSalary, effective_date: e.target.value })} />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">{bn ? 'স্মারক নং' : 'Letter No'}</Label>
+                          <Input className="mt-1 h-8 text-xs" value={editSalary.letter_number || ''} onChange={e => setEditSalary({ ...editSalary, letter_number: e.target.value })} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">{bn ? 'কারণ' : 'Reason'}</Label>
+                        <Textarea rows={2} className="mt-1 text-xs" value={editSalary.reason || ''} onChange={e => setEditSalary({ ...editSalary, reason: e.target.value })} />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="outline" onClick={() => setEditingSalaryId(null)}><X className="w-3 h-3 mr-1" />{bn ? 'বাতিল' : 'Cancel'}</Button>
+                        <Button size="sm" onClick={() => updateSalaryMutation.mutate()} disabled={updateSalaryMutation.isPending}>
+                          {updateSalaryMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}
+                          {bn ? 'সংরক্ষণ' : 'Save'}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
                     <div key={h.id} className="rounded-[16px] bg-card border p-2 text-xs flex items-center gap-2">
                       <span className="text-muted-foreground">{format(new Date(h.effective_date), 'dd/MM/yyyy')}</span>
                       <span>৳ {Number(h.old_salary || 0).toLocaleString()}</span>
                       <ArrowRight className="w-3 h-3 text-primary shrink-0" />
                       <span className="font-semibold text-primary">৳ {Number(h.new_salary).toLocaleString()}</span>
-                      <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${h.change_type === 'increase' ? 'bg-success/10 text-success' : h.change_type === 'decrease' ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${h.change_type === 'increase' ? 'bg-success/10 text-success' : h.change_type === 'decrease' ? 'bg-destructive/10 text-destructive' : 'bg-muted'}`}>
                         {h.change_type === 'increase' ? (bn ? 'বৃদ্ধি' : 'Increase') : h.change_type === 'decrease' ? (bn ? 'হ্রাস' : 'Decrease') : (bn ? 'সমন্বয়' : 'Adjust')}
                       </span>
+                      <div className="ml-auto flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintSalary(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
+                          <Printer className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditingSalaryId(h.id); setEditSalary({ ...h }); }} title={bn ? 'এডিট' : 'Edit'}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
