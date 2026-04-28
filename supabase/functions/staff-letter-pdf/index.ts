@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     const instLogo = pick("logo_url", "logo_url", "");
     const principalName = pick("principal_name", "principal_name", bn ? "প্রিন্সিপাল" : "Principal");
 
-    const memoNo = letter_number || `${type === 'promotion' ? (bn ? 'পদ' : 'PRO') : (bn ? 'বে' : 'SAL')}-${new Date().getFullYear()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`;
+    const memoNo = letter_number || `${type === 'promotion' ? (bn ? 'পদ' : 'PRO') : 'S'}-${new Date().getFullYear()}-${Math.random().toString(36).slice(2,7).toUpperCase()}`;
     const issueDate = fmtDate(new Date().toISOString());
 
     const isPromotion = type === 'promotion';
