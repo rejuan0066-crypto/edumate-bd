@@ -159,6 +159,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         effective_date: pEffectiveDate,
         reason: pReason,
         letter_number: pLetterNo,
+        intro_text: pIntroText || undefined,
+        closing_text: pClosingText || undefined,
       });
       // 3) insert history with file URL
       const { data: { user } } = await supabase.auth.getUser();
