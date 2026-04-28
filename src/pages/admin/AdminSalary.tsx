@@ -1305,6 +1305,13 @@ const AdminSalary = () => {
 
   // Export PDF via edge function
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [sigPreparedBy, setSigPreparedBy] = useState('');
+  const [sigPreparedRole, setSigPreparedRole] = useState('');
+  const [sigVerifiedBy, setSigVerifiedBy] = useState('');
+  const [sigVerifiedRole, setSigVerifiedRole] = useState('');
+  const [sigApprovedBy, setSigApprovedBy] = useState('');
+  const [sigApprovedRole, setSigApprovedRole] = useState('');
   const exportPDF = async () => {
     setPdfLoading(true);
     try {
