@@ -17,6 +17,7 @@ import {
   CheckCircle2, Circle, ArrowRight, RotateCcw, Zap,
 } from 'lucide-react';
 import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
+import { useSalaryWorkflowGating } from '@/hooks/useSalaryWorkflowGating';
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -357,12 +358,19 @@ export default function SalaryWorkflowPanel({
     );
   }
 
-  // Action availability
-  const canSendToVerifier = sheetStage === 'draft';
-  const canVerify = sheetStage === 'pending_verification';
-  const canSendToApprover = sheetStage === 'verified';
-  const canApprove = sheetStage === 'pending_approval';
-  const canMarkPaid = sheetStage === 'approved';
+  // Role-based gating
+  const gating = useSalaryWorkflowGating();
+  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id);
+  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id);
+
+  // Action availability — combines stage + role gating
+  const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
+  const canVerify = sheetStage === 'pending_verification' && isAssignedVerifier;
+  const canSendToApprover = sheetStage === 'verified' && isAssignedVerifier;
+  const canApprove = sheetStage === 'pending_approval' && isAssignedApprover;
+  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer;
+  const canReset = gating.isSuperAdmin;
+  const canAutoAdvance = gating.isSuperAdmin;
 
   return (
     <>
@@ -385,7 +393,7 @@ export default function SalaryWorkflowPanel({
               <Button size="sm" variant="ghost" onClick={() => setHistoryOpen(true)}>
                 <History className="h-3.5 w-3.5 mr-1" /> {bn ? 'ইতিহাস' : 'History'}
               </Button>
-              {sheetStage !== 'draft' && sheetStage !== 'paid' && (
+              {sheetStage !== 'draft' && sheetStage !== 'paid' && canReset && (
                 <Button size="sm" variant="ghost" onClick={() => setActionDialog({ type: 'reset' })}>
                   <RotateCcw className="h-3.5 w-3.5 mr-1" /> {bn ? 'রিসেট' : 'Reset'}
                 </Button>
@@ -448,7 +456,7 @@ export default function SalaryWorkflowPanel({
                 <Wallet className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ সম্পন্ন (কোষাধ্যক্ষ)' : 'Mark Paid (Treasurer)'}
               </Button>
             )}
-            {sheetStage !== 'paid' && verifiers.length > 0 && approvers.length > 0 && treasurers.length > 0 && (
+            {canAutoAdvance && sheetStage !== 'paid' && verifiers.length > 0 && approvers.length > 0 && treasurers.length > 0 && (
               <Button
                 size="sm"
                 variant="outline"
@@ -462,12 +470,32 @@ export default function SalaryWorkflowPanel({
                   }
                 }}
               >
-                <Zap className="h-3 w-3 mr-1" /> {bn ? 'সকল ধাপ অটো-সম্পন্ন' : 'Auto-Advance All Stages'}
+                <Zap className="h-3 w-3 mr-1" /> {bn ? 'সকল ধাপ অটো-সম্পন্ন (সুপার অ্যাডমিন)' : 'Auto-Advance All Stages (Super Admin)'}
               </Button>
             )}
             {sheetStage === 'paid' && (
               <Badge className="bg-green-100 text-green-800 border-green-300">
                 ✓ {bn ? 'সম্পূর্ণ ওয়ার্কফ্লো সম্পন্ন' : 'Workflow Complete'}
+              </Badge>
+            )}
+            {/* Waiting hint when current user has no available action */}
+            {sheetStage !== 'paid' && !canSendToVerifier && !canVerify && !canSendToApprover && !canApprove && !canMarkPaid && !gating.loading && (
+              <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 font-normal">
+                {sheetStage === 'pending_verification' && (bn
+                  ? `অপেক্ষমাণ: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'যাচাইকারী'} এর যাচাই`
+                  : `Waiting: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'verifier'} to verify`)}
+                {sheetStage === 'verified' && (bn
+                  ? `অপেক্ষমাণ: যাচাইকারীর forward to অনুমোদনকারী`
+                  : `Waiting: verifier to forward to approver`)}
+                {sheetStage === 'pending_approval' && (bn
+                  ? `অপেক্ষমাণ: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'অনুমোদনকারী'} এর অনুমোদন`
+                  : `Waiting: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'approver'} to approve`)}
+                {sheetStage === 'approved' && (bn
+                  ? `অপেক্ষমাণ: কোষাধ্যক্ষ/হিসাবরক্ষক এর পরিশোধ`
+                  : `Waiting: treasurer/accountant to mark paid`)}
+                {sheetStage === 'draft' && (bn
+                  ? `অপেক্ষমাণ: প্রস্তুতকারী (সুপার অ্যাডমিন) এর পদক্ষেপ`
+                  : `Waiting: preparer (super admin) to send for verification`)}
               </Badge>
             )}
           </div>
