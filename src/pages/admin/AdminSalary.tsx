@@ -1342,6 +1342,12 @@ const AdminSalary = () => {
           };
         }),
         totals: { base: stats.totalBase, net: stats.totalNet, deductions: stats.totalDeduction },
+        prepared_by: sigPreparedBy.trim() || undefined,
+        prepared_by_role: sigPreparedRole.trim() || undefined,
+        verified_by: sigVerifiedBy.trim() || undefined,
+        verified_by_role: sigVerifiedRole.trim() || undefined,
+        approved_by: sigApprovedBy.trim() || undefined,
+        approved_by_role: sigApprovedRole.trim() || undefined,
       };
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
