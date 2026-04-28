@@ -309,7 +309,7 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  const roleLabel = role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : role || '';
+  const roleLabel = staffData?.designation || (role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : role || '');
   const displayName = staffData?.name_bn || profileData?.full_name || (bn ? 'নাম সেট করা হয়নি' : 'Name not set');
 
   return (
