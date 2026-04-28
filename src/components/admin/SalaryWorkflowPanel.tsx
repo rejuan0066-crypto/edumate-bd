@@ -17,6 +17,7 @@ import {
   CheckCircle2, Circle, ArrowRight, RotateCcw, Zap,
 } from 'lucide-react';
 import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
+import { useSalaryWorkflowGating } from '@/hooks/useSalaryWorkflowGating';
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -357,12 +358,19 @@ export default function SalaryWorkflowPanel({
     );
   }
 
-  // Action availability
-  const canSendToVerifier = sheetStage === 'draft';
-  const canVerify = sheetStage === 'pending_verification';
-  const canSendToApprover = sheetStage === 'verified';
-  const canApprove = sheetStage === 'pending_approval';
-  const canMarkPaid = sheetStage === 'approved';
+  // Role-based gating
+  const gating = useSalaryWorkflowGating();
+  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id);
+  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id);
+
+  // Action availability — combines stage + role gating
+  const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
+  const canVerify = sheetStage === 'pending_verification' && isAssignedVerifier;
+  const canSendToApprover = sheetStage === 'verified' && isAssignedVerifier;
+  const canApprove = sheetStage === 'pending_approval' && isAssignedApprover;
+  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer;
+  const canReset = gating.isSuperAdmin;
+  const canAutoAdvance = gating.isSuperAdmin;
 
   return (
     <>
@@ -385,7 +393,7 @@ export default function SalaryWorkflowPanel({
               <Button size="sm" variant="ghost" onClick={() => setHistoryOpen(true)}>
                 <History className="h-3.5 w-3.5 mr-1" /> {bn ? 'ইতিহাস' : 'History'}
               </Button>
-              {sheetStage !== 'draft' && sheetStage !== 'paid' && (
+              {sheetStage !== 'draft' && sheetStage !== 'paid' && canReset && (
                 <Button size="sm" variant="ghost" onClick={() => setActionDialog({ type: 'reset' })}>
                   <RotateCcw className="h-3.5 w-3.5 mr-1" /> {bn ? 'রিসেট' : 'Reset'}
                 </Button>
