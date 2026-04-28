@@ -3,6 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 import emailjs from '@emailjs/browser';
 import { toast } from 'sonner';
 
+/**
+ * ============================================================================
+ *  SINGLE SOURCE OF TRUTH FOR ALL OTP TRAFFIC
+ * ----------------------------------------------------------------------------
+ *  EVERY component that needs to send / verify / resend an OTP MUST go through
+ *  `useOtpService()` (React) or the `otpService` module export (non-React).
+ *  Direct calls to `supabase.functions.invoke('send-otp' | 'verify-otp')` or
+ *  raw `fetch` to the OTP edge functions are FORBIDDEN — they bypass:
+ *    1. Cooldown / rate-limit handling (causes false 429 "blank screen" errors)
+ *    2. EmailJS fallback dispatch
+ *    3. Telemetry / lockout tracking
+ *  If you need new OTP behaviour, extend this file — do not call the edge
+ *  function from elsewhere.
+ * ============================================================================
+ */
+
 export interface SendOtpResult {
   success: boolean;
   expiryMinutes?: number;
@@ -12,6 +28,8 @@ export interface SendOtpResult {
   errorCode?: string;
   /** Human-readable message safe to show in UI. */
   message?: string;
+  /** Which delivery path the server used (smtp | emailjs). Useful for the admin test panel. */
+  method?: 'smtp' | 'emailjs' | string;
 }
 
 export interface VerifyOtpResult {
@@ -21,6 +39,9 @@ export interface VerifyOtpResult {
   retryAfterSeconds?: number;
   attemptsRemaining?: number;
 }
+
+export type OtpPurpose = 'email_verification' | 'password_reset';
+export type OtpScope = 'login' | 'password_reset' | 'email_change' | 'password_change';
 
 const FUNCTIONS_BASE = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -55,65 +76,126 @@ async function callEdgeFunction(
   }
 }
 
+interface SendOptions {
+  /** Toast on toast-able errors (most flows want this). The admin Test panel sets it false. */
+  toastOnError?: boolean;
+  /** Skip the EmailJS client dispatch (rare — used by Test panel that only checks the path). */
+  skipEmailJsDispatch?: boolean;
+}
+
+/** Core send implementation — the only place that talks to `send-otp`. */
+async function sendOtpCore(
+  email: string,
+  purpose: OtpPurpose,
+  recipientName?: string,
+  scope?: OtpScope,
+  opts: SendOptions = {},
+): Promise<SendOtpResult> {
+  const toastOnError = opts.toastOnError !== false;
+  const { status, data, networkError } = await callEdgeFunction('send-otp', {
+    email, purpose, scope,
+  });
+
+  if (networkError) {
+    if (toastOnError) toast.error('Failed to send verification email');
+    return { success: false, message: 'Network error' };
+  }
+
+  if (status < 200 || status >= 300) {
+    const retry = Number(data?.retry_after_seconds) || undefined;
+    const message = data?.message || data?.error || 'Failed to send code';
+    const code = data?.code as string | undefined;
+    if (toastOnError && code !== 'COOLDOWN_ACTIVE') toast.error(message);
+    return { success: false, errorCode: code, message, retryAfterSeconds: retry };
+  }
+
+  if (!data?.success) {
+    const message = data?.message || data?.error || 'Failed to generate OTP';
+    if (toastOnError) toast.error(message);
+    return { success: false, message, errorCode: data?.code };
+  }
+
+  if (data.method === 'smtp') {
+    return { success: true, expiryMinutes: data.expiry_minutes, method: 'smtp' };
+  }
+
+  // EmailJS path
+  if (!opts.skipEmailJsDispatch) {
+    const { otp_code, emailjs: config, expiry_minutes } = data;
+    await emailjs.send(
+      config.service_id,
+      config.template_id,
+      {
+        to_email: email,
+        to_name: recipientName || email,
+        otp_code,
+        expiry_minutes,
+        purpose: purpose === 'password_reset' ? 'Password Reset' : 'Email Verification',
+      },
+      config.public_key,
+    );
+  }
+
+  return { success: true, expiryMinutes: data.expiry_minutes, method: 'emailjs' };
+}
+
+/** Core verify implementation — the only place that talks to `verify-otp`. */
+async function verifyOtpCore(
+  email: string,
+  code: string,
+  purpose: OtpPurpose,
+): Promise<VerifyOtpResult> {
+  const { status, data, networkError } = await callEdgeFunction('verify-otp', {
+    email, code, purpose,
+  });
+
+  if (networkError) return { valid: false, error: 'Verification failed' };
+
+  if (status < 200 || status >= 300) {
+    return {
+      valid: false,
+      error: data?.message || data?.error || 'Verification failed',
+      errorCode: data?.code,
+      retryAfterSeconds: Number(data?.retry_after_seconds) || undefined,
+      attemptsRemaining: typeof data?.attempts_remaining === 'number'
+        ? data.attempts_remaining : undefined,
+    };
+  }
+
+  return {
+    valid: !!data?.valid,
+    error: data?.error || data?.message,
+    errorCode: data?.code,
+  };
+}
+
+/**
+ * Non-React export for callers that aren't components/hooks (utils, services).
+ * Same single pipeline as the hook — never reach for `functions.invoke` instead.
+ */
+export const otpService = {
+  sendOtp: sendOtpCore,
+  verifyOtp: verifyOtpCore,
+  /** Live end-to-end send used by /admin/settings Test OTP button.
+   *  Returns the delivery method without showing duplicate toasts. */
+  testSendOtp: (email: string) =>
+    sendOtpCore(email, 'email_verification', undefined, undefined, { toastOnError: false }),
+};
+
+/** React hook wrapper — adds `sending` / `verifying` busy flags. */
 export const useOtpService = () => {
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
   const sendOtp = async (
     email: string,
-    purpose: 'email_verification' | 'password_reset',
+    purpose: OtpPurpose,
     recipientName?: string,
-    scope?: 'login' | 'password_reset' | 'email_change' | 'password_change'
+    scope?: OtpScope,
   ): Promise<SendOtpResult> => {
     setSending(true);
     try {
-      const { status, data, networkError } = await callEdgeFunction('send-otp', {
-        email, purpose, scope,
-      });
-
-      if (networkError) {
-        toast.error('Failed to send verification email');
-        return { success: false };
-      }
-
-      // Non-2xx — structured error envelope from the edge function
-      if (status < 200 || status >= 300) {
-        const retry = Number(data?.retry_after_seconds) || undefined;
-        const message = data?.message || data?.error || 'Failed to send code';
-        const code = data?.code as string | undefined;
-        if (code !== 'COOLDOWN_ACTIVE') {
-          toast.error(message);
-        }
-        return { success: false, errorCode: code, message, retryAfterSeconds: retry };
-      }
-
-      if (!data?.success) {
-        const message = data?.message || data?.error || 'Failed to generate OTP';
-        toast.error(message);
-        return { success: false, message, errorCode: data?.code };
-      }
-
-      // SMTP path: server already sent the email
-      if (data.method === 'smtp') {
-        return { success: true, expiryMinutes: data.expiry_minutes };
-      }
-
-      // EmailJS path - send from client side
-      const { otp_code, emailjs: config, expiry_minutes } = data;
-      await emailjs.send(
-        config.service_id,
-        config.template_id,
-        {
-          to_email: email,
-          to_name: recipientName || email,
-          otp_code: otp_code,
-          expiry_minutes: expiry_minutes,
-          purpose: purpose === 'password_reset' ? 'Password Reset' : 'Email Verification',
-        },
-        config.public_key
-      );
-
-      return { success: true, expiryMinutes: expiry_minutes };
+      return await sendOtpCore(email, purpose, recipientName, scope);
     } finally {
       setSending(false);
     }
@@ -122,34 +204,11 @@ export const useOtpService = () => {
   const verifyOtp = async (
     email: string,
     code: string,
-    purpose: 'email_verification' | 'password_reset'
+    purpose: OtpPurpose,
   ): Promise<VerifyOtpResult> => {
     setVerifying(true);
     try {
-      const { status, data, networkError } = await callEdgeFunction('verify-otp', {
-        email, code, purpose,
-      });
-
-      if (networkError) {
-        return { valid: false, error: 'Verification failed' };
-      }
-
-      if (status < 200 || status >= 300) {
-        return {
-          valid: false,
-          error: data?.message || data?.error || 'Verification failed',
-          errorCode: data?.code,
-          retryAfterSeconds: Number(data?.retry_after_seconds) || undefined,
-          attemptsRemaining: typeof data?.attempts_remaining === 'number'
-            ? data.attempts_remaining : undefined,
-        };
-      }
-
-      return {
-        valid: !!data?.valid,
-        error: data?.error || data?.message,
-        errorCode: data?.code,
-      };
+      return await verifyOtpCore(email, code, purpose);
     } finally {
       setVerifying(false);
     }
