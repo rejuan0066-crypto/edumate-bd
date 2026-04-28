@@ -363,15 +363,28 @@ Deno.serve(async (req) => {
   </div>
 
   <table>
+    <colgroup>
+      <col style="width:4%"/>
+      <col style="width:18%"/>
+      <col style="width:14%"/>
+      <col style="width:9%"/>
+      <col style="width:4%"/>
+      <col style="width:4%"/>
+      <col style="width:4%"/>
+      <col style="width:9%"/>
+      <col style="width:9%"/>
+      <col style="width:9%"/>
+      <col style="width:16%"/>
+    </colgroup>
     <thead>
       <tr>
-        <th class="center" style="width:28pt">${bn ? "ক্রঃ" : "SL"}</th>
+        <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
         <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
         <th>${bn ? "পদবি" : "Designation"}</th>
         <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center" style="width:30pt">${bn ? "উপ" : "P"}</th>
-        <th class="center" style="width:30pt">${bn ? "অনু" : "A"}</th>
-        <th class="center" style="width:30pt">${bn ? "বি" : "L"}</th>
+        <th class="center">${bn ? "উপ" : "P"}</th>
+        <th class="center">${bn ? "অনু" : "A"}</th>
+        <th class="center">${bn ? "বি" : "L"}</th>
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
         <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
