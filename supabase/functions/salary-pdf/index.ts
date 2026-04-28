@@ -485,7 +485,7 @@ Deno.serve(async (req) => {
   </div>
 
   <div class="page-footer">
-    <div class="signatures">
+    <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
       <div class="sig">
         <div class="sig-line"></div>
         <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
@@ -504,6 +504,13 @@ Deno.serve(async (req) => {
         <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
         <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
       </div>
+      ${(paid_by && String(paid_by).trim()) ? `
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${paid_by}</div>
+        <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
+        <div class="role-meta">${(paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)")}</div>
+      </div>` : ''}
     </div>
 
     <div class="footer">
