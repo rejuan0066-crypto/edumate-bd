@@ -6400,6 +6400,7 @@ export type Database = {
           effective_date: string
           id: string
           issued_by: string | null
+          letter_file_url: string | null
           letter_number: string | null
           new_designation: string
           notes: string | null
@@ -6415,6 +6416,7 @@ export type Database = {
           effective_date?: string
           id?: string
           issued_by?: string | null
+          letter_file_url?: string | null
           letter_number?: string | null
           new_designation: string
           notes?: string | null
@@ -6430,6 +6432,7 @@ export type Database = {
           effective_date?: string
           id?: string
           issued_by?: string | null
+          letter_file_url?: string | null
           letter_number?: string | null
           new_designation?: string
           notes?: string | null
@@ -6457,6 +6460,7 @@ export type Database = {
           effective_date: string
           id: string
           issued_by: string | null
+          letter_file_url: string | null
           letter_number: string | null
           new_salary: number
           notes: string | null
@@ -6473,6 +6477,7 @@ export type Database = {
           effective_date?: string
           id?: string
           issued_by?: string | null
+          letter_file_url?: string | null
           letter_number?: string | null
           new_salary: number
           notes?: string | null
@@ -6489,6 +6494,7 @@ export type Database = {
           effective_date?: string
           id?: string
           issued_by?: string | null
+          letter_file_url?: string | null
           letter_number?: string | null
           new_salary?: number
           notes?: string | null
