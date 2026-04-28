@@ -84,12 +84,16 @@ const Login = () => {
   // Otherwise behave as before: wait for role to resolve, then redirect.
   const otpGateActive = pendingOtp && !otpVerified;
 
-  if (authLoading || (user && !otpGateActive && !hasResolvedAuthRedirectState({ role, userStatus }))) {
-    return <PageLoader />;
-  }
-
-  if (user && !otpGateActive) {
-    return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
+  // While OTP gate is pending (or active), keep the form + dialog mounted —
+  // do NOT show a full-page loader. Otherwise the user sees a blank loader
+  // between clicking "Sign in" and the OTP dialog appearing.
+  if (!pendingOtp && !otpGateActive) {
+    if (authLoading || (user && !hasResolvedAuthRedirectState({ role, userStatus }))) {
+      return <PageLoader />;
+    }
+    if (user) {
+      return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
