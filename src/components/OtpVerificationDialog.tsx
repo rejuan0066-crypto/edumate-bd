@@ -73,10 +73,20 @@ const OtpVerificationDialog = ({
   const verifyTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const resendApiRef = useRef<{ startCooldown: (s: number) => void } | null>(null);
+  // Guard against double-fire of the initial send (StrictMode / re-renders).
+  const initialSendStartedRef = useRef(false);
+
+  // Reset the guard whenever the dialog closes so a future open re-sends.
+  useEffect(() => {
+    if (!open) {
+      initialSendStartedRef.current = false;
+    }
+  }, [open]);
 
   // Initial send when dialog opens — but first check if OTP is required for this scope
   useEffect(() => {
-    if (open && !otpSent) {
+    if (open && !otpSent && !initialSendStartedRef.current) {
+      initialSendStartedRef.current = true;
       void (async () => {
         // Honour admin per-flow OTP toggle. If disabled for this scope, skip the
         // entire OTP exchange and call onVerified() so the calling flow proceeds.
@@ -186,8 +196,21 @@ const OtpVerificationDialog = ({
       toast.success(bn ? `${email} এ কোড পাঠানো হয়েছে` : `Code sent to ${email}`);
       return;
     }
+    // COOLDOWN_ACTIVE on initial send means a code was issued moments ago and
+    // is still valid — show the verify UI so the user can enter that code.
+    if (result.errorCode === 'COOLDOWN_ACTIVE') {
+      setOtpSent(true);
+      setExpiryMinutes(result.expiryMinutes || 10);
+      if (result.retryAfterSeconds) {
+        resendApiRef.current?.startCooldown(result.retryAfterSeconds);
+      }
+      toast.info(bn
+        ? `${email} এ পাঠানো পূর্বের কোডটি ব্যবহার করুন`
+        : `Enter the code already sent to ${email}`);
+      return;
+    }
     // Failed initial send — check for lockout
-    const locked = applyLockout(
+    applyLockout(
       result.errorCode,
       result.message,
       result.retryAfterSeconds,
@@ -196,8 +219,8 @@ const OtpVerificationDialog = ({
     if (result.retryAfterSeconds) {
       resendApiRef.current?.startCooldown(result.retryAfterSeconds);
     }
-    // Show OTP UI either way so user can verify a previously issued code
-    if (!locked || locked) setOtpSent(true);
+    // Show OTP UI so user can verify a previously issued code
+    setOtpSent(true);
   };
 
   const handleResend = async () => {
