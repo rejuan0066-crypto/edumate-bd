@@ -26,7 +26,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
-  CheckCircle2, Clock, AlertCircle, ChevronDown, Edit2, Eye,
+  CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, Timer, FolderOpen,
   PiggyBank, Landmark, RefreshCw
 } from 'lucide-react';
