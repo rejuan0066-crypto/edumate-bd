@@ -12,6 +12,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { FileText, Printer, Trash2, Loader2, Eye, Pencil, PencilOff, Upload, Plus, UserCheck } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toast } from 'sonner';
 import { useState, useRef, useCallback } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -108,10 +109,7 @@ const AdminResignLetters = () => {
 
   const { data: institution } = useQuery({
     queryKey: ['institution-info'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
+    queryFn: fetchInstitutionInfo,
   });
 
   const { data: principalInfo } = useQuery({

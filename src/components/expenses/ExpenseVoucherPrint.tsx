@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Printer } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface ExpenseVoucherPrintProps {
   expense: any;
@@ -18,7 +19,7 @@ const ExpenseVoucherPrint = ({ expense, open, onClose }: ExpenseVoucherPrintProp
   const { data: institution } = useQuery({
     queryKey: ['voucher-institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).single();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

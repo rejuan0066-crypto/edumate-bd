@@ -17,6 +17,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import CertificateTemplateDesigner from '@/components/admin/CertificateTemplateDesigner';
 import { renderCertificateHTML, mergeTemplate, CertTemplateConfig, CertType as RenderCertType } from '@/lib/certificateTemplate';
 import { romanizeBangla, containsBangla } from '@/lib/bnRomanize';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 type CertType = 'certificate' | 'transfer' | 'testimonial';
 
@@ -86,10 +87,7 @@ const AdminCertificates = () => {
   /* ── Data ──────────────────────────── */
   const { data: institution } = useQuery({
     queryKey: ['institution-info'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
+    queryFn: fetchInstitutionInfo,
   });
 
   const { data: principalInfo } = useQuery({

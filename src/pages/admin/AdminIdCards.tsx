@@ -12,6 +12,7 @@ import StaffIdCard from '@/components/idcard/StaffIdCard';
 import { printIdCard, printMultipleIdCards } from '@/lib/idCardPrint';
 import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -142,10 +143,7 @@ const AdminIdCards = () => {
 
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
+    queryFn: fetchInstitutionInfo,
   });
 
   // Fetch active academic session for valid-until

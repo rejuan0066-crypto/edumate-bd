@@ -6,6 +6,7 @@ import { Printer, ArrowLeft } from 'lucide-react';
 import { getGrade } from './ClassResultTable';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface IndividualMarksheetProps {
   student: any;
@@ -50,7 +51,7 @@ const IndividualMarksheet = ({ student, subjects, marksMap, examTitle, onBack }:
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     staleTime: 10 * 60 * 1000,

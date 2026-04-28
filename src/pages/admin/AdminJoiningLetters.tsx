@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileText, Printer, Trash2, Loader2, Eye, Pencil, PencilOff, Upload, AlignLeft, AlignCenter, AlignRight, AlignJustify, Move, RotateCcw } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { toast } from 'sonner';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -183,10 +184,7 @@ const AdminJoiningLetters = () => {
 
   const { data: institution } = useQuery({
     queryKey: ['institution-info'],
-    queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
-      return data;
-    },
+    queryFn: fetchInstitutionInfo,
   });
 
   const { data: principalInfo } = useQuery({

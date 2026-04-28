@@ -12,6 +12,7 @@ import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { Eye, Download, Loader2, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 const DEFAULT_STYLE: ReceiptStyleConfig = {
   primaryColor: '#1a5c2e',
   fontSize: 100,
@@ -30,7 +31,7 @@ const DonationReceiptDesigner = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution_donation'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

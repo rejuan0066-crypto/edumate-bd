@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useStaffFormConfig } from '@/hooks/useStaffFormConfig';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
@@ -103,7 +104,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

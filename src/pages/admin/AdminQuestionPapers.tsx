@@ -19,6 +19,7 @@ import { Plus, Trash2, Printer, ArrowLeft, Check, X, Clock, Eye, Keyboard, Type,
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
 import AIQuestionGeneratorDialog from '@/components/admin/AIQuestionGeneratorDialog';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 // ─── Arabic Virtual Keyboard Layout (IBM PC Arabic Keyboard) ───
 const ARABIC_ROWS_NORMAL = [
@@ -854,7 +855,7 @@ const AdminQuestionPapers = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

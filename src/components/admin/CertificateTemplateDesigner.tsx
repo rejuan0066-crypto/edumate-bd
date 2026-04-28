@@ -17,6 +17,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import {
   CertType, CertTemplateConfig, DEFAULT_TEMPLATE, mergeTemplate, renderCertificateHTML,
 } from '@/lib/certificateTemplate';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const TYPE_TABS: { key: CertType; bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string }[] = [
   { key: 'certificate', bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award, titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير' },
@@ -121,7 +122,7 @@ const CertificateTemplateDesigner = ({ open, onOpenChange }: Props) => {
   const { data: liveInstitution } = useQuery({
     queryKey: ['designer-institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     enabled: open,

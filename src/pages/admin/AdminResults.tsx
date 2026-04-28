@@ -15,6 +15,7 @@ import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import { GraduationCap } from 'lucide-react';
 import { exportResultCSV, exportResultPDF, printResultSheet } from '@/lib/resultExport';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const AdminResults = () => {
   const { language } = useLanguage();
@@ -275,7 +276,7 @@ const AdminResults = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('name, name_en, logo_url, address, phone').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     staleTime: 10 * 60 * 1000,

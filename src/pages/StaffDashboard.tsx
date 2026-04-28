@@ -19,6 +19,7 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 // Lazy-load admin modules for staff with permissions
 const AdminStudents = lazy(() => import('@/pages/admin/AdminStudents'));
@@ -175,7 +176,7 @@ const StaffDashboard = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-info'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

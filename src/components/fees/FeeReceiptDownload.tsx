@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { useReceiptSettings } from '@/hooks/useReceiptSettings';
 import { Link } from 'react-router-dom';
 import { buildSingleStudentPrintHtml, buildBulkClassPrintHtml, ReceiptData, ReceiptStyleConfig } from './receiptPrintLayouts';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface Props {
   collectorName?: string;
@@ -53,7 +54,7 @@ const FeeReceiptDownload = ({ collectorName }: Props) => {
   const { data: institution } = useQuery({
     queryKey: ['institution_receipt'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

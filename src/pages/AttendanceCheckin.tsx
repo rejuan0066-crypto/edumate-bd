@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, QrCode, Loader2, AlertCircle, School } from 'lucide-react';
 import { toast } from 'sonner';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const AttendanceCheckin = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,7 @@ const AttendanceCheckin = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

@@ -14,6 +14,7 @@ import {
   QrCode, Fingerprint, CreditCard, Monitor, CheckCircle2,
   Loader2, UserCheck, Clock, LogIn, LogOut, Printer, Copy
 } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface Props {
   open: boolean;
@@ -35,7 +36,7 @@ const StaffCheckinDialog = ({ open, onOpenChange, selectedDate }: Props) => {
   const { data: institution } = useQuery({
     queryKey: ['institution-checkin'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
     enabled: open,

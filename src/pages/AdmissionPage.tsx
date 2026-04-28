@@ -16,6 +16,7 @@ import PhoneInput from '@/components/PhoneInput';
 import { Camera, Search, Loader2, AlertCircle, CheckCircle, Plus, Printer, Download, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { DatePicker } from '@/components/ui/date-picker';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 const emptyAddress: AddressData = { division: '', district: '', upazila: '', union: '', postOffice: '', village: '' };
 
 const formatAddress = (addr: AddressData) =>
@@ -91,7 +92,7 @@ const AdmissionPage = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-default'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

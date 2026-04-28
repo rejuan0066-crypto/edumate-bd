@@ -19,6 +19,7 @@ import { useApprovalCheck } from '@/hooks/useApprovalCheck';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { generateBilingualReport, type ReportSection, type ReportSummaryStat } from '@/lib/reportPdfGenerator';
 import { resolvePersonType, makePersonMatcher, type PersonTypeInput } from '@/lib/personType';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 type PersonType = 'student' | 'staff';
 
@@ -163,7 +164,7 @@ const AdminHealthRecords = () => {
   const { data: institution } = useQuery({
     queryKey: ['institution-default-health'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });

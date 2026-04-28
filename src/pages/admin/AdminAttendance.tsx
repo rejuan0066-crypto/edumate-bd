@@ -31,6 +31,7 @@ import AttendanceDeviceManager from '@/components/attendance/AttendanceDeviceMan
 import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -678,7 +679,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { data: institution } = useQuery({
     queryKey: ['institution'],
     queryFn: async () => {
-      const { data } = await supabase.from('institutions').select('*').eq('is_default', true).maybeSingle();
+      const data = await fetchInstitutionInfo();
       return data;
     },
   });
