@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
-import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare } from 'lucide-react';
+import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
@@ -16,6 +16,7 @@ import PaymentGatewaySettings from '@/components/admin/PaymentGatewaySettings';
 import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
+import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
@@ -608,6 +609,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="general" className="gap-1.5">
               <Palette className="w-4 h-4" /> {bn ? 'সাধারণ' : 'General'}
+            </TabsTrigger>
+            <TabsTrigger value="salary_workflow" className="gap-1.5">
+              <Wallet className="w-4 h-4" /> {bn ? 'বেতন ওয়ার্কফ্লো' : 'Salary Workflow'}
             </TabsTrigger>
           </TabsList>
 
@@ -1350,6 +1354,10 @@ const AdminSettings = () => {
                 <Save className="w-4 h-4 mr-2" /> {bn ? 'সকল সেটিংস সংরক্ষণ করুন' : 'Save All Settings'}
               </Button>
             </div>
+          </TabsContent>
+
+          <TabsContent value="salary_workflow" className="mt-6">
+            <SalaryWorkflowSettings />
           </TabsContent>
         </Tabs>
       </div>

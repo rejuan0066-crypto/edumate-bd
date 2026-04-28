@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
+import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -1312,10 +1313,23 @@ const AdminSalary = () => {
   const [sigVerifiedRole, setSigVerifiedRole] = useState('');
   const [sigApprovedBy, setSigApprovedBy] = useState('');
   const [sigApprovedRole, setSigApprovedRole] = useState('');
-  const exportPDF = async () => {
+  const exportPDF = async (sigOverride?: {
+    prepared_by?: string; prepared_by_role?: string;
+    verified_by?: string; verified_by_role?: string;
+    approved_by?: string; approved_by_role?: string;
+    paid_by?: string; paid_by_role?: string;
+  }) => {
     setPdfLoading(true);
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
+      const sig = sigOverride || {
+        prepared_by: sigPreparedBy.trim() || undefined,
+        prepared_by_role: sigPreparedRole.trim() || undefined,
+        verified_by: sigVerifiedBy.trim() || undefined,
+        verified_by_role: sigVerifiedRole.trim() || undefined,
+        approved_by: sigApprovedBy.trim() || undefined,
+        approved_by_role: sigApprovedRole.trim() || undefined,
+      };
       const payload = {
         monthYear,
         monthLabel: bn ? monthName?.bn : monthName?.en,
@@ -1342,12 +1356,7 @@ const AdminSalary = () => {
           };
         }),
         totals: { base: stats.totalBase, net: stats.totalNet, deductions: stats.totalDeduction },
-        prepared_by: sigPreparedBy.trim() || undefined,
-        prepared_by_role: sigPreparedRole.trim() || undefined,
-        verified_by: sigVerifiedBy.trim() || undefined,
-        verified_by_role: sigVerifiedRole.trim() || undefined,
-        approved_by: sigApprovedBy.trim() || undefined,
-        approved_by_role: sigApprovedRole.trim() || undefined,
+        ...sig,
       };
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -1787,6 +1796,19 @@ const AdminSalary = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Salary Approval Workflow */}
+        {mainTab === 'salary' && (
+          <SalaryWorkflowPanel
+            monthYear={monthYear}
+            monthLabel={(bn ? MONTHS.find(m => m.value === selectedMonth)?.bn : MONTHS.find(m => m.value === selectedMonth)?.en) || ''}
+            year={selectedYear}
+            records={salaryRecords as any[]}
+            eligibleIds={(salaryRecords as any[]).map((r: any) => r.id)}
+            onChanged={() => queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] })}
+            onPrintWithWorkflow={(sig) => exportPDF(sig)}
+          />
+        )}
 
         {/* Main Tabs: Floating Segmented Control */}
         <Tabs value={mainTab} onValueChange={setMainTab}>

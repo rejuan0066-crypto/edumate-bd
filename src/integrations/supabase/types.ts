@@ -5720,6 +5720,11 @@ export type Database = {
           absence_deduction: number | null
           absent_days: number | null
           advance_deduction: number | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          approved_by_role: string | null
+          approver_staff_id: string | null
           base_salary: number
           bonus: number | null
           created_at: string | null
@@ -5733,18 +5738,37 @@ export type Database = {
           other_deduction: number | null
           overtime: number | null
           paid_at: string | null
+          paid_by: string | null
+          paid_by_name: string | null
+          paid_by_role: string | null
+          prepared_at: string | null
+          prepared_by: string | null
+          prepared_by_name: string | null
+          prepared_by_role: string | null
           present_days: number | null
           remarks: string | null
           savings_deduction: number
           staff_id: string
           status: string | null
           updated_at: string | null
+          verified_at: string | null
+          verified_by: string | null
+          verified_by_name: string | null
+          verified_by_role: string | null
+          verifier_staff_id: string | null
+          workflow_notes: string | null
+          workflow_stage: string
           working_days: number | null
         }
         Insert: {
           absence_deduction?: number | null
           absent_days?: number | null
           advance_deduction?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          approved_by_role?: string | null
+          approver_staff_id?: string | null
           base_salary?: number
           bonus?: number | null
           created_at?: string | null
@@ -5758,18 +5782,37 @@ export type Database = {
           other_deduction?: number | null
           overtime?: number | null
           paid_at?: string | null
+          paid_by?: string | null
+          paid_by_name?: string | null
+          paid_by_role?: string | null
+          prepared_at?: string | null
+          prepared_by?: string | null
+          prepared_by_name?: string | null
+          prepared_by_role?: string | null
           present_days?: number | null
           remarks?: string | null
           savings_deduction?: number
           staff_id: string
           status?: string | null
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_name?: string | null
+          verified_by_role?: string | null
+          verifier_staff_id?: string | null
+          workflow_notes?: string | null
+          workflow_stage?: string
           working_days?: number | null
         }
         Update: {
           absence_deduction?: number | null
           absent_days?: number | null
           advance_deduction?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          approved_by_role?: string | null
+          approver_staff_id?: string | null
           base_salary?: number
           bonus?: number | null
           created_at?: string | null
@@ -5783,12 +5826,26 @@ export type Database = {
           other_deduction?: number | null
           overtime?: number | null
           paid_at?: string | null
+          paid_by?: string | null
+          paid_by_name?: string | null
+          paid_by_role?: string | null
+          prepared_at?: string | null
+          prepared_by?: string | null
+          prepared_by_name?: string | null
+          prepared_by_role?: string | null
           present_days?: number | null
           remarks?: string | null
           savings_deduction?: number
           staff_id?: string
           status?: string | null
           updated_at?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          verified_by_name?: string | null
+          verified_by_role?: string | null
+          verifier_staff_id?: string | null
+          workflow_notes?: string | null
+          workflow_stage?: string
           working_days?: number | null
         }
         Relationships: [
@@ -5917,6 +5974,101 @@ export type Database = {
           setting_key?: string
           setting_value?: Json | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      salary_workflow_history: {
+        Row: {
+          action: string
+          actor_name: string | null
+          actor_role: string | null
+          actor_user_id: string | null
+          created_at: string
+          from_stage: string | null
+          id: string
+          month_year: string | null
+          notes: string | null
+          salary_record_id: string | null
+          staff_id: string | null
+          target_name: string | null
+          target_staff_id: string | null
+          to_stage: string
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          month_year?: string | null
+          notes?: string | null
+          salary_record_id?: string | null
+          staff_id?: string | null
+          target_name?: string | null
+          target_staff_id?: string | null
+          to_stage: string
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          from_stage?: string | null
+          id?: string
+          month_year?: string | null
+          notes?: string | null
+          salary_record_id?: string | null
+          staff_id?: string | null
+          target_name?: string | null
+          target_staff_id?: string | null
+          to_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salary_workflow_history_salary_record_id_fkey"
+            columns: ["salary_record_id"]
+            isOneToOne: false
+            referencedRelation: "salary_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      salary_workflow_settings: {
+        Row: {
+          created_at: string
+          designation: string | null
+          display_name: string | null
+          id: string
+          is_active: boolean
+          role: string
+          sort_order: number
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          designation?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          role: string
+          sort_order?: number
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          designation?: string | null
+          display_name?: string | null
+          id?: string
+          is_active?: boolean
+          role?: string
+          sort_order?: number
+          staff_id?: string
+          updated_at?: string
         }
         Relationships: []
       }

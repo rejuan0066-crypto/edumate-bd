@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { monthYear, monthLabel, year, language, staff, totals,
       prepared_by, prepared_by_role, verified_by, verified_by_role,
-      approved_by, approved_by_role } = body;
+      approved_by, approved_by_role, paid_by, paid_by_role } = body;
 
     if (!staff || !Array.isArray(staff)) {
       return new Response(JSON.stringify({ error: "Invalid data" }), { status: 400, headers: corsHeaders });
@@ -305,8 +305,8 @@ Deno.serve(async (req) => {
   }
   .signatures {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10mm;
+    grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
+    gap: 8mm;
     margin: 8mm 4mm 2mm;
   }
   .sig {
@@ -485,7 +485,7 @@ Deno.serve(async (req) => {
   </div>
 
   <div class="page-footer">
-    <div class="signatures">
+    <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
       <div class="sig">
         <div class="sig-line"></div>
         <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
@@ -504,6 +504,13 @@ Deno.serve(async (req) => {
         <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
         <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
       </div>
+      ${(paid_by && String(paid_by).trim()) ? `
+      <div class="sig">
+        <div class="sig-line"></div>
+        <div class="sig-name">${paid_by}</div>
+        <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
+        <div class="role-meta">${(paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)")}</div>
+      </div>` : ''}
     </div>
 
     <div class="footer">
