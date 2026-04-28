@@ -44,37 +44,43 @@ Deno.serve(async (req) => {
     };
     const fmtNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
 
-    // Fetch institution info
-    const { data: institution } = await supabase
-      .from("institutions")
-      .select("*")
-      .eq("is_default", true)
-      .single();
-
-    const instName = institution?.name || (bn ? "প্রতিষ্ঠান" : "Institution");
-    const instAddress = institution?.address || "";
-    const instPhone = (institution as any)?.phone || "";
-    const instEmail = (institution as any)?.email || "";
-    const instLogo = (institution as any)?.logo_url || "";
-    // Names: priority is institutions table (প্রতিষ্ঠানের তথ্য সম্পাদনা) → website_settings → fallback
-    const { data: wsRows } = await supabase
-      .from("website_settings")
-      .select("key,value")
-      .in("key", [
+    // Fetch institution info + website_settings (full fallback for any missing field)
+    const [{ data: institution }, { data: wsRows }] = await Promise.all([
+      supabase.from("institutions").select("*").eq("is_default", true).maybeSingle(),
+      supabase.from("website_settings").select("key,value").in("key", [
+        "institution_name", "institution_name_en",
+        "address", "address_en",
+        "phone", "email", "logo_url",
+        "established_year", "registration_number",
         "principal_name", "principal_name_en",
         "accountant_name", "accountant_name_en",
         "verifier_name", "verifier_name_en",
-      ]);
+      ]),
+    ]);
     const ws: Record<string, string> = {};
-    (wsRows || []).forEach((r: any) => { ws[r.key] = r.value || ""; });
+    (wsRows || []).forEach((r: any) => {
+      ws[r.key] = (typeof r.value === 'string' ? r.value : (r.value ?? '')) || '';
+    });
     const inst: any = institution || {};
-    const pickName = (key: string, fallback: string) =>
-      (inst[key] && String(inst[key]).trim()) ||
-      ws[key] || ws[`${key}_en`] || fallback;
 
-    const principalName = pickName("principal_name", bn ? "প্রিন্সিপাল" : "Principal");
-    const accountantName = pickName("accountant_name", "");
-    const verifierName = pickName("verifier_name", "");
+    // Pick: institutions row (primary) → website_settings (legacy mirror) → fallback
+    const pick = (instKey: string, wsKey: string, fallback = "") => {
+      const a = inst[instKey];
+      if (a != null && String(a).trim() !== '') return String(a).trim();
+      const b = ws[wsKey];
+      if (b != null && String(b).trim() !== '') return String(b).trim();
+      return fallback;
+    };
+
+    const instName = pick("name", "institution_name", bn ? "প্রতিষ্ঠান" : "Institution");
+    const instAddress = pick("address", "address", "");
+    const instPhone = pick("phone", "phone", "");
+    const instEmail = pick("email", "email", "");
+    const instLogo = pick("logo_url", "logo_url", "");
+
+    const principalName = pick("principal_name", "principal_name", bn ? "প্রিন্সিপাল" : "Principal");
+    const accountantName = pick("accountant_name", "accountant_name", "");
+    const verifierName = pick("verifier_name", "verifier_name", "");
 
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
