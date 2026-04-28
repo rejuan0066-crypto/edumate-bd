@@ -349,11 +349,12 @@ Deno.serve(async (req) => {
 
   @media print {
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 60mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 50mm 5mm 60mm; }
     @page { size: A4 landscape; margin: 5mm; }
     table { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
+    .page-header { position: fixed; top: 3mm; left: 5mm; right: 5mm; }
     .page-footer { position: fixed; bottom: 3mm; left: 5mm; right: 5mm; }
   }
 </style>
