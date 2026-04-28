@@ -43,6 +43,9 @@ const Login = () => {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpRole, setOtpRole] = useState<OtpRoleScope | undefined>(undefined);
   const [otpVerified, setOtpVerified] = useState(false);
+  // Synchronous flag — set the instant verification succeeds so the dialog's
+  // immediate onOpenChange(false) callback does NOT mistake it for a cancel.
+  const otpVerifiedRef = useRef(false);
   // Track that the current authenticated session is awaiting OTP. Persist in
   // sessionStorage so a refresh during the gate keeps blocking until verified.
   const [pendingOtp, setPendingOtp] = useState<boolean>(() => {
