@@ -11,10 +11,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import {
-import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
   QrCode, Fingerprint, CreditCard, Monitor, CheckCircle2,
   Loader2, UserCheck, Clock, LogIn, LogOut, Printer, Copy
 } from 'lucide-react';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 interface Props {
   open: boolean;

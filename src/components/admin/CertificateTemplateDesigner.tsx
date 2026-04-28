@@ -15,9 +15,9 @@ import { Loader2, Save, RotateCcw, Award, FileText, ScrollText } from 'lucide-re
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
   CertType, CertTemplateConfig, DEFAULT_TEMPLATE, mergeTemplate, renderCertificateHTML,
 } from '@/lib/certificateTemplate';
+import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 
 const TYPE_TABS: { key: CertType; bn: string; en: string; icon: any; titleBn: string; titleEn: string; titleAr: string }[] = [
   { key: 'certificate', bn: 'সার্টিফিকেট', en: 'Certificate', icon: Award, titleBn: 'প্রশংসা সনদপত্র', titleEn: 'Certificate of Achievement', titleAr: 'شهادة تقدير' },
