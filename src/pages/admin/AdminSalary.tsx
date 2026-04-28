@@ -148,7 +148,12 @@ const AdminSalary = () => {
   const { data: staffRaw = [] } = useQuery({
     queryKey: ['salary-staff'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
+      const { data, error } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('status', 'active')
+        .order('salary_order', { ascending: true, nullsFirst: false })
+        .order('name_bn', { ascending: true });
       if (error) throw error;
       return data;
     },
