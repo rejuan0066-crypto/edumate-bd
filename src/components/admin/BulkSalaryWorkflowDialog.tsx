@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Zap, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
+import { useSalaryWorkflowGating } from '@/hooks/useSalaryWorkflowGating';
 
 const MONTH_NAMES_BN = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
