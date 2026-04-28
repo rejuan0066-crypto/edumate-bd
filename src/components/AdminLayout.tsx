@@ -73,7 +73,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     queryKey: ['sidebar-staff-photo', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from('staff').select('photo_url, name_bn, name_en').eq('user_id', user.id).maybeSingle();
+      const { data } = await supabase.from('staff').select('photo_url, name_bn, name_en, designation').eq('user_id', user.id).maybeSingle();
       return data;
     },
     enabled: !!user?.id,
@@ -565,6 +565,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
                   {(language === 'bn' ? sidebarStaffPhoto?.name_bn : sidebarStaffPhoto?.name_en) || sidebarStaffPhoto?.name_bn || sidebarProfile?.full_name || user?.email?.split('@')[0] || 'User'}
                 </p>
                 <span className="text-[9px] text-sidebar-foreground/55 truncate block mt-0.5">{(() => {
+                  // Prefer the linked staff designation (actual job title) over generic role label
+                  if (sidebarStaffPhoto?.designation) return sidebarStaffPhoto.designation;
                   const roleLabels: Record<string, { bn: string; en: string }> = {
                     super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
                     admin: { bn: 'অ্যাডমিন', en: 'Admin' },
