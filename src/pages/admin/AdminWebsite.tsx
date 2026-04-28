@@ -260,6 +260,50 @@ const AdminWebsite = () => {
     setSaving(false);
   };
 
+  // Saves principal/accountant/verifier names to BOTH institutions table (priority source)
+  // AND website_settings (legacy fallback) so every printable doc & edge function picks them up.
+  const saveSignatories = async () => {
+    if (!form) return;
+    setSaving(true);
+    try {
+      const principal = (form.principal_name || '').trim();
+      const accountant = ((form as any).accountant_name || '').trim();
+      const verifier = ((form as any).verifier_name || '').trim();
+
+      // 1) Update default institution row
+      const { data: instRow } = await supabase
+        .from('institutions')
+        .select('id')
+        .eq('is_default', true)
+        .maybeSingle();
+      if (instRow?.id) {
+        const { error: instErr } = await supabase
+          .from('institutions')
+          .update({
+            principal_name: principal || null,
+            accountant_name: accountant || null,
+            verifier_name: verifier || null,
+          })
+          .eq('id', instRow.id);
+        if (instErr) throw instErr;
+      }
+
+      // 2) Mirror to website_settings for legacy callers
+      await updateMultiple.mutateAsync([
+        { key: 'principal_name', value: principal as Json },
+        { key: 'principal_name_en', value: (form.principal_name_en || '') as Json },
+        { key: 'accountant_name', value: accountant as Json },
+        { key: 'verifier_name', value: verifier as Json },
+      ]);
+
+      toast.success(language === 'bn' ? 'অনুমোদনকারী/স্বাক্ষরকারীর তথ্য সংরক্ষিত!' : 'Signatories saved!');
+    } catch (err) {
+      console.error(err);
+      toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Save failed');
+    }
+    setSaving(false);
+  };
+
   const saveNavigation = async () => {
     setSaving(true);
     try {
@@ -407,6 +451,38 @@ const AdminWebsite = () => {
               </div>
               <Button className="btn-primary-gradient mt-3" onClick={() => saveSection(['institution_name', 'institution_name_en', 'address', 'phone', 'email'])} disabled={saving}>
                 <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'তথ্য সংরক্ষণ' : 'Save Info'}
+              </Button>
+
+              <hr className="my-4 border-border" />
+
+              <h4 className="text-sm font-semibold text-foreground mb-1">
+                {language === 'bn' ? 'অনুমোদনকারী / স্বাক্ষরকারী' : 'Approvers / Signatories'}
+              </h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                {language === 'bn'
+                  ? 'এই নামগুলো বেতন শীট, স্লিপ, সার্টিফিকেট, রসিদ ও ইমেইলের স্বাক্ষর অংশে স্বয়ংক্রিয়ভাবে দেখাবে।'
+                  : 'These names appear automatically on salary sheets, slips, certificates, receipts and email signatures.'}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (বাংলা)' : 'Principal (Bangla)'}</Label>
+                  <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'প্রিন্সিপাল (ইংরেজি)' : 'Principal (English)'}</Label>
+                  <Input className="bg-background mt-1" value={form.principal_name_en} onChange={e => updateField('principal_name_en', e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'হিসাবরক্ষক (Accountant)' : 'Accountant'}</Label>
+                  <Input className="bg-background mt-1" value={(form as any).accountant_name || ''} onChange={e => updateField('accountant_name' as any, e.target.value)} />
+                </div>
+                <div>
+                  <Label>{language === 'bn' ? 'যাচাইকারী (Verifier)' : 'Verifier'}</Label>
+                  <Input className="bg-background mt-1" value={(form as any).verifier_name || ''} onChange={e => updateField('verifier_name' as any, e.target.value)} />
+                </div>
+              </div>
+              <Button className="btn-primary-gradient mt-3" onClick={saveSignatories} disabled={saving}>
+                <Save className="w-4 h-4 mr-1" /> {language === 'bn' ? 'স্বাক্ষরকারী সংরক্ষণ' : 'Save Signatories'}
               </Button>
 
               <hr className="my-4 border-border" />
