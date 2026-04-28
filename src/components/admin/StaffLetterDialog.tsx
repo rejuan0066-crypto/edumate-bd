@@ -200,7 +200,78 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
-  if (!staff) return null;
+  // Update existing promotion record
+  const updatePromoMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingPromoId) return;
+      const { error } = await supabase.from('staff_promotions').update({
+        old_designation: editPromo.old_designation || null,
+        new_designation: editPromo.new_designation,
+        effective_date: editPromo.effective_date,
+        reason: editPromo.reason || null,
+        letter_number: editPromo.letter_number || null,
+      }).eq('id', editingPromoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'পত্র আপডেট হয়েছে' : 'Letter updated');
+      setEditingPromoId(null);
+      qc.invalidateQueries({ queryKey: ['staff-promotions', staff.id] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const updateSalaryMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingSalaryId) return;
+      const { error } = await supabase.from('staff_salary_changes').update({
+        old_salary: Number(editSalary.old_salary || 0),
+        new_salary: Number(editSalary.new_salary || 0),
+        change_type: editSalary.change_type,
+        effective_date: editSalary.effective_date,
+        reason: editSalary.reason || null,
+        letter_number: editSalary.letter_number || null,
+      }).eq('id', editingSalaryId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'পত্র আপডেট হয়েছে' : 'Letter updated');
+      setEditingSalaryId(null);
+      qc.invalidateQueries({ queryKey: ['staff-salary-changes', staff.id] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const reprintPromo = (h: any) => generateLetter({
+    type: 'promotion',
+    language: bn ? 'bn' : 'en',
+    staff: {
+      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+      staff_id: staff.staff_id,
+      designation: h.old_designation,
+    },
+    old_designation: h.old_designation,
+    new_designation: h.new_designation,
+    effective_date: h.effective_date,
+    reason: h.reason,
+    letter_number: h.letter_number,
+  });
+
+  const reprintSalary = (h: any) => generateLetter({
+    type: 'salary_change',
+    language: bn ? 'bn' : 'en',
+    staff: {
+      name: bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn),
+      staff_id: staff.staff_id,
+      designation: staff.designation,
+    },
+    old_salary: h.old_salary,
+    new_salary: h.new_salary,
+    change_type: h.change_type,
+    effective_date: h.effective_date,
+    reason: h.reason,
+    letter_number: h.letter_number,
+  });
 
   const staffName = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
