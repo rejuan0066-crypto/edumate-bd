@@ -114,85 +114,85 @@ Deno.serve(async (req) => {
     background: #ffffff;
     color: #000000;
     font-family: 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
-    font-size: 11.5pt;
-    line-height: 1.4;
+    font-size: 8.5pt;
+    line-height: 1.25;
   }
-  body { padding: 14mm 12mm; }
+  body { padding: 5mm 6mm; }
 
   .sheet {
-    max-width: 280mm;
+    width: 100%;
     margin: 0 auto;
     background: #fff;
-    border: 1.5pt solid #000;
-    padding: 10mm 12mm 12mm;
+    border: 1pt solid #000;
+    padding: 5mm 6mm 5mm;
     position: relative;
   }
 
-  /* ===== Letterhead — single, centred, official ===== */
+  /* ===== Letterhead ===== */
   .letterhead {
     text-align: center;
-    border-bottom: 2pt double #000;
-    padding-bottom: 8pt;
-    margin-bottom: 10pt;
+    border-bottom: 1.5pt double #000;
+    padding-bottom: 4pt;
+    margin-bottom: 5pt;
     position: relative;
-    min-height: 78px;
+    min-height: 50px;
   }
   .logo-wrap {
     position: absolute;
-    left: 0; top: 2pt;
-    width: 78px; height: 78px;
-    border: 1pt solid #000;
+    left: 0; top: 0;
+    width: 50px; height: 50px;
+    border: 0.75pt solid #000;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden;
     background: #fff;
   }
-  .logo-img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+  .logo-img { width: 100%; height: 100%; object-fit: contain; padding: 1px; }
   .logo-fallback {
-    font-size: 36px; font-weight: 700;
+    font-size: 24px; font-weight: 700;
     color: #000;
     font-family: 'Noto Serif Bengali', serif;
   }
   .inst-name {
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
-    font-size: 22pt;
+    font-size: 15pt;
     font-weight: 700;
-    line-height: 1.15;
-    letter-spacing: .2pt;
+    line-height: 1.1;
+    letter-spacing: .1pt;
     color: #000;
-    margin: 0 0 4pt;
+    margin: 0 0 2pt;
   }
   .inst-address {
-    font-size: 11pt;
-    line-height: 1.35;
+    font-size: 8.5pt;
+    line-height: 1.25;
     color: #000;
   }
   .inst-contact {
-    font-size: 10.5pt;
+    font-size: 8pt;
     color: #000;
-    margin-top: 2pt;
+    margin-top: 1pt;
   }
-  .inst-contact .sep { margin: 0 6pt; }
+  .inst-contact .sep { margin: 0 4pt; }
 
   /* ===== Document title ===== */
   .doc-title {
     text-align: center;
-    margin: 8pt 0 10pt;
+    margin: 4pt 0 4pt;
   }
   .doc-title h2 {
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
-    font-size: 15pt;
+    font-size: 11pt;
     font-weight: 700;
     color: #000;
-    letter-spacing: 1pt;
+    letter-spacing: .6pt;
     text-transform: uppercase;
     display: inline-block;
-    padding: 3pt 18pt;
-    border: 1.25pt solid #000;
+    padding: 2pt 14pt;
+    border: 1pt solid #000;
     border-radius: 2pt;
   }
   .doc-period {
-    margin-top: 5pt;
-    font-size: 11pt;
+    margin-top: 3pt;
+    font-size: 9pt;
     color: #000;
   }
   .doc-period strong { font-weight: 700; }
@@ -200,8 +200,8 @@ Deno.serve(async (req) => {
   /* Memo / date row */
   .memo-row {
     display: flex; justify-content: space-between;
-    font-size: 10.5pt;
-    margin: 6pt 0 10pt;
+    font-size: 8.5pt;
+    margin: 3pt 0 5pt;
     color: #000;
   }
   .memo-row span strong { font-weight: 700; }
@@ -210,35 +210,41 @@ Deno.serve(async (req) => {
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 10.5pt;
+    font-size: 8pt;
     color: #000;
+    table-layout: fixed;
   }
   thead th {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 6pt 5pt;
+    padding: 3pt 3pt;
     text-align: left;
-    border: 0.75pt solid #000;
+    border: 0.5pt solid #000;
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
+    font-size: 8pt;
+    line-height: 1.15;
+    word-break: break-word;
   }
   thead th.center { text-align: center; }
   thead th.right { text-align: right; }
   tbody td {
-    padding: 5pt 5pt;
-    border: 0.5pt solid #000;
+    padding: 2.5pt 3pt;
+    border: 0.4pt solid #000;
     vertical-align: middle;
     color: #000;
+    line-height: 1.2;
+    word-break: break-word;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
-  .c-num { text-align: center; width: 28pt; font-variant-numeric: tabular-nums; }
-  .c-name .nm { font-weight: 700; }
+  .c-num { text-align: center; font-variant-numeric: tabular-nums; }
+  .c-name .nm { font-weight: 700; font-size: 8pt; }
   .c-name .sid {
-    font-size: 9pt;
+    font-size: 7pt;
     color: #333;
-    margin-top: 1pt;
+    margin-top: 0;
     font-family: 'Tinos', monospace;
   }
   .c-amt {
@@ -246,34 +252,28 @@ Deno.serve(async (req) => {
     font-variant-numeric: tabular-nums;
   }
   .c-net { font-weight: 700; }
-  .c-pal {
-    text-align: center;
-    white-space: nowrap;
-    font-variant-numeric: tabular-nums;
-  }
-  .c-pal .pal-sep { margin: 0 2pt; color: #888; }
 
   .totals td {
     background: #e8e8e8 !important;
     font-weight: 700;
-    border: 1pt solid #000;
-    padding: 7pt 5pt;
+    border: 0.75pt solid #000;
+    padding: 4pt 3pt;
   }
   .totals td:first-child {
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: .4pt;
+    letter-spacing: .3pt;
   }
 
   /* ===== Note ===== */
   .note {
-    margin: 12pt 0 0;
-    padding: 6pt 8pt;
-    font-size: 10pt;
+    margin: 5pt 0 0;
+    padding: 3pt 5pt;
+    font-size: 7.5pt;
     color: #000;
-    border: 0.5pt solid #000;
+    border: 0.4pt solid #000;
     background: #fafafa;
-    line-height: 1.45;
+    line-height: 1.3;
   }
   .note strong { font-weight: 700; }
 
@@ -281,59 +281,61 @@ Deno.serve(async (req) => {
   .signatures {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 18mm;
-    margin: 26mm 4mm 4mm;
+    gap: 10mm;
+    margin: 12mm 4mm 2mm;
   }
   .sig {
     text-align: center;
-    font-size: 10.5pt;
+    font-size: 8.5pt;
     color: #000;
   }
   .sig .sig-line {
-    border-top: 1pt solid #000;
-    margin-bottom: 4pt;
+    border-top: 0.75pt solid #000;
+    margin-bottom: 2pt;
     height: 0;
   }
   .sig .sig-name {
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
-    font-size: 11pt;
+    font-size: 9pt;
     font-weight: 700;
-    min-height: 14pt;
-    margin-bottom: 2pt;
+    min-height: 11pt;
+    margin-bottom: 1pt;
     color: #000;
   }
   .sig .role {
     font-weight: 700;
     color: #000;
-    font-size: 10.5pt;
+    font-size: 8.5pt;
   }
   .sig .role-meta {
-    font-size: 9.5pt;
+    font-size: 7.5pt;
     color: #333;
-    margin-top: 1pt;
+    margin-top: 0;
     font-style: italic;
   }
 
   /* ===== Footer ===== */
   .footer {
-    margin-top: 10pt;
-    padding-top: 6pt;
-    border-top: 0.5pt solid #000;
+    margin-top: 5pt;
+    padding-top: 3pt;
+    border-top: 0.4pt solid #000;
     text-align: center;
-    font-size: 9pt;
+    font-size: 7.5pt;
     color: #000;
   }
   .footer .ref {
-    margin-top: 2pt;
+    margin-top: 1pt;
     font-family: 'Tinos', monospace;
-    font-size: 8.5pt;
+    font-size: 7pt;
     color: #333;
   }
 
   @media print {
     body { padding: 0; background: #fff; }
-    .sheet { border: 1.25pt solid #000; max-width: 100%; }
-    @page { size: A4 landscape; margin: 8mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm; }
+    @page { size: A4 landscape; margin: 5mm; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
   }
 </style>
 </head><body>
@@ -361,15 +363,28 @@ Deno.serve(async (req) => {
   </div>
 
   <table>
+    <colgroup>
+      <col style="width:4%"/>
+      <col style="width:18%"/>
+      <col style="width:14%"/>
+      <col style="width:9%"/>
+      <col style="width:4%"/>
+      <col style="width:4%"/>
+      <col style="width:4%"/>
+      <col style="width:9%"/>
+      <col style="width:9%"/>
+      <col style="width:9%"/>
+      <col style="width:16%"/>
+    </colgroup>
     <thead>
       <tr>
-        <th class="center" style="width:28pt">${bn ? "ক্রঃ" : "SL"}</th>
+        <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
         <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
         <th>${bn ? "পদবি" : "Designation"}</th>
         <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center" style="width:30pt">${bn ? "উপ" : "P"}</th>
-        <th class="center" style="width:30pt">${bn ? "অনু" : "A"}</th>
-        <th class="center" style="width:30pt">${bn ? "বি" : "L"}</th>
+        <th class="center">${bn ? "উপ" : "P"}</th>
+        <th class="center">${bn ? "অনু" : "A"}</th>
+        <th class="center">${bn ? "বি" : "L"}</th>
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
         <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
