@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer } from 'lucide-react';
+import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface StaffLetterDialogProps {
