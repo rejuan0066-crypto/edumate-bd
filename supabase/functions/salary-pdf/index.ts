@@ -290,13 +290,19 @@ Deno.serve(async (req) => {
     margin: 60px 4px 8px;
   }
   .sig { text-align: center; font-size: 11px; color: #000; }
+  .sig .sig-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #000;
+    min-height: 18px;
+    padding: 0 6px 4px;
+  }
   .sig .line {
     border-top: 1px solid #000;
     padding-top: 6px;
-    margin-top: 36px;
+    margin-top: 0;
   }
   .sig .role { font-weight: 700; color: #000; font-size: 12px; }
-  .sig .name { font-size: 10.5px; color: #000; margin-top: 2px; }
 
   /* ===== Footer (official seal line) ===== */
   .footer {
@@ -407,21 +413,21 @@ Deno.serve(async (req) => {
 
     <div class="signatures">
       <div class="sig">
+        <div class="sig-name">${accountantName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "প্রস্তুতকারী (হিসাবরক্ষক)" : "Prepared by (Accountant)"}</div>
-          <div class="name">${accountantName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
+        <div class="sig-name">${verifierName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-          <div class="name">${verifierName || (bn ? "স্বাক্ষর ও তারিখ" : "Signature & Date")}</div>
         </div>
       </div>
       <div class="sig">
+        <div class="sig-name">${principalName || ""}</div>
         <div class="line">
           <div class="role">${bn ? "অনুমোদনকারী (প্রিন্সিপাল)" : "Approved by (Principal)"}</div>
-          <div class="name">${principalName}</div>
         </div>
       </div>
     </div>

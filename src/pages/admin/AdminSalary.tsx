@@ -1450,9 +1450,9 @@ const AdminSalary = () => {
       .words strong{color:#0f766e;font-style:normal;font-weight:700}
       .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:55px;padding:0 8px}
       .sig{text-align:center;font-size:11.5px;color:#475569}
-      .sig .line{border-top:1.5px solid #94a3b8;padding-top:6px;margin-top:30px}
+      .sig .sig-name{font-size:12px;font-weight:700;color:#0f172a;min-height:18px;padding:0 6px 4px}
+      .sig .line{border-top:1.5px solid #94a3b8;padding-top:6px;margin-top:0}
       .sig .role{font-weight:700;color:#0f172a;font-size:12px}
-      .sig .name{font-size:10.5px;color:#64748b;margin-top:2px}
       .footer{background:#f1f5f9;padding:10px 32px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:30px}
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
       @media print{
@@ -1546,21 +1546,21 @@ const AdminSalary = () => {
 
         <div class="signatures">
           <div class="sig">
+            <div class="sig-name">${staffMember.name_bn || ''}</div>
             <div class="line">
               <div class="role">${bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature"}</div>
-              <div class="name">${staffMember.name_bn}</div>
             </div>
           </div>
           <div class="sig">
+            <div class="sig-name">&nbsp;</div>
             <div class="line">
               <div class="role">${bn ? 'হিসাবরক্ষক' : 'Accountant'}</div>
-              <div class="name">&nbsp;</div>
             </div>
           </div>
           <div class="sig">
+            <div class="sig-name">${principalName}</div>
             <div class="line">
-              <div class="role">${bn ? 'প্রিন্সিপাল' : 'Principal'}</div>
-              <div class="name">${principalName}</div>
+              <div class="role">${bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)'}</div>
             </div>
           </div>
         </div>
