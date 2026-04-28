@@ -268,8 +268,17 @@ const AdminWebsite = () => {
     setSaving(false);
   };
 
-  // Saves principal/accountant/verifier names to BOTH institutions table (priority source)
-  // AND website_settings (legacy fallback) so every printable doc & edge function picks them up.
+  // Saves principal/accountant/verifier names to BOTH institutions (primary source of truth)
+  // AND website_settings (legacy mirror). Conflict-handling rules:
+  //   1. Skip the save entirely if nothing changed (no-op detection).
+  //   2. If institutions ↔ website_settings already disagree (legacy drift), warn the
+  //      user once before overwriting both with the form values.
+  //   3. Optimistic concurrency: re-read institutions just before update; if another
+  //      session changed it after the form was loaded, ask the user to confirm.
+  //   4. Partial-failure rollback: if the legacy mirror write fails after the
+  //      institutions write succeeded, restore institutions to its pre-save snapshot
+  //      so the two sources never end up out of sync.
+  //   5. Auto-create the default institution row if it's missing instead of silently skipping.
   const saveSignatories = async () => {
     if (!form) return;
     if (!canEditSignatories) {
@@ -281,16 +290,114 @@ const AdminWebsite = () => {
     setSaving(true);
     try {
       const principal = (form.principal_name || '').trim();
+      const principalEn = (form.principal_name_en || '').trim();
       const accountant = ((form as any).accountant_name || '').trim();
       const verifier = ((form as any).verifier_name || '').trim();
 
-      // 1) Update default institution row
-      const { data: instRow } = await supabase
-        .from('institutions')
-        .select('id')
-        .eq('is_default', true)
-        .maybeSingle();
-      if (instRow?.id) {
+      // --- Step A: read current state from BOTH sources ----------------------------
+      const [{ data: instRow, error: instReadErr }, { data: wsRows, error: wsReadErr }] = await Promise.all([
+        supabase
+          .from('institutions')
+          .select('id, principal_name, accountant_name, verifier_name, updated_at')
+          .eq('is_default', true)
+          .maybeSingle(),
+        supabase
+          .from('website_settings')
+          .select('key, value')
+          .in('key', ['principal_name', 'principal_name_en', 'accountant_name', 'verifier_name']),
+      ]);
+      if (instReadErr) throw instReadErr;
+      if (wsReadErr) throw wsReadErr;
+
+      const wsMap: Record<string, string> = {};
+      (wsRows || []).forEach((r: any) => {
+        const v = r.value;
+        wsMap[r.key] = (typeof v === 'string' ? v : (v == null ? '' : String(v))).trim();
+      });
+
+      // --- Step B: no-op detection -------------------------------------------------
+      const sameAsInst = !!instRow
+        && (instRow.principal_name || '').trim() === principal
+        && (instRow.accountant_name || '').trim() === accountant
+        && (instRow.verifier_name || '').trim() === verifier;
+      const sameAsWs =
+        (wsMap.principal_name || '') === principal
+        && (wsMap.principal_name_en || '') === principalEn
+        && (wsMap.accountant_name || '') === accountant
+        && (wsMap.verifier_name || '') === verifier;
+      if (sameAsInst && sameAsWs) {
+        toast.info(language === 'bn' ? 'কোনো পরিবর্তন নেই — সংরক্ষণ এড়ানো হলো।' : 'No changes — skipping save.');
+        setSaving(false);
+        return;
+      }
+
+      // --- Step C: legacy-drift warning -------------------------------------------
+      const driftDetected = !!instRow && (
+        (instRow.principal_name || '').trim() !== (wsMap.principal_name || '')
+        || (instRow.accountant_name || '').trim() !== (wsMap.accountant_name || '')
+        || (instRow.verifier_name || '').trim() !== (wsMap.verifier_name || '')
+      );
+      if (driftDetected) {
+        const proceed = window.confirm(language === 'bn'
+          ? 'প্রতিষ্ঠানের তথ্য ও পুরাতন সেটিংসে ভিন্ন নাম পাওয়া গেছে। আপনি এখন যেগুলো লিখেছেন সেগুলো দুই জায়গায়ই বসিয়ে সমন্বয় করা হবে। চালিয়ে যাবেন?'
+          : 'Institutions and legacy website_settings hold different names. Continuing will overwrite BOTH with the values you just entered. Proceed?');
+        if (!proceed) { setSaving(false); return; }
+      }
+
+      // --- Step D: optimistic concurrency check (re-read right before write) ------
+      // If form was loaded with one snapshot and someone else saved meanwhile, settings
+      // (which feeds the form on first load) and the live row will disagree.
+      const baselinePrincipal = (settings?.principal_name || '').trim();
+      const baselineAccountant = ((settings as any)?.accountant_name || '').trim();
+      const baselineVerifier = ((settings as any)?.verifier_name || '').trim();
+      if (instRow) {
+        const livePrincipal = (instRow.principal_name || '').trim();
+        const liveAccountant = (instRow.accountant_name || '').trim();
+        const liveVerifier = (instRow.verifier_name || '').trim();
+        const concurrentChange =
+          livePrincipal !== baselinePrincipal
+          || liveAccountant !== baselineAccountant
+          || liveVerifier !== baselineVerifier;
+        if (concurrentChange) {
+          const overwrite = window.confirm(language === 'bn'
+            ? `অন্য একজন এই তথ্য পরিবর্তন করেছেন।\n\nবর্তমান সংরক্ষিত:\n• প্রিন্সিপাল: ${livePrincipal || '—'}\n• হিসাবরক্ষক: ${liveAccountant || '—'}\n• যাচাইকারী: ${liveVerifier || '—'}\n\nআপনার এডিট দিয়ে ওভাররাইট করবেন?`
+            : `Someone else changed these fields.\n\nCurrently saved:\n• Principal: ${livePrincipal || '—'}\n• Accountant: ${liveAccountant || '—'}\n• Verifier: ${liveVerifier || '—'}\n\nOverwrite with your edits?`);
+          if (!overwrite) { setSaving(false); return; }
+        }
+      }
+
+      // --- Step E: PRIMARY write (institutions) -----------------------------------
+      // Snapshot for rollback in case the mirror write fails.
+      const snapshot = instRow
+        ? {
+            principal_name: instRow.principal_name,
+            accountant_name: instRow.accountant_name,
+            verifier_name: instRow.verifier_name,
+          }
+        : null;
+
+      let resolvedInstId: string | null = instRow?.id ?? null;
+      if (!instRow?.id) {
+        // No default row yet → create one so the mirror is never the only source.
+        const { data: created, error: createErr } = await supabase
+          .from('institutions')
+          .insert({
+            name: form.institution_name || 'Default Institution',
+            name_en: form.institution_name_en || null,
+            address: form.address || null,
+            phone: form.phone || null,
+            email: form.email || null,
+            logo_url: form.logo_url || null,
+            is_default: true,
+            principal_name: principal || null,
+            accountant_name: accountant || null,
+            verifier_name: verifier || null,
+          })
+          .select('id')
+          .maybeSingle();
+        if (createErr) throw createErr;
+        resolvedInstId = created?.id ?? null;
+      } else {
         const { error: instErr } = await supabase
           .from('institutions')
           .update({
@@ -302,30 +409,41 @@ const AdminWebsite = () => {
         if (instErr) throw instErr;
       }
 
-      // 2) Mirror to website_settings for legacy callers
-      await updateMultiple.mutateAsync([
-        { key: 'principal_name', value: principal as Json },
-        { key: 'principal_name_en', value: (form.principal_name_en || '') as Json },
-        { key: 'accountant_name', value: accountant as Json },
-        { key: 'verifier_name', value: verifier as Json },
-      ]);
+      // --- Step F: MIRROR write (website_settings) with rollback on failure -------
+      try {
+        await updateMultiple.mutateAsync([
+          { key: 'principal_name', value: principal as Json },
+          { key: 'principal_name_en', value: principalEn as Json },
+          { key: 'accountant_name', value: accountant as Json },
+          { key: 'verifier_name', value: verifier as Json },
+        ]);
+      } catch (mirrorErr) {
+        // Roll back the primary write so the two sources stay aligned.
+        if (snapshot && resolvedInstId) {
+          await supabase
+            .from('institutions')
+            .update(snapshot)
+            .eq('id', resolvedInstId);
+        }
+        throw mirrorErr;
+      }
 
-      // 3) Force every consumer (certificates, marksheets, ID cards, salary sheets,
-      //    receipts, edge-driven PDFs) to pick up the new names *immediately*.
+      // --- Step G: invalidate caches & broadcast ----------------------------------
       await queryClient.invalidateQueries({ queryKey: ['website-settings'] });
       await queryClient.refetchQueries({ queryKey: ['website-settings'] });
       await queryClient.invalidateQueries({ queryKey: ['institutions'] });
-      // Broadcast for any non-React-Query consumer (print preview iframes, open windows)
       window.dispatchEvent(new CustomEvent('institution-info-updated', {
         detail: { principal_name: principal, accountant_name: accountant, verifier_name: verifier },
       }));
 
       toast.success(language === 'bn'
-        ? 'সংরক্ষিত! পরবর্তী সার্টিফিকেট/মার্কশিট/আইডি কার্ডে নতুন নাম দেখাবে।'
-        : 'Saved! New names will show on the next certificate / marksheet / ID card.');
-    } catch (err) {
-      console.error(err);
-      toast.error(language === 'bn' ? 'সংরক্ষণে ত্রুটি' : 'Save failed');
+        ? 'সংরক্ষিত! প্রতিষ্ঠান ও সেটিংস সমন্বিত — পরবর্তী ডকুমেন্টে নতুন নাম দেখাবে।'
+        : 'Saved! Institutions and settings are in sync — new names appear on the next generated document.');
+    } catch (err: any) {
+      console.error('saveSignatories failed:', err);
+      toast.error(language === 'bn'
+        ? `সংরক্ষণে ত্রুটি: ${err?.message || 'অজানা সমস্যা'}`
+        : `Save failed: ${err?.message || 'Unknown error'}`);
     }
     setSaving(false);
   };
