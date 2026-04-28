@@ -1780,7 +1780,7 @@ const AdminSalary = () => {
                 <Button size="sm" variant="outline" onClick={exportExcel}>
                   <Download className="h-3 w-3 mr-1" /> Excel
                 </Button>
-                <Button size="sm" variant="outline" onClick={exportPDF} disabled={pdfLoading}>
+                <Button size="sm" variant="outline" onClick={() => setSigDialogOpen(true)} disabled={pdfLoading}>
                   <FileText className="h-3 w-3 mr-1" /> {pdfLoading ? '...' : 'PDF'}
                 </Button>
               </div>
