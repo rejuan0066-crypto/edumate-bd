@@ -105,10 +105,25 @@ const AdminSettings = () => {
     setOtpTesting(true);
     setOtpTestResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('send-otp', {
-        body: { email: otpTestEmail, purpose: 'email_verification' },
+      // Direct fetch to bypass supabase-js auto console.error on 4xx (e.g. 429 cooldown),
+      // which the runtime tracker mis-reports as a blank-screen error.
+      const SUPA_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token || ANON;
+      const res = await fetch(`${SUPA_URL}/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: ANON,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: otpTestEmail, purpose: 'email_verification' }),
       });
-      if (error) throw new Error(error.message || 'Edge function error');
+      const data: any = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || data?.error || `Edge function returned ${res.status}`);
+      }
       if (data?.error) throw new Error(data.error);
       const method = data?.method || 'unknown';
       setOtpTestResult({
