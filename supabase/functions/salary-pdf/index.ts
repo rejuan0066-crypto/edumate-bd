@@ -277,12 +277,19 @@ Deno.serve(async (req) => {
   }
   .note strong { font-weight: 700; }
 
-  /* ===== Signatures ===== */
+  /* ===== Page Footer (repeats on every printed page) ===== */
+  .page-footer {
+    position: fixed;
+    left: 5mm;
+    right: 5mm;
+    bottom: 3mm;
+    background: #fff;
+  }
   .signatures {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     gap: 10mm;
-    margin: 12mm 4mm 2mm;
+    margin: 8mm 4mm 2mm;
   }
   .sig {
     text-align: center;
