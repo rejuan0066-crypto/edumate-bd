@@ -289,6 +289,11 @@ Deno.serve(async (req) => {
     font-size: 10.5pt;
     color: #000;
   }
+  .sig .sig-line {
+    border-top: 1pt solid #000;
+    margin-bottom: 4pt;
+    height: 0;
+  }
   .sig .sig-name {
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
     font-size: 11pt;
@@ -296,10 +301,6 @@ Deno.serve(async (req) => {
     min-height: 14pt;
     margin-bottom: 2pt;
     color: #000;
-  }
-  .sig .line {
-    border-top: 1pt solid #000;
-    padding-top: 4pt;
   }
   .sig .role {
     font-weight: 700;
