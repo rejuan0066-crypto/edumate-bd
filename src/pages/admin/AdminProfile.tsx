@@ -414,15 +414,16 @@ const AdminProfile = () => {
                 <p className="text-white/70 text-sm">{staffData.name_en}</p>
               )}
               <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                {role && (
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/15 text-white border border-white/20 backdrop-blur-sm">
-                    {roleLabel}
-                  </span>
-                )}
-                {showDesignationBadge && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                    {staffData!.designation}
-                  </span>
+                {roleDesignationBadges.map((b) =>
+                  b.kind === 'role' ? (
+                    <span key={b.key} className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/15 text-white border border-white/20 backdrop-blur-sm">
+                      {b.label}
+                    </span>
+                  ) : (
+                    <span key={b.key} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
+                      {b.label}
+                    </span>
+                  )
                 )}
                 {staffData?.status && (
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${staffData.status === 'active' ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/20' : 'bg-amber-400/20 text-amber-200 border border-amber-400/20'}`}>
