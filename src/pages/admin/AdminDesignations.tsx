@@ -117,13 +117,13 @@ const AdminDesignations = () => {
       if (catEditItem) { const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('staff_categories').insert(record); if (error) throw error; }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(catEditItem ? (bn ? 'বিভাগ আপডেট হয়েছে' : 'Category updated') : (bn ? 'বিভাগ যোগ হয়েছে' : 'Category added')); setCatDialogOpen(false); resetCatForm(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(catEditItem ? (bn ? 'ডিপার্টমেন্ট আপডেট হয়েছে' : 'Department updated') : (bn ? 'ডিপার্টমেন্ট যোগ হয়েছে' : 'Department added')); setCatDialogOpen(false); resetCatForm(); },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
   const deleteCatMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('staff_categories').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(bn ? 'বিভাগ মুছে ফেলা হয়েছে' : 'Category deleted'); setCatDeleteId(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(bn ? 'ডিপার্টমেন্ট মুছে ফেলা হয়েছে' : 'Department deleted'); setCatDeleteId(null); },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
@@ -149,15 +149,15 @@ const AdminDesignations = () => {
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <Tag className="w-6 h-6 text-primary" />
-            {bn ? 'পদবি ও বিভাগ ব্যবস্থাপনা' : 'Designation & Category Management'}
+            {bn ? 'পদবি ও ডিপার্টমেন্ট ব্যবস্থাপনা' : 'Designation & Department Management'}
           </h1>
-          <p className="text-sm text-muted-foreground">{bn ? 'পদবি ও স্টাফ বিভাগ পরিচালনা করুন' : 'Manage designations and staff categories'}</p>
+          <p className="text-sm text-muted-foreground">{bn ? 'পদবি ও স্টাফ ডিপার্টমেন্ট পরিচালনা করুন' : 'Manage designations and staff departments'}</p>
         </div>
 
         <Tabs defaultValue="designations" className="space-y-4">
           <TabsList>
             <TabsTrigger value="designations" className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> {bn ? 'পদবি' : 'Designations'}</TabsTrigger>
-            <TabsTrigger value="categories" className="flex items-center gap-1.5"><FolderOpen className="w-4 h-4" /> {bn ? 'বিভাগ' : 'Categories'}</TabsTrigger>
+            <TabsTrigger value="categories" className="flex items-center gap-1.5"><FolderOpen className="w-4 h-4" /> {bn ? 'ডিপার্টমেন্ট' : 'Departments'}</TabsTrigger>
           </TabsList>
 
           {/* ─── Designations Tab ─── */}
@@ -185,7 +185,7 @@ const AdminDesignations = () => {
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">#</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবি (বাংলা)' : 'Name (BN)'}</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবি (ইংরেজি)' : 'Name (EN)'}</th>
-                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'বিভাগ' : 'Category'}</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</th>
                         <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                         <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                       </tr>
@@ -221,10 +221,10 @@ const AdminDesignations = () => {
           {/* ─── Categories Tab ─── */}
           <TabsContent value="categories" className="space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">{bn ? `মোট ${staffCategories.length}টি বিভাগ` : `Total ${staffCategories.length} categories`}</p>
+              <p className="text-sm text-muted-foreground">{bn ? `মোট ${staffCategories.length}টি ডিপার্টমেন্ট` : `Total ${staffCategories.length} departments`}</p>
               {canAddItem && (
                 <Button onClick={openCatAdd} className="btn-primary-gradient flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> {bn ? 'নতুন বিভাগ' : 'Add Category'}
+                  <Plus className="w-4 h-4" /> {bn ? 'নতুন ডিপার্টমেন্ট' : 'Add Department'}
                 </Button>
               )}
             </div>
@@ -271,7 +271,7 @@ const AdminDesignations = () => {
                           </td>
                         </tr>
                       ))}
-                      {staffCategories.length === 0 && <tr><td colSpan={9} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো বিভাগ নেই' : 'No categories found'}</td></tr>}
+                      {staffCategories.length === 0 && <tr><td colSpan={9} className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো ডিপার্টমেন্ট নেই' : 'No departments found'}</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -291,9 +291,9 @@ const AdminDesignations = () => {
               <div><Label>{bn ? 'পদবি (ইংরেজি)' : 'Name (English)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={name} onChange={e => setName(e.target.value)} placeholder={bn ? 'যেমন: Head Teacher' : 'e.g. Head Teacher'} /></div>
               <div><Label>{bn ? 'বিবরণ' : 'Description'}</Label><Input className="bg-background mt-1" value={description} onChange={e => setDescription(e.target.value)} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} /></div>
               <div>
-                <Label>{bn ? 'বিভাগ' : 'Category'} <span className="text-destructive">*</span></Label>
+                <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="text-destructive">*</span></Label>
                 <Select value={staffCategory} onValueChange={setStaffCategory}>
-                  <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন করুন' : 'Select category'} /></SelectTrigger>
+                  <SelectTrigger className="bg-background mt-1"><SelectValue placeholder={bn ? 'ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department'} /></SelectTrigger>
                   <SelectContent>
                     {staffCategories.filter((c: any) => c.is_active).map((c: any) => (
                       <SelectItem key={c.key} value={c.key}>{bn ? c.name_bn : c.name} {c.route_path ? `(${c.route_path})` : ''}</SelectItem>
@@ -315,7 +315,7 @@ const AdminDesignations = () => {
         <Dialog open={catDialogOpen} onOpenChange={(open) => { if (!open) { setCatDialogOpen(false); resetCatForm(); } }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><FolderOpen className="w-5 h-5 text-primary" /> {catEditItem ? (bn ? 'বিভাগ সম্পাদনা' : 'Edit Category') : (bn ? 'নতুন বিভাগ যোগ করুন' : 'Add New Category')}</DialogTitle>
+              <DialogTitle className="flex items-center gap-2"><FolderOpen className="w-5 h-5 text-primary" /> {catEditItem ? (bn ? 'ডিপার্টমেন্ট সম্পাদনা' : 'Edit Department') : (bn ? 'নতুন ডিপার্টমেন্ট যোগ করুন' : 'Add New Department')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div><Label>{bn ? 'কী (ইউনিক)' : 'Key (unique)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono" value={catKey} onChange={e => setCatKey(e.target.value)} placeholder="e.g. teacher" disabled={!!catEditItem} /></div>
@@ -364,7 +364,7 @@ const AdminDesignations = () => {
         {/* ─── Category Delete ─── */}
         <AlertDialog open={!!catDeleteId} onOpenChange={(open) => !open && setCatDeleteId(null)}>
           <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>{bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?'}</AlertDialogTitle><AlertDialogDescription>{bn ? 'এই বিভাগ মুছে ফেলা হলে সংশ্লিষ্ট পদবিগুলো প্রভাবিত হতে পারে।' : 'Deleting this category may affect related designations.'}</AlertDialogDescription></AlertDialogHeader>
+            <AlertDialogHeader><AlertDialogTitle>{bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?'}</AlertDialogTitle><AlertDialogDescription>{bn ? 'এই ডিপার্টমেন্ট মুছে ফেলা হলে সংশ্লিষ্ট পদবিগুলো প্রভাবিত হতে পারে।' : 'Deleting this department may affect related designations.'}</AlertDialogDescription></AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{bn ? 'বাতিল' : 'Cancel'}</AlertDialogCancel>
               <AlertDialogAction onClick={() => catDeleteId && deleteCatMutation.mutate(catDeleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{bn ? 'মুছুন' : 'Delete'}</AlertDialogAction>
