@@ -972,7 +972,7 @@ const AdminUserManagement = () => {
                   <TableBody>
                     {users.map(u => {
                       const linked = staffByUser[u.id];
-                      const displayName = linked?.name_bn || linked?.name_en || u.full_name || u.profile_full_name || '—';
+                      const displayName = getUserDisplayName(u);
                       return (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{displayName}</TableCell>
@@ -1057,7 +1057,7 @@ const AdminUserManagement = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
+                                onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(displayName || '')}`)}
                                 title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
                               >
                                 <UserPlus className="w-4 h-4" />
@@ -1068,7 +1068,7 @@ const AdminUserManagement = () => {
                               size="icon"
                               variant="ghost"
                               className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(u.full_name || '')}`)}
+                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(displayName || '')}`)}
                               title={bn ? 'কমিটিতে যোগ করুন' : 'Add to Committee'}
                             >
                               <Users2 className="w-4 h-4" />
