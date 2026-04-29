@@ -29,6 +29,8 @@ interface UserItem {
   email: string;
   role: string;
   full_name: string;
+  profile_full_name?: string;
+  staff?: LinkedStaff | null;
   status: string;
   created_at: string;
 }
@@ -282,8 +284,20 @@ const AdminUserManagement = () => {
     },
   });
 
+  const getCategoryLabel = (key?: string | null) => {
+    if (!key) return '';
+    const category = staffCategories.find((cat) => cat.key === key);
+    return (bn ? category?.name_bn : category?.name) || category?.name_bn || category?.name || key;
+  };
+
   // Map of user_id -> linked staff (for showing designation/category in the user list)
   const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
+
+  const getUserDisplayName = (user?: UserItem | null) => {
+    if (!user) return '';
+    const linked = staffByUser[user.id];
+    return linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || user.email || '—';
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -295,9 +309,16 @@ const AdminUserManagement = () => {
       const list: UserItem[] = data?.users || [];
       setUsers(list);
 
-      // Pull linked staff records (designation + staff_category) for the listed users
+      const includedStaffMap: Record<string, LinkedStaff> = {};
+      list.forEach((u) => {
+        if (u.staff?.id) includedStaffMap[u.id] = u.staff;
+      });
+
+      // Pull linked staff records if the function response does not include them yet
       const ids = list.map(u => u.id).filter(Boolean);
-      if (ids.length > 0) {
+      if (Object.keys(includedStaffMap).length > 0) {
+        setStaffByUser(includedStaffMap);
+      } else if (ids.length > 0) {
         const { data: staffRows } = await supabase
           .from('staff')
           .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
@@ -489,9 +510,10 @@ const AdminUserManagement = () => {
 
   const openProfileDialog = (user: UserItem) => {
     const linked = staffByUser[user.id];
+    const unifiedName = getUserDisplayName(user);
     setProfileUser(user);
-    setProfileEditName(user.full_name || linked?.name_bn || linked?.name_en || '');
-    setProfileEditStaffNameBn(linked?.name_bn || user.full_name || '');
+    setProfileEditName(unifiedName);
+    setProfileEditStaffNameBn(linked?.name_bn || unifiedName);
     setProfileEditDesignation(linked?.designation || '');
     setProfileEditStaffCategory(linked?.staff_category || '');
     setProfileEditEmail(user.email);
@@ -534,6 +556,7 @@ const AdminUserManagement = () => {
       };
       setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
       setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
+      setProfileEditName(profileEditStaffNameBn.trim());
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['staff'] }),
         queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
@@ -949,9 +972,10 @@ const AdminUserManagement = () => {
                   <TableBody>
                     {users.map(u => {
                       const linked = staffByUser[u.id];
+                      const displayName = getUserDisplayName(u);
                       return (
                       <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.full_name || '—'}</TableCell>
+                        <TableCell className="font-medium">{displayName}</TableCell>
                         <TableCell>{u.email}</TableCell>
                         <TableCell>
                           {linked ? (
@@ -963,7 +987,7 @@ const AdminUserManagement = () => {
                               )}
                               {linked.staff_category && (
                                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                  {linked.staff_category}
+                                  {getCategoryLabel(linked.staff_category)}
                                 </span>
                               )}
                             </div>
@@ -1033,7 +1057,7 @@ const AdminUserManagement = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
+                                onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(displayName || '')}`)}
                                 title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
                               >
                                 <UserPlus className="w-4 h-4" />
@@ -1044,7 +1068,7 @@ const AdminUserManagement = () => {
                               size="icon"
                               variant="ghost"
                               className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(u.full_name || '')}`)}
+                              onClick={() => navigate(`/admin/committees?prefill_email=${encodeURIComponent(u.email)}&prefill_name=${encodeURIComponent(displayName || '')}`)}
                               title={bn ? 'কমিটিতে যোগ করুন' : 'Add to Committee'}
                             >
                               <Users2 className="w-4 h-4" />
@@ -1193,7 +1217,7 @@ const AdminUserManagement = () => {
             {roleEditUser && (
               <div className="space-y-4 pt-2">
                 <p className="text-sm text-muted-foreground">
-                  {roleEditUser.full_name || roleEditUser.email}
+                  {getUserDisplayName(roleEditUser)}
                 </p>
                 <div>
                   <Label>{bn ? 'নতুন রোল' : 'New Role'}</Label>
@@ -1292,7 +1316,7 @@ const AdminUserManagement = () => {
                 {bn ? 'ব্যক্তিগত পারমিশন' : 'Individual Permissions'}
                 {permUser && (
                   <Badge variant="outline" className="ml-2 font-normal">
-                    {permUser.full_name || permUser.email}
+                    {getUserDisplayName(permUser)}
                   </Badge>
                 )}
               </DialogTitle>
@@ -1482,16 +1506,32 @@ const AdminUserManagement = () => {
             </DialogHeader>
             {profileUser && (
               <div className="space-y-5 pt-2">
+                {(() => {
+                  const linked = staffByUser[profileUser.id];
+                  const displayName = getUserDisplayName(profileUser);
+                  const displayPhoto = linked?.photo_url;
+                  const displayDesignation = linked?.designation;
+                  const displayCategory = linked?.staff_category;
+                  return (
+                    <>
                 {/* User Info Card */}
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                    <UserCircle className="w-8 h-8 text-primary" />
+                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                    {displayPhoto ? <img src={displayPhoto} alt="" className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-primary" />}
                   </div>
-                  <div>
-                    <p className="font-semibold text-lg">{profileUser.full_name || '—'}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-lg truncate">{displayName}</p>
                     <p className="text-sm text-muted-foreground">{profileUser.email}</p>
+                    {(displayDesignation || displayCategory) && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {[displayDesignation, getCategoryLabel(displayCategory)].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                   </div>
                 </div>
+                    </>
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg border bg-card">
@@ -1569,7 +1609,7 @@ const AdminUserManagement = () => {
                     <Input value={profileEditName} onChange={e => setProfileEditName(e.target.value)} placeholder={bn ? 'নতুন নাম' : 'New name'} />
                     <Button
                       size="sm"
-                      disabled={profileSaving === 'name' || profileEditName === profileUser.full_name}
+                      disabled={profileSaving === 'name' || profileEditName === getUserDisplayName(profileUser)}
                       onClick={async () => {
                         setProfileSaving('name');
                         try {
@@ -1690,7 +1730,7 @@ const AdminUserManagement = () => {
                         />
                         {!emailOtpSent ? (
                           <Button size="sm" variant="outline" disabled={otpSending} onClick={async () => {
-                            const result = await sendOtp(profileUser.email, 'email_verification', profileUser.full_name);
+                            const result = await sendOtp(profileUser.email, 'email_verification', getUserDisplayName(profileUser));
                             if (result.success) { setEmailOtpSent(true); toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${result.expiryMinutes} মিনিট)` : `✅ OTP sent (${result.expiryMinutes} min)`); }
                           }}>
                             {otpSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
@@ -1726,7 +1766,7 @@ const AdminUserManagement = () => {
                       </div>
                       {emailOtpSent && (
                         <button type="button" className="text-xs text-primary hover:underline" onClick={async () => {
-                          const result = await sendOtp(profileUser.email, 'email_verification', profileUser.full_name);
+                          const result = await sendOtp(profileUser.email, 'email_verification', getUserDisplayName(profileUser));
                           if (result.success) toast.success(bn ? 'নতুন OTP পাঠানো হয়েছে' : 'New OTP sent');
                         }}>{bn ? 'আবার OTP পাঠান' : 'Resend OTP'}</button>
                       )}
@@ -1828,7 +1868,7 @@ const AdminUserManagement = () => {
                         />
                         {!pwOtpSent ? (
                           <Button size="sm" variant="outline" disabled={otpSending} onClick={async () => {
-                            const result = await sendOtp(profileUser.email, 'password_reset', profileUser.full_name);
+                            const result = await sendOtp(profileUser.email, 'password_reset', getUserDisplayName(profileUser));
                             if (result.success) { setPwOtpSent(true); toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${result.expiryMinutes} মিনিট)` : `✅ OTP sent (${result.expiryMinutes} min)`); }
                           }}>
                             {otpSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
@@ -1863,7 +1903,7 @@ const AdminUserManagement = () => {
                       </div>
                       {pwOtpSent && (
                         <button type="button" className="text-xs text-primary hover:underline" onClick={async () => {
-                          const result = await sendOtp(profileUser.email, 'password_reset', profileUser.full_name);
+                          const result = await sendOtp(profileUser.email, 'password_reset', getUserDisplayName(profileUser));
                           if (result.success) toast.success(bn ? 'নতুন OTP পাঠানো হয়েছে' : 'New OTP sent');
                         }}>{bn ? 'আবার OTP পাঠান' : 'Resend OTP'}</button>
                       )}
