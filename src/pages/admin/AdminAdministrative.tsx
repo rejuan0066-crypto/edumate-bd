@@ -86,6 +86,10 @@ const AdminAdministrative = () => {
   const [form, setForm] = useState<Partial<Officer>>(emptyForm);
   const [delTarget, setDelTarget] = useState<Officer | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageTab, setManageTab] = useState<'department' | 'designation'>('department');
+  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
+  const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
 
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
