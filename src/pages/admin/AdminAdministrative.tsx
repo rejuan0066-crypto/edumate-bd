@@ -163,6 +163,67 @@ const AdminAdministrative = () => {
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
+  const updateOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string }) => {
+      const name_bn = payload.name_bn.trim();
+      const name = (payload.name || name_bn).trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
+      const { error } = await supabase.from(table as any).update({ name_bn, name }).eq('id', payload.id);
+      if (error) throw error;
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'হালনাগাদ হয়েছে' : 'Updated');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setEditRow(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const deleteOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string }) => {
+      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
+      // soft-delete via deleted_at if exists, else is_active=false
+      const { error } = await supabase
+        .from(table as any)
+        .update({ deleted_at: new Date().toISOString(), is_active: false })
+        .eq('id', payload.id);
+      if (error) {
+        // fallback: try just is_active
+        const { error: e2 } = await supabase.from(table as any).update({ is_active: false }).eq('id', payload.id);
+        if (e2) throw e2;
+      }
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Removed');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const addInline = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string }) => {
+      const name_bn = payload.name_bn.trim();
+      const name = (payload.name || name_bn).trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      if (payload.kind === 'department') {
+        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, is_active: true });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('designations').insert({ name, name_bn, staff_category: 'administrative', is_active: true });
+        if (error) throw error;
+      }
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setNewRow({ name_bn: '', name: '' });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = officers;
