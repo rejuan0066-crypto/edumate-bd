@@ -132,6 +132,7 @@ const AdminProfile = () => {
   const saveRoleMutation = useMutation({
     mutationFn: async () => {
       if (!staffData?.id) throw new Error('No staff record');
+      if (!canEditRoleFields) throw new Error(bn ? 'এই ফিল্ড এডিট করার অনুমতি নেই' : 'You do not have permission to edit these fields');
       const isAdminOfficer = (staffData as any).__source === 'administrative';
       if (isAdminOfficer) {
         const { error } = await supabase
