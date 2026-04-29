@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff, Settings2, Check, X } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import { format } from 'date-fns';
