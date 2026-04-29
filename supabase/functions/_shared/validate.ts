@@ -91,8 +91,11 @@ export function rateLimitResponse(opts: {
     ...(opts.scope ? { scope: opts.scope } : {}),
     ...(opts.extras ?? {}),
   };
+  // Use 200 so the supabase-js client doesn't throw on invoke();
+  // callers must inspect `body.ok === false` and `body.code` to detect rate limits.
+  // Retry-After header is still included for any HTTP-aware caller.
   return new Response(JSON.stringify(body), {
-    status: 429,
+    status: 200,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
