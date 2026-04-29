@@ -474,12 +474,56 @@ const AdminAdministrative = () => {
               <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{bn ? '৩. পদবী ও দায়িত্ব' : '3. Designation & Duty'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label>{bn ? 'পদবী' : 'Designation'}</Label>
-                  <Input value={form.designation || ''} onChange={e => setForm({ ...form, designation: e.target.value })} />
+                  <div className="flex items-center justify-between">
+                    <Label>{bn ? 'পদবী' : 'Designation'}</Label>
+                    <button
+                      type="button"
+                      onClick={() => setQuickAdd({ kind: 'designation', name_bn: '', name_en: '' })}
+                      className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
+                    </button>
+                  </div>
+                  <Select value={form.designation || ''} onValueChange={v => setForm({ ...form, designation: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'পদবী নির্বাচন' : 'Select designation'} /></SelectTrigger>
+                    <SelectContent>
+                      {designations.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো পদবী নেই — "নতুন" ক্লিক করুন' : 'No designations — click "New"'}</div>
+                      )}
+                      {designations.map(d => (
+                        <SelectItem key={d.id} value={d.name_bn}>{bn ? d.name_bn : (d.name || d.name_bn)}</SelectItem>
+                      ))}
+                      {form.designation && !designations.some(d => d.name_bn === form.designation) && (
+                        <SelectItem value={form.designation}>{form.designation} {bn ? '(কাস্টম)' : '(custom)'}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
-                  <Input value={form.department || ''} onChange={e => setForm({ ...form, department: e.target.value })} />
+                  <div className="flex items-center justify-between">
+                    <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
+                    <button
+                      type="button"
+                      onClick={() => setQuickAdd({ kind: 'department', name_bn: '', name_en: '' })}
+                      className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
+                    </button>
+                  </div>
+                  <Select value={form.department || ''} onValueChange={v => setForm({ ...form, department: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} /></SelectTrigger>
+                    <SelectContent>
+                      {departments.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো বিভাগ নেই — "নতুন" ক্লিক করুন' : 'No departments — click "New"'}</div>
+                      )}
+                      {departments.map(d => (
+                        <SelectItem key={d.id} value={d.name_bn}>{bn ? d.name_bn : (d.name || d.name_bn)}</SelectItem>
+                      ))}
+                      {form.department && !departments.some(d => d.name_bn === form.department) && (
+                        <SelectItem value={form.department}>{form.department} {bn ? '(কাস্টম)' : '(custom)'}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>{bn ? 'অফিস কক্ষ' : 'Office Room'}</Label>
