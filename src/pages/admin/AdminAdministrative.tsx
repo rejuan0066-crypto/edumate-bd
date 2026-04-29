@@ -371,6 +371,12 @@ const AdminAdministrative = () => {
                 <SelectItem value="on_leave">{bn ? 'ছুটিতে' : 'On Leave'}</SelectItem>
               </SelectContent>
             </Select>
+            {canEditItem && (
+              <Button variant="outline" onClick={() => setManageOpen(true)} className="gap-2">
+                <Settings2 className="w-4 h-4" />
+                {bn ? 'বিভাগ ও পদবি' : 'Departments & Designations'}
+              </Button>
+            )}
             {canAddItem && (
               <Button onClick={openAdd} className="gap-2">
                 <Plus className="w-4 h-4" />
