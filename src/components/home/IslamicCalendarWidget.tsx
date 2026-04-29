@@ -204,8 +204,7 @@ const IslamicCalendarWidget = () => {
   const holidayMap = useMemo(() => getHolidayMap(yearHolidays), [yearHolidays]);
   const todayHoliday = currentYearHolidays.find(h => h.date === todayStr);
 
-  // Use admin-configured global timezone (defaults to Asia/Dhaka).
-  const { tz: APP_TZ } = useAppTimezone();
+  // Derived display strings (APP_TZ already pulled at top of component).
   const timeStr = formatTimeInTz(now, APP_TZ);
   const safeWeekdayIdx = getWeekdayIdxInTz(now, APP_TZ);
   const dayName = bn ? BANGLA_DAYS[safeWeekdayIdx] : EN_DAYS[safeWeekdayIdx];
