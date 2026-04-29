@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff, Settings2, Check, X } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import { format } from 'date-fns';
@@ -85,6 +86,10 @@ const AdminAdministrative = () => {
   const [form, setForm] = useState<Partial<Officer>>(emptyForm);
   const [delTarget, setDelTarget] = useState<Officer | null>(null);
   const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [manageTab, setManageTab] = useState<'department' | 'designation'>('department');
+  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
+  const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
 
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
@@ -154,6 +159,68 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: [res.kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
       setForm(prev => ({ ...prev, [res.kind === 'department' ? 'department' : 'designation']: res.value }));
       setQuickAdd(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const updateOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string }) => {
+      const name_bn = payload.name_bn.trim();
+      const name = (payload.name || name_bn).trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
+      const { error } = await supabase.from(table as any).update({ name_bn, name }).eq('id', payload.id);
+      if (error) throw error;
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'হালনাগাদ হয়েছে' : 'Updated');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setEditRow(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const deleteOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string }) => {
+      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
+      // soft-delete via deleted_at if exists, else is_active=false
+      const { error } = await supabase
+        .from(table as any)
+        .update({ deleted_at: new Date().toISOString(), is_active: false })
+        .eq('id', payload.id);
+      if (error) {
+        // fallback: try just is_active
+        const { error: e2 } = await supabase.from(table as any).update({ is_active: false }).eq('id', payload.id);
+        if (e2) throw e2;
+      }
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Removed');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
+  });
+
+  const addInline = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string }) => {
+      const name_bn = payload.name_bn.trim();
+      const name = (payload.name || name_bn).trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      if (payload.kind === 'department') {
+        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, is_active: true });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('designations').insert({ name, name_bn, staff_category: 'administrative', is_active: true });
+        if (error) throw error;
+      }
+      return payload.kind;
+    },
+    onSuccess: (kind) => {
+      toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
+      qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setNewRow({ name_bn: '', name: '' });
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
   });
@@ -304,6 +371,12 @@ const AdminAdministrative = () => {
                 <SelectItem value="on_leave">{bn ? 'ছুটিতে' : 'On Leave'}</SelectItem>
               </SelectContent>
             </Select>
+            {canEditItem && (
+              <Button variant="outline" onClick={() => setManageOpen(true)} className="gap-2">
+                <Settings2 className="w-4 h-4" />
+                {bn ? 'বিভাগ ও পদবি' : 'Departments & Designations'}
+              </Button>
+            )}
             {canAddItem && (
               <Button onClick={openAdd} className="gap-2">
                 <Plus className="w-4 h-4" />
@@ -659,6 +732,127 @@ const AdminAdministrative = () => {
             >
               {createOption.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'যোগ করুন' : 'Add')}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Departments & Designations */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-5 h-5 text-emerald-600" />
+              {bn ? 'বিভাগ ও পদবি ব্যবস্থাপনা' : 'Manage Departments & Designations'}
+            </DialogTitle>
+          </DialogHeader>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '' }); }}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="department">{bn ? 'বিভাগসমূহ' : 'Departments'} ({departments.length})</TabsTrigger>
+              <TabsTrigger value="designation">{bn ? 'পদবিসমূহ' : 'Designations'} ({designations.length})</TabsTrigger>
+            </TabsList>
+
+            {(['department','designation'] as const).map((kind) => (
+              <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
+                {/* Add new row */}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                  <Input
+                    placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
+                    value={newRow.name_bn}
+                    onChange={(e) => setNewRow({ ...newRow, name_bn: e.target.value })}
+                  />
+                  <Input
+                    placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
+                    value={newRow.name}
+                    onChange={(e) => setNewRow({ ...newRow, name: e.target.value })}
+                  />
+                  <Button
+                    onClick={() => addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name })}
+                    disabled={!newRow.name_bn.trim() || addInline.isPending}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
+                  </Button>
+                </div>
+
+                {/* List */}
+                <div className="divide-y border rounded-[20px] overflow-hidden">
+                  {(kind === 'department' ? departments : designations).length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      {bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}
+                    </div>
+                  ) : (
+                    (kind === 'department' ? departments : designations).map((row) => {
+                      const isEditing = editRow?.id === row.id;
+                      return (
+                        <div key={row.id} className="flex items-center gap-2 p-3 hover:bg-muted/20">
+                          {isEditing ? (
+                            <>
+                              <Input
+                                className="flex-1"
+                                value={editRow!.name_bn}
+                                onChange={(e) => setEditRow({ ...editRow!, name_bn: e.target.value })}
+                                placeholder={bn ? 'বাংলা নাম' : 'Bangla'}
+                              />
+                              <Input
+                                className="flex-1"
+                                value={editRow!.name}
+                                onChange={(e) => setEditRow({ ...editRow!, name: e.target.value })}
+                                placeholder={bn ? 'ইংরেজি নাম' : 'English'}
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full text-emerald-600"
+                                onClick={() => updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name })}
+                                disabled={updateOption.isPending}
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => setEditRow(null)}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{row.name_bn}</div>
+                                {row.name && row.name !== row.name_bn && (
+                                  <div className="text-xs text-muted-foreground">{row.name}</div>
+                                )}
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full"
+                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '' })}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full text-destructive"
+                                onClick={() => {
+                                  if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete this entry?')) {
+                                    deleteOption.mutate({ kind, id: row.id });
+                                  }
+                                }}
+                                disabled={deleteOption.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageOpen(false)}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
