@@ -7732,6 +7732,60 @@ export type Database = {
       }
     }
     Views: {
+      administrative_officers_public: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          department: string | null
+          designation: string | null
+          email: string | null
+          id: string | null
+          joining_date: string | null
+          name_bn: string | null
+          name_en: string | null
+          officer_id: string | null
+          phone: string | null
+          photo_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          id?: string | null
+          joining_date?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          officer_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          id?: string | null
+          joining_date?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          officer_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       committee_staff_ids: {
         Row: {
           staff_id: string | null
