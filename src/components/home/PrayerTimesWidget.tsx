@@ -211,24 +211,68 @@ const PrayerTimesWidget = () => {
 
   // IANA timezones — DST-aware. Aladhan applies offset based on this TZ for the
   // requested date, so DST transitions are handled automatically.
-  // Notes: BD/SA/IN/PK/AE/MY/ID/QA/KW/OM/BH = no DST. TR = no DST since 2016.
-  // EG reintroduced DST in 2023. GB/US/EU follow standard DST rules.
+  // Notes (no DST): BD, SA, IN, PK, AE, MY, ID (all sub-zones), TR (since 2016),
+  // QA, KW, OM, BH. DST observed: EG (since 2023), GB, EU, most US states.
+  // Single-zone countries — safe to map by country code.
   const COUNTRY_TZ: Record<string, string> = {
-    BD: 'Asia/Dhaka',
-    SA: 'Asia/Riyadh',
-    IN: 'Asia/Kolkata',
-    PK: 'Asia/Karachi',
-    AE: 'Asia/Dubai',
-    MY: 'Asia/Kuala_Lumpur',
-    ID: 'Asia/Jakarta',
-    TR: 'Europe/Istanbul',
-    EG: 'Africa/Cairo',
-    QA: 'Asia/Qatar',
-    KW: 'Asia/Kuwait',
-    OM: 'Asia/Muscat',
-    BH: 'Asia/Bahrain',
-    GB: 'Europe/London',
-    US: 'America/New_York',
+    BD: 'Asia/Dhaka',          // BST UTC+6, no DST
+    SA: 'Asia/Riyadh',         // AST UTC+3, no DST
+    IN: 'Asia/Kolkata',        // IST UTC+5:30, no DST (single zone)
+    PK: 'Asia/Karachi',        // PKT UTC+5, no DST
+    AE: 'Asia/Dubai',          // GST UTC+4, no DST
+    MY: 'Asia/Kuala_Lumpur',   // MYT UTC+8, no DST (single zone since 1982)
+    TR: 'Europe/Istanbul',     // TRT UTC+3, no DST since 2016
+    EG: 'Africa/Cairo',        // EET/EEST, DST resumed 2023
+    QA: 'Asia/Qatar',          // AST UTC+3
+    KW: 'Asia/Kuwait',         // AST UTC+3
+    OM: 'Asia/Muscat',         // GST UTC+4
+    BH: 'Asia/Bahrain',        // AST UTC+3
+    GB: 'Europe/London',       // GMT/BST, DST observed
+    // Multi-zone countries — default to capital/most-populous; override per city below.
+    ID: 'Asia/Jakarta',        // WIB UTC+7 (Java/Sumatra). WITA=Makassar +8, WIT=Jayapura +9
+    US: 'America/New_York',    // ET. Override per city for CT/MT/PT/AK/HI
+  };
+
+  // City-level TZ overrides for countries that span multiple IANA zones.
+  // Keys are normalised lowercase city names that match what Aladhan/our UI uses.
+  const CITY_TZ: Record<string, string> = {
+    // Indonesia (WIB / WITA / WIT)
+    'jakarta': 'Asia/Jakarta',
+    'bandung': 'Asia/Jakarta',
+    'surabaya': 'Asia/Jakarta',
+    'medan': 'Asia/Jakarta',
+    'semarang': 'Asia/Jakarta',
+    'palembang': 'Asia/Jakarta',
+    'denpasar': 'Asia/Makassar',
+    'makassar': 'Asia/Makassar',
+    'balikpapan': 'Asia/Makassar',
+    'manado': 'Asia/Makassar',
+    'jayapura': 'Asia/Jayapura',
+    'ambon': 'Asia/Jayapura',
+    // United States (ET / CT / MT / PT / AKT / HAT)
+    'new york': 'America/New_York',
+    'washington': 'America/New_York',
+    'boston': 'America/New_York',
+    'miami': 'America/New_York',
+    'atlanta': 'America/New_York',
+    'philadelphia': 'America/New_York',
+    'chicago': 'America/Chicago',
+    'houston': 'America/Chicago',
+    'dallas': 'America/Chicago',
+    'minneapolis': 'America/Chicago',
+    'new orleans': 'America/Chicago',
+    'denver': 'America/Denver',
+    'salt lake city': 'America/Denver',
+    'albuquerque': 'America/Denver',
+    'phoenix': 'America/Phoenix',     // AZ does not observe DST
+    'los angeles': 'America/Los_Angeles',
+    'san francisco': 'America/Los_Angeles',
+    'san diego': 'America/Los_Angeles',
+    'seattle': 'America/Los_Angeles',
+    'portland': 'America/Los_Angeles',
+    'las vegas': 'America/Los_Angeles',
+    'anchorage': 'America/Anchorage',
+    'honolulu': 'Pacific/Honolulu',   // HI does not observe DST
   };
 
   // Validate the chosen TZ at runtime; fall back to Asia/Dhaka if invalid.
@@ -240,7 +284,9 @@ const PrayerTimesWidget = () => {
       return false;
     }
   };
-  const candidateTz = COUNTRY_TZ[effectiveCountry] || 'Asia/Dhaka';
+  const cityKey = (selectedCity || '').trim().toLowerCase();
+  const candidateTz =
+    CITY_TZ[cityKey] || COUNTRY_TZ[effectiveCountry] || 'Asia/Dhaka';
   const tz = isValidTz(candidateTz) ? candidateTz : 'Asia/Dhaka';
 
   // DST-aware UTC offset (in minutes) for the target TZ on the current date.
