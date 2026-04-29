@@ -66,6 +66,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [sortKey, setSortKey] = useState<'name' | 'staff_id' | 'designation' | 'department' | 'status'>('staff_id');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
   const [letterStaff, setLetterStaff] = useState<any>(null);
