@@ -66,6 +66,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const bn = language === 'bn';
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
+  const [sortKey, setSortKey] = useState<'name' | 'staff_id' | 'designation' | 'department' | 'status'>('staff_id');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
   const [letterStaff, setLetterStaff] = useState<any>(null);
@@ -211,17 +214,57 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
 
-  const filtered = typeFiltered.filter((s: any) => {
+  const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
+    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+    administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
+    support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
+    general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+    director: { bn: 'পরিচালক', en: 'Director' },
+    committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
+  };
+  const labelForCategory = (key: string) => CATEGORY_LABELS[key]?.[bn ? 'bn' : 'en'] || key;
+
+  const preFiltered = typeFiltered.filter((s: any) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap) !== departmentFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
+    const cat = getStaffCategory(s, designationsMap);
+    const catLabelBn = CATEGORY_LABELS[cat]?.bn || '';
+    const catLabelEn = CATEGORY_LABELS[cat]?.en || '';
     return s.name_bn?.toLowerCase().includes(q)
       || s.name_en?.toLowerCase().includes(q)
       || s.designation?.toLowerCase().includes(q)
       || (s as any).staff_id?.toLowerCase().includes(q)
       || (s as any).phone?.toLowerCase().includes(q)
-      || (s as any).mobile?.toLowerCase().includes(q);
+      || (s as any).mobile?.toLowerCase().includes(q)
+      || cat.toLowerCase().includes(q)
+      || catLabelBn.toLowerCase().includes(q)
+      || catLabelEn.toLowerCase().includes(q)
+      || (s.department || '').toLowerCase().includes(q);
   });
+
+  const getSortVal = (s: any): string => {
+    switch (sortKey) {
+      case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+      case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
+      case 'designation': return s.designation || '';
+      case 'department': return labelForCategory(getStaffCategory(s, designationsMap));
+      case 'status': return s.status || '';
+    }
+  };
+  const filtered = [...preFiltered].sort((a, b) => {
+    const av = getSortVal(a);
+    const bv = getSortVal(b);
+    const cmp = String(av).localeCompare(String(bv), bn ? 'bn' : 'en', { numeric: true, sensitivity: 'base' });
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+  const sortIcon = (key: typeof sortKey) => sortKey !== key ? '↕' : (sortDir === 'asc' ? '↑' : '↓');
 
   const openAccountDialog = (staff: any) => {
     setSelectedStaff(staff);
@@ -321,12 +364,25 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           </div>
         </div>
 
-        <div className="card-elevated p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="relative max-w-md flex-1">
+        <div className="card-elevated p-4 flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+          <div className="relative max-w-md flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder={bn ? 'নাম, ফোন বা পদবী দিয়ে খুঁজুন...' : 'Search by name, phone or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder={bn ? 'নাম, আইডি, পদবী, ডিপার্টমেন্ট, ফোন...' : 'Search by name, ID, designation, department, phone...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className="flex gap-2">
+          {staffType === 'all' && (
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
+                {Object.keys(CATEGORY_LABELS).map((k) => (
+                  <SelectItem key={k} value={k}>{labelForCategory(k)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="flex gap-2 flex-wrap">
             <Button variant={statusFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('all')}>
               {bn ? 'সবগুলো' : 'All'} ({typeFiltered.length})
             </Button>
@@ -355,13 +411,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <table className="w-full">
                 <thead className="bg-secondary/50">
                    <tr>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নাম' : 'Name'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবী' : 'Designation'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
+                       {bn ? 'নাম' : 'Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('staff_id')}>
+                       {bn ? 'স্টাফ আইডি' : 'Staff ID'} <span className="ml-1 opacity-60">{sortIcon('staff_id')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('designation')}>
+                       {bn ? 'পদবী' : 'Designation'} <span className="ml-1 opacity-60">{sortIcon('designation')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('department')}>
+                       {bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="ml-1 opacity-60">{sortIcon('department')}</span>
+                     </th>
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'মোবাইল' : 'Mobile'}</th>
                      {isAdminRole(role) && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকাউন্ট' : 'Account'}</th>}
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('status')}>
+                       {bn ? 'স্ট্যাটাস' : 'Status'} <span className="ml-1 opacity-60">{sortIcon('status')}</span>
+                     </th>
                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                    </tr>
                 </thead>
