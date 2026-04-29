@@ -1564,9 +1564,15 @@ const AdminUserManagement = () => {
                     {bn ? 'স্টাফ নাম, পদবি ও ডিপার্টমেন্ট' : 'Staff Name, Designation & Department'}
                   </h3>
                   <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
-                        <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
+                          <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+                          <Input value={profileEditStaffNameEn} onChange={e => setProfileEditStaffNameEn(e.target.value)} placeholder={bn ? 'ইংরেজি নাম লিখুন' : 'Enter English name'} />
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
