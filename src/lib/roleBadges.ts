@@ -48,7 +48,14 @@ export const getRoleDesignationBadges = (params: {
     const r = roleLabelMap[role];
     const label = r ? (bn ? r.bn : r.en) : role;
     badges.push({ key: 'role', label, kind: 'role' });
+    // Add BOTH language variants to the seen set so a Bengali designation
+    // is suppressed even in English mode (and vice versa).
     seen.add(norm(label));
+    if (r) {
+      seen.add(norm(r.bn));
+      seen.add(norm(r.en));
+    }
+    seen.add(norm(role));
   }
 
   const trimmed = designation?.trim();
