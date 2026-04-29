@@ -490,6 +490,11 @@ const AdminUserManagement = () => {
 
     setProfileSaving('staff');
     try {
+      const { data: nameData, error: nameError } = await supabase.functions.invoke('manage-users', {
+        body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditStaffNameBn.trim() },
+      });
+      if (nameError || !nameData?.success) throw new Error((bn ? nameData?.message_bn : nameData?.message) || nameData?.error || nameError?.message);
+
       const { error } = await supabase
         .from('staff')
         .update({
@@ -1517,8 +1522,24 @@ const AdminUserManagement = () => {
                             body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditName.trim() },
                           });
                           if (error || !data?.success) throw new Error((bn ? data?.message_bn : data?.message) || data?.error || error?.message);
+                          const linked = staffByUser[profileUser.id];
+                          if (linked?.id) {
+                            await supabase.from('staff').update({ name_bn: profileEditName.trim(), name_en: profileEditName.trim() }).eq('id', linked.id);
+                            setStaffByUser(prev => ({
+                              ...prev,
+                              [profileUser.id]: { ...linked, name_bn: profileEditName.trim(), name_en: profileEditName.trim() },
+                            }));
+                            setProfileEditStaffNameBn(profileEditName.trim());
+                          }
                           toast.success(bn ? '✅ নাম আপডেট হয়েছে' : '✅ Name updated');
                           setProfileUser({ ...profileUser, full_name: profileEditName.trim() });
+                          await Promise.all([
+                            queryClient.invalidateQueries({ queryKey: ['staff'] }),
+                            queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
+                            queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
+                            queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
+                            queryClient.invalidateQueries({ queryKey: ['users'] }),
+                          ]);
                           fetchUsers();
                         } catch (err: any) {
                           toast.error(err?.message || (bn ? 'নাম আপডেট ব্যর্থ' : 'Failed to update name'));
