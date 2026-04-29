@@ -67,21 +67,12 @@ export const useCurrentStaff = () => {
         .maybeSingle();
       if (adminByUid.data) return mapAdmin(adminByUid.data);
 
+      // Email-based auto-link via SECURITY DEFINER RPC
+      // (RLS hides other users' rows, so direct .eq('email', …) wouldn't return).
       if (user.email) {
-        const adminByEmail = await supabase
-          .from('administrative_officers')
-          .select('*')
-          .eq('email', user.email)
-          .is('deleted_at', null)
-          .maybeSingle();
-        if (adminByEmail.data && !adminByEmail.data.user_id) {
-          await supabase
-            .from('administrative_officers')
-            .update({ user_id: user.id })
-            .eq('id', adminByEmail.data.id);
-          return mapAdmin({ ...adminByEmail.data, user_id: user.id });
-        }
-        if (adminByEmail.data) return mapAdmin(adminByEmail.data);
+        const { data: linked } = await supabase
+          .rpc('link_administrative_officer_by_email' as any);
+        if (linked) return mapAdmin(linked);
       }
 
       return null;
