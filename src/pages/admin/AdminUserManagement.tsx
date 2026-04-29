@@ -1602,50 +1602,10 @@ const AdminUserManagement = () => {
                     </>
                 </div>
 
-                {/* Edit Name */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-medium">{bn ? 'নাম পরিবর্তন' : 'Change Name'}</Label>
-                  <div className="flex gap-2">
-                    <Input value={profileEditName} onChange={e => setProfileEditName(e.target.value)} placeholder={bn ? 'নতুন নাম' : 'New name'} />
-                    <Button
-                      size="sm"
-                      disabled={profileSaving === 'name' || profileEditName === getUserDisplayName(profileUser)}
-                      onClick={async () => {
-                        setProfileSaving('name');
-                        try {
-                          const { data, error } = await supabase.functions.invoke('manage-users', {
-                            body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditName.trim() },
-                          });
-                          if (error || !data?.success) throw new Error((bn ? data?.message_bn : data?.message) || data?.error || error?.message);
-                          const linked = staffByUser[profileUser.id];
-                          if (linked?.id) {
-                            await supabase.from('staff').update({ name_bn: profileEditName.trim(), name_en: profileEditName.trim() }).eq('id', linked.id);
-                            setStaffByUser(prev => ({
-                              ...prev,
-                              [profileUser.id]: { ...linked, name_bn: profileEditName.trim(), name_en: profileEditName.trim() },
-                            }));
-                            setProfileEditStaffNameBn(profileEditName.trim());
-                          }
-                          toast.success(bn ? '✅ নাম আপডেট হয়েছে' : '✅ Name updated');
-                          setProfileUser({ ...profileUser, full_name: profileEditName.trim() });
-                          await Promise.all([
-                            queryClient.invalidateQueries({ queryKey: ['staff'] }),
-                            queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
-                            queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
-                            queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
-                            queryClient.invalidateQueries({ queryKey: ['users'] }),
-                          ]);
-                          fetchUsers();
-                        } catch (err: any) {
-                          toast.error(err?.message || (bn ? 'নাম আপডেট ব্যর্থ' : 'Failed to update name'));
-                        }
-                        setProfileSaving(null);
-                      }}
-                    >
-                      {profileSaving === 'name' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
+                {/* "Change Name" field removed — the "Staff Name, Designation & Department" section
+                    above already edits the canonical name (staff.name_bn) and the DB triggers
+                    (sync_staff_to_profile / sync_profile_to_staff) keep profiles.full_name +
+                    staff.name_en in lock-step automatically. */}
 
                 {/* ===== EMAIL CHANGE SECTION ===== */}
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
