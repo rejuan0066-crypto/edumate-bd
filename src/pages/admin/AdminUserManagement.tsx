@@ -293,6 +293,9 @@ const AdminUserManagement = () => {
 
   // Map of user_id -> linked staff (for showing designation/category in the user list)
   const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
+  // Map of user_id -> linked administrative officer
+  const [adminOfficerByUser, setAdminOfficerByUser] = useState<Record<string, { id: string; name_bn: string; designation: string | null }>>({});
+  const [linkSaving, setLinkSaving] = useState<'staff' | 'officer' | null>(null);
 
   const getUserDisplayName = (user?: UserItem | null) => {
     if (!user) return '';
