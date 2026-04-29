@@ -34,7 +34,7 @@ const BD_DIVISIONS: Record<string, { en: string; bn: string; cities: { en: strin
   mymensingh: { en: 'Mymensingh', bn: 'ময়মনসিংহ', cities: [{ en: 'Mymensingh', bn: 'ময়মনসিংহ' }, { en: 'Jamalpur', bn: 'জামালপুর' }, { en: 'Netrokona', bn: 'নেত্রকোণা' }, { en: 'Sherpur', bn: 'শেরপুর' }] },
 };
 
-const PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
+const PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Sunset', 'Isha'] as const;
 
 const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
   Fajr: { en: 'Fajr', bn: 'ফজর', icon: '🌅' },
@@ -42,7 +42,22 @@ const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
   Dhuhr: { en: 'Dhuhr', bn: 'যোহর', icon: '🌤️' },
   Asr: { en: 'Asr', bn: 'আসর', icon: '🌥️' },
   Maghrib: { en: 'Maghrib', bn: 'মাগরিব', icon: '🌇' },
+  Sunset: { en: 'Sunset', bn: 'সূর্যাস্ত', icon: '🌆' },
   Isha: { en: 'Isha', bn: 'ইশা', icon: '🌙' },
+};
+
+// Minutes after sunrise when nafl prayer (Ishraq) becomes permissible
+const ISHRAQ_OFFSET_MIN = 15;
+// Minutes before Dhuhr when prayer is forbidden (zawal)
+const ZAWAL_BEFORE_DHUHR_MIN = 5;
+
+const addMinutesToTime = (timeStr: string, mins: number): string => {
+  const clean = timeStr.replace(/\s*\(.*\)/, '');
+  const [h, m] = clean.split(':').map(Number);
+  const total = (h * 60 + m + mins + 24 * 60) % (24 * 60);
+  const hh = Math.floor(total / 60).toString().padStart(2, '0');
+  const mm = (total % 60).toString().padStart(2, '0');
+  return `${hh}:${mm}`;
 };
 
 const toBanglaNum = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
