@@ -448,7 +448,7 @@ const AdminProfile = () => {
               { icon: Mail, label: bn ? 'ইমেইল' : 'Email', value: currentEmail },
               { icon: Phone, label: bn ? 'মোবাইল' : 'Mobile', value: staffData?.phone || profileData?.phone },
               { icon: Hash, label: bn ? 'স্টাফ আইডি' : 'Staff ID', value: staffData?.staff_id },
-              { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: (categoriesList.find((c: any) => c.key === staffData?.staff_category) as any)?.[bn ? 'name_bn' : 'name'] || staffData?.staff_category },
+              { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: (categoriesList.find((c: any) => c.key === (staffData?.department || staffData?.staff_category)) as any)?.[bn ? 'name_bn' : 'name'] || staffData?.department || staffData?.staff_category },
               { icon: Calendar, label: bn ? 'যোগদান' : 'Joining Date', value: fmtDate(staffData?.joining_date) },
               { icon: Calendar, label: bn ? 'জন্ম তারিখ' : 'Date of Birth', value: fmtDate(staffData?.date_of_birth) },
               { icon: ShieldCheck, label: 'NID', value: staffData?.nid },
