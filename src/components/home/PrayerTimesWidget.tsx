@@ -277,8 +277,9 @@ const PrayerTimesWidget = () => {
   const apiDateStr = `${tyD}-${tyM}-${tyY}`; // DD-MM-YYYY for Aladhan
 
   const { data: prayerData, isLoading } = useQuery({
-    queryKey: ['prayer-times', selectedCity, selectedCountry, effectiveMethod, todayKey],
+    queryKey: ['prayer-times', selectedCity, selectedCountry, effectiveMethod, todayKey, tz, tzOffsetMin],
     queryFn: async () => {
+      // timezonestring = DST-aware IANA name; Aladhan recomputes offset for the requested date.
       const url = `https://api.aladhan.com/v1/timingsByCity/${apiDateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${effectiveMethod}&timezonestring=${encodeURIComponent(tz)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch prayer times');
