@@ -57,6 +57,15 @@ interface CustomRole {
   sort_order: number;
 }
 
+interface LinkedStaff {
+  id: string;
+  name_bn: string | null;
+  name_en: string | null;
+  designation: string | null;
+  staff_category: string | null;
+  photo_url: string | null;
+}
+
 const MENU_PATHS = [
   { path: '/admin', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard' },
   { path: '/admin/profile', label_bn: 'প্রোফাইল', label_en: 'Profile' },
@@ -115,6 +124,9 @@ const AdminUserManagement = () => {
   const [profileUser, setProfileUser] = useState<UserItem | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEditName, setProfileEditName] = useState('');
+  const [profileEditStaffNameBn, setProfileEditStaffNameBn] = useState('');
+  const [profileEditDesignation, setProfileEditDesignation] = useState('');
+  const [profileEditStaffCategory, setProfileEditStaffCategory] = useState('');
   const [profileEditEmail, setProfileEditEmail] = useState('');
   const [profileNewPassword, setProfileNewPassword] = useState('');
   const [profileConfirmPassword, setProfileConfirmPassword] = useState('');
@@ -229,8 +241,34 @@ const AdminUserManagement = () => {
     },
   });
 
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: masterDesignations = [] } = useQuery({
+    queryKey: ['designations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('designations')
+        .select('id, name, name_bn, staff_category, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   // Map of user_id -> linked staff (for showing designation/category in the user list)
-  const [staffByUser, setStaffByUser] = useState<Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }>>({});
+  const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -247,12 +285,12 @@ const AdminUserManagement = () => {
       if (ids.length > 0) {
         const { data: staffRows } = await supabase
           .from('staff')
-          .select('user_id, designation, staff_category, photo_url')
+          .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
           .in('user_id', ids)
           .is('deleted_at', null);
-        const map: Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }> = {};
+        const map: Record<string, LinkedStaff> = {};
         (staffRows || []).forEach(r => {
-          if (r.user_id) map[r.user_id] = { designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
+          if (r.user_id) map[r.user_id] = { id: r.id, name_bn: r.name_bn, name_en: r.name_en, designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
         });
         setStaffByUser(map);
       } else {
