@@ -88,6 +88,7 @@ const PrayerTimesWidget = () => {
   const [division, setDivision] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [timeFormat, setTimeFormat] = useState<'24h' | '12h' | null>(null);
+  const [methodOverride, setMethodOverride] = useState<number | null>(null);
   const [now, setNow] = useState(new Date());
 
   // Effective values: user override > backend config
@@ -95,6 +96,7 @@ const PrayerTimesWidget = () => {
   const effectiveDivision = division ?? config.default_division;
   const effectiveCity = city ?? config.default_city;
   const effectiveTimeFormat = timeFormat ?? config.time_format;
+  const effectiveMethod = methodOverride ?? config.calculation_method;
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
@@ -104,20 +106,24 @@ const PrayerTimesWidget = () => {
   const selectedCity = effectiveCountry === 'BD' ? effectiveCity : COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka';
   const selectedCountry = COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Bangladesh';
 
+  // Date key changes at midnight so query refetches the next day automatically
+  const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
   const { data: prayerData, isLoading } = useQuery({
-    queryKey: ['prayer-times', selectedCity, selectedCountry, config.calculation_method],
+    queryKey: ['prayer-times', selectedCity, selectedCountry, effectiveMethod, todayKey],
     queryFn: async () => {
       const today = new Date();
       const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-      const res = await fetch(
-        `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${config.calculation_method}`
-      );
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dhaka';
+      const url = `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${effectiveMethod}&timezonestring=${encodeURIComponent(tz)}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch prayer times');
       const json = await res.json();
       return json.data;
     },
-    staleTime: 1000 * 60 * 30,
-    refetchInterval: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 15,
+    refetchInterval: 1000 * 60 * 30,
+    refetchOnWindowFocus: true,
   });
 
   const timings = prayerData?.timings;
@@ -201,15 +207,32 @@ const PrayerTimesWidget = () => {
             </Select>
           </div>
         )}
-        <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
-          <SelectTrigger className="h-7 text-xs">
-            <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
-            <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
+              <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={String(effectiveMethod)} onValueChange={(v) => setMethodOverride(Number(v))}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={bn ? 'হিসাব পদ্ধতি' : 'Method'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1" className="text-xs">{bn ? 'করাচী (হানাফী)' : 'Karachi (Hanafi)'}</SelectItem>
+              <SelectItem value="2" className="text-xs">{bn ? 'ISNA (উত্তর আমেরিকা)' : 'ISNA (N. America)'}</SelectItem>
+              <SelectItem value="3" className="text-xs">{bn ? 'বিশ্ব মুসলিম লীগ' : 'Muslim World League'}</SelectItem>
+              <SelectItem value="4" className="text-xs">{bn ? 'উম্মুল কুরা মক্কা' : 'Umm al-Qura, Makkah'}</SelectItem>
+              <SelectItem value="5" className="text-xs">{bn ? 'মিশর' : 'Egyptian'}</SelectItem>
+              <SelectItem value="8" className="text-xs">{bn ? 'গালফ অঞ্চল' : 'Gulf Region'}</SelectItem>
+              <SelectItem value="13" className="text-xs">{bn ? 'তুরস্ক (Diyanet)' : 'Diyanet (Turkey)'}</SelectItem>
+              <SelectItem value="15" className="text-xs">{bn ? 'মুনলাইটিং সাইটিং কাউন্সিল' : 'Moonsighting Committee'}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="p-2">
