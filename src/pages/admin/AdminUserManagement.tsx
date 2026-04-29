@@ -1217,7 +1217,7 @@ const AdminUserManagement = () => {
             {roleEditUser && (
               <div className="space-y-4 pt-2">
                 <p className="text-sm text-muted-foreground">
-                  {roleEditUser.full_name || roleEditUser.email}
+                  {getUserDisplayName(roleEditUser)}
                 </p>
                 <div>
                   <Label>{bn ? 'নতুন রোল' : 'New Role'}</Label>
@@ -1316,7 +1316,7 @@ const AdminUserManagement = () => {
                 {bn ? 'ব্যক্তিগত পারমিশন' : 'Individual Permissions'}
                 {permUser && (
                   <Badge variant="outline" className="ml-2 font-normal">
-                    {permUser.full_name || permUser.email}
+                    {getUserDisplayName(permUser)}
                   </Badge>
                 )}
               </DialogTitle>
@@ -1508,7 +1508,7 @@ const AdminUserManagement = () => {
               <div className="space-y-5 pt-2">
                 {(() => {
                   const linked = staffByUser[profileUser.id];
-                  const displayName = linked?.name_bn || linked?.name_en || profileUser.full_name || profileUser.profile_full_name || '—';
+                  const displayName = getUserDisplayName(profileUser);
                   const displayPhoto = linked?.photo_url;
                   const displayDesignation = linked?.designation;
                   const displayCategory = linked?.staff_category;
