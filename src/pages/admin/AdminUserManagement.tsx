@@ -1609,7 +1609,7 @@ const AdminUserManagement = () => {
                     <Input value={profileEditName} onChange={e => setProfileEditName(e.target.value)} placeholder={bn ? 'নতুন নাম' : 'New name'} />
                     <Button
                       size="sm"
-                      disabled={profileSaving === 'name' || profileEditName === profileUser.full_name}
+                      disabled={profileSaving === 'name' || profileEditName === getUserDisplayName(profileUser)}
                       onClick={async () => {
                         setProfileSaving('name');
                         try {
@@ -1730,7 +1730,7 @@ const AdminUserManagement = () => {
                         />
                         {!emailOtpSent ? (
                           <Button size="sm" variant="outline" disabled={otpSending} onClick={async () => {
-                            const result = await sendOtp(profileUser.email, 'email_verification', profileUser.full_name);
+                            const result = await sendOtp(profileUser.email, 'email_verification', getUserDisplayName(profileUser));
                             if (result.success) { setEmailOtpSent(true); toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${result.expiryMinutes} মিনিট)` : `✅ OTP sent (${result.expiryMinutes} min)`); }
                           }}>
                             {otpSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
@@ -1766,7 +1766,7 @@ const AdminUserManagement = () => {
                       </div>
                       {emailOtpSent && (
                         <button type="button" className="text-xs text-primary hover:underline" onClick={async () => {
-                          const result = await sendOtp(profileUser.email, 'email_verification', profileUser.full_name);
+                          const result = await sendOtp(profileUser.email, 'email_verification', getUserDisplayName(profileUser));
                           if (result.success) toast.success(bn ? 'নতুন OTP পাঠানো হয়েছে' : 'New OTP sent');
                         }}>{bn ? 'আবার OTP পাঠান' : 'Resend OTP'}</button>
                       )}
@@ -1868,7 +1868,7 @@ const AdminUserManagement = () => {
                         />
                         {!pwOtpSent ? (
                           <Button size="sm" variant="outline" disabled={otpSending} onClick={async () => {
-                            const result = await sendOtp(profileUser.email, 'password_reset', profileUser.full_name);
+                            const result = await sendOtp(profileUser.email, 'password_reset', getUserDisplayName(profileUser));
                             if (result.success) { setPwOtpSent(true); toast.success(bn ? `✅ OTP পাঠানো হয়েছে (${result.expiryMinutes} মিনিট)` : `✅ OTP sent (${result.expiryMinutes} min)`); }
                           }}>
                             {otpSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SendHorizonal className="w-4 h-4" />}
@@ -1903,7 +1903,7 @@ const AdminUserManagement = () => {
                       </div>
                       {pwOtpSent && (
                         <button type="button" className="text-xs text-primary hover:underline" onClick={async () => {
-                          const result = await sendOtp(profileUser.email, 'password_reset', profileUser.full_name);
+                          const result = await sendOtp(profileUser.email, 'password_reset', getUserDisplayName(profileUser));
                           if (result.success) toast.success(bn ? 'নতুন OTP পাঠানো হয়েছে' : 'New OTP sent');
                         }}>{bn ? 'আবার OTP পাঠান' : 'Resend OTP'}</button>
                       )}
