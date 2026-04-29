@@ -359,9 +359,33 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  const roleLabel = role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (role || '');
-  // Hide designation badge if it duplicates the role label
-  const showDesignationBadge = !!staffData?.designation && staffData.designation !== roleLabel;
+  // ─── Unified role + designation badge resolver ───
+  // Single source of truth: returns deduplicated badges for use anywhere on the page.
+  const getRoleDesignationBadges = (): Array<{ key: string; label: string; kind: 'role' | 'designation' }> => {
+    const roleLabelMap: Record<string, { bn: string; en: string }> = {
+      super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
+      admin: { bn: 'অ্যাডমিন', en: 'Admin' },
+      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+      staff: { bn: 'স্টাফ', en: 'Staff' },
+    };
+    const norm = (s?: string | null) => (s || '').trim().toLowerCase();
+    const badges: Array<{ key: string; label: string; kind: 'role' | 'designation' }> = [];
+    const seen = new Set<string>();
+
+    if (role) {
+      const r = roleLabelMap[role];
+      const label = r ? (bn ? r.bn : r.en) : role;
+      badges.push({ key: 'role', label, kind: 'role' });
+      seen.add(norm(label));
+    }
+    const designation = staffData?.designation?.trim();
+    if (designation && !seen.has(norm(designation))) {
+      badges.push({ key: 'designation', label: designation, kind: 'designation' });
+    }
+    return badges;
+  };
+  const roleDesignationBadges = getRoleDesignationBadges();
+  const roleLabel = roleDesignationBadges.find((b) => b.kind === 'role')?.label || '';
   const displayName = (bn ? staffData?.name_bn : staffData?.name_en)
     || staffData?.name_bn
     || staffData?.name_en
@@ -390,15 +414,16 @@ const AdminProfile = () => {
                 <p className="text-white/70 text-sm">{staffData.name_en}</p>
               )}
               <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                {role && (
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/15 text-white border border-white/20 backdrop-blur-sm">
-                    {roleLabel}
-                  </span>
-                )}
-                {showDesignationBadge && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                    {staffData!.designation}
-                  </span>
+                {roleDesignationBadges.map((b) =>
+                  b.kind === 'role' ? (
+                    <span key={b.key} className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-white/15 text-white border border-white/20 backdrop-blur-sm">
+                      {b.label}
+                    </span>
+                  ) : (
+                    <span key={b.key} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
+                      {b.label}
+                    </span>
+                  )
                 )}
                 {staffData?.status && (
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${staffData.status === 'active' ? 'bg-emerald-400/20 text-emerald-200 border border-emerald-400/20' : 'bg-amber-400/20 text-amber-200 border border-amber-400/20'}`}>
