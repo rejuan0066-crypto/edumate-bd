@@ -6,7 +6,7 @@ import { Calendar, Clock, Star, ChevronLeft, ChevronRight, ChevronsLeft, Chevron
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
-import { formatTimeInTz, getWeekdayIdxInTz } from '@/lib/timezone';
+import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz } from '@/lib/timezone';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 const toArabicNum = (str: string) => String(str).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -85,27 +85,70 @@ const IslamicCalendarWidget = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { config } = usePrayerCalendarSettings();
-  const [now, setNow] = useState(new Date());
-  const [viewYear, setViewYear] = useState(new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(new Date().getMonth());
-  const [lastDate, setLastDate] = useState(new Date().getDate());
+  // Pull global app timezone first — clock + midnight detection both depend on it.
+  const { tz: APP_TZ } = useAppTimezone();
+  const [now, setNow] = useState(() => new Date());
+  const [viewYear, setViewYear] = useState(() => getDatePartsInTz(new Date(), APP_TZ).year);
+  const [viewMonth, setViewMonth] = useState(() => getDatePartsInTz(new Date(), APP_TZ).month);
 
+  /**
+   * Self-correcting clock:
+   *  - Always reads `new Date()` at tick time (no stale reference).
+   *  - Aligns each tick to the next wall-clock second boundary so it can't drift
+   *    when the main thread / setInterval gets throttled.
+   *  - Forces an immediate resync when the tab regains focus / visibility / network.
+   *  - Detects midnight in the configured APP_TZ (not the device TZ).
+   */
   useEffect(() => {
-    const timer = setInterval(() => {
+    let timeoutId: number | undefined;
+    let cancelled = false;
+    let lastDayKey = (() => {
+      const p = getDatePartsInTz(new Date(), APP_TZ);
+      return `${p.year}-${p.month}-${p.day}`;
+    })();
+
+    const tick = () => {
+      if (cancelled) return;
       const n = new Date();
       setNow(n);
-      // Auto-navigate calendar when date changes (midnight)
-      setLastDate(prev => {
-        if (prev !== n.getDate()) {
-          setViewMonth(n.getMonth());
-          setViewYear(n.getFullYear());
-          return n.getDate();
-        }
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
+      // Midnight roll-over in APP_TZ: auto-navigate calendar to today.
+      const p = getDatePartsInTz(n, APP_TZ);
+      const dayKey = `${p.year}-${p.month}-${p.day}`;
+      if (dayKey !== lastDayKey) {
+        lastDayKey = dayKey;
+        setViewMonth(p.month);
+        setViewYear(p.year);
+      }
+
+      // Schedule the next tick at the next wall-clock second boundary.
+      const drift = Date.now() % 1000;
+      const delay = 1000 - drift;
+      timeoutId = window.setTimeout(tick, delay);
+    };
+
+    // Run once immediately so the first paint after mount / TZ change is in sync.
+    tick();
+
+    // Resync when the tab becomes active again — setTimeout can be paused
+    // while the tab is hidden, leaving the clock visibly behind.
+    const resync = () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+      tick();
+    };
+    const onVisibility = () => { if (document.visibilityState === 'visible') resync(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', resync);
+    window.addEventListener('online', resync);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', resync);
+      window.removeEventListener('online', resync);
+    };
+  }, [APP_TZ]);
 
   // Fetch holidays from DB
   const { data: dbHolidays } = useQuery({
