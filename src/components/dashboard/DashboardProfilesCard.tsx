@@ -71,11 +71,16 @@ const DashboardProfilesCard = () => {
   const { settings } = useWebsiteSettings();
   const { data: myStaff } = useCurrentStaff();
 
-  const adminName = bn ? settings.admin_name : (settings.admin_name || '');
-  const adminTitle = bn ? settings.admin_title_bn : settings.admin_title_en;
-  const adminMessage = bn ? settings.admin_message_bn : settings.admin_message_en;
-
+  // Prefer the logged-in user's own staff record everywhere; fall back to
+  // institution-level admin info from website settings only if no staff record exists.
   const staffName = myStaff ? (bn ? myStaff.name_bn : (myStaff.name_en || myStaff.name_bn)) : null;
+
+  const adminName = staffName || (bn ? settings.admin_name : (settings.admin_name || ''));
+  const adminTitle = myStaff?.designation || (bn ? settings.admin_title_bn : settings.admin_title_en);
+  const adminEmail = myStaff?.email || settings.admin_email;
+  const adminPhone = myStaff?.phone || settings.admin_phone;
+  const adminPhoto = myStaff?.photo_url || settings.admin_photo_url;
+  const adminMessage = bn ? settings.admin_message_bn : settings.admin_message_en;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -83,10 +88,10 @@ const DashboardProfilesCard = () => {
         title={bn ? 'এডমিন প্রোফাইল' : 'Admin Profile'}
         name={adminName}
         designation={adminTitle}
-        email={settings.admin_email}
-        phone={settings.admin_phone}
+        email={adminEmail}
+        phone={adminPhone}
         message={adminMessage}
-        photo={settings.admin_photo_url}
+        photo={adminPhoto}
         accentClass="bg-accent"
       />
       <ProfileCard
