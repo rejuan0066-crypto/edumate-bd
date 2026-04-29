@@ -140,6 +140,7 @@ const AdminUserManagement = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEditName, setProfileEditName] = useState('');
   const [profileEditStaffNameBn, setProfileEditStaffNameBn] = useState('');
+  const [profileEditStaffNameEn, setProfileEditStaffNameEn] = useState('');
   const [profileEditDesignation, setProfileEditDesignation] = useState('');
   const [profileEditStaffCategory, setProfileEditStaffCategory] = useState('');
   const [profileEditEmail, setProfileEditEmail] = useState('');
