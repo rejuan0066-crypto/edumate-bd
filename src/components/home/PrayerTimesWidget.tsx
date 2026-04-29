@@ -88,6 +88,7 @@ const PrayerTimesWidget = () => {
   const [division, setDivision] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [timeFormat, setTimeFormat] = useState<'24h' | '12h' | null>(null);
+  const [methodOverride, setMethodOverride] = useState<number | null>(null);
   const [now, setNow] = useState(new Date());
 
   // Effective values: user override > backend config
@@ -95,6 +96,7 @@ const PrayerTimesWidget = () => {
   const effectiveDivision = division ?? config.default_division;
   const effectiveCity = city ?? config.default_city;
   const effectiveTimeFormat = timeFormat ?? config.time_format;
+  const effectiveMethod = methodOverride ?? config.calculation_method;
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
