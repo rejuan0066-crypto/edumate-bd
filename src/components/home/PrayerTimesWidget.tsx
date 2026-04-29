@@ -321,6 +321,22 @@ const PrayerTimesWidget = () => {
 
   const { activeIndex, activeRemainingMs } = getActiveInfo();
 
+  // Debug snapshot — only rendered in dev (Vite import.meta.env.DEV)
+  const nowMinDebug = timings ? nowMinutesInTz(now, tz) : 0;
+  const debugInfo = {
+    tz,
+    tzOffsetMin,
+    nowMin: Number(nowMinDebug.toFixed(2)),
+    nowHHMM: `${String(Math.floor(nowMinDebug / 60)).padStart(2, '0')}:${String(Math.floor(nowMinDebug % 60)).padStart(2, '0')}`,
+    activeIndex,
+    activePrayer: activeIndex >= 0 ? PRAYER_ORDER[activeIndex] : '—',
+    nextPrayer: activeIndex >= 0 ? PRAYER_ORDER[(activeIndex + 1) % PRAYER_ORDER.length] : '—',
+    remainingMs: activeRemainingMs,
+    method: effectiveMethod,
+    city: selectedCity,
+    country: selectedCountry,
+  };
+
   if (!config.show_prayer_times) return null;
 
   return (
@@ -492,6 +508,17 @@ const PrayerTimesWidget = () => {
           <div className="text-center py-4 text-xs text-muted-foreground">{bn ? 'তথ্য পাওয়া যায়নি' : 'No data available'}</div>
         )}
       </div>
+
+      {import.meta.env.DEV && (
+        <details className="border-t border-border bg-muted/40 px-3 py-2 text-[10px] font-mono text-muted-foreground">
+          <summary className="cursor-pointer select-none font-semibold text-foreground">
+            🛠 Debug · tz={debugInfo.tz} · now={debugInfo.nowHHMM} · active={debugInfo.activePrayer}
+          </summary>
+          <pre className="mt-1 whitespace-pre-wrap break-all leading-relaxed">
+{JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        </details>
+      )}
     </div>
   );
 };
