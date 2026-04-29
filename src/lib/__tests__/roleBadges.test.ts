@@ -13,6 +13,16 @@ describe('getRoleDesignationBadges', () => {
       expect(badges[0]).toEqual({ key: 'role', label: 'সুপার অ্যাডমিন', kind: 'role' });
     });
 
+    it('dedupes visually-equivalent Bengali variants (এডমিন vs অ্যাডমিন)', () => {
+      const badges = getRoleDesignationBadges({
+        role: 'super_admin',
+        designation: 'সুপার এডমিন',
+        bn: true,
+      });
+      expect(badges).toHaveLength(1);
+      expect(badges[0].kind).toBe('role');
+    });
+
     it('shows both role and designation when distinct', () => {
       const badges = getRoleDesignationBadges({
         role: 'admin',

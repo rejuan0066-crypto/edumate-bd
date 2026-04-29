@@ -11,7 +11,24 @@ const roleLabelMap: Record<string, { bn: string; en: string }> = {
   staff: { bn: 'স্টাফ', en: 'Staff' },
 };
 
-const norm = (s?: string | null) => (s || '').trim().toLowerCase();
+// Aggressive normalization for fuzzy duplicate detection across visually-equivalent
+// Bengali variants. Strips diacritics, vowel signs, virama (hasanta) and whitespace
+// so "সুপার এডমিন" and "সুপার অ্যাডমিন" collapse to the same key.
+const norm = (s?: string | null): string => {
+  if (!s) return '';
+  return s
+    .normalize('NFKD')
+    .toLowerCase()
+    // Collapse the "অ্য" glide cluster (independent vowel অ + virama + য) — visually it
+    // represents the same "a/e" onset as the bare independent vowel এ in many spellings.
+    .replace(/\u0985\u09CD\u09AF/g, '')
+    // Remove all Bengali combining marks (vowel signs, virama, nukta) and ASCII separators
+    .replace(/[\u0981-\u0983\u09BC-\u09C4\u09C7-\u09C8\u09CB-\u09CD\u09D7\u09E2-\u09E3\u200C\u200D\s_\-./()]/g, '')
+    // Treat independent vowels অ/আ/এ/ঐ as equivalent (drop them)
+    .replace(/[\u0985\u0986\u098F\u0990]/g, '')
+    .trim();
+};
+
 
 /**
  * Single source of truth for role + designation badges across the app.
