@@ -293,6 +293,12 @@ const AdminUserManagement = () => {
   // Map of user_id -> linked staff (for showing designation/category in the user list)
   const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
 
+  const getUserDisplayName = (user?: UserItem | null) => {
+    if (!user) return '';
+    const linked = staffByUser[user.id];
+    return linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || user.email || '—';
+  };
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -504,7 +510,7 @@ const AdminUserManagement = () => {
 
   const openProfileDialog = (user: UserItem) => {
     const linked = staffByUser[user.id];
-    const unifiedName = linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || '';
+    const unifiedName = getUserDisplayName(user);
     setProfileUser(user);
     setProfileEditName(unifiedName);
     setProfileEditStaffNameBn(linked?.name_bn || unifiedName);
