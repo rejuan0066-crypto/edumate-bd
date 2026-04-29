@@ -279,6 +279,11 @@ const IslamicCalendarWidget = () => {
                     <p className="mt-1.5 opacity-70">
                       ডিভাইস: <span className="font-mono">{getDeviceTz()}</span> · অফসেট: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
                     </p>
+                    {usingFallbackTz() && (
+                      <p className="mt-1 text-amber-300/90">
+                        ⚠ আপনার ব্রাউজার পূর্ণ টাইমজোন সাপোর্ট করে না — সময় ফিক্সড অফসেট ফলব্যাক দিয়ে দেখানো হচ্ছে।
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -289,6 +294,11 @@ const IslamicCalendarWidget = () => {
                     <p className="mt-1.5 opacity-70">
                       Your device: <span className="font-mono">{getDeviceTz()}</span> · Offset: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
                     </p>
+                    {usingFallbackTz() && (
+                      <p className="mt-1 text-amber-300/90">
+                        ⚠ Your browser lacks full timezone support — showing time via a fixed-offset fallback.
+                      </p>
+                    )}
                   </>
                 )}
               </TooltipContent>
