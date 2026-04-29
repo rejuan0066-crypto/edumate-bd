@@ -34,7 +34,7 @@ const BD_DIVISIONS: Record<string, { en: string; bn: string; cities: { en: strin
   mymensingh: { en: 'Mymensingh', bn: 'ময়মনসিংহ', cities: [{ en: 'Mymensingh', bn: 'ময়মনসিংহ' }, { en: 'Jamalpur', bn: 'জামালপুর' }, { en: 'Netrokona', bn: 'নেত্রকোণা' }, { en: 'Sherpur', bn: 'শেরপুর' }] },
 };
 
-const PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
+const PRAYER_ORDER = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Sunset', 'Isha'] as const;
 
 const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
   Fajr: { en: 'Fajr', bn: 'ফজর', icon: '🌅' },
@@ -42,7 +42,22 @@ const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
   Dhuhr: { en: 'Dhuhr', bn: 'যোহর', icon: '🌤️' },
   Asr: { en: 'Asr', bn: 'আসর', icon: '🌥️' },
   Maghrib: { en: 'Maghrib', bn: 'মাগরিব', icon: '🌇' },
+  Sunset: { en: 'Sunset', bn: 'সূর্যাস্ত', icon: '🌆' },
   Isha: { en: 'Isha', bn: 'ইশা', icon: '🌙' },
+};
+
+// Minutes after sunrise when nafl prayer (Ishraq) becomes permissible
+const ISHRAQ_OFFSET_MIN = 15;
+// Minutes before Dhuhr when prayer is forbidden (zawal)
+const ZAWAL_BEFORE_DHUHR_MIN = 5;
+
+const addMinutesToTime = (timeStr: string, mins: number): string => {
+  const clean = timeStr.replace(/\s*\(.*\)/, '');
+  const [h, m] = clean.split(':').map(Number);
+  const total = (h * 60 + m + mins + 24 * 60) % (24 * 60);
+  const hh = Math.floor(total / 60).toString().padStart(2, '0');
+  const mm = (total % 60).toString().padStart(2, '0');
+  return `${hh}:${mm}`;
 };
 
 const toBanglaNum = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
@@ -259,6 +274,28 @@ const PrayerTimesWidget = () => {
           <div className="text-center py-6 text-xs text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
         ) : timings ? (
           <>
+            {/* Ishraq / forbidden-time info banner */}
+            {timings.Sunrise && timings.Dhuhr && timings.Sunset && (
+              <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-[10px] leading-relaxed">
+                <div className="flex justify-between gap-2">
+                  <span className="text-foreground">
+                    {bn ? `সূর্যোদয়ের ${toBanglaNum(String(ISHRAQ_OFFSET_MIN))} মিনিট পর ইশরাকের নামাজ পড়া যাবে:` : `Ishraq prayer permitted ${ISHRAQ_OFFSET_MIN} min after sunrise:`}
+                  </span>
+                  <span className="font-mono font-bold text-primary">
+                    {formatDisplayTime(addMinutesToTime(timings.Sunrise, ISHRAQ_OFFSET_MIN), bn, effectiveTimeFormat)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2 mt-0.5">
+                  <span className="text-muted-foreground">
+                    {bn ? 'সূর্যাস্ত:' : 'Sunset:'}
+                  </span>
+                  <span className="font-mono text-muted-foreground">
+                    {formatDisplayTime(timings.Sunset.replace(/\s*\(.*\)/, ''), bn, effectiveTimeFormat)}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-[1fr_auto_auto] gap-1 px-2 pb-1 mb-1 border-b border-border text-[10px] text-muted-foreground font-medium">
               <span>{bn ? 'ওয়াক্ত' : 'Prayer'}</span>
               <span className="text-center w-20">{bn ? 'শুরু' : 'Start'}</span>
