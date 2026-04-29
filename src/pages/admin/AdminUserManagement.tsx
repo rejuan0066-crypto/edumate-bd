@@ -1467,8 +1467,7 @@ const AdminUserManagement = () => {
                     <Tag className="w-5 h-5" />
                     {bn ? 'স্টাফ নাম, পদবি ও ক্যাটাগরি' : 'Staff Name, Designation & Category'}
                   </h3>
-                  {staffByUser[profileUser.id] ? (
-                    <>
+                  <>
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
                         <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
@@ -1481,7 +1480,7 @@ const AdminUserManagement = () => {
                               <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
                             </SelectTrigger>
                             <SelectContent>
-                              {staffCategories.map((cat: any) => (
+                              {staffCategories.map((cat) => (
                                 <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
                               ))}
                             </SelectContent>
@@ -1495,9 +1494,9 @@ const AdminUserManagement = () => {
                             </SelectTrigger>
                             <SelectContent>
                               {masterDesignations
-                                .filter((d: any) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
-                                .map((d: any) => (
-                                  <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>{bn ? d.name_bn : d.name}</SelectItem>
+                                .filter((d) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
+                                .map((d) => (
+                                  <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
                                 ))}
                             </SelectContent>
                           </Select>
@@ -1508,11 +1507,6 @@ const AdminUserManagement = () => {
                         {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
                       </Button>
                     </>
-                  ) : (
-                    <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                      {bn ? 'এই ইউজারের স্টাফ প্রোফাইল এখনো নেই। স্টাফে যোগ করুন বাটন দিয়ে আগে স্টাফ প্রোফাইল তৈরি করুন।' : 'This user has no staff profile yet. Use Add to Staff first.'}
-                    </div>
-                  )}
                 </div>
 
                 {/* Edit Name */}
