@@ -86,7 +86,63 @@ const AdminProfile = () => {
     enabled: !!user?.id,
   });
 
-  const { data: staffData } = useCurrentStaff();
+  const { data: staffData, refetch: refetchStaff } = useCurrentStaff();
+  const queryClient = useQueryClient();
+
+  // ─── Designation & Staff Category editor ───
+  const [editingRole, setEditingRole] = useState(false);
+  const [editDesignation, setEditDesignation] = useState<string>('');
+  const [editCategory, setEditCategory] = useState<string>('');
+
+  useEffect(() => {
+    if (staffData) {
+      setEditDesignation(staffData.designation || '');
+      setEditCategory(staffData.staff_category || '');
+    }
+  }, [staffData?.id, staffData?.designation, staffData?.staff_category]);
+
+  const { data: designationsList = [] } = useQuery({
+    queryKey: ['designations', 'active'],
+    queryFn: async () => {
+      const { data } = await supabase.from('designations').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+  const { data: categoriesList = [] } = useQuery({
+    queryKey: ['staff_categories', 'active'],
+    queryFn: async () => {
+      const { data } = await supabase.from('staff_categories').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+
+  const filteredDesignations = editCategory
+    ? designationsList.filter((d: any) => d.staff_category === editCategory)
+    : designationsList;
+
+  const saveRoleMutation = useMutation({
+    mutationFn: async () => {
+      if (!staffData?.id) throw new Error('No staff record');
+      const { error } = await supabase
+        .from('staff')
+        .update({ designation: editDesignation || null, staff_category: editCategory || null })
+        .eq('id', staffData.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success(bn ? 'পদবি ও ক্যাটাগরি আপডেট হয়েছে' : 'Designation & category updated');
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['users'] }),
+      ]);
+      await refetchStaff();
+      setEditingRole(false);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'আপডেট ব্যর্থ' : 'Update failed')),
+  });
 
   useEffect(() => {
     const getUser = async () => {
