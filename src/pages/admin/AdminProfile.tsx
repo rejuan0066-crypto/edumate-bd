@@ -433,7 +433,79 @@ const AdminProfile = () => {
           </div>
         </div>
 
-        {/* ═══ Email Change Card ═══ */}
+        {/* ═══ Designation & Category Editor ═══ */}
+        {staffData?.id && (
+          <div className="rounded-[32px] border border-border/15 bg-card/75 dark:bg-card/40 backdrop-blur-xl p-7 sm:p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+              <h3 className="font-bold text-foreground flex items-center gap-2.5 text-base">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><Briefcase className="w-4.5 h-4.5 text-primary" /></div>
+                {bn ? 'পদবি ও ক্যাটাগরি' : 'Designation & Category'}
+              </h3>
+              {!editingRole ? (
+                <Button size="sm" variant="outline" onClick={() => setEditingRole(true)} className="rounded-full">
+                  {bn ? 'এডিট' : 'Edit'}
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => { setEditingRole(false); setEditDesignation(staffData.designation || ''); setEditCategory(staffData.staff_category || ''); }} className="rounded-full">{bn ? 'বাতিল' : 'Cancel'}</Button>
+                  <Button size="sm" onClick={() => saveRoleMutation.mutate()} disabled={saveRoleMutation.isPending} className="rounded-full" style={{ background: 'linear-gradient(135deg, #059669, #0d9488)', color: 'white' }}>
+                    {saveRoleMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                    {bn ? 'সেভ' : 'Save'}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {!editingRole ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/8 shrink-0"><Briefcase className="w-4 h-4 text-primary/70" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{bn ? 'পদবি' : 'Designation'}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{staffData.designation || '-'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/8 shrink-0"><User className="w-4 h-4 text-primary/70" /></div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{bn ? 'ক্যাটাগরি' : 'Staff Category'}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {(categoriesList.find((c: any) => c.key === staffData.staff_category) as any)?.[bn ? 'name_bn' : 'name'] || staffData.staff_category || '-'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'ক্যাটাগরি' : 'Staff Category'}</Label>
+                  <Select value={editCategory} onValueChange={(v) => { setEditCategory(v); setEditDesignation(''); }}>
+                    <SelectTrigger className="mt-1.5 bg-background"><SelectValue placeholder={bn ? 'ক্যাটাগরি বেছে নিন' : 'Select category'} /></SelectTrigger>
+                    <SelectContent>
+                      {categoriesList.map((c: any) => (
+                        <SelectItem key={c.key} value={c.key}>{bn ? c.name_bn : c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'পদবি' : 'Designation'}</Label>
+                  <Select value={editDesignation} onValueChange={setEditDesignation}>
+                    <SelectTrigger className="mt-1.5 bg-background"><SelectValue placeholder={bn ? 'পদবি বেছে নিন' : 'Select designation'} /></SelectTrigger>
+                    <SelectContent>
+                      {filteredDesignations.map((d: any) => (
+                        <SelectItem key={d.id} value={bn ? (d.name_bn || d.name) : (d.name || d.name_bn)}>
+                          {bn ? (d.name_bn || d.name) : (d.name || d.name_bn)}
+                        </SelectItem>
+                      ))}
+                      {filteredDesignations.length === 0 && (
+                        <div className="px-3 py-2 text-xs text-muted-foreground">{bn ? 'কোনো পদবি নেই' : 'No designations'}</div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
         <div className="rounded-[32px] border border-border/15 bg-card/75 dark:bg-card/40 backdrop-blur-xl p-7 sm:p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h3 className="font-bold text-foreground mb-6 flex items-center gap-2.5 text-base">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><Mail className="w-4.5 h-4.5 text-primary" /></div>
