@@ -276,7 +276,10 @@ const PrayerTimesWidget = () => {
   const todayKey = todayInTz;
   const apiDateStr = `${tyD}-${tyM}-${tyY}`; // DD-MM-YYYY for Aladhan
 
-  const { data: prayerData, isLoading } = useQuery({
+  // localStorage cache key — scoped per location/method so different cities don't collide
+  const cacheKey = `prayer-cache:${selectedCountry}:${selectedCity}:${effectiveMethod}:${tz}`;
+
+  const { data: prayerData, isLoading, isError } = useQuery({
     queryKey: ['prayer-times', selectedCity, selectedCountry, effectiveMethod, todayKey, tz, tzOffsetMin],
     queryFn: async () => {
       // timezonestring = DST-aware IANA name; Aladhan recomputes offset for the requested date.
@@ -284,17 +287,38 @@ const PrayerTimesWidget = () => {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch prayer times');
       const json = await res.json();
+      // Persist last successful payload + the date it was fetched for, so we can fall back later.
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now(), date: todayKey, data: json.data }));
+      } catch { /* quota / private mode — ignore */ }
       return json.data;
     },
-    staleTime: 1000 * 60,        // consider stale after 1 minute
-    refetchInterval: 1000 * 60,  // auto refetch every 1 minute
+    staleTime: 1000 * 60,
+    refetchInterval: 1000 * 60,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    retry: 2,
   });
 
-  const timings = prayerData?.timings;
-  const hijriDate = prayerData?.date?.hijri;
+  // Fallback: if API failed or hasn't responded yet, restore last known good payload from localStorage.
+  type CachedPayload = { savedAt: number; date: string; data: any };
+  const cachedFallback: CachedPayload | null = (() => {
+    if (prayerData) return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? (JSON.parse(raw) as CachedPayload) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const effectiveData = prayerData ?? cachedFallback?.data ?? null;
+  const usingFallback = !prayerData && !!cachedFallback;
+  const fallbackIsStale = usingFallback && cachedFallback!.date !== todayKey;
+
+  const timings = effectiveData?.timings;
+  const hijriDate = effectiveData?.date?.hijri;
 
   const getActiveInfo = () => {
     if (!timings) return { activeIndex: -1, nextIndex: -1, activeRemainingMs: 0 };
