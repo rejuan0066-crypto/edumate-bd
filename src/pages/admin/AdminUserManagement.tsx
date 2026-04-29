@@ -293,6 +293,9 @@ const AdminUserManagement = () => {
 
   // Map of user_id -> linked staff (for showing designation/category in the user list)
   const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
+  // Map of user_id -> linked administrative officer
+  const [adminOfficerByUser, setAdminOfficerByUser] = useState<Record<string, { id: string; name_bn: string; designation: string | null }>>({});
+  const [linkSaving, setLinkSaving] = useState<'staff' | 'officer' | null>(null);
 
   const getUserDisplayName = (user?: UserItem | null) => {
     if (!user) return '';
@@ -332,6 +335,22 @@ const AdminUserManagement = () => {
         setStaffByUser(map);
       } else {
         setStaffByUser({});
+      }
+
+      // Pull administrative_officers linked by user_id
+      if (ids.length > 0) {
+        const { data: officerRows } = await supabase
+          .from('administrative_officers' as any)
+          .select('id, user_id, name_bn, designation')
+          .in('user_id', ids)
+          .is('deleted_at', null);
+        const omap: Record<string, { id: string; name_bn: string; designation: string | null }> = {};
+        (officerRows || []).forEach((r: any) => {
+          if (r.user_id) omap[r.user_id] = { id: r.id, name_bn: r.name_bn, designation: r.designation };
+        });
+        setAdminOfficerByUser(omap);
+      } else {
+        setAdminOfficerByUser({});
       }
     } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
@@ -583,6 +602,125 @@ const AdminUserManagement = () => {
       toast.error(err?.message || (bn ? 'সেভ ব্যর্থ' : 'Failed to save'));
     }
     setProfileSaving(null);
+  };
+
+  // Add user to administrative_officers table
+  const addToAdministrative = async () => {
+    if (!profileUser) return;
+    if (adminOfficerByUser[profileUser.id]) {
+      toast.info(bn ? 'এই ইউজার ইতিমধ্যে প্রশাসনিক কর্মকর্তায় আছে' : 'Already in administrative officers');
+      return;
+    }
+    const nameBn = (profileEditStaffNameBn.trim() || profileEditName.trim() || profileUser.full_name || '').trim();
+    if (!nameBn) {
+      toast.error(bn ? 'নাম দিন' : 'Enter name first');
+      return;
+    }
+    setLinkSaving('officer');
+    try {
+      const { data, error } = await supabase
+        .from('administrative_officers' as any)
+        .insert({
+          user_id: profileUser.id,
+          name_bn: nameBn,
+          name_en: profileEditStaffNameEn.trim() || nameBn,
+          designation: profileEditDesignation || null,
+          email: profileUser.email,
+        })
+        .select('id, name_bn, designation')
+        .single();
+      if (error) throw error;
+      const row = data as any;
+      setAdminOfficerByUser(prev => ({ ...prev, [profileUser.id]: { id: row.id, name_bn: row.name_bn, designation: row.designation } }));
+      toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তায় যোগ হয়েছে' : '✅ Added to administrative officers');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'যোগ করা ব্যর্থ' : 'Failed to add'));
+    }
+    setLinkSaving(null);
+  };
+
+  const removeFromAdministrative = async () => {
+    if (!profileUser) return;
+    const linked = adminOfficerByUser[profileUser.id];
+    if (!linked) return;
+    setLinkSaving('officer');
+    try {
+      const { error } = await supabase
+        .from('administrative_officers' as any)
+        .update({ deleted_at: new Date().toISOString(), user_id: null })
+        .eq('id', linked.id);
+      if (error) throw error;
+      setAdminOfficerByUser(prev => {
+        const next = { ...prev };
+        delete next[profileUser.id];
+        return next;
+      });
+      toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তা থেকে সরানো হয়েছে' : '✅ Removed from administrative officers');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'সরানো ব্যর্থ' : 'Failed to remove'));
+    }
+    setLinkSaving(null);
+  };
+
+  const addToStaff = async () => {
+    if (!profileUser) return;
+    if (staffByUser[profileUser.id]) {
+      toast.info(bn ? 'এই ইউজার ইতিমধ্যে স্টাফে আছে' : 'Already in staff');
+      return;
+    }
+    if (!profileEditStaffCategory) {
+      toast.error(bn ? 'প্রথমে ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department first');
+      return;
+    }
+    const nameBn = (profileEditStaffNameBn.trim() || profileEditName.trim() || profileUser.full_name || '').trim();
+    if (!nameBn) {
+      toast.error(bn ? 'নাম দিন' : 'Enter name first');
+      return;
+    }
+    setLinkSaving('staff');
+    try {
+      const { data, error } = await supabase
+        .from('staff')
+        .insert({
+          user_id: profileUser.id,
+          name_bn: nameBn,
+          name_en: profileEditStaffNameEn.trim() || nameBn,
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory,
+          email: profileUser.email,
+        })
+        .select('id, name_bn, name_en, designation, staff_category, photo_url')
+        .single();
+      if (error) throw error;
+      setStaffByUser(prev => ({ ...prev, [profileUser.id]: data as LinkedStaff }));
+      toast.success(bn ? '✅ স্টাফে যোগ হয়েছে' : '✅ Added to staff');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'যোগ করা ব্যর্থ' : 'Failed to add'));
+    }
+    setLinkSaving(null);
+  };
+
+  const removeFromStaff = async () => {
+    if (!profileUser) return;
+    const linked = staffByUser[profileUser.id];
+    if (!linked) return;
+    setLinkSaving('staff');
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({ deleted_at: new Date().toISOString(), user_id: null })
+        .eq('id', linked.id);
+      if (error) throw error;
+      setStaffByUser(prev => {
+        const next = { ...prev };
+        delete next[profileUser.id];
+        return next;
+      });
+      toast.success(bn ? '✅ স্টাফ থেকে সরানো হয়েছে' : '✅ Removed from staff');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'সরানো ব্যর্থ' : 'Failed to remove'));
+    }
+    setLinkSaving(null);
   };
 
   // Custom role CRUD
@@ -1621,6 +1759,73 @@ const AdminUserManagement = () => {
                     {bn ? 'নাম সেভ করুন' : 'Save Name'}
                   </Button>
                 </div>
+
+                {/* ===== TABLE LINK SECTION (Staff / Administrative Officer) ===== */}
+                {profileUser && (
+                  <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/20 p-4 space-y-3">
+                    <h3 className="flex items-center gap-2 font-semibold text-base text-emerald-700 dark:text-emerald-400">
+                      <Users2 className="w-5 h-5" />
+                      {bn ? 'টেবিলে যোগ/সরান' : 'Add to / Remove from Table'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {bn
+                        ? 'এই ইউজারকে স্টাফ অথবা প্রশাসনিক কর্মকর্তা টেবিলে যোগ বা সরাতে পারবেন। উপরের নাম/ডিপার্টমেন্ট/পদবি ফিল্ড ব্যবহার হবে।'
+                        : 'Add or remove this user to/from Staff or Administrative Officers table. The fields above will be used.'}
+                    </p>
+
+                    {/* Staff link */}
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{bn ? 'স্টাফ টেবিল' : 'Staff Table'}</p>
+                        {staffByUser[profileUser.id] ? (
+                          <p className="text-xs text-emerald-600 truncate">
+                            ✓ {bn ? 'যুক্ত আছে' : 'Linked'} — {staffByUser[profileUser.id].name_bn || staffByUser[profileUser.id].name_en}
+                            {staffByUser[profileUser.id].designation && ` (${staffByUser[profileUser.id].designation})`}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{bn ? 'এখনো যুক্ত নেই' : 'Not linked yet'}</p>
+                        )}
+                      </div>
+                      {staffByUser[profileUser.id] ? (
+                        <Button size="sm" variant="outline" onClick={removeFromStaff} disabled={linkSaving === 'staff'} className="text-destructive hover:bg-destructive/10">
+                          {linkSaving === 'staff' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'সরান' : 'Remove'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={addToStaff} disabled={linkSaving === 'staff'}>
+                          {linkSaving === 'staff' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'স্টাফে যোগ' : 'Add to Staff'}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Administrative Officer link */}
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{bn ? 'প্রশাসনিক কর্মকর্তা টেবিল' : 'Administrative Officers Table'}</p>
+                        {adminOfficerByUser[profileUser.id] ? (
+                          <p className="text-xs text-emerald-600 truncate">
+                            ✓ {bn ? 'যুক্ত আছে' : 'Linked'} — {adminOfficerByUser[profileUser.id].name_bn}
+                            {adminOfficerByUser[profileUser.id].designation && ` (${adminOfficerByUser[profileUser.id].designation})`}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{bn ? 'এখনো যুক্ত নেই' : 'Not linked yet'}</p>
+                        )}
+                      </div>
+                      {adminOfficerByUser[profileUser.id] ? (
+                        <Button size="sm" variant="outline" onClick={removeFromAdministrative} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
+                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'সরান' : 'Remove'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={addToAdministrative} disabled={linkSaving === 'officer'} className="bg-emerald-600 hover:bg-emerald-700">
+                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'প্রশাসনিকে যোগ' : 'Add to Administrative'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* ===== EMAIL CHANGE SECTION ===== */}
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
