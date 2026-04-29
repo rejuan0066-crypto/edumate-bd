@@ -284,6 +284,12 @@ const AdminUserManagement = () => {
     },
   });
 
+  const getCategoryLabel = (key?: string | null) => {
+    if (!key) return '';
+    const category = staffCategories.find((cat) => cat.key === key);
+    return (bn ? category?.name_bn : category?.name) || category?.name_bn || category?.name || key;
+  };
+
   // Map of user_id -> linked staff (for showing designation/category in the user list)
   const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
 
@@ -975,7 +981,7 @@ const AdminUserManagement = () => {
                               )}
                               {linked.staff_category && (
                                 <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                                  {linked.staff_category}
+                                  {getCategoryLabel(linked.staff_category)}
                                 </span>
                               )}
                             </div>
@@ -1512,7 +1518,7 @@ const AdminUserManagement = () => {
                     <p className="text-sm text-muted-foreground">{profileUser.email}</p>
                     {(displayDesignation || displayCategory) && (
                       <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {[displayDesignation, displayCategory].filter(Boolean).join(' · ')}
+                        {[displayDesignation, getCategoryLabel(displayCategory)].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>
