@@ -496,8 +496,16 @@ const AdminAdministrative = () => {
                   <Input value={form.name_en || ''} onChange={e => setForm({ ...form, name_en: e.target.value })} />
                 </div>
                 <div>
-                  <Label>{bn ? 'কর্মকর্তা আইডি' : 'Officer ID'}</Label>
-                  <Input value={form.officer_id || ''} onChange={e => setForm({ ...form, officer_id: e.target.value })} placeholder="ADO-2026-001" />
+                  <Label>
+                    {bn ? 'কর্মকর্তা আইডি' : 'Officer ID'}
+                    {!editing && <span className="ml-1 text-xs text-emerald-600">{bn ? '(অটো)' : '(auto)'}</span>}
+                  </Label>
+                  <Input
+                    value={form.officer_id || ''}
+                    onChange={e => setForm({ ...form, officer_id: e.target.value })}
+                    placeholder={editing ? 'ADO-2026-0001' : (bn ? 'সংরক্ষণ করলে স্বয়ংক্রিয়ভাবে তৈরি হবে' : 'Auto-generated on save')}
+                    disabled={!editing}
+                  />
                 </div>
                 <div>
                   <Label>{bn ? 'NID' : 'NID'}</Label>
