@@ -235,9 +235,11 @@ const PrayerTimesWidget = () => {
       const json = await res.json();
       return json.data;
     },
-    staleTime: 1000 * 60 * 15,
-    refetchInterval: 1000 * 60 * 30,
+    staleTime: 1000 * 60,        // consider stale after 1 minute
+    refetchInterval: 1000 * 60,  // auto refetch every 1 minute
+    refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const timings = prayerData?.timings;
