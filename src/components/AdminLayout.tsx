@@ -13,6 +13,7 @@ import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import { useThemeSettings } from '@/hooks/useThemeSettings';
 import { useSidebarSections } from '@/hooks/useSidebarSections';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 import LanguageToggle from './LanguageToggle';
 import BijoyToggle from './BijoyToggle';
 import NotificationPanel from './NotificationPanel';
@@ -70,7 +71,6 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
 
   // Fetch staff record for sidebar avatar (shared lookup: user_id → email fallback + auto-link)
   const { data: sidebarStaffPhoto } = useCurrentStaff();
-  });
 
   const { data: sidebarProfile } = useQuery({
     queryKey: ['sidebar-profile', user?.id],
