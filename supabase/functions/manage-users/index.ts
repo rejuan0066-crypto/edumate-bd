@@ -605,6 +605,67 @@ Deno.serve(async (req) => {
       });
     }
 
+    // UPSERT STAFF IDENTITY (admin assigns Bangla name, designation and category to a user)
+    if (action === "upsert_staff_identity") {
+      const { user_id: targetUserId, name_bn, designation, staff_category } = body;
+      if (!targetUserId || !name_bn || !staff_category) {
+        return new Response(JSON.stringify({ error: "user_id, name_bn and staff_category are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const trimmedName = String(name_bn).trim();
+      const trimmedDesignation = designation ? String(designation).trim() : null;
+      const category = String(staff_category).trim();
+      const { data: { user: targetAuthUser } } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+
+      const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
+        id: targetUserId,
+        full_name: trimmedName,
+      });
+      if (profileError) {
+        return new Response(JSON.stringify({ error: profileError.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
+        user_metadata: { full_name: trimmedName },
+      });
+
+      const staffPayload = {
+        user_id: targetUserId,
+        name_bn: trimmedName,
+        name_en: trimmedName,
+        email: targetAuthUser?.email || null,
+        designation: trimmedDesignation,
+        staff_category: category,
+        department: category === 'teacher' ? 'teaching' : 'general',
+        status: 'active',
+      };
+
+      const { data: existingStaff } = await supabaseAdmin
+        .from("staff")
+        .select("id")
+        .eq("user_id", targetUserId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+      const staffResult = existingStaff?.id
+        ? await supabaseAdmin.from("staff").update(staffPayload).eq("id", existingStaff.id).select("id, name_bn, name_en, designation, staff_category, photo_url").single()
+        : await supabaseAdmin.from("staff").insert(staffPayload).select("id, name_bn, name_en, designation, staff_category, photo_url").single();
+
+      if (staffResult.error) {
+        return new Response(JSON.stringify({ error: staffResult.error.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true, staff: staffResult.data }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ensure_staff is handled above (before admin check)
 
     return new Response(JSON.stringify({ error: "Invalid action" }), {
