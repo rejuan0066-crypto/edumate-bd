@@ -639,12 +639,23 @@ const AdminUserManagement = () => {
     setLinkSaving(null);
   };
 
-  const removeFromAdministrative = async () => {
+  const removeFromAdministrative = async (opts?: { moveToStaff?: boolean }) => {
     if (!profileUser) return;
     const linked = adminOfficerByUser[profileUser.id];
     if (!linked) return;
+    if (opts?.moveToStaff) {
+      if (staffByUser[profileUser.id]) {
+        toast.error(bn ? 'এই ইউজার ইতিমধ্যে স্টাফে আছে' : 'Already in staff');
+        return;
+      }
+      if (!profileEditStaffCategory) {
+        toast.error(bn ? 'প্রথমে ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department first');
+        return;
+      }
+    }
     setLinkSaving('officer');
     try {
+      // Soft-delete from administrative_officers
       const { error } = await supabase
         .from('administrative_officers' as any)
         .update({ deleted_at: new Date().toISOString(), user_id: null })
@@ -655,7 +666,27 @@ const AdminUserManagement = () => {
         delete next[profileUser.id];
         return next;
       });
-      toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তা থেকে সরানো হয়েছে' : '✅ Removed from administrative officers');
+
+      if (opts?.moveToStaff) {
+        const nameBn = (profileEditStaffNameBn.trim() || profileEditName.trim() || profileUser.full_name || linked.name_bn || '').trim();
+        const { data: sData, error: sErr } = await supabase
+          .from('staff')
+          .insert({
+            user_id: profileUser.id,
+            name_bn: nameBn,
+            name_en: profileEditStaffNameEn.trim() || nameBn,
+            designation: profileEditDesignation || linked.designation || null,
+            staff_category: profileEditStaffCategory,
+            email: profileUser.email,
+          })
+          .select('id, name_bn, name_en, designation, staff_category, photo_url')
+          .single();
+        if (sErr) throw sErr;
+        setStaffByUser(prev => ({ ...prev, [profileUser.id]: sData as LinkedStaff }));
+        toast.success(bn ? '✅ স্টাফে স্থানান্তর সম্পন্ন' : '✅ Moved to staff');
+      } else {
+        toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তা থেকে সরানো হয়েছে' : '✅ Removed from administrative officers');
+      }
     } catch (err: any) {
       toast.error(err?.message || (bn ? 'সরানো ব্যর্থ' : 'Failed to remove'));
     }
@@ -1813,10 +1844,18 @@ const AdminUserManagement = () => {
                         )}
                       </div>
                       {adminOfficerByUser[profileUser.id] ? (
-                        <Button size="sm" variant="outline" onClick={removeFromAdministrative} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
-                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
-                          {bn ? 'সরান' : 'Remove'}
-                        </Button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {!staffByUser[profileUser.id] && (
+                            <Button size="sm" variant="outline" onClick={() => removeFromAdministrative({ moveToStaff: true })} disabled={linkSaving === 'officer'} title={bn ? 'প্রশাসনিক থেকে সরিয়ে স্টাফে স্থানান্তর' : 'Move to Staff'}>
+                              {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1" />}
+                              {bn ? 'স্টাফে স্থানান্তর' : 'Move to Staff'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => removeFromAdministrative()} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
+                            {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                            {bn ? 'সরান' : 'Remove'}
+                          </Button>
+                        </div>
                       ) : (
                         <Button size="sm" onClick={addToAdministrative} disabled={linkSaving === 'officer'} className="bg-emerald-600 hover:bg-emerald-700">
                           {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 mr-1" />}
