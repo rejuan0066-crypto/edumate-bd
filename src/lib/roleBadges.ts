@@ -19,9 +19,12 @@ const norm = (s?: string | null): string => {
   return s
     .normalize('NFKD')
     .toLowerCase()
-    // Remove all Bengali vowel signs/marks (U+0980-U+09FF combining marks) and ASCII punctuation/space
+    // Collapse the "অ্য" glide cluster (independent vowel অ + virama + য) — visually it
+    // represents the same "a/e" onset as the bare independent vowel এ in many spellings.
+    .replace(/\u0985\u09CD\u09AF/g, '')
+    // Remove all Bengali combining marks (vowel signs, virama, nukta) and ASCII separators
     .replace(/[\u0981-\u0983\u09BC-\u09C4\u09C7-\u09C8\u09CB-\u09CD\u09D7\u09E2-\u09E3\u200C\u200D\s_\-./()]/g, '')
-    // Treat independent vowels অ/আ/এ/অ্যা as the same canonical "a" by dropping them when adjacent to consonants
+    // Treat independent vowels অ/আ/এ/ঐ as equivalent (drop them)
     .replace(/[\u0985\u0986\u098F\u0990]/g, '')
     .trim();
 };
