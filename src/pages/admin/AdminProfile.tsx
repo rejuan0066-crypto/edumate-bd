@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 
 const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
   <div className="relative">
@@ -84,15 +85,7 @@ const AdminProfile = () => {
     enabled: !!user?.id,
   });
 
-  const { data: staffData } = useQuery({
-    queryKey: ['my-staff-profile', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase.from('staff').select('*').eq('user_id', user.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  const { data: staffData } = useCurrentStaff();
 
   useEffect(() => {
     const getUser = async () => {
