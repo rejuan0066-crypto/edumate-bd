@@ -229,6 +229,9 @@ const AdminUserManagement = () => {
     },
   });
 
+  // Map of user_id -> linked staff (for showing designation/category in the user list)
+  const [staffByUser, setStaffByUser] = useState<Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }>>({});
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -236,7 +239,25 @@ const AdminUserManagement = () => {
         method: 'GET',
       });
       if (error) throw error;
-      setUsers(data?.users || []);
+      const list: UserItem[] = data?.users || [];
+      setUsers(list);
+
+      // Pull linked staff records (designation + staff_category) for the listed users
+      const ids = list.map(u => u.id).filter(Boolean);
+      if (ids.length > 0) {
+        const { data: staffRows } = await supabase
+          .from('staff')
+          .select('user_id, designation, staff_category, photo_url')
+          .in('user_id', ids)
+          .is('deleted_at', null);
+        const map: Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }> = {};
+        (staffRows || []).forEach(r => {
+          if (r.user_id) map[r.user_id] = { designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
+        });
+        setStaffByUser(map);
+      } else {
+        setStaffByUser({});
+      }
     } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
     }
