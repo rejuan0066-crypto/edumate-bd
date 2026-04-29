@@ -207,15 +207,32 @@ const PrayerTimesWidget = () => {
             </Select>
           </div>
         )}
-        <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
-          <SelectTrigger className="h-7 text-xs">
-            <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
-            <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={bn ? 'টাইম ফরমেট' : 'Time format'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h" className="text-xs">24 Hour</SelectItem>
+              <SelectItem value="12h" className="text-xs">12 Hour (AM/PM)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={String(effectiveMethod)} onValueChange={(v) => setMethodOverride(Number(v))}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder={bn ? 'হিসাব পদ্ধতি' : 'Method'} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1" className="text-xs">{bn ? 'করাচী (হানাফী)' : 'Karachi (Hanafi)'}</SelectItem>
+              <SelectItem value="2" className="text-xs">{bn ? 'ISNA (উত্তর আমেরিকা)' : 'ISNA (N. America)'}</SelectItem>
+              <SelectItem value="3" className="text-xs">{bn ? 'বিশ্ব মুসলিম লীগ' : 'Muslim World League'}</SelectItem>
+              <SelectItem value="4" className="text-xs">{bn ? 'উম্মুল কুরা মক্কা' : 'Umm al-Qura, Makkah'}</SelectItem>
+              <SelectItem value="5" className="text-xs">{bn ? 'মিশর' : 'Egyptian'}</SelectItem>
+              <SelectItem value="8" className="text-xs">{bn ? 'গালফ অঞ্চল' : 'Gulf Region'}</SelectItem>
+              <SelectItem value="13" className="text-xs">{bn ? 'তুরস্ক (Diyanet)' : 'Diyanet (Turkey)'}</SelectItem>
+              <SelectItem value="15" className="text-xs">{bn ? 'মুনলাইটিং সাইটিং কাউন্সিল' : 'Moonsighting Committee'}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="p-2">
