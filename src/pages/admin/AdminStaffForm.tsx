@@ -548,7 +548,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       toast.success(bn ? (isEditMode ? `${titleConfig.bn} সফলভাবে আপডেট হয়েছে` : `${titleConfig.bn} সফলভাবে যোগ হয়েছে`) : (isEditMode ? `${titleConfig.en} updated successfully` : `${titleConfig.en} added successfully`));
       navigate(backPath);
     },
-    onError: (e: any) => toast.error(e.message || 'Error saving staff'),
+    onError: (e: any) => {
+      const msg: string = e?.message || 'Error saving staff';
+      if (msg.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
+        toast.error(bn
+          ? 'নির্বাচিত কাস্টম রোলটি এই স্টাফ ক্যাটেগরির জন্য অনুমোদিত নয়। অনুগ্রহ করে অন্য রোল বাছাই করুন।'
+          : 'The selected custom role is not allowed for this staff category. Please choose a different role.');
+        return;
+      }
+      if (msg.includes('INVALID_CUSTOM_ROLE')) {
+        toast.error(bn ? 'নির্বাচিত কাস্টম রোলটি অস্তিত্বহীন' : 'Selected custom role does not exist');
+        return;
+      }
+      toast.error(msg);
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
