@@ -641,6 +641,26 @@ const AdminUserManagement = () => {
         .single();
       if (error) throw error;
       const row = data as any;
+
+      // If this user was already in staff, soft-delete from staff so they only appear as administrative officer
+      const linkedStaff = staffByUser[profileUser.id];
+      if (linkedStaff?.id) {
+        const { error: delErr } = await supabase
+          .from('staff')
+          .update({ deleted_at: new Date().toISOString(), status: 'inactive' })
+          .eq('id', linkedStaff.id);
+        if (delErr) {
+          console.warn('Failed to remove from staff after move:', delErr);
+          toast.warning(bn ? 'প্রশাসনিকে যোগ হয়েছে কিন্তু স্টাফ থেকে সরানো যায়নি' : 'Added to administrative but failed to remove from staff');
+        } else {
+          setStaffByUser(prev => {
+            const next = { ...prev };
+            delete next[profileUser.id];
+            return next;
+          });
+        }
+      }
+
       setAdminOfficerByUser(prev => ({ ...prev, [profileUser.id]: { id: row.id, name_bn: row.name_bn, designation: row.designation } }));
       toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তায় যোগ হয়েছে' : '✅ Added to administrative officers');
     } catch (err: any) {
