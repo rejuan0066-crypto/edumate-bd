@@ -180,7 +180,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast.success(bn ? 'ক্যাটাগরি ও পদবী পরিবর্তন হয়েছে' : 'Category & designation updated');
+      toast.success(bn ? 'বিভাগ ও পদবী পরিবর্তন হয়েছে' : 'Category & designation updated');
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
@@ -358,7 +358,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নাম' : 'Name'}</th>
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবী' : 'Designation'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ক্যাটাগরি' : 'Category'}</th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'বিভাগ' : 'Category'}</th>
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'মোবাইল' : 'Mobile'}</th>
                      {isAdminRole(role) && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকাউন্ট' : 'Account'}</th>}
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>

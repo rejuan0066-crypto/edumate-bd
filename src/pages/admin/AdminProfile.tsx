@@ -130,7 +130,7 @@ const AdminProfile = () => {
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success(bn ? 'পদবি ও ক্যাটাগরি আপডেট হয়েছে' : 'Designation & category updated');
+      toast.success(bn ? 'পদবি ও বিভাগ আপডেট হয়েছে' : 'Designation & category updated');
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
         queryClient.invalidateQueries({ queryKey: ['staff'] }),
@@ -444,7 +444,7 @@ const AdminProfile = () => {
             <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
               <h3 className="font-bold text-foreground flex items-center gap-2.5 text-base">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><Briefcase className="w-4.5 h-4.5 text-primary" /></div>
-                {bn ? 'পদবি ও ক্যাটাগরি' : 'Designation & Category'}
+                {bn ? 'পদবি ও বিভাগ' : 'Designation & Category'}
               </h3>
               {!editingRole ? (
                 <Button size="sm" variant="outline" onClick={() => setEditingRole(true)} className="rounded-full">
@@ -473,7 +473,7 @@ const AdminProfile = () => {
                 <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/8 shrink-0"><User className="w-4 h-4 text-primary/70" /></div>
                   <div className="min-w-0">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{bn ? 'ক্যাটাগরি' : 'Staff Category'}</p>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{bn ? 'বিভাগ' : 'Staff Category'}</p>
                     <p className="text-sm font-semibold text-foreground truncate">
                       {(categoriesList.find((c: any) => c.key === staffData.staff_category) as any)?.[bn ? 'name_bn' : 'name'] || staffData.staff_category || '-'}
                     </p>
@@ -483,9 +483,9 @@ const AdminProfile = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'ক্যাটাগরি' : 'Staff Category'}</Label>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'বিভাগ' : 'Staff Category'}</Label>
                   <Select value={editCategory} onValueChange={(v) => { setEditCategory(v); setEditDesignation(''); }}>
-                    <SelectTrigger className="mt-1.5 bg-background"><SelectValue placeholder={bn ? 'ক্যাটাগরি বেছে নিন' : 'Select category'} /></SelectTrigger>
+                    <SelectTrigger className="mt-1.5 bg-background"><SelectValue placeholder={bn ? 'বিভাগ বেছে নিন' : 'Select category'} /></SelectTrigger>
                     <SelectContent>
                       {categoriesList.map((c: any) => (
                         <SelectItem key={c.key} value={c.key}>{bn ? c.name_bn : c.name}</SelectItem>
