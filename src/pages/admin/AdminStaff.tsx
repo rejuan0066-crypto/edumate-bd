@@ -479,6 +479,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
                           </button>
                         )}
+                        {canEditItem && (
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
                             const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
