@@ -32,6 +32,7 @@ import AdminStudents from "./pages/admin/AdminStudents";
 import AdminStaff from "./pages/admin/AdminStaff";
 import AdminTeachers from "./pages/admin/AdminTeachers";
 import AdminAdministrativeStaff from "./pages/admin/AdminAdministrativeStaff";
+import AdminAdministrative from "./pages/admin/AdminAdministrative";
 import AdminGeneralStaff from "./pages/admin/AdminGeneralStaff";
 import AdminStaffForm from "./pages/admin/AdminStaffForm";
 import AdminTeacherForm from "./pages/admin/AdminTeacherForm";
@@ -288,6 +289,7 @@ const App = () => (
                     <Route path="administrative-staff" element={<ModuleGuard menuPath="/admin/administrative-staff"><AdminAdministrativeStaff /></ModuleGuard>} />
                     <Route path="administrative-staff/add" element={<ModuleGuard menuPath="/admin/administrative-staff"><AdminAdministrativeStaffForm /></ModuleGuard>} />
                     <Route path="administrative-staff/edit/:id" element={<ModuleGuard menuPath="/admin/administrative-staff"><AdminAdministrativeStaffForm /></ModuleGuard>} />
+                    <Route path="administrative" element={<ModuleGuard menuPath="/admin/administrative"><AdminAdministrative /></ModuleGuard>} />
                     <Route path="support-staff" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaff /></ModuleGuard>} />
                     <Route path="support-staff/add" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaffForm /></ModuleGuard>} />
                     <Route path="support-staff/edit/:id" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaffForm /></ModuleGuard>} />

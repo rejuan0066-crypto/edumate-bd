@@ -127,6 +127,10 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
 
 
 
+  // প্রশাসন
+  { id: 'administration', path: '/admin/administrative', label_bn: 'প্রশাসন', label_en: 'Administration', icon: 'ShieldCheck', visible: true, sort_order: 8.5, children: [
+    { id: 'administrative-officers', path: '/admin/administrative', label_bn: 'প্রশাসনিক কর্মকর্তা', label_en: 'Administrative Officers', icon: 'ShieldCheck', visible: true, sort_order: 0 },
+  ]},
 
   // সিস্টেম ও সেটিংস
   { id: 'system', path: '/admin/settings', label_bn: 'সিস্টেম', label_en: 'System', icon: 'Settings', visible: true, sort_order: 9, children: [
