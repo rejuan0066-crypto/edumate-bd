@@ -147,20 +147,36 @@ Deno.serve(async (req) => {
       // Get all roles
       const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
       const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name, status");
+      const userIds = users.map((u: any) => u.id).filter(Boolean);
+      const { data: staffRows } = userIds.length
+        ? await supabaseAdmin
+          .from("staff")
+          .select("id, user_id, name_bn, name_en, designation, staff_category, photo_url")
+          .in("user_id", userIds)
+          .is("deleted_at", null)
+        : { data: [] } as any;
 
       const roleMap: Record<string, string> = {};
       (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
       const profileMap: Record<string, { name: string; status: string }> = {};
       (profiles || []).forEach((p: any) => { profileMap[p.id] = { name: p.full_name || '', status: p.status || 'pending' }; });
+      const staffMap: Record<string, any> = {};
+      (staffRows || []).forEach((s: any) => { if (s.user_id) staffMap[s.user_id] = s; });
 
-      const userList = users.map((u: any) => ({
-        id: u.id,
-        email: u.email,
-        role: roleMap[u.id] || 'none',
-        full_name: profileMap[u.id]?.name || '',
-        status: profileMap[u.id]?.status || 'pending',
-        created_at: u.created_at,
-      }));
+      const userList = users.map((u: any) => {
+        const staff = staffMap[u.id];
+        const fullName = staff?.name_bn || staff?.name_en || profileMap[u.id]?.name || u.user_metadata?.full_name || '';
+        return {
+          id: u.id,
+          email: u.email,
+          role: roleMap[u.id] || 'none',
+          full_name: fullName,
+          profile_full_name: profileMap[u.id]?.name || '',
+          staff,
+          status: profileMap[u.id]?.status || 'pending',
+          created_at: u.created_at,
+        };
+      });
 
       return new Response(JSON.stringify({ users: userList }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
