@@ -785,6 +785,7 @@ const AdminUserManagement = () => {
                     <TableRow>
                       <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                       <TableHead>{bn ? 'ইমেইল' : 'Email'}</TableHead>
+                      <TableHead>{bn ? 'পদবি / ক্যাটাগরি' : 'Designation / Category'}</TableHead>
                       <TableHead>{bn ? 'রোল' : 'Role'}</TableHead>
                       <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                       <TableHead>{bn ? 'তৈরির তারিখ' : 'Created'}</TableHead>
@@ -792,10 +793,30 @@ const AdminUserManagement = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map(u => (
+                    {users.map(u => {
+                      const linked = staffByUser[u.id];
+                      return (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{u.full_name || '—'}</TableCell>
                         <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          {linked ? (
+                            <div className="flex flex-col gap-1">
+                              {linked.designation && (
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/30 w-fit">
+                                  {linked.designation}
+                                </Badge>
+                              )}
+                              {linked.staff_category && (
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  {linked.staff_category}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{roleBadge(u.role)}</TableCell>
                         <TableCell>
                           {u.status === 'approved' ? (
