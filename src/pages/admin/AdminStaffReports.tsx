@@ -279,7 +279,7 @@ const AdminStaffReports = () => {
     wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
     wsData.push([]);
     wsData.push([bn ? 'স্টাফ উপস্থিতি রিপোর্ট' : 'Staff Attendance Report']);
-    wsData.push([`${bn ? 'ক্যাটাগরি' : 'Category'}: ${catLabel(category)} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
+    wsData.push([`${bn ? 'বিভাগ' : 'Category'}: ${catLabel(category)} | ${bn ? 'সময়কাল' : 'Period'}: ${fromDate} → ${toDate}`]);
     wsData.push([`${bn ? 'মোট স্টাফ' : 'Total Staff'}: ${attendanceSummary.length} | ${bn ? 'উপস্থিতি হার' : 'Rate'}: ${attTotals.rate}`]);
     wsData.push([]);
 
@@ -386,7 +386,7 @@ const AdminStaffReports = () => {
     wsData.push([`${bn ? 'ফোন' : 'Phone'}: ${ws.phone || ''} | ${bn ? 'ইমেইল' : 'Email'}: ${ws.email || ''}`]);
     wsData.push([]);
     wsData.push([bn ? 'প্রতিদিনের ডিউটি রিপোর্ট' : 'Daily Duty Report']);
-    wsData.push([`${bn ? 'তারিখ' : 'Date'}: ${dutyDate} | ${bn ? 'ক্যাটাগরি' : 'Category'}: ${catLabel(dutyCategory)}`]);
+    wsData.push([`${bn ? 'তারিখ' : 'Date'}: ${dutyDate} | ${bn ? 'বিভাগ' : 'Category'}: ${catLabel(dutyCategory)}`]);
     wsData.push([`${bn ? 'উপস্থিত' : 'Present'}: ${dutyStats.present} | ${bn ? 'অনুপস্থিত' : 'Absent'}: ${dutyStats.absent} | ${bn ? 'দেরি' : 'Late'}: ${dutyStats.late}`]);
     wsData.push([]);
 
@@ -475,7 +475,7 @@ const AdminStaffReports = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                      {bn ? 'ক্যাটাগরি' : 'Category'}
+                      {bn ? 'বিভাগ' : 'Category'}
                     </label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -589,7 +589,7 @@ const AdminStaffReports = () => {
                   </div>
                   <div>
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                      {bn ? 'ক্যাটাগরি' : 'Category'}
+                      {bn ? 'বিভাগ' : 'Category'}
                     </label>
                     <Select value={dutyCategory} onValueChange={setDutyCategory}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
