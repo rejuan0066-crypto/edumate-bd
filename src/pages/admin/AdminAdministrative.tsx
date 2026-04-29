@@ -77,7 +77,9 @@ const AdminAdministrative = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { canViewItem, canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/administrative');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Officer | null>(null);
   const [form, setForm] = useState<Partial<Officer>>(emptyForm);
