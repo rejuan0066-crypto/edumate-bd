@@ -1557,7 +1557,8 @@ const AdminUserManagement = () => {
                   </div>
                 </div>
 
-                {/* Staff identity: Bangla name + designation/category */}
+                {/* Staff identity: only for staff-type roles (not parent/student) */}
+                {profileUser.role !== 'parent' && profileUser.role !== 'student' && (
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
                   <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
                     <Tag className="w-5 h-5" />
@@ -1609,7 +1610,8 @@ const AdminUserManagement = () => {
                         {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
                       </Button>
                     </>
-                </div>
+                 </div>
+                )}
 
                 {/* "Change Name" field removed — the "Staff Name, Designation & Department" section
                     above already edits the canonical name (staff.name_bn) and the DB triggers
