@@ -68,34 +68,8 @@ const ProfileCard = ({
 const DashboardProfilesCard = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
   const { settings } = useWebsiteSettings();
-
-  // Logged-in staff record from DB (matched by user_id or email)
-  const { data: myStaff } = useQuery({
-    queryKey: ['dashboard-my-staff', user?.id, user?.email],
-    queryFn: async () => {
-      if (!user) return null;
-      // Try by user_id first
-      let { data } = await supabase
-        .from('staff')
-        .select('name_bn, name_en, designation, department, email, phone, photo_url, staff_id')
-        .eq('user_id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
-      if (!data && user.email) {
-        const res = await supabase
-          .from('staff')
-          .select('name_bn, name_en, designation, department, email, phone, photo_url, staff_id')
-          .eq('email', user.email)
-          .is('deleted_at', null)
-          .maybeSingle();
-        data = res.data;
-      }
-      return data;
-    },
-    enabled: !!user,
-  });
+  const { data: myStaff } = useCurrentStaff();
 
   const adminName = bn ? settings.admin_name : (settings.admin_name || '');
   const adminTitle = bn ? settings.admin_title_bn : settings.admin_title_en;
