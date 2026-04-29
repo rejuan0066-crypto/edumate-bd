@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
 import { useCurrentStaff } from '@/hooks/useCurrentStaff';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const PasswordInput = ({ value, onChange, show, onToggle, placeholder }: { value: string; onChange: (v: string) => void; show: boolean; onToggle: () => void; placeholder: string }) => (
   <div className="relative">
