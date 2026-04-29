@@ -530,7 +530,8 @@ const AdminUserManagement = () => {
       toast.error(bn ? 'বাংলা নাম দিন' : 'Enter Bangla name');
       return;
     }
-    if (!profileEditStaffCategory) {
+    const isAdminRole = ['admin', 'super_admin', 'moderator'].includes(profileUser.role);
+    if (!isAdminRole && !profileEditStaffCategory) {
       toast.error(bn ? 'ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department');
       return;
     }
@@ -543,21 +544,30 @@ const AdminUserManagement = () => {
           user_id: profileUser.id,
           name_bn: profileEditStaffNameBn.trim(),
           name_en: (profileEditStaffNameEn.trim() || profileEditStaffNameBn.trim()),
-          designation: profileEditDesignation || null,
-          staff_category: profileEditStaffCategory,
+          designation: isAdminRole ? null : (profileEditDesignation || null),
+          staff_category: isAdminRole ? null : profileEditStaffCategory,
         },
       });
       if (error || !data?.success) throw new Error(data?.error || error?.message);
 
-      const nextLinked: LinkedStaff = {
-        id: data.staff.id,
-        name_bn: data.staff.name_bn,
-        name_en: data.staff.name_en,
-        designation: data.staff.designation,
-        staff_category: data.staff.staff_category,
-        photo_url: data.staff.photo_url,
-      };
-      setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
+      if (data.staff) {
+        const nextLinked: LinkedStaff = {
+          id: data.staff.id,
+          name_bn: data.staff.name_bn,
+          name_en: data.staff.name_en,
+          designation: data.staff.designation,
+          staff_category: data.staff.staff_category,
+          photo_url: data.staff.photo_url,
+        };
+        setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
+      } else {
+        // admin role — clear any linked staff entry from local cache
+        setStaffByUser(prev => {
+          const next = { ...prev };
+          delete next[profileUser.id];
+          return next;
+        });
+      }
       setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
       setProfileEditName(profileEditStaffNameBn.trim());
       await Promise.all([
@@ -568,9 +578,9 @@ const AdminUserManagement = () => {
         queryClient.invalidateQueries({ queryKey: ['users'] }),
       ]);
       await fetchUsers();
-      toast.success(bn ? '✅ বাংলা নাম, পদবি ও ডিপার্টমেন্ট সেভ হয়েছে' : '✅ Bangla name, designation and department saved');
+      toast.success(bn ? '✅ নাম সেভ হয়েছে' : '✅ Name saved');
     } catch (err: any) {
-      toast.error(err?.message || (bn ? 'স্টাফ তথ্য সেভ ব্যর্থ' : 'Failed to save staff info'));
+      toast.error(err?.message || (bn ? 'সেভ ব্যর্থ' : 'Failed to save'));
     }
     setProfileSaving(null);
   };
