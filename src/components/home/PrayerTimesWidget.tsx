@@ -47,12 +47,20 @@ const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
 
 const toBanglaNum = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-const parseTime = (timeStr: string): Date => {
+// Convert "HH:MM" string to total minutes since midnight (timezone-agnostic)
+const timeToMinutes = (timeStr: string): number => {
   const clean = timeStr.replace(/\s*\(.*\)/, '');
   const [h, m] = clean.split(':').map(Number);
-  const now = new Date();
-  now.setHours(h, m, 0, 0);
-  return now;
+  return (h || 0) * 60 + (m || 0);
+};
+
+// Get current time in the target timezone as minutes since midnight
+const nowMinutesInTz = (now: Date, tz: string): number => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) => Number(parts.find(p => p.type === t)?.value || 0);
+  return get('hour') * 60 + get('minute') + get('second') / 60;
 };
 
 const formatCountdown = (ms: number, isBn: boolean): string => {
@@ -142,25 +150,25 @@ const PrayerTimesWidget = () => {
 
   const getActiveInfo = () => {
     if (!timings) return { activeIndex: -1, nextIndex: -1, activeRemainingMs: 0 };
-    const times = PRAYER_ORDER.map(k => {
-      const raw = timings[k] || '00:00';
-      return parseTime(raw);
-    });
-    const nowMs = now.getTime();
+    // All prayer times are in target city's TZ (e.g. Asia/Dhaka). Compare in that TZ too.
+    const minutesList = PRAYER_ORDER.map(k => timeToMinutes(timings[k] || '00:00'));
+    const nowMin = nowMinutesInTz(now, tz);
+    const MIN_PER_DAY = 24 * 60;
     for (let i = PRAYER_ORDER.length - 1; i >= 0; i--) {
-      if (nowMs >= times[i].getTime()) {
+      if (nowMin >= minutesList[i]) {
         const nextIdx = i + 1;
         if (nextIdx < PRAYER_ORDER.length) {
-          const remaining = times[nextIdx].getTime() - nowMs;
-          return { activeIndex: i, nextIndex: nextIdx, activeRemainingMs: remaining > 0 ? remaining : 0 };
+          const remaining = (minutesList[nextIdx] - nowMin) * 60 * 1000;
+          return { activeIndex: i, nextIndex: nextIdx, activeRemainingMs: Math.max(0, remaining) };
         }
-        const nextFajr = times[0].getTime() + 24 * 60 * 60 * 1000;
-        const remaining = nextFajr - nowMs;
-        return { activeIndex: i, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
+        // Past Isha — countdown to tomorrow's Fajr
+        const remaining = (MIN_PER_DAY - nowMin + minutesList[0]) * 60 * 1000;
+        return { activeIndex: i, nextIndex: 0, activeRemainingMs: Math.max(0, remaining) };
       }
     }
-    const remaining = times[0].getTime() - nowMs;
-    return { activeIndex: PRAYER_ORDER.length - 1, nextIndex: 0, activeRemainingMs: remaining > 0 ? remaining : 0 };
+    // Before Fajr — previous Isha is still "active"
+    const remaining = (minutesList[0] - nowMin) * 60 * 1000;
+    return { activeIndex: PRAYER_ORDER.length - 1, nextIndex: 0, activeRemainingMs: Math.max(0, remaining) };
   };
 
   const { activeIndex, activeRemainingMs } = getActiveInfo();
