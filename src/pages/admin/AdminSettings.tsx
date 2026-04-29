@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
-import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet } from 'lucide-react';
+import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
@@ -17,6 +17,7 @@ import SmsGatewaySettings from '@/components/admin/SmsGatewaySettings';
 import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
+import TimezoneSettings from '@/components/admin/TimezoneSettings';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
@@ -612,6 +613,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="salary_workflow" className="gap-1.5">
               <Wallet className="w-4 h-4" /> {bn ? 'বেতন ওয়ার্কফ্লো' : 'Salary Workflow'}
+            </TabsTrigger>
+            <TabsTrigger value="timezone" className="gap-1.5">
+              <Clock className="w-4 h-4" /> {bn ? 'টাইমজোন' : 'Timezone'}
             </TabsTrigger>
           </TabsList>
 
@@ -1358,6 +1362,10 @@ const AdminSettings = () => {
 
           <TabsContent value="salary_workflow" className="mt-6">
             <SalaryWorkflowSettings />
+          </TabsContent>
+
+          <TabsContent value="timezone" className="mt-6">
+            <TimezoneSettings />
           </TabsContent>
         </Tabs>
       </div>

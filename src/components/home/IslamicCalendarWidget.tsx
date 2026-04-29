@@ -5,6 +5,8 @@ import { usePrayerCalendarSettings } from '@/hooks/usePrayerCalendarSettings';
 import { Calendar, Clock, Star, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
+import { useAppTimezone } from '@/hooks/useAppTimezone';
+import { formatTimeInTz, getWeekdayIdxInTz } from '@/lib/timezone';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 const toArabicNum = (str: string) => String(str).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -159,17 +161,10 @@ const IslamicCalendarWidget = () => {
   const holidayMap = useMemo(() => getHolidayMap(yearHolidays), [yearHolidays]);
   const todayHoliday = currentYearHolidays.find(h => h.date === todayStr);
 
-  // Force Bangladesh timezone so the clock & weekday always match BD time,
-  // regardless of the user's device/browser timezone.
-  const BD_TZ = 'Asia/Dhaka';
-  const timeStr = now.toLocaleTimeString('en-US', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: BD_TZ,
-  });
-  const bdWeekdayShort = new Intl.DateTimeFormat('en-US', {
-    timeZone: BD_TZ, weekday: 'short',
-  }).format(now);
-  const bdWeekdayIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(bdWeekdayShort);
-  const safeWeekdayIdx = bdWeekdayIdx >= 0 ? bdWeekdayIdx : now.getDay();
+  // Use admin-configured global timezone (defaults to Asia/Dhaka).
+  const { tz: APP_TZ } = useAppTimezone();
+  const timeStr = formatTimeInTz(now, APP_TZ);
+  const safeWeekdayIdx = getWeekdayIdxInTz(now, APP_TZ);
   const dayName = bn ? BANGLA_DAYS[safeWeekdayIdx] : EN_DAYS[safeWeekdayIdx];
 
   const viewStartDate = new Date(viewYear, viewMonth, 1);
@@ -401,7 +396,7 @@ const IslamicCalendarWidget = () => {
         )}
       </div>
 
-      {/* Dev-only debug panel: device TZ vs forced BD TZ, time & weekday */}
+      {/* Dev-only debug panel: device TZ vs configured app TZ, time & weekday */}
       {import.meta.env.DEV && (() => {
         const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
         const deviceTime = now.toLocaleTimeString('en-US', { hour12: false });
@@ -410,10 +405,8 @@ const IslamicCalendarWidget = () => {
           deviceTz,
           deviceTime,
           deviceWeekday,
-          forcedTz: BD_TZ,
-          bdTime: timeStr,
-          bdWeekdayShort,
-          bdWeekdayIdx,
+          appTz: APP_TZ,
+          appTime: timeStr,
           safeWeekdayIdx,
           dayName,
           isoUtc: now.toISOString(),
@@ -421,7 +414,7 @@ const IslamicCalendarWidget = () => {
         return (
           <details className="border-t border-border bg-muted/40 px-3 py-2 text-[10px] font-mono text-muted-foreground">
             <summary className="cursor-pointer select-none font-semibold text-foreground">
-              🛠 Calendar Debug · device={deviceTz} · forced={BD_TZ} · {bdWeekdayShort}
+              🛠 Calendar Debug · device={deviceTz} · app={APP_TZ}
             </summary>
             <pre className="mt-1 whitespace-pre-wrap break-all leading-relaxed">
               {JSON.stringify(debug, null, 2)}
