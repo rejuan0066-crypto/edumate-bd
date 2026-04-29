@@ -1,0 +1,1 @@
+UPDATE public.otp_config SET require_for_login = false, updated_at = now() WHERE id = 1;
