@@ -302,24 +302,37 @@ const PrayerTimesWidget = () => {
           </SelectContent>
         </Select>
         {effectiveCountry === 'BD' && (
-          <div className="grid grid-cols-2 gap-2">
-            <Select value={effectiveDivision} onValueChange={(v) => { setDivision(v); setCity(BD_DIVISIONS[v].cities[0].en); }}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} /></SelectTrigger>
-              <SelectContent>
-                {Object.entries(BD_DIVISIONS).map(([k, v]) => (
-                  <SelectItem key={k} value={k} className="text-xs">{bn ? v.bn : v.en}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={effectiveCity} onValueChange={v => setCity(v)}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'জেলা' : 'District'} /></SelectTrigger>
-              <SelectContent>
-                {effectiveDivision && BD_DIVISIONS[effectiveDivision]?.cities.map(c => (
-                  <SelectItem key={c.en} value={c.en} className="text-xs">{bn ? c.bn : c.en}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={effectiveDivision} onValueChange={(v) => { setDivision(v); setCity(BD_DIVISIONS[v].cities[0].en); setUpazila(''); }}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'বিভাগ' : 'Division'} /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BD_DIVISIONS).map(([k, v]) => (
+                    <SelectItem key={k} value={k} className="text-xs">{bn ? v.bn : v.en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={effectiveCity} onValueChange={v => { setCity(v); setUpazila(''); }}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'জেলা' : 'District'} /></SelectTrigger>
+                <SelectContent>
+                  {effectiveDivision && BD_DIVISIONS[effectiveDivision]?.cities.map(c => (
+                    <SelectItem key={c.en} value={c.en} className="text-xs">{bn ? c.bn : c.en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {cityObj?.upazilas && cityObj.upazilas.length > 0 && (
+              <Select value={upazila || '__district__'} onValueChange={v => setUpazila(v === '__district__' ? '' : v)}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder={bn ? 'উপজেলা' : 'Upazila'} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__district__" className="text-xs">{bn ? `— সদর (${cityObj.bn}) —` : `— District HQ (${cityObj.en}) —`}</SelectItem>
+                  {cityObj.upazilas.map(u => (
+                    <SelectItem key={u.en} value={u.en} className="text-xs">{bn ? u.bn : u.en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </>
         )}
         <div className="grid grid-cols-2 gap-2">
           <Select value={effectiveTimeFormat} onValueChange={(value: '24h' | '12h') => setTimeFormat(value)}>
