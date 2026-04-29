@@ -831,6 +831,36 @@ const AdminUserManagement = () => {
                         </p>
                       )}
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>{bn ? 'স্টাফ ক্যাটাগরি' : 'Staff Category'}</Label>
+                        <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'ক্যাটাগরি' : 'Category'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {staffCategories.map((cat) => (
+                              <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'পদবি' : 'Designation'}</Label>
+                        <Select value={createDesignation} onValueChange={setCreateDesignation} disabled={!createStaffCategory}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'পদবি' : 'Designation'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {masterDesignations
+                              .filter((d) => !createStaffCategory || d.staff_category === createStaffCategory)
+                              .map((d) => (
+                                <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div>
                       <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
                       <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
