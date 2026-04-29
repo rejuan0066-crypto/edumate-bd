@@ -271,8 +271,8 @@ const AdminAdministrative = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="md:col-span-2 flex justify-center">
                   <PhotoUpload
-                    currentPhotoUrl={form.photo_url || undefined}
-                    onPhotoChange={(url) => setForm({ ...form, photo_url: url || '' })}
+                    value={form.photo_url || null}
+                    onChange={(url) => setForm({ ...form, photo_url: url || '' })}
                     folder="administrative-officers"
                   />
                 </div>
@@ -435,7 +435,9 @@ const AdminAdministrative = () => {
         open={!!delTarget}
         onOpenChange={(o) => !o && setDelTarget(null)}
         onConfirm={() => delTarget && softDelete.mutate(delTarget.id)}
-        itemName={delTarget?.name_bn || ''}
+        title={bn ? 'কর্মকর্তা মুছে ফেলুন' : 'Delete Officer'}
+        description={delTarget ? `${delTarget.name_bn} ${bn ? 'কে মুছে ফেলতে চান?' : 'will be removed.'}` : ''}
+        isPending={softDelete.isPending}
       />
     </AdminLayout>
   );
