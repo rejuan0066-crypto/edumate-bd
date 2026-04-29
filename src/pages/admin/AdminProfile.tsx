@@ -533,13 +533,20 @@ const AdminProfile = () => {
                 {bn ? 'পদবি ও ডিপার্টমেন্ট' : 'Designation & Department'}
               </h3>
               {!editingRole ? (
-                <Button size="sm" variant="outline" onClick={() => setEditingRole(true)} className="rounded-full">
-                  {bn ? 'এডিট' : 'Edit'}
-                </Button>
+                canEditRoleFields ? (
+                  <Button size="sm" variant="outline" onClick={() => setEditingRole(true)} className="rounded-full">
+                    {bn ? 'এডিট' : 'Edit'}
+                  </Button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium bg-muted/40 text-muted-foreground border border-border/30">
+                    <Lock className="w-3 h-3" />
+                    {bn ? 'এডিট অনুমতি নেই' : 'No edit permission'}
+                  </span>
+                )
               ) : (
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" onClick={() => { setEditingRole(false); setEditDesignation(staffData.designation || ''); setEditCategory(staffData.staff_category || ''); }} className="rounded-full">{bn ? 'বাতিল' : 'Cancel'}</Button>
-                  <Button size="sm" onClick={() => saveRoleMutation.mutate()} disabled={saveRoleMutation.isPending} className="rounded-full" style={{ background: 'linear-gradient(135deg, #059669, #0d9488)', color: 'white' }}>
+                  <Button size="sm" onClick={() => saveRoleMutation.mutate()} disabled={saveRoleMutation.isPending || !canEditRoleFields} className="rounded-full" style={{ background: 'linear-gradient(135deg, #059669, #0d9488)', color: 'white' }}>
                     {saveRoleMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
                     {bn ? 'সেভ' : 'Save'}
                   </Button>
