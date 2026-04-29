@@ -395,6 +395,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
                             <SelectItem value="support">{bn ? 'অফিস কর্মচারী' : 'Support Staff'}</SelectItem>
                             <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
+                            <SelectItem value="director">{bn ? 'পরিচালক' : 'Director'}</SelectItem>
+                            <SelectItem value="committee_member">{bn ? 'কমিটি সদস্য' : 'Committee Member'}</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
@@ -441,7 +443,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         {canEditItem && (
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
-                            const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : 'general-staff';
+                            const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
                             navigate(`/admin/${path}/edit/${s.id}`);
                           }} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
                         )}
