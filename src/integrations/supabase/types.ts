@@ -1172,6 +1172,7 @@ export type Database = {
       }
       custom_roles: {
         Row: {
+          allowed_categories: string[]
           base_role: string
           created_at: string | null
           description: string | null
@@ -1186,6 +1187,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allowed_categories?: string[]
           base_role?: string
           created_at?: string | null
           description?: string | null
@@ -1200,6 +1202,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allowed_categories?: string[]
           base_role?: string
           created_at?: string | null
           description?: string | null
