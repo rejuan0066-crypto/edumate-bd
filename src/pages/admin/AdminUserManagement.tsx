@@ -1760,6 +1760,73 @@ const AdminUserManagement = () => {
                   </Button>
                 </div>
 
+                {/* ===== TABLE LINK SECTION (Staff / Administrative Officer) ===== */}
+                {profileUser && (
+                  <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-950/20 p-4 space-y-3">
+                    <h3 className="flex items-center gap-2 font-semibold text-base text-emerald-700 dark:text-emerald-400">
+                      <Users2 className="w-5 h-5" />
+                      {bn ? 'টেবিলে যোগ/সরান' : 'Add to / Remove from Table'}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {bn
+                        ? 'এই ইউজারকে স্টাফ অথবা প্রশাসনিক কর্মকর্তা টেবিলে যোগ বা সরাতে পারবেন। উপরের নাম/ডিপার্টমেন্ট/পদবি ফিল্ড ব্যবহার হবে।'
+                        : 'Add or remove this user to/from Staff or Administrative Officers table. The fields above will be used.'}
+                    </p>
+
+                    {/* Staff link */}
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{bn ? 'স্টাফ টেবিল' : 'Staff Table'}</p>
+                        {staffByUser[profileUser.id] ? (
+                          <p className="text-xs text-emerald-600 truncate">
+                            ✓ {bn ? 'যুক্ত আছে' : 'Linked'} — {staffByUser[profileUser.id].name_bn || staffByUser[profileUser.id].name_en}
+                            {staffByUser[profileUser.id].designation && ` (${staffByUser[profileUser.id].designation})`}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{bn ? 'এখনো যুক্ত নেই' : 'Not linked yet'}</p>
+                        )}
+                      </div>
+                      {staffByUser[profileUser.id] ? (
+                        <Button size="sm" variant="outline" onClick={removeFromStaff} disabled={linkSaving === 'staff'} className="text-destructive hover:bg-destructive/10">
+                          {linkSaving === 'staff' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'সরান' : 'Remove'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={addToStaff} disabled={linkSaving === 'staff'}>
+                          {linkSaving === 'staff' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'স্টাফে যোগ' : 'Add to Staff'}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Administrative Officer link */}
+                    <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-card border">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">{bn ? 'প্রশাসনিক কর্মকর্তা টেবিল' : 'Administrative Officers Table'}</p>
+                        {adminOfficerByUser[profileUser.id] ? (
+                          <p className="text-xs text-emerald-600 truncate">
+                            ✓ {bn ? 'যুক্ত আছে' : 'Linked'} — {adminOfficerByUser[profileUser.id].name_bn}
+                            {adminOfficerByUser[profileUser.id].designation && ` (${adminOfficerByUser[profileUser.id].designation})`}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{bn ? 'এখনো যুক্ত নেই' : 'Not linked yet'}</p>
+                        )}
+                      </div>
+                      {adminOfficerByUser[profileUser.id] ? (
+                        <Button size="sm" variant="outline" onClick={removeFromAdministrative} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
+                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'সরান' : 'Remove'}
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={addToAdministrative} disabled={linkSaving === 'officer'} className="bg-emerald-600 hover:bg-emerald-700">
+                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 mr-1" />}
+                          {bn ? 'প্রশাসনিকে যোগ' : 'Add to Administrative'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* ===== EMAIL CHANGE SECTION ===== */}
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
                   <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
