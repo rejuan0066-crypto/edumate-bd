@@ -395,9 +395,9 @@ const AdminProfile = () => {
                     {roleLabel}
                   </span>
                 )}
-                {staffData?.designation && (
+                {showDesignationBadge && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                    {staffData.designation}
+                    {staffData!.designation}
                   </span>
                 )}
                 {staffData?.status && (
