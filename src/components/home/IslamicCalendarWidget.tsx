@@ -159,8 +159,18 @@ const IslamicCalendarWidget = () => {
   const holidayMap = useMemo(() => getHolidayMap(yearHolidays), [yearHolidays]);
   const todayHoliday = currentYearHolidays.find(h => h.date === todayStr);
 
-  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-  const dayName = bn ? BANGLA_DAYS[now.getDay()] : EN_DAYS[now.getDay()];
+  // Force Bangladesh timezone so the clock & weekday always match BD time,
+  // regardless of the user's device/browser timezone.
+  const BD_TZ = 'Asia/Dhaka';
+  const timeStr = now.toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: BD_TZ,
+  });
+  const bdWeekdayShort = new Intl.DateTimeFormat('en-US', {
+    timeZone: BD_TZ, weekday: 'short',
+  }).format(now);
+  const bdWeekdayIdx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(bdWeekdayShort);
+  const safeWeekdayIdx = bdWeekdayIdx >= 0 ? bdWeekdayIdx : now.getDay();
+  const dayName = bn ? BANGLA_DAYS[safeWeekdayIdx] : EN_DAYS[safeWeekdayIdx];
 
   const viewStartDate = new Date(viewYear, viewMonth, 1);
   const viewEndDate = new Date(viewYear, viewMonth + 1, 0);
