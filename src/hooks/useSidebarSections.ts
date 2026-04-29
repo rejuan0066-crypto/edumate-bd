@@ -42,12 +42,21 @@ export const DEFAULT_SIDEBAR_SECTIONS: SidebarSection[] = [
     menuPaths: ['/admin/students-fees', '/admin/fees', '/admin/payments', '/admin/expenses', '/admin/donors', '/admin/salary'],
   },
   {
+    id: 'administration',
+    labelBn: 'প্রশাসন',
+    labelEn: 'Administration',
+    color: '#10b981',
+    bgColor: '',
+    sort_order: 3,
+    menuPaths: ['/admin/administrative'],
+  },
+  {
     id: 'others',
     labelBn: 'অন্যান্য',
     labelEn: 'Others',
     color: '',
     bgColor: '',
-    sort_order: 3,
+    sort_order: 4,
     menuPaths: ['/admin/website', '/admin/notices', '/admin/settings'],
   },
 ];
