@@ -106,16 +106,27 @@ const PrayerTimesWidget = () => {
   const selectedCity = effectiveCountry === 'BD' ? effectiveCity : COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka';
   const selectedCountry = COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Bangladesh';
 
-  // Date key changes at midnight so query refetches the next day automatically
-  const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+  // Map each country to its IANA timezone so Aladhan returns correct local times
+  const COUNTRY_TZ: Record<string, string> = {
+    BD: 'Asia/Dhaka', SA: 'Asia/Riyadh', IN: 'Asia/Kolkata', PK: 'Asia/Karachi',
+    AE: 'Asia/Dubai', MY: 'Asia/Kuala_Lumpur', ID: 'Asia/Jakarta', TR: 'Europe/Istanbul',
+    EG: 'Africa/Cairo', QA: 'Asia/Qatar', KW: 'Asia/Kuwait', OM: 'Asia/Muscat',
+    BH: 'Asia/Bahrain', GB: 'Europe/London', US: 'America/New_York',
+  };
+  const tz = COUNTRY_TZ[effectiveCountry] || 'Asia/Dhaka';
+
+  // Compute today's date in the target timezone (not the user's device TZ)
+  const todayInTz = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(now); // YYYY-MM-DD
+  const [tyY, tyM, tyD] = todayInTz.split('-');
+  const todayKey = todayInTz;
+  const apiDateStr = `${tyD}-${tyM}-${tyY}`; // DD-MM-YYYY for Aladhan
 
   const { data: prayerData, isLoading } = useQuery({
     queryKey: ['prayer-times', selectedCity, selectedCountry, effectiveMethod, todayKey],
     queryFn: async () => {
-      const today = new Date();
-      const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dhaka';
-      const url = `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${effectiveMethod}&timezonestring=${encodeURIComponent(tz)}`;
+      const url = `https://api.aladhan.com/v1/timingsByCity/${apiDateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${effectiveMethod}&timezonestring=${encodeURIComponent(tz)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch prayer times');
       const json = await res.json();
