@@ -209,14 +209,64 @@ const PrayerTimesWidget = () => {
     : (COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka');
   const selectedCountry = COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Bangladesh';
 
-  // Map each country to its IANA timezone so Aladhan returns correct local times
+  // IANA timezones — DST-aware. Aladhan applies offset based on this TZ for the
+  // requested date, so DST transitions are handled automatically.
+  // Notes: BD/SA/IN/PK/AE/MY/ID/QA/KW/OM/BH = no DST. TR = no DST since 2016.
+  // EG reintroduced DST in 2023. GB/US/EU follow standard DST rules.
   const COUNTRY_TZ: Record<string, string> = {
-    BD: 'Asia/Dhaka', SA: 'Asia/Riyadh', IN: 'Asia/Kolkata', PK: 'Asia/Karachi',
-    AE: 'Asia/Dubai', MY: 'Asia/Kuala_Lumpur', ID: 'Asia/Jakarta', TR: 'Europe/Istanbul',
-    EG: 'Africa/Cairo', QA: 'Asia/Qatar', KW: 'Asia/Kuwait', OM: 'Asia/Muscat',
-    BH: 'Asia/Bahrain', GB: 'Europe/London', US: 'America/New_York',
+    BD: 'Asia/Dhaka',
+    SA: 'Asia/Riyadh',
+    IN: 'Asia/Kolkata',
+    PK: 'Asia/Karachi',
+    AE: 'Asia/Dubai',
+    MY: 'Asia/Kuala_Lumpur',
+    ID: 'Asia/Jakarta',
+    TR: 'Europe/Istanbul',
+    EG: 'Africa/Cairo',
+    QA: 'Asia/Qatar',
+    KW: 'Asia/Kuwait',
+    OM: 'Asia/Muscat',
+    BH: 'Asia/Bahrain',
+    GB: 'Europe/London',
+    US: 'America/New_York',
   };
-  const tz = COUNTRY_TZ[effectiveCountry] || 'Asia/Dhaka';
+
+  // Validate the chosen TZ at runtime; fall back to Asia/Dhaka if invalid.
+  const isValidTz = (z: string): boolean => {
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: z });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const candidateTz = COUNTRY_TZ[effectiveCountry] || 'Asia/Dhaka';
+  const tz = isValidTz(candidateTz) ? candidateTz : 'Asia/Dhaka';
+
+  // DST-aware UTC offset (in minutes) for the target TZ on the current date.
+  // Used to send Aladhan an explicit numeric offset hint, which prevents
+  // server-side TZ-name parsing differences across DST transitions.
+  const getTzOffsetMinutes = (date: Date, zone: string): number => {
+    try {
+      const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone, hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      });
+      const parts = dtf.formatToParts(date).reduce<Record<string, string>>((acc, p) => {
+        if (p.type !== 'literal') acc[p.type] = p.value;
+        return acc;
+      }, {});
+      const asUTC = Date.UTC(
+        Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+        Number(parts.hour), Number(parts.minute), Number(parts.second)
+      );
+      return Math.round((asUTC - date.getTime()) / 60000);
+    } catch {
+      return 0;
+    }
+  };
+  const tzOffsetMin = getTzOffsetMinutes(now, tz);
 
   // Compute today's date in the target timezone (not the user's device TZ)
   const todayInTz = new Intl.DateTimeFormat('en-CA', {
