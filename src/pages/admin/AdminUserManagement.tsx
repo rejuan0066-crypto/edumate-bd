@@ -498,9 +498,10 @@ const AdminUserManagement = () => {
 
   const openProfileDialog = (user: UserItem) => {
     const linked = staffByUser[user.id];
+    const unifiedName = linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || '';
     setProfileUser(user);
-    setProfileEditName(user.full_name || linked?.name_bn || linked?.name_en || '');
-    setProfileEditStaffNameBn(linked?.name_bn || user.full_name || '');
+    setProfileEditName(unifiedName);
+    setProfileEditStaffNameBn(linked?.name_bn || unifiedName);
     setProfileEditDesignation(linked?.designation || '');
     setProfileEditStaffCategory(linked?.staff_category || '');
     setProfileEditEmail(user.email);
@@ -958,9 +959,10 @@ const AdminUserManagement = () => {
                   <TableBody>
                     {users.map(u => {
                       const linked = staffByUser[u.id];
+                      const displayName = linked?.name_bn || linked?.name_en || u.full_name || u.profile_full_name || '—';
                       return (
                       <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.full_name || '—'}</TableCell>
+                        <TableCell className="font-medium">{displayName}</TableCell>
                         <TableCell>{u.email}</TableCell>
                         <TableCell>
                           {linked ? (
