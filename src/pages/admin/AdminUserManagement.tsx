@@ -463,6 +463,68 @@ const AdminUserManagement = () => {
     setRoleUpdating(false);
   };
 
+  const openProfileDialog = (user: UserItem) => {
+    const linked = staffByUser[user.id];
+    setProfileUser(user);
+    setProfileEditName(user.full_name || linked?.name_bn || linked?.name_en || '');
+    setProfileEditStaffNameBn(linked?.name_bn || user.full_name || '');
+    setProfileEditDesignation(linked?.designation || '');
+    setProfileEditStaffCategory(linked?.staff_category || '');
+    setProfileEditEmail(user.email);
+    setProfileNewPassword('');
+    setProfileShowPw(false);
+    setProfileOpen(true);
+  };
+
+  const saveStaffIdentity = async () => {
+    if (!profileUser) return;
+    const linked = staffByUser[profileUser.id];
+    if (!linked?.id) {
+      toast.error(bn ? 'এই ইউজারের সাথে কোনো স্টাফ প্রোফাইল লিংক নেই' : 'No linked staff profile for this user');
+      return;
+    }
+    if (!profileEditStaffNameBn.trim()) {
+      toast.error(bn ? 'বাংলা নাম দিন' : 'Enter Bangla name');
+      return;
+    }
+
+    setProfileSaving('staff');
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({
+          name_bn: profileEditStaffNameBn.trim(),
+          name_en: profileEditStaffNameBn.trim(),
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory || null,
+        })
+        .eq('id', linked.id);
+      if (error) throw error;
+
+      const nextLinked = {
+        ...linked,
+        name_bn: profileEditStaffNameBn.trim(),
+        name_en: profileEditStaffNameBn.trim(),
+        designation: profileEditDesignation || null,
+        staff_category: profileEditStaffCategory || null,
+      };
+      setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
+      setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['users'] }),
+      ]);
+      await fetchUsers();
+      toast.success(bn ? '✅ বাংলা নাম, পদবি ও ক্যাটাগরি সেভ হয়েছে' : '✅ Bangla name, designation and category saved');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'স্টাফ তথ্য সেভ ব্যর্থ' : 'Failed to save staff info'));
+    }
+    setProfileSaving(null);
+  };
+
   // Custom role CRUD
   const openRoleDialog = (role?: CustomRole) => {
     if (role) {
