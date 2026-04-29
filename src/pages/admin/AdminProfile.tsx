@@ -492,7 +492,35 @@ const AdminProfile = () => {
             const fields = [
               { icon: Mail, label: bn ? 'ইমেইল' : 'Email', value: currentEmail },
               { icon: Phone, label: bn ? 'মোবাইল' : 'Mobile', value: staffData?.phone || profileData?.phone },
-              { icon: Hash, label: bn ? 'স্টাফ আইডি' : 'Staff ID', value: staffData?.staff_id },
+              { icon: Hash, label: (() => {
+                  const sid: string = staffData?.staff_id || '';
+                  const prefix = sid.split('-')[0]?.toUpperCase() || '';
+                  const desig: string = (staffData?.designation || '').toString().toLowerCase();
+                  const dept: string = (staffData?.department || staffData?.staff_category || '').toString().toLowerCase();
+                  // Prefix-based mapping (authoritative — matches Staff ID System)
+                  const prefixMap: Record<string, { bn: string; en: string }> = {
+                    ADO: { bn: 'প্রশাসনিক আইডি', en: 'Administrative ID' },
+                    TCH: { bn: 'শিক্ষক আইডি', en: 'Teacher ID' },
+                    TEA: { bn: 'শিক্ষক আইডি', en: 'Teacher ID' },
+                    PRN: { bn: 'অধ্যক্ষ আইডি', en: 'Principal ID' },
+                    VPR: { bn: 'উপাধ্যক্ষ আইডি', en: 'Vice Principal ID' },
+                    ACC: { bn: 'হিসাবরক্ষক আইডি', en: 'Accountant ID' },
+                    LIB: { bn: 'গ্রন্থাগারিক আইডি', en: 'Librarian ID' },
+                    OFF: { bn: 'অফিস আইডি', en: 'Office ID' },
+                    SEC: { bn: 'নিরাপত্তা আইডি', en: 'Security ID' },
+                    DRV: { bn: 'চালক আইডি', en: 'Driver ID' },
+                    CLN: { bn: 'পরিচ্ছন্নতা আইডি', en: 'Cleaner ID' },
+                    STF: { bn: 'স্টাফ আইডি', en: 'Staff ID' },
+                  };
+                  if (prefix && prefixMap[prefix]) return bn ? prefixMap[prefix].bn : prefixMap[prefix].en;
+                  // Designation-based fallback
+                  if (/principal|অধ্যক্ষ/.test(desig)) return bn ? 'অধ্যক্ষ আইডি' : 'Principal ID';
+                  if (/teacher|শিক্ষক|মৌলভী|হাফেজ|qari|ক্বারী/.test(desig)) return bn ? 'শিক্ষক আইডি' : 'Teacher ID';
+                  if (/admin|প্রশাসন/.test(desig) || /admin|প্রশাসন/.test(dept)) return bn ? 'প্রশাসনিক আইডি' : 'Administrative ID';
+                  if (/account|হিসাব/.test(desig)) return bn ? 'হিসাবরক্ষক আইডি' : 'Accountant ID';
+                  if (/librar|গ্রন্থ/.test(desig)) return bn ? 'গ্রন্থাগারিক আইডি' : 'Librarian ID';
+                  return bn ? 'স্টাফ আইডি' : 'Staff ID';
+                })(), value: staffData?.staff_id },
               { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: (categoriesList.find((c: any) => c.key === (staffData?.department || staffData?.staff_category)) as any)?.[bn ? 'name_bn' : 'name'] || staffData?.department || staffData?.staff_category },
               { icon: Calendar, label: bn ? 'যোগদান' : 'Joining Date', value: fmtDate(staffData?.joining_date) },
               { icon: Calendar, label: bn ? 'জন্ম তারিখ' : 'Date of Birth', value: fmtDate(staffData?.date_of_birth) },
