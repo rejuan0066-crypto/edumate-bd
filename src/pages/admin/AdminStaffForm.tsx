@@ -56,7 +56,7 @@ const DOC_TYPES = [
   { value: 'other', bn: 'অন্যান্য', en: 'Other' },
 ];
 
-export type StaffCategory = 'teacher' | 'administrative' | 'general' | 'support' | 'all';
+export type StaffCategory = 'teacher' | 'administrative' | 'general' | 'support' | 'director' | 'committee_member' | 'all';
 
 // Section visibility config per category — all categories show all sections equally
 const CATEGORY_SECTIONS: Record<StaffCategory, { showEducation: boolean; showIdentifier: boolean; showRelativesIdentifier: boolean; showGuardian: boolean; showParentAddress: boolean }> = {
@@ -64,6 +64,8 @@ const CATEGORY_SECTIONS: Record<StaffCategory, { showEducation: boolean; showIde
   administrative: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
   general: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
   support: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
+  director: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
+  committee_member: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
   all: { showEducation: true, showIdentifier: true, showRelativesIdentifier: true, showGuardian: true, showParentAddress: true },
 };
 
@@ -72,6 +74,8 @@ const CATEGORY_TITLES: Record<StaffCategory, { bn: string; en: string; addBn: st
   administrative: { bn: 'প্রশাসনিক কর্মকর্তা', en: 'Administrative Staff', addBn: 'নতুন প্রশাসনিক কর্মকর্তা যোগ করুন', addEn: 'Add Administrative Staff', editBn: 'প্রশাসনিক কর্মকর্তা সম্পাদনা', editEn: 'Edit Administrative Staff' },
   general: { bn: 'সহায়ক কর্মী', en: 'General Staff', addBn: 'নতুন সহায়ক কর্মী যোগ করুন', addEn: 'Add General Staff', editBn: 'সহায়ক কর্মী সম্পাদনা', editEn: 'Edit General Staff' },
   support: { bn: 'অফিস কর্মচারী', en: 'Support Staff', addBn: 'নতুন অফিস কর্মচারী যোগ করুন', addEn: 'Add Support Staff', editBn: 'অফিস কর্মচারী সম্পাদনা', editEn: 'Edit Support Staff' },
+  director: { bn: 'পরিচালক', en: 'Director', addBn: 'নতুন পরিচালক যোগ করুন', addEn: 'Add Director', editBn: 'পরিচালক সম্পাদনা', editEn: 'Edit Director' },
+  committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member', addBn: 'নতুন কমিটি সদস্য যোগ করুন', addEn: 'Add Committee Member', editBn: 'কমিটি সদস্য সম্পাদনা', editEn: 'Edit Committee Member' },
   all: { bn: 'কর্মী/শিক্ষক', en: 'Staff/Teacher', addBn: 'নতুন কর্মী/শিক্ষক যোগ করুন', addEn: 'Add New Staff/Teacher', editBn: 'কর্মী/শিক্ষক সম্পাদনা', editEn: 'Edit Staff/Teacher' },
 };
 
@@ -80,6 +84,8 @@ const CATEGORY_BACK_PATH: Record<StaffCategory, string> = {
   administrative: '/admin/administrative-staff',
   general: '/admin/general-staff',
   support: '/admin/support-staff',
+  director: '/admin/directors',
+  committee_member: '/admin/committee-members',
   all: '/admin/staff',
 };
 
