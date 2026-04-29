@@ -92,6 +92,12 @@ const AdminProfile = () => {
   const noProfileRecord = !!user && staffFetched && !staffLoading && !staffData;
   const queryClient = useQueryClient();
 
+  // ─── Permission to edit designation/department on own profile ───
+  const { canEdit } = usePermissions();
+  const isAdminOfficerProfile = (staffData as any)?.__source === 'administrative';
+  const canEditRoleFields = isAdmin
+    || (isAdminOfficerProfile ? canEdit('/admin/administrative') : canEdit('/admin/staff'));
+
   // ─── Designation & Staff Category editor ───
   const [editingRole, setEditingRole] = useState(false);
   const [editDesignation, setEditDesignation] = useState<string>('');
