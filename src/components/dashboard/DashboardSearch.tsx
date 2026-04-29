@@ -24,8 +24,8 @@ const DashboardSearch = () => {
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,student_id.ilike.%${query}%,roll_number.ilike.%${query}%,phone.ilike.%${query}%`);
       const { data: staffData } = await supabase.from('staff').select('*')
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%`);
-      const { data: officerData } = await supabase.from('administrative_officers' as any).select('*')
-        .is('deleted_at', null)
+      // Use public view (sensitive fields hidden by RLS)
+      const { data: officerData } = await supabase.from('administrative_officers_public' as any).select('*')
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%,officer_id.ilike.%${query}%`);
 
       const combined = [
