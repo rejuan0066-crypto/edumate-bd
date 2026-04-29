@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
-export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support';
+export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
 
 // Fallback keyword matching (used when designation has no staff_category in DB)
 const TEACHER_KEYWORDS = ['teacher', 'শিক্ষক', 'ustaz', 'ustad', 'মুআল্লিম', 'মুয়াল্লিম'];
@@ -59,7 +59,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : '/admin/staff';
+  const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
   const { checkApproval } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions(menuPath);
@@ -101,6 +101,15 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       const { data, error } = await supabase.from('designations').select('name, name_bn, staff_category').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ['custom-roles-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custom_roles').select('id, name, name_bn, base_role').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -189,6 +198,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   });
 
   const typeFiltered = staffType === 'all' ? staffList : staffList.filter((s: any) => {
+    // Director / committee member: rely strictly on the stored staff_category column
+    if (staffType === 'director') return s.staff_category === 'director';
+    if (staffType === 'committee_member') return s.staff_category === 'committee_member';
     const category = getStaffCategory(s, designationsMap);
     if (staffType === 'teacher') return category === 'teacher';
     if (staffType === 'administrative') return category === 'administrative';
@@ -221,12 +233,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
     setAccCreating(true);
     try {
+      // Detect custom role selection: prefix "custom:<id>"
+      let baseRole: string | undefined;
+      let customRoleId: string | null = null;
+      if (accRole.startsWith('custom:')) {
+        customRoleId = accRole.replace('custom:', '');
+        const cr = (customRoles as any[]).find((r) => r.id === customRoleId);
+        baseRole = cr?.base_role || 'staff';
+      } else if (accRole !== 'none') {
+        baseRole = accRole;
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'create',
           email: accEmail.trim(),
           password: accPassword,
-          role: accRole === 'none' ? undefined : accRole,
+          role: baseRole,
           full_name: selectedStaff?.name_bn || selectedStaff?.name_en || '',
           staff_id: selectedStaff?.id,
         },
@@ -235,6 +258,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         toast.error(data?.error || error?.message || (bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account'));
         setAccCreating(false);
         return;
+      }
+      // Persist custom role link on the staff record
+      if (customRoleId && selectedStaff?.id) {
+        await supabase.from('staff').update({ custom_role_id: customRoleId } as any).eq('id', selectedStaff.id);
       }
       toast.success(bn ? '✅ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' : '✅ Account created successfully!');
       setAccountDialogOpen(false);
@@ -268,10 +295,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {staffType === 'teacher' ? (bn ? 'শিক্ষক ব্যবস্থাপনা' : 'Teacher Management') : staffType === 'administrative' ? (bn ? 'প্রশাসনিক কর্মকর্তা ব্যবস্থাপনা' : 'Administrative Staff Management') : staffType === 'staff' ? (bn ? 'সহায়ক কর্মী ব্যবস্থাপনা' : 'General Staff Management') : t('staff')}
+              {staffType === 'teacher' ? (bn ? 'শিক্ষক ব্যবস্থাপনা' : 'Teacher Management') : staffType === 'administrative' ? (bn ? 'প্রশাসনিক কর্মকর্তা ব্যবস্থাপনা' : 'Administrative Staff Management') : staffType === 'staff' ? (bn ? 'সহায়ক কর্মী ব্যবস্থাপনা' : 'General Staff Management') : staffType === 'director' ? (bn ? 'পরিচালক ব্যবস্থাপনা' : 'Director Management') : staffType === 'committee_member' ? (bn ? 'কমিটি সদস্য ব্যবস্থাপনা' : 'Committee Member Management') : t('staff')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
+              {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : staffType === 'director' ? (bn ? `মোট ${typeFiltered.length} জন পরিচালক` : `Total ${typeFiltered.length} directors`) : staffType === 'committee_member' ? (bn ? `মোট ${typeFiltered.length} জন কমিটি সদস্য` : `Total ${typeFiltered.length} committee members`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
@@ -282,7 +309,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               </Button>
             )}
             {canAddItem && (
-              <Button onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : '/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
+              <Button onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : staffType === 'director' ? '/admin/directors/add' : staffType === 'committee_member' ? '/admin/committee-members/add' : '/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
                 <Plus className="w-4 h-4" /> {t('addNew')}
               </Button>
             )}
@@ -392,6 +419,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                             <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
                             <SelectItem value="support">{bn ? 'অফিস কর্মচারী' : 'Support Staff'}</SelectItem>
                             <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
+                            <SelectItem value="director">{bn ? 'পরিচালক' : 'Director'}</SelectItem>
+                            <SelectItem value="committee_member">{bn ? 'কমিটি সদস্য' : 'Committee Member'}</SelectItem>
                           </SelectContent>
                         </Select>
                       </td>
@@ -438,7 +467,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         {canEditItem && (
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
-                            const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : 'general-staff';
+                            const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
                             navigate(`/admin/${path}/edit/${s.id}`);
                           }} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
                         )}
@@ -514,6 +543,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                     <SelectItem value="general">{bn ? 'সহায়ক' : 'General'}</SelectItem>
                     <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
                     <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                    {customRoles.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase">{bn ? 'কাস্টম রোল' : 'Custom Roles'}</div>
+                        {(customRoles as any[]).map((cr) => (
+                          <SelectItem key={cr.id} value={`custom:${cr.id}`}>
+                            {(bn ? cr.name_bn : cr.name) || cr.name} <span className="text-[10px] text-muted-foreground ml-1">({cr.base_role})</span>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

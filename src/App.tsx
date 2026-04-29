@@ -39,6 +39,10 @@ import AdminAdministrativeStaffForm from "./pages/admin/AdminAdministrativeStaff
 import AdminGeneralStaffForm from "./pages/admin/AdminGeneralStaffForm";
 import AdminSupportStaff from "./pages/admin/AdminSupportStaff";
 import AdminSupportStaffForm from "./pages/admin/AdminSupportStaffForm";
+import AdminDirectors from "./pages/admin/AdminDirectors";
+import AdminDirectorsForm from "./pages/admin/AdminDirectorsForm";
+import AdminCommitteeMembers from "./pages/admin/AdminCommitteeMembers";
+import AdminCommitteeMembersForm from "./pages/admin/AdminCommitteeMembersForm";
 import AdminDivisions from "./pages/admin/AdminDivisions";
 import AdminSubjects from "./pages/admin/AdminSubjects";
 import AdminResults from "./pages/admin/AdminResults";
@@ -287,6 +291,12 @@ const App = () => (
                     <Route path="support-staff" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaff /></ModuleGuard>} />
                     <Route path="support-staff/add" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaffForm /></ModuleGuard>} />
                     <Route path="support-staff/edit/:id" element={<ModuleGuard menuPath="/admin/support-staff"><AdminSupportStaffForm /></ModuleGuard>} />
+                    <Route path="directors" element={<ModuleGuard menuPath="/admin/directors"><AdminDirectors /></ModuleGuard>} />
+                    <Route path="directors/add" element={<ModuleGuard menuPath="/admin/directors"><AdminDirectorsForm /></ModuleGuard>} />
+                    <Route path="directors/edit/:id" element={<ModuleGuard menuPath="/admin/directors"><AdminDirectorsForm /></ModuleGuard>} />
+                    <Route path="committee-members" element={<ModuleGuard menuPath="/admin/committee-members"><AdminCommitteeMembers /></ModuleGuard>} />
+                    <Route path="committee-members/add" element={<ModuleGuard menuPath="/admin/committee-members"><AdminCommitteeMembersForm /></ModuleGuard>} />
+                    <Route path="committee-members/edit/:id" element={<ModuleGuard menuPath="/admin/committee-members"><AdminCommitteeMembersForm /></ModuleGuard>} />
                     <Route path="divisions" element={<ModuleGuard menuPath="/admin/divisions"><AdminDivisions /></ModuleGuard>} />
                     <Route path="subjects" element={<ModuleGuard menuPath="/admin/subjects"><AdminSubjects /></ModuleGuard>} />
                     <Route path="results" element={<ModuleGuard menuPath="/admin/results"><AdminResults /></ModuleGuard>} />
