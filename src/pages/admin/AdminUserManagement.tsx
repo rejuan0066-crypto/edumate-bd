@@ -336,6 +336,22 @@ const AdminUserManagement = () => {
       } else {
         setStaffByUser({});
       }
+
+      // Pull administrative_officers linked by user_id
+      if (ids.length > 0) {
+        const { data: officerRows } = await supabase
+          .from('administrative_officers' as any)
+          .select('id, user_id, name_bn, designation')
+          .in('user_id', ids)
+          .is('deleted_at', null);
+        const omap: Record<string, { id: string; name_bn: string; designation: string | null }> = {};
+        (officerRows || []).forEach((r: any) => {
+          if (r.user_id) omap[r.user_id] = { id: r.id, name_bn: r.name_bn, designation: r.designation };
+        });
+        setAdminOfficerByUser(omap);
+      } else {
+        setAdminOfficerByUser({});
+      }
     } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
     }
