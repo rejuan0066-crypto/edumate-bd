@@ -57,6 +57,28 @@ interface CustomRole {
   sort_order: number;
 }
 
+interface LinkedStaff {
+  id: string;
+  name_bn: string | null;
+  name_en: string | null;
+  designation: string | null;
+  staff_category: string | null;
+  photo_url: string | null;
+}
+
+interface StaffCategoryOption {
+  key: string;
+  name: string | null;
+  name_bn: string | null;
+}
+
+interface MasterDesignationOption {
+  id: string;
+  name: string | null;
+  name_bn: string | null;
+  staff_category: string | null;
+}
+
 const MENU_PATHS = [
   { path: '/admin', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard' },
   { path: '/admin/profile', label_bn: 'প্রোফাইল', label_en: 'Profile' },
@@ -115,6 +137,9 @@ const AdminUserManagement = () => {
   const [profileUser, setProfileUser] = useState<UserItem | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEditName, setProfileEditName] = useState('');
+  const [profileEditStaffNameBn, setProfileEditStaffNameBn] = useState('');
+  const [profileEditDesignation, setProfileEditDesignation] = useState('');
+  const [profileEditStaffCategory, setProfileEditStaffCategory] = useState('');
   const [profileEditEmail, setProfileEditEmail] = useState('');
   const [profileNewPassword, setProfileNewPassword] = useState('');
   const [profileConfirmPassword, setProfileConfirmPassword] = useState('');
@@ -135,6 +160,8 @@ const AdminUserManagement = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [createStaffCategory, setCreateStaffCategory] = useState('');
+  const [createDesignation, setCreateDesignation] = useState('');
   const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   // Real-time duplicate check
@@ -229,8 +256,34 @@ const AdminUserManagement = () => {
     },
   });
 
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return (data || []) as StaffCategoryOption[];
+    },
+  });
+
+  const { data: masterDesignations = [] } = useQuery({
+    queryKey: ['designations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('designations')
+        .select('id, name, name_bn, staff_category, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return (data || []) as MasterDesignationOption[];
+    },
+  });
+
   // Map of user_id -> linked staff (for showing designation/category in the user list)
-  const [staffByUser, setStaffByUser] = useState<Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }>>({});
+  const [staffByUser, setStaffByUser] = useState<Record<string, LinkedStaff>>({});
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -247,12 +300,12 @@ const AdminUserManagement = () => {
       if (ids.length > 0) {
         const { data: staffRows } = await supabase
           .from('staff')
-          .select('user_id, designation, staff_category, photo_url')
+          .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
           .in('user_id', ids)
           .is('deleted_at', null);
-        const map: Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }> = {};
+        const map: Record<string, LinkedStaff> = {};
         (staffRows || []).forEach(r => {
-          if (r.user_id) map[r.user_id] = { designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
+          if (r.user_id) map[r.user_id] = { id: r.id, name_bn: r.name_bn, name_en: r.name_en, designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
         });
         setStaffByUser(map);
       } else {
@@ -335,7 +388,16 @@ const AdminUserManagement = () => {
     setCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'create', email: email.trim(), password, role: actualRole || undefined, full_name: fullName.trim() },
+        body: {
+          action: 'create',
+          email: email.trim(),
+          password,
+          role: actualRole || undefined,
+          full_name: fullName.trim(),
+          name_bn: fullName.trim(),
+          staff_category: createStaffCategory || undefined,
+          designation: createDesignation || undefined,
+        },
       });
       if (error || !data?.success) {
         const code = data?.error;
@@ -348,7 +410,7 @@ const AdminUserManagement = () => {
       }
       toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
       setDialogOpen(false);
-      setEmail(''); setPassword(''); setFullName(''); setRole('');
+      setEmail(''); setPassword(''); setFullName(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
       fetchUsers();
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
@@ -423,6 +485,68 @@ const AdminUserManagement = () => {
       toast.error(bn ? 'রোল আপডেট ব্যর্থ' : 'Role update failed');
     }
     setRoleUpdating(false);
+  };
+
+  const openProfileDialog = (user: UserItem) => {
+    const linked = staffByUser[user.id];
+    setProfileUser(user);
+    setProfileEditName(user.full_name || linked?.name_bn || linked?.name_en || '');
+    setProfileEditStaffNameBn(linked?.name_bn || user.full_name || '');
+    setProfileEditDesignation(linked?.designation || '');
+    setProfileEditStaffCategory(linked?.staff_category || '');
+    setProfileEditEmail(user.email);
+    setProfileNewPassword('');
+    setProfileShowPw(false);
+    setProfileOpen(true);
+  };
+
+  const saveStaffIdentity = async () => {
+    if (!profileUser) return;
+    if (!profileEditStaffNameBn.trim()) {
+      toast.error(bn ? 'বাংলা নাম দিন' : 'Enter Bangla name');
+      return;
+    }
+    if (!profileEditStaffCategory) {
+      toast.error(bn ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select category');
+      return;
+    }
+
+    setProfileSaving('staff');
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'upsert_staff_identity',
+          user_id: profileUser.id,
+          name_bn: profileEditStaffNameBn.trim(),
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory,
+        },
+      });
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
+
+      const nextLinked: LinkedStaff = {
+        id: data.staff.id,
+        name_bn: data.staff.name_bn,
+        name_en: data.staff.name_en,
+        designation: data.staff.designation,
+        staff_category: data.staff.staff_category,
+        photo_url: data.staff.photo_url,
+      };
+      setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
+      setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
+        queryClient.invalidateQueries({ queryKey: ['users'] }),
+      ]);
+      await fetchUsers();
+      toast.success(bn ? '✅ বাংলা নাম, পদবি ও ক্যাটাগরি সেভ হয়েছে' : '✅ Bangla name, designation and category saved');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'স্টাফ তথ্য সেভ ব্যর্থ' : 'Failed to save staff info'));
+    }
+    setProfileSaving(null);
   };
 
   // Custom role CRUD
@@ -707,6 +831,36 @@ const AdminUserManagement = () => {
                         </p>
                       )}
                     </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>{bn ? 'স্টাফ ক্যাটাগরি' : 'Staff Category'}</Label>
+                        <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'ক্যাটাগরি' : 'Category'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {staffCategories.map((cat) => (
+                              <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{bn ? 'পদবি' : 'Designation'}</Label>
+                        <Select value={createDesignation} onValueChange={setCreateDesignation} disabled={!createStaffCategory}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={bn ? 'পদবি' : 'Designation'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {masterDesignations
+                              .filter((d) => !createStaffCategory || d.staff_category === createStaffCategory)
+                              .map((d) => (
+                                <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div>
                       <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
                       <Input className="mt-1" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={bn ? 'ইমেইল অ্যাড্রেস' : 'Email address'} />
@@ -835,7 +989,7 @@ const AdminUserManagement = () => {
                               size="icon"
                               variant="ghost"
                               className="text-primary hover:text-primary hover:bg-primary/10"
-                              onClick={() => { setProfileUser(u); setProfileEditName(u.full_name || ''); setProfileEditEmail(u.email); setProfileNewPassword(''); setProfileShowPw(false); setProfileOpen(true); }}
+                              onClick={() => openProfileDialog(u)}
                               title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}
                             >
                               <UserCircle className="w-4 h-4" />
@@ -1348,6 +1502,54 @@ const AdminUserManagement = () => {
                   </div>
                 </div>
 
+                {/* Staff identity: Bangla name + designation/category */}
+                <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
+                    <Tag className="w-5 h-5" />
+                    {bn ? 'স্টাফ নাম, পদবি ও ক্যাটাগরি' : 'Staff Name, Designation & Category'}
+                  </h3>
+                  <>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
+                        <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'ক্যাটাগরি' : 'Category'}</Label>
+                          <Select value={profileEditStaffCategory} onValueChange={(value) => { setProfileEditStaffCategory(value); setProfileEditDesignation(''); }}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {staffCategories.map((cat) => (
+                                <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'পদবি' : 'Designation'}</Label>
+                          <Select value={profileEditDesignation} onValueChange={setProfileEditDesignation}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={bn ? 'পদবি নির্বাচন' : 'Select designation'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {masterDesignations
+                                .filter((d) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
+                                .map((d) => (
+                                  <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button onClick={saveStaffIdentity} disabled={profileSaving === 'staff'} className="w-full btn-primary-gradient">
+                        {profileSaving === 'staff' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                        {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
+                      </Button>
+                    </>
+                </div>
+
                 {/* Edit Name */}
                 <div className="space-y-2">
                   <Label className="text-xs font-medium">{bn ? 'নাম পরিবর্তন' : 'Change Name'}</Label>
@@ -1363,8 +1565,24 @@ const AdminUserManagement = () => {
                             body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditName.trim() },
                           });
                           if (error || !data?.success) throw new Error((bn ? data?.message_bn : data?.message) || data?.error || error?.message);
+                          const linked = staffByUser[profileUser.id];
+                          if (linked?.id) {
+                            await supabase.from('staff').update({ name_bn: profileEditName.trim(), name_en: profileEditName.trim() }).eq('id', linked.id);
+                            setStaffByUser(prev => ({
+                              ...prev,
+                              [profileUser.id]: { ...linked, name_bn: profileEditName.trim(), name_en: profileEditName.trim() },
+                            }));
+                            setProfileEditStaffNameBn(profileEditName.trim());
+                          }
                           toast.success(bn ? '✅ নাম আপডেট হয়েছে' : '✅ Name updated');
                           setProfileUser({ ...profileUser, full_name: profileEditName.trim() });
+                          await Promise.all([
+                            queryClient.invalidateQueries({ queryKey: ['staff'] }),
+                            queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
+                            queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
+                            queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
+                            queryClient.invalidateQueries({ queryKey: ['users'] }),
+                          ]);
                           fetchUsers();
                         } catch (err: any) {
                           toast.error(err?.message || (bn ? 'নাম আপডেট ব্যর্থ' : 'Failed to update name'));

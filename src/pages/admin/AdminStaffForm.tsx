@@ -107,6 +107,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const sectionConfig = CATEGORY_SECTIONS[staffCategory];
   const titleConfig = CATEGORY_TITLES[staffCategory];
+  const initialStaffCategory = staffCategory !== 'all' ? staffCategory : 'general';
+  const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>(initialStaffCategory);
   const printRef = useRef<HTMLDivElement>(null);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -273,6 +275,19 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   ];
 
   // Load all active designations (no category filter so user can pick any title)
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const { data: dbDesignations = [] } = useQuery({
     queryKey: ['designations-for-form-all'],
     queryFn: async () => {
@@ -288,18 +303,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
 
   // Use DB designations if available, else fallback to hardcoded
   const designations = dbDesignations.length > 0
-    ? dbDesignations.map(d => ({ value: d.name, bn: d.name_bn, en: d.name }))
-    : designationsHardcoded;
+    ? dbDesignations.map(d => ({ value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category }))
+    : designationsHardcoded.map(d => ({ ...d, staff_category: initialStaffCategory }));
+  const filteredDesignations = designations.filter(d => !selectedStaffCategory || !d.staff_category || d.staff_category === selectedStaffCategory);
   // Populate form fields when editing
   useEffect(() => {
     if (!isEditMode || !existingStaff || dataLoaded) return;
     const sd = (existingStaff.staff_data as any) || {};
+    setSelectedStaffCategory(existingStaff.staff_category || initialStaffCategory);
     setFirstName(sd.first_name || existingStaff.name_bn?.split(' ')[0] || '');
     setLastName(sd.last_name || existingStaff.name_bn?.split(' ').slice(1).join(' ') || '');
     setMobile(existingStaff.phone?.replace(/^\+\d{1,3}/, '') || '');
     setMobileCode(sd.mobile_code || '+880');
     setEmploymentType(existingStaff.employment_type || '');
-    const desigMatch = designations.find(d => d.bn === existingStaff.designation || d.en === existingStaff.designation);
+    const desigMatch = designations.find(d => d.bn === existingStaff.designation || d.en === existingStaff.designation || d.value === existingStaff.designation);
     setDesignation(desigMatch?.value || existingStaff.designation || '');
     setResidenceType(existingStaff.residence_type || '');
     setDob(existingStaff.date_of_birth || '');
@@ -526,7 +543,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         previous_institute: prevInstitute || null,
         joining_date: joiningDate || null,
         staff_data: staffData as any,
-        staff_category: staffCategory !== 'all' ? staffCategory : 'general',
+        staff_category: selectedStaffCategory || initialStaffCategory,
         include_in_payroll: includeInPayroll,
         include_in_attendance: includeInAttendance,
         custom_role_id: customRoleId !== 'none' ? customRoleId : null,
@@ -993,13 +1010,26 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   <FieldError field="employment_type" />
                 </div>
                 )}
+                <div>
+                  <Label>{bn ? 'স্টাফ ক্যাটাগরি' : 'Staff Category'} <span className="text-destructive">*</span></Label>
+                  <Select value={selectedStaffCategory} onValueChange={(value) => { setSelectedStaffCategory(value); setDesignation(''); }}>
+                    <SelectTrigger className="bg-background mt-1">
+                      <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staffCategories.map((cat) => (
+                        <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {isFieldActive('designation') && (
                 <div>
                   <Label>{bn ? (getField('designation')?.label_bn || 'পদবী') : (getField('designation')?.label || 'Designation')} {isFieldRequired('designation') && <span className="text-destructive">*</span>}</Label>
                   <Select value={designation} onValueChange={setDesignation}>
                     <SelectTrigger className={`bg-background mt-1 ${fieldErrors['designation'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
                     <SelectContent>
-                      {designations.map(d => (
+                      {filteredDesignations.map(d => (
                         <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>
                       ))}
                     </SelectContent>
