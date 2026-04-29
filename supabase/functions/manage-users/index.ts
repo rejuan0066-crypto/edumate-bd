@@ -636,8 +636,8 @@ Deno.serve(async (req) => {
     // UPSERT STAFF IDENTITY (admin assigns Bangla name, designation and category to a user)
     if (action === "upsert_staff_identity") {
       const { user_id: targetUserId, name_bn, name_en, designation, staff_category } = body;
-      if (!targetUserId || !name_bn || !staff_category) {
-        return new Response(JSON.stringify({ error: "user_id, name_bn and staff_category are required" }), {
+      if (!targetUserId || !name_bn) {
+        return new Response(JSON.stringify({ error: "user_id and name_bn are required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -645,9 +645,19 @@ Deno.serve(async (req) => {
       const trimmedName = String(name_bn).trim();
       const trimmedNameEn = name_en ? String(name_en).trim() : trimmedName;
       const trimmedDesignation = designation ? String(designation).trim() : null;
-      const category = String(staff_category).trim();
+      const category = staff_category ? String(staff_category).trim() : '';
       const { data: { user: targetAuthUser } } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
 
+      // Check target user's role — admin/super_admin/moderator should NOT have a staff record
+      const { data: targetRoleRow } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      const targetRole = (targetRoleRow?.role || '').toString();
+      const isAdminRole = ['admin', 'super_admin', 'moderator'].includes(targetRole);
+
+      // Always update profile name + auth metadata
       const { error: profileError } = await supabaseAdmin.from("profiles").upsert({
         id: targetUserId,
         full_name: trimmedName,
@@ -661,6 +671,26 @@ Deno.serve(async (req) => {
       await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
         user_metadata: { full_name: trimmedName },
       });
+
+      // For admin roles: stop here, do NOT create/update staff record
+      if (isAdminRole) {
+        // If a staff record exists for this admin user (legacy), unlink it
+        await supabaseAdmin
+          .from("staff")
+          .update({ user_id: null, updated_at: new Date().toISOString() })
+          .eq("user_id", targetUserId)
+          .is("deleted_at", null);
+        return new Response(JSON.stringify({ success: true, staff: null, admin_role: true }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Non-admin roles require staff_category
+      if (!category) {
+        return new Response(JSON.stringify({ error: "staff_category is required for staff users" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
       const staffPayload = {
         user_id: targetUserId,
