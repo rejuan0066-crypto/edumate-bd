@@ -602,6 +602,11 @@ Deno.serve(async (req) => {
       await supabaseAdmin.auth.admin.updateUserById(targetUserId, {
         user_metadata: { full_name },
       });
+      await supabaseAdmin
+        .from("staff")
+        .update({ name_bn: trimmedName || null, name_en: trimmedName || null })
+        .eq("user_id", targetUserId)
+        .is("deleted_at", null);
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
