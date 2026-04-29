@@ -22,7 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 
-export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support';
+export type StaffPageType = 'all' | 'staff' | 'teacher' | 'administrative' | 'support' | 'director' | 'committee_member';
 
 // Fallback keyword matching (used when designation has no staff_category in DB)
 const TEACHER_KEYWORDS = ['teacher', 'শিক্ষক', 'ustaz', 'ustad', 'মুআল্লিম', 'মুয়াল্লিম'];
@@ -59,7 +59,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : '/admin/staff';
+  const menuPath = staffType === 'teacher' ? '/admin/teachers' : staffType === 'administrative' ? '/admin/administrative-staff' : staffType === 'support' ? '/admin/support-staff' : staffType === 'staff' ? '/admin/general-staff' : staffType === 'director' ? '/admin/directors' : staffType === 'committee_member' ? '/admin/committee-members' : '/admin/staff';
   const { checkApproval } = useApprovalCheck(menuPath, 'staff');
   const { role } = useAuth();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions(menuPath);
@@ -189,6 +189,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   });
 
   const typeFiltered = staffType === 'all' ? staffList : staffList.filter((s: any) => {
+    // Director / committee member: rely strictly on the stored staff_category column
+    if (staffType === 'director') return s.staff_category === 'director';
+    if (staffType === 'committee_member') return s.staff_category === 'committee_member';
     const category = getStaffCategory(s, designationsMap);
     if (staffType === 'teacher') return category === 'teacher';
     if (staffType === 'administrative') return category === 'administrative';
@@ -268,10 +271,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
-              {staffType === 'teacher' ? (bn ? 'শিক্ষক ব্যবস্থাপনা' : 'Teacher Management') : staffType === 'administrative' ? (bn ? 'প্রশাসনিক কর্মকর্তা ব্যবস্থাপনা' : 'Administrative Staff Management') : staffType === 'staff' ? (bn ? 'সহায়ক কর্মী ব্যবস্থাপনা' : 'General Staff Management') : t('staff')}
+              {staffType === 'teacher' ? (bn ? 'শিক্ষক ব্যবস্থাপনা' : 'Teacher Management') : staffType === 'administrative' ? (bn ? 'প্রশাসনিক কর্মকর্তা ব্যবস্থাপনা' : 'Administrative Staff Management') : staffType === 'staff' ? (bn ? 'সহায়ক কর্মী ব্যবস্থাপনা' : 'General Staff Management') : staffType === 'director' ? (bn ? 'পরিচালক ব্যবস্থাপনা' : 'Director Management') : staffType === 'committee_member' ? (bn ? 'কমিটি সদস্য ব্যবস্থাপনা' : 'Committee Member Management') : t('staff')}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
+              {staffType === 'teacher' ? (bn ? `মোট ${typeFiltered.length} জন শিক্ষক` : `Total ${typeFiltered.length} teachers`) : staffType === 'administrative' ? (bn ? `মোট ${typeFiltered.length} জন প্রশাসনিক কর্মকর্তা` : `Total ${typeFiltered.length} administrative staff`) : staffType === 'staff' ? (bn ? `মোট ${typeFiltered.length} জন সহায়ক কর্মী` : `Total ${typeFiltered.length} general staff`) : staffType === 'director' ? (bn ? `মোট ${typeFiltered.length} জন পরিচালক` : `Total ${typeFiltered.length} directors`) : staffType === 'committee_member' ? (bn ? `মোট ${typeFiltered.length} জন কমিটি সদস্য` : `Total ${typeFiltered.length} committee members`) : (bn ? `মোট ${staffList.length} জন কর্মী/শিক্ষক` : `Total ${staffList.length} staff`)}
             </p>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
@@ -282,7 +285,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               </Button>
             )}
             {canAddItem && (
-              <Button onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : '/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
+              <Button onClick={() => navigate(staffType === 'teacher' ? '/admin/teachers/add' : staffType === 'administrative' ? '/admin/administrative-staff/add' : staffType === 'staff' ? '/admin/general-staff/add' : staffType === 'director' ? '/admin/directors/add' : staffType === 'committee_member' ? '/admin/committee-members/add' : '/admin/staff/add')} className="btn-primary-gradient flex items-center gap-2">
                 <Plus className="w-4 h-4" /> {t('addNew')}
               </Button>
             )}
