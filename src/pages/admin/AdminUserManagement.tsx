@@ -515,6 +515,7 @@ const AdminUserManagement = () => {
     setProfileUser(user);
     setProfileEditName(unifiedName);
     setProfileEditStaffNameBn(linked?.name_bn || unifiedName);
+    setProfileEditStaffNameEn(linked?.name_en || linked?.name_bn || unifiedName);
     setProfileEditDesignation(linked?.designation || '');
     setProfileEditStaffCategory(linked?.staff_category || '');
     setProfileEditEmail(user.email);
