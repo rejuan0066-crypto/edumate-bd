@@ -124,17 +124,27 @@ const AdminProfile = () => {
   const saveRoleMutation = useMutation({
     mutationFn: async () => {
       if (!staffData?.id) throw new Error('No staff record');
-      const { error } = await supabase
-        .from('staff')
-        .update({ designation: editDesignation || null, staff_category: editCategory || null })
-        .eq('id', staffData.id);
-      if (error) throw error;
+      const isAdminOfficer = (staffData as any).__source === 'administrative';
+      if (isAdminOfficer) {
+        const { error } = await supabase
+          .from('administrative_officers')
+          .update({ designation: editDesignation || null, department: editCategory || null })
+          .eq('id', staffData.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('staff')
+          .update({ designation: editDesignation || null, staff_category: editCategory || null })
+          .eq('id', staffData.id);
+        if (error) throw error;
+      }
     },
     onSuccess: async () => {
       toast.success(bn ? 'পদবি ও ডিপার্টমেন্ট আপডেট হয়েছে' : 'Designation & department updated');
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
         queryClient.invalidateQueries({ queryKey: ['staff'] }),
+        queryClient.invalidateQueries({ queryKey: ['administrative_officers'] }),
         queryClient.invalidateQueries({ queryKey: ['my-profile'] }),
         queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] }),
         queryClient.invalidateQueries({ queryKey: ['users'] }),
