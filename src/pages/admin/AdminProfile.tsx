@@ -359,7 +359,9 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  const roleLabel = staffData?.designation || (role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : role || '');
+  const roleLabel = role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (role || '');
+  // Hide designation badge if it duplicates the role label
+  const showDesignationBadge = !!staffData?.designation && staffData.designation !== roleLabel;
   const displayName = (bn ? staffData?.name_bn : staffData?.name_en)
     || staffData?.name_bn
     || staffData?.name_en
@@ -393,9 +395,9 @@ const AdminProfile = () => {
                     {roleLabel}
                   </span>
                 )}
-                {staffData?.designation && (
+                {showDesignationBadge && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80 border border-white/10">
-                    {staffData.designation}
+                    {staffData!.designation}
                   </span>
                 )}
                 {staffData?.status && (
