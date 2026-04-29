@@ -13,6 +13,7 @@ import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import { useThemeSettings } from '@/hooks/useThemeSettings';
 import { useSidebarSections } from '@/hooks/useSidebarSections';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 import LanguageToggle from './LanguageToggle';
 import BijoyToggle from './BijoyToggle';
 import NotificationPanel from './NotificationPanel';
@@ -68,17 +69,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const mobileMenuRef = useRef<HTMLElement | null>(null);
   const menuScrollPositionsRef = useRef({ desktop: 0, mobile: 0 });
 
-  // Fetch staff photo & profile for sidebar avatar
-  const { data: sidebarStaffPhoto } = useQuery({
-    queryKey: ['sidebar-staff-photo', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data } = await supabase.from('staff').select('photo_url, name_bn, name_en, designation').eq('user_id', user.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
+  // Fetch staff record for sidebar avatar (shared lookup: user_id → email fallback + auto-link)
+  const { data: sidebarStaffPhoto } = useCurrentStaff();
 
   const { data: sidebarProfile } = useQuery({
     queryKey: ['sidebar-profile', user?.id],
