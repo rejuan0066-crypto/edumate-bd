@@ -1017,16 +1017,28 @@ const AdminUserManagement = () => {
                                 <AlertTriangle className="w-4 h-4" />
                               </Button>
                             )}
-                            {/* Quick: Add to Staff */}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                              onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
-                              title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
-                            >
-                              <UserPlus className="w-4 h-4" />
-                            </Button>
+                            {/* Edit Identity (or Add to Staff if not linked) */}
+                            {staffByUser[u.id] ? (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => openProfileDialog(u)}
+                                title={bn ? 'পরিচয় ও পদবি এডিট করুন' : 'Edit Identity & Designation'}
+                              >
+                                <UserCircle className="w-4 h-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => navigate(`/admin/staff/add?email=${encodeURIComponent(u.email)}&full_name=${encodeURIComponent(u.full_name || '')}`)}
+                                title={bn ? 'স্টাফে যোগ করুন' : 'Add to Staff'}
+                              >
+                                <UserPlus className="w-4 h-4" />
+                              </Button>
+                            )}
                             {/* Quick: Add to Committee */}
                             <Button
                               size="icon"
