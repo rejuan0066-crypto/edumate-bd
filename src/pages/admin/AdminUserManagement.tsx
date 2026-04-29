@@ -1610,7 +1610,8 @@ const AdminUserManagement = () => {
                         {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
                       </Button>
                     </>
-                </div>
+                 </div>
+                )}
 
                 {/* "Change Name" field removed — the "Staff Name, Designation & Department" section
                     above already edits the canonical name (staff.name_bn) and the DB triggers
