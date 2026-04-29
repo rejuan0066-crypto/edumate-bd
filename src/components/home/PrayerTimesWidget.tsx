@@ -456,10 +456,26 @@ const PrayerTimesWidget = () => {
       </div>
 
       <div className="p-2">
-        {isLoading ? (
+        {isLoading && !timings ? (
           <div className="text-center py-6 text-xs text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
         ) : timings ? (
           <>
+            {usingFallback && (
+              <div className={`mb-2 px-2 py-1.5 rounded-md text-[10px] leading-relaxed ${
+                fallbackIsStale
+                  ? 'bg-destructive/10 border border-destructive/30 text-destructive'
+                  : 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400'
+              }`}>
+                {fallbackIsStale
+                  ? (bn
+                      ? `⚠️ অফলাইন: গতকাল (${cachedFallback!.date})-এর সর্বশেষ সংরক্ষিত সময় দেখানো হচ্ছে। ইন্টারনেট সংযোগ চেক করুন।`
+                      : `⚠️ Offline: showing last saved times from ${cachedFallback!.date}. Check internet connection.`)
+                  : (bn
+                      ? '📦 ক্যাশ থেকে দেখানো হচ্ছে — লাইভ আপডেট লোড হচ্ছে...'
+                      : '📦 Showing cached data — live update loading...')}
+              </div>
+            )}
+
             {/* Ishraq / forbidden-time info banner */}
             {timings.Sunrise && timings.Dhuhr && timings.Sunset && (
               <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-[10px] leading-relaxed">
