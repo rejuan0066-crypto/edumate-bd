@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
 
     // CREATE user
     if (action === "create") {
-      const { email, password, role, full_name } = body;
+      const { email, password, role, full_name, name_bn, designation, staff_category } = body;
 
       if (!email || !password) {
         return new Response(JSON.stringify({ error: "email and password are required" }), {
@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
       // Link to staff record if staff_id provided
       if (body.staff_id) {
         await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
-      } else if (role && (role === 'staff' || role === 'teacher' || role === 'admin')) {
+      } else if (staff_category || (role && (role === 'staff' || role === 'teacher' || role === 'admin'))) {
         // Auto-create staff record if no staff_id provided
         const { data: existingStaff } = await supabaseAdmin
           .from("staff")
@@ -257,10 +257,12 @@ Deno.serve(async (req) => {
         if (!existingStaff) {
           await supabaseAdmin.from("staff").insert({
             user_id: newUser.user.id,
-            name_bn: full_name || email.split('@')[0],
-            name_en: full_name || '',
+            name_bn: name_bn || full_name || email.split('@')[0],
+            name_en: full_name || name_bn || '',
             email: email,
-            department: role === 'teacher' ? 'teaching' : 'general',
+            designation: designation || null,
+            staff_category: staff_category || (role === 'teacher' ? 'teacher' : 'general'),
+            department: (staff_category || role) === 'teacher' ? 'teaching' : 'general',
             status: 'active',
           });
         }
