@@ -300,7 +300,16 @@ const AdminUserManagement = () => {
   const getUserDisplayName = (user?: UserItem | null) => {
     if (!user) return '';
     const linked = staffByUser[user.id];
-    return linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || user.email || '—';
+    const officer = adminOfficerByUser[user.id];
+    return linked?.name_bn || linked?.name_en || officer?.name_bn || user.full_name || user.profile_full_name || user.email || '—';
+  };
+
+  const getUserDesignation = (user?: UserItem | null): string | null => {
+    if (!user) return null;
+    const linked = staffByUser[user.id];
+    if (linked?.designation) return linked.designation;
+    const officer = adminOfficerByUser[user.id];
+    return officer?.designation || null;
   };
 
   const fetchUsers = useCallback(async () => {
@@ -1155,6 +1164,7 @@ const AdminUserManagement = () => {
                   <TableBody>
                     {users.map(u => {
                       const linked = staffByUser[u.id];
+                      const officer = adminOfficerByUser[u.id];
                       const displayName = getUserDisplayName(u);
                       return (
                       <TableRow key={u.id}>
@@ -1173,6 +1183,17 @@ const AdminUserManagement = () => {
                                   {getCategoryLabel(linked.staff_category)}
                                 </span>
                               )}
+                            </div>
+                          ) : officer ? (
+                            <div className="flex flex-col gap-1">
+                              {officer.designation && (
+                                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-400/40 w-fit">
+                                  {officer.designation}
+                                </Badge>
+                              )}
+                              <span className="text-[10px] uppercase tracking-wider text-amber-600">
+                                {bn ? 'প্রশাসনিক কর্মকর্তা' : 'Administrative Officer'}
+                              </span>
                             </div>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>

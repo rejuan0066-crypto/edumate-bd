@@ -1,0 +1,1 @@
+ALTER VIEW public.staff_directory SET (security_invoker = true);

@@ -7746,6 +7746,27 @@ export type Database = {
           },
         ]
       }
+      staff_directory: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          deleted_at: string | null
+          department: string | null
+          designation: string | null
+          email: string | null
+          id: string | null
+          joining_date: string | null
+          name_bn: string | null
+          name_en: string | null
+          phone: string | null
+          photo_url: string | null
+          source: string | null
+          staff_category: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       generate_staff_id: {

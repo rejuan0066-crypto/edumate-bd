@@ -24,10 +24,14 @@ const DashboardSearch = () => {
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,student_id.ilike.%${query}%,roll_number.ilike.%${query}%,phone.ilike.%${query}%`);
       const { data: staffData } = await supabase.from('staff').select('*')
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%`);
+      const { data: officerData } = await supabase.from('administrative_officers' as any).select('*')
+        .is('deleted_at', null)
+        .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%,officer_id.ilike.%${query}%`);
 
       const combined = [
         ...(studentData || []).map((s: any) => ({ ...s, _type: 'students' as const })),
         ...(staffData || []).map((s: any) => ({ ...s, _type: 'staff' as const })),
+        ...(((officerData || []) as any[])).map((s: any) => ({ ...s, _type: 'staff' as const, _source: 'administrative' })),
       ];
       setResults(combined);
     } catch (e) {
@@ -37,9 +41,9 @@ const DashboardSearch = () => {
   };
 
   const toggleStatus = async (item: any) => {
-    const table = item._type;
+    const table = item._source === 'administrative' ? 'administrative_officers' : item._type;
     const newStatus = item.status === 'active' ? 'inactive' : 'active';
-    const { error } = await supabase.from(table).update({ status: newStatus }).eq('id', item.id);
+    const { error } = await supabase.from(table as any).update({ status: newStatus }).eq('id', item.id);
     if (error) { toast.error(error.message); return; }
     toast.success(language === 'bn' ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     setResults(prev => prev.map(r => r.id === item.id ? { ...r, status: newStatus } : r));
@@ -48,7 +52,8 @@ const DashboardSearch = () => {
 
   const deleteItem = async (item: any) => {
     if (!confirm(language === 'bn' ? 'মুছে ফেলতে চান?' : 'Delete this record?')) return;
-    const { error } = await supabase.from(item._type).delete().eq('id', item.id);
+    const table = item._source === 'administrative' ? 'administrative_officers' : item._type;
+    const { error } = await supabase.from(table as any).update({ deleted_at: new Date().toISOString() }).eq('id', item.id);
     if (error) { toast.error(error.message); return; }
     toast.success(language === 'bn' ? 'মুছে ফেলা হয়েছে' : 'Deleted');
     setResults(prev => prev.filter(r => r.id !== item.id));
