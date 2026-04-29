@@ -1493,16 +1493,32 @@ const AdminUserManagement = () => {
             </DialogHeader>
             {profileUser && (
               <div className="space-y-5 pt-2">
+                {(() => {
+                  const linked = staffByUser[profileUser.id];
+                  const displayName = linked?.name_bn || linked?.name_en || profileUser.full_name || profileUser.profile_full_name || '—';
+                  const displayPhoto = linked?.photo_url;
+                  const displayDesignation = linked?.designation;
+                  const displayCategory = linked?.staff_category;
+                  return (
+                    <>
                 {/* User Info Card */}
                 <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                    <UserCircle className="w-8 h-8 text-primary" />
+                  <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+                    {displayPhoto ? <img src={displayPhoto} alt="" className="w-full h-full object-cover" /> : <UserCircle className="w-8 h-8 text-primary" />}
                   </div>
-                  <div>
-                    <p className="font-semibold text-lg">{profileUser.full_name || '—'}</p>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-lg truncate">{displayName}</p>
                     <p className="text-sm text-muted-foreground">{profileUser.email}</p>
+                    {(displayDesignation || displayCategory) && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {[displayDesignation, displayCategory].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
                   </div>
                 </div>
+                    </>
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg border bg-card">
