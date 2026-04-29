@@ -321,6 +321,22 @@ const PrayerTimesWidget = () => {
 
   const { activeIndex, activeRemainingMs } = getActiveInfo();
 
+  // Debug snapshot — only rendered in dev (Vite import.meta.env.DEV)
+  const nowMinDebug = timings ? nowMinutesInTz(now, tz) : 0;
+  const debugInfo = {
+    tz,
+    tzOffsetMin,
+    nowMin: Number(nowMinDebug.toFixed(2)),
+    nowHHMM: `${String(Math.floor(nowMinDebug / 60)).padStart(2, '0')}:${String(Math.floor(nowMinDebug % 60)).padStart(2, '0')}`,
+    activeIndex,
+    activePrayer: activeIndex >= 0 ? PRAYER_ORDER[activeIndex] : '—',
+    nextPrayer: activeIndex >= 0 ? PRAYER_ORDER[(activeIndex + 1) % PRAYER_ORDER.length] : '—',
+    remainingMs: activeRemainingMs,
+    method: effectiveMethod,
+    city: selectedCity,
+    country: selectedCountry,
+  };
+
   if (!config.show_prayer_times) return null;
 
   return (
