@@ -534,7 +534,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       queryClient.invalidateQueries({ queryKey: ['salary-records'] });
       queryClient.invalidateQueries({ queryKey: ['shift-time-audit-log'] });
       const msg = bn
-        ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} বিভাগ পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
+        ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} ডিপার্টমেন্ট পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
         : `Saved${changedCount > 0 ? ` • ${changedCount} category changes • ${totalRecalc} salary records refreshed` : ''}`;
       toast.success(msg);
     },
@@ -1305,7 +1305,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     </PopoverTrigger>
                     <PopoverContent align="end" side="bottom" sideOffset={8} avoidCollisions collisionPadding={16} className="w-72 max-h-[60vh] overflow-y-auto rounded-2xl border border-border/30 bg-background/95 backdrop-blur-2xl shadow-[0_16px_48px_-8px_hsl(220_20%_10%/0.15)] p-2 space-y-1 scrollbar-hidden hover:scrollbar-thin z-[9999]">
                       <div className="px-2 py-1">
-                        <p className="text-xs font-medium text-muted-foreground mb-2 px-2">{bn ? 'বিভাগ অনুযায়ী রিসেট করুন' : 'Reset by Category'}</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 px-2">{bn ? 'ডিপার্টমেন্ট অনুযায়ী রিসেট করুন' : 'Reset by Department'}</p>
                         {resettableStaffCategories.map(cat => (
                           <button key={cat.key} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors text-left" onClick={() => { setResetType('staff_category'); setResetStaffCategory(cat.key); setShowResetMenu(false); setShowResetDialog(true); }}>
                             <div className={`w-8 h-8 rounded-full ${cat.color} flex items-center justify-center shrink-0`}><cat.icon className="h-3.5 w-3.5" /></div>
@@ -1424,10 +1424,10 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 {/* Staff Category Filter */}
                 <Select value={selectedStaffCategory} onValueChange={setSelectedStaffCategory}>
                   <SelectTrigger className="w-44 h-8 text-xs">
-                    <SelectValue placeholder={bn ? 'বিভাগ' : 'Category'} />
+                    <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Categories'}</SelectItem>
+                    <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
                     <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
                     <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
                     <SelectItem value="support">{bn ? 'সাপোর্ট স্টাফ' : 'Support Staff'}</SelectItem>
@@ -1699,7 +1699,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
               <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
                 <Label className="font-semibold flex items-center gap-2">
                   <Clock className="h-4 w-4 text-primary" />
-                  {bn ? 'বিভাগ অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Category'}
+                  {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Department'}
                 </Label>
                 {dynamicStaffCategories.map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
                   <div key={cat.key} className="space-y-1">
@@ -1717,7 +1717,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   </div>
                 ))}
                 <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)} disabled={saveCategoryTimesMutation.isPending}>
-                  <Save className="h-3 w-3 mr-1" /> {bn ? 'বিভাগ শিফট সেভ করুন' : 'Save Category Shifts'}
+                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>
                 <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
                   {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}

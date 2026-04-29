@@ -898,10 +898,10 @@ const AdminIdCards = () => {
               <Select value={staffCategoryFilter} onValueChange={setStaffCategoryFilter}>
                 <SelectTrigger className="bg-background w-full sm:w-48">
                   <Filter className="w-4 h-4 mr-1 text-muted-foreground" />
-                  <SelectValue placeholder={bn ? 'বিভাগ' : 'Category'} />
+                  <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{bn ? 'সকল বিভাগ' : 'All Categories'}</SelectItem>
+                  <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
                   <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
                   <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
                   <SelectItem value="support">{bn ? 'অফিস কর্মচারী' : 'Support Staff'}</SelectItem>
