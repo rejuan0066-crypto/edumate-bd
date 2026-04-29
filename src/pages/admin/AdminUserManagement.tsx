@@ -140,6 +140,7 @@ const AdminUserManagement = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [profileEditName, setProfileEditName] = useState('');
   const [profileEditStaffNameBn, setProfileEditStaffNameBn] = useState('');
+  const [profileEditStaffNameEn, setProfileEditStaffNameEn] = useState('');
   const [profileEditDesignation, setProfileEditDesignation] = useState('');
   const [profileEditStaffCategory, setProfileEditStaffCategory] = useState('');
   const [profileEditEmail, setProfileEditEmail] = useState('');
@@ -514,6 +515,7 @@ const AdminUserManagement = () => {
     setProfileUser(user);
     setProfileEditName(unifiedName);
     setProfileEditStaffNameBn(linked?.name_bn || unifiedName);
+    setProfileEditStaffNameEn(linked?.name_en || linked?.name_bn || unifiedName);
     setProfileEditDesignation(linked?.designation || '');
     setProfileEditStaffCategory(linked?.staff_category || '');
     setProfileEditEmail(user.email);
@@ -540,6 +542,7 @@ const AdminUserManagement = () => {
           action: 'upsert_staff_identity',
           user_id: profileUser.id,
           name_bn: profileEditStaffNameBn.trim(),
+          name_en: (profileEditStaffNameEn.trim() || profileEditStaffNameBn.trim()),
           designation: profileEditDesignation || null,
           staff_category: profileEditStaffCategory,
         },
@@ -1561,9 +1564,15 @@ const AdminUserManagement = () => {
                     {bn ? 'স্টাফ নাম, পদবি ও ডিপার্টমেন্ট' : 'Staff Name, Designation & Department'}
                   </h3>
                   <>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
-                        <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
+                          <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+                          <Input value={profileEditStaffNameEn} onChange={e => setProfileEditStaffNameEn(e.target.value)} placeholder={bn ? 'ইংরেজি নাম লিখুন' : 'Enter English name'} />
+                        </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
