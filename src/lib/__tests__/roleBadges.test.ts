@@ -21,6 +21,7 @@ describe('getRoleDesignationBadges', () => {
       });
       expect(badges).toHaveLength(1);
       expect(badges[0].kind).toBe('role');
+    });
 
     it('shows both role and designation when distinct', () => {
       const badges = getRoleDesignationBadges({
