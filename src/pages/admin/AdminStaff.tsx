@@ -364,12 +364,25 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
           </div>
         </div>
 
-        <div className="card-elevated p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="relative max-w-md flex-1">
+        <div className="card-elevated p-4 flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+          <div className="relative max-w-md flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder={bn ? 'নাম, ফোন বা পদবী দিয়ে খুঁজুন...' : 'Search by name, phone or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder={bn ? 'নাম, আইডি, পদবী, ডিপার্টমেন্ট, ফোন...' : 'Search by name, ID, designation, department, phone...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className="flex gap-2">
+          {staffType === 'all' && (
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
+                {Object.keys(CATEGORY_LABELS).map((k) => (
+                  <SelectItem key={k} value={k}>{labelForCategory(k)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="flex gap-2 flex-wrap">
             <Button variant={statusFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('all')}>
               {bn ? 'সবগুলো' : 'All'} ({typeFiltered.length})
             </Button>
