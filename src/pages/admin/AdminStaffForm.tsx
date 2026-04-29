@@ -1017,7 +1017,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                       <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {(staffCategories as any[]).map((cat) => (
+                      {staffCategories.map((cat) => (
                         <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
                       ))}
                     </SelectContent>
