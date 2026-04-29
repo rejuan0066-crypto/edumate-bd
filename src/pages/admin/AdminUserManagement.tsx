@@ -1584,7 +1584,7 @@ const AdminUserManagement = () => {
                     </div>
                   </div>
                   {/* Staff-specific fields (designation, department) only for staff roles */}
-                  {profileUser.role !== 'parent' && profileUser.role !== 'student' && (
+                  {!['parent', 'student', 'admin', 'super_admin', 'moderator'].includes(profileUser.role) && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs text-muted-foreground">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
