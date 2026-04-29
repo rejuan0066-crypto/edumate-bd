@@ -635,7 +635,7 @@ Deno.serve(async (req) => {
 
     // UPSERT STAFF IDENTITY (admin assigns Bangla name, designation and category to a user)
     if (action === "upsert_staff_identity") {
-      const { user_id: targetUserId, name_bn, designation, staff_category } = body;
+      const { user_id: targetUserId, name_bn, name_en, designation, staff_category } = body;
       if (!targetUserId || !name_bn || !staff_category) {
         return new Response(JSON.stringify({ error: "user_id, name_bn and staff_category are required" }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -643,6 +643,7 @@ Deno.serve(async (req) => {
       }
 
       const trimmedName = String(name_bn).trim();
+      const trimmedNameEn = name_en ? String(name_en).trim() : trimmedName;
       const trimmedDesignation = designation ? String(designation).trim() : null;
       const category = String(staff_category).trim();
       const { data: { user: targetAuthUser } } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
@@ -664,7 +665,7 @@ Deno.serve(async (req) => {
       const staffPayload = {
         user_id: targetUserId,
         name_bn: trimmedName,
-        name_en: trimmedName,
+        name_en: trimmedNameEn,
         email: targetAuthUser?.email || null,
         designation: trimmedDesignation,
         staff_category: category,
