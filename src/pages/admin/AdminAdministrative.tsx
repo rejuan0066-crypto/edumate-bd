@@ -223,6 +223,7 @@ const AdminAdministrative = () => {
       setNewRow({ name_bn: '', name: '' });
     },
     onError: (e: any) => toast.error(e.message || 'Error'),
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
