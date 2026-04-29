@@ -604,6 +604,125 @@ const AdminUserManagement = () => {
     setProfileSaving(null);
   };
 
+  // Add user to administrative_officers table
+  const addToAdministrative = async () => {
+    if (!profileUser) return;
+    if (adminOfficerByUser[profileUser.id]) {
+      toast.info(bn ? 'এই ইউজার ইতিমধ্যে প্রশাসনিক কর্মকর্তায় আছে' : 'Already in administrative officers');
+      return;
+    }
+    const nameBn = (profileEditStaffNameBn.trim() || profileEditName.trim() || profileUser.full_name || '').trim();
+    if (!nameBn) {
+      toast.error(bn ? 'নাম দিন' : 'Enter name first');
+      return;
+    }
+    setLinkSaving('officer');
+    try {
+      const { data, error } = await supabase
+        .from('administrative_officers' as any)
+        .insert({
+          user_id: profileUser.id,
+          name_bn: nameBn,
+          name_en: profileEditStaffNameEn.trim() || nameBn,
+          designation: profileEditDesignation || null,
+          email: profileUser.email,
+        })
+        .select('id, name_bn, designation')
+        .single();
+      if (error) throw error;
+      const row = data as any;
+      setAdminOfficerByUser(prev => ({ ...prev, [profileUser.id]: { id: row.id, name_bn: row.name_bn, designation: row.designation } }));
+      toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তায় যোগ হয়েছে' : '✅ Added to administrative officers');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'যোগ করা ব্যর্থ' : 'Failed to add'));
+    }
+    setLinkSaving(null);
+  };
+
+  const removeFromAdministrative = async () => {
+    if (!profileUser) return;
+    const linked = adminOfficerByUser[profileUser.id];
+    if (!linked) return;
+    setLinkSaving('officer');
+    try {
+      const { error } = await supabase
+        .from('administrative_officers' as any)
+        .update({ deleted_at: new Date().toISOString(), user_id: null })
+        .eq('id', linked.id);
+      if (error) throw error;
+      setAdminOfficerByUser(prev => {
+        const next = { ...prev };
+        delete next[profileUser.id];
+        return next;
+      });
+      toast.success(bn ? '✅ প্রশাসনিক কর্মকর্তা থেকে সরানো হয়েছে' : '✅ Removed from administrative officers');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'সরানো ব্যর্থ' : 'Failed to remove'));
+    }
+    setLinkSaving(null);
+  };
+
+  const addToStaff = async () => {
+    if (!profileUser) return;
+    if (staffByUser[profileUser.id]) {
+      toast.info(bn ? 'এই ইউজার ইতিমধ্যে স্টাফে আছে' : 'Already in staff');
+      return;
+    }
+    if (!profileEditStaffCategory) {
+      toast.error(bn ? 'প্রথমে ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department first');
+      return;
+    }
+    const nameBn = (profileEditStaffNameBn.trim() || profileEditName.trim() || profileUser.full_name || '').trim();
+    if (!nameBn) {
+      toast.error(bn ? 'নাম দিন' : 'Enter name first');
+      return;
+    }
+    setLinkSaving('staff');
+    try {
+      const { data, error } = await supabase
+        .from('staff')
+        .insert({
+          user_id: profileUser.id,
+          name_bn: nameBn,
+          name_en: profileEditStaffNameEn.trim() || nameBn,
+          designation: profileEditDesignation || null,
+          staff_category: profileEditStaffCategory,
+          email: profileUser.email,
+        })
+        .select('id, name_bn, name_en, designation, staff_category, photo_url')
+        .single();
+      if (error) throw error;
+      setStaffByUser(prev => ({ ...prev, [profileUser.id]: data as LinkedStaff }));
+      toast.success(bn ? '✅ স্টাফে যোগ হয়েছে' : '✅ Added to staff');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'যোগ করা ব্যর্থ' : 'Failed to add'));
+    }
+    setLinkSaving(null);
+  };
+
+  const removeFromStaff = async () => {
+    if (!profileUser) return;
+    const linked = staffByUser[profileUser.id];
+    if (!linked) return;
+    setLinkSaving('staff');
+    try {
+      const { error } = await supabase
+        .from('staff')
+        .update({ deleted_at: new Date().toISOString(), user_id: null })
+        .eq('id', linked.id);
+      if (error) throw error;
+      setStaffByUser(prev => {
+        const next = { ...prev };
+        delete next[profileUser.id];
+        return next;
+      });
+      toast.success(bn ? '✅ স্টাফ থেকে সরানো হয়েছে' : '✅ Removed from staff');
+    } catch (err: any) {
+      toast.error(err?.message || (bn ? 'সরানো ব্যর্থ' : 'Failed to remove'));
+    }
+    setLinkSaving(null);
+  };
+
   // Custom role CRUD
   const openRoleDialog = (role?: CustomRole) => {
     if (role) {
