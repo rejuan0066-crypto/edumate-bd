@@ -669,9 +669,21 @@ Deno.serve(async (req) => {
         existingStaff = staffByEmail;
       }
 
-      const staffResult = existingStaff?.id
-        ? await supabaseAdmin.from("staff").update(staffPayload).eq("id", existingStaff.id).select("id, name_bn, name_en, designation, staff_category, photo_url").single()
-        : await supabaseAdmin.from("staff").insert(staffPayload).select("id, name_bn, name_en, designation, staff_category, photo_url").single();
+      // Update-only: if no staff record exists yet, do NOT auto-create one.
+      // The explicit "Add to Staff" action in /admin/user-management profile dialog
+      // is the only path that should insert a new staff row.
+      if (!existingStaff?.id) {
+        return new Response(JSON.stringify({ success: true, staff: null, skipped: true, reason: 'no_staff_record' }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const staffResult = await supabaseAdmin
+        .from("staff")
+        .update(staffPayload)
+        .eq("id", existingStaff.id)
+        .select("id, name_bn, name_en, designation, staff_category, photo_url")
+        .single();
 
       if (staffResult.error) {
         return new Response(JSON.stringify({ error: staffResult.error.message }), {
