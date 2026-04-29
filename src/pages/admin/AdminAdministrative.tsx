@@ -101,29 +101,48 @@ const AdminAdministrative = () => {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return officers;
-    return officers.filter(o =>
+    let list = officers;
+    if (statusFilter !== 'all') {
+      list = list.filter(o => (o.status || 'active') === statusFilter);
+    }
+    if (!q) return list;
+    return list.filter(o =>
       [o.name_bn, o.name_en, o.designation, o.department, o.phone, o.email, o.officer_id]
         .filter(Boolean)
         .some(v => String(v).toLowerCase().includes(q))
     );
-  }, [officers, search]);
+  }, [officers, search, statusFilter]);
+
+  const friendlyError = (e: any): string => {
+    const msg = String(e?.message || e || '');
+    if (msg.includes('DUPLICATE_PHONE') || (msg.includes('uq_admin_officers_phone') )) {
+      return bn ? 'এই ফোন নম্বর ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This phone number is already used by another administrative officer.';
+    }
+    if (msg.includes('DUPLICATE_EMAIL') || msg.includes('uq_admin_officers_email')) {
+      return bn ? 'এই ইমেইল ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This email is already used by another administrative officer.';
+    }
+    if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('permission')) {
+      return bn ? 'এই কাজটি করার অনুমতি আপনার নেই।' : 'You do not have permission to perform this action.';
+    }
+    return msg || (bn ? 'একটি ত্রুটি ঘটেছে' : 'An error occurred');
+  };
 
   const upsert = useMutation({
     mutationFn: async (payload: Partial<Officer>) => {
       const cleaned: any = { ...payload };
-      // Empty strings → null for optional fields
       ['name_en','designation','department','phone','email','address','photo_url','date_of_birth','nid','education','experience','previous_institute','responsibilities','office_room','officer_id'].forEach(k => {
         if (cleaned[k] === '') cleaned[k] = null;
       });
       cleaned.salary = Number(cleaned.salary || 0);
       if (editing) {
+        if (!canEditItem) throw new Error('PERMISSION_DENIED');
         const { error } = await supabase
           .from('administrative_officers' as any)
           .update(cleaned)
           .eq('id', editing.id);
         if (error) throw error;
       } else {
+        if (!canAddItem) throw new Error('PERMISSION_DENIED');
         const { error } = await supabase
           .from('administrative_officers' as any)
           .insert(cleaned);
@@ -137,11 +156,12 @@ const AdminAdministrative = () => {
       setEditing(null);
       setForm(emptyForm);
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => toast.error(friendlyError(e)),
   });
 
   const softDelete = useMutation({
     mutationFn: async (id: string) => {
+      if (!canDeleteItem) throw new Error('PERMISSION_DENIED');
       const { error } = await supabase
         .from('administrative_officers' as any)
         .update({ deleted_at: new Date().toISOString() })
@@ -153,7 +173,25 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: ['administrative-officers'] });
       setDelTarget(null);
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => toast.error(friendlyError(e)),
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: async (o: Officer) => {
+      if (!canEditItem) throw new Error('PERMISSION_DENIED');
+      const next = (o.status || 'active') === 'active' ? 'inactive' : 'active';
+      const { error } = await supabase
+        .from('administrative_officers' as any)
+        .update({ status: next })
+        .eq('id', o.id);
+      if (error) throw error;
+      return next;
+    },
+    onSuccess: (next) => {
+      toast.success(next === 'active' ? (bn ? 'সক্রিয় করা হয়েছে' : 'Activated') : (bn ? 'নিষ্ক্রিয় করা হয়েছে' : 'Deactivated'));
+      qc.invalidateQueries({ queryKey: ['administrative-officers'] });
+    },
+    onError: (e: any) => toast.error(friendlyError(e)),
   });
 
   const openAdd = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
