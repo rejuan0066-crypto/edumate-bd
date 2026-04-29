@@ -30,7 +30,7 @@ export const useCurrentStaff = () => {
 
       if (byUserId.data) return byUserId.data;
 
-      // 2) Fallback by email
+      // 2) Fallback by email in staff
       if (user.email) {
         const byEmail = await supabase
           .from('staff')
@@ -48,7 +48,40 @@ export const useCurrentStaff = () => {
             .eq('id', byEmail.data.id);
           return { ...byEmail.data, user_id: user.id };
         }
-        return byEmail.data;
+        if (byEmail.data) return byEmail.data;
+      }
+
+      // 3) Fallback to administrative_officers (by user_id, then email)
+      const mapAdmin = (a: any) => a ? ({
+        ...a,
+        staff_id: a.officer_id || a.staff_id || null,
+        staff_category: a.department || a.staff_category || null,
+        __source: 'administrative' as const,
+      }) : null;
+
+      const adminByUid = await supabase
+        .from('administrative_officers')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (adminByUid.data) return mapAdmin(adminByUid.data);
+
+      if (user.email) {
+        const adminByEmail = await supabase
+          .from('administrative_officers')
+          .select('*')
+          .eq('email', user.email)
+          .is('deleted_at', null)
+          .maybeSingle();
+        if (adminByEmail.data && !adminByEmail.data.user_id) {
+          await supabase
+            .from('administrative_officers')
+            .update({ user_id: user.id })
+            .eq('id', adminByEmail.data.id);
+          return mapAdmin({ ...adminByEmail.data, user_id: user.id });
+        }
+        if (adminByEmail.data) return mapAdmin(adminByEmail.data);
       }
 
       return null;
