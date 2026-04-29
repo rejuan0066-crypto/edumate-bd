@@ -672,12 +672,22 @@ Deno.serve(async (req) => {
         status: 'active',
       };
 
-      const { data: existingStaff } = await supabaseAdmin
+      let { data: existingStaff } = await supabaseAdmin
         .from("staff")
         .select("id")
         .eq("user_id", targetUserId)
         .is("deleted_at", null)
         .maybeSingle();
+
+      if (!existingStaff?.id && targetAuthUser?.email) {
+        const { data: staffByEmail } = await supabaseAdmin
+          .from("staff")
+          .select("id")
+          .eq("email", targetAuthUser.email)
+          .is("deleted_at", null)
+          .maybeSingle();
+        existingStaff = staffByEmail;
+      }
 
       const staffResult = existingStaff?.id
         ? await supabaseAdmin.from("staff").update(staffPayload).eq("id", existingStaff.id).select("id, name_bn, name_en, designation, staff_category, photo_url").single()
