@@ -160,6 +160,8 @@ const AdminUserManagement = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [createStaffCategory, setCreateStaffCategory] = useState('');
+  const [createDesignation, setCreateDesignation] = useState('');
   const [role, setRole] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   // Real-time duplicate check
@@ -386,7 +388,16 @@ const AdminUserManagement = () => {
     setCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'create', email: email.trim(), password, role: actualRole || undefined, full_name: fullName.trim() },
+        body: {
+          action: 'create',
+          email: email.trim(),
+          password,
+          role: actualRole || undefined,
+          full_name: fullName.trim(),
+          name_bn: fullName.trim(),
+          staff_category: createStaffCategory || undefined,
+          designation: createDesignation || undefined,
+        },
       });
       if (error || !data?.success) {
         const code = data?.error;
@@ -399,7 +410,7 @@ const AdminUserManagement = () => {
       }
       toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
       setDialogOpen(false);
-      setEmail(''); setPassword(''); setFullName(''); setRole('');
+      setEmail(''); setPassword(''); setFullName(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
       fetchUsers();
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
