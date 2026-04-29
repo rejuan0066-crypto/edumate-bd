@@ -311,6 +311,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     setJoiningDate(existingStaff.joining_date || '');
     setSalary(existingStaff.salary?.toString() || '');
     setPhotoUrl(existingStaff.photo_url || null);
+    setIncludeInPayroll((existingStaff as any).include_in_payroll ?? true);
+    setIncludeInAttendance((existingStaff as any).include_in_attendance ?? true);
+    setCustomRoleId((existingStaff as any).custom_role_id || 'none');
     if (sd.permanent_address) setPermanentAddr(sd.permanent_address);
     if (sd.present_address) setPresentAddr(sd.present_address);
     if (sd.parents) {
