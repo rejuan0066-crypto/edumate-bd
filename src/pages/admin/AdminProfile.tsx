@@ -359,9 +359,33 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  const roleLabel = role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (role || '');
-  // Hide designation badge if it duplicates the role label
-  const showDesignationBadge = !!staffData?.designation && staffData.designation !== roleLabel;
+  // ─── Unified role + designation badge resolver ───
+  // Single source of truth: returns deduplicated badges for use anywhere on the page.
+  const getRoleDesignationBadges = (): Array<{ key: string; label: string; kind: 'role' | 'designation' }> => {
+    const roleLabelMap: Record<string, { bn: string; en: string }> = {
+      super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
+      admin: { bn: 'অ্যাডমিন', en: 'Admin' },
+      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+      staff: { bn: 'স্টাফ', en: 'Staff' },
+    };
+    const norm = (s?: string | null) => (s || '').trim().toLowerCase();
+    const badges: Array<{ key: string; label: string; kind: 'role' | 'designation' }> = [];
+    const seen = new Set<string>();
+
+    if (role) {
+      const r = roleLabelMap[role];
+      const label = r ? (bn ? r.bn : r.en) : role;
+      badges.push({ key: 'role', label, kind: 'role' });
+      seen.add(norm(label));
+    }
+    const designation = staffData?.designation?.trim();
+    if (designation && !seen.has(norm(designation))) {
+      badges.push({ key: 'designation', label: designation, kind: 'designation' });
+    }
+    return badges;
+  };
+  const roleDesignationBadges = getRoleDesignationBadges();
+  const roleLabel = roleDesignationBadges.find((b) => b.kind === 'role')?.label || '';
   const displayName = (bn ? staffData?.name_bn : staffData?.name_en)
     || staffData?.name_bn
     || staffData?.name_en
