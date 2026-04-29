@@ -57,7 +57,14 @@ export function getWeekdayIdxInTz(date: Date, tz: string): number {
   return idx >= 0 ? idx : date.getDay();
 }
 
-/** Returns the IANA timezone offset label (e.g. "GMT+6") for the given timezone *now*. */
+/** Returns the calendar date parts (year, month 0-indexed, day) for a Date in the given timezone. */
+export function getDatePartsInTz(date: Date, tz: string): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: safeTz(tz), year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const get = (t: string) => parseInt(parts.find(p => p.type === t)?.value || '0', 10);
+  return { year: get('year'), month: get('month') - 1, day: get('day') };
+}
 export function getTzOffsetLabel(tz: string): string {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {
