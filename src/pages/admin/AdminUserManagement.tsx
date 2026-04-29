@@ -625,6 +625,7 @@ const AdminUserManagement = () => {
           name_bn: nameBn,
           name_en: profileEditStaffNameEn.trim() || nameBn,
           designation: profileEditDesignation || null,
+          department: profileEditStaffCategory || profileEditDesignation || 'administrative',
           email: profileUser.email,
         })
         .select('id, name_bn, designation')
