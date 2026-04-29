@@ -76,7 +76,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     queryKey: ['sidebar-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url, phone').eq('id', user.id).maybeSingle();
       return data;
     },
     enabled: !!user?.id,
@@ -544,11 +544,11 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           <div className="px-2 py-1.5 border-t border-white/8 shrink-0">
             <div className="flex items-center gap-2 px-1.5 py-1 rounded-lg bg-white/5 backdrop-blur-sm">
               <div className="w-6 h-6 rounded-full bg-sidebar-primary flex items-center justify-center shrink-0 overflow-hidden ring-1 ring-white/10">
-                {sidebarStaffPhoto?.photo_url ? (
-                  <img src={sidebarStaffPhoto.photo_url} alt="" className="w-full h-full object-cover" />
+                {(sidebarStaffPhoto?.photo_url || sidebarProfile?.avatar_url) ? (
+                  <img src={sidebarStaffPhoto?.photo_url || sidebarProfile?.avatar_url || ''} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[9px] font-bold text-sidebar-primary-foreground">
-                    {user?.email?.charAt(0).toUpperCase() || 'A'}
+                    {(sidebarProfile?.full_name || user?.email || 'A').charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>

@@ -544,7 +544,13 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       }
     },
     onSuccess: () => {
+      // Invalidate every cache that may show this staff record so the UI
+      // (sidebar, dashboard, profile, user list, etc.) reflects the change immediately.
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['current-staff'] });
+      queryClient.invalidateQueries({ queryKey: ['my-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['sidebar-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(bn ? (isEditMode ? `${titleConfig.bn} সফলভাবে আপডেট হয়েছে` : `${titleConfig.bn} সফলভাবে যোগ হয়েছে`) : (isEditMode ? `${titleConfig.en} updated successfully` : `${titleConfig.en} added successfully`));
       navigate(backPath);
     },
