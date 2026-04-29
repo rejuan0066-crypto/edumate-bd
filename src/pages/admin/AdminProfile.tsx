@@ -87,7 +87,8 @@ const AdminProfile = () => {
     enabled: !!user?.id,
   });
 
-  const { data: staffData, refetch: refetchStaff } = useCurrentStaff();
+  const { data: staffData, refetch: refetchStaff, isLoading: staffLoading, isFetched: staffFetched } = useCurrentStaff();
+  const noProfileRecord = !!user && staffFetched && !staffLoading && !staffData;
   const queryClient = useQueryClient();
 
   // ─── Designation & Staff Category editor ───
@@ -426,7 +427,25 @@ const AdminProfile = () => {
           </div>
         </div>
 
-        {/* ═══ Personal Info Card ═══ */}
+        {/* ═══ No-record fallback banner ═══ */}
+        {noProfileRecord && (
+          <div className="rounded-[28px] border border-amber-200/60 dark:border-amber-500/20 bg-amber-50/80 dark:bg-amber-500/5 backdrop-blur-xl p-6 sm:p-7 flex items-start gap-4" style={{ boxShadow: 'var(--shadow-card)' }}>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-300">
+              <User className="w-5 h-5" />
+            </div>
+            <div className="space-y-1.5 text-sm">
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                {bn ? 'প্রোফাইল রেকর্ড পাওয়া যায়নি' : 'No profile record found'}
+              </p>
+              <p className="text-amber-800/80 dark:text-amber-200/70 leading-relaxed">
+                {bn
+                  ? 'আপনার অ্যাকাউন্টের সাথে এখনও কোনো স্টাফ বা প্রশাসনিক কর্মকর্তা রেকর্ড সংযুক্ত করা হয়নি। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন অথবা User Management থেকে আপনাকে যোগ করতে বলুন। ইতোমধ্যে নিচের মৌলিক তথ্য (ইমেইল, পাসওয়ার্ড) ব্যবহার করতে পারবেন।'
+                  : 'No staff or administrative officer record is linked to your account yet. Please contact an administrator or ask them to add you from User Management. You can still use the basic info (email, password) below in the meantime.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-[32px] border border-border/15 bg-card/75 dark:bg-card/40 backdrop-blur-xl p-7 sm:p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h3 className="font-bold text-foreground mb-6 flex items-center gap-2.5 text-base">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><User className="w-4.5 h-4.5 text-primary" /></div>

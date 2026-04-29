@@ -7732,6 +7732,60 @@ export type Database = {
       }
     }
     Views: {
+      administrative_officers_public: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          department: string | null
+          designation: string | null
+          email: string | null
+          id: string | null
+          joining_date: string | null
+          name_bn: string | null
+          name_en: string | null
+          officer_id: string | null
+          phone: string | null
+          photo_url: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          id?: string | null
+          joining_date?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          officer_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          department?: string | null
+          designation?: string | null
+          email?: string | null
+          id?: string | null
+          joining_date?: string | null
+          name_bn?: string | null
+          name_en?: string | null
+          officer_id?: string | null
+          phone?: string | null
+          photo_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       committee_staff_ids: {
         Row: {
           staff_id: string | null
@@ -7790,6 +7844,48 @@ export type Database = {
       increment_inventory_stock: {
         Args: { p_amount: number; p_item_id: string }
         Returns: undefined
+      }
+      link_administrative_officer_by_email: {
+        Args: never
+        Returns: {
+          address: string | null
+          created_at: string
+          date_of_birth: string | null
+          deleted_at: string | null
+          department: string | null
+          designation: string | null
+          duty_end_time: string | null
+          duty_start_time: string | null
+          education: string | null
+          email: string | null
+          employment_type: string | null
+          experience: string | null
+          extra_data: Json | null
+          id: string
+          joining_date: string | null
+          name_bn: string
+          name_en: string | null
+          nid: string | null
+          office_room: string | null
+          officer_id: string | null
+          phone: string | null
+          photo_url: string | null
+          previous_institute: string | null
+          religion: string | null
+          residence_type: string | null
+          responsibilities: string | null
+          salary: number | null
+          sort_order: number | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "administrative_officers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       undo_committee_change: {
         Args: {
