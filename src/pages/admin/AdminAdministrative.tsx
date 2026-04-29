@@ -735,6 +735,127 @@ const AdminAdministrative = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Departments & Designations */}
+      <Dialog open={manageOpen} onOpenChange={setManageOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="w-5 h-5 text-emerald-600" />
+              {bn ? 'বিভাগ ও পদবি ব্যবস্থাপনা' : 'Manage Departments & Designations'}
+            </DialogTitle>
+          </DialogHeader>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '' }); }}>
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="department">{bn ? 'বিভাগসমূহ' : 'Departments'} ({departments.length})</TabsTrigger>
+              <TabsTrigger value="designation">{bn ? 'পদবিসমূহ' : 'Designations'} ({designations.length})</TabsTrigger>
+            </TabsList>
+
+            {(['department','designation'] as const).map((kind) => (
+              <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
+                {/* Add new row */}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                  <Input
+                    placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
+                    value={newRow.name_bn}
+                    onChange={(e) => setNewRow({ ...newRow, name_bn: e.target.value })}
+                  />
+                  <Input
+                    placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
+                    value={newRow.name}
+                    onChange={(e) => setNewRow({ ...newRow, name: e.target.value })}
+                  />
+                  <Button
+                    onClick={() => addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name })}
+                    disabled={!newRow.name_bn.trim() || addInline.isPending}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
+                  </Button>
+                </div>
+
+                {/* List */}
+                <div className="divide-y border rounded-[20px] overflow-hidden">
+                  {(kind === 'department' ? departments : designations).length === 0 ? (
+                    <div className="p-6 text-center text-sm text-muted-foreground">
+                      {bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}
+                    </div>
+                  ) : (
+                    (kind === 'department' ? departments : designations).map((row) => {
+                      const isEditing = editRow?.id === row.id;
+                      return (
+                        <div key={row.id} className="flex items-center gap-2 p-3 hover:bg-muted/20">
+                          {isEditing ? (
+                            <>
+                              <Input
+                                className="flex-1"
+                                value={editRow!.name_bn}
+                                onChange={(e) => setEditRow({ ...editRow!, name_bn: e.target.value })}
+                                placeholder={bn ? 'বাংলা নাম' : 'Bangla'}
+                              />
+                              <Input
+                                className="flex-1"
+                                value={editRow!.name}
+                                onChange={(e) => setEditRow({ ...editRow!, name: e.target.value })}
+                                placeholder={bn ? 'ইংরেজি নাম' : 'English'}
+                              />
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full text-emerald-600"
+                                onClick={() => updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name })}
+                                disabled={updateOption.isPending}
+                              >
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => setEditRow(null)}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex-1">
+                                <div className="font-medium text-sm">{row.name_bn}</div>
+                                {row.name && row.name !== row.name_bn && (
+                                  <div className="text-xs text-muted-foreground">{row.name}</div>
+                                )}
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full"
+                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '' })}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full text-destructive"
+                                onClick={() => {
+                                  if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete this entry?')) {
+                                    deleteOption.mutate({ kind, id: row.id });
+                                  }
+                                }}
+                                disabled={deleteOption.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageOpen(false)}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
