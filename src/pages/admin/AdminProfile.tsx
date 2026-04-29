@@ -13,6 +13,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { useOtpRequirements, isOtpRequiredFor } from '@/hooks/useOtpRequirements';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { getRoleDesignationBadges } from '@/lib/roleBadges';
 import { useAuth } from '@/hooks/useAuth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
@@ -359,32 +360,12 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  // ─── Unified role + designation badge resolver ───
-  // Single source of truth: returns deduplicated badges for use anywhere on the page.
-  const getRoleDesignationBadges = (): Array<{ key: string; label: string; kind: 'role' | 'designation' }> => {
-    const roleLabelMap: Record<string, { bn: string; en: string }> = {
-      super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
-      admin: { bn: 'অ্যাডমিন', en: 'Admin' },
-      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-      staff: { bn: 'স্টাফ', en: 'Staff' },
-    };
-    const norm = (s?: string | null) => (s || '').trim().toLowerCase();
-    const badges: Array<{ key: string; label: string; kind: 'role' | 'designation' }> = [];
-    const seen = new Set<string>();
-
-    if (role) {
-      const r = roleLabelMap[role];
-      const label = r ? (bn ? r.bn : r.en) : role;
-      badges.push({ key: 'role', label, kind: 'role' });
-      seen.add(norm(label));
-    }
-    const designation = staffData?.designation?.trim();
-    if (designation && !seen.has(norm(designation))) {
-      badges.push({ key: 'designation', label: designation, kind: 'designation' });
-    }
-    return badges;
-  };
-  const roleDesignationBadges = getRoleDesignationBadges();
+  // ─── Unified role + designation badges (single source of truth in src/lib/roleBadges.ts) ───
+  const roleDesignationBadges = getRoleDesignationBadges({
+    role,
+    designation: staffData?.designation,
+    bn,
+  });
   const roleLabel = roleDesignationBadges.find((b) => b.kind === 'role')?.label || '';
   const displayName = (bn ? staffData?.name_bn : staffData?.name_en)
     || staffData?.name_bn
