@@ -543,6 +543,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                     <SelectItem value="general">{bn ? 'সহায়ক' : 'General'}</SelectItem>
                     <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
                     <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                    {customRoles.length > 0 && (
+                      <>
+                        <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase">{bn ? 'কাস্টম রোল' : 'Custom Roles'}</div>
+                        {(customRoles as any[]).map((cr) => (
+                          <SelectItem key={cr.id} value={`custom:${cr.id}`}>
+                            {(bn ? cr.name_bn : cr.name) || cr.name} <span className="text-[10px] text-muted-foreground ml-1">({cr.base_role})</span>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
