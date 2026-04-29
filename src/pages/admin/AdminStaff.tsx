@@ -469,7 +469,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         {canEditItem && s.status === 'active' && (
                           <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
                         )}
-                        {canEditItem && (
+                        {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
+                          <button
+                            onClick={() => statusMutation.mutate({ id: s.id, status: s.status === 'active' ? 'inactive' : 'active' })}
+                            className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'}`}
+                            title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
+                            disabled={statusMutation.isPending}
+                          >
+                            {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                          </button>
+                        )}
                           <button onClick={() => {
                             const cat = getStaffCategory(s, designationsMap);
                             const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
