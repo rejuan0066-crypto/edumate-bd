@@ -524,6 +524,9 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         joining_date: joiningDate || null,
         staff_data: staffData as any,
         staff_category: staffCategory !== 'all' ? staffCategory : 'general',
+        include_in_payroll: includeInPayroll,
+        include_in_attendance: includeInAttendance,
+        custom_role_id: customRoleId !== 'none' ? customRoleId : null,
       };
 
       if (isEditMode && editId) {
