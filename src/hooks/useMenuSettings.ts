@@ -43,6 +43,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'administrative-staff', path: '/admin/administrative-staff', label_bn: 'প্রশাসনিক স্টাফ', label_en: 'Administrative Staff', icon: 'Briefcase', visible: true, sort_order: 1 },
     { id: 'support-staff', path: '/admin/support-staff', label_bn: 'সহায়ক স্টাফ', label_en: 'Support Staff', icon: 'Wrench', visible: true, sort_order: 2 },
     { id: 'general-staff', path: '/admin/general-staff', label_bn: 'সাধারণ স্টাফ', label_en: 'General Staff', icon: 'HardHat', visible: true, sort_order: 3 },
+    { id: 'directors', path: '/admin/directors', label_bn: 'পরিচালকবৃন্দ', label_en: 'Directors', icon: 'Crown', visible: true, sort_order: 35 },
+    { id: 'committee-members', path: '/admin/committee-members', label_bn: 'কমিটি সদস্য', label_en: 'Committee Members', icon: 'Users', visible: true, sort_order: 36 },
     { id: 'designations', path: '/admin/designations', label_bn: 'পদবি তৈরি', label_en: 'Designations', icon: 'Tag', visible: true, sort_order: 4 },
     { id: 'joining-letters', path: '/admin/joining-letters', label_bn: 'যোগদান পত্র', label_en: 'Joining Letters', icon: 'FilePlus', visible: true, sort_order: 5 },
     { id: 'resign-letters', path: '/admin/resign-letters', label_bn: 'পদত্যাগ পত্র', label_en: 'Resign Letters', icon: 'FileSignature', visible: true, sort_order: 6 },
