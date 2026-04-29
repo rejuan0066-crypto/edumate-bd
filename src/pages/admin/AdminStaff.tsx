@@ -214,17 +214,57 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
 
-  const filtered = typeFiltered.filter((s: any) => {
+  const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
+    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+    administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
+    support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
+    general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+    director: { bn: 'পরিচালক', en: 'Director' },
+    committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
+  };
+  const labelForCategory = (key: string) => CATEGORY_LABELS[key]?.[bn ? 'bn' : 'en'] || key;
+
+  const preFiltered = typeFiltered.filter((s: any) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
+    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap) !== departmentFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
+    const cat = getStaffCategory(s, designationsMap);
+    const catLabelBn = CATEGORY_LABELS[cat]?.bn || '';
+    const catLabelEn = CATEGORY_LABELS[cat]?.en || '';
     return s.name_bn?.toLowerCase().includes(q)
       || s.name_en?.toLowerCase().includes(q)
       || s.designation?.toLowerCase().includes(q)
       || (s as any).staff_id?.toLowerCase().includes(q)
       || (s as any).phone?.toLowerCase().includes(q)
-      || (s as any).mobile?.toLowerCase().includes(q);
+      || (s as any).mobile?.toLowerCase().includes(q)
+      || cat.toLowerCase().includes(q)
+      || catLabelBn.toLowerCase().includes(q)
+      || catLabelEn.toLowerCase().includes(q)
+      || (s.department || '').toLowerCase().includes(q);
   });
+
+  const getSortVal = (s: any): string => {
+    switch (sortKey) {
+      case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
+      case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
+      case 'designation': return s.designation || '';
+      case 'department': return labelForCategory(getStaffCategory(s, designationsMap));
+      case 'status': return s.status || '';
+    }
+  };
+  const filtered = [...preFiltered].sort((a, b) => {
+    const av = getSortVal(a);
+    const bv = getSortVal(b);
+    const cmp = String(av).localeCompare(String(bv), bn ? 'bn' : 'en', { numeric: true, sensitivity: 'base' });
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+  const sortIcon = (key: typeof sortKey) => sortKey !== key ? '↕' : (sortDir === 'asc' ? '↑' : '↓');
 
   const openAccountDialog = (staff: any) => {
     setSelectedStaff(staff);
