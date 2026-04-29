@@ -47,12 +47,20 @@ const PRAYER_NAMES: Record<string, { en: string; bn: string; icon: string }> = {
 
 const toBanglaNum = (str: string) => str.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 
-const parseTime = (timeStr: string): Date => {
+// Convert "HH:MM" string to total minutes since midnight (timezone-agnostic)
+const timeToMinutes = (timeStr: string): number => {
   const clean = timeStr.replace(/\s*\(.*\)/, '');
   const [h, m] = clean.split(':').map(Number);
-  const now = new Date();
-  now.setHours(h, m, 0, 0);
-  return now;
+  return (h || 0) * 60 + (m || 0);
+};
+
+// Get current time in the target timezone as minutes since midnight
+const nowMinutesInTz = (now: Date, tz: string): number => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).formatToParts(now);
+  const get = (t: string) => Number(parts.find(p => p.type === t)?.value || 0);
+  return get('hour') * 60 + get('minute') + get('second') / 60;
 };
 
 const formatCountdown = (ms: number, isBn: boolean): string => {
