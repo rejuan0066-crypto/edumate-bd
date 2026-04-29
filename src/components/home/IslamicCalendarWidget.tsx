@@ -400,6 +400,35 @@ const IslamicCalendarWidget = () => {
           </ScrollArea>
         )}
       </div>
+
+      {/* Dev-only debug panel: device TZ vs forced BD TZ, time & weekday */}
+      {import.meta.env.DEV && (() => {
+        const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'unknown';
+        const deviceTime = now.toLocaleTimeString('en-US', { hour12: false });
+        const deviceWeekday = EN_DAYS[now.getDay()];
+        const debug = {
+          deviceTz,
+          deviceTime,
+          deviceWeekday,
+          forcedTz: BD_TZ,
+          bdTime: timeStr,
+          bdWeekdayShort,
+          bdWeekdayIdx,
+          safeWeekdayIdx,
+          dayName,
+          isoUtc: now.toISOString(),
+        };
+        return (
+          <details className="border-t border-border bg-muted/40 px-3 py-2 text-[10px] font-mono text-muted-foreground">
+            <summary className="cursor-pointer select-none font-semibold text-foreground">
+              🛠 Calendar Debug · device={deviceTz} · forced={BD_TZ} · {bdWeekdayShort}
+            </summary>
+            <pre className="mt-1 whitespace-pre-wrap break-all leading-relaxed">
+              {JSON.stringify(debug, null, 2)}
+            </pre>
+          </details>
+        );
+      })()}
     </div>
   );
 };
