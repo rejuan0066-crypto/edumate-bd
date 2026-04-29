@@ -7823,6 +7823,10 @@ export type Database = {
       }
     }
     Functions: {
+      generate_administrative_officer_id: {
+        Args: { p_year?: number }
+        Returns: string
+      }
       generate_staff_id: {
         Args: { p_category_key: string; p_joining_year?: number }
         Returns: string
