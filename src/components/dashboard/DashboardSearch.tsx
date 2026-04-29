@@ -41,9 +41,9 @@ const DashboardSearch = () => {
   };
 
   const toggleStatus = async (item: any) => {
-    const table = item._type;
+    const table = item._source === 'administrative' ? 'administrative_officers' : item._type;
     const newStatus = item.status === 'active' ? 'inactive' : 'active';
-    const { error } = await supabase.from(table).update({ status: newStatus }).eq('id', item.id);
+    const { error } = await supabase.from(table as any).update({ status: newStatus }).eq('id', item.id);
     if (error) { toast.error(error.message); return; }
     toast.success(language === 'bn' ? 'স্ট্যাটাস আপডেট হয়েছে' : 'Status updated');
     setResults(prev => prev.map(r => r.id === item.id ? { ...r, status: newStatus } : r));
@@ -52,7 +52,8 @@ const DashboardSearch = () => {
 
   const deleteItem = async (item: any) => {
     if (!confirm(language === 'bn' ? 'মুছে ফেলতে চান?' : 'Delete this record?')) return;
-    const { error } = await supabase.from(item._type).delete().eq('id', item.id);
+    const table = item._source === 'administrative' ? 'administrative_officers' : item._type;
+    const { error } = await supabase.from(table as any).update({ deleted_at: new Date().toISOString() }).eq('id', item.id);
     if (error) { toast.error(error.message); return; }
     toast.success(language === 'bn' ? 'মুছে ফেলা হয়েছে' : 'Deleted');
     setResults(prev => prev.filter(r => r.id !== item.id));
