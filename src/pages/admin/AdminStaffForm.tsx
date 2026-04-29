@@ -543,7 +543,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
         previous_institute: prevInstitute || null,
         joining_date: joiningDate || null,
         staff_data: staffData as any,
-        staff_category: staffCategory !== 'all' ? staffCategory : 'general',
+        staff_category: selectedStaffCategory || initialStaffCategory,
         include_in_payroll: includeInPayroll,
         include_in_attendance: includeInAttendance,
         custom_role_id: customRoleId !== 'none' ? customRoleId : null,
