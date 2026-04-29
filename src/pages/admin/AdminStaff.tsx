@@ -411,13 +411,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               <table className="w-full">
                 <thead className="bg-secondary/50">
                    <tr>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'নাম' : 'Name'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্টাফ আইডি' : 'Staff ID'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'পদবী' : 'Designation'}</th>
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('name')}>
+                       {bn ? 'নাম' : 'Name'} <span className="ml-1 opacity-60">{sortIcon('name')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('staff_id')}>
+                       {bn ? 'স্টাফ আইডি' : 'Staff ID'} <span className="ml-1 opacity-60">{sortIcon('staff_id')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('designation')}>
+                       {bn ? 'পদবী' : 'Designation'} <span className="ml-1 opacity-60">{sortIcon('designation')}</span>
+                     </th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('department')}>
+                       {bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="ml-1 opacity-60">{sortIcon('department')}</span>
+                     </th>
                      <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'মোবাইল' : 'Mobile'}</th>
                      {isAdminRole(role) && <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকাউন্ট' : 'Account'}</th>}
-                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
+                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase cursor-pointer select-none hover:text-foreground" onClick={() => toggleSort('status')}>
+                       {bn ? 'স্ট্যাটাস' : 'Status'} <span className="ml-1 opacity-60">{sortIcon('status')}</span>
+                     </th>
                      <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">{bn ? 'অ্যাকশন' : 'Action'}</th>
                    </tr>
                 </thead>
