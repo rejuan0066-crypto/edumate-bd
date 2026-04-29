@@ -506,6 +506,10 @@ const AdminProfile = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ═══ Email Change Card ═══ */}
         <div className="rounded-[32px] border border-border/15 bg-card/75 dark:bg-card/40 backdrop-blur-xl p-7 sm:p-8" style={{ boxShadow: 'var(--shadow-card)' }}>
           <h3 className="font-bold text-foreground mb-6 flex items-center gap-2.5 text-base">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><Mail className="w-4.5 h-4.5 text-primary" /></div>
