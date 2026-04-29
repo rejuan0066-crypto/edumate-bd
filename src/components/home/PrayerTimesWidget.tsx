@@ -104,20 +104,25 @@ const PrayerTimesWidget = () => {
   const selectedCity = effectiveCountry === 'BD' ? effectiveCity : COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka';
   const selectedCountry = COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Bangladesh';
 
+  // Date key changes at midnight so query refetches the next day automatically
+  const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
   const { data: prayerData, isLoading } = useQuery({
-    queryKey: ['prayer-times', selectedCity, selectedCountry, config.calculation_method],
+    queryKey: ['prayer-times', selectedCity, selectedCountry, config.calculation_method, todayKey],
     queryFn: async () => {
       const today = new Date();
       const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
-      const res = await fetch(
-        `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${config.calculation_method}`
-      );
+      // Aladhan returns local times for the requested city — pass the timezone to be safe
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dhaka';
+      const url = `https://api.aladhan.com/v1/timingsByCity/${dateStr}?city=${encodeURIComponent(selectedCity)}&country=${encodeURIComponent(selectedCountry)}&method=${config.calculation_method}&timezonestring=${encodeURIComponent(tz)}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch prayer times');
       const json = await res.json();
       return json.data;
     },
-    staleTime: 1000 * 60 * 30,
-    refetchInterval: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 15,
+    refetchInterval: 1000 * 60 * 30,
+    refetchOnWindowFocus: true,
   });
 
   const timings = prayerData?.timings;
