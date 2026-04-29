@@ -1011,10 +1011,10 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 </div>
                 )}
                 <div>
-                  <Label>{bn ? 'স্টাফ বিভাগ' : 'Staff Category'} <span className="text-destructive">*</span></Label>
+                  <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'} <span className="text-destructive">*</span></Label>
                   <Select value={selectedStaffCategory} onValueChange={(value) => { setSelectedStaffCategory(value); setDesignation(''); }}>
                     <SelectTrigger className="bg-background mt-1">
-                      <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select category'} />
+                      <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট নির্বাচন' : 'Select department'} />
                     </SelectTrigger>
                     <SelectContent>
                       {staffCategories.map((cat) => (
