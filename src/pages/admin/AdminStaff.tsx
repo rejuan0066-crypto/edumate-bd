@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
 import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
 import { toast } from 'sonner';
@@ -215,7 +215,12 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return s.name_bn?.toLowerCase().includes(q) || s.name_en?.toLowerCase().includes(q) || s.designation?.toLowerCase().includes(q) || (s as any).staff_id?.toLowerCase().includes(q);
+    return s.name_bn?.toLowerCase().includes(q)
+      || s.name_en?.toLowerCase().includes(q)
+      || s.designation?.toLowerCase().includes(q)
+      || (s as any).staff_id?.toLowerCase().includes(q)
+      || (s as any).phone?.toLowerCase().includes(q)
+      || (s as any).mobile?.toLowerCase().includes(q);
   });
 
   const openAccountDialog = (staff: any) => {
@@ -319,7 +324,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         <div className="card-elevated p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder={bn ? 'নাম বা পদবী দিয়ে খুঁজুন...' : 'Search by name or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder={bn ? 'নাম, ফোন বা পদবী দিয়ে খুঁজুন...' : 'Search by name, phone or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button variant={statusFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('all')}>
@@ -463,6 +468,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         <button onClick={() => setViewStaff(s)} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}><Eye className="w-4 h-4" /></button>
                         {canEditItem && s.status === 'active' && (
                           <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
+                        )}
+                        {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
+                          <button
+                            onClick={() => statusMutation.mutate({ id: s.id, status: s.status === 'active' ? 'inactive' : 'active' })}
+                            className={`p-2 rounded-lg ${s.status === 'active' ? 'hover:bg-destructive/10 text-muted-foreground hover:text-destructive' : 'hover:bg-success/10 text-muted-foreground hover:text-success'}`}
+                            title={s.status === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Inactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
+                            disabled={statusMutation.isPending}
+                          >
+                            {s.status === 'active' ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                          </button>
                         )}
                         {canEditItem && (
                           <button onClick={() => {
