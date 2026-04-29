@@ -38,8 +38,8 @@ export default function AdminShiftAuditLog() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {bn
-              ? 'প্রতিটি বিভাগ শিফট টাইম পরিবর্তন এবং প্রভাবিত স্টাফ/বেতন রেকর্ডের তালিকা।'
-              : 'Every category shift time change and the affected staff / salary records.'}
+              ? 'প্রতিটি ডিপার্টমেন্ট শিফট টাইম পরিবর্তন এবং প্রভাবিত স্টাফ/বেতন রেকর্ডের তালিকা।'
+              : 'Every department shift time change and the affected staff / salary records.'}
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>

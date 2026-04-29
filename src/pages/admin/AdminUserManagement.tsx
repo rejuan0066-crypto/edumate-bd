@@ -529,7 +529,7 @@ const AdminUserManagement = () => {
       return;
     }
     if (!profileEditStaffCategory) {
-      toast.error(bn ? 'বিভাগ নির্বাচন করুন' : 'Select category');
+      toast.error(bn ? 'ডিপার্টমেন্ট নির্বাচন করুন' : 'Select department');
       return;
     }
 
@@ -565,7 +565,7 @@ const AdminUserManagement = () => {
         queryClient.invalidateQueries({ queryKey: ['users'] }),
       ]);
       await fetchUsers();
-      toast.success(bn ? '✅ বাংলা নাম, পদবি ও বিভাগ সেভ হয়েছে' : '✅ Bangla name, designation and category saved');
+      toast.success(bn ? '✅ বাংলা নাম, পদবি ও ডিপার্টমেন্ট সেভ হয়েছে' : '✅ Bangla name, designation and department saved');
     } catch (err: any) {
       toast.error(err?.message || (bn ? 'স্টাফ তথ্য সেভ ব্যর্থ' : 'Failed to save staff info'));
     }
@@ -856,10 +856,10 @@ const AdminUserManagement = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <Label>{bn ? 'স্টাফ বিভাগ' : 'Staff Category'}</Label>
+                        <Label>{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
                         <Select value={createStaffCategory} onValueChange={(value) => { setCreateStaffCategory(value); setCreateDesignation(''); }}>
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder={bn ? 'বিভাগ' : 'Category'} />
+                            <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট' : 'Department'} />
                           </SelectTrigger>
                           <SelectContent>
                             {staffCategories.map((cat) => (
@@ -962,7 +962,7 @@ const AdminUserManagement = () => {
                     <TableRow>
                       <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                       <TableHead>{bn ? 'ইমেইল' : 'Email'}</TableHead>
-                      <TableHead>{bn ? 'পদবি / বিভাগ' : 'Designation / Category'}</TableHead>
+                      <TableHead>{bn ? 'পদবি / ডিপার্টমেন্ট' : 'Designation / Department'}</TableHead>
                       <TableHead>{bn ? 'রোল' : 'Role'}</TableHead>
                       <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                       <TableHead>{bn ? 'তৈরির তারিখ' : 'Created'}</TableHead>
@@ -1558,7 +1558,7 @@ const AdminUserManagement = () => {
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
                   <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
                     <Tag className="w-5 h-5" />
-                    {bn ? 'স্টাফ নাম, পদবি ও বিভাগ' : 'Staff Name, Designation & Category'}
+                    {bn ? 'স্টাফ নাম, পদবি ও ডিপার্টমেন্ট' : 'Staff Name, Designation & Department'}
                   </h3>
                   <>
                       <div className="space-y-1">
@@ -1567,10 +1567,10 @@ const AdminUserManagement = () => {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">{bn ? 'বিভাগ' : 'Category'}</Label>
+                          <Label className="text-xs text-muted-foreground">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
                           <Select value={profileEditStaffCategory} onValueChange={(value) => { setProfileEditStaffCategory(value); setProfileEditDesignation(''); }}>
                             <SelectTrigger>
-                              <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select category'} />
+                              <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট নির্বাচন' : 'Select department'} />
                             </SelectTrigger>
                             <SelectContent>
                               {staffCategories.map((cat) => (
