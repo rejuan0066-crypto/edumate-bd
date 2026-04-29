@@ -359,7 +359,9 @@ const AdminProfile = () => {
     setPwCountdown(0);
   };
 
-  const roleLabel = staffData?.designation || (role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : role || '');
+  const roleLabel = role === 'super_admin' ? (bn ? 'সুপার অ্যাডমিন' : 'Super Admin') : role === 'admin' ? (bn ? 'অ্যাডমিন' : 'Admin') : role === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : role === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (role || '');
+  // Hide designation badge if it duplicates the role label
+  const showDesignationBadge = !!staffData?.designation && staffData.designation !== roleLabel;
   const displayName = (bn ? staffData?.name_bn : staffData?.name_en)
     || staffData?.name_bn
     || staffData?.name_en
