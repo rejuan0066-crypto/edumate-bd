@@ -87,7 +87,8 @@ const AdminProfile = () => {
     enabled: !!user?.id,
   });
 
-  const { data: staffData, refetch: refetchStaff } = useCurrentStaff();
+  const { data: staffData, refetch: refetchStaff, isLoading: staffLoading, isFetched: staffFetched } = useCurrentStaff();
+  const noProfileRecord = !!user && staffFetched && !staffLoading && !staffData;
   const queryClient = useQueryClient();
 
   // ─── Designation & Staff Category editor ───
