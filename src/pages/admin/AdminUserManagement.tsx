@@ -229,6 +229,9 @@ const AdminUserManagement = () => {
     },
   });
 
+  // Map of user_id -> linked staff (for showing designation/category in the user list)
+  const [staffByUser, setStaffByUser] = useState<Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }>>({});
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -236,7 +239,25 @@ const AdminUserManagement = () => {
         method: 'GET',
       });
       if (error) throw error;
-      setUsers(data?.users || []);
+      const list: UserItem[] = data?.users || [];
+      setUsers(list);
+
+      // Pull linked staff records (designation + staff_category) for the listed users
+      const ids = list.map(u => u.id).filter(Boolean);
+      if (ids.length > 0) {
+        const { data: staffRows } = await supabase
+          .from('staff')
+          .select('user_id, designation, staff_category, photo_url')
+          .in('user_id', ids)
+          .is('deleted_at', null);
+        const map: Record<string, { designation: string | null; staff_category: string | null; photo_url: string | null }> = {};
+        (staffRows || []).forEach(r => {
+          if (r.user_id) map[r.user_id] = { designation: r.designation, staff_category: r.staff_category, photo_url: r.photo_url };
+        });
+        setStaffByUser(map);
+      } else {
+        setStaffByUser({});
+      }
     } catch {
       toast.error(bn ? 'ইউজার তালিকা লোড ব্যর্থ' : 'Failed to load users');
     }
@@ -764,6 +785,7 @@ const AdminUserManagement = () => {
                     <TableRow>
                       <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                       <TableHead>{bn ? 'ইমেইল' : 'Email'}</TableHead>
+                      <TableHead>{bn ? 'পদবি / ক্যাটাগরি' : 'Designation / Category'}</TableHead>
                       <TableHead>{bn ? 'রোল' : 'Role'}</TableHead>
                       <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                       <TableHead>{bn ? 'তৈরির তারিখ' : 'Created'}</TableHead>
@@ -771,10 +793,30 @@ const AdminUserManagement = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map(u => (
+                    {users.map(u => {
+                      const linked = staffByUser[u.id];
+                      return (
                       <TableRow key={u.id}>
                         <TableCell className="font-medium">{u.full_name || '—'}</TableCell>
                         <TableCell>{u.email}</TableCell>
+                        <TableCell>
+                          {linked ? (
+                            <div className="flex flex-col gap-1">
+                              {linked.designation && (
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/30 w-fit">
+                                  {linked.designation}
+                                </Badge>
+                              )}
+                              {linked.staff_category && (
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                                  {linked.staff_category}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>{roleBadge(u.role)}</TableCell>
                         <TableCell>
                           {u.status === 'approved' ? (
@@ -876,7 +918,8 @@ const AdminUserManagement = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
