@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
-import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz, getTzOffsetLabel, getDeviceTz } from '@/lib/timezone';
+import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz, getTzOffsetLabel, getDeviceTz, usingFallbackTz } from '@/lib/timezone';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 const toArabicNum = (str: string) => String(str).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
