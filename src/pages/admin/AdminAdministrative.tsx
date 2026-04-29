@@ -304,12 +304,28 @@ const AdminAdministrative = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => openEdit(o)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full text-destructive" onClick={() => setDelTarget(o)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canEditItem && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="rounded-full"
+                        onClick={() => toggleStatus.mutate(o)}
+                        disabled={toggleStatus.isPending}
+                        title={(o.status || 'active') === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
+                      >
+                        {(o.status || 'active') === 'active' ? <PowerOff className="w-4 h-4 text-orange-600" /> : <Power className="w-4 h-4 text-emerald-600" />}
+                      </Button>
+                    )}
+                    {canEditItem && (
+                      <Button variant="ghost" size="icon" className="rounded-full" onClick={() => openEdit(o)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canDeleteItem && (
+                      <Button variant="ghost" size="icon" className="rounded-full text-destructive" onClick={() => setDelTarget(o)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
