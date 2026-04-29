@@ -233,12 +233,23 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
     setAccCreating(true);
     try {
+      // Detect custom role selection: prefix "custom:<id>"
+      let baseRole: string | undefined;
+      let customRoleId: string | null = null;
+      if (accRole.startsWith('custom:')) {
+        customRoleId = accRole.replace('custom:', '');
+        const cr = (customRoles as any[]).find((r) => r.id === customRoleId);
+        baseRole = cr?.base_role || 'staff';
+      } else if (accRole !== 'none') {
+        baseRole = accRole;
+      }
+
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'create',
           email: accEmail.trim(),
           password: accPassword,
-          role: accRole === 'none' ? undefined : accRole,
+          role: baseRole,
           full_name: selectedStaff?.name_bn || selectedStaff?.name_en || '',
           staff_id: selectedStaff?.id,
         },
@@ -247,6 +258,10 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         toast.error(data?.error || error?.message || (bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account'));
         setAccCreating(false);
         return;
+      }
+      // Persist custom role link on the staff record
+      if (customRoleId && selectedStaff?.id) {
+        await supabase.from('staff').update({ custom_role_id: customRoleId } as any).eq('id', selectedStaff.id);
       }
       toast.success(bn ? '✅ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' : '✅ Account created successfully!');
       setAccountDialogOpen(false);
