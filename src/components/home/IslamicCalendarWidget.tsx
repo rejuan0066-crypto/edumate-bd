@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
-import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz, getTzOffsetLabel, getDeviceTz } from '@/lib/timezone';
+import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz, getTzOffsetLabel, getDeviceTz, usingFallbackTz } from '@/lib/timezone';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 const toArabicNum = (str: string) => String(str).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -279,6 +279,11 @@ const IslamicCalendarWidget = () => {
                     <p className="mt-1.5 opacity-70">
                       ডিভাইস: <span className="font-mono">{getDeviceTz()}</span> · অফসেট: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
                     </p>
+                    {usingFallbackTz() && (
+                      <p className="mt-1 text-amber-300/90">
+                        ⚠ আপনার ব্রাউজার পূর্ণ টাইমজোন সাপোর্ট করে না — সময় ফিক্সড অফসেট ফলব্যাক দিয়ে দেখানো হচ্ছে।
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -289,6 +294,11 @@ const IslamicCalendarWidget = () => {
                     <p className="mt-1.5 opacity-70">
                       Your device: <span className="font-mono">{getDeviceTz()}</span> · Offset: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
                     </p>
+                    {usingFallbackTz() && (
+                      <p className="mt-1 text-amber-300/90">
+                        ⚠ Your browser lacks full timezone support — showing time via a fixed-offset fallback.
+                      </p>
+                    )}
                   </>
                 )}
               </TooltipContent>
