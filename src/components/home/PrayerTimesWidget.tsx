@@ -274,6 +274,28 @@ const PrayerTimesWidget = () => {
           <div className="text-center py-6 text-xs text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>
         ) : timings ? (
           <>
+            {/* Ishraq / forbidden-time info banner */}
+            {timings.Sunrise && timings.Dhuhr && timings.Sunset && (
+              <div className="mb-2 px-2 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-[10px] leading-relaxed">
+                <div className="flex justify-between gap-2">
+                  <span className="text-foreground">
+                    {bn ? `সূর্যোদয়ের ${toBanglaNum(String(ISHRAQ_OFFSET_MIN))} মিনিট পর ইশরাকের নামাজ পড়া যাবে:` : `Ishraq prayer permitted ${ISHRAQ_OFFSET_MIN} min after sunrise:`}
+                  </span>
+                  <span className="font-mono font-bold text-primary">
+                    {formatDisplayTime(addMinutesToTime(timings.Sunrise, ISHRAQ_OFFSET_MIN), bn, effectiveTimeFormat)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2 mt-0.5">
+                  <span className="text-muted-foreground">
+                    {bn ? 'সূর্যাস্ত:' : 'Sunset:'}
+                  </span>
+                  <span className="font-mono text-muted-foreground">
+                    {formatDisplayTime(timings.Sunset.replace(/\s*\(.*\)/, ''), bn, effectiveTimeFormat)}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-[1fr_auto_auto] gap-1 px-2 pb-1 mb-1 border-b border-border text-[10px] text-muted-foreground font-medium">
               <span>{bn ? 'ওয়াক্ত' : 'Prayer'}</span>
               <span className="text-center w-20">{bn ? 'শুরু' : 'Start'}</span>
