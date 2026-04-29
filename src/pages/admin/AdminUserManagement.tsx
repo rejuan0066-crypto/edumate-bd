@@ -935,7 +935,7 @@ const AdminUserManagement = () => {
                               size="icon"
                               variant="ghost"
                               className="text-primary hover:text-primary hover:bg-primary/10"
-                              onClick={() => { setProfileUser(u); setProfileEditName(u.full_name || ''); setProfileEditEmail(u.email); setProfileNewPassword(''); setProfileShowPw(false); setProfileOpen(true); }}
+                              onClick={() => openProfileDialog(u)}
                               title={bn ? 'প্রোফাইল দেখুন' : 'View Profile'}
                             >
                               <UserCircle className="w-4 h-4" />
@@ -1446,6 +1446,60 @@ const AdminUserManagement = () => {
                       {new Date(profileUser.created_at).toLocaleDateString(bn ? 'bn-BD' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                   </div>
+                </div>
+
+                {/* Staff identity: Bangla name + designation/category */}
+                <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
+                  <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
+                    <Tag className="w-5 h-5" />
+                    {bn ? 'স্টাফ নাম, পদবি ও ক্যাটাগরি' : 'Staff Name, Designation & Category'}
+                  </h3>
+                  {staffByUser[profileUser.id] ? (
+                    <>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
+                        <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'ক্যাটাগরি' : 'Category'}</Label>
+                          <Select value={profileEditStaffCategory} onValueChange={(value) => { setProfileEditStaffCategory(value); setProfileEditDesignation(''); }}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {staffCategories.map((cat: any) => (
+                                <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">{bn ? 'পদবি' : 'Designation'}</Label>
+                          <Select value={profileEditDesignation} onValueChange={setProfileEditDesignation}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={bn ? 'পদবি নির্বাচন' : 'Select designation'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {masterDesignations
+                                .filter((d: any) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
+                                .map((d: any) => (
+                                  <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>{bn ? d.name_bn : d.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <Button onClick={saveStaffIdentity} disabled={profileSaving === 'staff'} className="w-full btn-primary-gradient">
+                        {profileSaving === 'staff' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                        {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                      {bn ? 'এই ইউজারের স্টাফ প্রোফাইল এখনো নেই। স্টাফে যোগ করুন বাটন দিয়ে আগে স্টাফ প্রোফাইল তৈরি করুন।' : 'This user has no staff profile yet. Use Add to Staff first.'}
+                    </div>
+                  )}
                 </div>
 
                 {/* Edit Name */}
