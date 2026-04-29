@@ -544,6 +544,7 @@ const AdminUserManagement = () => {
       };
       setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
       setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
+      setProfileEditName(profileEditStaffNameBn.trim());
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['staff'] }),
         queryClient.invalidateQueries({ queryKey: ['current-staff'] }),
