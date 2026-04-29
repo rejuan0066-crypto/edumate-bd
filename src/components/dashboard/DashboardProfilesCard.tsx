@@ -1,8 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 import { UserCog, User, Mail, Phone, Briefcase } from 'lucide-react';
 
 const Field = ({ icon: Icon, label, value }: { icon: any; label: string; value?: string | null }) => {
