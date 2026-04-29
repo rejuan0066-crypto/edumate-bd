@@ -183,6 +183,7 @@ const PrayerTimesWidget = () => {
   const [country, setCountry] = useState<string | null>(null);
   const [division, setDivision] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
+  const [upazila, setUpazila] = useState<string>('');
   const [timeFormat, setTimeFormat] = useState<'24h' | '12h' | null>(null);
   const [methodOverride, setMethodOverride] = useState<number | null>(null);
   const [now, setNow] = useState(new Date());
@@ -199,7 +200,13 @@ const PrayerTimesWidget = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const selectedCity = effectiveCountry === 'BD' ? effectiveCity : COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka';
+  // Use upazila as the city for Aladhan when selected (more precise sunrise/sunset)
+  const cityObj = effectiveCountry === 'BD'
+    ? BD_DIVISIONS[effectiveDivision]?.cities.find(c => c.en === effectiveCity)
+    : null;
+  const selectedCity = effectiveCountry === 'BD'
+    ? (upazila || effectiveCity)
+    : (COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Dhaka');
   const selectedCountry = COUNTRIES.find(c => c.code === effectiveCountry)?.en || 'Bangladesh';
 
   // Map each country to its IANA timezone so Aladhan returns correct local times
