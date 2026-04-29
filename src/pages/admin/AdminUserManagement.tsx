@@ -1844,10 +1844,18 @@ const AdminUserManagement = () => {
                         )}
                       </div>
                       {adminOfficerByUser[profileUser.id] ? (
-                        <Button size="sm" variant="outline" onClick={removeFromAdministrative} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
-                          {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
-                          {bn ? 'সরান' : 'Remove'}
-                        </Button>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {!staffByUser[profileUser.id] && (
+                            <Button size="sm" variant="outline" onClick={() => removeFromAdministrative({ moveToStaff: true })} disabled={linkSaving === 'officer'} title={bn ? 'প্রশাসনিক থেকে সরিয়ে স্টাফে স্থানান্তর' : 'Move to Staff'}>
+                              {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1" />}
+                              {bn ? 'স্টাফে স্থানান্তর' : 'Move to Staff'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => removeFromAdministrative()} disabled={linkSaving === 'officer'} className="text-destructive hover:bg-destructive/10">
+                            {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                            {bn ? 'সরান' : 'Remove'}
+                          </Button>
+                        </div>
                       ) : (
                         <Button size="sm" onClick={addToAdministrative} disabled={linkSaving === 'officer'} className="bg-emerald-600 hover:bg-emerald-700">
                           {linkSaving === 'officer' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 mr-1" />}
