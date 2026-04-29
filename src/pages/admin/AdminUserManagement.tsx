@@ -1557,66 +1557,60 @@ const AdminUserManagement = () => {
                   </div>
                 </div>
 
-                {/* Staff identity: only for staff-type roles (not parent/student) */}
-                {profileUser.role !== 'parent' && profileUser.role !== 'student' && (
+                {/* User Name Edit Section */}
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
                   <h3 className="flex items-center gap-2 font-semibold text-base text-primary">
                     <Tag className="w-5 h-5" />
-                    {bn ? 'স্টাফ নাম, পদবি ও ডিপার্টমেন্ট' : 'Staff Name, Designation & Department'}
+                    {bn ? 'নাম পরিবর্তন' : 'Change Name'}
                   </h3>
-                  <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
-                          <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
-                          <Input value={profileEditStaffNameEn} onChange={e => setProfileEditStaffNameEn(e.target.value)} placeholder={bn ? 'ইংরেজি নাম লিখুন' : 'Enter English name'} />
-                        </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{bn ? 'বাংলা নাম' : 'Bangla Name'}</Label>
+                      <Input value={profileEditStaffNameBn} onChange={e => setProfileEditStaffNameBn(e.target.value)} placeholder={bn ? 'বাংলা নাম লিখুন' : 'Enter Bangla name'} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+                      <Input value={profileEditStaffNameEn} onChange={e => setProfileEditStaffNameEn(e.target.value)} placeholder={bn ? 'ইংরেজি নাম লিখুন' : 'Enter English name'} />
+                    </div>
+                  </div>
+                  {/* Staff-specific fields (designation, department) only for staff roles */}
+                  {profileUser.role !== 'parent' && profileUser.role !== 'student' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
+                        <Select value={profileEditStaffCategory} onValueChange={(value) => { setProfileEditStaffCategory(value); setProfileEditDesignation(''); }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট নির্বাচন' : 'Select department'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {staffCategories.map((cat) => (
+                              <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">{bn ? 'ডিপার্টমেন্ট' : 'Department'}</Label>
-                          <Select value={profileEditStaffCategory} onValueChange={(value) => { setProfileEditStaffCategory(value); setProfileEditDesignation(''); }}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={bn ? 'ডিপার্টমেন্ট নির্বাচন' : 'Select department'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {staffCategories.map((cat) => (
-                                <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">{bn ? 'পদবি' : 'Designation'}</Label>
+                        <Select value={profileEditDesignation} onValueChange={setProfileEditDesignation}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={bn ? 'পদবি নির্বাচন' : 'Select designation'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {masterDesignations
+                              .filter((d) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
+                              .map((d) => (
+                                <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
                               ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">{bn ? 'পদবি' : 'Designation'}</Label>
-                          <Select value={profileEditDesignation} onValueChange={setProfileEditDesignation}>
-                            <SelectTrigger>
-                              <SelectValue placeholder={bn ? 'পদবি নির্বাচন' : 'Select designation'} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {masterDesignations
-                                .filter((d) => !profileEditStaffCategory || d.staff_category === profileEditStaffCategory)
-                                .map((d) => (
-                                  <SelectItem key={d.id} value={(bn ? d.name_bn : d.name) || d.name || d.name_bn || ''}>{(bn ? d.name_bn : d.name) || d.name || d.name_bn}</SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <Button onClick={saveStaffIdentity} disabled={profileSaving === 'staff'} className="w-full btn-primary-gradient">
-                        {profileSaving === 'staff' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                        {bn ? 'স্টাফ তথ্য সেভ করুন' : 'Save Staff Info'}
-                      </Button>
-                    </>
-                 </div>
-                )}
-
-                {/* "Change Name" field removed — the "Staff Name, Designation & Department" section
-                    above already edits the canonical name (staff.name_bn) and the DB triggers
-                    (sync_staff_to_profile / sync_profile_to_staff) keep profiles.full_name +
-                    staff.name_en in lock-step automatically. */}
+                    </div>
+                  )}
+                  <Button onClick={saveStaffIdentity} disabled={profileSaving === 'staff'} className="w-full btn-primary-gradient">
+                    {profileSaving === 'staff' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    {bn ? 'নাম সেভ করুন' : 'Save Name'}
+                  </Button>
+                </div>
 
                 {/* ===== EMAIL CHANGE SECTION ===== */}
                 <div className="rounded-xl border-2 border-primary/20 bg-card p-4 space-y-3">
