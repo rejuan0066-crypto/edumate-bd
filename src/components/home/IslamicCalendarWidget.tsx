@@ -2,11 +2,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePrayerCalendarSettings } from '@/hooks/usePrayerCalendarSettings';
-import { Calendar, Clock, Star, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Calendar, Clock, Star, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
-import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz } from '@/lib/timezone';
+import { formatTimeInTz, getWeekdayIdxInTz, getDatePartsInTz, getTzOffsetLabel, getDeviceTz } from '@/lib/timezone';
 
 const toBanglaNum = (str: string) => String(str).replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[parseInt(d)]);
 const toArabicNum = (str: string) => String(str).replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)]);
@@ -257,9 +258,48 @@ const IslamicCalendarWidget = () => {
         <div className="flex items-center justify-center gap-1.5 mb-1">
           <Clock className="w-3.5 h-3.5" />
           <span className="text-[10px] uppercase tracking-wider opacity-80">{dayName}</span>
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={bn ? 'টাইমজোন তথ্য' : 'Timezone info'}
+                  className="inline-flex items-center justify-center rounded-full p-0.5 opacity-70 hover:opacity-100 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-foreground/60"
+                >
+                  <Info className="w-3 h-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[260px] text-xs leading-relaxed">
+                {bn ? (
+                  <>
+                    <p className="font-semibold mb-1">এই ঘড়ি <span className="font-mono">{APP_TZ}</span> টাইমজোনে চলে</p>
+                    <p className="opacity-80">
+                      আপনার ডিভাইসের টাইমজোন যাই হোক না কেন, এখানে দেখানো সময় সবসময় প্রতিষ্ঠানের কনফিগার করা টাইমজোন অনুযায়ী হবে। তাই ডিভাইসের ঘড়ির সাথে পার্থক্য থাকতে পারে।
+                    </p>
+                    <p className="mt-1.5 opacity-70">
+                      ডিভাইস: <span className="font-mono">{getDeviceTz()}</span> · অফসেট: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold mb-1">Clock uses <span className="font-mono">{APP_TZ}</span></p>
+                    <p className="opacity-80">
+                      This clock always shows the institution's configured timezone, regardless of your device timezone. That is why it may differ from your system clock.
+                    </p>
+                    <p className="mt-1.5 opacity-70">
+                      Your device: <span className="font-mono">{getDeviceTz()}</span> · Offset: <span className="font-mono">{getTzOffsetLabel(APP_TZ)}</span>
+                    </p>
+                  </>
+                )}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         <div className="text-2xl font-mono font-bold tracking-wider">
           {bn ? toBanglaNum(timeStr) : timeStr}
+        </div>
+        <div className="text-[9px] uppercase tracking-wider opacity-70 mt-0.5 font-mono">
+          {APP_TZ} · {getTzOffsetLabel(APP_TZ)}
         </div>
       </div>
 
