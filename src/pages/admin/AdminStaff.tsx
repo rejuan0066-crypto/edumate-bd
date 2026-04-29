@@ -104,6 +104,15 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     },
   });
 
+  const { data: customRoles = [] } = useQuery({
+    queryKey: ['custom-roles-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custom_roles').select('id, name, name_bn, base_role').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const designationsMap = new Map<string, string>();
   designationsList.forEach((d: any) => {
     if (d.staff_category) {
