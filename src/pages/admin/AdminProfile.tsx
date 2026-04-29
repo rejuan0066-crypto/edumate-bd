@@ -493,9 +493,16 @@ const AdminProfile = () => {
               { icon: Mail, label: bn ? 'ইমেইল' : 'Email', value: currentEmail },
               { icon: Phone, label: bn ? 'মোবাইল' : 'Mobile', value: staffData?.phone || profileData?.phone },
               { icon: Hash, label: (() => {
-                  const desigKey = staffData?.designation;
-                  const d: any = desigKey ? designationsList.find((x: any) => x.key === desigKey || x.name === desigKey) : null;
-                  const desigName = d ? (bn ? (d.name_bn || d.name) : (d.name || d.name_bn)) : (desigKey || '');
+                  const desigKey = (staffData?.designation || '').toString().trim();
+                  const d: any = desigKey ? designationsList.find((x: any) =>
+                    x.key === desigKey ||
+                    x.name === desigKey ||
+                    x.name_bn === desigKey ||
+                    String(x.name || '').toLowerCase() === desigKey.toLowerCase()
+                  ) : null;
+                  const desigName = d
+                    ? (bn ? (d.name_bn || d.name) : (d.name || d.name_bn))
+                    : desigKey;
                   if (desigName && String(desigName).trim()) {
                     return bn ? `${desigName} আইডি` : `${desigName} ID`;
                   }
