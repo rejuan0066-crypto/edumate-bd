@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck, Send, Lock, Phone, MapPin, Briefcase, Calendar, GraduationCap } from 'lucide-react';
+import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck, Send, Lock, Phone, MapPin, Briefcase, Calendar, GraduationCap, Building2, Home, Award, BookOpen, Hash, Heart, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOtpService } from '@/hooks/useOtpService';
