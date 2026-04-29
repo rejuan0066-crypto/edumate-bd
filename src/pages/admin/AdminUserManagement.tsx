@@ -66,6 +66,19 @@ interface LinkedStaff {
   photo_url: string | null;
 }
 
+interface StaffCategoryOption {
+  key: string;
+  name: string | null;
+  name_bn: string | null;
+}
+
+interface MasterDesignationOption {
+  id: string;
+  name: string | null;
+  name_bn: string | null;
+  staff_category: string | null;
+}
+
 const MENU_PATHS = [
   { path: '/admin', label_bn: 'ড্যাশবোর্ড', label_en: 'Dashboard' },
   { path: '/admin/profile', label_bn: 'প্রোফাইল', label_en: 'Profile' },
@@ -250,7 +263,7 @@ const AdminUserManagement = () => {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []) as StaffCategoryOption[];
     },
   });
 
@@ -263,7 +276,7 @@ const AdminUserManagement = () => {
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
-      return data || [];
+      return (data || []) as MasterDesignationOption[];
     },
   });
 
@@ -478,40 +491,35 @@ const AdminUserManagement = () => {
 
   const saveStaffIdentity = async () => {
     if (!profileUser) return;
-    const linked = staffByUser[profileUser.id];
-    if (!linked?.id) {
-      toast.error(bn ? 'এই ইউজারের সাথে কোনো স্টাফ প্রোফাইল লিংক নেই' : 'No linked staff profile for this user');
-      return;
-    }
     if (!profileEditStaffNameBn.trim()) {
       toast.error(bn ? 'বাংলা নাম দিন' : 'Enter Bangla name');
+      return;
+    }
+    if (!profileEditStaffCategory) {
+      toast.error(bn ? 'ক্যাটাগরি নির্বাচন করুন' : 'Select category');
       return;
     }
 
     setProfileSaving('staff');
     try {
-      const { data: nameData, error: nameError } = await supabase.functions.invoke('manage-users', {
-        body: { action: 'update_name', user_id: profileUser.id, full_name: profileEditStaffNameBn.trim() },
-      });
-      if (nameError || !nameData?.success) throw new Error((bn ? nameData?.message_bn : nameData?.message) || nameData?.error || nameError?.message);
-
-      const { error } = await supabase
-        .from('staff')
-        .update({
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'upsert_staff_identity',
+          user_id: profileUser.id,
           name_bn: profileEditStaffNameBn.trim(),
-          name_en: profileEditStaffNameBn.trim(),
           designation: profileEditDesignation || null,
-          staff_category: profileEditStaffCategory || null,
-        })
-        .eq('id', linked.id);
-      if (error) throw error;
+          staff_category: profileEditStaffCategory,
+        },
+      });
+      if (error || !data?.success) throw new Error(data?.error || error?.message);
 
-      const nextLinked = {
-        ...linked,
-        name_bn: profileEditStaffNameBn.trim(),
-        name_en: profileEditStaffNameBn.trim(),
-        designation: profileEditDesignation || null,
-        staff_category: profileEditStaffCategory || null,
+      const nextLinked: LinkedStaff = {
+        id: data.staff.id,
+        name_bn: data.staff.name_bn,
+        name_en: data.staff.name_en,
+        designation: data.staff.designation,
+        staff_category: data.staff.staff_category,
+        photo_url: data.staff.photo_url,
       };
       setStaffByUser(prev => ({ ...prev, [profileUser.id]: nextLinked }));
       setProfileUser({ ...profileUser, full_name: profileEditStaffNameBn.trim() });
