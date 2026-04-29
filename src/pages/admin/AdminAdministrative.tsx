@@ -621,6 +621,47 @@ const AdminAdministrative = () => {
         description={delTarget ? `${delTarget.name_bn} ${bn ? 'কে মুছে ফেলতে চান?' : 'will be removed.'}` : ''}
         isPending={softDelete.isPending}
       />
+
+      {/* Quick Add: Department / Designation */}
+      <Dialog open={!!quickAdd} onOpenChange={(o) => !o && setQuickAdd(null)}>
+        <DialogContent className="max-w-md rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle>
+              {quickAdd?.kind === 'department'
+                ? (bn ? 'নতুন বিভাগ যোগ করুন' : 'Add New Department')
+                : (bn ? 'নতুন পদবী যোগ করুন' : 'Add New Designation')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>{bn ? 'বাংলা নাম *' : 'Bangla Name *'}</Label>
+              <Input
+                autoFocus
+                value={quickAdd?.name_bn || ''}
+                onChange={(e) => setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q)}
+                placeholder={quickAdd?.kind === 'department' ? (bn ? 'যেমনঃ হিসাব শাখা' : 'e.g. Accounts') : (bn ? 'যেমনঃ অফিস সহকারী' : 'e.g. Office Assistant')}
+              />
+            </div>
+            <div>
+              <Label>{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+              <Input
+                value={quickAdd?.name_en || ''}
+                onChange={(e) => setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q)}
+                placeholder={quickAdd?.kind === 'department' ? 'e.g. Accounts' : 'e.g. Office Assistant'}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickAdd(null)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button
+              onClick={() => quickAdd && createOption.mutate(quickAdd)}
+              disabled={!quickAdd?.name_bn?.trim() || createOption.isPending}
+            >
+              {createOption.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'যোগ করুন' : 'Add')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
