@@ -29,6 +29,8 @@ interface UserItem {
   email: string;
   role: string;
   full_name: string;
+  profile_full_name?: string;
+  staff?: LinkedStaff | null;
   status: string;
   created_at: string;
 }
@@ -295,9 +297,16 @@ const AdminUserManagement = () => {
       const list: UserItem[] = data?.users || [];
       setUsers(list);
 
-      // Pull linked staff records (designation + staff_category) for the listed users
+      const includedStaffMap: Record<string, LinkedStaff> = {};
+      list.forEach((u) => {
+        if (u.staff?.id) includedStaffMap[u.id] = u.staff;
+      });
+
+      // Pull linked staff records if the function response does not include them yet
       const ids = list.map(u => u.id).filter(Boolean);
-      if (ids.length > 0) {
+      if (Object.keys(includedStaffMap).length > 0) {
+        setStaffByUser(includedStaffMap);
+      } else if (ids.length > 0) {
         const { data: staffRows } = await supabase
           .from('staff')
           .select('id, user_id, name_bn, name_en, designation, staff_category, photo_url')
