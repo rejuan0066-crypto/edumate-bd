@@ -76,7 +76,7 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
     queryKey: ['sidebar-profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+      const { data } = await supabase.from('profiles').select('full_name, avatar_url, phone').eq('id', user.id).maybeSingle();
       return data;
     },
     enabled: !!user?.id,
