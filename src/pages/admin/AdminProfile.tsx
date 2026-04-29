@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck, Send, Lock, Phone, MapPin, Briefcase, Calendar, GraduationCap } from 'lucide-react';
+import { Mail, Loader2, Eye, EyeOff, User, RefreshCw, CheckCircle2, ShieldCheck, Send, Lock, Phone, MapPin, Briefcase, Calendar, GraduationCap, Building2, Home, Award, BookOpen, Hash, Heart, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useOtpService } from '@/hooks/useOtpService';
@@ -414,28 +414,70 @@ const AdminProfile = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><User className="w-4.5 h-4.5 text-primary" /></div>
             {bn ? 'ব্যক্তিগত তথ্য' : 'Personal Information'}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {[
+          {(() => {
+            const fmtDate = (d?: string | null) => {
+              if (!d) return null;
+              const dt = new Date(d);
+              if (isNaN(dt.getTime())) return null;
+              const dd = String(dt.getDate()).padStart(2, '0');
+              const mm = String(dt.getMonth() + 1).padStart(2, '0');
+              const yy = dt.getFullYear();
+              return `${dd}/${mm}/${yy}`;
+            };
+            const empMap: Record<string, { bn: string; en: string }> = {
+              full_time: { bn: 'ফুল-টাইম', en: 'Full-time' },
+              part_time: { bn: 'পার্ট-টাইম', en: 'Part-time' },
+              contract: { bn: 'চুক্তিভিত্তিক', en: 'Contract' },
+              guest: { bn: 'অতিথি', en: 'Guest' },
+            };
+            const resMap: Record<string, { bn: string; en: string }> = {
+              residential: { bn: 'আবাসিক', en: 'Residential' },
+              non_residential: { bn: 'অনাবাসিক', en: 'Non-residential' },
+            };
+            const relMap: Record<string, { bn: string; en: string }> = {
+              islam: { bn: 'ইসলাম', en: 'Islam' },
+              hindu: { bn: 'হিন্দু', en: 'Hindu' },
+              christian: { bn: 'খ্রিষ্টান', en: 'Christian' },
+              buddhist: { bn: 'বৌদ্ধ', en: 'Buddhist' },
+              other: { bn: 'অন্যান্য', en: 'Other' },
+            };
+            const lookup = (m: Record<string, { bn: string; en: string }>, v?: string | null) =>
+              v ? (m[v] ? (bn ? m[v].bn : m[v].en) : v) : null;
+
+            const fields = [
               { icon: Mail, label: bn ? 'ইমেইল' : 'Email', value: currentEmail },
               { icon: Phone, label: bn ? 'মোবাইল' : 'Mobile', value: staffData?.phone || profileData?.phone },
-              { icon: Briefcase, label: bn ? 'বিভাগ' : 'Department', value: staffData?.department },
-              { icon: Calendar, label: bn ? 'যোগদান' : 'Joining', value: staffData?.joining_date ? new Date(staffData.joining_date).toLocaleDateString('bn-BD') : null },
-              { icon: GraduationCap, label: bn ? 'শিক্ষাগত যোগ্যতা' : 'Education', value: staffData?.education },
-              { icon: MapPin, label: bn ? 'ঠিকানা' : 'Address', value: staffData?.address },
+              { icon: Hash, label: bn ? 'স্টাফ আইডি' : 'Staff ID', value: staffData?.staff_id },
+              { icon: Building2, label: bn ? 'ডিপার্টমেন্ট' : 'Department', value: staffData?.department },
+              { icon: Calendar, label: bn ? 'যোগদান' : 'Joining Date', value: fmtDate(staffData?.joining_date) },
+              { icon: Calendar, label: bn ? 'জন্ম তারিখ' : 'Date of Birth', value: fmtDate(staffData?.date_of_birth) },
               { icon: ShieldCheck, label: 'NID', value: staffData?.nid },
-              { icon: Calendar, label: bn ? 'জন্ম তারিখ' : 'Date of Birth', value: staffData?.date_of_birth ? new Date(staffData.date_of_birth).toLocaleDateString('bn-BD') : null },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20 hover:bg-muted/30 transition-colors duration-300">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/8 shrink-0">
-                  <item.icon className="w-4 h-4 text-primary/70" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</p>
-                  <p className="text-sm font-semibold text-foreground truncate">{item.value || '-'}</p>
-                </div>
+              { icon: Heart, label: bn ? 'ধর্ম' : 'Religion', value: lookup(relMap, staffData?.religion) },
+              { icon: Clock, label: bn ? 'কর্মসংস্থান ধরন' : 'Employment Type', value: lookup(empMap, staffData?.employment_type) },
+              { icon: Home, label: bn ? 'আবাসিক ধরন' : 'Residence Type', value: lookup(resMap, staffData?.residence_type) },
+              { icon: GraduationCap, label: bn ? 'শিক্ষাগত যোগ্যতা' : 'Education', value: staffData?.education },
+              { icon: Award, label: bn ? 'অভিজ্ঞতা' : 'Experience', value: staffData?.experience },
+              { icon: BookOpen, label: bn ? 'পূর্ববর্তী প্রতিষ্ঠান' : 'Previous Institute', value: staffData?.previous_institute },
+              { icon: MapPin, label: bn ? 'ঠিকানা' : 'Address', value: staffData?.address },
+            ];
+            const visible = fields.filter(f => f.value && String(f.value).trim().length > 0);
+            const finalList = visible.length > 0 ? visible : fields;
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                {finalList.map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20 hover:bg-muted/30 transition-colors duration-300">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/8 shrink-0">
+                      <item.icon className="w-4 h-4 text-primary/70" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{item.label}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{item.value || '-'}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
 
         {/* ═══ Designation & Category Editor ═══ */}
