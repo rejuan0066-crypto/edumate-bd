@@ -300,7 +300,16 @@ const AdminUserManagement = () => {
   const getUserDisplayName = (user?: UserItem | null) => {
     if (!user) return '';
     const linked = staffByUser[user.id];
-    return linked?.name_bn || linked?.name_en || user.full_name || user.profile_full_name || user.email || '—';
+    const officer = adminOfficerByUser[user.id];
+    return linked?.name_bn || linked?.name_en || officer?.name_bn || user.full_name || user.profile_full_name || user.email || '—';
+  };
+
+  const getUserDesignation = (user?: UserItem | null): string | null => {
+    if (!user) return null;
+    const linked = staffByUser[user.id];
+    if (linked?.designation) return linked.designation;
+    const officer = adminOfficerByUser[user.id];
+    return officer?.designation || null;
   };
 
   const fetchUsers = useCallback(async () => {
