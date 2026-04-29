@@ -84,6 +84,7 @@ const AdminAdministrative = () => {
   const [editing, setEditing] = useState<Officer | null>(null);
   const [form, setForm] = useState<Partial<Officer>>(emptyForm);
   const [delTarget, setDelTarget] = useState<Officer | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
 
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
@@ -97,6 +98,64 @@ const AdminAdministrative = () => {
       if (error) throw error;
       return (data || []) as unknown as Officer[];
     },
+  });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['administrative-departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('administrative_departments' as any)
+        .select('id, name, name_bn')
+        .is('deleted_at', null)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('name_bn', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; name: string; name_bn: string }>;
+    },
+  });
+
+  const { data: designations = [] } = useQuery({
+    queryKey: ['administrative-designations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('designations')
+        .select('id, name, name_bn, staff_category')
+        .eq('is_active', true)
+        .eq('staff_category', 'administrative')
+        .order('sort_order', { ascending: true })
+        .order('name_bn', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; name: string; name_bn: string }>;
+    },
+  });
+
+  const createOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name_en: string }) => {
+      const name = (payload.name_en || payload.name_bn).trim();
+      const name_bn = payload.name_bn.trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      if (payload.kind === 'department') {
+        const { error } = await supabase
+          .from('administrative_departments' as any)
+          .insert({ name, name_bn, is_active: true });
+        if (error) throw error;
+        return { kind: payload.kind, value: name_bn };
+      } else {
+        const { error } = await supabase
+          .from('designations')
+          .insert({ name, name_bn, staff_category: 'administrative', is_active: true });
+        if (error) throw error;
+        return { kind: payload.kind, value: name_bn };
+      }
+    },
+    onSuccess: (res) => {
+      toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
+      qc.invalidateQueries({ queryKey: [res.kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setForm(prev => ({ ...prev, [res.kind === 'department' ? 'department' : 'designation']: res.value }));
+      setQuickAdd(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
   const filtered = useMemo(() => {
