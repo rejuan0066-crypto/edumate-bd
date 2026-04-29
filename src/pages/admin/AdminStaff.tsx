@@ -215,7 +215,12 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    return s.name_bn?.toLowerCase().includes(q) || s.name_en?.toLowerCase().includes(q) || s.designation?.toLowerCase().includes(q) || (s as any).staff_id?.toLowerCase().includes(q);
+    return s.name_bn?.toLowerCase().includes(q)
+      || s.name_en?.toLowerCase().includes(q)
+      || s.designation?.toLowerCase().includes(q)
+      || (s as any).staff_id?.toLowerCase().includes(q)
+      || (s as any).phone?.toLowerCase().includes(q)
+      || (s as any).mobile?.toLowerCase().includes(q);
   });
 
   const openAccountDialog = (staff: any) => {
