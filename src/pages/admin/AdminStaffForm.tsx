@@ -134,6 +134,20 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
   // Section 1: Employee
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [salary, setSalary] = useState('');
+  // Director/committee visibility flags (default true so existing categories don't change behaviour)
+  const [includeInPayroll, setIncludeInPayroll] = useState(true);
+  const [includeInAttendance, setIncludeInAttendance] = useState(true);
+  const [customRoleId, setCustomRoleId] = useState<string>('none');
+
+  // Load custom roles for selection
+  const { data: customRolesList = [] } = useQuery({
+    queryKey: ['custom-roles-active-form'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('custom_roles').select('id, name, name_bn, base_role').eq('is_active', true).order('sort_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [staffEmail, setStaffEmail] = useState('');
