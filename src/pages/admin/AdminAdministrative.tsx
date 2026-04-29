@@ -84,6 +84,7 @@ const AdminAdministrative = () => {
   const [editing, setEditing] = useState<Officer | null>(null);
   const [form, setForm] = useState<Partial<Officer>>(emptyForm);
   const [delTarget, setDelTarget] = useState<Officer | null>(null);
+  const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
 
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
@@ -97,6 +98,64 @@ const AdminAdministrative = () => {
       if (error) throw error;
       return (data || []) as unknown as Officer[];
     },
+  });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['administrative-departments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('administrative_departments' as any)
+        .select('id, name, name_bn')
+        .is('deleted_at', null)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+        .order('name_bn', { ascending: true });
+      if (error) throw error;
+      return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string }>;
+    },
+  });
+
+  const { data: designations = [] } = useQuery({
+    queryKey: ['administrative-designations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('designations')
+        .select('id, name, name_bn, staff_category')
+        .eq('is_active', true)
+        .eq('staff_category', 'administrative')
+        .order('sort_order', { ascending: true })
+        .order('name_bn', { ascending: true });
+      if (error) throw error;
+      return (data || []) as Array<{ id: string; name: string; name_bn: string }>;
+    },
+  });
+
+  const createOption = useMutation({
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name_en: string }) => {
+      const name = (payload.name_en || payload.name_bn).trim();
+      const name_bn = payload.name_bn.trim();
+      if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
+      if (payload.kind === 'department') {
+        const { error } = await supabase
+          .from('administrative_departments' as any)
+          .insert({ name, name_bn, is_active: true });
+        if (error) throw error;
+        return { kind: payload.kind, value: name_bn };
+      } else {
+        const { error } = await supabase
+          .from('designations')
+          .insert({ name, name_bn, staff_category: 'administrative', is_active: true });
+        if (error) throw error;
+        return { kind: payload.kind, value: name_bn };
+      }
+    },
+    onSuccess: (res) => {
+      toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
+      qc.invalidateQueries({ queryKey: [res.kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
+      setForm(prev => ({ ...prev, [res.kind === 'department' ? 'department' : 'designation']: res.value }));
+      setQuickAdd(null);
+    },
+    onError: (e: any) => toast.error(e.message || 'Error'),
   });
 
   const filtered = useMemo(() => {
@@ -415,12 +474,56 @@ const AdminAdministrative = () => {
               <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{bn ? '৩. পদবী ও দায়িত্ব' : '3. Designation & Duty'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label>{bn ? 'পদবী' : 'Designation'}</Label>
-                  <Input value={form.designation || ''} onChange={e => setForm({ ...form, designation: e.target.value })} />
+                  <div className="flex items-center justify-between">
+                    <Label>{bn ? 'পদবী' : 'Designation'}</Label>
+                    <button
+                      type="button"
+                      onClick={() => setQuickAdd({ kind: 'designation', name_bn: '', name_en: '' })}
+                      className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
+                    </button>
+                  </div>
+                  <Select value={form.designation || ''} onValueChange={v => setForm({ ...form, designation: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'পদবী নির্বাচন' : 'Select designation'} /></SelectTrigger>
+                    <SelectContent>
+                      {designations.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো পদবী নেই — "নতুন" ক্লিক করুন' : 'No designations — click "New"'}</div>
+                      )}
+                      {designations.map(d => (
+                        <SelectItem key={d.id} value={d.name_bn}>{bn ? d.name_bn : (d.name || d.name_bn)}</SelectItem>
+                      ))}
+                      {form.designation && !designations.some(d => d.name_bn === form.designation) && (
+                        <SelectItem value={form.designation}>{form.designation} {bn ? '(কাস্টম)' : '(custom)'}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
-                  <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
-                  <Input value={form.department || ''} onChange={e => setForm({ ...form, department: e.target.value })} />
+                  <div className="flex items-center justify-between">
+                    <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
+                    <button
+                      type="button"
+                      onClick={() => setQuickAdd({ kind: 'department', name_bn: '', name_en: '' })}
+                      className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
+                    </button>
+                  </div>
+                  <Select value={form.department || ''} onValueChange={v => setForm({ ...form, department: v })}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} /></SelectTrigger>
+                    <SelectContent>
+                      {departments.length === 0 && (
+                        <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো বিভাগ নেই — "নতুন" ক্লিক করুন' : 'No departments — click "New"'}</div>
+                      )}
+                      {departments.map(d => (
+                        <SelectItem key={d.id} value={d.name_bn}>{bn ? d.name_bn : (d.name || d.name_bn)}</SelectItem>
+                      ))}
+                      {form.department && !departments.some(d => d.name_bn === form.department) && (
+                        <SelectItem value={form.department}>{form.department} {bn ? '(কাস্টম)' : '(custom)'}</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>{bn ? 'অফিস কক্ষ' : 'Office Room'}</Label>
@@ -518,6 +621,47 @@ const AdminAdministrative = () => {
         description={delTarget ? `${delTarget.name_bn} ${bn ? 'কে মুছে ফেলতে চান?' : 'will be removed.'}` : ''}
         isPending={softDelete.isPending}
       />
+
+      {/* Quick Add: Department / Designation */}
+      <Dialog open={!!quickAdd} onOpenChange={(o) => !o && setQuickAdd(null)}>
+        <DialogContent className="max-w-md rounded-[38px]">
+          <DialogHeader>
+            <DialogTitle>
+              {quickAdd?.kind === 'department'
+                ? (bn ? 'নতুন বিভাগ যোগ করুন' : 'Add New Department')
+                : (bn ? 'নতুন পদবী যোগ করুন' : 'Add New Designation')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>{bn ? 'বাংলা নাম *' : 'Bangla Name *'}</Label>
+              <Input
+                autoFocus
+                value={quickAdd?.name_bn || ''}
+                onChange={(e) => setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q)}
+                placeholder={quickAdd?.kind === 'department' ? (bn ? 'যেমনঃ হিসাব শাখা' : 'e.g. Accounts') : (bn ? 'যেমনঃ অফিস সহকারী' : 'e.g. Office Assistant')}
+              />
+            </div>
+            <div>
+              <Label>{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+              <Input
+                value={quickAdd?.name_en || ''}
+                onChange={(e) => setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q)}
+                placeholder={quickAdd?.kind === 'department' ? 'e.g. Accounts' : 'e.g. Office Assistant'}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuickAdd(null)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button
+              onClick={() => quickAdd && createOption.mutate(quickAdd)}
+              disabled={!quickAdd?.name_bn?.trim() || createOption.isPending}
+            >
+              {createOption.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'যোগ করুন' : 'Add')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
