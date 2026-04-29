@@ -324,7 +324,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
         <div className="card-elevated p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input placeholder={bn ? 'নাম বা পদবী দিয়ে খুঁজুন...' : 'Search by name or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder={bn ? 'নাম, ফোন বা পদবী দিয়ে খুঁজুন...' : 'Search by name, phone or designation...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button variant={statusFilter === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setStatusFilter('all')}>
