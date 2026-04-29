@@ -1010,13 +1010,26 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   <FieldError field="employment_type" />
                 </div>
                 )}
+                <div>
+                  <Label>{bn ? 'স্টাফ ক্যাটাগরি' : 'Staff Category'} <span className="text-destructive">*</span></Label>
+                  <Select value={selectedStaffCategory} onValueChange={(value) => { setSelectedStaffCategory(value); setDesignation(''); }}>
+                    <SelectTrigger className="bg-background mt-1">
+                      <SelectValue placeholder={bn ? 'ক্যাটাগরি নির্বাচন' : 'Select category'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(staffCategories as any[]).map((cat) => (
+                        <SelectItem key={cat.key} value={cat.key}>{bn ? cat.name_bn : cat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {isFieldActive('designation') && (
                 <div>
                   <Label>{bn ? (getField('designation')?.label_bn || 'পদবী') : (getField('designation')?.label || 'Designation')} {isFieldRequired('designation') && <span className="text-destructive">*</span>}</Label>
                   <Select value={designation} onValueChange={setDesignation}>
                     <SelectTrigger className={`bg-background mt-1 ${fieldErrors['designation'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
                     <SelectContent>
-                      {designations.map(d => (
+                      {filteredDesignations.map(d => (
                         <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>
                       ))}
                     </SelectContent>
