@@ -542,6 +542,7 @@ const AdminUserManagement = () => {
           action: 'upsert_staff_identity',
           user_id: profileUser.id,
           name_bn: profileEditStaffNameBn.trim(),
+          name_en: (profileEditStaffNameEn.trim() || profileEditStaffNameBn.trim()),
           designation: profileEditDesignation || null,
           staff_category: profileEditStaffCategory,
         },
