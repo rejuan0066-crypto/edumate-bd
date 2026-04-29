@@ -24,10 +24,14 @@ const DashboardSearch = () => {
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,student_id.ilike.%${query}%,roll_number.ilike.%${query}%,phone.ilike.%${query}%`);
       const { data: staffData } = await supabase.from('staff').select('*')
         .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%`);
+      const { data: officerData } = await supabase.from('administrative_officers' as any).select('*')
+        .is('deleted_at', null)
+        .or(`name_bn.ilike.%${query}%,name_en.ilike.%${query}%,phone.ilike.%${query}%,designation.ilike.%${query}%,officer_id.ilike.%${query}%`);
 
       const combined = [
         ...(studentData || []).map((s: any) => ({ ...s, _type: 'students' as const })),
         ...(staffData || []).map((s: any) => ({ ...s, _type: 'staff' as const })),
+        ...(((officerData || []) as any[])).map((s: any) => ({ ...s, _type: 'staff' as const, _source: 'administrative' })),
       ];
       setResults(combined);
     } catch (e) {
