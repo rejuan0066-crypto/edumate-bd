@@ -112,6 +112,10 @@ const AdminAdministrative = () => {
         .order('name_bn', { ascending: true });
       if (error) throw error;
       return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string }>;
+    },
+  });
+
+  const { data: designations = [] } = useQuery({
     queryKey: ['administrative-designations'],
     queryFn: async () => {
       const { data, error } = await supabase
