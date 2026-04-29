@@ -148,23 +148,28 @@ Deno.serve(async (req) => {
       const { data: roles } = await supabaseAdmin.from("user_roles").select("user_id, role");
       const { data: profiles } = await supabaseAdmin.from("profiles").select("id, full_name, status");
       const userIds = users.map((u: any) => u.id).filter(Boolean);
-      const { data: staffRows } = userIds.length
-        ? await supabaseAdmin
-          .from("staff")
-          .select("id, user_id, name_bn, name_en, designation, staff_category, photo_url")
-          .in("user_id", userIds)
-          .is("deleted_at", null)
-        : { data: [] } as any;
+      const userEmails = users.map((u: any) => u.email).filter(Boolean);
+      const [staffByIdResult, staffByEmailResult] = await Promise.all([
+        userIds.length
+          ? supabaseAdmin.from("staff").select("id, user_id, name_bn, name_en, email, designation, staff_category, photo_url").in("user_id", userIds).is("deleted_at", null)
+          : Promise.resolve({ data: [] } as any),
+        userEmails.length
+          ? supabaseAdmin.from("staff").select("id, user_id, name_bn, name_en, email, designation, staff_category, photo_url").in("email", userEmails).is("deleted_at", null)
+          : Promise.resolve({ data: [] } as any),
+      ]);
+      const staffRows = [...(staffByIdResult.data || []), ...(staffByEmailResult.data || [])];
 
       const roleMap: Record<string, string> = {};
       (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
       const profileMap: Record<string, { name: string; status: string }> = {};
       (profiles || []).forEach((p: any) => { profileMap[p.id] = { name: p.full_name || '', status: p.status || 'pending' }; });
       const staffMap: Record<string, any> = {};
+      const staffEmailMap: Record<string, any> = {};
       (staffRows || []).forEach((s: any) => { if (s.user_id) staffMap[s.user_id] = s; });
+      (staffRows || []).forEach((s: any) => { if (s.email) staffEmailMap[String(s.email).toLowerCase()] = s; });
 
       const userList = users.map((u: any) => {
-        const staff = staffMap[u.id];
+        const staff = staffMap[u.id] || staffEmailMap[String(u.email || '').toLowerCase()];
         const fullName = staff?.name_bn || staff?.name_en || profileMap[u.id]?.name || u.user_metadata?.full_name || '';
         return {
           id: u.id,
