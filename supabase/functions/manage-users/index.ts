@@ -264,29 +264,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Link to staff record if staff_id provided
+      // Link to existing staff record if staff_id explicitly provided.
+      // NOTE: We intentionally do NOT auto-create a staff/administrative record from role.
+      // Adding a user to staff or administrative_officers must be done manually from the
+      // User Management profile dialog ("Add to Staff" / "Add to Administrative" buttons).
       if (body.staff_id) {
         await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
-      } else if (staff_category || (role && (role === 'staff' || role === 'teacher' || role === 'admin'))) {
-        // Auto-create staff record if no staff_id provided
-        const { data: existingStaff } = await supabaseAdmin
-          .from("staff")
-          .select("id")
-          .eq("user_id", newUser.user.id)
-          .maybeSingle();
-
-        if (!existingStaff) {
-          await supabaseAdmin.from("staff").insert({
-            user_id: newUser.user.id,
-            name_bn: name_bn || full_name || email.split('@')[0],
-            name_en: full_name || name_bn || '',
-            email: email,
-            designation: designation || null,
-            staff_category: staff_category || (role === 'teacher' ? 'teacher' : 'general'),
-            department: (staff_category || role) === 'teacher' ? 'teaching' : 'general',
-            status: 'active',
-          });
-        }
       }
 
       // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
@@ -447,43 +430,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Auto-create staff record when approving
-      if (status === 'approved') {
-        const { data: existingStaff } = await supabaseAdmin
-          .from("staff")
-          .select("id")
-          .eq("user_id", targetUserId)
-          .maybeSingle();
-
-        if (!existingStaff) {
-          // Get user info
-          const { data: profile } = await supabaseAdmin
-            .from("profiles")
-            .select("full_name, phone")
-            .eq("id", targetUserId)
-            .maybeSingle();
-          
-          const { data: { user: authUser } } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
-          
-          const { data: roleData } = await supabaseAdmin
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", targetUserId)
-            .maybeSingle();
-
-          const userRole = roleData?.role || 'staff';
-
-          await supabaseAdmin.from("staff").insert({
-            user_id: targetUserId,
-            name_bn: profile?.full_name || authUser?.email?.split('@')[0] || 'Unknown',
-            name_en: profile?.full_name || '',
-            email: authUser?.email || '',
-            phone: profile?.phone || '',
-            department: userRole === 'teacher' ? 'teaching' : 'general',
-            status: 'active',
-          });
-        }
-      }
+      // NOTE: Approving a user no longer auto-creates a staff record.
+      // Use the explicit "Add to Staff" / "Add to Administrative" actions in
+      // /admin/user-management profile dialog instead.
 
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
