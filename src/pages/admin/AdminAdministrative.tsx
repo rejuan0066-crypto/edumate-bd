@@ -201,6 +201,17 @@ const AdminAdministrative = () => {
     setOpen(true);
   };
 
+  if (!canViewPage) {
+    return (
+      <AdminLayout>
+        <div className="max-w-[1440px] mx-auto p-12 text-center text-muted-foreground">
+          <ShieldCheck className="w-10 h-10 mx-auto mb-2 opacity-40" />
+          {bn ? 'এই পেজ দেখার অনুমতি নেই' : 'You do not have permission to view this page'}
+        </div>
+      </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout>
       <div className="max-w-[1440px] mx-auto p-4 md:p-6 space-y-6">
@@ -215,7 +226,7 @@ const AdminAdministrative = () => {
               {bn ? 'প্রতিষ্ঠানের প্রশাসনিক কর্মকর্তাদের তালিকা ও ব্যবস্থাপনা' : 'Manage institutional administrative officers'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -225,10 +236,21 @@ const AdminAdministrative = () => {
                 className="pl-9 w-64"
               />
             </div>
-            <Button onClick={openAdd} className="gap-2">
-              <Plus className="w-4 h-4" />
-              {bn ? 'নতুন কর্মকর্তা' : 'Add Officer'}
-            </Button>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব স্ট্যাটাস' : 'All status'}</SelectItem>
+                <SelectItem value="active">{bn ? 'সক্রিয়' : 'Active'}</SelectItem>
+                <SelectItem value="inactive">{bn ? 'নিষ্ক্রিয়' : 'Inactive'}</SelectItem>
+                <SelectItem value="on_leave">{bn ? 'ছুটিতে' : 'On Leave'}</SelectItem>
+              </SelectContent>
+            </Select>
+            {canAddItem && (
+              <Button onClick={openAdd} className="gap-2">
+                <Plus className="w-4 h-4" />
+                {bn ? 'নতুন কর্মকর্তা' : 'Add Officer'}
+              </Button>
+            )}
           </div>
         </div>
 
