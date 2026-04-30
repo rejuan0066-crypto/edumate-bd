@@ -686,12 +686,26 @@ const AdminAdministrative = () => {
               <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{bn ? '২. যোগাযোগ' : '2. Contact'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label>{bn ? 'ফোন' : 'Phone'}</Label>
-                  <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  <Label className={fieldErrors.phone ? 'text-destructive' : ''}>{bn ? 'ফোন' : 'Phone'}</Label>
+                  <Input
+                    value={form.phone || ''}
+                    onChange={e => { setForm({ ...form, phone: e.target.value }); clearFieldError('phone'); }}
+                    placeholder="01XXXXXXXXX"
+                    aria-invalid={!!fieldErrors.phone}
+                    className={fieldErrors.phone ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.phone && <p className="text-xs text-destructive mt-1">{fieldErrors.phone}</p>}
                 </div>
                 <div>
-                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                  <Input type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                  <Label className={fieldErrors.email ? 'text-destructive' : ''}>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input
+                    type="email"
+                    value={form.email || ''}
+                    onChange={e => { setForm({ ...form, email: e.target.value }); clearFieldError('email'); }}
+                    aria-invalid={!!fieldErrors.email}
+                    className={fieldErrors.email ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
