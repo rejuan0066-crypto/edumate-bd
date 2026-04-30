@@ -1330,10 +1330,12 @@ const AdminSettings = () => {
                   </div>
                 </div>
               </div>
+              <div className="max-w-none">
+                <RateLimitSettings />
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="general" className="mt-6">
             <div className="space-y-6 max-w-3xl">
               <div className="card-elevated p-5">
                 <h3 className="font-display font-bold text-foreground mb-4 flex items-center gap-2"><Palette className="w-5 h-5 text-primary" /> {bn ? 'সাধারণ' : 'General'}</h3>
