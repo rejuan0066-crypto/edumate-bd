@@ -25,6 +25,19 @@ const translateGender = (val: string | undefined, bn: boolean): string => {
   return map[val.toLowerCase()]?.[bn ? 0 : 1] || val;
 };
 
+const formatDutyTime = (t: string | null | undefined, bn: boolean): string | undefined => {
+  if (!t) return undefined;
+  const [hStr, mStr] = String(t).split(':');
+  const h24 = parseInt(hStr || '0', 10);
+  const m = parseInt(mStr || '0', 10);
+  if (isNaN(h24) || isNaN(m)) return t as string;
+  const period = h24 >= 12 ? (bn ? 'অপরাহ্ন' : 'PM') : (bn ? 'পূর্বাহ্ন' : 'AM');
+  let h12 = h24 % 12; if (h12 === 0) h12 = 12;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const toBn = (s: string) => bn ? s.replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : s;
+  return `${toBn(pad(h12))}:${toBn(pad(m))} ${period} (${toBn(pad(h24))}:${toBn(pad(m))})`;
+};
+
 const translateResidence = (val: string | undefined, bn: boolean): string => {
   if (!val) return '-';
   const map: Record<string, [string, string]> = { residential: ['আবাসিক', 'Residential'], non_residential: ['অনাবাসিক', 'Non-Residential'], day_scholar: ['ডে স্কলার', 'Day Scholar'] };
@@ -175,8 +188,8 @@ const StaffProfileModal = ({ staff, bn }: StaffProfileModalProps) => {
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'অভিজ্ঞতা' : 'Experience'} value={staff.experience || sd.experience} />
             <ProfileInfoItem icon={DollarSign} label={bn ? 'বেতন' : 'Salary'} value={staff.salary ? `৳${staff.salary}` : undefined} />
             <ProfileInfoItem icon={Building2} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={staff.previous_institute || sd.previous_institute} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={staff.duty_start_time} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={staff.duty_end_time} />
+            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={formatDutyTime(staff.duty_start_time, bn)} />
+            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={formatDutyTime(staff.duty_end_time, bn)} />
           </ProfileSectionCard>
         </div>
       )}
