@@ -566,13 +566,23 @@ export default function AdminCommittees() {
                   <Input type="email" value={editingMember.email || ""} onChange={e => setEditingMember({ ...editingMember, email: e.target.value })} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label>{bn ? "এনআইডি" : "NID"}</Label>
+                  <Label className={memberFieldErrors.nid ? "text-destructive" : ""}>
+                    {bn ? "এনআইডি" : "NID"}
+                  </Label>
                   <Input
                     value={editingMember.nid || ""}
-                    onChange={e => setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") })}
+                    onChange={e => {
+                      setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") });
+                      clearMemberFieldError("nid");
+                    }}
                     inputMode="numeric"
+                    aria-invalid={!!memberFieldErrors.nid}
+                    className={memberFieldErrors.nid ? "border-destructive ring-1 ring-destructive/30 focus-visible:ring-destructive" : ""}
                     placeholder={bn ? "জাতীয় পরিচয়পত্র নম্বর" : "National ID number"}
                   />
+                  {memberFieldErrors.nid && (
+                    <p className="text-xs text-destructive mt-1">{memberFieldErrors.nid}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label>{bn ? "ঠিকানা" : "Address"}</Label>
