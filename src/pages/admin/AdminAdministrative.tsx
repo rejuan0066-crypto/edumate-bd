@@ -255,18 +255,81 @@ const AdminAdministrative = () => {
     );
   }, [officers, search, statusFilter]);
 
-  const friendlyError = (e: any): string => {
-    const msg = String(e?.message || e || '');
-    if (msg.includes('DUPLICATE_PHONE') || (msg.includes('uq_admin_officers_phone') )) {
-      return bn ? 'এই ফোন নম্বর ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This phone number is already used by another administrative officer.';
+  // Map backend errors (from triggers / RLS / constraints) to {field, message}.
+  // Used by both officer form and department/designation dialogs.
+  type ParsedErr = { field?: string; message: string };
+  const parseBackendError = (e: any): ParsedErr => {
+    const raw = String(e?.message || e?.error_description || e || '');
+    const msg = raw.toUpperCase();
+
+    // ---- Officer field-level violations ----
+    if (msg.includes('DUPLICATE_PHONE') || raw.includes('uq_admin_officers_phone') || raw.includes('uq_staff_phone')) {
+      return { field: 'phone', message: bn ? 'এই ফোন নম্বর ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This phone number is already in use.' };
     }
-    if (msg.includes('DUPLICATE_EMAIL') || msg.includes('uq_admin_officers_email')) {
-      return bn ? 'এই ইমেইল ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This email is already used by another administrative officer.';
+    if (msg.includes('DUPLICATE_EMAIL') || raw.includes('uq_admin_officers_email') || raw.includes('uq_staff_email')) {
+      return { field: 'email', message: bn ? 'এই ইমেইল ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This email is already in use.' };
     }
-    if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('permission')) {
-      return bn ? 'এই কাজটি করার অনুমতি আপনার নেই।' : 'You do not have permission to perform this action.';
+    if (msg.includes('DUPLICATE_NID')) {
+      return { field: 'nid', message: bn ? 'এই এনআইডি ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This NID is already in use.' };
     }
-    return msg || (bn ? 'একটি ত্রুটি ঘটেছে' : 'An error occurred');
+    if (msg.includes('DUPLICATE_USER')) {
+      return { message: bn ? 'এই ইউজার ইতিমধ্যে অন্য তালিকায় আছেন।' : 'This user is already registered elsewhere.' };
+    }
+    if (msg.includes('CROSS_TABLE_DUPLICATE')) {
+      // Pick most likely field based on words in the original raw message
+      if (/phone|ফোন/i.test(raw)) return { field: 'phone', message: bn ? 'এই ফোন নম্বর ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Phone already exists in staff/admin list.' };
+      if (/email|ইমেইল/i.test(raw)) return { field: 'email', message: bn ? 'এই ইমেইল ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Email already exists in staff/admin list.' };
+      if (/nid|এনআইডি/i.test(raw)) return { field: 'nid', message: bn ? 'এই এনআইডি ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'NID already exists in staff/admin list.' };
+      return { message: bn ? 'এই তথ্য ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Record already exists in staff/admin list.' };
+    }
+    if (msg.includes('INVALID_PHONE')) {
+      return { field: 'phone', message: bn ? 'সঠিক ১১-সংখ্যার বাংলাদেশি মোবাইল নম্বর দিন (01XXXXXXXXX)।' : 'Enter a valid 11-digit Bangladesh mobile (01XXXXXXXXX).' };
+    }
+    if (msg.includes('INVALID_EMAIL')) {
+      return { field: 'email', message: bn ? 'সঠিক ইমেইল ঠিকানা দিন।' : 'Enter a valid email address.' };
+    }
+    if (msg.includes('INVALID_NID')) {
+      return { field: 'nid', message: bn ? 'সঠিক এনআইডি দিন (১০, ১৩ অথবা ১৭ সংখ্যা)।' : 'NID must be 10, 13, or 17 digits.' };
+    }
+    if (msg.includes('INVALID_DEPARTMENT')) {
+      return { field: 'department', message: bn ? 'নির্বাচিত বিভাগটি সক্রিয় বিভাগ তালিকায় নেই।' : 'Selected department does not exist in the active list.' };
+    }
+    if (msg.includes('REQUIRED_NAME_BN') || msg.includes('NAME_BN_REQUIRED')) {
+      return { field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' };
+    }
+    if (msg.includes('REQUIRED_NAME') || msg.includes('NAME_REQUIRED')) {
+      return { field: 'name', message: bn ? 'ইংরেজি নাম আবশ্যক।' : 'English name is required.' };
+    }
+    if (msg.includes('DUPLICATE_DEPT_NAME') || msg.includes('DUPLICATE_DEPARTMENT_NAME') || raw.includes('uq_admin_departments_name')) {
+      return { field: 'name', message: bn ? 'এই নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this name already exists.' };
+    }
+    if (msg.includes('DUPLICATE_DEPT_NAME_BN') || raw.includes('uq_admin_departments_name_bn')) {
+      return { field: 'name_bn', message: bn ? 'এই বাংলা নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this Bangla name already exists.' };
+    }
+
+    // ---- Permission / RLS ----
+    if (msg.includes('PERMISSION_DENIED') || raw.toLowerCase().includes('row-level security') || raw.toLowerCase().includes('permission')) {
+      return { message: bn ? 'এই কাজটি করার অনুমতি আপনার নেই।' : 'You do not have permission to perform this action.' };
+    }
+
+    // Strip leading SQL prefixes like "DUPLICATE_PHONE: " for cleaner display
+    const cleaned = raw.replace(/^[A-Z_]+:\s*/, '').trim();
+    return { message: cleaned || (bn ? 'একটি ত্রুটি ঘটেছে' : 'An error occurred') };
+  };
+
+  // Convenience: surface any backend error onto the officer form. Returns
+  // true when the error was attached to a specific field.
+  const applyOfficerError = (e: any): boolean => {
+    const parsed = parseBackendError(e);
+    if (parsed.field) {
+      setFieldErrors(prev => ({ ...prev, [parsed.field!]: parsed.message }));
+      setFormError('');
+      toast.error(parsed.message);
+      return true;
+    }
+    setFormError(parsed.message);
+    toast.error(parsed.message);
+    return false;
   };
 
   const upsert = useMutation({
