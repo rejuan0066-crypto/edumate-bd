@@ -185,13 +185,19 @@ const AdminAdministrative = () => {
   });
 
   const updateOption = useMutation({
-    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string }) => {
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string; code?: string }) => {
       const name_bn = payload.name_bn.trim();
       const name = (payload.name || name_bn).trim();
       if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
-      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
-      const { error } = await supabase.from(table as any).update({ name_bn, name }).eq('id', payload.id);
-      if (error) throw error;
+      if (payload.kind === 'department') {
+        const code = (payload.code || '').trim().toUpperCase();
+        if (!code) throw new Error('REQUIRED_FIELD: ' + (bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.'));
+        const { error } = await supabase.from('administrative_departments' as any).update({ name_bn, name, code }).eq('id', payload.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('designations').update({ name_bn, name }).eq('id', payload.id);
+        if (error) throw error;
+      }
       return payload.kind;
     },
     onSuccess: (kind) => {
