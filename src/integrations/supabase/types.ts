@@ -208,6 +208,7 @@ export type Database = {
           residence_type: string | null
           responsibilities: string | null
           salary: number | null
+          salary_encrypted: string | null
           sort_order: number | null
           status: string | null
           updated_at: string
@@ -242,6 +243,7 @@ export type Database = {
           residence_type?: string | null
           responsibilities?: string | null
           salary?: number | null
+          salary_encrypted?: string | null
           sort_order?: number | null
           status?: string | null
           updated_at?: string
@@ -276,6 +278,7 @@ export type Database = {
           residence_type?: string | null
           responsibilities?: string | null
           salary?: number | null
+          salary_encrypted?: string | null
           sort_order?: number | null
           status?: string | null
           updated_at?: string
@@ -694,6 +697,51 @@ export type Database = {
           rule_type?: string
           sort_order?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      backup_history: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          file_size_bytes: number | null
+          id: string
+          row_count: number | null
+          started_at: string
+          status: string
+          storage_path: string | null
+          table_count: number | null
+          triggered_by: string | null
+        }
+        Insert: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          row_count?: number | null
+          started_at?: string
+          status?: string
+          storage_path?: string | null
+          table_count?: number | null
+          triggered_by?: string | null
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          row_count?: number | null
+          started_at?: string
+          status?: string
+          storage_path?: string | null
+          table_count?: number | null
+          triggered_by?: string | null
         }
         Relationships: []
       }
@@ -1873,6 +1921,27 @@ export type Database = {
           service_id?: string
           template_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      encryption_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_value: string
+          rotated_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          key_value: string
+          rotated_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_value?: string
+          rotated_at?: string | null
         }
         Relationships: []
       }
@@ -5980,6 +6049,7 @@ export type Database = {
           approved_by_role: string | null
           approver_staff_id: string | null
           base_salary: number
+          base_salary_encrypted: string | null
           bonus: number | null
           created_at: string | null
           deleted_at: string | null
@@ -5988,6 +6058,7 @@ export type Database = {
           late_deduction: number | null
           month_year: string
           net_salary: number
+          net_salary_encrypted: string | null
           other_allowance: number | null
           other_deduction: number | null
           overtime: number | null
@@ -6024,6 +6095,7 @@ export type Database = {
           approved_by_role?: string | null
           approver_staff_id?: string | null
           base_salary?: number
+          base_salary_encrypted?: string | null
           bonus?: number | null
           created_at?: string | null
           deleted_at?: string | null
@@ -6032,6 +6104,7 @@ export type Database = {
           late_deduction?: number | null
           month_year: string
           net_salary?: number
+          net_salary_encrypted?: string | null
           other_allowance?: number | null
           other_deduction?: number | null
           overtime?: number | null
@@ -6068,6 +6141,7 @@ export type Database = {
           approved_by_role?: string | null
           approver_staff_id?: string | null
           base_salary?: number
+          base_salary_encrypted?: string | null
           bonus?: number | null
           created_at?: string | null
           deleted_at?: string | null
@@ -6076,6 +6150,7 @@ export type Database = {
           late_deduction?: number | null
           month_year?: string
           net_salary?: number
+          net_salary_encrypted?: string | null
           other_allowance?: number | null
           other_deduction?: number | null
           overtime?: number | null
@@ -6682,6 +6757,7 @@ export type Database = {
           religion: string | null
           residence_type: string | null
           salary: number | null
+          salary_encrypted: string | null
           salary_order: number | null
           staff_category: string
           staff_data: Json | null
@@ -6717,6 +6793,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           salary?: number | null
+          salary_encrypted?: string | null
           salary_order?: number | null
           staff_category?: string
           staff_data?: Json | null
@@ -6752,6 +6829,7 @@ export type Database = {
           religion?: string | null
           residence_type?: string | null
           salary?: number | null
+          salary_encrypted?: string | null
           salary_order?: number | null
           staff_category?: string
           staff_data?: Json | null
@@ -7374,7 +7452,9 @@ export type Database = {
           new_data: Json | null
           old_data: Json | null
           record_id: string | null
+          request_id: string | null
           table_name: string
+          user_agent: string | null
           user_id: string | null
         }
         Insert: {
@@ -7386,7 +7466,9 @@ export type Database = {
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
+          request_id?: string | null
           table_name: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Update: {
@@ -7398,7 +7480,9 @@ export type Database = {
           new_data?: Json | null
           old_data?: Json | null
           record_id?: string | null
+          request_id?: string | null
           table_name?: string
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -7956,6 +8040,10 @@ export type Database = {
         Args: { _email: string; _full_name: string; _phone: string }
         Returns: Json
       }
+      decrypt_numeric: { Args: { p_cipher: string }; Returns: number }
+      decrypt_value: { Args: { p_cipher: string }; Returns: string }
+      encrypt_numeric: { Args: { p_value: number }; Returns: string }
+      encrypt_value: { Args: { p_plain: string }; Returns: string }
       enforce_approve_permission: {
         Args: { _menu_path: string }
         Returns: undefined
@@ -7968,6 +8056,7 @@ export type Database = {
         Args: { p_category_key: string; p_joining_year?: number }
         Returns: string
       }
+      get_encryption_key: { Args: never; Returns: string }
       get_next_receipt_serial: { Args: never; Returns: string }
       get_public_tables: {
         Args: never
@@ -7975,6 +8064,8 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_request_ip: { Args: never; Returns: string }
+      get_request_ua: { Args: never; Returns: string }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_menu_permission: {
         Args: { _action: string; _menu_path: string; _user_id: string }
@@ -8022,6 +8113,7 @@ export type Database = {
           residence_type: string | null
           responsibilities: string | null
           salary: number | null
+          salary_encrypted: string | null
           sort_order: number | null
           status: string | null
           updated_at: string
