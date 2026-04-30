@@ -582,18 +582,44 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       navigate(backPath);
     },
     onError: (e: any) => {
-      const msg: string = e?.message || 'Error saving staff';
-      if (msg.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
+      const raw: string = String(e?.message || e?.error_description || e || 'Error saving staff');
+      const upper = raw.toUpperCase();
+      if (upper.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
         toast.error(bn
           ? 'নির্বাচিত কাস্টম রোলটি এই স্টাফ ক্যাটেগরির জন্য অনুমোদিত নয়। অনুগ্রহ করে অন্য রোল বাছাই করুন।'
           : 'The selected custom role is not allowed for this staff category. Please choose a different role.');
         return;
       }
-      if (msg.includes('INVALID_CUSTOM_ROLE')) {
+      if (upper.includes('INVALID_CUSTOM_ROLE')) {
         toast.error(bn ? 'নির্বাচিত কাস্টম রোলটি অস্তিত্বহীন' : 'Selected custom role does not exist');
         return;
       }
-      toast.error(msg);
+      // Duplicate NID across staff / administrative_officers / committee_members
+      if (
+        upper.includes('DUPLICATE_NID') ||
+        (upper.includes('CROSS_TABLE_DUPLICATE') && /nid|এনআইডি/i.test(raw))
+      ) {
+        let nidMsg = bn
+          ? 'এই NID দিয়ে ইতিমধ্যে একজন রেজিস্টার্ড আছেন।'
+          : 'This NID is already registered.';
+        if (/staff|স্টাফ/i.test(raw)) {
+          nidMsg = bn ? 'এই NID দিয়ে ইতিমধ্যে একজন স্টাফ রেজিস্টার্ড আছেন।' : 'This NID is already registered to a staff member.';
+        } else if (/admin|প্রশাসনিক/i.test(raw)) {
+          nidMsg = bn ? 'এই NID দিয়ে ইতিমধ্যে একজন প্রশাসনিক কর্মকর্তা রেজিস্টার্ড আছেন।' : 'This NID is already registered to an administrative officer.';
+        } else if (/committee|কমিটি/i.test(raw)) {
+          nidMsg = bn ? 'এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।' : 'This NID is already registered to a committee member.';
+        }
+        setFieldErrors(prev => ({ ...prev, nid: nidMsg }));
+        toast.error(nidMsg);
+        // Scroll the NID field into view for visibility
+        setTimeout(() => {
+          const el = document.querySelector<HTMLInputElement>('input[maxlength="17"]');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el?.focus();
+        }, 100);
+        return;
+      }
+      toast.error(raw);
     },
   });
 
