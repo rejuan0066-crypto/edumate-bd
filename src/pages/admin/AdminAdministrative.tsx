@@ -235,12 +235,14 @@ const AdminAdministrative = () => {
   });
 
   const addInline = useMutation({
-    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string }) => {
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string; code?: string }) => {
       const name_bn = payload.name_bn.trim();
       const name = (payload.name || name_bn).trim();
       if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
       if (payload.kind === 'department') {
-        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, is_active: true });
+        const code = (payload.code || '').trim().toUpperCase();
+        if (!code) throw new Error('REQUIRED_FIELD: ' + (bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.'));
+        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, code, is_active: true });
         if (error) throw error;
       } else {
         const { error } = await supabase.from('designations').insert({ name, name_bn, staff_category: 'administrative', is_active: true });
@@ -251,7 +253,7 @@ const AdminAdministrative = () => {
     onSuccess: (kind) => {
       toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
-      setNewRow({ name_bn: '', name: '' });
+      setNewRow({ name_bn: '', name: '', code: '' });
     },
     onError: (e: any) => {
       const parsed = parseBackendError(e);
