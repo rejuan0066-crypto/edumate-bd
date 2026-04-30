@@ -652,8 +652,14 @@ const AdminAdministrative = () => {
                   />
                 </div>
                 <div>
-                  <Label>{bn ? 'NID' : 'NID'}</Label>
-                  <Input value={form.nid || ''} onChange={e => setForm({ ...form, nid: e.target.value })} />
+                  <Label className={fieldErrors.nid ? 'text-destructive' : ''}>{bn ? 'NID' : 'NID'}</Label>
+                  <Input
+                    value={form.nid || ''}
+                    onChange={e => { setForm({ ...form, nid: e.target.value }); clearFieldError('nid'); }}
+                    aria-invalid={!!fieldErrors.nid}
+                    className={fieldErrors.nid ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.nid && <p className="text-xs text-destructive mt-1">{fieldErrors.nid}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'জন্মতারিখ' : 'Date of Birth'}</Label>
