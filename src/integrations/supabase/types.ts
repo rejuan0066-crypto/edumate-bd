@@ -182,6 +182,7 @@ export type Database = {
           date_of_birth: string | null
           deleted_at: string | null
           department: string | null
+          department_id: string | null
           designation: string | null
           duty_end_time: string | null
           duty_start_time: string | null
@@ -215,6 +216,7 @@ export type Database = {
           date_of_birth?: string | null
           deleted_at?: string | null
           department?: string | null
+          department_id?: string | null
           designation?: string | null
           duty_end_time?: string | null
           duty_start_time?: string | null
@@ -248,6 +250,7 @@ export type Database = {
           date_of_birth?: string | null
           deleted_at?: string | null
           department?: string | null
+          department_id?: string | null
           designation?: string | null
           duty_end_time?: string | null
           duty_start_time?: string | null
@@ -275,7 +278,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_admin_officers_department"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "administrative_departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       admission_test_attempts: {
         Row: {
@@ -7985,6 +7996,7 @@ export type Database = {
           date_of_birth: string | null
           deleted_at: string | null
           department: string | null
+          department_id: string | null
           designation: string | null
           duty_end_time: string | null
           duty_start_time: string | null
