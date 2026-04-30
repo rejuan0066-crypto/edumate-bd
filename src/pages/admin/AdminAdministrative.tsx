@@ -126,13 +126,13 @@ const AdminAdministrative = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('administrative_departments' as any)
-        .select('id, name, name_bn')
+        .select('id, name, name_bn, code')
         .is('deleted_at', null)
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .order('name_bn', { ascending: true });
       if (error) throw error;
-      return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string }>;
+      return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string; code?: string | null }>;
     },
   });
 
