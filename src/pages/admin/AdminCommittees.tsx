@@ -612,6 +612,31 @@ export default function AdminCommittees() {
             <Button
               onClick={() => {
                 if (!editingMember) return;
+                // Inline NID length validation (10, 13, or 17 digits)
+                const nidVal = String(editingMember.nid || "").replace(/[^0-9]/g, "");
+                if (nidVal) {
+                  if (![10, 13, 17].includes(nidVal.length)) {
+                    const errMsg = bn
+                      ? "এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।"
+                      : "NID must be 10, 13, or 17 digits.";
+                    setMemberFieldErrors(prev => ({ ...prev, nid: errMsg }));
+                    toast.error(errMsg);
+                    return;
+                  }
+                  // Client-side duplicate check within already-loaded committee members
+                  const dupLocal = members.some(
+                    (x) => String(x.nid || "").replace(/[^0-9]/g, "") === nidVal && x.id !== editingMember.id
+                  );
+                  if (dupLocal) {
+                    const errMsg = bn
+                      ? "এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।"
+                      : "This NID is already registered to a committee member.";
+                    setMemberFieldErrors(prev => ({ ...prev, nid: errMsg }));
+                    toast.error(errMsg);
+                    return;
+                  }
+                }
+                setMemberFieldErrors({});
                 // Detect overlap to decide whether OTP is required
                 const isOverlap =
                   editingMember.staff_id &&
