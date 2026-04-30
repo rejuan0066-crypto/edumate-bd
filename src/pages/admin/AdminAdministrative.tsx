@@ -95,8 +95,8 @@ const AdminAdministrative = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>('');
   const [quickAddError, setQuickAddError] = useState<{ field?: 'name_bn' | 'name_en'; message: string } | null>(null);
-  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
-  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name' | 'code'; message: string } | null>(null);
+  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name' | 'code'; message: string } | null>(null);
 
   const clearFieldError = (field: string) => {
     setFieldErrors(prev => {
