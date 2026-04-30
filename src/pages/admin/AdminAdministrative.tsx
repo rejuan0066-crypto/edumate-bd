@@ -958,24 +958,44 @@ const AdminAdministrative = () => {
             {(['department','designation'] as const).map((kind) => (
               <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
                 {/* Add new row */}
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
-                  <Input
-                    placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
-                    value={newRow.name_bn}
-                    onChange={(e) => setNewRow({ ...newRow, name_bn: e.target.value })}
-                  />
-                  <Input
-                    placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
-                    value={newRow.name}
-                    onChange={(e) => setNewRow({ ...newRow, name: e.target.value })}
-                  />
-                  <Button
-                    onClick={() => addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name })}
-                    disabled={!newRow.name_bn.trim() || addInline.isPending}
-                    className="gap-1"
-                  >
-                    <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
-                  </Button>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                    <div>
+                      <Input
+                        placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
+                        value={newRow.name_bn}
+                        onChange={(e) => { setNewRow({ ...newRow, name_bn: e.target.value }); if (manageNewError) setManageNewError(null); }}
+                        aria-invalid={manageNewError?.field === 'name_bn'}
+                        className={manageNewError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
+                        value={newRow.name}
+                        onChange={(e) => { setNewRow({ ...newRow, name: e.target.value }); if (manageNewError) setManageNewError(null); }}
+                        aria-invalid={manageNewError?.field === 'name'}
+                        className={manageNewError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                      />
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setManageNewError(null);
+                        if (!newRow.name_bn.trim()) {
+                          setManageNewError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                          return;
+                        }
+                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name });
+                      }}
+                      disabled={!newRow.name_bn.trim() || addInline.isPending}
+                      className="gap-1"
+                    >
+                      <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
+                    </Button>
+                  </div>
+                  {manageNewError && (
+                    <p className="text-xs text-destructive px-1">{manageNewError.message}</p>
+                  )}
                 </div>
 
                 {/* List */}
