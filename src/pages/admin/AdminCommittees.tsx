@@ -78,6 +78,13 @@ export default function AdminCommittees() {
   const [activeCommitteeId, setActiveCommitteeId] = useState<string | null>(null);
   const [deleteCommittee, setDeleteCommittee] = useState<Committee | null>(null);
   const [deleteMember, setDeleteMember] = useState<Member | null>(null);
+  const [memberFieldErrors, setMemberFieldErrors] = useState<Record<string, string>>({});
+  const clearMemberFieldError = (f: string) =>
+    setMemberFieldErrors(prev => {
+      if (!prev[f]) return prev;
+      const { [f]: _, ...rest } = prev;
+      return rest;
+    });
   const otpGate = useAdminOtpGate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -204,12 +211,25 @@ export default function AdminCommittees() {
     },
     onError: (e: any) => {
       if (e.message === "__cancelled__") return;
-      const msg = e.message || "";
+      const raw = String(e?.message || e || "");
+      const msg = raw.toUpperCase();
       if (msg.includes("OVERLAP_BLOCKED")) {
         toast.error(bn ? "ওভারল্যাপ ব্লক: এই স্টাফ ইতিমধ্যে অন্য কমিটিতে সক্রিয়" : "Overlap blocked: staff is already in another active committee");
-      } else {
-        toast.error(msg);
+        return;
       }
+      // Duplicate NID across staff / administrative / committee tables
+      if (msg.includes("DUPLICATE_NID") || (msg.includes("CROSS_TABLE_DUPLICATE") && /nid|এনআইডি/i.test(raw))) {
+        let nidMsg = bn
+          ? "এই NID দিয়ে ইতিমধ্যে একজন রেজিস্টার্ড আছেন।"
+          : "This NID is already registered.";
+        if (/staff|স্টাফ/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন স্টাফ রেজিস্টার্ড আছেন।" : "This NID is already registered to a staff member.";
+        else if (/admin|প্রশাসনিক/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন প্রশাসনিক কর্মকর্তা রেজিস্টার্ড আছেন।" : "This NID is already registered to an administrative officer.";
+        else if (/committee|কমিটি/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।" : "This NID is already registered to a committee member.";
+        setMemberFieldErrors(prev => ({ ...prev, nid: nidMsg }));
+        toast.error(nidMsg);
+        return;
+      }
+      toast.error(raw);
     },
   });
 
@@ -449,7 +469,7 @@ export default function AdminCommittees() {
       </Dialog>
 
       {/* Member Dialog */}
-      <Dialog open={memberDialog} onOpenChange={setMemberDialog}>
+      <Dialog open={memberDialog} onOpenChange={(o) => { setMemberDialog(o); if (!o) setMemberFieldErrors({}); }}>
         <DialogContent className="max-w-3xl rounded-[38px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingMember?.id ? (bn ? "সদস্য সম্পাদনা" : "Edit Member") : (bn ? "নতুন সদস্য" : "New Member")}</DialogTitle>
@@ -546,13 +566,23 @@ export default function AdminCommittees() {
                   <Input type="email" value={editingMember.email || ""} onChange={e => setEditingMember({ ...editingMember, email: e.target.value })} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label>{bn ? "এনআইডি" : "NID"}</Label>
+                  <Label className={memberFieldErrors.nid ? "text-destructive" : ""}>
+                    {bn ? "এনআইডি" : "NID"}
+                  </Label>
                   <Input
                     value={editingMember.nid || ""}
-                    onChange={e => setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") })}
+                    onChange={e => {
+                      setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") });
+                      clearMemberFieldError("nid");
+                    }}
                     inputMode="numeric"
+                    aria-invalid={!!memberFieldErrors.nid}
+                    className={memberFieldErrors.nid ? "border-destructive ring-1 ring-destructive/30 focus-visible:ring-destructive" : ""}
                     placeholder={bn ? "জাতীয় পরিচয়পত্র নম্বর" : "National ID number"}
                   />
+                  {memberFieldErrors.nid && (
+                    <p className="text-xs text-destructive mt-1">{memberFieldErrors.nid}</p>
+                  )}
                 </div>
                 <div className="sm:col-span-2">
                   <Label>{bn ? "ঠিকানা" : "Address"}</Label>
@@ -582,6 +612,31 @@ export default function AdminCommittees() {
             <Button
               onClick={() => {
                 if (!editingMember) return;
+                // Inline NID length validation (10, 13, or 17 digits)
+                const nidVal = String(editingMember.nid || "").replace(/[^0-9]/g, "");
+                if (nidVal) {
+                  if (![10, 13, 17].includes(nidVal.length)) {
+                    const errMsg = bn
+                      ? "এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।"
+                      : "NID must be 10, 13, or 17 digits.";
+                    setMemberFieldErrors(prev => ({ ...prev, nid: errMsg }));
+                    toast.error(errMsg);
+                    return;
+                  }
+                  // Client-side duplicate check within already-loaded committee members
+                  const dupLocal = members.some(
+                    (x) => String(x.nid || "").replace(/[^0-9]/g, "") === nidVal && x.id !== editingMember.id
+                  );
+                  if (dupLocal) {
+                    const errMsg = bn
+                      ? "এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।"
+                      : "This NID is already registered to a committee member.";
+                    setMemberFieldErrors(prev => ({ ...prev, nid: errMsg }));
+                    toast.error(errMsg);
+                    return;
+                  }
+                }
+                setMemberFieldErrors({});
                 // Detect overlap to decide whether OTP is required
                 const isOverlap =
                   editingMember.staff_id &&
