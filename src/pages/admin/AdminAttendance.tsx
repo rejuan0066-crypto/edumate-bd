@@ -1720,7 +1720,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     </div>
                   </div>
                 ))}
-                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)} disabled={saveCategoryTimesMutation.isPending}>
+                <Button size="sm" className="w-full" onClick={() => {
+                  const visibleCategoryTimes = dynamicStaffCategories
+                    .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                    .reduce((acc, catKey) => {
+                      acc[catKey] = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
+                      return acc;
+                    }, {} as Record<string, { start: string; end: string }>);
+                  saveCategoryTimesMutation.mutate(visibleCategoryTimes);
+                }} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>
                 <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
