@@ -327,6 +327,15 @@ const AdminAdministrative = () => {
     if (msg.includes('DUPLICATE_DEPT_NAME_BN') || raw.includes('uq_admin_departments_name_bn')) {
       return { field: 'name_bn', message: bn ? 'এই বাংলা নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this Bangla name already exists.' };
     }
+    if (msg.includes('DUPLICATE_DEPT_CODE') || raw.includes('uq_admin_dept_code_active')) {
+      return { field: 'code', message: bn ? 'এই কোডের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this code already exists.' };
+    }
+    if (msg.includes('INVALID_DEPT_CODE')) {
+      return { field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে (যেমন: ACC, IT01)।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' };
+    }
+    if (msg.includes('REQUIRED_FIELD') && /কোড|code/i.test(raw)) {
+      return { field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' };
+    }
 
     // ---- Permission / RLS ----
     if (msg.includes('PERMISSION_DENIED') || raw.toLowerCase().includes('row-level security') || raw.toLowerCase().includes('permission')) {
