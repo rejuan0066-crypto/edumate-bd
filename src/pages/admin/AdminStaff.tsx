@@ -31,29 +31,30 @@ const ADMIN_STAFF_KEYWORDS = ['administrative', 'প্রশাসনিক', '
 const GENERAL_STAFF_KEYWORDS = ['peon', 'পিয়ন', 'guard', 'প্রহরী', 'গার্ড', 'cleaner', 'পরিচ্ছন্নতাকর্মী', 'সহায়ক', 'helper', 'driver', 'ড্রাইভার'];
 const SUPPORT_STAFF_KEYWORDS = ['অফিস সহকারী', 'clerk', 'কেরানি', 'operator', 'অপারেটর', 'accountant', 'হিসাবরক্ষক', 'librarian', 'লাইব্রেরিয়ান', 'data entry', 'ডাটা এন্ট্রি'];
 
-const getStaffCategory = (staff: any, designationsMap: Map<string, string>): string => {
+const getStaffCategory = (staff: any, designationsMap: Map<string, string>, availableCategories?: Set<string>): string => {
+  const isAvailable = (key: string) => !availableCategories || availableCategories.size === 0 || availableCategories.has(key);
   // 1. Use stored staff_category column if available and not default
-  if (staff?.staff_category && staff.staff_category !== 'general') return staff.staff_category;
+  if (staff?.staff_category && staff.staff_category !== 'general' && isAvailable(staff.staff_category)) return staff.staff_category;
   // 2. Check DB-based category from designation name
   const designation = staff?.designation;
   if (designation) {
     const dbCategory = designationsMap.get(designation.toLowerCase());
-    if (dbCategory) return dbCategory;
+    if (dbCategory && isAvailable(dbCategory)) return dbCategory;
     const lower = designation.toLowerCase();
-    if (TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher';
-    if (ADMIN_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'administrative';
-    if (SUPPORT_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'support';
-    if (GENERAL_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'general';
+    if (isAvailable('teacher') && TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher';
+    if (isAvailable('administrative') && ADMIN_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'administrative';
+    if (isAvailable('support') && SUPPORT_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'support';
+    if (isAvailable('general') && GENERAL_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'general';
   }
   // 3. Use stored staff_category (could be 'general' default)
-  if (staff?.staff_category) return staff.staff_category;
+  if (staff?.staff_category && isAvailable(staff.staff_category)) return staff.staff_category;
   // 4. Fallback: department field
   const dept = (staff?.department || '').toLowerCase();
-  if (dept === 'general' || dept === 'সাধারণ' || dept === 'সহায়ক') return 'general';
-  if (dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা')) return 'teacher';
-  if (dept === 'administrative' || dept === 'প্রশাসন' || dept === 'প্রশাসনিক') return 'administrative';
-  if (dept === 'support' || dept === 'অফিস') return 'support';
-  return 'general';
+  if (isAvailable('general') && (dept === 'general' || dept === 'সাধারণ' || dept === 'সহায়ক')) return 'general';
+  if (isAvailable('teacher') && (dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা'))) return 'teacher';
+  if (isAvailable('administrative') && (dept === 'administrative' || dept === 'প্রশাসন' || dept === 'প্রশাসনিক')) return 'administrative';
+  if (isAvailable('support') && (dept === 'support' || dept === 'অফিস')) return 'support';
+  return isAvailable('general') ? 'general' : (availableCategories?.values().next().value || 'general');
 };
 
 const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
