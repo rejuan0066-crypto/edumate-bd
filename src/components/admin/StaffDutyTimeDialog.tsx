@@ -156,13 +156,15 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
-              <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />
-              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(start)}</p>}
+              {fmt === '12'
+                ? <Time12Picker value={start} onChange={setStart} bn={bn} />
+                : <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />}
             </div>
             <div>
               <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
-              <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />
-              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(end)}</p>}
+              {fmt === '12'
+                ? <Time12Picker value={end} onChange={setEnd} bn={bn} />
+                : <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />}
             </div>
           </div>
           <div className="p-3 bg-muted/40 rounded-2xl text-sm flex items-center justify-between gap-2">
