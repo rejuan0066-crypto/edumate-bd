@@ -175,8 +175,8 @@ const StaffProfileModal = ({ staff, bn }: StaffProfileModalProps) => {
             <ProfileInfoItem icon={ClipboardList} label={bn ? 'অভিজ্ঞতা' : 'Experience'} value={staff.experience || sd.experience} />
             <ProfileInfoItem icon={DollarSign} label={bn ? 'বেতন' : 'Salary'} value={staff.salary ? `৳${staff.salary}` : undefined} />
             <ProfileInfoItem icon={Building2} label={bn ? 'পূর্বের প্রতিষ্ঠান' : 'Previous Institute'} value={staff.previous_institute || sd.previous_institute} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={staff.duty_start_time} />
-            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={staff.duty_end_time} />
+            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শুরু' : 'Duty Start'} value={formatDutyTime(staff.duty_start_time, bn)} />
+            <ProfileInfoItem icon={Clock} label={bn ? 'ডিউটি শেষ' : 'Duty End'} value={formatDutyTime(staff.duty_end_time, bn)} />
           </ProfileSectionCard>
         </div>
       )}
