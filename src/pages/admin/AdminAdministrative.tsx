@@ -88,8 +88,8 @@ const AdminAdministrative = () => {
   const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [manageTab, setManageTab] = useState<'department' | 'designation'>('department');
-  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
-  const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
+  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string; code?: string } | null>(null);
+  const [newRow, setNewRow] = useState<{ name_bn: string; name: string; code: string }>({ name_bn: '', name: '', code: '' });
 
   // Inline error state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
