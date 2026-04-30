@@ -323,45 +323,41 @@ Deno.serve(async (req) => {
       } catch (smtpError) {
         const errMsg = smtpError instanceof Error ? smtpError.message : String(smtpError);
         console.error("SMTP send failed:", errMsg);
-        // Fall back to EmailJS if available
+        // Fall back to EmailJS if available — sent SERVER-SIDE so the OTP code is never returned to the client
         if (useEmailjs) {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              method: "emailjs",
-              otp_code: code,
-              emailjs: {
-                service_id: emailjsConfig.service_id,
-                template_id: emailjsConfig.template_id,
-                public_key: emailjsConfig.public_key,
-              },
-              expiry_minutes: emailjsConfig.otp_expiry_minutes || 10,
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          const ejExpiry = emailjsConfig.otp_expiry_minutes || 10;
+          const sent = await sendViaEmailJsServerSide(emailjsConfig, email, code, ejExpiry, purpose);
+          if (sent.ok) {
+            return new Response(
+              JSON.stringify({ success: true, method: "emailjs", expiry_minutes: ejExpiry }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          console.error("EmailJS server-side send failed:", sent.error);
         }
-        return new Response(JSON.stringify({ error: "Failed to send email via SMTP" }), {
+        return new Response(JSON.stringify({ error: "Failed to send email" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
 
-    // EmailJS path - return config for client-side sending
-    return new Response(
-      JSON.stringify({
-        success: true,
-        method: "emailjs",
-        otp_code: code,
-        emailjs: {
-          service_id: emailjsConfig.service_id,
-          template_id: emailjsConfig.template_id,
-          public_key: emailjsConfig.public_key,
-        },
-        expiry_minutes: expiryMinutes,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // EmailJS path (primary) — sent SERVER-SIDE so the OTP code is never returned to the client
+    {
+      const ejExpiry = emailjsConfig.otp_expiry_minutes || expiryMinutes;
+      const sent = await sendViaEmailJsServerSide(emailjsConfig, email, code, ejExpiry, purpose);
+      if (sent.ok) {
+        return new Response(
+          JSON.stringify({ success: true, method: "emailjs", expiry_minutes: ejExpiry }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      console.error("EmailJS server-side send failed:", sent.error);
+      return new Response(JSON.stringify({ error: "Failed to send verification email" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   } catch (error) {
     console.error("Send OTP error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
