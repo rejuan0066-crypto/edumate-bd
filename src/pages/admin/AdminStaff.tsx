@@ -104,9 +104,22 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('designations').select('name, name_bn, staff_category').eq('is_active', true).order('sort_order');
+      const { data, error } = await supabase.from('designations').select('id, name, name_bn, staff_category').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -126,6 +139,21 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       if (d.name_bn) designationsMap.set(d.name_bn.toLowerCase(), d.staff_category);
     }
   });
+  const activeCategoryKeys = new Set((staffCategories as any[]).map((c: any) => c.key));
+  const labelForCategory = (key: string) => {
+    const category = (staffCategories as any[]).find((c: any) => c.key === key);
+    if (category) return bn ? (category.name_bn || category.name) : (category.name || category.name_bn);
+
+    const fallbackLabels: Record<string, { bn: string; en: string }> = {
+      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+      support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
+      general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+      director: { bn: 'পরিচালক', en: 'Director' },
+      committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
+      administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
+    };
+    return fallbackLabels[key]?.[bn ? 'bn' : 'en'] || key;
+  };
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
