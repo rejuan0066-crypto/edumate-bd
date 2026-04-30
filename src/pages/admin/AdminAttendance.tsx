@@ -1705,18 +1705,17 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 </Label>
                 {dynamicStaffCategories
                   .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                  .filter(catKey => (allStaff as any[]).some((s: any) => (s.staff_category || 'general') === catKey))
                   .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
                   <div key={cat.key} className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground">{cat.label}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { ...p[cat.key], start: v } }))} />
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: v, end: p[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00' } }))} />
                       </div>
                       <div>
                         <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { ...p[cat.key], end: v } }))} />
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: p[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00', end: v } }))} />
                       </div>
                     </div>
                   </div>
