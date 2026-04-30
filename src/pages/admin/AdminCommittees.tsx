@@ -546,6 +546,15 @@ export default function AdminCommittees() {
                   <Input type="email" value={editingMember.email || ""} onChange={e => setEditingMember({ ...editingMember, email: e.target.value })} />
                 </div>
                 <div className="sm:col-span-2">
+                  <Label>{bn ? "এনআইডি" : "NID"}</Label>
+                  <Input
+                    value={editingMember.nid || ""}
+                    onChange={e => setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") })}
+                    inputMode="numeric"
+                    placeholder={bn ? "জাতীয় পরিচয়পত্র নম্বর" : "National ID number"}
+                  />
+                </div>
+                <div className="sm:col-span-2">
                   <Label>{bn ? "ঠিকানা" : "Address"}</Label>
                   <Input value={editingMember.address || ""} onChange={e => setEditingMember({ ...editingMember, address: e.target.value })} />
                 </div>
