@@ -623,8 +623,17 @@ const AdminAdministrative = () => {
                   />
                 </div>
                 <div>
-                  <Label>{bn ? 'নাম (বাংলা) *' : 'Name (Bangla) *'}</Label>
-                  <Input value={form.name_bn || ''} onChange={e => setForm({ ...form, name_bn: e.target.value })} required />
+                  <Label className={fieldErrors.name_bn ? 'text-destructive' : ''}>
+                    {bn ? 'নাম (বাংলা) *' : 'Name (Bangla) *'}
+                  </Label>
+                  <Input
+                    value={form.name_bn || ''}
+                    onChange={e => { setForm({ ...form, name_bn: e.target.value }); clearFieldError('name_bn'); }}
+                    required
+                    aria-invalid={!!fieldErrors.name_bn}
+                    className={fieldErrors.name_bn ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.name_bn && <p className="text-xs text-destructive mt-1">{fieldErrors.name_bn}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label>
