@@ -957,7 +957,7 @@ const AdminAdministrative = () => {
               {bn ? 'বিভাগ ও পদবি ব্যবস্থাপনা' : 'Manage Departments & Designations'}
             </DialogTitle>
           </DialogHeader>
-          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '' }); }}>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '', code: '' }); }}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="department">{bn ? 'বিভাগসমূহ' : 'Departments'} ({departments.length})</TabsTrigger>
               <TabsTrigger value="designation">{bn ? 'পদবিসমূহ' : 'Designations'} ({designations.length})</TabsTrigger>
@@ -967,7 +967,7 @@ const AdminAdministrative = () => {
               <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
                 {/* Add new row */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                  <div className={`grid grid-cols-1 ${kind === 'department' ? 'md:grid-cols-[1fr_1fr_140px_auto]' : 'md:grid-cols-[1fr_1fr_auto]'} gap-2 p-3 rounded-[20px] bg-muted/30 border`}>
                     <div>
                       <Input
                         placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
@@ -986,6 +986,18 @@ const AdminAdministrative = () => {
                         className={manageNewError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}
                       />
                     </div>
+                    {kind === 'department' && (
+                      <div>
+                        <Input
+                          placeholder={bn ? 'কোড * (যেমন ACC)' : 'Code * (e.g. ACC)'}
+                          value={newRow.code}
+                          maxLength={10}
+                          onChange={(e) => { setNewRow({ ...newRow, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); if (manageNewError) setManageNewError(null); }}
+                          aria-invalid={manageNewError?.field === 'code'}
+                          className={`uppercase tracking-wider ${manageNewError?.field === 'code' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
+                        />
+                      </div>
+                    )}
                     <Button
                       onClick={() => {
                         setManageNewError(null);
@@ -993,9 +1005,19 @@ const AdminAdministrative = () => {
                           setManageNewError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
                           return;
                         }
-                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name });
+                        if (kind === 'department') {
+                          if (!newRow.code.trim()) {
+                            setManageNewError({ field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' });
+                            return;
+                          }
+                          if (!/^[A-Z0-9]{2,10}$/.test(newRow.code.trim())) {
+                            setManageNewError({ field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' });
+                            return;
+                          }
+                        }
+                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name, code: newRow.code });
                       }}
-                      disabled={!newRow.name_bn.trim() || addInline.isPending}
+                      disabled={!newRow.name_bn.trim() || (kind === 'department' && !newRow.code.trim()) || addInline.isPending}
                       className="gap-1"
                     >
                       <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
