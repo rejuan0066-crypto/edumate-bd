@@ -91,6 +91,22 @@ const AdminAdministrative = () => {
   const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
   const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
 
+  // Inline error state
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string>('');
+  const [quickAddError, setQuickAddError] = useState<{ field?: 'name_bn' | 'name_en'; message: string } | null>(null);
+  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => {
+      if (!prev[field]) return prev;
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+    if (formError) setFormError('');
+  };
+
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
     queryFn: async () => {
@@ -160,7 +176,12 @@ const AdminAdministrative = () => {
       setForm(prev => ({ ...prev, [res.kind === 'department' ? 'department' : 'designation']: res.value }));
       setQuickAdd(null);
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => {
+      const parsed = parseBackendError(e);
+      const f = parsed.field === 'name' ? 'name_en' : parsed.field === 'name_bn' ? 'name_bn' : undefined;
+      setQuickAddError({ field: f as any, message: parsed.message });
+      toast.error(parsed.message);
+    },
   });
 
   const updateOption = useMutation({
@@ -178,7 +199,11 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
       setEditRow(null);
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => {
+      const parsed = parseBackendError(e);
+      setManageEditError({ field: parsed.field as any, message: parsed.message });
+      toast.error(parsed.message);
+    },
   });
 
   const deleteOption = useMutation({
@@ -200,7 +225,7 @@ const AdminAdministrative = () => {
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Removed');
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
   const addInline = useMutation({
@@ -222,7 +247,11 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
       setNewRow({ name_bn: '', name: '' });
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => {
+      const parsed = parseBackendError(e);
+      setManageNewError({ field: parsed.field as any, message: parsed.message });
+      toast.error(parsed.message);
+    },
   });
 
   const filtered = useMemo(() => {
@@ -239,18 +268,81 @@ const AdminAdministrative = () => {
     );
   }, [officers, search, statusFilter]);
 
-  const friendlyError = (e: any): string => {
-    const msg = String(e?.message || e || '');
-    if (msg.includes('DUPLICATE_PHONE') || (msg.includes('uq_admin_officers_phone') )) {
-      return bn ? 'এই ফোন নম্বর ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This phone number is already used by another administrative officer.';
+  // Map backend errors (from triggers / RLS / constraints) to {field, message}.
+  // Used by both officer form and department/designation dialogs.
+  type ParsedErr = { field?: string; message: string };
+  const parseBackendError = (e: any): ParsedErr => {
+    const raw = String(e?.message || e?.error_description || e || '');
+    const msg = raw.toUpperCase();
+
+    // ---- Officer field-level violations ----
+    if (msg.includes('DUPLICATE_PHONE') || raw.includes('uq_admin_officers_phone') || raw.includes('uq_staff_phone')) {
+      return { field: 'phone', message: bn ? 'এই ফোন নম্বর ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This phone number is already in use.' };
     }
-    if (msg.includes('DUPLICATE_EMAIL') || msg.includes('uq_admin_officers_email')) {
-      return bn ? 'এই ইমেইল ইতিমধ্যে অন্য একজন প্রশাসনিক কর্মকর্তার জন্য ব্যবহৃত হয়েছে।' : 'This email is already used by another administrative officer.';
+    if (msg.includes('DUPLICATE_EMAIL') || raw.includes('uq_admin_officers_email') || raw.includes('uq_staff_email')) {
+      return { field: 'email', message: bn ? 'এই ইমেইল ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This email is already in use.' };
     }
-    if (msg.toLowerCase().includes('row-level security') || msg.toLowerCase().includes('permission')) {
-      return bn ? 'এই কাজটি করার অনুমতি আপনার নেই।' : 'You do not have permission to perform this action.';
+    if (msg.includes('DUPLICATE_NID')) {
+      return { field: 'nid', message: bn ? 'এই এনআইডি ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This NID is already in use.' };
     }
-    return msg || (bn ? 'একটি ত্রুটি ঘটেছে' : 'An error occurred');
+    if (msg.includes('DUPLICATE_USER')) {
+      return { message: bn ? 'এই ইউজার ইতিমধ্যে অন্য তালিকায় আছেন।' : 'This user is already registered elsewhere.' };
+    }
+    if (msg.includes('CROSS_TABLE_DUPLICATE')) {
+      // Pick most likely field based on words in the original raw message
+      if (/phone|ফোন/i.test(raw)) return { field: 'phone', message: bn ? 'এই ফোন নম্বর ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Phone already exists in staff/admin list.' };
+      if (/email|ইমেইল/i.test(raw)) return { field: 'email', message: bn ? 'এই ইমেইল ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Email already exists in staff/admin list.' };
+      if (/nid|এনআইডি/i.test(raw)) return { field: 'nid', message: bn ? 'এই এনআইডি ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'NID already exists in staff/admin list.' };
+      return { message: bn ? 'এই তথ্য ইতিমধ্যে স্টাফ/প্রশাসনিক তালিকায় আছে।' : 'Record already exists in staff/admin list.' };
+    }
+    if (msg.includes('INVALID_PHONE')) {
+      return { field: 'phone', message: bn ? 'সঠিক ১১-সংখ্যার বাংলাদেশি মোবাইল নম্বর দিন (01XXXXXXXXX)।' : 'Enter a valid 11-digit Bangladesh mobile (01XXXXXXXXX).' };
+    }
+    if (msg.includes('INVALID_EMAIL')) {
+      return { field: 'email', message: bn ? 'সঠিক ইমেইল ঠিকানা দিন।' : 'Enter a valid email address.' };
+    }
+    if (msg.includes('INVALID_NID')) {
+      return { field: 'nid', message: bn ? 'সঠিক এনআইডি দিন (১০, ১৩ অথবা ১৭ সংখ্যা)।' : 'NID must be 10, 13, or 17 digits.' };
+    }
+    if (msg.includes('INVALID_DEPARTMENT')) {
+      return { field: 'department', message: bn ? 'নির্বাচিত বিভাগটি সক্রিয় বিভাগ তালিকায় নেই।' : 'Selected department does not exist in the active list.' };
+    }
+    if (msg.includes('REQUIRED_NAME_BN') || msg.includes('NAME_BN_REQUIRED')) {
+      return { field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' };
+    }
+    if (msg.includes('REQUIRED_NAME') || msg.includes('NAME_REQUIRED')) {
+      return { field: 'name', message: bn ? 'ইংরেজি নাম আবশ্যক।' : 'English name is required.' };
+    }
+    if (msg.includes('DUPLICATE_DEPT_NAME') || msg.includes('DUPLICATE_DEPARTMENT_NAME') || raw.includes('uq_admin_departments_name')) {
+      return { field: 'name', message: bn ? 'এই নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this name already exists.' };
+    }
+    if (msg.includes('DUPLICATE_DEPT_NAME_BN') || raw.includes('uq_admin_departments_name_bn')) {
+      return { field: 'name_bn', message: bn ? 'এই বাংলা নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this Bangla name already exists.' };
+    }
+
+    // ---- Permission / RLS ----
+    if (msg.includes('PERMISSION_DENIED') || raw.toLowerCase().includes('row-level security') || raw.toLowerCase().includes('permission')) {
+      return { message: bn ? 'এই কাজটি করার অনুমতি আপনার নেই।' : 'You do not have permission to perform this action.' };
+    }
+
+    // Strip leading SQL prefixes like "DUPLICATE_PHONE: " for cleaner display
+    const cleaned = raw.replace(/^[A-Z_]+:\s*/, '').trim();
+    return { message: cleaned || (bn ? 'একটি ত্রুটি ঘটেছে' : 'An error occurred') };
+  };
+
+  // Convenience: surface any backend error onto the officer form. Returns
+  // true when the error was attached to a specific field.
+  const applyOfficerError = (e: any): boolean => {
+    const parsed = parseBackendError(e);
+    if (parsed.field) {
+      setFieldErrors(prev => ({ ...prev, [parsed.field!]: parsed.message }));
+      setFormError('');
+      toast.error(parsed.message);
+      return true;
+    }
+    setFormError(parsed.message);
+    toast.error(parsed.message);
+    return false;
   };
 
   const upsert = useMutation({
@@ -281,8 +373,10 @@ const AdminAdministrative = () => {
       setOpen(false);
       setEditing(null);
       setForm(emptyForm);
+      setFieldErrors({});
+      setFormError('');
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => applyOfficerError(e),
   });
 
   const softDelete = useMutation({
@@ -299,7 +393,7 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: ['administrative-officers'] });
       setDelTarget(null);
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
   const toggleStatus = useMutation({
@@ -317,13 +411,54 @@ const AdminAdministrative = () => {
       toast.success(next === 'active' ? (bn ? 'সক্রিয় করা হয়েছে' : 'Activated') : (bn ? 'নিষ্ক্রিয় করা হয়েছে' : 'Deactivated'));
       qc.invalidateQueries({ queryKey: ['administrative-officers'] });
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
-  const openAdd = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  // Client-side pre-validation that mirrors the backend triggers, so users
+  // see inline messages immediately without a round-trip.
+  const validateOfficerForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const f = form;
+    if (!f.name_bn || !String(f.name_bn).trim()) {
+      errs.name_bn = bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.';
+    }
+    if (f.phone) {
+      const digits = String(f.phone).replace(/[^0-9]/g, '');
+      if (!/^01[3-9][0-9]{8}$/.test(digits)) {
+        errs.phone = bn ? 'সঠিক ১১-সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।' : 'Enter a valid 11-digit mobile (01XXXXXXXXX).';
+      }
+    }
+    if (f.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.email))) {
+        errs.email = bn ? 'সঠিক ইমেইল ঠিকানা দিন।' : 'Enter a valid email address.';
+      }
+    }
+    if (f.nid) {
+      const nd = String(f.nid).replace(/[^0-9]/g, '');
+      if (![10, 13, 17].includes(nd.length)) {
+        errs.nid = bn ? 'এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।' : 'NID must be 10, 13, or 17 digits.';
+      }
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setFormError(bn ? 'অনুগ্রহ করে নিচের ভুলগুলো ঠিক করুন।' : 'Please fix the errors below.');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
+  const handleSaveOfficer = () => {
+    if (!validateOfficerForm()) return;
+    upsert.mutate(form);
+  };
+
+  const openAdd = () => { setEditing(null); setForm(emptyForm); setFieldErrors({}); setFormError(''); setOpen(true); };
   const openEdit = (o: Officer) => {
     setEditing(o);
     setForm({ ...o });
+    setFieldErrors({});
+    setFormError('');
     setOpen(true);
   };
 
@@ -488,8 +623,17 @@ const AdminAdministrative = () => {
                   />
                 </div>
                 <div>
-                  <Label>{bn ? 'নাম (বাংলা) *' : 'Name (Bangla) *'}</Label>
-                  <Input value={form.name_bn || ''} onChange={e => setForm({ ...form, name_bn: e.target.value })} required />
+                  <Label className={fieldErrors.name_bn ? 'text-destructive' : ''}>
+                    {bn ? 'নাম (বাংলা) *' : 'Name (Bangla) *'}
+                  </Label>
+                  <Input
+                    value={form.name_bn || ''}
+                    onChange={e => { setForm({ ...form, name_bn: e.target.value }); clearFieldError('name_bn'); }}
+                    required
+                    aria-invalid={!!fieldErrors.name_bn}
+                    className={fieldErrors.name_bn ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.name_bn && <p className="text-xs text-destructive mt-1">{fieldErrors.name_bn}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label>
@@ -508,8 +652,14 @@ const AdminAdministrative = () => {
                   />
                 </div>
                 <div>
-                  <Label>{bn ? 'NID' : 'NID'}</Label>
-                  <Input value={form.nid || ''} onChange={e => setForm({ ...form, nid: e.target.value })} />
+                  <Label className={fieldErrors.nid ? 'text-destructive' : ''}>{bn ? 'NID' : 'NID'}</Label>
+                  <Input
+                    value={form.nid || ''}
+                    onChange={e => { setForm({ ...form, nid: e.target.value }); clearFieldError('nid'); }}
+                    aria-invalid={!!fieldErrors.nid}
+                    className={fieldErrors.nid ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.nid && <p className="text-xs text-destructive mt-1">{fieldErrors.nid}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'জন্মতারিখ' : 'Date of Birth'}</Label>
@@ -536,12 +686,26 @@ const AdminAdministrative = () => {
               <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{bn ? '২. যোগাযোগ' : '2. Contact'}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <Label>{bn ? 'ফোন' : 'Phone'}</Label>
-                  <Input value={form.phone || ''} onChange={e => setForm({ ...form, phone: e.target.value })} />
+                  <Label className={fieldErrors.phone ? 'text-destructive' : ''}>{bn ? 'ফোন' : 'Phone'}</Label>
+                  <Input
+                    value={form.phone || ''}
+                    onChange={e => { setForm({ ...form, phone: e.target.value }); clearFieldError('phone'); }}
+                    placeholder="01XXXXXXXXX"
+                    aria-invalid={!!fieldErrors.phone}
+                    className={fieldErrors.phone ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.phone && <p className="text-xs text-destructive mt-1">{fieldErrors.phone}</p>}
                 </div>
                 <div>
-                  <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
-                  <Input type="email" value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} />
+                  <Label className={fieldErrors.email ? 'text-destructive' : ''}>{bn ? 'ইমেইল' : 'Email'}</Label>
+                  <Input
+                    type="email"
+                    value={form.email || ''}
+                    onChange={e => { setForm({ ...form, email: e.target.value }); clearFieldError('email'); }}
+                    aria-invalid={!!fieldErrors.email}
+                    className={fieldErrors.email ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                  />
+                  {fieldErrors.email && <p className="text-xs text-destructive mt-1">{fieldErrors.email}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <Label>{bn ? 'ঠিকানা' : 'Address'}</Label>
@@ -582,7 +746,7 @@ const AdminAdministrative = () => {
                 </div>
                 <div>
                   <div className="flex items-center justify-between">
-                    <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
+                    <Label className={fieldErrors.department ? 'text-destructive' : ''}>{bn ? 'বিভাগ' : 'Department'}</Label>
                     <button
                       type="button"
                       onClick={() => setQuickAdd({ kind: 'department', name_bn: '', name_en: '' })}
@@ -591,8 +755,10 @@ const AdminAdministrative = () => {
                       <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
                     </button>
                   </div>
-                  <Select value={form.department || ''} onValueChange={v => setForm({ ...form, department: v })}>
-                    <SelectTrigger><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} /></SelectTrigger>
+                  <Select value={form.department || ''} onValueChange={v => { setForm({ ...form, department: v }); clearFieldError('department'); }}>
+                    <SelectTrigger className={fieldErrors.department ? 'border-destructive ring-1 ring-destructive/30' : ''}>
+                      <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} />
+                    </SelectTrigger>
                     <SelectContent>
                       {departments.length === 0 && (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো বিভাগ নেই — "নতুন" ক্লিক করুন' : 'No departments — click "New"'}</div>
@@ -605,6 +771,7 @@ const AdminAdministrative = () => {
                       )}
                     </SelectContent>
                   </Select>
+                  {fieldErrors.department && <p className="text-xs text-destructive mt-1">{fieldErrors.department}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'অফিস কক্ষ' : 'Office Room'}</Label>
@@ -685,9 +852,15 @@ const AdminAdministrative = () => {
             </section>
           </div>
 
+          {(formError || Object.keys(fieldErrors).length > 0) && (
+            <div className="mt-2 px-4 py-2 rounded-[14px] bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+              {formError || (bn ? 'নিচে চিহ্নিত ফিল্ডগুলো ঠিক করুন।' : 'Please fix the highlighted fields below.')}
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
-            <Button onClick={() => upsert.mutate(form)} disabled={!form.name_bn || upsert.isPending}>
+            <Button onClick={handleSaveOfficer} disabled={!form.name_bn || upsert.isPending}>
               {upsert.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
             </Button>
           </DialogFooter>
@@ -704,7 +877,7 @@ const AdminAdministrative = () => {
       />
 
       {/* Quick Add: Department / Designation */}
-      <Dialog open={!!quickAdd} onOpenChange={(o) => !o && setQuickAdd(null)}>
+      <Dialog open={!!quickAdd} onOpenChange={(o) => { if (!o) { setQuickAdd(null); setQuickAddError(null); } }}>
         <DialogContent className="max-w-md rounded-[38px]">
           <DialogHeader>
             <DialogTitle>
@@ -715,27 +888,50 @@ const AdminAdministrative = () => {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
-              <Label>{bn ? 'বাংলা নাম *' : 'Bangla Name *'}</Label>
+              <Label className={quickAddError?.field === 'name_bn' ? 'text-destructive' : ''}>
+                {bn ? 'বাংলা নাম *' : 'Bangla Name *'}
+              </Label>
               <Input
                 autoFocus
                 value={quickAdd?.name_bn || ''}
-                onChange={(e) => setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q)}
+                onChange={(e) => { setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q); if (quickAddError) setQuickAddError(null); }}
                 placeholder={quickAdd?.kind === 'department' ? (bn ? 'যেমনঃ হিসাব শাখা' : 'e.g. Accounts') : (bn ? 'যেমনঃ অফিস সহকারী' : 'e.g. Office Assistant')}
+                aria-invalid={quickAddError?.field === 'name_bn'}
+                className={quickAddError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}
               />
+              {quickAddError?.field === 'name_bn' && <p className="text-xs text-destructive mt-1">{quickAddError.message}</p>}
             </div>
             <div>
-              <Label>{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+              <Label className={quickAddError?.field === 'name_en' ? 'text-destructive' : ''}>
+                {bn ? 'ইংরেজি নাম' : 'English Name'}
+              </Label>
               <Input
                 value={quickAdd?.name_en || ''}
-                onChange={(e) => setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q)}
+                onChange={(e) => { setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q); if (quickAddError) setQuickAddError(null); }}
                 placeholder={quickAdd?.kind === 'department' ? 'e.g. Accounts' : 'e.g. Office Assistant'}
+                aria-invalid={quickAddError?.field === 'name_en'}
+                className={quickAddError?.field === 'name_en' ? 'border-destructive ring-1 ring-destructive/30' : ''}
               />
+              {quickAddError?.field === 'name_en' && <p className="text-xs text-destructive mt-1">{quickAddError.message}</p>}
             </div>
+            {quickAddError && !quickAddError.field && (
+              <div className="px-3 py-2 rounded-[14px] bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+                {quickAddError.message}
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQuickAdd(null)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button variant="outline" onClick={() => { setQuickAdd(null); setQuickAddError(null); }}>{bn ? 'বাতিল' : 'Cancel'}</Button>
             <Button
-              onClick={() => quickAdd && createOption.mutate(quickAdd)}
+              onClick={() => {
+                if (!quickAdd) return;
+                setQuickAddError(null);
+                if (!quickAdd.name_bn?.trim()) {
+                  setQuickAddError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                  return;
+                }
+                createOption.mutate(quickAdd);
+              }}
               disabled={!quickAdd?.name_bn?.trim() || createOption.isPending}
             >
               {createOption.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'যোগ করুন' : 'Add')}
@@ -762,24 +958,44 @@ const AdminAdministrative = () => {
             {(['department','designation'] as const).map((kind) => (
               <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
                 {/* Add new row */}
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
-                  <Input
-                    placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
-                    value={newRow.name_bn}
-                    onChange={(e) => setNewRow({ ...newRow, name_bn: e.target.value })}
-                  />
-                  <Input
-                    placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
-                    value={newRow.name}
-                    onChange={(e) => setNewRow({ ...newRow, name: e.target.value })}
-                  />
-                  <Button
-                    onClick={() => addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name })}
-                    disabled={!newRow.name_bn.trim() || addInline.isPending}
-                    className="gap-1"
-                  >
-                    <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
-                  </Button>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                    <div>
+                      <Input
+                        placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
+                        value={newRow.name_bn}
+                        onChange={(e) => { setNewRow({ ...newRow, name_bn: e.target.value }); if (manageNewError) setManageNewError(null); }}
+                        aria-invalid={manageNewError?.field === 'name_bn'}
+                        className={manageNewError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        placeholder={bn ? 'ইংরেজি নাম' : 'English name'}
+                        value={newRow.name}
+                        onChange={(e) => { setNewRow({ ...newRow, name: e.target.value }); if (manageNewError) setManageNewError(null); }}
+                        aria-invalid={manageNewError?.field === 'name'}
+                        className={manageNewError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}
+                      />
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setManageNewError(null);
+                        if (!newRow.name_bn.trim()) {
+                          setManageNewError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                          return;
+                        }
+                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name });
+                      }}
+                      disabled={!newRow.name_bn.trim() || addInline.isPending}
+                      className="gap-1"
+                    >
+                      <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
+                    </Button>
+                  </div>
+                  {manageNewError && (
+                    <p className="text-xs text-destructive px-1">{manageNewError.message}</p>
+                  )}
                 </div>
 
                 {/* List */}
@@ -792,31 +1008,41 @@ const AdminAdministrative = () => {
                     (kind === 'department' ? departments : designations).map((row) => {
                       const isEditing = editRow?.id === row.id;
                       return (
-                        <div key={row.id} className="flex items-center gap-2 p-3 hover:bg-muted/20">
+                        <div key={row.id} className={`p-3 hover:bg-muted/20 ${isEditing && manageEditError ? 'bg-destructive/5' : ''}`}>
+                          <div className="flex items-center gap-2">
                           {isEditing ? (
                             <>
                               <Input
-                                className="flex-1"
+                                className={`flex-1 ${manageEditError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
                                 value={editRow!.name_bn}
-                                onChange={(e) => setEditRow({ ...editRow!, name_bn: e.target.value })}
+                                onChange={(e) => { setEditRow({ ...editRow!, name_bn: e.target.value }); if (manageEditError) setManageEditError(null); }}
                                 placeholder={bn ? 'বাংলা নাম' : 'Bangla'}
+                                aria-invalid={manageEditError?.field === 'name_bn'}
                               />
                               <Input
-                                className="flex-1"
+                                className={`flex-1 ${manageEditError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
                                 value={editRow!.name}
-                                onChange={(e) => setEditRow({ ...editRow!, name: e.target.value })}
+                                onChange={(e) => { setEditRow({ ...editRow!, name: e.target.value }); if (manageEditError) setManageEditError(null); }}
                                 placeholder={bn ? 'ইংরেজি নাম' : 'English'}
+                                aria-invalid={manageEditError?.field === 'name'}
                               />
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="rounded-full text-emerald-600"
-                                onClick={() => updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name })}
+                                onClick={() => {
+                                  setManageEditError(null);
+                                  if (!editRow!.name_bn.trim()) {
+                                    setManageEditError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                                    return;
+                                  }
+                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name });
+                                }}
                                 disabled={updateOption.isPending}
                               >
                                 <Check className="w-4 h-4" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => setEditRow(null)}>
+                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => { setEditRow(null); setManageEditError(null); }}>
                                 <X className="w-4 h-4" />
                               </Button>
                             </>
@@ -850,6 +1076,10 @@ const AdminAdministrative = () => {
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </>
+                          )}
+                          </div>
+                          {isEditing && manageEditError && (
+                            <p className="text-xs text-destructive mt-1 px-1">{manageEditError.message}</p>
                           )}
                         </div>
                       );
