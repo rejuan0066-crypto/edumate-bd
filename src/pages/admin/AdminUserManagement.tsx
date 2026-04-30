@@ -1145,6 +1145,25 @@ const AdminUserManagement = () => {
                       )}
                     </div>
                     <div>
+                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
+                      <Input
+                        className="mt-1"
+                        type="tel"
+                        value={createPhone}
+                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
+                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
+                        maxLength={15}
+                      />
+                      {createPhone.trim() && (
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${(phoneDup === 'dup' || phoneDup === 'invalid') ? 'text-destructive' : phoneDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {phoneDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
+                          {phoneDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ফোন নম্বর নয় (১১ ডিজিট)' : '⚠️ Invalid phone (11 digits)'}</>}
+                          {phoneDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'}</>}
+                          {phoneDup === 'ok' && <>✓ {bn ? 'ফোন নম্বর উপলব্ধ' : 'Phone available'}</>}
+                        </p>
+                      )}
+                    </div>
+                    <div>
                       <Label>{bn ? 'পাসওয়ার্ড' : 'Password'} *</Label>
                       <div className="relative mt-1">
                         <Input className="pr-10" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(sanitizePasswordInput(e.target.value))} placeholder={bn ? 'শক্তিশালী পাসওয়ার্ড দিন' : 'Enter strong password'} />
