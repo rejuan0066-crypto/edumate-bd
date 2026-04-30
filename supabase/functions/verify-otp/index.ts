@@ -29,6 +29,40 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // ---- Configurable per-IP / per-email rate limit (db-driven) ----
+    const xff = req.headers.get('x-forwarded-for');
+    const clientIp = (xff ? xff.split(',')[0].trim() : null)
+      || req.headers.get('x-real-ip')
+      || req.headers.get('cf-connecting-ip')
+      || 'unknown';
+    const callRl = async (action: string, scope: string, key: string) => {
+      try {
+        const { data } = await supabase.rpc('check_rate_limit', { _key: key, _scope: scope, _action: action });
+        return data;
+      } catch { return { ok: true }; }
+    };
+    const ipRl = await callRl('otp_verify_ip', 'ip', clientIp);
+    if (ipRl?.ok === false) {
+      return rateLimitResponse({
+        code: 'RATE_LIMITED',
+        message: ipRl.message_bn || 'Too many verification attempts from this network.',
+        retryAfterSeconds: ipRl.retry_after || 60,
+        limit: ipRl.limit,
+        scope: `verify:ip:${clientIp}`,
+      });
+    }
+    const emailRl = await callRl('otp_verify_email', 'email', email);
+    if (emailRl?.ok === false) {
+      return rateLimitResponse({
+        code: 'RATE_LIMITED',
+        message: emailRl.message_bn || 'Too many verification attempts for this email.',
+        retryAfterSeconds: emailRl.retry_after || 60,
+        limit: emailRl.limit,
+        scope: `verify:email:${email}`,
+      });
+    }
+
+
     // ---- Verification rate limiting (mirrors send-otp shape) ----
     // Caps per email+purpose across re-issued OTPs to block brute-force.
     const COOLDOWN_SECONDS = 5;     // min gap between two verify attempts
