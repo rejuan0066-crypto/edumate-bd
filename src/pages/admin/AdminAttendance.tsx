@@ -32,6 +32,7 @@ import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -98,6 +99,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [resetStaffCategory, setResetStaffCategory] = useState<string>('');
   const [showResetMenu, setShowResetMenu] = useState(false);
   const resetBtnRef = useRef<HTMLDivElement>(null);
+  const [monthlyStaff, setMonthlyStaff] = useState<any | null>(null);
   // Effective shift: for students, meal tab uses meal shift; for staff, fulltime=full_day, others use selected
   const effectiveShift = entityType === 'student'
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
@@ -1501,7 +1503,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
               >
                 <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {/* Left: Index + Avatar + Info */}
-                  <div className="flex items-center gap-4 min-w-0 flex-shrink-0">
+                  <div
+                    className={`flex items-center gap-4 min-w-0 flex-shrink-0 ${entityType === 'staff' ? 'cursor-pointer hover:opacity-80 transition' : ''}`}
+                    onClick={() => { if (entityType === 'staff') setMonthlyStaff(entity); }}
+                    title={entityType === 'staff' ? (bn ? 'মাসিক উপস্থিতি দেখুন' : 'View monthly attendance') : undefined}
+                  >
                     <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
                     
                     {/* Avatar with emerald ring */}
@@ -1520,7 +1526,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
                     {/* Name & Info */}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{bn ? entity.name_bn : (entity.name_en || entity.name_bn)}</p>
+                      <p className={`text-sm font-semibold text-foreground truncate ${entityType === 'staff' ? 'hover:text-primary' : ''}`}>{bn ? entity.name_bn : (entity.name_en || entity.name_bn)}</p>
                       <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                         {entityType === 'student'
                           ? (() => {
@@ -1924,6 +1930,13 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         <AttendanceDeviceManager open={deviceManagerOpen} onOpenChange={setDeviceManagerOpen} />
         {/* Staff Check-in Dialog */}
         <StaffCheckinDialog open={staffCheckinOpen} onOpenChange={setStaffCheckinOpen} selectedDate={selectedDate} />
+        {/* Staff Monthly Attendance */}
+        <StaffMonthlyAttendanceDialog
+          open={!!monthlyStaff}
+          onOpenChange={(v) => { if (!v) setMonthlyStaff(null); }}
+          staff={monthlyStaff}
+          shift={entityType === 'staff' ? effectiveShift : undefined}
+        />
       </div>
     </AdminLayout>
   );
