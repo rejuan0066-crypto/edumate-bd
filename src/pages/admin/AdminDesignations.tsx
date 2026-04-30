@@ -105,7 +105,7 @@ const AdminDesignations = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('designations').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['designations'] }); toast.success(bn ? 'পদবি মুছে ফেলা হয়েছে' : 'Designation deleted'); setDeleteId(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['designations'] }); queryClient.invalidateQueries({ queryKey: ['designations-all'] }); queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] }); toast.success(bn ? 'পদবি মুছে ফেলা হয়েছে' : 'Designation deleted'); setDeleteId(null); },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
@@ -130,7 +130,7 @@ const AdminDesignations = () => {
 
   const deleteCatMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from('staff_categories').delete().eq('id', id); if (error) throw error; },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); toast.success(bn ? 'ডিপার্টমেন্ট মুছে ফেলা হয়েছে' : 'Department deleted'); setCatDeleteId(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['staff_categories'] }); queryClient.invalidateQueries({ queryKey: ['staff-categories-for-shift'] }); queryClient.invalidateQueries({ queryKey: ['designations-all'] }); queryClient.invalidateQueries({ queryKey: ['designations-for-form-all'] }); toast.success(bn ? 'ডিপার্টমেন্ট মুছে ফেলা হয়েছে' : 'Department deleted'); setCatDeleteId(null); },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
