@@ -5538,6 +5538,75 @@ export type Database = {
           },
         ]
       }
+      rate_limit_config: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          max_requests: number
+          updated_at: string
+          window_seconds: number
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          max_requests?: number
+          updated_at?: string
+          window_seconds?: number
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          max_requests?: number
+          updated_at?: string
+          window_seconds?: number
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          action: string
+          blocked_count: number
+          bucket_key: string
+          created_at: string
+          id: string
+          last_request_at: string
+          request_count: number
+          scope: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          blocked_count?: number
+          bucket_key: string
+          created_at?: string
+          id?: string
+          last_request_at?: string
+          request_count?: number
+          scope: string
+          window_start?: string
+        }
+        Update: {
+          action?: string
+          blocked_count?: number
+          bucket_key?: string
+          created_at?: string
+          id?: string
+          last_request_at?: string
+          request_count?: number
+          scope?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       receipt_counter: {
         Row: {
           current_year: number
@@ -7865,6 +7934,10 @@ export type Database = {
             Args: { _email: string; _phone: string; _timeout_ms?: number }
             Returns: Json
           }
+      check_rate_limit: {
+        Args: { _action: string; _key: string; _scope: string }
+        Returns: Json
+      }
       check_user_duplicates: {
         Args: { _email: string; _full_name: string; _phone: string }
         Returns: Json
