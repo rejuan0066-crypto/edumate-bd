@@ -91,6 +91,22 @@ const AdminAdministrative = () => {
   const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
   const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
 
+  // Inline error state
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string>('');
+  const [quickAddError, setQuickAddError] = useState<{ field?: 'name_bn' | 'name_en'; message: string } | null>(null);
+  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+
+  const clearFieldError = (field: string) => {
+    setFieldErrors(prev => {
+      if (!prev[field]) return prev;
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+    if (formError) setFormError('');
+  };
+
   const { data: officers = [], isLoading } = useQuery({
     queryKey: ['administrative-officers'],
     queryFn: async () => {
