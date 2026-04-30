@@ -301,11 +301,13 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     },
   });
 
-  // Use DB designations if available, else fallback to hardcoded
+  // Use DB designations if available, else fallback to hardcoded. Dedupe by name to avoid duplicate Select keys.
   const designations = dbDesignations.length > 0
-    ? dbDesignations.map(d => ({ value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category }))
-    : designationsHardcoded.map(d => ({ ...d, staff_category: initialStaffCategory }));
-  const filteredDesignations = designations.filter(d => !selectedStaffCategory || !d.staff_category || d.staff_category === selectedStaffCategory);
+    ? Array.from(new Map(
+        dbDesignations.map((d: any) => [d.name, { value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category, id: d.id }])
+      ).values())
+    : designationsHardcoded.map(d => ({ ...d, staff_category: initialStaffCategory, id: d.value }));
+  const filteredDesignations = designations.filter((d: any) => !selectedStaffCategory || !d.staff_category || d.staff_category === selectedStaffCategory);
   // Populate form fields when editing
   useEffect(() => {
     if (!isEditMode || !existingStaff || dataLoaded) return;
