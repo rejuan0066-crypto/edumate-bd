@@ -1008,31 +1008,41 @@ const AdminAdministrative = () => {
                     (kind === 'department' ? departments : designations).map((row) => {
                       const isEditing = editRow?.id === row.id;
                       return (
-                        <div key={row.id} className="flex items-center gap-2 p-3 hover:bg-muted/20">
+                        <div key={row.id} className={`p-3 hover:bg-muted/20 ${isEditing && manageEditError ? 'bg-destructive/5' : ''}`}>
+                          <div className="flex items-center gap-2">
                           {isEditing ? (
                             <>
                               <Input
-                                className="flex-1"
+                                className={`flex-1 ${manageEditError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
                                 value={editRow!.name_bn}
-                                onChange={(e) => setEditRow({ ...editRow!, name_bn: e.target.value })}
+                                onChange={(e) => { setEditRow({ ...editRow!, name_bn: e.target.value }); if (manageEditError) setManageEditError(null); }}
                                 placeholder={bn ? 'বাংলা নাম' : 'Bangla'}
+                                aria-invalid={manageEditError?.field === 'name_bn'}
                               />
                               <Input
-                                className="flex-1"
+                                className={`flex-1 ${manageEditError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
                                 value={editRow!.name}
-                                onChange={(e) => setEditRow({ ...editRow!, name: e.target.value })}
+                                onChange={(e) => { setEditRow({ ...editRow!, name: e.target.value }); if (manageEditError) setManageEditError(null); }}
                                 placeholder={bn ? 'ইংরেজি নাম' : 'English'}
+                                aria-invalid={manageEditError?.field === 'name'}
                               />
                               <Button
                                 size="icon"
                                 variant="ghost"
                                 className="rounded-full text-emerald-600"
-                                onClick={() => updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name })}
+                                onClick={() => {
+                                  setManageEditError(null);
+                                  if (!editRow!.name_bn.trim()) {
+                                    setManageEditError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                                    return;
+                                  }
+                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name });
+                                }}
                                 disabled={updateOption.isPending}
                               >
                                 <Check className="w-4 h-4" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => setEditRow(null)}>
+                              <Button size="icon" variant="ghost" className="rounded-full" onClick={() => { setEditRow(null); setManageEditError(null); }}>
                                 <X className="w-4 h-4" />
                               </Button>
                             </>
