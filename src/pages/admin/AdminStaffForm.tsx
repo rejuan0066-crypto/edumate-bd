@@ -1030,8 +1030,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                   <Select value={designation} onValueChange={setDesignation}>
                     <SelectTrigger className={`bg-background mt-1 ${fieldErrors['designation'] ? 'border-destructive' : ''}`}><SelectValue placeholder={bn ? 'নির্বাচন' : 'Select'} /></SelectTrigger>
                     <SelectContent>
-                      {filteredDesignations.map(d => (
-                        <SelectItem key={d.value} value={d.value}>{bn ? d.bn : d.en}</SelectItem>
+                      {filteredDesignations.map((d: any) => (
+                        <SelectItem key={d.id} value={d.value}>{bn ? d.bn : d.en}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
