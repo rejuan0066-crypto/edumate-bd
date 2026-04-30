@@ -1208,9 +1208,15 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {isFieldActive('nid') && (
                 <div>
-                  <Label>{bn ? (getField('nid')?.label_bn || 'NID (১০/১৭ ডিজিট)') : (getField('nid')?.label || 'NID (10/17)')} {isFieldRequired('nid') && <span className="text-destructive">*</span>}</Label>
+                  <Label className="flex items-center gap-2">
+                    {bn ? (getField('nid')?.label_bn || 'NID (১০/১৭ ডিজিট)') : (getField('nid')?.label || 'NID (10/17)')} {isFieldRequired('nid') && <span className="text-destructive">*</span>}
+                    {nidChecking && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
+                  </Label>
                   <Input className={`bg-background mt-1 ${fieldErrors['nid'] || nidError ? 'border-destructive' : ''}`} maxLength={17} value={nid} onChange={e => validateNid(e.target.value, setNid, setNidError)} />
                   {nidError && <p className="text-xs text-destructive mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {nidError}</p>}
+                  {!nidError && nid && [10, 13, 17].includes(nid.length) && !nidChecking && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {bn ? 'NID যাচাই সম্পন্ন' : 'NID is available'}</p>
+                  )}
                   <FieldError field="nid" />
                 </div>
                 )}
