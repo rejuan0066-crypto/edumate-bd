@@ -440,12 +440,28 @@ const AdminUserManagement = () => {
     if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); setPhoneDup('idle'); }
   }, [dialogOpen]);
 
+  const lastCreateAtRef = useRef<number>(0);
+  const CREATE_COOLDOWN_MS = 3000;
+
   const handleCreate = async () => {
+    // Submit throttle: prevent rapid repeated submissions from this admin's session
+    const sinceLast = Date.now() - lastCreateAtRef.current;
+    if (sinceLast < CREATE_COOLDOWN_MS) {
+      const wait = Math.ceil((CREATE_COOLDOWN_MS - sinceLast) / 1000);
+      toast.error(bn ? `অনুগ্রহ করে ${wait} সেকেন্ড অপেক্ষা করুন` : `Please wait ${wait}s before retrying`);
+      return;
+    }
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
     if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
     if (phoneDup === 'invalid') { toast.error(bn ? 'সঠিক ফোন নম্বর দিন' : 'Invalid phone number'); return; }
     if (phoneDup === 'dup') { toast.error(bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'); return; }
+
+    // Wait for any in-flight debounced duplicate checks to settle
+    if (emailDup === 'checking' || nameDup === 'checking' || phoneDup === 'checking') {
+      toast.error(bn ? 'যাচাই সম্পন্ন হওয়ার অপেক্ষা করুন' : 'Please wait for validation to finish');
+      return;
+    }
 
     // Client-side duplicate guard against currently loaded users
     const emailLc = email.trim().toLowerCase();
@@ -466,6 +482,7 @@ const AdminUserManagement = () => {
     const actualRole = effectiveRole ? (customRole?.base_role || effectiveRole) : '';
 
     setCreating(true);
+    lastCreateAtRef.current = Date.now();
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
         body: {
@@ -481,7 +498,19 @@ const AdminUserManagement = () => {
         },
       });
       if (error || !data?.success) {
-        const code = data?.error;
+        const code = data?.error || data?.code;
+        // Rate limited from server (per-admin or per-IP)
+        if (data?.code === 'RATE_LIMITED' || (typeof error?.message === 'string' && error.message.includes('429'))) {
+          const retry = data?.retry_after || 30;
+          toast.error(
+            data?.error
+              || (bn
+                ? `অনেক বেশি অনুরোধ। ${retry} সেকেন্ড পর আবার চেষ্টা করুন।`
+                : `Too many requests. Try again in ${retry}s.`)
+          );
+          setCreating(false);
+          return;
+        }
         if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
         if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
         if (code === 'DUPLICATE_PHONE') {
@@ -504,6 +533,7 @@ const AdminUserManagement = () => {
     }
     setCreating(false);
   };
+
 
   const handleStatusChange = async (userId: string, status: 'pending' | 'approved') => {
     try {
