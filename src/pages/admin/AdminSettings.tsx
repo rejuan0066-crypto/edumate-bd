@@ -19,6 +19,7 @@ import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManage
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
+import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
@@ -1333,6 +1334,9 @@ const AdminSettings = () => {
               </div>
               <div className="max-w-none">
                 <RateLimitSettings />
+              </div>
+              <div className="max-w-none">
+                <SecurityBackupPanel bn={bn} />
               </div>
             </div>
           </TabsContent>
