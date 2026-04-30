@@ -443,10 +443,13 @@ const AdminUserManagement = () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
     if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
+    if (phoneDup === 'invalid') { toast.error(bn ? 'সঠিক ফোন নম্বর দিন' : 'Invalid phone number'); return; }
+    if (phoneDup === 'dup') { toast.error(bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'); return; }
 
     // Client-side duplicate guard against currently loaded users
     const emailLc = email.trim().toLowerCase();
     const nameLc = fullName.trim().toLowerCase();
+    const phoneTrim = createPhone.trim();
     if (users.some(u => u.email?.toLowerCase() === emailLc)) {
       showConflict('email', email);
       return;
@@ -468,6 +471,7 @@ const AdminUserManagement = () => {
           action: 'create',
           email: email.trim(),
           password,
+          phone: phoneTrim || undefined,
           role: actualRole || undefined,
           full_name: fullName.trim(),
           name_bn: fullName.trim(),
@@ -479,6 +483,12 @@ const AdminUserManagement = () => {
         const code = data?.error;
         if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
         if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
+        if (code === 'DUPLICATE_PHONE') {
+          toast.error((bn ? data?.message_bn : data?.message) || (bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'));
+          setPhoneDup('dup');
+          setCreating(false);
+          return;
+        }
         const msg = (bn ? data?.message_bn : data?.message) || data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
         toast.error(msg);
         setCreating(false);
@@ -486,7 +496,7 @@ const AdminUserManagement = () => {
       }
       toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
       setDialogOpen(false);
-      setEmail(''); setPassword(''); setFullName(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
+      setEmail(''); setPassword(''); setFullName(''); setCreatePhone(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
       fetchUsers();
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
