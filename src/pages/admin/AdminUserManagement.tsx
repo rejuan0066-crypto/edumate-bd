@@ -163,6 +163,7 @@ const AdminUserManagement = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [createPhone, setCreatePhone] = useState('');
   const [createStaffCategory, setCreateStaffCategory] = useState('');
   const [createDesignation, setCreateDesignation] = useState('');
   const [role, setRole] = useState('');
@@ -170,6 +171,7 @@ const AdminUserManagement = () => {
   // Real-time duplicate check
   const [emailDup, setEmailDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
   const [nameDup, setNameDup] = useState<'idle' | 'checking' | 'ok' | 'dup'>('idle');
+  const [phoneDup, setPhoneDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
   // Duplicate conflict modal
   const [conflictOpen, setConflictOpen] = useState(false);
   const [conflictType, setConflictType] = useState<'email' | 'name'>('email');
@@ -408,19 +410,46 @@ const AdminUserManagement = () => {
     return () => clearTimeout(t);
   }, [fullName, users, dialogOpen]);
 
+  // Real-time phone duplicate check (debounced + DB lookup)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = createPhone.trim();
+    if (!v) { setPhoneDup('idle'); return; }
+    // Basic phone validity (BD: 11 digits starting with 01, or international 10-15 digits)
+    const phoneRegex = /^(\+?\d{10,15}|01\d{9})$/;
+    if (!phoneRegex.test(v)) { setPhoneDup('invalid'); return; }
+    setPhoneDup('checking');
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('phone', v)
+          .limit(1)
+          .maybeSingle();
+        if (!error && data) setPhoneDup('dup');
+        else setPhoneDup('ok');
+      } catch { setPhoneDup('ok'); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [createPhone, dialogOpen]);
+
   // Reset duplicate states when dialog closes
   useEffect(() => {
-    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); }
+    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); setPhoneDup('idle'); }
   }, [dialogOpen]);
 
   const handleCreate = async () => {
     if (!email.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
     if (!fullName.trim()) { toast.error(bn ? 'ইউজারের নাম দিন' : 'Enter user name'); return; }
     if (!isPasswordStrongAgainst(password, passwordPolicy)) { toast.error(firstFailedRuleMessage(password, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড সব শর্ত পূরণ করছে না' : 'Password does not meet requirements')); return; }
+    if (phoneDup === 'invalid') { toast.error(bn ? 'সঠিক ফোন নম্বর দিন' : 'Invalid phone number'); return; }
+    if (phoneDup === 'dup') { toast.error(bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'); return; }
 
     // Client-side duplicate guard against currently loaded users
     const emailLc = email.trim().toLowerCase();
     const nameLc = fullName.trim().toLowerCase();
+    const phoneTrim = createPhone.trim();
     if (users.some(u => u.email?.toLowerCase() === emailLc)) {
       showConflict('email', email);
       return;
@@ -442,6 +471,7 @@ const AdminUserManagement = () => {
           action: 'create',
           email: email.trim(),
           password,
+          phone: phoneTrim || undefined,
           role: actualRole || undefined,
           full_name: fullName.trim(),
           name_bn: fullName.trim(),
@@ -453,6 +483,12 @@ const AdminUserManagement = () => {
         const code = data?.error;
         if (code === 'DUPLICATE_EMAIL') { showConflict('email', email); setCreating(false); return; }
         if (code === 'DUPLICATE_NAME') { showConflict('name', fullName); setCreating(false); return; }
+        if (code === 'DUPLICATE_PHONE') {
+          toast.error((bn ? data?.message_bn : data?.message) || (bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'));
+          setPhoneDup('dup');
+          setCreating(false);
+          return;
+        }
         const msg = (bn ? data?.message_bn : data?.message) || data?.error || error?.message || (bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
         toast.error(msg);
         setCreating(false);
@@ -460,7 +496,7 @@ const AdminUserManagement = () => {
       }
       toast.success(bn ? '✅ ইউজার সফলভাবে তৈরি হয়েছে!' : '✅ User created successfully!');
       setDialogOpen(false);
-      setEmail(''); setPassword(''); setFullName(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
+      setEmail(''); setPassword(''); setFullName(''); setCreatePhone(''); setRole(''); setCreateStaffCategory(''); setCreateDesignation('');
       fetchUsers();
     } catch {
       toast.error(bn ? 'ইউজার তৈরি ব্যর্থ' : 'Failed to create user');
@@ -1105,6 +1141,25 @@ const AdminUserManagement = () => {
                           {emailDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ইমেইল ফরম্যাট নয়' : '⚠️ Invalid email format'}</>}
                           {emailDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' : '⚠️ A user with this email already exists'} <button type="button" onClick={() => showConflict('email', email)} className="underline ml-1 hover:text-destructive/80">{bn ? 'বিস্তারিত দেখুন' : 'View details'}</button></>}
                           {emailDup === 'ok' && <>✓ {bn ? 'ইমেইল উপলব্ধ' : 'Email available'}</>}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>{bn ? 'মোবাইল নম্বর' : 'Mobile Number'}</Label>
+                      <Input
+                        className="mt-1"
+                        type="tel"
+                        value={createPhone}
+                        onChange={e => setCreatePhone(e.target.value.replace(/[^\d+]/g, ''))}
+                        placeholder={bn ? '01XXXXXXXXX' : '01XXXXXXXXX'}
+                        maxLength={15}
+                      />
+                      {createPhone.trim() && (
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${(phoneDup === 'dup' || phoneDup === 'invalid') ? 'text-destructive' : phoneDup === 'ok' ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                          {phoneDup === 'checking' && <><Loader2 className="w-3 h-3 animate-spin" />{bn ? 'যাচাই হচ্ছে...' : 'Checking...'}</>}
+                          {phoneDup === 'invalid' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ সঠিক ফোন নম্বর নয় (১১ ডিজিট)' : '⚠️ Invalid phone (11 digits)'}</>}
+                          {phoneDup === 'dup' && <><AlertTriangle className="w-3 h-3" />{bn ? '⚠️ এই ফোন নম্বর দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন' : '⚠️ This phone number is already registered'}</>}
+                          {phoneDup === 'ok' && <>✓ {bn ? 'ফোন নম্বর উপলব্ধ' : 'Phone available'}</>}
                         </p>
                       )}
                     </div>

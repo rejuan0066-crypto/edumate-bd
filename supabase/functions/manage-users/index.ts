@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
 
     // CREATE user
     if (action === "create") {
-      const { email, password, role, full_name, name_bn, designation, staff_category } = body;
+      const { email, password, role, full_name, name_bn, designation, staff_category, phone } = body;
 
       if (!email || !password) {
         return new Response(JSON.stringify({ error: "email and password are required" }), {
@@ -204,6 +204,38 @@ Deno.serve(async (req) => {
       if (!pwCheck.ok) {
         await logSecurityEvent(supabaseAdmin, { event_type: 'weak_password_rejected', severity: 'warning', user_id: userId, email, reason: 'create_user', details: pwCheck.body, req });
         return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // ── Pre-check: Email duplicate (auth.users) ──
+      const trimmedEmail = String(email).trim().toLowerCase();
+      try {
+        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        const emailHit = existingUsers?.users?.find((u: any) => (u.email || '').toLowerCase() === trimmedEmail);
+        if (emailHit) {
+          return new Response(JSON.stringify({
+            error: 'DUPLICATE_EMAIL',
+            message: `This email (${trimmedEmail}) is already registered`,
+            message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
+          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      } catch (_e) { /* fall through to createUser which also enforces */ }
+
+      // ── Pre-check: Phone duplicate (profiles) ──
+      const trimmedPhone = phone ? String(phone).trim() : '';
+      if (trimmedPhone) {
+        const { data: dupPhone } = await supabaseAdmin
+          .from('profiles')
+          .select('id, full_name')
+          .eq('phone', trimmedPhone)
+          .limit(1)
+          .maybeSingle();
+        if (dupPhone) {
+          return new Response(JSON.stringify({
+            error: 'DUPLICATE_PHONE',
+            message: `This phone number (${trimmedPhone}) is already registered`,
+            message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
+          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
       }
 
       // Duplicate name check (case-insensitive) — DB also enforces via unique index
@@ -227,13 +259,13 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
-        user_metadata: { full_name: full_name || '' },
+        user_metadata: { full_name: full_name || '', phone: trimmedPhone || undefined },
       });
 
       if (createError) {
         const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(createError.message);
         const payload = isDup
-          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: 'এই ইমেইলে একজন ইউজার ইতিমধ্যে আছেন' }
+          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।` }
           : { error: createError.message };
         return new Response(JSON.stringify(payload), {
           status: isDup ? 409 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -256,12 +288,21 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Update profile name
-      if (full_name) {
-        await supabaseAdmin.from("profiles").upsert({
+      // Update profile name + phone
+      if (full_name || trimmedPhone) {
+        const { error: profUpsertErr } = await supabaseAdmin.from("profiles").upsert({
           id: newUser.user.id,
-          full_name,
+          ...(full_name ? { full_name } : {}),
+          ...(trimmedPhone ? { phone: trimmedPhone } : {}),
         });
+        if (profUpsertErr && /DUPLICATE_PHONE/i.test(profUpsertErr.message || '')) {
+          await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+          return new Response(JSON.stringify({
+            error: 'DUPLICATE_PHONE',
+            message: `This phone number (${trimmedPhone}) is already registered`,
+            message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
+          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
       }
 
       // Link to existing staff record if staff_id explicitly provided.
