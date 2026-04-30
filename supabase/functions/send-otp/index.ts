@@ -62,21 +62,76 @@ Deno.serve(async (req) => {
         return data;
       } catch { return { ok: true }; }
     };
-    const emailRl = await callRl('otp_send_email', 'email', normalizedEmail);
-    if (emailRl?.ok === false) {
-      return new Response(JSON.stringify({
-        success: false, code: 'RATE_LIMITED', scope: 'email',
-        retry_after: emailRl.retry_after,
-        error: emailRl.message_bn || 'Too many OTP requests for this email.',
-      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(emailRl.retry_after || 30) } });
+    const rlBlocked = (res: any, scope: string, fallbackMsg: string) =>
+      new Response(JSON.stringify({
+        success: false, code: 'RATE_LIMITED', scope,
+        retry_after: res.retry_after,
+        error: res.message_bn || fallbackMsg,
+      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(res.retry_after || 30) } });
+
+    // Resolve phone + auth user_id linked to this email (best-effort, non-fatal)
+    let resolvedPhone: string | null = null;
+    let resolvedUserId: string | null = null;
+    try {
+      const { data: au } = await supabase
+        .from('profiles')
+        .select('id, phone')
+        .ilike('id', '%') // no-op; we filter by email via auth.users below
+        .limit(0);
+      void au;
+    } catch { /* ignore */ }
+    try {
+      // Look up auth user by email
+      const { data: userList } = await (supabase as any).auth.admin.listUsers({
+        page: 1, perPage: 1, filter: `email.eq.${normalizedEmail}`,
+      });
+      const u = userList?.users?.find?.((x: any) => (x.email || '').toLowerCase() === normalizedEmail);
+      if (u?.id) {
+        resolvedUserId = u.id;
+        const { data: prof } = await supabase
+          .from('profiles').select('phone').eq('id', u.id).maybeSingle();
+        if (prof?.phone) resolvedPhone = String(prof.phone).trim();
+      }
+    } catch { /* ignore */ }
+    if (!resolvedPhone) {
+      try {
+        const { data: s } = await supabase.from('staff')
+          .select('phone, user_id').ilike('email', normalizedEmail)
+          .is('deleted_at', null).maybeSingle();
+        if (s?.phone) resolvedPhone = String(s.phone).trim();
+        if (!resolvedUserId && s?.user_id) resolvedUserId = s.user_id;
+      } catch { /* ignore */ }
     }
+    if (!resolvedPhone) {
+      try {
+        const { data: a } = await supabase.from('administrative_officers')
+          .select('phone, user_id').ilike('email', normalizedEmail)
+          .is('deleted_at', null).maybeSingle();
+        if (a?.phone) resolvedPhone = String(a.phone).trim();
+        if (!resolvedUserId && a?.user_id) resolvedUserId = a.user_id;
+      } catch { /* ignore */ }
+    }
+
+    // Email + IP (existing)
+    const emailRl = await callRl('otp_send_email', 'email', normalizedEmail);
+    if (emailRl?.ok === false) return rlBlocked(emailRl, 'email', 'Too many OTP requests for this email.');
     const ipRl = await callRl('otp_send_ip', 'ip', clientIp);
-    if (ipRl?.ok === false) {
-      return new Response(JSON.stringify({
-        success: false, code: 'RATE_LIMITED', scope: 'ip',
-        retry_after: ipRl.retry_after,
-        error: ipRl.message_bn || 'Too many OTP requests from this network.',
-      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retry_after || 30) } });
+    if (ipRl?.ok === false) return rlBlocked(ipRl, 'ip', 'Too many OTP requests from this network.');
+
+    // Per-phone (minute + hourly)
+    if (resolvedPhone) {
+      const phoneMin = await callRl('otp_send_phone', 'phone', resolvedPhone);
+      if (phoneMin?.ok === false) return rlBlocked(phoneMin, 'phone', 'Too many OTP requests for this mobile number.');
+      const phoneHr = await callRl('otp_send_phone_hourly', 'phone', resolvedPhone);
+      if (phoneHr?.ok === false) return rlBlocked(phoneHr, 'phone', 'Hourly OTP limit reached for this mobile number.');
+    }
+
+    // Per-user (minute + hourly)
+    if (resolvedUserId) {
+      const userMin = await callRl('otp_send_user', 'user', resolvedUserId);
+      if (userMin?.ok === false) return rlBlocked(userMin, 'user', 'Too many OTP requests for this account.');
+      const userHr = await callRl('otp_send_user_hourly', 'user', resolvedUserId);
+      if (userHr?.ok === false) return rlBlocked(userHr, 'user', 'Hourly OTP limit reached for this account.');
     }
 
 
