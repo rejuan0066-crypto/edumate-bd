@@ -1930,6 +1930,13 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         <AttendanceDeviceManager open={deviceManagerOpen} onOpenChange={setDeviceManagerOpen} />
         {/* Staff Check-in Dialog */}
         <StaffCheckinDialog open={staffCheckinOpen} onOpenChange={setStaffCheckinOpen} selectedDate={selectedDate} />
+        {/* Staff Monthly Attendance */}
+        <StaffMonthlyAttendanceDialog
+          open={!!monthlyStaff}
+          onOpenChange={(v) => { if (!v) setMonthlyStaff(null); }}
+          staff={monthlyStaff}
+          shift={entityType === 'staff' ? effectiveShift : undefined}
+        />
       </div>
     </AdminLayout>
   );
