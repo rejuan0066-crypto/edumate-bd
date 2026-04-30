@@ -41,6 +41,7 @@ interface UserPerm {
   can_add: boolean;
   can_edit: boolean;
   can_delete: boolean;
+  can_approve: boolean;
   approval_view: boolean;
   approval_add: boolean;
   approval_edit: boolean;
@@ -239,7 +240,7 @@ const AdminUserManagement = () => {
   const [rolePermRole, setRolePermRole] = useState<CustomRole | null>(null);
   const [rolePermLoading, setRolePermLoading] = useState(false);
   const [rolePermSaving, setRolePermSaving] = useState(false);
-  const [rolePerms, setRolePerms] = useState<{ menu_path: string; can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean }[]>([]);
+  const [rolePerms, setRolePerms] = useState<{ menu_path: string; can_view: boolean; can_add: boolean; can_edit: boolean; can_delete: boolean; can_approve: boolean }[]>([]);
 
   // Permission dialog
   const [permDialogOpen, setPermDialogOpen] = useState(false);
@@ -910,6 +911,7 @@ const AdminUserManagement = () => {
           can_add: existing?.can_add ?? false,
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
+          can_approve: existing?.can_approve ?? false,
         };
       });
       setRolePerms(merged);
@@ -926,8 +928,8 @@ const AdminUserManagement = () => {
   const toggleAllRolePerms = (menuPath: string) => {
     setRolePerms(prev => prev.map(p => {
       if (p.menu_path !== menuPath) return p;
-      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete;
-      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn };
+      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete && p.can_approve;
+      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn, can_approve: !allOn };
     }));
   };
 
@@ -937,7 +939,7 @@ const AdminUserManagement = () => {
     try {
       await supabase.from('role_permissions').delete().eq('role', rolePermRole.name);
       const toInsert = rolePerms
-        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete)
+        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete || p.can_approve)
         .map(p => ({
           role: rolePermRole.name,
           menu_path: p.menu_path,
@@ -945,6 +947,7 @@ const AdminUserManagement = () => {
           can_add: p.can_add,
           can_edit: p.can_edit,
           can_delete: p.can_delete,
+          can_approve: p.can_approve,
         }));
       if (toInsert.length > 0) {
         const { error } = await supabase.from('role_permissions').insert(toInsert);
@@ -973,6 +976,7 @@ const AdminUserManagement = () => {
           can_add: existing?.can_add ?? false,
           can_edit: existing?.can_edit ?? false,
           can_delete: existing?.can_delete ?? false,
+          can_approve: existing?.can_approve ?? false,
           approval_view: existing?.approval_view ?? false,
           approval_add: existing?.approval_add ?? false,
           approval_edit: existing?.approval_edit ?? false,
@@ -993,8 +997,8 @@ const AdminUserManagement = () => {
   const toggleAllForPath = (menuPath: string) => {
     setUserPerms(prev => prev.map(p => {
       if (p.menu_path !== menuPath) return p;
-      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete;
-      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn };
+      const allOn = p.can_view && p.can_add && p.can_edit && p.can_delete && p.can_approve;
+      return { ...p, can_view: !allOn, can_add: !allOn, can_edit: !allOn, can_delete: !allOn, can_approve: !allOn };
     }));
   };
 
@@ -1008,7 +1012,7 @@ const AdminUserManagement = () => {
     try {
       await supabase.from('user_permissions').delete().eq('user_id', permUser.id);
       const toInsert = userPerms
-        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete)
+        .filter(p => p.can_view || p.can_add || p.can_edit || p.can_delete || p.can_approve)
         .map(p => ({
           user_id: permUser.id,
           menu_path: p.menu_path,
@@ -1016,6 +1020,7 @@ const AdminUserManagement = () => {
           can_add: p.can_add,
           can_edit: p.can_edit,
           can_delete: p.can_delete,
+          can_approve: p.can_approve,
           approval_view: p.approval_view,
           approval_add: p.approval_add,
           approval_edit: p.approval_edit,
@@ -1632,6 +1637,7 @@ const AdminUserManagement = () => {
                         <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-16"><span className="text-emerald-600">{bn ? 'অনুমোদন' : 'Approve'}</span></TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
                         <TableHead className="text-center w-20" colSpan={3}>
                           <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
@@ -1646,7 +1652,7 @@ const AdminUserManagement = () => {
                     <TableBody>
                       {userPerms.map(perm => {
                         const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
-                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
                           <TableRow key={perm.menu_path}>
                             <TableCell className="font-medium text-sm">
@@ -1663,6 +1669,13 @@ const AdminUserManagement = () => {
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={perm.can_delete} onCheckedChange={() => togglePerm(perm.menu_path, 'can_delete')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={perm.can_approve}
+                                onCheckedChange={() => togglePerm(perm.menu_path, 'can_approve')}
+                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                              />
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
@@ -1732,13 +1745,14 @@ const AdminUserManagement = () => {
                         <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-16"><span className="text-emerald-600">{bn ? 'অনুমোদন' : 'Approve'}</span></TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {rolePerms.map(perm => {
                         const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
-                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
                           <TableRow key={perm.menu_path}>
                             <TableCell className="font-medium text-sm">
@@ -1755,6 +1769,13 @@ const AdminUserManagement = () => {
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={perm.can_delete} onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_delete')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={perm.can_approve}
+                                onCheckedChange={() => toggleRolePerm(perm.menu_path, 'can_approve')}
+                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                              />
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllRolePerms(perm.menu_path)} />

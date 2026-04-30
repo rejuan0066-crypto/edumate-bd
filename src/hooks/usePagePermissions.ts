@@ -4,12 +4,12 @@ import { isAdminRole } from '@/lib/roles';
 
 /**
  * Hook for page-level permission checks.
- * Returns boolean flags for view/add/edit/delete based on the current user's role and permissions.
+ * Returns boolean flags for view/add/edit/delete/approve based on the current user's role and permissions.
  * Admin always gets full access.
  */
 export const usePagePermissions = (menuPath: string) => {
   const { role } = useAuth();
-  const { canView, canAdd, canEdit, canDelete, isLoading } = usePermissions();
+  const { canView, canAdd, canEdit, canDelete, canApprove, isLoading } = usePermissions();
 
   // Admin/Super Admin has full access
   if (isAdminRole(role)) {
@@ -18,6 +18,7 @@ export const usePagePermissions = (menuPath: string) => {
       canAddItem: true,
       canEditItem: true,
       canDeleteItem: true,
+      canApproveItem: true,
       isLoading,
     };
   }
@@ -27,6 +28,7 @@ export const usePagePermissions = (menuPath: string) => {
     canAddItem: canAdd(menuPath),
     canEditItem: canEdit(menuPath),
     canDeleteItem: canDelete(menuPath),
+    canApproveItem: canApprove(menuPath),
     isLoading,
   };
 };

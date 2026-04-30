@@ -71,6 +71,7 @@ type PermRow = {
   can_add: boolean;
   can_edit: boolean;
   can_delete: boolean;
+  can_approve: boolean;
 };
 
 const AdminPermissions = () => {
@@ -121,6 +122,7 @@ const AdminPermissions = () => {
           can_add: saved?.can_add ?? false,
           can_edit: saved?.can_edit ?? false,
           can_delete: saved?.can_delete ?? false,
+          can_approve: saved?.can_approve ?? false,
         };
       });
       setLocalPerms(map);
@@ -143,6 +145,7 @@ const AdminPermissions = () => {
           can_add: !!p.can_add,
           can_edit: !!p.can_edit,
           can_delete: !!p.can_delete,
+          can_approve: !!p.can_approve,
           updated_at: new Date().toISOString(),
         }));
 
@@ -176,6 +179,7 @@ const AdminPermissions = () => {
     can_add: false,
     can_edit: false,
     can_delete: false,
+    can_approve: false,
   });
 
   const togglePerm = (path: string, field: keyof PermRow) => {
@@ -194,7 +198,7 @@ const AdminPermissions = () => {
     setLocalPerms((prev) => {
       const current = prev[path] ?? blankRow(path);
       const allChecked =
-        current.can_view && current.can_add && current.can_edit && current.can_delete;
+        current.can_view && current.can_add && current.can_edit && current.can_delete && current.can_approve;
       return {
         ...prev,
         [path]: {
@@ -203,13 +207,14 @@ const AdminPermissions = () => {
           can_add: !allChecked,
           can_edit: !allChecked,
           can_delete: !allChecked,
+          can_approve: !allChecked,
         },
       };
     });
     setDirty(true);
   };
 
-  const toggleAllForAction = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete') => {
+  const toggleAllForAction = (field: 'can_view' | 'can_add' | 'can_edit' | 'can_delete' | 'can_approve') => {
     const allChecked = filteredItems.every((item) => localPerms[item.path]?.[field]);
     setLocalPerms((prev) => {
       const updated = { ...prev };
@@ -316,17 +321,19 @@ const AdminPermissions = () => {
                       <th className="text-left p-3 font-medium min-w-[260px]">
                         {language === 'bn' ? 'মেনু / ফিচার' : 'Menu / Feature'}
                       </th>
-                      {(['can_view', 'can_add', 'can_edit', 'can_delete'] as const).map((field) => (
+                      {(['can_view', 'can_add', 'can_edit', 'can_delete', 'can_approve'] as const).map((field) => (
                         <th key={field} className="text-center p-3 font-medium w-24">
                           <div className="flex flex-col items-center gap-1">
-                            <span>
+                            <span className={field === 'can_approve' ? 'text-emerald-600 font-semibold' : ''}>
                               {field === 'can_view'
                                 ? language === 'bn' ? 'দেখা' : 'View'
                                 : field === 'can_add'
                                 ? language === 'bn' ? 'যোগ' : 'Add'
                                 : field === 'can_edit'
                                 ? language === 'bn' ? 'সম্পাদনা' : 'Edit'
-                                : language === 'bn' ? 'মুছুন' : 'Delete'}
+                                : field === 'can_delete'
+                                ? language === 'bn' ? 'মুছুন' : 'Delete'
+                                : language === 'bn' ? 'অনুমোদন' : 'Approve'}
                             </span>
                             <Checkbox
                               checked={
@@ -348,7 +355,7 @@ const AdminPermissions = () => {
                     {grouped.map((group) => (
                       <>
                         <tr key={`g-${group.name}`} className="bg-muted/40">
-                          <td colSpan={6} className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          <td colSpan={7} className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {language === 'bn' ? group.name_bn : group.name}
                           </td>
                         </tr>
@@ -356,7 +363,7 @@ const AdminPermissions = () => {
                           const perm =
                             localPerms[item.path] ?? blankRow(item.path);
                           const allChecked =
-                            perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                            perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                           return (
                             <tr
                               key={item.path}
@@ -373,12 +380,13 @@ const AdminPermissions = () => {
                                   </span>
                                 </div>
                               </td>
-                              {(['can_view', 'can_add', 'can_edit', 'can_delete'] as const).map(
+                              {(['can_view', 'can_add', 'can_edit', 'can_delete', 'can_approve'] as const).map(
                                 (field) => (
                                   <td key={field} className="text-center p-3">
                                     <Checkbox
                                       checked={perm[field]}
                                       onCheckedChange={() => togglePerm(item.path, field)}
+                                      className={field === 'can_approve' ? 'border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500' : ''}
                                     />
                                   </td>
                                 ),
