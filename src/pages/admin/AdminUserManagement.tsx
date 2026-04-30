@@ -410,9 +410,33 @@ const AdminUserManagement = () => {
     return () => clearTimeout(t);
   }, [fullName, users, dialogOpen]);
 
+  // Real-time phone duplicate check (debounced + DB lookup)
+  useEffect(() => {
+    if (!dialogOpen) return;
+    const v = createPhone.trim();
+    if (!v) { setPhoneDup('idle'); return; }
+    // Basic phone validity (BD: 11 digits starting with 01, or international 10-15 digits)
+    const phoneRegex = /^(\+?\d{10,15}|01\d{9})$/;
+    if (!phoneRegex.test(v)) { setPhoneDup('invalid'); return; }
+    setPhoneDup('checking');
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('phone', v)
+          .limit(1)
+          .maybeSingle();
+        if (!error && data) setPhoneDup('dup');
+        else setPhoneDup('ok');
+      } catch { setPhoneDup('ok'); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [createPhone, dialogOpen]);
+
   // Reset duplicate states when dialog closes
   useEffect(() => {
-    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); }
+    if (!dialogOpen) { setEmailDup('idle'); setNameDup('idle'); setPhoneDup('idle'); }
   }, [dialogOpen]);
 
   const handleCreate = async () => {
