@@ -5725,6 +5725,7 @@ export type Database = {
       role_permissions: {
         Row: {
           can_add: boolean
+          can_approve: boolean
           can_delete: boolean
           can_edit: boolean
           can_view: boolean
@@ -5736,6 +5737,7 @@ export type Database = {
         }
         Insert: {
           can_add?: boolean
+          can_approve?: boolean
           can_delete?: boolean
           can_edit?: boolean
           can_view?: boolean
@@ -5747,6 +5749,7 @@ export type Database = {
         }
         Update: {
           can_add?: boolean
+          can_approve?: boolean
           can_delete?: boolean
           can_edit?: boolean
           can_view?: boolean
@@ -7382,10 +7385,12 @@ export type Database = {
       user_permissions: {
         Row: {
           approval_add: boolean
+          approval_approve: boolean
           approval_delete: boolean
           approval_edit: boolean
           approval_view: boolean
           can_add: boolean
+          can_approve: boolean
           can_delete: boolean
           can_edit: boolean
           can_view: boolean
@@ -7397,10 +7402,12 @@ export type Database = {
         }
         Insert: {
           approval_add?: boolean
+          approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
           approval_view?: boolean
           can_add?: boolean
+          can_approve?: boolean
           can_delete?: boolean
           can_edit?: boolean
           can_view?: boolean
@@ -7412,10 +7419,12 @@ export type Database = {
         }
         Update: {
           approval_add?: boolean
+          approval_approve?: boolean
           approval_delete?: boolean
           approval_edit?: boolean
           approval_view?: boolean
           can_add?: boolean
+          can_approve?: boolean
           can_delete?: boolean
           can_edit?: boolean
           can_view?: boolean
@@ -7864,6 +7873,11 @@ export type Database = {
         Returns: {
           table_name: string
         }[]
+      }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
+      has_menu_permission: {
+        Args: { _action: string; _menu_path: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
