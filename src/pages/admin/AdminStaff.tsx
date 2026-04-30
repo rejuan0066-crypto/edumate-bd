@@ -207,14 +207,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       // Find the first designation matching the new category
       const matchingDesignation = designationsList.find((d: any) => d.staff_category === category);
       const newDesignation = matchingDesignation ? (bn ? matchingDesignation.name_bn : matchingDesignation.name) : null;
-      const updateData: any = { staff_category: category };
+      // Clearing staff_id lets the BEFORE UPDATE trigger (auto_generate_staff_id)
+      // regenerate it using the new category's prefix (TCH/SUP/GEN/DIR/ADM …).
+      const updateData: any = { staff_category: category, staff_id: null };
       if (newDesignation) updateData.designation = newDesignation;
       const { error } = await supabase.from('staff').update(updateData).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
-      toast.success(bn ? 'ডিপার্টমেন্ট ও পদবী পরিবর্তন হয়েছে' : 'Department & designation updated');
+      toast.success(bn ? 'ডিপার্টমেন্ট, পদবী ও আইডি পরিবর্তন হয়েছে' : 'Department, designation & ID updated');
     },
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
