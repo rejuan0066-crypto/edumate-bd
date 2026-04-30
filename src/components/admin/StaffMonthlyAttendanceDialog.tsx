@@ -43,12 +43,13 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     (async () => {
       setLoading(true);
       let q = supabase.from('attendance_records').select('*')
-        .eq('staff_id', staff.id)
-        .gte('date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('date', format(monthEnd, 'yyyy-MM-dd'));
+        .eq('entity_type', 'staff')
+        .eq('entity_id', staff.id)
+        .gte('attendance_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
       if (shift) q = q.eq('shift', shift);
       const { data } = await q;
-      if (!cancel) { setRecords(data || []); setLoading(false); }
+      if (!cancel) { setRecords((data as any[]) || []); setLoading(false); }
     })();
     return () => { cancel = true; };
   }, [open, staff?.id, monthStart, monthEnd, shift]);
