@@ -209,32 +209,30 @@ Deno.serve(async (req) => {
         ipAction = 'user_sensitive_ip';
       }
       if (adminAction) {
-        const adminCheck = await checkRateLimit(supabaseAdmin, adminAction, 'admin', userId);
-        if (!adminCheck.ok) {
-          await logSecurityEvent(supabaseAdmin, {
-            event_type: 'rate_limited',
-            severity: 'warning',
-            reason: adminAction,
-            details: { action, scope: 'admin', user_id: userId, retry_after: adminCheck.retry_after },
-            user_id: userId,
-            ip_address: clientIp,
-          }).catch(() => {});
-          return rateLimitedResponse(adminCheck, 'admin');
-        }
-        const ipCheck = await checkRateLimit(supabaseAdmin, ipAction!, 'ip', clientIp);
-        if (!ipCheck.ok) {
-          await logSecurityEvent(supabaseAdmin, {
-            event_type: 'rate_limited',
-            severity: 'warning',
-            reason: ipAction!,
-            details: { action, scope: 'ip', ip: clientIp, retry_after: ipCheck.retry_after },
-            user_id: userId,
-            ip_address: clientIp,
-          }).catch(() => {});
-          return rateLimitedResponse(ipCheck, 'ip');
+        // Check minute + hourly tiers for both admin and IP scopes
+        const checks: Array<{ action: string; scope: 'admin' | 'ip'; key: string }> = [
+          { action: adminAction,                scope: 'admin', key: userId },
+          { action: `${adminAction}_hourly`,    scope: 'admin', key: userId },
+          { action: ipAction!,                  scope: 'ip',    key: clientIp },
+          { action: `${ipAction!}_hourly`,      scope: 'ip',    key: clientIp },
+        ];
+        for (const c of checks) {
+          const res = await checkRateLimit(supabaseAdmin, c.action, c.scope, c.key);
+          if (!res.ok) {
+            await logSecurityEvent(supabaseAdmin, {
+              event_type: 'rate_limited',
+              severity: 'warning',
+              reason: c.action,
+              details: { action, scope: c.scope, key: c.key, retry_after: res.retry_after, tier: c.action.endsWith('_hourly') ? 'hour' : 'minute' },
+              user_id: userId,
+              ip_address: clientIp,
+            }).catch(() => {});
+            return rateLimitedResponse(res, c.scope);
+          }
         }
       }
     }
+
 
 
     // LIST users

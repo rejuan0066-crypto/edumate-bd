@@ -385,7 +385,7 @@ const AdminUserManagement = () => {
       // Authoritative check against freshly-loaded users list
       if (users.some(u => u.email?.toLowerCase() === v)) setEmailDup('dup');
       else setEmailDup('ok');
-    }, 300);
+    }, 400);
     return () => clearTimeout(t);
   }, [email, users, dialogOpen]);
 
