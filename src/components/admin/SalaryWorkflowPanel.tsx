@@ -77,6 +77,7 @@ export default function SalaryWorkflowPanel({
   }>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<string>('');
   const [actionNotes, setActionNotes] = useState('');
+  const gating = useSalaryWorkflowGating();
 
   // Derive a single workflow stage for the month-sheet (lowest stage among eligible records)
   const sheetStage: Stage = useMemo(() => {
@@ -358,8 +359,7 @@ export default function SalaryWorkflowPanel({
     );
   }
 
-  // Role-based gating
-  const gating = useSalaryWorkflowGating();
+  // Role-based gating (hook moved to top of component to keep hook order stable)
   const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id);
   const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id);
 
