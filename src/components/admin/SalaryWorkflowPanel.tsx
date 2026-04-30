@@ -77,6 +77,7 @@ export default function SalaryWorkflowPanel({
   }>(null);
   const [selectedTargetId, setSelectedTargetId] = useState<string>('');
   const [actionNotes, setActionNotes] = useState('');
+  const gating = useSalaryWorkflowGating();
 
   // Derive a single workflow stage for the month-sheet (lowest stage among eligible records)
   const sheetStage: Stage = useMemo(() => {
