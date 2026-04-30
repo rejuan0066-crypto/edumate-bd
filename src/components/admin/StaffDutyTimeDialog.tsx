@@ -51,7 +51,15 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
 
   if (!staff) return null;
 
-  const diff = timeToMinutes(end) - timeToMinutes(start);
+  const startM = timeToMinutes(start);
+  const endM = timeToMinutes(end);
+  const rawDiff = endM - startM;
+  // Overnight: end ≤ start ⇒ next-day end. start==end with both set ⇒ treat as 24h.
+  const isOvernight = !!start && !!end && endM <= startM;
+  const totalMinutes = !start || !end
+    ? 0
+    : (rawDiff > 0 ? rawDiff : (start === end ? 24 * 60 : rawDiff + 24 * 60));
+  const diff = totalMinutes; // legacy alias used below
   const name = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
   const save = async (clear = false) => {
