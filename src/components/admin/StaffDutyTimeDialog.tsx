@@ -87,14 +87,23 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
               ? 'এই স্টাফের জন্য আলাদা ডিউটি সময় সেট করলে তা ক্যাটেগরি ডিফল্টের পরিবর্তে ব্যবহৃত হবে (অ্যাটেন্ডেন্স ও বিলম্ব হিসাবে)।'
               : 'Setting a custom time will override the category default for attendance and late calculation.'}
           </p>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">{bn ? 'সময়ের ফরম্যাট' : 'Time Format'}</Label>
+            <div className="inline-flex rounded-full border bg-muted/40 p-0.5 text-xs">
+              <button type="button" onClick={() => setFmt('12')} className={`px-3 py-1 rounded-full transition ${fmt === '12' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>12h</button>
+              <button type="button" onClick={() => setFmt('24')} className={`px-3 py-1 rounded-full transition ${fmt === '24' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>24h</button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
-              <Input type="time" value={start} onChange={e => setStart(e.target.value)} />
+              <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />
+              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(start)}</p>}
             </div>
             <div>
               <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
-              <Input type="time" value={end} onChange={e => setEnd(e.target.value)} />
+              <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />
+              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(end)}</p>}
             </div>
           </div>
           <div className="p-3 bg-muted/40 rounded-2xl text-sm">
