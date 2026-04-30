@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import emailjs from '@emailjs/browser';
+// EmailJS is now invoked server-side (in the send-otp edge function) so the OTP
+// code is never returned to the client. The browser SDK is no longer imported.
 import { toast } from 'sonner';
 
 /**
@@ -115,28 +116,9 @@ async function sendOtpCore(
     return { success: false, message, errorCode: data?.code };
   }
 
-  if (data.method === 'smtp') {
-    return { success: true, expiryMinutes: data.expiry_minutes, method: 'smtp' };
-  }
-
-  // EmailJS path
-  if (!opts.skipEmailJsDispatch) {
-    const { otp_code, emailjs: config, expiry_minutes } = data;
-    await emailjs.send(
-      config.service_id,
-      config.template_id,
-      {
-        to_email: email,
-        to_name: recipientName || email,
-        otp_code,
-        expiry_minutes,
-        purpose: purpose === 'password_reset' ? 'Password Reset' : 'Email Verification',
-      },
-      config.public_key,
-    );
-  }
-
-  return { success: true, expiryMinutes: data.expiry_minutes, method: 'emailjs' };
+  // Server-side delivery (SMTP or EmailJS) — the OTP code is never returned to
+  // the client anymore. Treat both methods identically.
+  return { success: true, expiryMinutes: data.expiry_minutes, method: data.method || 'smtp' };
 }
 
 /** Core verify implementation — the only place that talks to `verify-otp`. */
