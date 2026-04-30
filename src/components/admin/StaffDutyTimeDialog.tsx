@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Timer, Save, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -20,6 +21,56 @@ const timeToMinutes = (t: string) => {
   const [h, m] = t.split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
 };
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+// Parse "HH:MM" (24h) into 12h parts
+const parse12h = (t: string) => {
+  const [hStr, mStr] = (t || '00:00').split(':');
+  let h24 = parseInt(hStr || '0', 10);
+  const m = parseInt(mStr || '0', 10);
+  const period: 'AM' | 'PM' = h24 >= 12 ? 'PM' : 'AM';
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return { h12, m, period };
+};
+
+// Compose 12h parts back into "HH:MM" (24h)
+const compose24h = (h12: number, m: number, period: 'AM' | 'PM') => {
+  let h24 = h12 % 12;
+  if (period === 'PM') h24 += 12;
+  return `${pad2(h24)}:${pad2(m)}`;
+};
+
+function Time12Picker({ value, onChange, bn }: { value: string; onChange: (v: string) => void; bn: boolean }) {
+  const { h12, m, period } = parse12h(value);
+  const toBn = (s: string) => bn ? s.replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : s;
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = Array.from({ length: 60 }, (_, i) => i);
+  return (
+    <div className="grid grid-cols-[1fr_1fr_1fr] gap-1.5">
+      <Select value={String(h12)} onValueChange={(v) => onChange(compose24h(parseInt(v, 10), m, period))}>
+        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
+        <SelectContent className="max-h-60">
+          {hours.map(h => <SelectItem key={h} value={String(h)}>{toBn(pad2(h))}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={String(m)} onValueChange={(v) => onChange(compose24h(h12, parseInt(v, 10), period))}>
+        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
+        <SelectContent className="max-h-60">
+          {minutes.map(mm => <SelectItem key={mm} value={String(mm)}>{toBn(pad2(mm))}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={period} onValueChange={(v) => onChange(compose24h(h12, m, v as 'AM' | 'PM'))}>
+        <SelectTrigger className="h-10 px-2 text-sm"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="AM">{bn ? 'পূর্বাহ্ন' : 'AM'}</SelectItem>
+          <SelectItem value="PM">{bn ? 'অপরাহ্ন' : 'PM'}</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = true }: Props) {
   const [start, setStart] = useState('09:00');
@@ -105,13 +156,15 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
-              <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />
-              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(start)}</p>}
+              {fmt === '12'
+                ? <Time12Picker value={start} onChange={setStart} bn={bn} />
+                : <Input type="time" step={60} value={start} onChange={e => setStart(e.target.value)} />}
             </div>
             <div>
               <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
-              <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />
-              {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(end)}</p>}
+              {fmt === '12'
+                ? <Time12Picker value={end} onChange={setEnd} bn={bn} />
+                : <Input type="time" step={60} value={end} onChange={e => setEnd(e.target.value)} />}
             </div>
           </div>
           <div className="p-3 bg-muted/40 rounded-2xl text-sm flex items-center justify-between gap-2">
