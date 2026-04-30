@@ -545,9 +545,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
-  // Helper: get shift time for a staff entity
+  // Helper: get shift time for a staff entity (per-staff override > category > default)
   const getCategoryTime = (entity: any) => {
-    const cat = entity.staff_category || 'general';
+    if (entity?.duty_start_time && entity?.duty_end_time) {
+      return { start: entity.duty_start_time, end: entity.duty_end_time };
+    }
+    const cat = entity?.staff_category || 'general';
     return categoryShiftTimes[cat] || defaultCategoryTimes.general;
   };
 
