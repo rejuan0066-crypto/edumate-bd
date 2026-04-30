@@ -78,6 +78,13 @@ export default function AdminCommittees() {
   const [activeCommitteeId, setActiveCommitteeId] = useState<string | null>(null);
   const [deleteCommittee, setDeleteCommittee] = useState<Committee | null>(null);
   const [deleteMember, setDeleteMember] = useState<Member | null>(null);
+  const [memberFieldErrors, setMemberFieldErrors] = useState<Record<string, string>>({});
+  const clearMemberFieldError = (f: string) =>
+    setMemberFieldErrors(prev => {
+      if (!prev[f]) return prev;
+      const { [f]: _, ...rest } = prev;
+      return rest;
+    });
   const otpGate = useAdminOtpGate();
   const [searchParams, setSearchParams] = useSearchParams();
 
