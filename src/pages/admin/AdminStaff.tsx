@@ -268,7 +268,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
       case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
       case 'designation': return s.designation || '';
-      case 'department': return labelForCategory(getStaffCategory(s, designationsMap));
+      case 'department': return labelForCategory(getStaffCategory(s, designationsMap, activeCategoryKeys));
       case 'status': return s.status || '';
     }
   };
@@ -566,7 +566,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         )}
                         {canEditItem && (
                           <button onClick={() => {
-                            const cat = getStaffCategory(s, designationsMap);
+                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
                             navigate(`/admin/${path}/edit/${s.id}`);
                           }} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
