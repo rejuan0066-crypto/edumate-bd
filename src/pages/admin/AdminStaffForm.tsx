@@ -406,6 +406,65 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     }
   };
 
+  // Live duplicate check for the staff's own NID (debounced).
+  // Only runs once a valid 10/13/17-digit value is typed; checks staff,
+  // administrative_officers, and committee_members tables.
+  const [nidChecking, setNidChecking] = useState(false);
+  useEffect(() => {
+    const cleaned = (nid || '').replace(/\D/g, '');
+    if (![10, 13, 17].includes(cleaned.length)) return;
+    // Don't override format error
+    if (nidError && /১০|১৭|10|17/.test(nidError)) return;
+    let cancelled = false;
+    setNidChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        // Parallel checks across the 3 tables
+        const [staffRes, adminRes, commRes] = await Promise.all([
+          supabase
+            .from('staff')
+            .select('id')
+            .eq('nid', cleaned)
+            .is('deleted_at', null)
+            .limit(1),
+          supabase
+            .from('administrative_officers')
+            .select('id')
+            .eq('nid', cleaned)
+            .is('deleted_at', null)
+            .limit(1),
+          supabase
+            .from('committee_members')
+            .select('id')
+            .eq('nid', cleaned)
+            .is('deleted_at', null)
+            .limit(1),
+        ]);
+        if (cancelled) return;
+        const staffHit = (staffRes.data || []).find((r: any) => r.id !== editId);
+        const adminHit = (adminRes.data || [])[0];
+        const commHit = (commRes.data || [])[0];
+        if (staffHit) {
+          setNidError(bn ? 'এই NID দিয়ে ইতিমধ্যে একজন স্টাফ রেজিস্টার্ড আছেন।' : 'This NID is already registered to a staff member.');
+        } else if (adminHit) {
+          setNidError(bn ? 'এই NID দিয়ে ইতিমধ্যে একজন প্রশাসনিক কর্মকর্তা রেজিস্টার্ড আছেন।' : 'This NID is already registered to an administrative officer.');
+        } else if (commHit) {
+          setNidError(bn ? 'এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।' : 'This NID is already registered to a committee member.');
+        } else {
+          // Clear only previous duplicate-style messages, keep format errors
+          setNidError(prev => (prev && /রেজিস্টার্ড|registered/i.test(prev) ? '' : prev));
+        }
+      } catch {
+        // Silent fail — server-side trigger will still block on submit
+      } finally {
+        if (!cancelled) setNidChecking(false);
+      }
+    }, 500);
+    return () => { cancelled = true; clearTimeout(t); setNidChecking(false); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nid, editId, bn]);
+
+
   const handleFieldChange = (field: string, value: string, setter: (v: string) => void) => {
     setter(value);
     const error = validate(field, value);
