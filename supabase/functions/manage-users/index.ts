@@ -6,6 +6,63 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ---- Rate limiting helpers ----
+function getClientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || req.headers.get('cf-connecting-ip') || 'unknown';
+}
+
+async function checkRateLimit(
+  admin: any,
+  action: string,
+  scope: 'admin' | 'ip' | 'email' | 'phone',
+  key: string,
+): Promise<{ ok: boolean; retry_after?: number; message_bn?: string; limit?: number }> {
+  if (!key) return { ok: true };
+  try {
+    const { data, error } = await admin.rpc('check_rate_limit', {
+      _key: key, _scope: scope, _action: action,
+    });
+    if (error) {
+      console.error('rate_limit rpc error', action, scope, error.message);
+      return { ok: true }; // fail-open to avoid blocking legitimate users on infra errors
+    }
+    if (data?.ok === false) {
+      return {
+        ok: false,
+        retry_after: Number(data.retry_after) || 30,
+        message_bn: data.message_bn || 'অনেক বেশি অনুরোধ। কিছুক্ষণ পর আবার চেষ্টা করুন।',
+        limit: data.limit,
+      };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.error('rate_limit exception', e);
+    return { ok: true };
+  }
+}
+
+function rateLimitedResponse(res: { retry_after?: number; message_bn?: string; limit?: number }, scope: string) {
+  return new Response(
+    JSON.stringify({
+      error: res.message_bn || 'Rate limit exceeded',
+      code: 'RATE_LIMITED',
+      scope,
+      retry_after: res.retry_after,
+      limit: res.limit,
+    }),
+    {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Retry-After': String(res.retry_after || 30),
+      },
+    },
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
