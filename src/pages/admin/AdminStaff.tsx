@@ -537,6 +537,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         {canEditItem && s.status === 'active' && (
                           <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
                         )}
+                        {canEditItem && s.status === 'active' && (
+                          <button onClick={() => setDutyStaff(s)} className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`} title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}><Clock className="w-4 h-4" /></button>
+                        )}
                         {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
                           <button
                             onClick={() => statusMutation.mutate({ id: s.id, status: s.status === 'active' ? 'inactive' : 'active' })}
