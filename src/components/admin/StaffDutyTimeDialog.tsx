@@ -1,0 +1,103 @@
+import { useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Timer, Save, RotateCcw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface Props {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  staff: { id: string; name_bn?: string; name_en?: string; duty_start_time?: string | null; duty_end_time?: string | null } | null;
+  bn?: boolean;
+}
+
+const timeToMinutes = (t: string) => {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = true }: Props) {
+  const [start, setStart] = useState('09:00');
+  const [end, setEnd] = useState('17:00');
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (open && staff) {
+      setStart(staff.duty_start_time || '09:00');
+      setEnd(staff.duty_end_time || '17:00');
+    }
+  }, [open, staff]);
+
+  if (!staff) return null;
+
+  const diff = timeToMinutes(end) - timeToMinutes(start);
+  const name = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
+
+  const save = async (clear = false) => {
+    setSaving(true);
+    const { error } = await supabase.from('staff').update({
+      duty_start_time: clear ? null : start,
+      duty_end_time: clear ? null : end,
+      updated_at: new Date().toISOString(),
+    }).eq('id', staff.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(clear
+      ? (bn ? 'কাস্টম ডিউটি টাইম রিসেট করা হয়েছে' : 'Custom duty time cleared')
+      : (bn ? 'ডিউটি টাইম সেভ হয়েছে' : 'Duty time saved'));
+    qc.invalidateQueries({ queryKey: ['staff'] });
+    qc.invalidateQueries({ queryKey: ['attendance'] });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm rounded-[38px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Timer className="h-5 w-5 text-primary" />
+            {bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm font-medium">{name}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {bn
+              ? 'এই স্টাফের জন্য আলাদা ডিউটি সময় সেট করলে তা ক্যাটেগরি ডিফল্টের পরিবর্তে ব্যবহৃত হবে (অ্যাটেন্ডেন্স ও বিলম্ব হিসাবে)।'
+              : 'Setting a custom time will override the category default for attendance and late calculation.'}
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">{bn ? 'শুরুর সময়' : 'Start Time'}</Label>
+              <Input type="time" value={start} onChange={e => setStart(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">{bn ? 'শেষের সময়' : 'End Time'}</Label>
+              <Input type="time" value={end} onChange={e => setEnd(e.target.value)} />
+            </div>
+          </div>
+          <div className="p-3 bg-muted/40 rounded-2xl text-sm">
+            <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
+            {diff > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : '-'}
+          </div>
+          <div className="flex gap-2">
+            <Button className="flex-1" onClick={() => save(false)} disabled={saving || diff <= 0}>
+              <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+            </Button>
+            {(staff.duty_start_time || staff.duty_end_time) && (
+              <Button variant="outline" onClick={() => save(true)} disabled={saving} title={bn ? 'ক্যাটেগরি ডিফল্টে ফিরে যান' : 'Reset to category default'}>
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

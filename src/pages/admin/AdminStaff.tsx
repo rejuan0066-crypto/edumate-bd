@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, Pencil, UserPlus, Eye, EyeOff, User, FileText, Check, X, Award, Power, PowerOff, Clock } from 'lucide-react';
 import StaffProfileModal from '@/components/profile/StaffProfileModal';
 import StaffLetterDialog from '@/components/admin/StaffLetterDialog';
+import StaffDutyTimeDialog from '@/components/admin/StaffDutyTimeDialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -72,6 +73,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
   const [letterStaff, setLetterStaff] = useState<any>(null);
+  const [dutyStaff, setDutyStaff] = useState<any>(null);
 
   // Account creation dialog state
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -535,6 +537,9 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         {canEditItem && s.status === 'active' && (
                           <button onClick={() => setLetterStaff(s)} className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent" title={bn ? 'পদোন্নতি / বেতন পত্র' : 'Promotion / Salary Letter'}><Award className="w-4 h-4" /></button>
                         )}
+                        {canEditItem && s.status === 'active' && (
+                          <button onClick={() => setDutyStaff(s)} className={`p-2 rounded-lg hover:bg-primary/10 ${s.duty_start_time ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`} title={bn ? 'ব্যক্তিগত ডিউটি সময়' : 'Personal Duty Time'}><Clock className="w-4 h-4" /></button>
+                        )}
                         {canEditItem && (s.status === 'active' || s.status === 'inactive') && isAdminRole(role) && (
                           <button
                             onClick={() => statusMutation.mutate({ id: s.id, status: s.status === 'active' ? 'inactive' : 'active' })}
@@ -655,6 +660,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
         {/* Promotion / Salary Letter Dialog */}
         <StaffLetterDialog open={!!letterStaff} onOpenChange={(o) => { if (!o) setLetterStaff(null); }} staff={letterStaff} bn={bn} />
+        <StaffDutyTimeDialog open={!!dutyStaff} onOpenChange={(o) => { if (!o) setDutyStaff(null); }} staff={dutyStaff} bn={bn} />
       </div>
     </AdminLayout>
   );
