@@ -225,7 +225,7 @@ const AdminAdministrative = () => {
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Removed');
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
   const addInline = useMutation({
