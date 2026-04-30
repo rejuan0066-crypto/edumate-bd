@@ -73,6 +73,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewStaff, setViewStaff] = useState<any>(null);
   const [letterStaff, setLetterStaff] = useState<any>(null);
+  const [dutyStaff, setDutyStaff] = useState<any>(null);
 
   // Account creation dialog state
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
