@@ -1056,6 +1056,16 @@ const AdminAdministrative = () => {
                                 placeholder={bn ? 'ইংরেজি নাম' : 'English'}
                                 aria-invalid={manageEditError?.field === 'name'}
                               />
+                              {kind === 'department' && (
+                                <Input
+                                  className={`w-28 uppercase tracking-wider ${manageEditError?.field === 'code' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
+                                  value={editRow!.code || ''}
+                                  maxLength={10}
+                                  onChange={(e) => { setEditRow({ ...editRow!, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); if (manageEditError) setManageEditError(null); }}
+                                  placeholder={bn ? 'কোড *' : 'Code *'}
+                                  aria-invalid={manageEditError?.field === 'code'}
+                                />
+                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1066,7 +1076,18 @@ const AdminAdministrative = () => {
                                     setManageEditError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
                                     return;
                                   }
-                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name });
+                                  if (kind === 'department') {
+                                    const c = (editRow!.code || '').trim();
+                                    if (!c) {
+                                      setManageEditError({ field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' });
+                                      return;
+                                    }
+                                    if (!/^[A-Z0-9]{2,10}$/.test(c)) {
+                                      setManageEditError({ field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' });
+                                      return;
+                                    }
+                                  }
+                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name, code: editRow!.code });
                                 }}
                                 disabled={updateOption.isPending}
                               >
@@ -1079,7 +1100,14 @@ const AdminAdministrative = () => {
                           ) : (
                             <>
                               <div className="flex-1">
-                                <div className="font-medium text-sm">{row.name_bn}</div>
+                                <div className="font-medium text-sm flex items-center gap-2">
+                                  {row.name_bn}
+                                  {kind === 'department' && row.code && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-mono tracking-wider border border-emerald-200/50 dark:border-emerald-700/50">
+                                      {row.code}
+                                    </span>
+                                  )}
+                                </div>
                                 {row.name && row.name !== row.name_bn && (
                                   <div className="text-xs text-muted-foreground">{row.name}</div>
                                 )}
@@ -1088,7 +1116,7 @@ const AdminAdministrative = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="rounded-full"
-                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '' })}
+                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '', code: row.code || '' })}
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
