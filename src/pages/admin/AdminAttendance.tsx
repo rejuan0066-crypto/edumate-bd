@@ -1710,7 +1710,10 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   <Clock className="h-4 w-4 text-primary" />
                   {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Department'}
                 </Label>
-                {dynamicStaffCategories.map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
+                {dynamicStaffCategories
+                  .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                  .filter(catKey => (allStaff as any[]).some((s: any) => (s.staff_category || 'general') === catKey))
+                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
                   <div key={cat.key} className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground">{cat.label}</p>
                     <div className="grid grid-cols-2 gap-3">
