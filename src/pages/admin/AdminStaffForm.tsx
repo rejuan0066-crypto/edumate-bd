@@ -551,7 +551,16 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       };
 
       if (isEditMode && editId) {
-        const { error } = await supabase.from('staff').update(record).eq('id', editId);
+        // If the staff_category changed, clear staff_id so the BEFORE UPDATE
+        // trigger (auto_generate_staff_id) regenerates it with the new
+        // department's prefix (TCH/SUP/GEN/DIR/ADM …).
+        const prevCategory = (existingStaff as any)?.staff_category || null;
+        const nextCategory = record.staff_category;
+        const updatePayload: any = { ...record };
+        if (prevCategory && nextCategory && prevCategory !== nextCategory) {
+          updatePayload.staff_id = null;
+        }
+        const { error } = await supabase.from('staff').update(updatePayload).eq('id', editId);
         if (error) throw error;
       } else {
         const { error } = await supabase.from('staff').insert({
