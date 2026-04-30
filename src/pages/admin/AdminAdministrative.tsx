@@ -852,9 +852,15 @@ const AdminAdministrative = () => {
             </section>
           </div>
 
+          {(formError || Object.keys(fieldErrors).length > 0) && (
+            <div className="mt-2 px-4 py-2 rounded-[14px] bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+              {formError || (bn ? 'নিচে চিহ্নিত ফিল্ডগুলো ঠিক করুন।' : 'Please fix the highlighted fields below.')}
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
-            <Button onClick={() => upsert.mutate(form)} disabled={!form.name_bn || upsert.isPending}>
+            <Button onClick={handleSaveOfficer} disabled={!form.name_bn || upsert.isPending}>
               {upsert.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ করুন' : 'Save')}
             </Button>
           </DialogFooter>
