@@ -746,7 +746,7 @@ const AdminAdministrative = () => {
                 </div>
                 <div>
                   <div className="flex items-center justify-between">
-                    <Label>{bn ? 'বিভাগ' : 'Department'}</Label>
+                    <Label className={fieldErrors.department ? 'text-destructive' : ''}>{bn ? 'বিভাগ' : 'Department'}</Label>
                     <button
                       type="button"
                       onClick={() => setQuickAdd({ kind: 'department', name_bn: '', name_en: '' })}
@@ -755,8 +755,10 @@ const AdminAdministrative = () => {
                       <Plus className="w-3 h-3" />{bn ? 'নতুন' : 'New'}
                     </button>
                   </div>
-                  <Select value={form.department || ''} onValueChange={v => setForm({ ...form, department: v })}>
-                    <SelectTrigger><SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} /></SelectTrigger>
+                  <Select value={form.department || ''} onValueChange={v => { setForm({ ...form, department: v }); clearFieldError('department'); }}>
+                    <SelectTrigger className={fieldErrors.department ? 'border-destructive ring-1 ring-destructive/30' : ''}>
+                      <SelectValue placeholder={bn ? 'বিভাগ নির্বাচন' : 'Select department'} />
+                    </SelectTrigger>
                     <SelectContent>
                       {departments.length === 0 && (
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">{bn ? 'কোনো বিভাগ নেই — "নতুন" ক্লিক করুন' : 'No departments — click "New"'}</div>
@@ -769,6 +771,7 @@ const AdminAdministrative = () => {
                       )}
                     </SelectContent>
                   </Select>
+                  {fieldErrors.department && <p className="text-xs text-destructive mt-1">{fieldErrors.department}</p>}
                 </div>
                 <div>
                   <Label>{bn ? 'অফিস কক্ষ' : 'Office Room'}</Label>
