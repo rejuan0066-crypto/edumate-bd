@@ -469,7 +469,7 @@ export default function AdminCommittees() {
       </Dialog>
 
       {/* Member Dialog */}
-      <Dialog open={memberDialog} onOpenChange={setMemberDialog}>
+      <Dialog open={memberDialog} onOpenChange={(o) => { setMemberDialog(o); if (!o) setMemberFieldErrors({}); }}>
         <DialogContent className="max-w-3xl rounded-[38px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingMember?.id ? (bn ? "সদস্য সম্পাদনা" : "Edit Member") : (bn ? "নতুন সদস্য" : "New Member")}</DialogTitle>
