@@ -48,6 +48,38 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
+    // ---- Rate limit (per-email + per-IP) ----
+    const xff = req.headers.get('x-forwarded-for');
+    const clientIp = (xff ? xff.split(',')[0].trim() : null)
+      || req.headers.get('x-real-ip')
+      || req.headers.get('cf-connecting-ip')
+      || 'unknown';
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const callRl = async (action: string, scope: string, key: string) => {
+      try {
+        const { data } = await supabase.rpc('check_rate_limit', { _key: key, _scope: scope, _action: action });
+        return data;
+      } catch { return { ok: true }; }
+    };
+    const emailRl = await callRl('otp_send_email', 'email', normalizedEmail);
+    if (emailRl?.ok === false) {
+      return new Response(JSON.stringify({
+        success: false, code: 'RATE_LIMITED', scope: 'email',
+        retry_after: emailRl.retry_after,
+        error: emailRl.message_bn || 'Too many OTP requests for this email.',
+      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(emailRl.retry_after || 30) } });
+    }
+    const ipRl = await callRl('otp_send_ip', 'ip', clientIp);
+    if (ipRl?.ok === false) {
+      return new Response(JSON.stringify({
+        success: false, code: 'RATE_LIMITED', scope: 'ip',
+        retry_after: ipRl.retry_after,
+        error: ipRl.message_bn || 'Too many OTP requests from this network.',
+      }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retry_after || 30) } });
+    }
+
+
     // ---- Load OTP config (toggle + dynamic limits) ----
     const { data: otpCfg } = await supabase
       .from("otp_config")
