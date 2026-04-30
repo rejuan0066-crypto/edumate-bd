@@ -235,7 +235,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     // Director / committee member: rely strictly on the stored staff_category column
     if (staffType === 'director') return s.staff_category === 'director';
     if (staffType === 'committee_member') return s.staff_category === 'committee_member';
-    const category = getStaffCategory(s, designationsMap);
+    const category = getStaffCategory(s, designationsMap, activeCategoryKeys);
     if (staffType === 'teacher') return category === 'teacher';
     if (staffType === 'administrative') return category === 'administrative';
     if (staffType === 'support') return category === 'support';
@@ -245,24 +245,13 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
 
-  const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
-    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-    administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
-    support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
-    general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
-    director: { bn: 'পরিচালক', en: 'Director' },
-    committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
-  };
-  const labelForCategory = (key: string) => CATEGORY_LABELS[key]?.[bn ? 'bn' : 'en'] || key;
-
   const preFiltered = typeFiltered.filter((s: any) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
-    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap) !== departmentFilter) return false;
+    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap, activeCategoryKeys) !== departmentFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    const cat = getStaffCategory(s, designationsMap);
-    const catLabelBn = CATEGORY_LABELS[cat]?.bn || '';
-    const catLabelEn = CATEGORY_LABELS[cat]?.en || '';
+    const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
+    const catLabel = labelForCategory(cat);
     return s.name_bn?.toLowerCase().includes(q)
       || s.name_en?.toLowerCase().includes(q)
       || s.designation?.toLowerCase().includes(q)
@@ -270,8 +259,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       || (s as any).phone?.toLowerCase().includes(q)
       || (s as any).mobile?.toLowerCase().includes(q)
       || cat.toLowerCase().includes(q)
-      || catLabelBn.toLowerCase().includes(q)
-      || catLabelEn.toLowerCase().includes(q)
+      || catLabel.toLowerCase().includes(q)
       || (s.department || '').toLowerCase().includes(q);
   });
 
