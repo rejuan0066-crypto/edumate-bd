@@ -317,7 +317,13 @@ Deno.serve(async (req) => {
       // Adding a user to staff or administrative_officers must be done manually from the
       // User Management profile dialog ("Add to Staff" / "Add to Administrative" buttons).
       if (body.staff_id) {
-        await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
+        const { error: linkErr } = await supabaseAdmin.from("staff").update({ user_id: newUserId }).eq("id", body.staff_id);
+        if (linkErr) {
+          await rollback('staff_link_failed: ' + linkErr.message);
+          return new Response(JSON.stringify({ error: 'staff_link_failed', message: linkErr.message }), {
+            status: 500, headers: jsonHeaders,
+          });
+        }
       }
 
       // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
@@ -326,8 +332,8 @@ Deno.serve(async (req) => {
         const loginUrl = origin ? `${new URL(origin).origin}/login` : undefined;
         await supabaseAdmin.functions.invoke("send-welcome-email", {
           body: {
-            email,
-            full_name: full_name || undefined,
+            email: trimmedEmail,
+            full_name: trimmedName || undefined,
             role: role || undefined,
             password,
             kind: "user",
@@ -338,8 +344,8 @@ Deno.serve(async (req) => {
         console.error("send-welcome-email failed (non-fatal):", mailErr);
       }
 
-      return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ success: true, user_id: newUserId }), {
+        status: 200, headers: jsonHeaders,
       });
     }
 
