@@ -7859,10 +7859,12 @@ export type Database = {
       }
     }
     Functions: {
-      acquire_user_create_lock: {
-        Args: { _email: string; _phone: string }
-        Returns: undefined
-      }
+      acquire_user_create_lock:
+        | { Args: { _email: string; _phone: string }; Returns: undefined }
+        | {
+            Args: { _email: string; _phone: string; _timeout_ms?: number }
+            Returns: Json
+          }
       check_user_duplicates: {
         Args: { _email: string; _full_name: string; _phone: string }
         Returns: Json

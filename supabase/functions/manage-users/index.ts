@@ -246,17 +246,59 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: jsonHeaders });
       }
 
-      // ── STEP 1: Acquire transaction-scoped advisory locks (serialize concurrent creates) ──
-      try {
-        await supabaseAdmin.rpc('acquire_user_create_lock', { _email: trimmedEmail, _phone: trimmedPhone });
-      } catch (lockErr) {
-        // non-fatal but log so we can spot lock-contention patterns
-        await logSecurityEvent(supabaseAdmin, {
-          event_type: 'user_create_lock_warn', severity: 'info',
-          user_id: userId, email: trimmedEmail, reason: 'ADVISORY_LOCK_FAILED',
-          details: { reason_code: 'ADVISORY_LOCK_FAILED', rollback_status: 'not_applicable', identifiers: ident, error: String((lockErr as any)?.message || lockErr) },
-          req,
-        }).catch(() => {});
+      // ── STEP 1: Acquire advisory locks with retry-backoff (serialize concurrent creates) ──
+      // Per-attempt DB timeout 2s; up to 3 attempts with exponential backoff (200ms, 400ms).
+      const LOCK_ATTEMPTS = 3;
+      const LOCK_TIMEOUT_MS = 2000;
+      let lockAcquired = false;
+      let lockResource: string | null = null;
+      let lockTotalWaitedMs = 0;
+      let lockLastError: string | null = null;
+      for (let attempt = 1; attempt <= LOCK_ATTEMPTS; attempt++) {
+        try {
+          const { data: lockRes, error: lockRpcErr } = await supabaseAdmin.rpc('acquire_user_create_lock', {
+            _email: trimmedEmail, _phone: trimmedPhone, _timeout_ms: LOCK_TIMEOUT_MS,
+          });
+          if (lockRpcErr) {
+            lockLastError = lockRpcErr.message;
+          } else if (lockRes && (lockRes as any).ok === true) {
+            lockAcquired = true;
+            lockTotalWaitedMs += Number((lockRes as any).waited_ms || 0);
+            break;
+          } else if (lockRes && (lockRes as any).ok === false) {
+            lockResource = (lockRes as any).resource || null;
+            lockTotalWaitedMs += Number((lockRes as any).waited_ms || 0);
+            lockLastError = `LOCK_TIMEOUT on ${lockResource}`;
+          }
+        } catch (e) {
+          lockLastError = String((e as any)?.message || e);
+        }
+        if (attempt < LOCK_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, 200 * attempt)); // 200ms, 400ms backoff
+        }
+      }
+
+      if (!lockAcquired) {
+        await logFail('LOCK_CONTENTION', 'warning', {
+          lock_resource: lockResource,
+          attempts: LOCK_ATTEMPTS,
+          total_waited_ms: lockTotalWaitedMs,
+          last_error: lockLastError,
+        });
+        return new Response(JSON.stringify({
+          error: 'LOCK_CONTENTION',
+          reason_code: 'LOCK_CONTENTION',
+          message: 'Another request is currently creating a user with the same email or phone. Please try again in a moment.',
+          message_bn: lockResource === 'phone'
+            ? 'এই ফোন নম্বর দিয়ে এই মুহূর্তে আরেকটি ইউজার তৈরি হচ্ছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।'
+            : lockResource === 'email'
+              ? 'এই ইমেইল দিয়ে এই মুহূর্তে আরেকটি ইউজার তৈরি হচ্ছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।'
+              : 'সিস্টেম এই মুহূর্তে ব্যস্ত। কিছুক্ষণ পরে আবার চেষ্টা করুন।',
+          retry_after_seconds: 2,
+        }), {
+          status: 429,
+          headers: { ...jsonHeaders, 'Retry-After': '2' },
+        });
       }
 
       // ── STEP 2: Atomic duplicate check across profiles + staff + administrative_officers ──
