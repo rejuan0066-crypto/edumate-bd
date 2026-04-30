@@ -1503,7 +1503,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
               >
                 <div className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {/* Left: Index + Avatar + Info */}
-                  <div className="flex items-center gap-4 min-w-0 flex-shrink-0">
+                  <div
+                    className={`flex items-center gap-4 min-w-0 flex-shrink-0 ${entityType === 'staff' ? 'cursor-pointer hover:opacity-80 transition' : ''}`}
+                    onClick={() => { if (entityType === 'staff') setMonthlyStaff(entity); }}
+                    title={entityType === 'staff' ? (bn ? 'মাসিক উপস্থিতি দেখুন' : 'View monthly attendance') : undefined}
+                  >
                     <span className="text-xs font-medium text-muted-foreground/60 w-6 text-center tabular-nums">{idx + 1}</span>
                     
                     {/* Avatar with emerald ring */}
@@ -1522,7 +1526,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
                     {/* Name & Info */}
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{bn ? entity.name_bn : (entity.name_en || entity.name_bn)}</p>
+                      <p className={`text-sm font-semibold text-foreground truncate ${entityType === 'staff' ? 'hover:text-primary' : ''}`}>{bn ? entity.name_bn : (entity.name_en || entity.name_bn)}</p>
                       <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                         {entityType === 'student'
                           ? (() => {
