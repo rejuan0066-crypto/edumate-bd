@@ -25,8 +25,16 @@ const ACTION_LABELS_BN: Record<string, string> = {
   user_sensitive_ip: 'সংবেদনশীল কাজ (প্রতি IP)',
   otp_send_email: 'OTP পাঠানো (প্রতি ইমেইল)',
   otp_send_ip: 'OTP পাঠানো (প্রতি IP)',
+  otp_send_phone: 'OTP পাঠানো (প্রতি মোবাইল/মিনিট)',
+  otp_send_phone_hourly: 'OTP পাঠানো (প্রতি মোবাইল/ঘণ্টা)',
+  otp_send_user: 'OTP পাঠানো (প্রতি ইউজার/মিনিট)',
+  otp_send_user_hourly: 'OTP পাঠানো (প্রতি ইউজার/ঘণ্টা)',
   otp_verify_email: 'OTP যাচাই (প্রতি ইমেইল)',
   otp_verify_ip: 'OTP যাচাই (প্রতি IP)',
+  otp_verify_phone: 'OTP যাচাই (প্রতি মোবাইল/মিনিট)',
+  otp_verify_phone_hourly: 'OTP যাচাই (প্রতি মোবাইল/ঘণ্টা)',
+  otp_verify_user: 'OTP যাচাই (প্রতি ইউজার/মিনিট)',
+  otp_verify_user_hourly: 'OTP যাচাই (প্রতি ইউজার/ঘণ্টা)',
   duplicate_check: 'ডুপ্লিকেট চেক (প্রতি অ্যাডমিন)',
 };
 
