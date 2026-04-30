@@ -877,7 +877,7 @@ const AdminAdministrative = () => {
       />
 
       {/* Quick Add: Department / Designation */}
-      <Dialog open={!!quickAdd} onOpenChange={(o) => !o && setQuickAdd(null)}>
+      <Dialog open={!!quickAdd} onOpenChange={(o) => { if (!o) { setQuickAdd(null); setQuickAddError(null); } }}>
         <DialogContent className="max-w-md rounded-[38px]">
           <DialogHeader>
             <DialogTitle>
@@ -888,27 +888,50 @@ const AdminAdministrative = () => {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div>
-              <Label>{bn ? 'বাংলা নাম *' : 'Bangla Name *'}</Label>
+              <Label className={quickAddError?.field === 'name_bn' ? 'text-destructive' : ''}>
+                {bn ? 'বাংলা নাম *' : 'Bangla Name *'}
+              </Label>
               <Input
                 autoFocus
                 value={quickAdd?.name_bn || ''}
-                onChange={(e) => setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q)}
+                onChange={(e) => { setQuickAdd(q => q ? { ...q, name_bn: e.target.value } : q); if (quickAddError) setQuickAddError(null); }}
                 placeholder={quickAdd?.kind === 'department' ? (bn ? 'যেমনঃ হিসাব শাখা' : 'e.g. Accounts') : (bn ? 'যেমনঃ অফিস সহকারী' : 'e.g. Office Assistant')}
+                aria-invalid={quickAddError?.field === 'name_bn'}
+                className={quickAddError?.field === 'name_bn' ? 'border-destructive ring-1 ring-destructive/30' : ''}
               />
+              {quickAddError?.field === 'name_bn' && <p className="text-xs text-destructive mt-1">{quickAddError.message}</p>}
             </div>
             <div>
-              <Label>{bn ? 'ইংরেজি নাম' : 'English Name'}</Label>
+              <Label className={quickAddError?.field === 'name_en' ? 'text-destructive' : ''}>
+                {bn ? 'ইংরেজি নাম' : 'English Name'}
+              </Label>
               <Input
                 value={quickAdd?.name_en || ''}
-                onChange={(e) => setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q)}
+                onChange={(e) => { setQuickAdd(q => q ? { ...q, name_en: e.target.value } : q); if (quickAddError) setQuickAddError(null); }}
                 placeholder={quickAdd?.kind === 'department' ? 'e.g. Accounts' : 'e.g. Office Assistant'}
+                aria-invalid={quickAddError?.field === 'name_en'}
+                className={quickAddError?.field === 'name_en' ? 'border-destructive ring-1 ring-destructive/30' : ''}
               />
+              {quickAddError?.field === 'name_en' && <p className="text-xs text-destructive mt-1">{quickAddError.message}</p>}
             </div>
+            {quickAddError && !quickAddError.field && (
+              <div className="px-3 py-2 rounded-[14px] bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+                {quickAddError.message}
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQuickAdd(null)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
+            <Button variant="outline" onClick={() => { setQuickAdd(null); setQuickAddError(null); }}>{bn ? 'বাতিল' : 'Cancel'}</Button>
             <Button
-              onClick={() => quickAdd && createOption.mutate(quickAdd)}
+              onClick={() => {
+                if (!quickAdd) return;
+                setQuickAddError(null);
+                if (!quickAdd.name_bn?.trim()) {
+                  setQuickAddError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
+                  return;
+                }
+                createOption.mutate(quickAdd);
+              }}
               disabled={!quickAdd?.name_bn?.trim() || createOption.isPending}
             >
               {createOption.isPending ? (bn ? 'যোগ হচ্ছে...' : 'Adding...') : (bn ? 'যোগ করুন' : 'Add')}
