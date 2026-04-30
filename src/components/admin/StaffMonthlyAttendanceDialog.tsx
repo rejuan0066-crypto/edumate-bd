@@ -56,7 +56,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   const byDate = useMemo(() => {
     const m: Record<string, any> = {};
-    for (const r of records) m[r.date] = r;
+    for (const r of records) m[r.attendance_date] = r;
     return m;
   }, [records]);
 
