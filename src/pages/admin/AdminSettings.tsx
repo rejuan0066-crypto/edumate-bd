@@ -18,6 +18,7 @@ import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
+import RateLimitSettings from '@/components/admin/RateLimitSettings';
 
 const AdminSettings = () => {
   const { language } = useLanguage();
