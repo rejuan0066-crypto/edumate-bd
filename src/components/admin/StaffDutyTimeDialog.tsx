@@ -25,7 +25,22 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
   const [start, setStart] = useState('09:00');
   const [end, setEnd] = useState('17:00');
   const [saving, setSaving] = useState(false);
+  const [fmt, setFmt] = useState<'12' | '24'>(() => (localStorage.getItem('dutyTimeFmt') as '12' | '24') || '24');
   const qc = useQueryClient();
+
+  useEffect(() => { localStorage.setItem('dutyTimeFmt', fmt); }, [fmt]);
+
+  const to12h = (t: string) => {
+    if (!t) return '';
+    const [hStr, mStr] = t.split(':');
+    let h = parseInt(hStr || '0', 10);
+    const m = parseInt(mStr || '0', 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const toBn = (s: string) => bn ? s.replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : s;
+    return `${toBn(pad(h))}:${toBn(pad(m))} ${bn ? (ampm === 'AM' ? 'পূর্বাহ্ন' : 'অপরাহ্ন') : ampm}`;
+  };
 
   useEffect(() => {
     if (open && staff) {
