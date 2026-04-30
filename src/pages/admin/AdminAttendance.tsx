@@ -1427,10 +1427,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
-                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                    <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
-                    <SelectItem value="support">{bn ? 'সাপোর্ট স্টাফ' : 'Support Staff'}</SelectItem>
-                    <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
+                    {staffCategoriesData.map((category) => (
+                      <SelectItem key={category.key} value={category.key}>{getCategoryLabel(category.key)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
