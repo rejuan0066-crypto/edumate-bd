@@ -660,6 +660,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
         {/* Promotion / Salary Letter Dialog */}
         <StaffLetterDialog open={!!letterStaff} onOpenChange={(o) => { if (!o) setLetterStaff(null); }} staff={letterStaff} bn={bn} />
+        <StaffDutyTimeDialog open={!!dutyStaff} onOpenChange={(o) => { if (!o) setDutyStaff(null); }} staff={dutyStaff} bn={bn} />
       </div>
     </AdminLayout>
   );
