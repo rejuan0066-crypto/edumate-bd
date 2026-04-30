@@ -61,7 +61,7 @@ const emptyCommittee: Partial<Committee> = {
 const emptyMember: Partial<Member> = {
   staff_id: null,
   name: "", name_en: "", designation: "", designation_en: "",
-  phone: "", email: "", address: "", occupation: "", occupation_en: "",
+  phone: "", email: "", nid: "", address: "", occupation: "", occupation_en: "",
   photo_url: "", joining_date: "", is_active: true, sort_order: 0, notes: "",
 };
 
