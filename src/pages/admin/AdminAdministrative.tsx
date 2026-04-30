@@ -88,15 +88,15 @@ const AdminAdministrative = () => {
   const [quickAdd, setQuickAdd] = useState<{ kind: 'department' | 'designation'; name_bn: string; name_en: string } | null>(null);
   const [manageOpen, setManageOpen] = useState(false);
   const [manageTab, setManageTab] = useState<'department' | 'designation'>('department');
-  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string } | null>(null);
-  const [newRow, setNewRow] = useState<{ name_bn: string; name: string }>({ name_bn: '', name: '' });
+  const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string; code?: string } | null>(null);
+  const [newRow, setNewRow] = useState<{ name_bn: string; name: string; code: string }>({ name_bn: '', name: '', code: '' });
 
   // Inline error state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>('');
   const [quickAddError, setQuickAddError] = useState<{ field?: 'name_bn' | 'name_en'; message: string } | null>(null);
-  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
-  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name'; message: string } | null>(null);
+  const [manageNewError, setManageNewError] = useState<{ field?: 'name_bn' | 'name' | 'code'; message: string } | null>(null);
+  const [manageEditError, setManageEditError] = useState<{ field?: 'name_bn' | 'name' | 'code'; message: string } | null>(null);
 
   const clearFieldError = (field: string) => {
     setFieldErrors(prev => {
@@ -126,13 +126,13 @@ const AdminAdministrative = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('administrative_departments' as any)
-        .select('id, name, name_bn')
+        .select('id, name, name_bn, code')
         .is('deleted_at', null)
         .eq('is_active', true)
         .order('sort_order', { ascending: true })
         .order('name_bn', { ascending: true });
       if (error) throw error;
-      return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string }>;
+      return ((data || []) as unknown) as Array<{ id: string; name: string; name_bn: string; code?: string | null }>;
     },
   });
 
@@ -185,13 +185,19 @@ const AdminAdministrative = () => {
   });
 
   const updateOption = useMutation({
-    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string }) => {
+    mutationFn: async (payload: { kind: 'department' | 'designation'; id: string; name_bn: string; name: string; code?: string }) => {
       const name_bn = payload.name_bn.trim();
       const name = (payload.name || name_bn).trim();
       if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
-      const table = payload.kind === 'department' ? 'administrative_departments' : 'designations';
-      const { error } = await supabase.from(table as any).update({ name_bn, name }).eq('id', payload.id);
-      if (error) throw error;
+      if (payload.kind === 'department') {
+        const code = (payload.code || '').trim().toUpperCase();
+        if (!code) throw new Error('REQUIRED_FIELD: ' + (bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.'));
+        const { error } = await supabase.from('administrative_departments' as any).update({ name_bn, name, code }).eq('id', payload.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('designations').update({ name_bn, name }).eq('id', payload.id);
+        if (error) throw error;
+      }
       return payload.kind;
     },
     onSuccess: (kind) => {
@@ -229,12 +235,14 @@ const AdminAdministrative = () => {
   });
 
   const addInline = useMutation({
-    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string }) => {
+    mutationFn: async (payload: { kind: 'department' | 'designation'; name_bn: string; name: string; code?: string }) => {
       const name_bn = payload.name_bn.trim();
       const name = (payload.name || name_bn).trim();
       if (!name_bn) throw new Error(bn ? 'বাংলা নাম দিন' : 'Bengali name required');
       if (payload.kind === 'department') {
-        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, is_active: true });
+        const code = (payload.code || '').trim().toUpperCase();
+        if (!code) throw new Error('REQUIRED_FIELD: ' + (bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.'));
+        const { error } = await supabase.from('administrative_departments' as any).insert({ name, name_bn, code, is_active: true });
         if (error) throw error;
       } else {
         const { error } = await supabase.from('designations').insert({ name, name_bn, staff_category: 'administrative', is_active: true });
@@ -245,7 +253,7 @@ const AdminAdministrative = () => {
     onSuccess: (kind) => {
       toast.success(bn ? 'যোগ করা হয়েছে' : 'Added');
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
-      setNewRow({ name_bn: '', name: '' });
+      setNewRow({ name_bn: '', name: '', code: '' });
     },
     onError: (e: any) => {
       const parsed = parseBackendError(e);
@@ -318,6 +326,15 @@ const AdminAdministrative = () => {
     }
     if (msg.includes('DUPLICATE_DEPT_NAME_BN') || raw.includes('uq_admin_departments_name_bn')) {
       return { field: 'name_bn', message: bn ? 'এই বাংলা নামের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this Bangla name already exists.' };
+    }
+    if (msg.includes('DUPLICATE_DEPT_CODE') || raw.includes('uq_admin_dept_code_active')) {
+      return { field: 'code', message: bn ? 'এই কোডের একটি বিভাগ ইতিমধ্যে আছে।' : 'A department with this code already exists.' };
+    }
+    if (msg.includes('INVALID_DEPT_CODE')) {
+      return { field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে (যেমন: ACC, IT01)।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' };
+    }
+    if (msg.includes('REQUIRED_FIELD') && /কোড|code/i.test(raw)) {
+      return { field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' };
     }
 
     // ---- Permission / RLS ----
@@ -949,7 +966,7 @@ const AdminAdministrative = () => {
               {bn ? 'বিভাগ ও পদবি ব্যবস্থাপনা' : 'Manage Departments & Designations'}
             </DialogTitle>
           </DialogHeader>
-          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '' }); }}>
+          <Tabs value={manageTab} onValueChange={(v) => { setManageTab(v as any); setEditRow(null); setNewRow({ name_bn: '', name: '', code: '' }); }}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="department">{bn ? 'বিভাগসমূহ' : 'Departments'} ({departments.length})</TabsTrigger>
               <TabsTrigger value="designation">{bn ? 'পদবিসমূহ' : 'Designations'} ({designations.length})</TabsTrigger>
@@ -959,7 +976,7 @@ const AdminAdministrative = () => {
               <TabsContent key={kind} value={kind} className="space-y-3 mt-3">
                 {/* Add new row */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 p-3 rounded-[20px] bg-muted/30 border">
+                  <div className={`grid grid-cols-1 ${kind === 'department' ? 'md:grid-cols-[1fr_1fr_140px_auto]' : 'md:grid-cols-[1fr_1fr_auto]'} gap-2 p-3 rounded-[20px] bg-muted/30 border`}>
                     <div>
                       <Input
                         placeholder={bn ? 'বাংলা নাম *' : 'Bangla name *'}
@@ -978,6 +995,18 @@ const AdminAdministrative = () => {
                         className={manageNewError?.field === 'name' ? 'border-destructive ring-1 ring-destructive/30' : ''}
                       />
                     </div>
+                    {kind === 'department' && (
+                      <div>
+                        <Input
+                          placeholder={bn ? 'কোড * (যেমন ACC)' : 'Code * (e.g. ACC)'}
+                          value={newRow.code}
+                          maxLength={10}
+                          onChange={(e) => { setNewRow({ ...newRow, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); if (manageNewError) setManageNewError(null); }}
+                          aria-invalid={manageNewError?.field === 'code'}
+                          className={`uppercase tracking-wider ${manageNewError?.field === 'code' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
+                        />
+                      </div>
+                    )}
                     <Button
                       onClick={() => {
                         setManageNewError(null);
@@ -985,9 +1014,19 @@ const AdminAdministrative = () => {
                           setManageNewError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
                           return;
                         }
-                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name });
+                        if (kind === 'department') {
+                          if (!newRow.code.trim()) {
+                            setManageNewError({ field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' });
+                            return;
+                          }
+                          if (!/^[A-Z0-9]{2,10}$/.test(newRow.code.trim())) {
+                            setManageNewError({ field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' });
+                            return;
+                          }
+                        }
+                        addInline.mutate({ kind, name_bn: newRow.name_bn, name: newRow.name, code: newRow.code });
                       }}
-                      disabled={!newRow.name_bn.trim() || addInline.isPending}
+                      disabled={!newRow.name_bn.trim() || (kind === 'department' && !newRow.code.trim()) || addInline.isPending}
                       className="gap-1"
                     >
                       <Plus className="w-4 h-4" />{bn ? 'যোগ' : 'Add'}
@@ -1005,7 +1044,7 @@ const AdminAdministrative = () => {
                       {bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}
                     </div>
                   ) : (
-                    (kind === 'department' ? departments : designations).map((row) => {
+                    (kind === 'department' ? departments : designations).map((row: any) => {
                       const isEditing = editRow?.id === row.id;
                       return (
                         <div key={row.id} className={`p-3 hover:bg-muted/20 ${isEditing && manageEditError ? 'bg-destructive/5' : ''}`}>
@@ -1026,6 +1065,16 @@ const AdminAdministrative = () => {
                                 placeholder={bn ? 'ইংরেজি নাম' : 'English'}
                                 aria-invalid={manageEditError?.field === 'name'}
                               />
+                              {kind === 'department' && (
+                                <Input
+                                  className={`w-28 uppercase tracking-wider ${manageEditError?.field === 'code' ? 'border-destructive ring-1 ring-destructive/30' : ''}`}
+                                  value={editRow!.code || ''}
+                                  maxLength={10}
+                                  onChange={(e) => { setEditRow({ ...editRow!, code: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') }); if (manageEditError) setManageEditError(null); }}
+                                  placeholder={bn ? 'কোড *' : 'Code *'}
+                                  aria-invalid={manageEditError?.field === 'code'}
+                                />
+                              )}
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -1036,7 +1085,18 @@ const AdminAdministrative = () => {
                                     setManageEditError({ field: 'name_bn', message: bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.' });
                                     return;
                                   }
-                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name });
+                                  if (kind === 'department') {
+                                    const c = (editRow!.code || '').trim();
+                                    if (!c) {
+                                      setManageEditError({ field: 'code', message: bn ? 'বিভাগের কোড আবশ্যক।' : 'Department code is required.' });
+                                      return;
+                                    }
+                                    if (!/^[A-Z0-9]{2,10}$/.test(c)) {
+                                      setManageEditError({ field: 'code', message: bn ? 'কোড ২-১০ অক্ষরের ইংরেজি অক্ষর/সংখ্যা হতে হবে।' : 'Code must be 2–10 letters/digits (A–Z, 0–9).' });
+                                      return;
+                                    }
+                                  }
+                                  updateOption.mutate({ kind, id: editRow!.id, name_bn: editRow!.name_bn, name: editRow!.name, code: editRow!.code });
                                 }}
                                 disabled={updateOption.isPending}
                               >
@@ -1049,7 +1109,14 @@ const AdminAdministrative = () => {
                           ) : (
                             <>
                               <div className="flex-1">
-                                <div className="font-medium text-sm">{row.name_bn}</div>
+                                <div className="font-medium text-sm flex items-center gap-2">
+                                  {row.name_bn}
+                                  {kind === 'department' && row.code && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-mono tracking-wider border border-emerald-200/50 dark:border-emerald-700/50">
+                                      {row.code}
+                                    </span>
+                                  )}
+                                </div>
                                 {row.name && row.name !== row.name_bn && (
                                   <div className="text-xs text-muted-foreground">{row.name}</div>
                                 )}
@@ -1058,7 +1125,7 @@ const AdminAdministrative = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="rounded-full"
-                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '' })}
+                                onClick={() => setEditRow({ id: row.id, name_bn: row.name_bn, name: row.name || '', code: row.code || '' })}
                               >
                                 <Pencil className="w-4 h-4" />
                               </Button>
