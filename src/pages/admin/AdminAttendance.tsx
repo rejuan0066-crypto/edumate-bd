@@ -98,6 +98,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [resetStaffCategory, setResetStaffCategory] = useState<string>('');
   const [showResetMenu, setShowResetMenu] = useState(false);
   const resetBtnRef = useRef<HTMLDivElement>(null);
+  const [monthlyStaff, setMonthlyStaff] = useState<any | null>(null);
   // Effective shift: for students, meal tab uses meal shift; for staff, fulltime=full_day, others use selected
   const effectiveShift = entityType === 'student'
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
