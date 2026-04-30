@@ -192,6 +192,51 @@ Deno.serve(async (req) => {
 
     const callerIsSuperAdmin = roleData.role === 'super_admin';
 
+    // ---- Per-action rate limiting (super_admin bypass) ----
+    const clientIp = getClientIp(req);
+    const SENSITIVE_ACTIONS = new Set([
+      'update_role','delete','update_status','ban_user','unban_user',
+      'update_email','update_password','update_name','upsert_staff_identity',
+    ]);
+    if (!callerIsSuperAdmin && action) {
+      let adminAction: string | null = null;
+      let ipAction: string | null = null;
+      if (action === 'create') {
+        adminAction = 'user_create_admin';
+        ipAction = 'user_create_ip';
+      } else if (SENSITIVE_ACTIONS.has(action)) {
+        adminAction = 'user_sensitive_admin';
+        ipAction = 'user_sensitive_ip';
+      }
+      if (adminAction) {
+        const adminCheck = await checkRateLimit(supabaseAdmin, adminAction, 'admin', userId);
+        if (!adminCheck.ok) {
+          await logSecurityEvent(supabaseAdmin, {
+            event_type: 'rate_limited',
+            severity: 'warning',
+            reason: adminAction,
+            details: { action, scope: 'admin', user_id: userId, retry_after: adminCheck.retry_after },
+            user_id: userId,
+            ip_address: clientIp,
+          }).catch(() => {});
+          return rateLimitedResponse(adminCheck, 'admin');
+        }
+        const ipCheck = await checkRateLimit(supabaseAdmin, ipAction!, 'ip', clientIp);
+        if (!ipCheck.ok) {
+          await logSecurityEvent(supabaseAdmin, {
+            event_type: 'rate_limited',
+            severity: 'warning',
+            reason: ipAction!,
+            details: { action, scope: 'ip', ip: clientIp, retry_after: ipCheck.retry_after },
+            user_id: userId,
+            ip_address: clientIp,
+          }).catch(() => {});
+          return rateLimitedResponse(ipCheck, 'ip');
+        }
+      }
+    }
+
+
     // LIST users
     if (req.method === "GET" && !action) {
       const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
