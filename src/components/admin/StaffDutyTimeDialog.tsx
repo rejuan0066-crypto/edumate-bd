@@ -84,10 +84,19 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
           </div>
           <div className="p-3 bg-muted/40 rounded-2xl text-sm">
             <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
-            {diff > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : '-'}
+            {(() => {
+              const d = diff > 0 ? diff : (diff < 0 ? diff + 24 * 60 : 0);
+              if (d <= 0) return '-';
+              const h = Math.floor(d / 60);
+              const m = d % 60;
+              const toBn = (n: number) => bn ? String(n).replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : String(n);
+              return bn
+                ? `${toBn(h)} ঘন্টা ${toBn(m)} মিনিট`
+                : `${h}h ${m}m`;
+            })()}
           </div>
           <div className="flex gap-2">
-            <Button className="flex-1" onClick={() => save(false)} disabled={saving || diff <= 0}>
+            <Button className="flex-1" onClick={() => save(false)} onDoubleClick={(e) => e.preventDefault()} disabled={saving || diff === 0}>
               <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
             </Button>
             {(staff.duty_start_time || staff.duty_end_time) && (
