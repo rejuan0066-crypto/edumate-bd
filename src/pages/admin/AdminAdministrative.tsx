@@ -1077,6 +1077,10 @@ const AdminAdministrative = () => {
                               </Button>
                             </>
                           )}
+                          </div>
+                          {isEditing && manageEditError && (
+                            <p className="text-xs text-destructive mt-1 px-1">{manageEditError.message}</p>
+                          )}
                         </div>
                       );
                     })
