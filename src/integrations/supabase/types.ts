@@ -8056,8 +8056,20 @@ export type Database = {
         Args: { p_category_key: string; p_joining_year?: number }
         Returns: string
       }
+      get_data_sensitivity_map: {
+        Args: never
+        Returns: {
+          column_name: string
+          data_type: string
+          notes: string
+          protection: string
+          sensitivity: string
+          table_name: string
+        }[]
+      }
       get_encryption_key: { Args: never; Returns: string }
       get_next_receipt_serial: { Args: never; Returns: string }
+      get_password_protection_info: { Args: never; Returns: Json }
       get_public_tables: {
         Args: never
         Returns: {
