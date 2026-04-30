@@ -395,8 +395,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
-                {Object.keys(CATEGORY_LABELS).map((k) => (
-                  <SelectItem key={k} value={k}>{labelForCategory(k)}</SelectItem>
+                {(staffCategories as any[]).map((category: any) => (
+                  <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
