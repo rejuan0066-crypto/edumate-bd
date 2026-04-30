@@ -475,7 +475,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       </td>
                       <td className="px-4 py-3">
                         {(() => {
-                          const cat = getStaffCategory(s, designationsMap);
+                          const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                           const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
                           return (
                             <Select
@@ -487,7 +487,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               </SelectTrigger>
                               <SelectContent>
                                 {catDesignations.map((d: any) => (
-                                  <SelectItem key={d.name} value={bn ? d.name_bn : d.name}>
+                                  <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>
                                     {bn ? d.name_bn : d.name}
                                   </SelectItem>
                                 ))}
@@ -498,19 +498,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       </td>
                       <td className="px-4 py-3">
                         <Select
-                          value={getStaffCategory(s, designationsMap)}
+                          value={getStaffCategory(s, designationsMap, activeCategoryKeys)}
                           onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
                         >
                           <SelectTrigger className="h-7 text-xs w-[130px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                            <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
-                            <SelectItem value="support">{bn ? 'অফিস কর্মচারী' : 'Support Staff'}</SelectItem>
-                            <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
-                            <SelectItem value="director">{bn ? 'পরিচালক' : 'Director'}</SelectItem>
-                            <SelectItem value="committee_member">{bn ? 'কমিটি সদস্য' : 'Committee Member'}</SelectItem>
+                            {(staffCategories as any[]).map((category: any) => (
+                              <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </td>
