@@ -118,7 +118,6 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
   const defaultCategoryTimes: Record<string, { start: string; end: string }> = {
     teacher: { start: '08:00', end: '14:00' },
-    administrative: { start: '09:00', end: '17:00' },
     support: { start: '08:00', end: '17:00' },
     general: { start: '08:00', end: '17:00' },
   };
@@ -138,17 +137,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
 
   const dynamicStaffCategories = useMemo(() => {
-    const keys = staffCategoriesData.map(c => c.key);
-    // Ensure default categories are always included
-    const defaults = ['teacher', 'administrative', 'support', 'general'];
-    defaults.forEach(d => { if (!keys.includes(d)) keys.push(d); });
-    return keys;
+    return staffCategoriesData.map(c => c.key);
   }, [staffCategoriesData]);
 
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
       teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-      administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
       support: { bn: 'সাপোর্ট স্টাফ', en: 'Support Staff' },
       general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
     };
