@@ -8036,10 +8036,20 @@ export type Database = {
         Args: { _action: string; _key: string; _scope: string }
         Returns: Json
       }
-      check_user_duplicates: {
-        Args: { _email: string; _full_name: string; _phone: string }
-        Returns: Json
-      }
+      check_user_duplicates:
+        | {
+            Args: { _email: string; _full_name: string; _phone: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _email: string
+              _full_name: string
+              _nid?: string
+              _phone: string
+            }
+            Returns: Json
+          }
       decrypt_numeric: { Args: { p_cipher: string }; Returns: number }
       decrypt_value: { Args: { p_cipher: string }; Returns: string }
       encrypt_numeric: { Args: { p_value: number }; Returns: string }
