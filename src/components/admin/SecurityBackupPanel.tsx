@@ -114,6 +114,9 @@ export function SecurityBackupPanel({ bn = true }: { bn?: boolean }) {
         </div>
       </div>
 
+      {/* Sensitivity Map */}
+      <DataSensitivityMap bn={bn} />
+
       {/* Backup */}
       <div className="card-elevated p-5">
         <div className="flex items-center justify-between mb-4">
