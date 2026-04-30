@@ -194,42 +194,84 @@ Deno.serve(async (req) => {
     if (action === "create") {
       const { email, password, role, full_name, name_bn, designation, staff_category, phone } = body;
 
-      if (!email || !password) {
-        return new Response(JSON.stringify({ error: "email and password are required" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const pwCheck = await enforcePasswordPolicy(supabaseAdmin, password);
-      if (!pwCheck.ok) {
-        await logSecurityEvent(supabaseAdmin, { event_type: 'weak_password_rejected', severity: 'warning', user_id: userId, email, reason: 'create_user', details: pwCheck.body, req });
-        return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      const trimmedEmail = String(email).trim().toLowerCase();
+      const trimmedEmail = email ? String(email).trim().toLowerCase() : '';
       const trimmedPhone = phone ? String(phone).trim() : '';
       const trimmedName = full_name ? String(full_name).trim() : '';
       const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
       const conflict = (payload: any) => new Response(JSON.stringify(payload), { status: 409, headers: jsonHeaders });
 
+      // Identifiers attached to every audit/security log for this attempt
+      const ident = {
+        email: trimmedEmail || null,
+        phone: trimmedPhone || null,
+        full_name: trimmedName || null,
+        requested_role: role || null,
+        staff_id: body.staff_id || null,
+      };
+      // Helper: log a structured create-flow failure
+      const logFail = async (
+        reason_code: string,
+        severity: 'info' | 'warning' | 'critical',
+        extra: Record<string, unknown> = {},
+        rollback_status: 'not_applicable' | 'success' | 'partial' | 'failed' = 'not_applicable',
+      ) => {
+        await logSecurityEvent(supabaseAdmin, {
+          event_type: 'user_create_failed',
+          severity,
+          user_id: userId,
+          email: trimmedEmail || null,
+          reason: reason_code,
+          details: { reason_code, rollback_status, identifiers: ident, ...extra },
+          req,
+        }).catch(() => {});
+      };
+
+      if (!email || !password) {
+        await logFail('MISSING_REQUIRED_FIELDS', 'info', {
+          missing: { email: !email, password: !password },
+        });
+        return new Response(JSON.stringify({ error: "email and password are required" }), {
+          status: 400, headers: jsonHeaders,
+        });
+      }
+
+      const pwCheck = await enforcePasswordPolicy(supabaseAdmin, password);
+      if (!pwCheck.ok) {
+        await logSecurityEvent(supabaseAdmin, {
+          event_type: 'weak_password_rejected', severity: 'warning',
+          user_id: userId, email: trimmedEmail, reason: 'WEAK_PASSWORD',
+          details: { reason_code: 'WEAK_PASSWORD', rollback_status: 'not_applicable', identifiers: ident, policy_response: pwCheck.body },
+          req,
+        });
+        return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: jsonHeaders });
+      }
+
       // ── STEP 1: Acquire transaction-scoped advisory locks (serialize concurrent creates) ──
-      // Note: pg_advisory_xact_lock is auto-released at end of statement when called via RPC,
-      // so we instead rely on RPC-level serialization plus immediate duplicate re-check.
       try {
         await supabaseAdmin.rpc('acquire_user_create_lock', { _email: trimmedEmail, _phone: trimmedPhone });
-      } catch (_e) { /* non-fatal: locks are best-effort */ }
+      } catch (lockErr) {
+        // non-fatal but log so we can spot lock-contention patterns
+        await logSecurityEvent(supabaseAdmin, {
+          event_type: 'user_create_lock_warn', severity: 'info',
+          user_id: userId, email: trimmedEmail, reason: 'ADVISORY_LOCK_FAILED',
+          details: { reason_code: 'ADVISORY_LOCK_FAILED', rollback_status: 'not_applicable', identifiers: ident, error: String((lockErr as any)?.message || lockErr) },
+          req,
+        }).catch(() => {});
+      }
 
       // ── STEP 2: Atomic duplicate check across profiles + staff + administrative_officers ──
       const { data: dupCheck, error: dupErr } = await supabaseAdmin.rpc('check_user_duplicates', {
         _email: trimmedEmail, _phone: trimmedPhone, _full_name: trimmedName,
       });
       if (dupErr) {
+        await logFail('DUPLICATE_CHECK_FAILED', 'critical', { db_error: dupErr.message });
         return new Response(JSON.stringify({ error: 'duplicate_check_failed', message: dupErr.message }), {
           status: 500, headers: jsonHeaders,
         });
       }
       if (dupCheck && (dupCheck as any).ok === false) {
         const d = dupCheck as any;
+        await logFail(d.code || 'DUPLICATE_FOUND', 'warning', { duplicate_source: d.code });
         return conflict({ error: d.code, message: d.message_bn, message_bn: d.message_bn });
       }
 
@@ -238,13 +280,21 @@ Deno.serve(async (req) => {
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
         const emailHit = existingUsers?.users?.find((u: any) => (u.email || '').toLowerCase() === trimmedEmail);
         if (emailHit) {
+          await logFail('DUPLICATE_EMAIL_AUTH', 'warning', { existing_user_id: emailHit.id });
           return conflict({
             error: 'DUPLICATE_EMAIL',
             message: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
             message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
           });
         }
-      } catch (_e) { /* fall through */ }
+      } catch (listErr) {
+        await logSecurityEvent(supabaseAdmin, {
+          event_type: 'user_create_warn', severity: 'info',
+          user_id: userId, email: trimmedEmail, reason: 'AUTH_LIST_FAILED',
+          details: { reason_code: 'AUTH_LIST_FAILED', rollback_status: 'not_applicable', identifiers: ident, error: String((listErr as any)?.message || listErr) },
+          req,
+        }).catch(() => {});
+      }
 
       // ── STEP 4: Create auth user ──
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -257,6 +307,8 @@ Deno.serve(async (req) => {
       if (createError || !newUser?.user?.id) {
         const msg = createError?.message || 'create_failed';
         const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(msg);
+        const code = isDup ? 'DUPLICATE_EMAIL_AUTH_RACE' : 'AUTH_CREATE_FAILED';
+        await logFail(code, isDup ? 'warning' : 'critical', { auth_error: msg });
         return new Response(JSON.stringify(
           isDup
             ? { error: 'DUPLICATE_EMAIL', message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।` }
@@ -267,14 +319,25 @@ Deno.serve(async (req) => {
       const newUserId = newUser.user.id;
 
       // ── Atomic rollback helper: undoes everything done after auth user creation ──
-      const rollback = async (reason: string) => {
-        try { await supabaseAdmin.from('user_roles').delete().eq('user_id', newUserId); } catch {}
-        try { await supabaseAdmin.from('profiles').delete().eq('id', newUserId); } catch {}
-        try { await supabaseAdmin.auth.admin.deleteUser(newUserId); } catch {}
+      const rollback = async (reason_code: string, extra: Record<string, unknown> = {}) => {
+        const steps: Record<string, 'ok' | 'failed' | 'skipped'> = {
+          user_roles: 'skipped', profiles: 'skipped', auth_user: 'skipped',
+        };
+        try { const { error } = await supabaseAdmin.from('user_roles').delete().eq('user_id', newUserId); steps.user_roles = error ? 'failed' : 'ok'; } catch { steps.user_roles = 'failed'; }
+        try { const { error } = await supabaseAdmin.from('profiles').delete().eq('id', newUserId); steps.profiles = error ? 'failed' : 'ok'; } catch { steps.profiles = 'failed'; }
+        try { const { error } = await supabaseAdmin.auth.admin.deleteUser(newUserId); steps.auth_user = error ? 'failed' : 'ok'; } catch { steps.auth_user = 'failed'; }
+        const allOk = Object.values(steps).every(s => s === 'ok' || s === 'skipped');
+        const status: 'success' | 'partial' | 'failed' =
+          steps.auth_user === 'failed' ? 'failed' : (allOk ? 'success' : 'partial');
         await logSecurityEvent(supabaseAdmin, {
-          event_type: 'user_create_rolled_back', severity: 'warning',
-          user_id: userId, email: trimmedEmail, reason, req,
+          event_type: 'user_create_rolled_back',
+          severity: status === 'success' ? 'warning' : 'critical',
+          user_id: userId, target_user_id: newUserId, email: trimmedEmail,
+          reason: reason_code,
+          details: { reason_code, rollback_status: status, rollback_steps: steps, identifiers: ident, created_user_id: newUserId, ...extra },
+          req,
         }).catch(() => {});
+        return status;
       };
 
       // ── STEP 5: Assign role (rollback on failure) ──
@@ -283,10 +346,12 @@ Deno.serve(async (req) => {
           user_id: newUserId, role,
         });
         if (roleError) {
-          await rollback('role_assignment_failed: ' + roleError.message);
-          return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
-            status: 500, headers: jsonHeaders,
-          });
+          const rbStatus = await rollback('ROLE_ASSIGN_FAILED', { db_error: roleError.message, attempted_role: role });
+          return new Response(JSON.stringify({
+            error: "Failed to assign role: " + roleError.message,
+            reason_code: 'ROLE_ASSIGN_FAILED',
+            rollback_status: rbStatus,
+          }), { status: 500, headers: jsonHeaders });
         }
       }
 
@@ -299,38 +364,42 @@ Deno.serve(async (req) => {
         });
         if (profUpsertErr) {
           const m = profUpsertErr.message || '';
-          await rollback('profile_upsert_failed: ' + m);
-          if (/DUPLICATE_PHONE/i.test(m)) {
+          const isDupPhone = /DUPLICATE_PHONE/i.test(m);
+          const code = isDupPhone ? 'DUPLICATE_PHONE_RACE' : 'PROFILE_UPSERT_FAILED';
+          const rbStatus = await rollback(code, { db_error: m });
+          if (isDupPhone) {
             return conflict({
               error: 'DUPLICATE_PHONE',
               message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
+              reason_code: code,
+              rollback_status: rbStatus,
             });
           }
-          return new Response(JSON.stringify({ error: 'profile_update_failed', message: m }), {
-            status: 500, headers: jsonHeaders,
-          });
+          return new Response(JSON.stringify({
+            error: 'profile_update_failed', message: m,
+            reason_code: code, rollback_status: rbStatus,
+          }), { status: 500, headers: jsonHeaders });
         }
       }
 
       // Link to existing staff record if staff_id explicitly provided.
-      // NOTE: We intentionally do NOT auto-create a staff/administrative record from role.
-      // Adding a user to staff or administrative_officers must be done manually from the
-      // User Management profile dialog ("Add to Staff" / "Add to Administrative" buttons).
       if (body.staff_id) {
         const { error: linkErr } = await supabaseAdmin.from("staff").update({ user_id: newUserId }).eq("id", body.staff_id);
         if (linkErr) {
-          await rollback('staff_link_failed: ' + linkErr.message);
-          return new Response(JSON.stringify({ error: 'staff_link_failed', message: linkErr.message }), {
-            status: 500, headers: jsonHeaders,
-          });
+          const rbStatus = await rollback('STAFF_LINK_FAILED', { db_error: linkErr.message, staff_id: body.staff_id });
+          return new Response(JSON.stringify({
+            error: 'staff_link_failed', message: linkErr.message,
+            reason_code: 'STAFF_LINK_FAILED', rollback_status: rbStatus,
+          }), { status: 500, headers: jsonHeaders });
         }
       }
 
       // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
+      let welcome_email_status: 'sent' | 'failed' | 'skipped' = 'skipped';
       try {
         const origin = req.headers.get("origin") || req.headers.get("referer") || "";
         const loginUrl = origin ? `${new URL(origin).origin}/login` : undefined;
-        await supabaseAdmin.functions.invoke("send-welcome-email", {
+        const { error: mailErr } = await supabaseAdmin.functions.invoke("send-welcome-email", {
           body: {
             email: trimmedEmail,
             full_name: trimmedName || undefined,
@@ -340,9 +409,29 @@ Deno.serve(async (req) => {
             login_url: loginUrl,
           },
         });
+        welcome_email_status = mailErr ? 'failed' : 'sent';
+        if (mailErr) {
+          await logSecurityEvent(supabaseAdmin, {
+            event_type: 'user_create_warn', severity: 'info',
+            user_id: userId, target_user_id: newUserId, email: trimmedEmail,
+            reason: 'WELCOME_EMAIL_FAILED',
+            details: { reason_code: 'WELCOME_EMAIL_FAILED', rollback_status: 'not_applicable', identifiers: ident, error: String(mailErr.message || mailErr) },
+            req,
+          }).catch(() => {});
+        }
       } catch (mailErr) {
+        welcome_email_status = 'failed';
         console.error("send-welcome-email failed (non-fatal):", mailErr);
       }
+
+      // ── SUCCESS audit log ──
+      await logSecurityEvent(supabaseAdmin, {
+        event_type: 'user_created', severity: 'info',
+        user_id: userId, target_user_id: newUserId, email: trimmedEmail,
+        reason: 'CREATE_SUCCESS',
+        details: { reason_code: 'CREATE_SUCCESS', rollback_status: 'not_applicable', identifiers: ident, welcome_email_status, created_user_id: newUserId },
+        req,
+      }).catch(() => {});
 
       return new Response(JSON.stringify({ success: true, user_id: newUserId }), {
         status: 200, headers: jsonHeaders,
