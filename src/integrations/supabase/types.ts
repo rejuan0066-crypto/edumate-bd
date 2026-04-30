@@ -7859,6 +7859,14 @@ export type Database = {
       }
     }
     Functions: {
+      acquire_user_create_lock: {
+        Args: { _email: string; _phone: string }
+        Returns: undefined
+      }
+      check_user_duplicates: {
+        Args: { _email: string; _full_name: string; _phone: string }
+        Returns: Json
+      }
       generate_administrative_officer_id: {
         Args: { p_year?: number }
         Returns: string

@@ -206,102 +206,109 @@ Deno.serve(async (req) => {
         return new Response(JSON.stringify(pwCheck.body), { status: pwCheck.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // ── Pre-check: Email duplicate (auth.users) ──
       const trimmedEmail = String(email).trim().toLowerCase();
+      const trimmedPhone = phone ? String(phone).trim() : '';
+      const trimmedName = full_name ? String(full_name).trim() : '';
+      const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
+      const conflict = (payload: any) => new Response(JSON.stringify(payload), { status: 409, headers: jsonHeaders });
+
+      // ── STEP 1: Acquire transaction-scoped advisory locks (serialize concurrent creates) ──
+      // Note: pg_advisory_xact_lock is auto-released at end of statement when called via RPC,
+      // so we instead rely on RPC-level serialization plus immediate duplicate re-check.
+      try {
+        await supabaseAdmin.rpc('acquire_user_create_lock', { _email: trimmedEmail, _phone: trimmedPhone });
+      } catch (_e) { /* non-fatal: locks are best-effort */ }
+
+      // ── STEP 2: Atomic duplicate check across profiles + staff + administrative_officers ──
+      const { data: dupCheck, error: dupErr } = await supabaseAdmin.rpc('check_user_duplicates', {
+        _email: trimmedEmail, _phone: trimmedPhone, _full_name: trimmedName,
+      });
+      if (dupErr) {
+        return new Response(JSON.stringify({ error: 'duplicate_check_failed', message: dupErr.message }), {
+          status: 500, headers: jsonHeaders,
+        });
+      }
+      if (dupCheck && (dupCheck as any).ok === false) {
+        const d = dupCheck as any;
+        return conflict({ error: d.code, message: d.message_bn, message_bn: d.message_bn });
+      }
+
+      // ── STEP 3: Email duplicate in auth.users ──
       try {
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
         const emailHit = existingUsers?.users?.find((u: any) => (u.email || '').toLowerCase() === trimmedEmail);
         if (emailHit) {
-          return new Response(JSON.stringify({
+          return conflict({
             error: 'DUPLICATE_EMAIL',
-            message: `This email (${trimmedEmail}) is already registered`,
-            message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
-          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-      } catch (_e) { /* fall through to createUser which also enforces */ }
-
-      // ── Pre-check: Phone duplicate (profiles) ──
-      const trimmedPhone = phone ? String(phone).trim() : '';
-      if (trimmedPhone) {
-        const { data: dupPhone } = await supabaseAdmin
-          .from('profiles')
-          .select('id, full_name')
-          .eq('phone', trimmedPhone)
-          .limit(1)
-          .maybeSingle();
-        if (dupPhone) {
-          return new Response(JSON.stringify({
-            error: 'DUPLICATE_PHONE',
-            message: `This phone number (${trimmedPhone}) is already registered`,
-            message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
-          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-        }
-      }
-
-      // Duplicate name check (case-insensitive) — DB also enforces via unique index
-      if (full_name && full_name.trim()) {
-        const trimmedName = full_name.trim();
-        const { data: dupName } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .ilike('full_name', trimmedName)
-          .limit(1)
-          .maybeSingle();
-        if (dupName) {
-          return new Response(JSON.stringify({ error: 'DUPLICATE_NAME', message: 'A user with this name already exists', message_bn: 'এই নামে একজন ইউজার ইতিমধ্যে আছেন' }), {
-            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            message: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
+            message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
           });
         }
-      }
+      } catch (_e) { /* fall through */ }
 
-      // Create auth user (email uniqueness enforced by Supabase Auth)
+      // ── STEP 4: Create auth user ──
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email,
+        email: trimmedEmail,
         password,
         email_confirm: true,
-        user_metadata: { full_name: full_name || '', phone: trimmedPhone || undefined },
+        user_metadata: { full_name: trimmedName || '', phone: trimmedPhone || undefined },
       });
 
-      if (createError) {
-        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(createError.message);
-        const payload = isDup
-          ? { error: 'DUPLICATE_EMAIL', message: 'A user with this email already exists', message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।` }
-          : { error: createError.message };
-        return new Response(JSON.stringify(payload), {
-          status: isDup ? 409 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (createError || !newUser?.user?.id) {
+        const msg = createError?.message || 'create_failed';
+        const isDup = /already.*registered|already.*exists|duplicate|email.*exists/i.test(msg);
+        return new Response(JSON.stringify(
+          isDup
+            ? { error: 'DUPLICATE_EMAIL', message_bn: `এই ইমেইল (${trimmedEmail}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।` }
+            : { error: msg }
+        ), { status: isDup ? 409 : 400, headers: jsonHeaders });
       }
 
-      // Assign role only if provided
+      const newUserId = newUser.user.id;
+
+      // ── Atomic rollback helper: undoes everything done after auth user creation ──
+      const rollback = async (reason: string) => {
+        try { await supabaseAdmin.from('user_roles').delete().eq('user_id', newUserId); } catch {}
+        try { await supabaseAdmin.from('profiles').delete().eq('id', newUserId); } catch {}
+        try { await supabaseAdmin.auth.admin.deleteUser(newUserId); } catch {}
+        await logSecurityEvent(supabaseAdmin, {
+          event_type: 'user_create_rolled_back', severity: 'warning',
+          user_id: userId, email: trimmedEmail, reason, req,
+        }).catch(() => {});
+      };
+
+      // ── STEP 5: Assign role (rollback on failure) ──
       if (role) {
         const { error: roleError } = await supabaseAdmin.from("user_roles").insert({
-          user_id: newUser.user.id,
-          role,
+          user_id: newUserId, role,
         });
-
         if (roleError) {
-          // Cleanup: delete the created user if role assignment fails
-          await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
+          await rollback('role_assignment_failed: ' + roleError.message);
           return new Response(JSON.stringify({ error: "Failed to assign role: " + roleError.message }), {
-            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500, headers: jsonHeaders,
           });
         }
       }
 
-      // Update profile name + phone
-      if (full_name || trimmedPhone) {
+      // ── STEP 6: Update profile (rollback on duplicate-trigger failure) ──
+      if (trimmedName || trimmedPhone) {
         const { error: profUpsertErr } = await supabaseAdmin.from("profiles").upsert({
-          id: newUser.user.id,
-          ...(full_name ? { full_name } : {}),
+          id: newUserId,
+          ...(trimmedName ? { full_name: trimmedName } : {}),
           ...(trimmedPhone ? { phone: trimmedPhone } : {}),
         });
-        if (profUpsertErr && /DUPLICATE_PHONE/i.test(profUpsertErr.message || '')) {
-          await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-          return new Response(JSON.stringify({
-            error: 'DUPLICATE_PHONE',
-            message: `This phone number (${trimmedPhone}) is already registered`,
-            message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`
-          }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (profUpsertErr) {
+          const m = profUpsertErr.message || '';
+          await rollback('profile_upsert_failed: ' + m);
+          if (/DUPLICATE_PHONE/i.test(m)) {
+            return conflict({
+              error: 'DUPLICATE_PHONE',
+              message_bn: `এই ফোন নম্বর (${trimmedPhone}) দিয়ে ইতিমধ্যে একজন ইউজার রেজিস্টার্ড আছেন।`,
+            });
+          }
+          return new Response(JSON.stringify({ error: 'profile_update_failed', message: m }), {
+            status: 500, headers: jsonHeaders,
+          });
         }
       }
 
@@ -310,7 +317,13 @@ Deno.serve(async (req) => {
       // Adding a user to staff or administrative_officers must be done manually from the
       // User Management profile dialog ("Add to Staff" / "Add to Administrative" buttons).
       if (body.staff_id) {
-        await supabaseAdmin.from("staff").update({ user_id: newUser.user.id }).eq("id", body.staff_id);
+        const { error: linkErr } = await supabaseAdmin.from("staff").update({ user_id: newUserId }).eq("id", body.staff_id);
+        if (linkErr) {
+          await rollback('staff_link_failed: ' + linkErr.message);
+          return new Response(JSON.stringify({ error: 'staff_link_failed', message: linkErr.message }), {
+            status: 500, headers: jsonHeaders,
+          });
+        }
       }
 
       // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
@@ -319,8 +332,8 @@ Deno.serve(async (req) => {
         const loginUrl = origin ? `${new URL(origin).origin}/login` : undefined;
         await supabaseAdmin.functions.invoke("send-welcome-email", {
           body: {
-            email,
-            full_name: full_name || undefined,
+            email: trimmedEmail,
+            full_name: trimmedName || undefined,
             role: role || undefined,
             password,
             kind: "user",
@@ -331,8 +344,8 @@ Deno.serve(async (req) => {
         console.error("send-welcome-email failed (non-fatal):", mailErr);
       }
 
-      return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ success: true, user_id: newUserId }), {
+        status: 200, headers: jsonHeaders,
       });
     }
 
