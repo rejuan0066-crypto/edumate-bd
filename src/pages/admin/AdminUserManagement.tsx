@@ -1637,6 +1637,7 @@ const AdminUserManagement = () => {
                         <TableHead className="text-center w-16">{bn ? 'যোগ' : 'Add'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সম্পাদনা' : 'Edit'}</TableHead>
                         <TableHead className="text-center w-16">{bn ? 'মুছুন' : 'Delete'}</TableHead>
+                        <TableHead className="text-center w-16"><span className="text-emerald-600">{bn ? 'অনুমোদন' : 'Approve'}</span></TableHead>
                         <TableHead className="text-center w-16">{bn ? 'সব' : 'All'}</TableHead>
                         <TableHead className="text-center w-20" colSpan={3}>
                           <span className="text-yellow-600">{bn ? 'অনুমোদন লাগবে' : 'Needs Approval'}</span>
@@ -1651,7 +1652,7 @@ const AdminUserManagement = () => {
                     <TableBody>
                       {userPerms.map(perm => {
                         const menuInfo = MENU_PATHS.find(m => m.path === perm.menu_path);
-                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete;
+                        const allOn = perm.can_view && perm.can_add && perm.can_edit && perm.can_delete && perm.can_approve;
                         return (
                           <TableRow key={perm.menu_path}>
                             <TableCell className="font-medium text-sm">
@@ -1668,6 +1669,13 @@ const AdminUserManagement = () => {
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={perm.can_delete} onCheckedChange={() => togglePerm(perm.menu_path, 'can_delete')} />
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={perm.can_approve}
+                                onCheckedChange={() => togglePerm(perm.menu_path, 'can_approve')}
+                                className="border-emerald-500 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                              />
                             </TableCell>
                             <TableCell className="text-center">
                               <Checkbox checked={allOn} onCheckedChange={() => toggleAllForPath(perm.menu_path)} />
