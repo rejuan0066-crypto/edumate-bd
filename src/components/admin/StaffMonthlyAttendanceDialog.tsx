@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 const STATUS_META: Record<string, { bnLabel: string; enLabel: string; icon: any; color: string; bg: string; ring: string }> = {
   present:  { bnLabel: 'উপস্থিত',        enLabel: 'Present',  icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/30', ring: 'ring-emerald-400/40' },
@@ -30,12 +32,26 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [cursor, setCursor] = useState<Date>(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   useEffect(() => { if (open) setCursor(new Date()); }, [open, staff?.id]);
 
   const monthStart = useMemo(() => startOfMonth(cursor), [cursor]);
   const monthEnd = useMemo(() => endOfMonth(cursor), [cursor]);
   const days = useMemo(() => eachDayOfInterval({ start: monthStart, end: monthEnd }), [monthStart, monthEnd]);
+
+  const refetch = async () => {
+    if (!staff?.id) return;
+    let q = supabase.from('attendance_records').select('*')
+      .eq('entity_type', 'staff')
+      .eq('entity_id', staff.id)
+      .gte('attendance_date', format(monthStart, 'yyyy-MM-dd'))
+      .lte('attendance_date', format(monthEnd, 'yyyy-MM-dd'));
+    if (shift) q = q.eq('shift', shift);
+    const { data } = await q;
+    setRecords((data as any[]) || []);
+  };
 
   useEffect(() => {
     if (!open || !staff?.id) return;
@@ -69,12 +85,44 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const totalLateMins = useMemo(() => records.reduce((s, r) => s + (Number(r.late_minutes) || 0), 0), [records]);
   const unmarked = days.filter(d => !byDate[format(d, 'yyyy-MM-dd')]).length;
 
-  const monthLabel = bn
-    ? format(cursor, 'MMMM yyyy', { locale: bnLocale })
-    : format(cursor, 'MMMM yyyy');
-
-  // Build calendar grid (Sunday start)
+  const monthLabel = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
   const leadingBlanks = getDay(monthStart);
+
+  const setStatus = async (dateKey: string, newStatus: string | null) => {
+    if (!staff?.id) return;
+    setSavingKey(dateKey);
+    try {
+      const existing = byDate[dateKey];
+      if (newStatus === null) {
+        if (!existing) { setOpenKey(null); return; }
+        const { error } = await supabase.from('attendance_records').delete().eq('id', existing.id);
+        if (error) throw error;
+        toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Cleared');
+      } else if (existing) {
+        const { error } = await supabase.from('attendance_records').update({
+          status: newStatus, updated_at: new Date().toISOString(),
+        }).eq('id', existing.id);
+        if (error) throw error;
+        toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
+      } else {
+        const { error } = await supabase.from('attendance_records').insert({
+          attendance_date: dateKey,
+          entity_type: 'staff',
+          entity_id: staff.id,
+          shift: shift || 'full_day',
+          status: newStatus,
+        });
+        if (error) throw error;
+        toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
+      }
+      await refetch();
+      setOpenKey(null);
+    } catch (e: any) {
+      toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
+    } finally {
+      setSavingKey(null);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,10 +170,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             })}
           </div>
 
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground items-center">
             <span>{bn ? 'মোট দিন' : 'Total days'}: <b className="text-foreground">{days.length}</b></span>
             <span>{bn ? 'অচিহ্নিত' : 'Unmarked'}: <b className="text-foreground">{unmarked}</b></span>
             <span>{bn ? 'মোট বিলম্ব' : 'Total late'}: <b className="text-foreground">{totalLateMins} {bn ? 'মিনিট' : 'min'}</b></span>
+            <span className="ml-auto text-[11px] italic">{bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}</span>
           </div>
 
           {/* Calendar grid */}
@@ -146,22 +195,64 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                 const meta = rec ? STATUS_META[rec.status] : null;
                 const Icon = meta?.icon;
                 const isToday = isSameDay(d, new Date());
+                const isFuture = d > new Date();
+                const isSaving = savingKey === key;
                 return (
-                  <div
-                    key={key}
-                    className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center ${
-                      meta ? `${meta.bg} border-transparent` : 'bg-muted/20 border-dashed border-border/30'
-                    } ${isToday ? 'ring-2 ring-primary/50' : ''}`}
-                    title={meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
-                  >
-                    <div className={`text-[11px] sm:text-xs font-semibold ${meta ? meta.color : 'text-muted-foreground'}`}>
-                      {format(d, 'd')}
-                    </div>
-                    {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${meta!.color}`} />}
-                    {rec?.late_minutes ? (
-                      <div className="text-[9px] text-amber-600 font-medium leading-none">{rec.late_minutes}m</div>
-                    ) : null}
-                  </div>
+                  <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={isFuture || isSaving}
+                        className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all hover:-translate-y-[2px] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none ${
+                          meta ? `${meta.bg} border-transparent` : 'bg-muted/20 border-dashed border-border/30'
+                        } ${isToday ? 'ring-2 ring-primary/50' : ''} ${isSaving ? 'animate-pulse' : ''}`}
+                        title={meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
+                      >
+                        <div className={`text-[11px] sm:text-xs font-semibold ${meta ? meta.color : 'text-muted-foreground'}`}>
+                          {format(d, 'd')}
+                        </div>
+                        {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${meta!.color}`} />}
+                        {rec?.late_minutes ? (
+                          <div className="text-[9px] text-amber-600 font-medium leading-none">{rec.late_minutes}m</div>
+                        ) : null}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56 p-2 rounded-2xl" align="center">
+                      <div className="text-[11px] text-muted-foreground px-2 pb-1">
+                        {format(d, 'dd/MM/yyyy')}
+                      </div>
+                      <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
+                        {Object.entries(STATUS_META).map(([k, m]) => {
+                          const I = m.icon;
+                          const active = rec?.status === k;
+                          return (
+                            <button
+                              key={k}
+                              onClick={() => setStatus(key, k)}
+                              disabled={isSaving}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition ${
+                                active ? `${m.bg} ${m.color} font-semibold` : 'hover:bg-muted/60'
+                              }`}
+                            >
+                              <I className={`h-4 w-4 ${m.color}`} />
+                              <span className="flex-1">{bn ? m.bnLabel : m.enLabel}</span>
+                              {active && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                            </button>
+                          );
+                        })}
+                        {rec && (
+                          <button
+                            onClick={() => setStatus(key, null)}
+                            disabled={isSaving}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t pt-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {bn ? 'মুছুন' : 'Clear'}
+                          </button>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 );
               })}
             </div>
