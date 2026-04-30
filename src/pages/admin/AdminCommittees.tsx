@@ -41,6 +41,7 @@ type Member = {
   designation_en: string | null;
   phone: string | null;
   email: string | null;
+  nid: string | null;
   address: string | null;
   occupation: string | null;
   occupation_en: string | null;
@@ -60,7 +61,7 @@ const emptyCommittee: Partial<Committee> = {
 const emptyMember: Partial<Member> = {
   staff_id: null,
   name: "", name_en: "", designation: "", designation_en: "",
-  phone: "", email: "", address: "", occupation: "", occupation_en: "",
+  phone: "", email: "", nid: "", address: "", occupation: "", occupation_en: "",
   photo_url: "", joining_date: "", is_active: true, sort_order: 0, notes: "",
 };
 
@@ -543,6 +544,15 @@ export default function AdminCommittees() {
                 <div>
                   <Label>{bn ? "ইমেইল" : "Email"}</Label>
                   <Input type="email" value={editingMember.email || ""} onChange={e => setEditingMember({ ...editingMember, email: e.target.value })} />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>{bn ? "এনআইডি" : "NID"}</Label>
+                  <Input
+                    value={editingMember.nid || ""}
+                    onChange={e => setEditingMember({ ...editingMember, nid: e.target.value.replace(/[^0-9]/g, "") })}
+                    inputMode="numeric"
+                    placeholder={bn ? "জাতীয় পরিচয়পত্র নম্বর" : "National ID number"}
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <Label>{bn ? "ঠিকানা" : "Address"}</Label>
