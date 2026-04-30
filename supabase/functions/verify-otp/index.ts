@@ -41,25 +41,66 @@ Deno.serve(async (req) => {
         return data;
       } catch { return { ok: true }; }
     };
-    const ipRl = await callRl('otp_verify_ip', 'ip', clientIp);
-    if (ipRl?.ok === false) {
-      return rateLimitResponse({
+    const blockedRl = (res: any, scope: string, fallbackMsg: string) =>
+      rateLimitResponse({
         code: 'RATE_LIMITED',
-        message: ipRl.message_bn || 'Too many verification attempts from this network.',
-        retryAfterSeconds: ipRl.retry_after || 60,
-        limit: ipRl.limit,
-        scope: `verify:ip:${clientIp}`,
+        message: res.message_bn || fallbackMsg,
+        retryAfterSeconds: res.retry_after || 60,
+        limit: res.limit,
+        scope,
       });
+
+    // Resolve phone + auth user_id linked to this email (best-effort, non-fatal)
+    let resolvedPhone: string | null = null;
+    let resolvedUserId: string | null = null;
+    try {
+      const { data: userList } = await (supabase as any).auth.admin.listUsers({
+        page: 1, perPage: 1, filter: `email.eq.${email}`,
+      });
+      const u = userList?.users?.find?.((x: any) => (x.email || '').toLowerCase() === email);
+      if (u?.id) {
+        resolvedUserId = u.id;
+        const { data: prof } = await supabase
+          .from('profiles').select('phone').eq('id', u.id).maybeSingle();
+        if (prof?.phone) resolvedPhone = String(prof.phone).trim();
+      }
+    } catch { /* ignore */ }
+    if (!resolvedPhone) {
+      try {
+        const { data: s } = await supabase.from('staff')
+          .select('phone, user_id').ilike('email', email)
+          .is('deleted_at', null).maybeSingle();
+        if (s?.phone) resolvedPhone = String(s.phone).trim();
+        if (!resolvedUserId && s?.user_id) resolvedUserId = s.user_id;
+      } catch { /* ignore */ }
     }
+    if (!resolvedPhone) {
+      try {
+        const { data: a } = await supabase.from('administrative_officers')
+          .select('phone, user_id').ilike('email', email)
+          .is('deleted_at', null).maybeSingle();
+        if (a?.phone) resolvedPhone = String(a.phone).trim();
+        if (!resolvedUserId && a?.user_id) resolvedUserId = a.user_id;
+      } catch { /* ignore */ }
+    }
+
+    const ipRl = await callRl('otp_verify_ip', 'ip', clientIp);
+    if (ipRl?.ok === false) return blockedRl(ipRl, `verify:ip:${clientIp}`, 'Too many verification attempts from this network.');
     const emailRl = await callRl('otp_verify_email', 'email', email);
-    if (emailRl?.ok === false) {
-      return rateLimitResponse({
-        code: 'RATE_LIMITED',
-        message: emailRl.message_bn || 'Too many verification attempts for this email.',
-        retryAfterSeconds: emailRl.retry_after || 60,
-        limit: emailRl.limit,
-        scope: `verify:email:${email}`,
-      });
+    if (emailRl?.ok === false) return blockedRl(emailRl, `verify:email:${email}`, 'Too many verification attempts for this email.');
+
+    if (resolvedPhone) {
+      const phMin = await callRl('otp_verify_phone', 'phone', resolvedPhone);
+      if (phMin?.ok === false) return blockedRl(phMin, `verify:phone:${resolvedPhone}`, 'Too many verification attempts for this mobile number.');
+      const phHr = await callRl('otp_verify_phone_hourly', 'phone', resolvedPhone);
+      if (phHr?.ok === false) return blockedRl(phHr, `verify:phone:${resolvedPhone}`, 'Hourly verification limit reached for this mobile number.');
+    }
+
+    if (resolvedUserId) {
+      const usMin = await callRl('otp_verify_user', 'user', resolvedUserId);
+      if (usMin?.ok === false) return blockedRl(usMin, `verify:user:${resolvedUserId}`, 'Too many verification attempts for this account.');
+      const usHr = await callRl('otp_verify_user_hourly', 'user', resolvedUserId);
+      if (usHr?.ok === false) return blockedRl(usHr, `verify:user:${resolvedUserId}`, 'Hourly verification limit reached for this account.');
     }
 
 
