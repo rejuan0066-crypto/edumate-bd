@@ -51,7 +51,15 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
 
   if (!staff) return null;
 
-  const diff = timeToMinutes(end) - timeToMinutes(start);
+  const startM = timeToMinutes(start);
+  const endM = timeToMinutes(end);
+  const rawDiff = endM - startM;
+  // Overnight: end ≤ start ⇒ next-day end. start==end with both set ⇒ treat as 24h.
+  const isOvernight = !!start && !!end && endM <= startM;
+  const totalMinutes = !start || !end
+    ? 0
+    : (rawDiff > 0 ? rawDiff : (start === end ? 24 * 60 : rawDiff + 24 * 60));
+  const diff = totalMinutes; // legacy alias used below
   const name = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
   const save = async (clear = false) => {
@@ -106,21 +114,26 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
               {fmt === '12' && <p className="mt-1 text-[11px] text-muted-foreground">{to12h(end)}</p>}
             </div>
           </div>
-          <div className="p-3 bg-muted/40 rounded-2xl text-sm">
-            <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
-            {(() => {
-              const d = diff > 0 ? diff : (diff < 0 ? diff + 24 * 60 : 0);
-              if (d <= 0) return '-';
-              const h = Math.floor(d / 60);
-              const m = d % 60;
-              const toBn = (n: number) => bn ? String(n).replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : String(n);
-              return bn
-                ? `${toBn(h)} ঘন্টা ${toBn(m)} মিনিট`
-                : `${h}h ${m}m`;
-            })()}
+          <div className="p-3 bg-muted/40 rounded-2xl text-sm flex items-center justify-between gap-2">
+            <div>
+              <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
+              {(() => {
+                const d = totalMinutes;
+                if (d <= 0) return '-';
+                const h = Math.floor(d / 60);
+                const m = d % 60;
+                const toBn = (n: number) => bn ? String(n).replace(/[0-9]/g, (c) => '০১২৩৪৫৬৭৮৯'[+c]) : String(n);
+                return bn ? `${toBn(h)} ঘন্টা ${toBn(m)} মিনিট` : `${h}h ${m}m`;
+              })()}
+            </div>
+            {isOvernight && totalMinutes > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium whitespace-nowrap">
+                {bn ? 'ওভারনাইট ⏵ পরের দিন' : 'Overnight ⏵ next day'}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
-            <Button className="flex-1" onClick={() => save(false)} onDoubleClick={(e) => e.preventDefault()} disabled={saving || diff === 0}>
+            <Button className="flex-1" onClick={() => save(false)} onDoubleClick={(e) => e.preventDefault()} disabled={saving || totalMinutes <= 0}>
               <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
             </Button>
             {(staff.duty_start_time || staff.duty_end_time) && (

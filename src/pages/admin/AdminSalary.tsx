@@ -2382,10 +2382,29 @@ const AdminSalary = () => {
                       onChange={e => setDutyDialog({ ...dutyDialog, duty_end_time: e.target.value })} />
                   </div>
                 </div>
-                <div className="p-3 bg-muted/50 rounded-lg text-sm">
-                  <p><strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong> {timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)} {bn ? 'মিনিট' : 'minutes'}
-                    ({Math.floor((timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)) / 60)}h {(timeToMinutes(dutyDialog.duty_end_time) - timeToMinutes(dutyDialog.duty_start_time)) % 60}m)
-                  </p>
+                <div className="p-3 bg-muted/50 rounded-lg text-sm flex items-center justify-between gap-2">
+                  {(() => {
+                    const sM = timeToMinutes(dutyDialog.duty_start_time);
+                    const eM = timeToMinutes(dutyDialog.duty_end_time);
+                    const raw = eM - sM;
+                    const overnight = !!dutyDialog.duty_start_time && !!dutyDialog.duty_end_time && eM <= sM;
+                    const total = (!dutyDialog.duty_start_time || !dutyDialog.duty_end_time)
+                      ? 0
+                      : (raw > 0 ? raw : (sM === eM ? 24 * 60 : raw + 24 * 60));
+                    return (
+                      <>
+                        <p>
+                          <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
+                          {total} {bn ? 'মিনিট' : 'minutes'} ({Math.floor(total / 60)}h {total % 60}m)
+                        </p>
+                        {overnight && total > 0 && (
+                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium whitespace-nowrap">
+                            {bn ? 'ওভারনাইট ⏵ পরের দিন' : 'Overnight ⏵ next day'}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
                 <Button className="w-full" onClick={() => updateDutyMutation.mutate({
                   staffId: dutyDialog.id, dutyStart: dutyDialog.duty_start_time, dutyEnd: dutyDialog.duty_end_time
