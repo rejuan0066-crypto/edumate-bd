@@ -41,6 +41,7 @@ type Member = {
   designation_en: string | null;
   phone: string | null;
   email: string | null;
+  nid: string | null;
   address: string | null;
   occupation: string | null;
   occupation_en: string | null;
