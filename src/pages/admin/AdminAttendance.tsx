@@ -32,6 +32,7 @@ import StaffCheckinDialog from '@/components/attendance/StaffCheckinDialog';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
