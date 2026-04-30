@@ -211,12 +211,25 @@ export default function AdminCommittees() {
     },
     onError: (e: any) => {
       if (e.message === "__cancelled__") return;
-      const msg = e.message || "";
+      const raw = String(e?.message || e || "");
+      const msg = raw.toUpperCase();
       if (msg.includes("OVERLAP_BLOCKED")) {
         toast.error(bn ? "ওভারল্যাপ ব্লক: এই স্টাফ ইতিমধ্যে অন্য কমিটিতে সক্রিয়" : "Overlap blocked: staff is already in another active committee");
-      } else {
-        toast.error(msg);
+        return;
       }
+      // Duplicate NID across staff / administrative / committee tables
+      if (msg.includes("DUPLICATE_NID") || (msg.includes("CROSS_TABLE_DUPLICATE") && /nid|এনআইডি/i.test(raw))) {
+        let nidMsg = bn
+          ? "এই NID দিয়ে ইতিমধ্যে একজন রেজিস্টার্ড আছেন।"
+          : "This NID is already registered.";
+        if (/staff|স্টাফ/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন স্টাফ রেজিস্টার্ড আছেন।" : "This NID is already registered to a staff member.";
+        else if (/admin|প্রশাসনিক/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন প্রশাসনিক কর্মকর্তা রেজিস্টার্ড আছেন।" : "This NID is already registered to an administrative officer.";
+        else if (/committee|কমিটি/i.test(raw)) nidMsg = bn ? "এই NID দিয়ে ইতিমধ্যে একজন কমিটি সদস্য রেজিস্টার্ড আছেন।" : "This NID is already registered to a committee member.";
+        setMemberFieldErrors(prev => ({ ...prev, nid: nidMsg }));
+        toast.error(nidMsg);
+        return;
+      }
+      toast.error(raw);
     },
   });
 
