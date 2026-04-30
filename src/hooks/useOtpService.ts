@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import emailjs from '@emailjs/browser';
+// EmailJS is now invoked server-side (in the send-otp edge function) so the OTP
+// code is never returned to the client. The browser SDK is no longer imported.
 import { toast } from 'sonner';
 
 /**
