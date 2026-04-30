@@ -7867,6 +7867,10 @@ export type Database = {
         Args: { _email: string; _full_name: string; _phone: string }
         Returns: Json
       }
+      enforce_approve_permission: {
+        Args: { _menu_path: string }
+        Returns: undefined
+      }
       generate_administrative_officer_id: {
         Args: { p_year?: number }
         Returns: string
