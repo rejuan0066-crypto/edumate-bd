@@ -163,6 +163,7 @@ const AdminUserManagement = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [createPhone, setCreatePhone] = useState('');
   const [createStaffCategory, setCreateStaffCategory] = useState('');
   const [createDesignation, setCreateDesignation] = useState('');
   const [role, setRole] = useState('');
@@ -170,6 +171,7 @@ const AdminUserManagement = () => {
   // Real-time duplicate check
   const [emailDup, setEmailDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
   const [nameDup, setNameDup] = useState<'idle' | 'checking' | 'ok' | 'dup'>('idle');
+  const [phoneDup, setPhoneDup] = useState<'idle' | 'checking' | 'ok' | 'dup' | 'invalid'>('idle');
   // Duplicate conflict modal
   const [conflictOpen, setConflictOpen] = useState(false);
   const [conflictType, setConflictType] = useState<'email' | 'name'>('email');
