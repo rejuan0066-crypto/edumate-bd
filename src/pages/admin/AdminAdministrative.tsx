@@ -1035,7 +1035,7 @@ const AdminAdministrative = () => {
                       {bn ? 'কোনো এন্ট্রি নেই' : 'No entries'}
                     </div>
                   ) : (
-                    (kind === 'department' ? departments : designations).map((row) => {
+                    (kind === 'department' ? departments : designations).map((row: any) => {
                       const isEditing = editRow?.id === row.id;
                       return (
                         <div key={row.id} className={`p-3 hover:bg-muted/20 ${isEditing && manageEditError ? 'bg-destructive/5' : ''}`}>
