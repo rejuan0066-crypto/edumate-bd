@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Database, Download, Loader2, RefreshCw, ShieldCheck, FileLock2, History } from "lucide-react";
 import { format } from "date-fns";
+import { DataSensitivityMap } from "./DataSensitivityMap";
 
 interface BackupRow {
   id: string;
