@@ -118,7 +118,6 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
   const defaultCategoryTimes: Record<string, { start: string; end: string }> = {
     teacher: { start: '08:00', end: '14:00' },
-    administrative: { start: '09:00', end: '17:00' },
     support: { start: '08:00', end: '17:00' },
     general: { start: '08:00', end: '17:00' },
   };
@@ -138,17 +137,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   });
 
   const dynamicStaffCategories = useMemo(() => {
-    const keys = staffCategoriesData.map(c => c.key);
-    // Ensure default categories are always included
-    const defaults = ['teacher', 'administrative', 'support', 'general'];
-    defaults.forEach(d => { if (!keys.includes(d)) keys.push(d); });
-    return keys;
+    return staffCategoriesData.map(c => c.key);
   }, [staffCategoriesData]);
 
   const categoryLabelMap: Record<string, { bn: string; en: string }> = useMemo(() => {
     const map: Record<string, { bn: string; en: string }> = {
       teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-      administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
       support: { bn: 'সাপোর্ট স্টাফ', en: 'Support Staff' },
       general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
     };
@@ -1433,10 +1427,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
-                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                    <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
-                    <SelectItem value="support">{bn ? 'সাপোর্ট স্টাফ' : 'Support Staff'}</SelectItem>
-                    <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
+                    {staffCategoriesData.map((category) => (
+                      <SelectItem key={category.key} value={category.key}>{getCategoryLabel(category.key)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
 
@@ -1712,23 +1705,30 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 </Label>
                 {dynamicStaffCategories
                   .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                  .filter(catKey => (allStaff as any[]).some((s: any) => (s.staff_category || 'general') === catKey))
                   .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
                   <div key={cat.key} className="space-y-1">
                     <p className="text-xs font-medium text-muted-foreground">{cat.label}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { ...p[cat.key], start: v } }))} />
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: v, end: p[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00' } }))} />
                       </div>
                       <div>
                         <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { ...p[cat.key], end: v } }))} />
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: p[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00', end: v } }))} />
                       </div>
                     </div>
                   </div>
                 ))}
-                <Button size="sm" className="w-full" onClick={() => saveCategoryTimesMutation.mutate(categoryShiftTimes)} disabled={saveCategoryTimesMutation.isPending}>
+                <Button size="sm" className="w-full" onClick={() => {
+                  const visibleCategoryTimes = dynamicStaffCategories
+                    .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                    .reduce((acc, catKey) => {
+                      acc[catKey] = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
+                      return acc;
+                    }, {} as Record<string, { start: string; end: string }>);
+                  saveCategoryTimesMutation.mutate(visibleCategoryTimes);
+                }} disabled={saveCategoryTimesMutation.isPending}>
                   <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
                 </Button>
                 <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">

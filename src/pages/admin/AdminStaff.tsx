@@ -31,29 +31,30 @@ const ADMIN_STAFF_KEYWORDS = ['administrative', 'প্রশাসনিক', '
 const GENERAL_STAFF_KEYWORDS = ['peon', 'পিয়ন', 'guard', 'প্রহরী', 'গার্ড', 'cleaner', 'পরিচ্ছন্নতাকর্মী', 'সহায়ক', 'helper', 'driver', 'ড্রাইভার'];
 const SUPPORT_STAFF_KEYWORDS = ['অফিস সহকারী', 'clerk', 'কেরানি', 'operator', 'অপারেটর', 'accountant', 'হিসাবরক্ষক', 'librarian', 'লাইব্রেরিয়ান', 'data entry', 'ডাটা এন্ট্রি'];
 
-const getStaffCategory = (staff: any, designationsMap: Map<string, string>): string => {
+const getStaffCategory = (staff: any, designationsMap: Map<string, string>, availableCategories?: Set<string>): string => {
+  const isAvailable = (key: string) => !availableCategories || availableCategories.size === 0 || availableCategories.has(key);
   // 1. Use stored staff_category column if available and not default
-  if (staff?.staff_category && staff.staff_category !== 'general') return staff.staff_category;
+  if (staff?.staff_category && staff.staff_category !== 'general' && isAvailable(staff.staff_category)) return staff.staff_category;
   // 2. Check DB-based category from designation name
   const designation = staff?.designation;
   if (designation) {
     const dbCategory = designationsMap.get(designation.toLowerCase());
-    if (dbCategory) return dbCategory;
+    if (dbCategory && isAvailable(dbCategory)) return dbCategory;
     const lower = designation.toLowerCase();
-    if (TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher';
-    if (ADMIN_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'administrative';
-    if (SUPPORT_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'support';
-    if (GENERAL_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'general';
+    if (isAvailable('teacher') && TEACHER_KEYWORDS.some(k => lower.includes(k))) return 'teacher';
+    if (isAvailable('administrative') && ADMIN_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'administrative';
+    if (isAvailable('support') && SUPPORT_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'support';
+    if (isAvailable('general') && GENERAL_STAFF_KEYWORDS.some(k => lower.includes(k))) return 'general';
   }
   // 3. Use stored staff_category (could be 'general' default)
-  if (staff?.staff_category) return staff.staff_category;
+  if (staff?.staff_category && isAvailable(staff.staff_category)) return staff.staff_category;
   // 4. Fallback: department field
   const dept = (staff?.department || '').toLowerCase();
-  if (dept === 'general' || dept === 'সাধারণ' || dept === 'সহায়ক') return 'general';
-  if (dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা')) return 'teacher';
-  if (dept === 'administrative' || dept === 'প্রশাসন' || dept === 'প্রশাসনিক') return 'administrative';
-  if (dept === 'support' || dept === 'অফিস') return 'support';
-  return 'general';
+  if (isAvailable('general') && (dept === 'general' || dept === 'সাধারণ' || dept === 'সহায়ক')) return 'general';
+  if (isAvailable('teacher') && (dept === 'teacher' || dept === 'শিক্ষক' || dept.includes('শিক্ষা'))) return 'teacher';
+  if (isAvailable('administrative') && (dept === 'administrative' || dept === 'প্রশাসন' || dept === 'প্রশাসনিক')) return 'administrative';
+  if (isAvailable('support') && (dept === 'support' || dept === 'অফিস')) return 'support';
+  return isAvailable('general') ? 'general' : (availableCategories?.values().next().value || 'general');
 };
 
 const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
@@ -103,9 +104,22 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
   const { data: designationsList = [] } = useQuery({
     queryKey: ['designations-all'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('designations').select('name, name_bn, staff_category').eq('is_active', true).order('sort_order');
+      const { data, error } = await supabase.from('designations').select('id, name, name_bn, staff_category').eq('is_active', true).order('sort_order');
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: staffCategories = [] } = useQuery({
+    queryKey: ['staff_categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -125,6 +139,21 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       if (d.name_bn) designationsMap.set(d.name_bn.toLowerCase(), d.staff_category);
     }
   });
+  const activeCategoryKeys = new Set((staffCategories as any[]).map((c: any) => c.key));
+  const labelForCategory = (key: string) => {
+    const category = (staffCategories as any[]).find((c: any) => c.key === key);
+    if (category) return bn ? (category.name_bn || category.name) : (category.name || category.name_bn);
+
+    const fallbackLabels: Record<string, { bn: string; en: string }> = {
+      teacher: { bn: 'শিক্ষক', en: 'Teacher' },
+      support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
+      general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
+      director: { bn: 'পরিচালক', en: 'Director' },
+      committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
+      administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
+    };
+    return fallbackLabels[key]?.[bn ? 'bn' : 'en'] || key;
+  };
 
   const statusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -206,7 +235,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
     // Director / committee member: rely strictly on the stored staff_category column
     if (staffType === 'director') return s.staff_category === 'director';
     if (staffType === 'committee_member') return s.staff_category === 'committee_member';
-    const category = getStaffCategory(s, designationsMap);
+    const category = getStaffCategory(s, designationsMap, activeCategoryKeys);
     if (staffType === 'teacher') return category === 'teacher';
     if (staffType === 'administrative') return category === 'administrative';
     if (staffType === 'support') return category === 'support';
@@ -216,24 +245,13 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
 
   const pendingCount = typeFiltered.filter((s: any) => s.status === 'pending').length;
 
-  const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
-    teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-    administrative: { bn: 'প্রশাসনিক', en: 'Administrative' },
-    support: { bn: 'অফিস কর্মচারী', en: 'Support Staff' },
-    general: { bn: 'সহায়ক কর্মী', en: 'General Staff' },
-    director: { bn: 'পরিচালক', en: 'Director' },
-    committee_member: { bn: 'কমিটি সদস্য', en: 'Committee Member' },
-  };
-  const labelForCategory = (key: string) => CATEGORY_LABELS[key]?.[bn ? 'bn' : 'en'] || key;
-
   const preFiltered = typeFiltered.filter((s: any) => {
     if (statusFilter !== 'all' && s.status !== statusFilter) return false;
-    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap) !== departmentFilter) return false;
+    if (departmentFilter !== 'all' && getStaffCategory(s, designationsMap, activeCategoryKeys) !== departmentFilter) return false;
     if (!search) return true;
     const q = search.toLowerCase();
-    const cat = getStaffCategory(s, designationsMap);
-    const catLabelBn = CATEGORY_LABELS[cat]?.bn || '';
-    const catLabelEn = CATEGORY_LABELS[cat]?.en || '';
+    const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
+    const catLabel = labelForCategory(cat);
     return s.name_bn?.toLowerCase().includes(q)
       || s.name_en?.toLowerCase().includes(q)
       || s.designation?.toLowerCase().includes(q)
@@ -241,8 +259,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       || (s as any).phone?.toLowerCase().includes(q)
       || (s as any).mobile?.toLowerCase().includes(q)
       || cat.toLowerCase().includes(q)
-      || catLabelBn.toLowerCase().includes(q)
-      || catLabelEn.toLowerCase().includes(q)
+      || catLabel.toLowerCase().includes(q)
       || (s.department || '').toLowerCase().includes(q);
   });
 
@@ -251,7 +268,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
       case 'name': return (bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)) || '';
       case 'staff_id': return s.staff_id || '\uffff'; // empty IDs sort last on asc
       case 'designation': return s.designation || '';
-      case 'department': return labelForCategory(getStaffCategory(s, designationsMap));
+      case 'department': return labelForCategory(getStaffCategory(s, designationsMap, activeCategoryKeys));
       case 'status': return s.status || '';
     }
   };
@@ -378,8 +395,8 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{bn ? 'সকল ডিপার্টমেন্ট' : 'All Departments'}</SelectItem>
-                {Object.keys(CATEGORY_LABELS).map((k) => (
-                  <SelectItem key={k} value={k}>{labelForCategory(k)}</SelectItem>
+                {(staffCategories as any[]).map((category: any) => (
+                  <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -458,7 +475,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       </td>
                       <td className="px-4 py-3">
                         {(() => {
-                          const cat = getStaffCategory(s, designationsMap);
+                          const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                           const catDesignations = designationsList.filter((d: any) => d.staff_category === cat);
                           return (
                             <Select
@@ -470,7 +487,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                               </SelectTrigger>
                               <SelectContent>
                                 {catDesignations.map((d: any) => (
-                                  <SelectItem key={d.name} value={bn ? d.name_bn : d.name}>
+                                  <SelectItem key={d.id} value={bn ? d.name_bn : d.name}>
                                     {bn ? d.name_bn : d.name}
                                   </SelectItem>
                                 ))}
@@ -481,19 +498,16 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                       </td>
                       <td className="px-4 py-3">
                         <Select
-                          value={getStaffCategory(s, designationsMap)}
+                          value={getStaffCategory(s, designationsMap, activeCategoryKeys)}
                           onValueChange={(val) => categoryMutation.mutate({ id: s.id, category: val })}
                         >
                           <SelectTrigger className="h-7 text-xs w-[130px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                            <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
-                            <SelectItem value="support">{bn ? 'অফিস কর্মচারী' : 'Support Staff'}</SelectItem>
-                            <SelectItem value="general">{bn ? 'সহায়ক কর্মী' : 'General Staff'}</SelectItem>
-                            <SelectItem value="director">{bn ? 'পরিচালক' : 'Director'}</SelectItem>
-                            <SelectItem value="committee_member">{bn ? 'কমিটি সদস্য' : 'Committee Member'}</SelectItem>
+                            {(staffCategories as any[]).map((category: any) => (
+                              <SelectItem key={category.key} value={category.key}>{labelForCategory(category.key)}</SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </td>
@@ -552,7 +566,7 @@ const AdminStaff = ({ staffType = 'all' }: { staffType?: StaffPageType }) => {
                         )}
                         {canEditItem && (
                           <button onClick={() => {
-                            const cat = getStaffCategory(s, designationsMap);
+                            const cat = getStaffCategory(s, designationsMap, activeCategoryKeys);
                             const path = cat === 'teacher' ? 'teachers' : cat === 'administrative' ? 'administrative-staff' : cat === 'support' ? 'support-staff' : cat === 'director' ? 'directors' : cat === 'committee_member' ? 'committee-members' : 'general-staff';
                             navigate(`/admin/${path}/edit/${s.id}`);
                           }} className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-primary" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" /></button>
