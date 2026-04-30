@@ -247,7 +247,11 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: [kind === 'department' ? 'administrative-departments' : 'administrative-designations'] });
       setNewRow({ name_bn: '', name: '' });
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => {
+      const parsed = parseBackendError(e);
+      setManageNewError({ field: parsed.field as any, message: parsed.message });
+      toast.error(parsed.message);
+    },
   });
 
   const filtered = useMemo(() => {
