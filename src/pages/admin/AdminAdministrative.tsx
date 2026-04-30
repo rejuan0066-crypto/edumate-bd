@@ -176,7 +176,12 @@ const AdminAdministrative = () => {
       setForm(prev => ({ ...prev, [res.kind === 'department' ? 'department' : 'designation']: res.value }));
       setQuickAdd(null);
     },
-    onError: (e: any) => toast.error(e.message || 'Error'),
+    onError: (e: any) => {
+      const parsed = parseBackendError(e);
+      const f = parsed.field === 'name' ? 'name_en' : parsed.field === 'name_bn' ? 'name_bn' : undefined;
+      setQuickAddError({ field: f as any, message: parsed.message });
+      toast.error(parsed.message);
+    },
   });
 
   const updateOption = useMutation({
