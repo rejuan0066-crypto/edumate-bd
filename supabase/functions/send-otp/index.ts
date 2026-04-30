@@ -11,6 +11,46 @@ const corsHeaders = {
 
 const FALLBACK_OTP_HTML = `<!DOCTYPE html><html><body style="font-family:Arial;background:#f4f4f7;padding:40px;"><div style="max-width:480px;margin:0 auto;background:#fff;border-radius:12px;padding:32px;text-align:center;"><h2 style="color:#1a7f64;">Verification Code</h2><div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#1a7f64;background:#f0faf6;padding:20px;border-radius:12px;margin:20px 0;">{{otp}}</div><p>Expires in {{expiry_minutes}} minutes.</p></div></body></html>`;
 
+/**
+ * Send OTP via EmailJS REST API server-side. The OTP code is NEVER returned to
+ * the client — this is the security boundary. If EmailJS rejects non-browser
+ * calls, disable "Allow EmailJS API for non-browser applications" lock in
+ * EmailJS dashboard → Account → Security.
+ */
+async function sendViaEmailJsServerSide(
+  cfg: { service_id: string; template_id: string; public_key: string },
+  toEmail: string,
+  otpCode: string,
+  expiryMinutes: number,
+  purpose: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "origin": "http://localhost" },
+      body: JSON.stringify({
+        service_id: cfg.service_id,
+        template_id: cfg.template_id,
+        user_id: cfg.public_key,
+        template_params: {
+          to_email: toEmail,
+          to_name: toEmail.split("@")[0],
+          otp_code: otpCode,
+          expiry_minutes: expiryMinutes,
+          purpose: purpose === "password_reset" ? "Password Reset" : "Email Verification",
+        },
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      return { ok: false, error: `EmailJS HTTP ${res.status}: ${txt}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
