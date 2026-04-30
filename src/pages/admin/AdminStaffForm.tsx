@@ -301,11 +301,10 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     },
   });
 
-  // Use DB designations if available, else fallback to hardcoded. Dedupe by name to avoid duplicate Select keys.
+  // Use DB designations if available, else fallback to hardcoded.
+  // Use unique id for keys (multiple designations may share the same English name with different Bangla labels).
   const designations = dbDesignations.length > 0
-    ? Array.from(new Map(
-        dbDesignations.map((d: any) => [d.name, { value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category, id: d.id }])
-      ).values())
+    ? dbDesignations.map((d: any) => ({ value: d.name, bn: d.name_bn, en: d.name, staff_category: d.staff_category, id: d.id }))
     : designationsHardcoded.map(d => ({ ...d, staff_category: initialStaffCategory, id: d.value }));
   const filteredDesignations = designations.filter((d: any) => !selectedStaffCategory || !d.staff_category || d.staff_category === selectedStaffCategory);
   // Populate form fields when editing
