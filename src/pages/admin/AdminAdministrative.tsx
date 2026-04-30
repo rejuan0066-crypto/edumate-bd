@@ -360,8 +360,10 @@ const AdminAdministrative = () => {
       setOpen(false);
       setEditing(null);
       setForm(emptyForm);
+      setFieldErrors({});
+      setFormError('');
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => applyOfficerError(e),
   });
 
   const softDelete = useMutation({
@@ -378,7 +380,7 @@ const AdminAdministrative = () => {
       qc.invalidateQueries({ queryKey: ['administrative-officers'] });
       setDelTarget(null);
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
   const toggleStatus = useMutation({
@@ -396,13 +398,54 @@ const AdminAdministrative = () => {
       toast.success(next === 'active' ? (bn ? 'সক্রিয় করা হয়েছে' : 'Activated') : (bn ? 'নিষ্ক্রিয় করা হয়েছে' : 'Deactivated'));
       qc.invalidateQueries({ queryKey: ['administrative-officers'] });
     },
-    onError: (e: any) => toast.error(friendlyError(e)),
+    onError: (e: any) => toast.error(parseBackendError(e).message),
   });
 
-  const openAdd = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  // Client-side pre-validation that mirrors the backend triggers, so users
+  // see inline messages immediately without a round-trip.
+  const validateOfficerForm = (): boolean => {
+    const errs: Record<string, string> = {};
+    const f = form;
+    if (!f.name_bn || !String(f.name_bn).trim()) {
+      errs.name_bn = bn ? 'বাংলা নাম আবশ্যক।' : 'Bangla name is required.';
+    }
+    if (f.phone) {
+      const digits = String(f.phone).replace(/[^0-9]/g, '');
+      if (!/^01[3-9][0-9]{8}$/.test(digits)) {
+        errs.phone = bn ? 'সঠিক ১১-সংখ্যার মোবাইল নম্বর দিন (01XXXXXXXXX)।' : 'Enter a valid 11-digit mobile (01XXXXXXXXX).';
+      }
+    }
+    if (f.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.email))) {
+        errs.email = bn ? 'সঠিক ইমেইল ঠিকানা দিন।' : 'Enter a valid email address.';
+      }
+    }
+    if (f.nid) {
+      const nd = String(f.nid).replace(/[^0-9]/g, '');
+      if (![10, 13, 17].includes(nd.length)) {
+        errs.nid = bn ? 'এনআইডি ১০, ১৩ অথবা ১৭ সংখ্যা হতে হবে।' : 'NID must be 10, 13, or 17 digits.';
+      }
+    }
+    setFieldErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      setFormError(bn ? 'অনুগ্রহ করে নিচের ভুলগুলো ঠিক করুন।' : 'Please fix the errors below.');
+      return false;
+    }
+    setFormError('');
+    return true;
+  };
+
+  const handleSaveOfficer = () => {
+    if (!validateOfficerForm()) return;
+    upsert.mutate(form);
+  };
+
+  const openAdd = () => { setEditing(null); setForm(emptyForm); setFieldErrors({}); setFormError(''); setOpen(true); };
   const openEdit = (o: Officer) => {
     setEditing(o);
     setForm({ ...o });
+    setFieldErrors({});
+    setFormError('');
     setOpen(true);
   };
 
