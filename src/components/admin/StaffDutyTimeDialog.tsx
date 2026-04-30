@@ -96,7 +96,7 @@ export default function StaffDutyTimeDialog({ open, onOpenChange, staff, bn = tr
             })()}
           </div>
           <div className="flex gap-2">
-            <Button className="flex-1" onClick={() => save(false)} disabled={saving || diff <= 0}>
+            <Button className="flex-1" onClick={() => save(false)} onDoubleClick={(e) => e.preventDefault()} disabled={saving || diff === 0}>
               <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
             </Button>
             {(staff.duty_start_time || staff.duty_end_time) && (
