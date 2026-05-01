@@ -135,7 +135,8 @@ const AdminParentApprovals = () => {
                       <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                       <TableHead>{bn ? 'ইমেইল' : 'Email'}</TableHead>
                       <TableHead>{bn ? 'ফোন' : 'Phone'}</TableHead>
-                      <TableHead>{bn ? 'ছাত্র আইডি' : 'Student ID'}</TableHead>
+                      <TableHead>{bn ? 'NID' : 'NID'}</TableHead>
+                      <TableHead>{bn ? 'লিঙ্কড ছাত্র' : 'Linked Students'}</TableHead>
                       <TableHead>{bn ? 'ইমেইল ভেরিফাইড' : 'Verified'}</TableHead>
                       <TableHead>{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
                       <TableHead>{bn ? 'তারিখ' : 'Date'}</TableHead>
@@ -148,7 +149,14 @@ const AdminParentApprovals = () => {
                         <TableCell className="font-medium">{a.full_name}</TableCell>
                         <TableCell className="text-sm">{a.email}</TableCell>
                         <TableCell className="text-sm">{a.phone || '—'}</TableCell>
-                        <TableCell className="text-sm font-mono">{a.student_id}</TableCell>
+                        <TableCell className="text-sm font-mono">{a.nid || '—'}</TableCell>
+                        <TableCell className="text-xs">
+                          {Array.isArray(a.linked_student_uuids) && a.linked_student_uuids.length > 0 ? (
+                            <Badge variant="outline">{a.linked_student_uuids.length} {bn ? 'জন' : ''}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground font-mono">{a.student_id || '—'}</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {a.email_verified ? (
                             <Badge variant="outline" className="gap-1"><Check className="w-3 h-3" /> {bn ? 'হ্যাঁ' : 'Yes'}</Badge>

@@ -5095,6 +5095,8 @@ export type Database = {
           id: string
           last_login_at: string | null
           linked_student_uuid: string | null
+          linked_student_uuids: string[]
+          nid: string | null
           password_hash: string
           phone: string | null
           rejection_reason: string | null
@@ -5113,6 +5115,8 @@ export type Database = {
           id?: string
           last_login_at?: string | null
           linked_student_uuid?: string | null
+          linked_student_uuids?: string[]
+          nid?: string | null
           password_hash: string
           phone?: string | null
           rejection_reason?: string | null
@@ -5131,6 +5135,8 @@ export type Database = {
           id?: string
           last_login_at?: string | null
           linked_student_uuid?: string | null
+          linked_student_uuids?: string[]
+          nid?: string | null
           password_hash?: string
           phone?: string | null
           rejection_reason?: string | null
@@ -5226,6 +5232,71 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_payment_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          fee_assignment_ids: string[]
+          id: string
+          method: string
+          note: string | null
+          parent_account_id: string
+          payment_record_id: string | null
+          rejection_reason: string | null
+          sender_phone: string | null
+          status: string
+          student_uuid: string
+          trx_id: string | null
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          fee_assignment_ids?: string[]
+          id?: string
+          method: string
+          note?: string | null
+          parent_account_id: string
+          payment_record_id?: string | null
+          rejection_reason?: string | null
+          sender_phone?: string | null
+          status?: string
+          student_uuid: string
+          trx_id?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          fee_assignment_ids?: string[]
+          id?: string
+          method?: string
+          note?: string | null
+          parent_account_id?: string
+          payment_record_id?: string | null
+          rejection_reason?: string | null
+          sender_phone?: string | null
+          status?: string
+          student_uuid?: string
+          trx_id?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_payment_requests_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "parent_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -7634,6 +7705,7 @@ export type Database = {
           father_occupation: string | null
           father_phone: string | null
           gender: string | null
+          guardian_nid: string | null
           guardian_phone: string | null
           id: string
           is_free: boolean | null
@@ -7680,6 +7752,7 @@ export type Database = {
           father_occupation?: string | null
           father_phone?: string | null
           gender?: string | null
+          guardian_nid?: string | null
           guardian_phone?: string | null
           id?: string
           is_free?: boolean | null
@@ -7726,6 +7799,7 @@ export type Database = {
           father_occupation?: string | null
           father_phone?: string | null
           gender?: string | null
+          guardian_nid?: string | null
           guardian_phone?: string | null
           id?: string
           is_free?: boolean | null
@@ -8826,6 +8900,20 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      match_students_for_parent: {
+        Args: { p_nid: string; p_phone: string }
+        Returns: {
+          match_reason: string
+          name_bn: string
+          name_en: string
+          student_id: string
+          student_uuid: string
+        }[]
+      }
+      refresh_parent_student_links: {
+        Args: { p_account_id: string }
+        Returns: string[]
       }
       reject_admission_test_merit: {
         Args: { p_reason: string; p_test_id: string }

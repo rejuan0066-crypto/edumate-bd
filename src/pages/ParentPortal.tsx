@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ interface ParentSession {
   fullName?: string;
   studentId: string;
   studentUuid: string;
+  studentUuids?: string[];
   loggedInAt: string;
 }
 
@@ -67,9 +69,11 @@ const ParentPortal = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupFullName, setSignupFullName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
+  const [signupNid, setSignupNid] = useState('');
   const [signupStudentId, setSignupStudentId] = useState('');
   const [signupDob, setSignupDob] = useState('');
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [matchPreview, setMatchPreview] = useState<Array<{ student_uuid: string; student_id: string; name_bn: string; name_en: string; match_reason: string }>>([]);
 
   // Dynamic signup field configuration
   const { data: signupFields = [] } = useQuery({
@@ -203,6 +207,7 @@ const ParentPortal = () => {
         fullName: acc.full_name,
         studentId: acc.student_id,
         studentUuid: acc.linked_student_uuid,
+        studentUuids: acc.linked_student_uuids || (acc.linked_student_uuid ? [acc.linked_student_uuid] : []),
         loggedInAt: new Date().toISOString(),
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
@@ -226,6 +231,7 @@ const ParentPortal = () => {
       email: signupEmail.trim(),
       phone: signupPhone.trim(),
       password: signupPassword,
+      nid: signupNid.trim(),
       student_id: signupStudentId.trim(),
       student_dob: signupDob,
     };
@@ -260,7 +266,16 @@ const ParentPortal = () => {
       }
     }
 
-    // Hard auth requirement: password >= 6 regardless of config min_length being lower
+    // Hard requirement: NID or phone must be present (linking)
+    if (!signupNid.trim() && !signupPhone.trim()) {
+      toast({
+        title: bn ? 'ত্রুটি' : 'Error',
+        description: bn ? 'NID অথবা ফোন নম্বর প্রদান করুন (ছাত্র লিঙ্কের জন্য)' : 'NID or phone required to link your child',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (signupPassword.length < 6) {
       toast({ title: 'Error', description: bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password must be at least 6 characters', variant: 'destructive' });
       return;
@@ -274,8 +289,9 @@ const ParentPortal = () => {
           password: signupPassword,
           full_name: signupFullName.trim(),
           phone: signupPhone.trim() || undefined,
-          student_id: signupStudentId.trim(),
-          student_dob: signupDob,
+          nid: signupNid.trim() || undefined,
+          student_id: signupStudentId.trim() || undefined,
+          student_dob: signupDob || undefined,
         },
       });
       if (error || !data?.success) {
@@ -286,7 +302,12 @@ const ParentPortal = () => {
         });
         return;
       }
-      // Open OTP dialog for email verification
+      toast({
+        title: bn ? '✅ সাইনআপ সফল' : '✅ Signup successful',
+        description: bn
+          ? `${data.matched_count || 1} জন ছাত্র লিঙ্ক হয়েছে। এখন ইমেইল ভেরিফাই করুন।`
+          : `${data.matched_count || 1} student(s) linked. Please verify email.`,
+      });
       setOtpDialogOpen(true);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -312,6 +333,8 @@ const ParentPortal = () => {
     setSignupPassword('');
     setSignupFullName('');
     setSignupPhone('');
+    setSignupNid('');
+    setMatchPreview([]);
     setSignupStudentId('');
     setSignupDob('');
     setMode('login');
@@ -434,6 +457,45 @@ const ParentPortal = () => {
                             className="rounded-xl h-11" />
                         </div>
                       )}
+                      <div className="space-y-2">
+                        <Label htmlFor="su-nid">
+                          {bn ? 'অভিভাবকের NID (পিতা/মাতা/অভিভাবক)' : "Parent's NID (father/mother/guardian)"} *
+                        </Label>
+                        <Input id="su-nid"
+                          placeholder={bn ? 'NID নম্বর দিন' : 'Enter NID number'}
+                          value={signupNid}
+                          onChange={(e) => setSignupNid(e.target.value.replace(/[^\d]/g, ''))}
+                          onBlur={async () => {
+                            if (!signupNid.trim() && !signupPhone.trim()) { setMatchPreview([]); return; }
+                            try {
+                              const { data } = await supabase.functions.invoke('parent-auth', {
+                                body: { action: 'preview_match', nid: signupNid.trim() || undefined, phone: signupPhone.trim() || undefined },
+                              });
+                              setMatchPreview(data?.matches || []);
+                            } catch { /* ignore */ }
+                          }}
+                          inputMode="numeric"
+                          className="rounded-xl h-11" />
+                        <p className="text-[11px] text-muted-foreground">
+                          {bn
+                            ? 'NID/ফোন দিয়ে আপনার সন্তানদের একাউন্টের সাথে স্বয়ংক্রিয়ভাবে যুক্ত করা হবে। ভবিষ্যতে নতুন ভর্তি হলে অটো যোগ হবে।'
+                            : 'NID/phone is used to auto-link your children. Future admissions will auto-attach.'}
+                        </p>
+                        {matchPreview.length > 0 && (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs">
+                            <p className="font-semibold text-emerald-700 mb-1">
+                              {bn ? `${matchPreview.length} জন ছাত্র পাওয়া গেছে:` : `${matchPreview.length} student(s) found:`}
+                            </p>
+                            <ul className="space-y-0.5">
+                              {matchPreview.map((m) => (
+                                <li key={m.student_uuid} className="text-emerald-800">
+                                  • {bn ? m.name_bn : (m.name_en || m.name_bn)} <span className="text-emerald-600">({m.student_id})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                       {isVisible('password') && (
                         <div className="space-y-2">
                           <Label htmlFor="su-pwd">
@@ -535,18 +597,42 @@ const ParentDashboard = ({
   onLogout: () => void;
   bn: boolean;
 }) => {
-  // Fetch student full info via edge function (service role bypass)
-  const { data: student } = useQuery({
-    queryKey: ['parent-student', session.studentUuid, session.accountId],
+  // Fetch all linked students (multi-student support)
+  const { data: linkedStudents = [] } = useQuery({
+    queryKey: ['parent-linked-students', session.accountId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('parent-student-info', {
-        body: { account_id: session.accountId, student_uuid: session.studentUuid },
+        body: { account_id: session.accountId, list: true },
+      });
+      if (error) throw error;
+      return (data?.students || []) as any[];
+    },
+    enabled: !!session.accountId,
+    staleTime: 30000,
+  });
+
+  // Active student state — defaults to session.studentUuid, falls back to first linked
+  const [activeUuid, setActiveUuid] = useState<string>(session.studentUuid);
+  useEffect(() => {
+    if (linkedStudents.length > 0 && !linkedStudents.some((s: any) => s.id === activeUuid)) {
+      setActiveUuid(linkedStudents[0].id);
+    }
+  }, [linkedStudents, activeUuid]);
+
+  // Fetch active student full info via edge function (service role bypass)
+  const { data: student } = useQuery({
+    queryKey: ['parent-student', activeUuid, session.accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('parent-student-info', {
+        body: { account_id: session.accountId, student_uuid: activeUuid },
       });
       if (error) throw error;
       return data?.student ?? null;
     },
-    enabled: !!session.studentUuid && !!session.accountId,
+    enabled: !!activeUuid && !!session.accountId,
   });
+
+  const activeStudentId = (linkedStudents.find((s: any) => s.id === activeUuid)?.student_id) || session.studentId;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -556,15 +642,37 @@ const ParentDashboard = ({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6"
       >
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold">
             {bn ? 'স্বাগতম, অভিভাবক' : 'Welcome, Parent'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {bn ? 'ছাত্র আইডি' : 'Student ID'}: <span className="font-semibold text-foreground">{session.studentId}</span>
+            {bn ? 'ছাত্র আইডি' : 'Student ID'}: <span className="font-semibold text-foreground">{activeStudentId}</span>
+            {linkedStudents.length > 1 && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-medium">
+                {bn ? `${linkedStudents.length} জন সন্তান` : `${linkedStudents.length} children`}
+              </span>
+            )}
           </p>
+          {linkedStudents.length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {linkedStudents.map((s: any) => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveUuid(s.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    activeUuid === s.id
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400'
+                  }`}
+                >
+                  {bn ? s.name_bn : (s.name_en || s.name_bn)} <span className="opacity-70">({s.student_id})</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <Button variant="outline" onClick={onLogout} className="rounded-xl">
+        <Button variant="outline" onClick={onLogout} className="rounded-xl shrink-0">
           <LogOut className="w-4 h-4 mr-2" />
           {bn ? 'লগআউট' : 'Logout'}
         </Button>
@@ -603,19 +711,19 @@ const ParentDashboard = ({
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileTab student={student} studentUuid={session.studentUuid} bn={bn} />
+          <ProfileTab student={student} studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="results">
-          <ResultsTab studentUuid={session.studentUuid} bn={bn} />
+          <ResultsTab studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="fees">
-          <FeesTab studentUuid={session.studentUuid} bn={bn} />
+          <FeesTab studentUuid={activeUuid} accountId={session.accountId!} bn={bn} />
         </TabsContent>
         <TabsContent value="routine">
           <RoutineTab student={student} bn={bn} />
         </TabsContent>
         <TabsContent value="library">
-          <LibraryTab studentUuid={session.studentUuid} bn={bn} />
+          <LibraryTab studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="messages">
           <MessagesTab session={session} bn={bn} />
@@ -823,7 +931,17 @@ const ResultsTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) =
 };
 
 // ===== Fees Tab =====
-const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
+const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountId: string; bn: boolean }) => {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [payOpen, setPayOpen] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payMethod, setPayMethod] = useState('bkash');
+  const [payTrxId, setPayTrxId] = useState('');
+  const [paySender, setPaySender] = useState('');
+  const [payNote, setPayNote] = useState('');
+  const [paySubmitting, setPaySubmitting] = useState(false);
+
   const { data: payments = [] } = useQuery({
     queryKey: ['parent-fees', studentUuid],
     queryFn: async () => {
@@ -835,6 +953,22 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
         .order('paid_at', { ascending: false, nullsFirst: false });
       return data || [];
     },
+  });
+
+  // Pending parent payment requests for this student
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ['parent-payment-requests', studentUuid, accountId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('parent_payment_requests')
+        .select('*')
+        .eq('parent_account_id', accountId)
+        .eq('student_uuid', studentUuid)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!accountId && !!studentUuid,
   });
 
   const totals = payments.reduce(
@@ -849,6 +983,77 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
     { total: 0, paid: 0, due: 0 },
   );
 
+  const handleGatewayPay = async () => {
+    const amt = Number(payAmount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'সঠিক পরিমাণ দিন' : 'Enter a valid amount', variant: 'destructive' });
+      return;
+    }
+    setPaySubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parent-pay-fee', {
+        body: {
+          action: 'initiate_gateway',
+          account_id: accountId,
+          student_uuid: studentUuid,
+          amount: amt,
+          return_url: window.location.href,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: bn ? 'গেটওয়ে ত্রুটি' : 'Gateway error', description: data?.error || error?.message, variant: 'destructive' });
+        return;
+      }
+      if (data?.payment_url || data?.redirect_url) {
+        window.location.href = data.payment_url || data.redirect_url;
+      } else {
+        toast({ title: bn ? 'রিকোয়েস্ট পাঠানো হয়েছে' : 'Request sent', description: JSON.stringify(data) });
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
+
+  const handleManualSubmit = async () => {
+    const amt = Number(payAmount);
+    if (!Number.isFinite(amt) || amt <= 0 || !payTrxId.trim()) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'পরিমাণ ও TrxID আবশ্যক' : 'Amount and TrxID required', variant: 'destructive' });
+      return;
+    }
+    setPaySubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parent-pay-fee', {
+        body: {
+          action: 'submit_manual',
+          account_id: accountId,
+          student_uuid: studentUuid,
+          amount: amt,
+          method: payMethod,
+          trx_id: payTrxId.trim(),
+          sender_phone: paySender.trim() || undefined,
+          note: payNote.trim() || undefined,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: bn ? 'ত্রুটি' : 'Error', description: data?.error || error?.message, variant: 'destructive' });
+        return;
+      }
+      toast({
+        title: bn ? '✅ রিকোয়েস্ট জমা হয়েছে' : '✅ Submitted',
+        description: bn ? 'অ্যাডমিন যাচাই করার পর পেমেন্ট রেকর্ড হবে।' : 'Admin will verify and record the payment.',
+      });
+      setPayOpen(false);
+      setPayAmount(''); setPayTrxId(''); setPaySender(''); setPayNote('');
+      qc.invalidateQueries({ queryKey: ['parent-payment-requests', studentUuid, accountId] });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -856,6 +1061,45 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
         <StatBox label={bn ? 'পরিশোধিত' : 'Paid'} value={`৳${totals.paid.toLocaleString()}`} color="green-600" />
         <StatBox label={bn ? 'বকেয়া' : 'Due'} value={`৳${totals.due.toLocaleString()}`} color="red-500" />
       </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => { setPayAmount(String(totals.due || '')); setPayOpen(true); }} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
+          <Wallet className="w-4 h-4 mr-2" />
+          {bn ? 'অনলাইনে ফি পরিশোধ করুন' : 'Pay Fee Online'}
+        </Button>
+      </div>
+
+      {pendingRequests.length > 0 && (
+        <Card className="rounded-[28px] border-0 shadow-lg border-l-4 border-l-amber-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              {bn ? 'যাচাইয়ের অপেক্ষায়' : 'Pending Verification'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingRequests.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between text-sm bg-amber-50 rounded-xl p-3">
+                  <div>
+                    <p className="font-medium">৳{Number(r.amount).toLocaleString()} • {r.method?.toUpperCase()} • TrxID: {r.trx_id}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    r.status === 'pending' ? 'bg-amber-200 text-amber-900' :
+                    r.status === 'verified' ? 'bg-emerald-200 text-emerald-900' :
+                    'bg-red-200 text-red-900'
+                  }`}>
+                    {r.status === 'pending' ? (bn ? 'অপেক্ষমাণ' : 'Pending') :
+                     r.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') :
+                     (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="rounded-[28px] border-0 shadow-lg">
         <CardHeader>
@@ -905,6 +1149,66 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="rounded-[28px] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'অনলাইনে ফি পরিশোধ' : 'Pay Fee Online'}</DialogTitle>
+            <DialogDescription>
+              {bn ? 'গেটওয়ে অথবা ম্যানুয়ালি TrxID জমা দিতে পারেন।' : 'Use online gateway or submit TrxID manually.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="gateway">
+            <TabsList className="grid grid-cols-2 w-full rounded-xl">
+              <TabsTrigger value="gateway" className="rounded-lg">{bn ? 'গেটওয়ে' : 'Gateway'}</TabsTrigger>
+              <TabsTrigger value="manual" className="rounded-lg">{bn ? 'ম্যানুয়াল' : 'Manual'}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="gateway" className="space-y-3 pt-3">
+              <div>
+                <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <Button onClick={handleGatewayPay} disabled={paySubmitting} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                {paySubmitting ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'গেটওয়েতে যান' : 'Proceed to Gateway')}
+              </Button>
+            </TabsContent>
+            <TabsContent value="manual" className="space-y-3 pt-3">
+              <div>
+                <Label>{bn ? 'পদ্ধতি' : 'Method'}</Label>
+                <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full rounded-xl border h-10 px-3 mt-1 bg-background">
+                  <option value="bkash">bKash</option>
+                  <option value="nagad">Nagad</option>
+                  <option value="rocket">Rocket</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+              <div>
+                <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'TrxID / রেফারেন্স' : 'TrxID / Reference'}</Label>
+                <Input value={payTrxId} onChange={(e) => setPayTrxId(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'প্রেরক ফোন (ঐচ্ছিক)' : 'Sender phone (optional)'}</Label>
+                <Input value={paySender} onChange={(e) => setPaySender(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'নোট (ঐচ্ছিক)' : 'Note (optional)'}</Label>
+                <Input value={payNote} onChange={(e) => setPayNote(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <Button onClick={handleManualSubmit} disabled={paySubmitting} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                {paySubmitting ? (bn ? 'জমা হচ্ছে...' : 'Submitting...') : (bn ? 'রিকোয়েস্ট জমা দিন' : 'Submit Request')}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {bn ? 'অ্যাডমিন TrxID যাচাই করার পর পেমেন্ট অফিসিয়ালি রেকর্ড হবে।' : 'After admin verification this becomes an official payment.'}
+              </p>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
