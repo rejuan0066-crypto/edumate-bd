@@ -1201,9 +1201,14 @@ export type Database = {
           assigned_to: string | null
           attachments: Json | null
           category: string
+          complainant_address: string | null
           complainant_email: string | null
           complainant_name: string | null
           complainant_phone: string | null
+          complainant_student_id: string | null
+          contact_verification_method: string | null
+          contact_verified: boolean
+          contact_verified_at: string | null
           created_at: string
           deleted_at: string | null
           description: string
@@ -1224,9 +1229,14 @@ export type Database = {
           assigned_to?: string | null
           attachments?: Json | null
           category?: string
+          complainant_address?: string | null
           complainant_email?: string | null
           complainant_name?: string | null
           complainant_phone?: string | null
+          complainant_student_id?: string | null
+          contact_verification_method?: string | null
+          contact_verified?: boolean
+          contact_verified_at?: string | null
           created_at?: string
           deleted_at?: string | null
           description: string
@@ -1247,9 +1257,14 @@ export type Database = {
           assigned_to?: string | null
           attachments?: Json | null
           category?: string
+          complainant_address?: string | null
           complainant_email?: string | null
           complainant_name?: string | null
           complainant_phone?: string | null
+          complainant_student_id?: string | null
+          contact_verification_method?: string | null
+          contact_verified?: boolean
+          contact_verified_at?: string | null
           created_at?: string
           deleted_at?: string | null
           description?: string
