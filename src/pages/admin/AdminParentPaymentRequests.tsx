@@ -121,7 +121,14 @@ const AdminParentPaymentRequests = () => {
                         <TableCell className="uppercase text-xs"><Badge variant="outline">{r.method}</Badge></TableCell>
                         <TableCell className="font-mono text-xs">{r.trx_id || '—'}</TableCell>
                         <TableCell className="text-xs">{r.sender_phone || '—'}</TableCell>
-                        <TableCell>{statusBadge(r.status)}</TableCell>
+                        <TableCell>
+                          {statusBadge(r.status)}
+                          {r.status === 'rejected' && r.rejection_reason && (
+                            <div className="mt-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2 py-1 max-w-[220px]">
+                              {r.rejection_reason}
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-1">
                             {r.status !== 'verified' && (
