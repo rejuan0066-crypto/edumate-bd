@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PublicLayout from '@/components/PublicLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -141,17 +142,25 @@ const ComplaintPage = () => {
                   ? 'কর্তৃপক্ষ শীঘ্রই আপনার অভিযোগ পর্যালোচনা করবে। ভবিষ্যৎ যোগাযোগের জন্য টিকিট নম্বরটি সংরক্ষণ করুন।'
                   : 'Authority will review your complaint shortly. Please save the ticket number for future reference.'}
               </p>
-              <Button
-                onClick={() => {
-                  setSubmitted(null);
-                  setForm(initialForm);
-                  setEmailVerified(false);
-                  setVerifiedEmail('');
-                }}
-                className="rounded-2xl"
-              >
-                {bn ? 'আরেকটি জমা দিন' : 'Submit Another'}
-              </Button>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button
+                  onClick={() => {
+                    setSubmitted(null);
+                    setForm(initialForm);
+                    setEmailVerified(false);
+                    setVerifiedEmail('');
+                  }}
+                  variant="outline"
+                  className="rounded-2xl"
+                >
+                  {bn ? 'আরেকটি জমা দিন' : 'Submit Another'}
+                </Button>
+                <Button asChild className="rounded-2xl">
+                  <Link to={`/complaints/track?ticket=${submitted.ticket}`}>
+                    {bn ? 'অভিযোগ ট্র্যাক করুন' : 'Track This Complaint'}
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -174,6 +183,13 @@ const ComplaintPage = () => {
               ? 'বেনামে অভিযোগ গ্রহণ করা হয় না। সঠিক পরিচয় ও যাচাইকৃত যোগাযোগ মাধ্যম দিয়ে অভিযোগ জমা দিন।'
               : 'Anonymous complaints are not accepted. Please provide a verified contact to submit a complaint.'}
           </p>
+          <div className="mt-4">
+            <Button asChild variant="outline" size="sm" className="rounded-full">
+              <Link to="/complaints/track">
+                {bn ? 'আগের অভিযোগ ট্র্যাক করুন' : 'Track an existing complaint'}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Card className="rounded-[38px] border-0 bg-card/80 backdrop-blur-xl shadow-2xl">
