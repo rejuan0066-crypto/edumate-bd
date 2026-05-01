@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
       if (accErr) return json({ error: accErr.message }, 500);
       if (!account) return json({ error: 'Invalid email or password' }, 401);
 
-      const valid = await bcrypt.compare(password, account.password_hash);
+      const valid = compareSync(password, account.password_hash);
       if (!valid) return json({ error: 'Invalid email or password' }, 401);
 
       if (!account.email_verified) {
