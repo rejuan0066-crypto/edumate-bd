@@ -27,6 +27,7 @@ import DonationPage from "./pages/DonationPage";
 import FeePaymentPage from "./pages/FeePaymentPage";
 import Login from "./pages/Login";
 import ParentPortal from "./pages/ParentPortal";
+import StudentPortal from "./pages/StudentPortal";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
 import AdminStaff from "./pages/admin/AdminStaff";
@@ -269,6 +270,7 @@ const App = () => (
                   <Route path="/staff-checkin" element={<StaffCheckin />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/parent" element={<ParentPortal />} />
+                  <Route path="/student-portal" element={<StudentPortal />} />
                   <Route path="/complaints" element={<ComplaintPage />} />
                   <Route path="/complaints/track" element={<ComplaintTrackPage />} />
 

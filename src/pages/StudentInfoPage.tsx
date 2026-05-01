@@ -132,20 +132,26 @@ const StudentInfoPage = () => {
               </h2>
               <p className="text-muted-foreground">
                 {bn
-                  ? 'শিক্ষার্থীর তথ্য দেখতে অনুগ্রহ করে অভিভাবক পোর্টালে লগইন করুন। অ্যাকাউন্ট না থাকলে নতুন একাউন্ট তৈরি করুন। শিক্ষক ও প্রশাসন তাদের অ্যাকাউন্ট দিয়ে লগইন করতে পারেন।'
-                  : 'Please log in to view student information. If you don\'t have an account yet, create one. Teachers and admins can use their accounts.'}
+                  ? 'শিক্ষার্থী নিজে অথবা অভিভাবক — যেকেউ লগইন করে শিক্ষার্থীর তথ্য দেখতে পারবেন। অ্যাকাউন্ট না থাকলে নিচ থেকে তৈরি করুন। শিক্ষক ও প্রশাসন তাদের অ্যাকাউন্ট দিয়ে লগইন করতে পারেন।'
+                  : 'A student or parent can log in to view student information. Create an account if you don\'t have one. Teachers and admins can use their accounts.'}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 flex-wrap">
                 <Button asChild className="rounded-full">
-                  <Link to="/parent-portal">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    {bn ? 'অভিভাবক লগইন' : 'Parent Login'}
+                  <Link to="/student-portal">
+                    <GraduationCap className="w-4 h-4 mr-2" />
+                    {bn ? 'ছাত্র লগইন' : 'Student Login'}
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" className="rounded-full">
-                  <Link to="/parent-portal?mode=signup">
+                  <Link to="/student-portal?mode=signup">
                     <UserPlus className="w-4 h-4 mr-2" />
-                    {bn ? 'একাউন্ট তৈরি করুন' : 'Create Account'}
+                    {bn ? 'ছাত্র একাউন্ট তৈরি' : 'Create Student Account'}
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="rounded-full">
+                  <Link to="/parent-portal">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {bn ? 'অভিভাবক লগইন' : 'Parent Login'}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="rounded-full">
@@ -157,8 +163,8 @@ const StudentInfoPage = () => {
               </div>
               <p className="text-xs text-muted-foreground pt-2">
                 {bn
-                  ? 'একাউন্ট তৈরি করতে শিক্ষার্থীর রেজিস্ট্রেশন/আইডি ও জন্ম তারিখ প্রয়োজন।'
-                  : 'You will need the student\'s registration/ID number and date of birth to create an account.'}
+                  ? 'একাউন্ট তৈরি করতে শিক্ষার্থীর আইডি ও জন্ম তারিখ প্রয়োজন। প্রতি আইডিতে শুধু একটি একাউন্ট খোলা যাবে।'
+                  : 'You need the Student ID and date of birth. Only one account per Student ID.'}
               </p>
             </CardContent>
           </Card>
