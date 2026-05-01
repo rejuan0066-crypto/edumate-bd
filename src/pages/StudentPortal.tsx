@@ -104,6 +104,7 @@ const StudentPortal = () => {
       };
       persistSession(s);
       toast({ title: bn ? 'লগইন সফল' : 'Login successful' });
+      navigate('/student-info');
     } catch (err: any) {
       toast({ title: bn ? 'লগইন ব্যর্থ' : 'Login failed', description: err.message, variant: 'destructive' });
     } finally {

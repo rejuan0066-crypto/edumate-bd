@@ -17,10 +17,20 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
+const STUDENT_STORAGE_KEY = 'student_portal_session';
 
 interface ParentSession {
   accountId?: string;
   email?: string;
+  fullName?: string;
+  studentId: string;
+  studentUuid: string;
+  loggedInAt: string;
+}
+
+interface StudentSession {
+  accountId?: string;
+  contact?: string;
   fullName?: string;
   studentId: string;
   studentUuid: string;
@@ -35,6 +45,7 @@ const StudentInfoPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [parentSession, setParentSession] = useState<ParentSession | null>(null);
+  const [studentSession, setStudentSession] = useState<StudentSession | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -42,15 +53,15 @@ const StudentInfoPage = () => {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
-  // Load parent portal session
+  // Load portal sessions
   useEffect(() => {
-    const raw = sessionStorage.getItem(PARENT_STORAGE_KEY);
-    if (raw) {
-      try {
-        setParentSession(JSON.parse(raw));
-      } catch {
-        sessionStorage.removeItem(PARENT_STORAGE_KEY);
-      }
+    const rawP = sessionStorage.getItem(PARENT_STORAGE_KEY);
+    if (rawP) {
+      try { setParentSession(JSON.parse(rawP)); } catch { sessionStorage.removeItem(PARENT_STORAGE_KEY); }
+    }
+    const rawS = sessionStorage.getItem(STUDENT_STORAGE_KEY);
+    if (rawS) {
+      try { setStudentSession(JSON.parse(rawS)); } catch { sessionStorage.removeItem(STUDENT_STORAGE_KEY); }
     }
   }, []);
 
@@ -60,8 +71,16 @@ const StudentInfoPage = () => {
     [user, role]
   );
   const isAdmin = role === 'admin' || role === 'super_admin';
-  const isParent = !!parentSession?.studentUuid;
-  const isLoggedIn = isStaff || isParent;
+  const isStudent = !!studentSession?.studentUuid;
+  const isParent = !!parentSession?.studentUuid && !isStudent; // student session takes precedence
+  const isLoggedIn = isStaff || isParent || isStudent;
+
+  const handleStudentLogout = () => {
+    sessionStorage.removeItem(STUDENT_STORAGE_KEY);
+    sessionStorage.removeItem(PARENT_STORAGE_KEY);
+    setStudentSession(null);
+    window.location.href = '/student-portal';
+  };
 
   const openEdit = (s: any) => {
     // Empty strings allowed → admin can clear any optional field. Only name_bn (NOT NULL) is required.
@@ -132,12 +151,14 @@ const StudentInfoPage = () => {
     }
   };
 
-  // Auto-select for parent
+  // Auto-select student's own profile (student session takes precedence over parent)
   useEffect(() => {
-    if (isParent && parentSession?.studentUuid && !selectedStudentId) {
+    if (isStudent && studentSession?.studentUuid) {
+      setSelectedStudentId(studentSession.studentUuid);
+    } else if (isParent && parentSession?.studentUuid && !selectedStudentId) {
       setSelectedStudentId(parentSession.studentUuid);
     }
-  }, [isParent, parentSession, selectedStudentId]);
+  }, [isStudent, studentSession, isParent, parentSession, selectedStudentId]);
 
   // Staff search
   const { data: searchResults = [], isFetching: searching } = useQuery({
@@ -259,15 +280,25 @@ const StudentInfoPage = () => {
           <h1 className="text-3xl font-display font-bold text-foreground">
             {bn ? 'শিক্ষার্থী তথ্য' : 'Student Info'}
           </h1>
-          <Badge variant="outline" className="rounded-full px-3 py-1">
-            {isStaff
-              ? bn ? `স্টাফ (${role})` : `Staff (${role})`
-              : bn ? 'অভিভাবক' : 'Parent'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="rounded-full px-3 py-1">
+              {isStaff
+                ? bn ? `স্টাফ (${role})` : `Staff (${role})`
+                : isStudent
+                  ? bn ? 'শিক্ষার্থী' : 'Student'
+                  : bn ? 'অভিভাবক' : 'Parent'}
+            </Badge>
+            {isStudent && (
+              <Button onClick={handleStudentLogout} size="sm" variant="outline" className="rounded-full">
+                <LogIn className="w-4 h-4 mr-1 rotate-180" />
+                {bn ? 'লগআউট' : 'Logout'}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Staff search */}
-        {isStaff && (
+        {/* Staff search — only for staff, never for students/parents */}
+        {isStaff && !isStudent && (
           <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60 mb-6">
             <CardContent className="p-6">
               <form onSubmit={handleSearch} className="flex gap-3">
@@ -325,8 +356,17 @@ const StudentInfoPage = () => {
           </Card>
         )}
 
+        {/* Student: chip showing self */}
+        {isStudent && studentSession && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {bn
+              ? `শিক্ষার্থী: ${studentSession.fullName || ''} • আইডি: ${studentSession.studentId}`
+              : `Student: ${studentSession.fullName || ''} • ID: ${studentSession.studentId}`}
+          </p>
+        )}
+
         {/* Parent: small chip showing own student */}
-        {isParent && !isStaff && parentSession && (
+        {isParent && !isStaff && !isStudent && parentSession && (
           <p className="text-sm text-muted-foreground mb-4">
             {bn
               ? `অভিভাবক: ${parentSession.fullName || parentSession.email || ''} • শিক্ষার্থী আইডি: ${parentSession.studentId}`
