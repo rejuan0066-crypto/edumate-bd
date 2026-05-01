@@ -66,6 +66,18 @@ const AdmissionTestMerit = () => {
             <XCircle className="w-12 h-12 text-destructive mx-auto mb-3" />
             <p className="text-foreground">{bn ? 'পরীক্ষা পাওয়া যায়নি' : 'Test not found'}</p>
           </Card>
+        ) : !meritApproved ? (
+          <Card className="p-16 rounded-[28px] text-center max-w-2xl mx-auto">
+            <Trophy className="w-20 h-20 text-amber-500/40 mx-auto mb-4" />
+            <h2 className="text-xl font-display font-semibold text-foreground mb-2">
+              {bn ? 'মেধা তালিকা প্রকাশের অপেক্ষায়' : 'Merit list awaiting approval'}
+            </h2>
+            <p className="text-muted-foreground">
+              {bn
+                ? 'প্রশাসনের অনুমোদনের পর মেধা তালিকা প্রকাশ করা হবে। অনুগ্রহ করে পরে আবার দেখুন।'
+                : 'The merit list will be published after admin approval. Please check back later.'}
+            </p>
+          </Card>
         ) : attempts.length === 0 ? (
           <Card className="p-16 rounded-[28px] text-center max-w-2xl mx-auto">
             <Users className="w-20 h-20 text-muted-foreground/30 mx-auto mb-4" />
