@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === 'signup') {
-      const { email, password, full_name, phone, nid, student_id, student_dob } = body;
+      const { email, password, full_name, phone, nid, student_id, student_dob, confirmed_student_uuids } = body;
       if (!email || !password || !full_name) {
         return json({ error: 'Missing required fields' }, 400);
       }
