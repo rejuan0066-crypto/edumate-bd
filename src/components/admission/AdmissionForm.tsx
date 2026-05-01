@@ -596,22 +596,24 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
       }
     }
 
-    // Validation manager rules — map form keys to validation rule field names
-    const vmForm: Record<string, any> = {
-      ...form,
-      name_bn: form.first_name, // bangla name stored as first_name
-      name_en: form.last_name,
-      phone: form.father_phone || form.mother_phone || form.guardian_phone, // at least one phone
-    };
-    const vmErrors = validateAll(vmForm);
-    console.log('[AdmissionForm] vmErrors:', vmErrors);
-    // Skip vm errors for fields already validated above with custom logic
-    const skipVmKeys = ['father_phone', 'mother_phone', 'father_nid', 'mother_nid', 'guardian_nid', 'birth_reg_no'];
-    Object.entries(vmErrors).forEach(([key, msg]) => {
-      if (!skipVmKeys.includes(key) && !errors[key]) {
-        errors[key] = msg;
-      }
-    });
+    // Validation manager rules — skip entirely in edit mode (admin update)
+    if (!isEditMode) {
+      const vmForm: Record<string, any> = {
+        ...form,
+        name_bn: form.first_name, // bangla name stored as first_name
+        name_en: form.last_name,
+        phone: form.father_phone || form.mother_phone || form.guardian_phone, // at least one phone
+      };
+      const vmErrors = validateAll(vmForm);
+      console.log('[AdmissionForm] vmErrors:', vmErrors);
+      // Skip vm errors for fields already validated above with custom logic
+      const skipVmKeys = ['father_phone', 'mother_phone', 'father_nid', 'mother_nid', 'guardian_nid', 'birth_reg_no'];
+      Object.entries(vmErrors).forEach(([key, msg]) => {
+        if (!skipVmKeys.includes(key) && !errors[key]) {
+          errors[key] = msg;
+        }
+      });
+    }
     console.log('[AdmissionForm] final errors:', errors);
 
     if (Object.keys(errors).length > 0) {
