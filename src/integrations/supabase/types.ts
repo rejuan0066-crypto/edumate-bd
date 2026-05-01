@@ -7425,6 +7425,54 @@ export type Database = {
           },
         ]
       }
+      student_accounts: {
+        Row: {
+          contact: string
+          contact_type: string
+          contact_verified: boolean
+          created_at: string
+          full_name: string
+          id: string
+          last_login_at: string | null
+          linked_student_uuid: string
+          password_hash: string
+          status: string
+          student_dob: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact: string
+          contact_type: string
+          contact_verified?: boolean
+          created_at?: string
+          full_name: string
+          id?: string
+          last_login_at?: string | null
+          linked_student_uuid: string
+          password_hash: string
+          status?: string
+          student_dob: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact?: string
+          contact_type?: string
+          contact_verified?: boolean
+          created_at?: string
+          full_name?: string
+          id?: string
+          last_login_at?: string | null
+          linked_student_uuid?: string
+          password_hash?: string
+          status?: string
+          student_dob?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_categories: {
         Row: {
           created_at: string | null
