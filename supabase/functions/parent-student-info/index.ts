@@ -1,4 +1,7 @@
-// Returns student profile + attendance for parent portal (service role bypass)
+// Returns student profile(s) for parent portal (service role bypass)
+// Supports two modes:
+//   - { account_id, student_uuid } -> returns single student detail
+//   - { account_id, list: true }   -> returns list of all linked students (lite info)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -11,29 +14,56 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 );
 
+function jsonResp(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
-    const { account_id, student_uuid } = await req.json();
-    if (!account_id || !student_uuid) {
-      return new Response(JSON.stringify({ error: 'Missing params' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { account_id, student_uuid, list } = await req.json();
+    if (!account_id) return jsonResp({ error: 'Missing account_id' }, 400);
 
-    // Verify the parent account is approved and linked to this student
+    // Verify the parent account is approved
     const { data: acc } = await supabase
       .from('parent_accounts')
-      .select('id, status, linked_student_uuid')
+      .select('id, status, linked_student_uuid, linked_student_uuids, nid, phone')
       .eq('id', account_id)
       .maybeSingle();
 
-    if (!acc || acc.status !== 'approved' || acc.linked_student_uuid !== student_uuid) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!acc || acc.status !== 'approved') {
+      return jsonResp({ error: 'Unauthorized' }, 403);
+    }
+
+    // Live refresh links so newly admitted students appear immediately
+    let allowed: string[] = [];
+    try {
+      const { data: refreshed } = await supabase.rpc('refresh_parent_student_links', {
+        p_account_id: account_id,
       });
+      allowed = (refreshed as string[]) || [];
+    } catch {
+      allowed = (acc.linked_student_uuids as string[]) || (acc.linked_student_uuid ? [acc.linked_student_uuid] : []);
+    }
+    if (allowed.length === 0 && acc.linked_student_uuid) allowed = [acc.linked_student_uuid];
+
+    if (list) {
+      if (allowed.length === 0) return jsonResp({ students: [] });
+      const { data: students, error } = await supabase
+        .from('students')
+        .select('id, student_id, name_bn, name_en, photo_url, classes(name, name_bn), academic_sessions(name, name_bn)')
+        .in('id', allowed)
+        .is('deleted_at', null);
+      if (error) return jsonResp({ error: error.message }, 500);
+      return jsonResp({ students: students || [] });
+    }
+
+    if (!student_uuid) return jsonResp({ error: 'Missing student_uuid' }, 400);
+    if (!allowed.includes(student_uuid)) {
+      return jsonResp({ error: 'Unauthorized for this student' }, 403);
     }
 
     const { data: student, error: sErr } = await supabase
@@ -42,20 +72,9 @@ Deno.serve(async (req) => {
       .eq('id', student_uuid)
       .maybeSingle();
 
-    if (sErr) {
-      return new Response(JSON.stringify({ error: sErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    return new Response(JSON.stringify({ student }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    if (sErr) return jsonResp({ error: sErr.message }, 500);
+    return jsonResp({ student, linked_count: allowed.length });
   } catch (err) {
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResp({ error: (err as Error).message }, 500);
   }
 });
