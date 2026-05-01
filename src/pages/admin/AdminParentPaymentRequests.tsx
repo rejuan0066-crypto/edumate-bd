@@ -167,6 +167,23 @@ const AdminParentPaymentRequests = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={!!historyId} onOpenChange={(o) => !o && setHistoryId(null)}>
+          <DialogContent className="rounded-[28px] max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-4 h-4 text-emerald-600" />
+                {bn ? 'স্ট্যাটাস টাইমলাইন' : 'Status Timeline'}
+              </DialogTitle>
+            </DialogHeader>
+            {historyId && (
+              <ReceiptStatusTimeline
+                sourceTable="parent_payment_requests"
+                sourceId={historyId}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
