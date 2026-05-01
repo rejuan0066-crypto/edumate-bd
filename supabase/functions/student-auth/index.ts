@@ -42,7 +42,16 @@ interface ResetPasswordBody {
   code: string;          // OTP previously sent with purpose=password_reset
   new_password: string;
 }
-type Body = SignupBody | LoginBody | MarkVerifiedBody | CheckAccountBody | ResetPasswordBody;
+interface NotifyApprovedBody {
+  action: 'notify_approved';
+  account_id: string;
+}
+interface NotifyRejectedBody {
+  action: 'notify_rejected';
+  account_id: string;
+  reason?: string;
+}
+type Body = SignupBody | LoginBody | MarkVerifiedBody | CheckAccountBody | ResetPasswordBody | NotifyApprovedBody | NotifyRejectedBody;
 
 const normalizeDob = (v: string | null | undefined): string => {
   if (!v) return '';
