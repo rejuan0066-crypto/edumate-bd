@@ -1380,6 +1380,10 @@ const AdminSettings = () => {
           <TabsContent value="timezone" className="mt-6">
             <TimezoneSettings />
           </TabsContent>
+
+          <TabsContent value="receipt_qr" className="mt-6">
+            <ReceiptQrSettings />
+          </TabsContent>
         </Tabs>
       </div>
 
