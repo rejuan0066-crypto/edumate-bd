@@ -7,9 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
