@@ -25,6 +25,24 @@ export function buildVerifyUrl(token: string): string {
   return `${origin}/verify-receipt/${token}`;
 }
 
+/**
+ * Validate a QR token via the backend edge endpoint.
+ * Returns the same shape as verify_receipt_public / verify_receipt_admin.
+ * Use mode='admin' from authenticated admin pages to get full details.
+ */
+export async function verifyReceiptToken(
+  token: string,
+  mode: 'public' | 'admin' = 'public',
+): Promise<any> {
+  const { data, error } = await supabase.functions.invoke('verify-receipt-token', {
+    body: { token, mode },
+  });
+  if (error) {
+    return { valid: false, error: error.message || 'NETWORK_ERROR' };
+  }
+  return data;
+}
+
 /** Generate a QR code data URL (PNG) for a verification link. */
 export async function generateReceiptQrDataUrl(
   receiptType: ReceiptType,
