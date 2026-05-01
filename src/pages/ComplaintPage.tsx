@@ -60,40 +60,7 @@ const ComplaintPage = () => {
     return null;
   };
 
-  const handleVerifyClick = () => {
-    const err = validateRequired();
-    if (err) {
-      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
-      return;
-    }
-    setOtpOpen(true);
-  };
-
-  const handleOtpVerified = () => {
-    setEmailVerified(true);
-    setVerifiedEmail(form.complainant_email.trim());
-    setOtpOpen(false);
-    toast({
-      title: bn ? 'ইমেইল ভেরিফাই হয়েছে' : 'Email Verified',
-      description: bn ? 'এখন অভিযোগ জমা দিন' : 'You can now submit the complaint',
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const err = validateRequired();
-    if (err) {
-      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
-      return;
-    }
-    if (!emailVerified) {
-      toast({
-        title: bn ? 'যাচাই প্রয়োজন' : 'Verification Required',
-        description: bn ? 'অভিযোগ জমা দিতে ইমেইল ভেরিফাই করুন' : 'Please verify your email before submitting',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const submitComplaint = async () => {
     setSubmitting(true);
     try {
       const payload = {
@@ -126,6 +93,28 @@ const ComplaintPage = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOtpVerified = async () => {
+    setEmailVerified(true);
+    setVerifiedEmail(form.complainant_email.trim());
+    setOtpOpen(false);
+    await submitComplaint();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = validateRequired();
+    if (err) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
+      return;
+    }
+    // If email already verified (and unchanged), submit directly. Otherwise open OTP dialog.
+    if (emailVerified && verifiedEmail.toLowerCase() === form.complainant_email.trim().toLowerCase()) {
+      await submitComplaint();
+    } else {
+      setOtpOpen(true);
     }
   };
 
@@ -202,15 +191,10 @@ const ComplaintPage = () => {
                   <p className="text-sm font-semibold">
                     {bn ? 'পরিচয় ও যোগাযোগ (আবশ্যক)' : 'Identity & Contact (Required)'}
                   </p>
-                  {emailVerified ? (
+                  {emailVerified && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-500/10 px-3 py-1 rounded-full">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       {bn ? 'ইমেইল ভেরিফাইড' : 'Email Verified'}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      {bn ? 'যাচাই বাকি' : 'Not Verified'}
                     </span>
                   )}
                 </div>
@@ -269,18 +253,6 @@ const ComplaintPage = () => {
                     />
                   </div>
                 </div>
-
-                {!emailVerified && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleVerifyClick}
-                    className="w-full rounded-xl"
-                  >
-                    <ShieldCheck className="w-4 h-4 mr-2" />
-                    {bn ? 'ইমেইল OTP দিয়ে ভেরিফাই করুন' : 'Verify Email via OTP'}
-                  </Button>
-                )}
               </div>
 
               {/* Category & priority */}
@@ -337,13 +309,11 @@ const ComplaintPage = () => {
 
               <Button
                 type="submit"
-                disabled={submitting || !emailVerified}
+                disabled={submitting}
                 className="w-full h-12 rounded-2xl text-base"
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{bn ? 'জমা হচ্ছে...' : 'Submitting...'}</>
-                ) : !emailVerified ? (
-                  bn ? 'প্রথমে ইমেইল ভেরিফাই করুন' : 'Verify email first'
                 ) : (
                   bn ? 'অভিযোগ জমা দিন' : 'Submit Complaint'
                 )}
