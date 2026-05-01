@@ -1,0 +1,44 @@
+{
+  "lint": {
+    "include": ["./"],
+    "exclude": ["**/node_modules/**", "**/dist/**"],
+    "rules": {
+      "tags": ["recommended"],
+      "include": [
+        "no-await-in-loop",
+        "no-console",
+        "no-eval",
+        "no-external-import",
+        "no-throw-literal",
+        "no-self-compare",
+        "no-sparse-arrays",
+        "no-sync-fn-in-async-fn",
+        "no-top-level-await",
+        "eqeqeq",
+        "default-param-last",
+        "explicit-function-return-type",
+        "guard-for-in",
+        "no-implicit-declare-namespace-export",
+        "no-non-null-asserted-optional-chain",
+        "no-non-null-assertion",
+        "single-var-declarator",
+        "triple-slash-reference"
+      ],
+      "exclude": [
+        "no-explicit-any",
+        "require-await",
+        "no-unused-vars"
+      ]
+    }
+  },
+  "fmt": {
+    "include": ["./"],
+    "exclude": ["**/node_modules/**", "**/dist/**"],
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": false,
+    "proseWrap": "preserve"
+  }
+}

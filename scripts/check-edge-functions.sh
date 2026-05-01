@@ -50,6 +50,36 @@ FAIL=()
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
+DENO_CFG="$FN_DIR/deno.json"
+CFG_ARGS=()
+if [ -f "$DENO_CFG" ]; then
+  CFG_ARGS=(--config "$DENO_CFG")
+fi
+
+# Repo-wide lint + fmt gate (runs once, not per-function) — enforces the
+# Edge Functions rule set defined in supabase/functions/deno.json.
+echo "── repo-wide lint + fmt ──────────────────────"
+GATE_OK=1
+gate_log1="$TMP/_lint.log"
+gate_log2="$TMP/_fmt.log"
+
+if deno lint "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log1" 2>&1; then
+  echo "  ✓ deno lint (Edge Functions rule set)"
+else
+  echo "  ✗ deno lint"
+  sed 's/^/      /' "$gate_log1"
+  GATE_OK=0
+fi
+
+if deno fmt --check "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log2" 2>&1; then
+  echo "  ✓ deno fmt --check"
+else
+  echo "  ✗ deno fmt --check (run: deno fmt --config $DENO_CFG $FN_DIR)"
+  sed 's/^/      /' "$gate_log2"
+  GATE_OK=0
+fi
+echo
+
 run_step() {
   # run_step <label> <logfile> -- <cmd...>
   local label="$1"; shift
@@ -95,6 +125,12 @@ echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
 if [ "${#FAIL[@]}" -gt 0 ]; then
   printf '  - %s\n' "${FAIL[@]}"
+fi
+if [ "$GATE_OK" -ne 1 ]; then
+  echo "Lint/fmt gate failed. ❌"
   exit 1
 fi
-echo "All edge functions parse, type-check, and bundle cleanly. ✅"
+if [ "${#FAIL[@]}" -gt 0 ]; then
+  exit 1
+fi
+echo "All edge functions lint, format, type-check, and bundle cleanly. ✅"
