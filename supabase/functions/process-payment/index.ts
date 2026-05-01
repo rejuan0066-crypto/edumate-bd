@@ -259,6 +259,19 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Record pending payments row so webhook + DB triggers can reconcile later.
+      await supabase.from("payments").insert({
+        student_id: student_id || null,
+        fee_type: fee_type_id || "fee",
+        amount,
+        transaction_id: transactionId,
+        status: "pending",
+        payment_method: config.provider,
+        fee_assignment_ids: fee_assignment_ids || [],
+        parent_account_id: parent_account_id || null,
+        source: source || "gateway",
+      });
+
       return new Response(
         JSON.stringify({
           success: true,
