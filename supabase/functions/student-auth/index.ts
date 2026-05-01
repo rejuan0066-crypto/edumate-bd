@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
           student_dob: inputDob,
           linked_student_uuid: student.id,
           contact_verified: false,
-          status: 'active',
+          status: 'pending',
         })
         .select('id, contact, contact_type')
         .single();
