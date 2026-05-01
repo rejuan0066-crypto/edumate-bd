@@ -1,0 +1,62 @@
+name: Edge Functions Check
+
+on:
+  push:
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/edge-functions-check.yml'
+  pull_request:
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/edge-functions-check.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    name: Parse & Lint Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Discover edge functions
+        id: discover
+        run: |
+          set -euo pipefail
+          mapfile -t FUNCS < <(find supabase/functions -mindepth 2 -maxdepth 2 -name 'index.ts' | sort)
+          if [ "${#FUNCS[@]}" -eq 0 ]; then
+            echo "No edge functions found."
+            exit 0
+          fi
+          printf '%s\n' "${FUNCS[@]}"
+          {
+            echo "files<<EOF"
+            printf '%s\n' "${FUNCS[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Lint (catches unclosed blocks, parse errors)
+        run: |
+          set -euo pipefail
+          # `deno lint` fails on syntax/parse errors such as unclosed braces,
+          # which is exactly the class of bug we want to block before deploy.
+          deno lint supabase/functions
+
+      - name: Type check each function
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            echo "::group::deno check $f"
+            if ! deno check --no-lock --quiet "$f"; then
+              status=1
+            fi
+            echo "::endgroup::"
+          done <<< "${{ steps.discover.outputs.files }}"
+          exit $status
