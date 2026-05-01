@@ -55,6 +55,16 @@ const StudentInfoPage = () => {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
+  // Inline student signup state
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [signupBusy, setSignupBusy] = useState(false);
+  const [suName, setSuName] = useState('');
+  const [suStudentId, setSuStudentId] = useState('');
+  const [suDob, setSuDob] = useState('');
+  const [suEmail, setSuEmail] = useState('');
+  const [suPassword, setSuPassword] = useState('');
+  const [otpOpen, setOtpOpen] = useState(false);
+
   // Load portal sessions
   useEffect(() => {
     const rawP = sessionStorage.getItem(PARENT_STORAGE_KEY);
