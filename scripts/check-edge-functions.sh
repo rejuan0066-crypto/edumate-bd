@@ -58,42 +58,57 @@ fi
 
 # Repo-wide lint + fmt gate (runs once, not per-function) — enforces the
 # Edge Functions rule set defined in supabase/functions/deno.json.
+# Wrapped in `timeout` below (see STEP_TIMEOUT) so a hung lint/fmt fails fast.
 echo "── repo-wide lint + fmt ──────────────────────"
 GATE_OK=1
 gate_log1="$TMP/_lint.log"
 gate_log2="$TMP/_fmt.log"
 
-if deno lint "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log1" 2>&1; then
-  echo "  ✓ deno lint (Edge Functions rule set)"
-else
-  echo "  ✗ deno lint"
-  sed 's/^/      /' "$gate_log1"
-  GATE_OK=0
-fi
+# NOTE: the timeout wrapper is applied after STEP_TIMEOUT is defined below,
+# via a small helper. We forward-declare GATE_OK here and run the gate after
+# the helper is in scope.
 
-if deno fmt --check "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log2" 2>&1; then
-  echo "  ✓ deno fmt --check"
-else
-  echo "  ✗ deno fmt --check (run: deno fmt --config $DENO_CFG $FN_DIR)"
-  sed 's/^/      /' "$gate_log2"
-  GATE_OK=0
+# Per-step timeouts (seconds). Override via env to tune in CI.
+#   STEP_TIMEOUT       — wall-clock budget per individual step
+#   STEP_KILL_AFTER    — extra grace before SIGKILL after SIGTERM
+STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
+STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
+
+if ! command -v timeout >/dev/null 2>&1; then
+  echo "❌ 'timeout' (coreutils) is required for per-step timeouts." >&2
+  exit 127
 fi
-echo
 
 run_step() {
   # run_step <label> <logfile> -- <cmd...>
   local label="$1"; shift
   local logfile="$1"; shift
   shift # discard "--"
-  if "$@" >"$logfile" 2>&1; then
+  local rc=0
+  timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
+    >"$logfile" 2>&1 || rc=$?
+  if [ "$rc" -eq 0 ]; then
     echo "  ✓ $label"
     return 0
-  else
-    echo "  ✗ $label"
-    sed 's/^/      /' "$logfile"
-    return 1
   fi
+  # `timeout` exits 124 on SIGTERM expiry, 137 when it had to SIGKILL.
+  if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
+    echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
+    echo "      hangs (network fetches at import time, infinite loops, etc.)"
+  else
+    echo "  ✗ $label (exit $rc)"
+  fi
+  sed 's/^/      /' "$logfile"
+  return 1
 }
+
+# Run the lint/fmt gate now that run_step (with timeouts) is defined.
+run_step "deno lint (Edge Functions rule set)" "$gate_log1" -- \
+  deno lint "${CFG_ARGS[@]}" "$FN_DIR" || GATE_OK=0
+run_step "deno fmt --check" "$gate_log2" -- \
+  deno fmt --check "${CFG_ARGS[@]}" "$FN_DIR" || GATE_OK=0
+echo
 
 for f in "${TARGETS[@]}"; do
   name="$(basename "$(dirname "$f")")"
