@@ -92,23 +92,28 @@ run_step() {
   local logfile="$1"; shift
   shift # discard "--"
   local rc=0
+  local started; started="$(date +%s)"
   timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
     >"$logfile" 2>&1 || rc=$?
+  local dur=$(( $(date +%s) - started ))
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label"
+    echo "  ✓ $label (${dur}s)"
     return 0
   fi
-  # `timeout` exits 124 on SIGTERM expiry, 137 when it had to SIGKILL.
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
     echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
     echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
     echo "      hangs (network fetches at import time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc)"
+    echo "  ✗ $label (exit $rc, ${dur}s)"
   fi
   sed 's/^/      /' "$logfile"
   return 1
 }
+
+STEP_RESULTS=()
+LAST_FN="_gate"
 
 # Run the lint/fmt gate now that run_step (with timeouts) is defined.
 run_step "deno lint (Edge Functions rule set)" "$gate_log1" -- \
