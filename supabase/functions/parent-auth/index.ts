@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         return json({ error: 'An account with this email already exists', status: existing.status }, 409);
       }
 
-      const password_hash = await bcrypt.hash(password);
+      const password_hash = hashSync(password);
 
       const { data: created, error: insErr } = await supabase
         .from('parent_accounts')
