@@ -159,7 +159,7 @@ const DonationPage = () => {
           fee_type: 'donation',
           payer_name: form.name,
           payer_phone: form.phone,
-          payer_nid: form.nid || null,
+          payer_email: form.email || null,
           transaction_id: txId,
           purpose: purposeLabel,
           callback_url: window.location.origin + '/donation?status=success',
@@ -171,7 +171,7 @@ const DonationPage = () => {
       await supabase.from('donors').insert({
         name_bn: form.name,
         phone: form.phone || null,
-        nid: form.nid || null,
+        email: form.email || null,
         donation_amount: amountNum,
         donation_type: bn ? 'অনলাইন' : 'Online',
         purpose: purposeLabel,
@@ -216,7 +216,7 @@ const DonationPage = () => {
         .insert({
           name_bn: form.name,
           phone: form.phone || null,
-          nid: form.nid || null,
+          email: form.email || null,
           sender_number: senderNumber.trim(),
           donation_amount: amountNum,
           donation_type: manualMethod,
@@ -308,7 +308,7 @@ const DonationPage = () => {
     setIsDone(false);
     setResult(null);
     setStep(1);
-    setForm({ name: '', phone: '', nid: '', purposeKey: '', purposeOther: '', amount: '' });
+    setForm({ name: '', phone: '', email: '', purposeKey: '', purposeOther: '', amount: '' });
     setPayMode('');
     setManualMethod('');
     setManualTrxId('');
@@ -467,13 +467,15 @@ const DonationPage = () => {
               </div>
               <div className="sm:col-span-2">
                 <Label className="text-sm">
-                  {bn ? 'এনআইডি (ঐচ্ছিক)' : 'NID (Optional)'}
+                  {bn ? 'ইমেইল (ঐচ্ছিক)' : 'Email (Optional)'}
                 </Label>
                 <Input
                   className="bg-background mt-1"
-                  value={form.nid}
-                  onChange={(e) => updateField('nid', toEnDigits(e.target.value))}
-                  maxLength={20}
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => updateField('email', e.target.value)}
+                  placeholder="example@email.com"
+                  maxLength={255}
                 />
               </div>
               <div className="sm:col-span-2">
