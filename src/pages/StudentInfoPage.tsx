@@ -10,11 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save } from 'lucide-react';
+import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save, Mail, Lock, IdCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
 const STUDENT_STORAGE_KEY = 'student_portal_session';
