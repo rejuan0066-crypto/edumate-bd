@@ -535,17 +535,17 @@ const ParentDashboard = ({
   onLogout: () => void;
   bn: boolean;
 }) => {
-  // Fetch student full info
+  // Fetch student full info via edge function (service role bypass)
   const { data: student } = useQuery({
-    queryKey: ['parent-student', session.studentUuid],
+    queryKey: ['parent-student', session.studentUuid, session.accountId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('students')
-        .select('*, classes(name, name_bn), academic_sessions(name, name_bn)')
-        .eq('id', session.studentUuid)
-        .maybeSingle();
-      return data;
+      const { data, error } = await supabase.functions.invoke('parent-student-info', {
+        body: { account_id: session.accountId, student_uuid: session.studentUuid },
+      });
+      if (error) throw error;
+      return data?.student ?? null;
     },
+    enabled: !!session.studentUuid && !!session.accountId,
   });
 
   return (
