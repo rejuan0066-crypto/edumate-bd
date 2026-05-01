@@ -1832,6 +1832,39 @@ export type Database = {
         }
         Relationships: []
       }
+      donation_purposes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key?: string
+          label_bn?: string
+          label_en?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       donors: {
         Row: {
           address: string | null
@@ -1845,12 +1878,15 @@ export type Database = {
           id: string
           name_bn: string
           name_en: string | null
+          nid: string | null
           notes: string | null
           payment_status: string
           phone: string | null
           purpose: string | null
+          purpose_key: string | null
           receipt_number: string | null
           receipt_sent_at: string | null
+          sender_number: string | null
           status: string | null
           updated_at: string | null
           verified_at: string | null
@@ -1868,12 +1904,15 @@ export type Database = {
           id?: string
           name_bn: string
           name_en?: string | null
+          nid?: string | null
           notes?: string | null
           payment_status?: string
           phone?: string | null
           purpose?: string | null
+          purpose_key?: string | null
           receipt_number?: string | null
           receipt_sent_at?: string | null
+          sender_number?: string | null
           status?: string | null
           updated_at?: string | null
           verified_at?: string | null
@@ -1891,12 +1930,15 @@ export type Database = {
           id?: string
           name_bn?: string
           name_en?: string | null
+          nid?: string | null
           notes?: string | null
           payment_status?: string
           phone?: string | null
           purpose?: string | null
+          purpose_key?: string | null
           receipt_number?: string | null
           receipt_sent_at?: string | null
+          sender_number?: string | null
           status?: string | null
           updated_at?: string | null
           verified_at?: string | null
@@ -8511,6 +8553,56 @@ export type Database = {
         }
         Relationships: []
       }
+      verified_payments: {
+        Row: {
+          amount: number
+          consumed_at: string | null
+          consumed_by_donor_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          method: string
+          note: string | null
+          sender_number: string | null
+          trx_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          consumed_at?: string | null
+          consumed_by_donor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          sender_number?: string | null
+          trx_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          consumed_at?: string | null
+          consumed_by_donor_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          method?: string
+          note?: string | null
+          sender_number?: string | null
+          trx_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verified_payments_consumed_by_donor_id_fkey"
+            columns: ["consumed_by_donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       website_settings: {
         Row: {
           id: string
@@ -9314,6 +9406,10 @@ export type Database = {
       }
       validate_password_strength: {
         Args: { p_password: string }
+        Returns: Json
+      }
+      verify_donation_payment: {
+        Args: { _amount: number; _donor_id?: string; _trx_id: string }
         Returns: Json
       }
       verify_receipt_admin: { Args: { _token: string }; Returns: Json }
