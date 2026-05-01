@@ -8,7 +8,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle2, XCircle, Clock, Send, ShieldCheck, ShieldX, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'none';
