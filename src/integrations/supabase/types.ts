@@ -8514,6 +8514,10 @@ export type Database = {
             Args: { _email: string; _phone: string; _timeout_ms?: number }
             Returns: Json
           }
+      add_complaint_reply: {
+        Args: { p_email: string; p_message: string; p_ticket: string }
+        Returns: Json
+      }
       approve_admission_test_merit: {
         Args: { p_test_id: string }
         Returns: {
