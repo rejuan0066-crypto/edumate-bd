@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       if (accErr) return json({ error: accErr.message }, 500);
       if (!account) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
 
-      const valid = await bcrypt.compare(password, account.password_hash);
+      const valid = compareSync(password, account.password_hash);
       if (!valid) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
 
       if (!account.contact_verified) {
