@@ -194,12 +194,23 @@ const ParentPaymentReceipt = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestId]);
 
-  const handlePrint = () => window.print();
+  // Always refetch the latest status before printing/downloading so the
+  // output reflects the most recent Verified/Rejected change automatically.
+  const handlePrint = async () => {
+    await loadReceipt({ silent: true });
+    // Wait one paint so the DOM reflects any status change before window.print
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    window.print();
+  };
 
   const handleDownloadPdf = async () => {
     if (!receiptRef.current) return;
     setDownloading(true);
     try {
+      // Pull the freshest status first so the PDF is never stale
+      await loadReceipt({ silent: true });
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         useCORS: true,
@@ -213,7 +224,16 @@ const ParentPaymentReceipt = () => {
       const imgW = pageW - 20;
       const imgH = (canvas.height * imgW) / canvas.width;
       pdf.addImage(imgData, 'PNG', 10, 10, imgW, Math.min(imgH, pageH - 20));
-      pdf.save(`fee-receipt-${data?.trx_id || data?.id}.pdf`);
+
+      const statusTag = (data?.status || 'pending').toUpperCase();
+      const ident = data?.trx_id || data?.id || 'receipt';
+      pdf.save(`fee-receipt-${ident}-${statusTag}.pdf`);
+      toast({
+        title: bn ? 'ডাউনলোড সম্পন্ন' : 'Download complete',
+        description: bn
+          ? `সর্বশেষ স্ট্যাটাস: ${statusTag}`
+          : `Latest status: ${statusTag}`,
+      });
     } catch (e: any) {
       toast({ title: 'PDF Error', description: e.message, variant: 'destructive' });
     } finally {
