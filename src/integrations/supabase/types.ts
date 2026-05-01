@@ -432,6 +432,12 @@ export type Database = {
           instructions: string | null
           instructions_bn: string | null
           is_published: boolean | null
+          merit_approval_status: string
+          merit_decided_at: string | null
+          merit_decided_by: string | null
+          merit_rejection_reason: string | null
+          merit_submitted_at: string | null
+          merit_submitted_by: string | null
           opens_at: string | null
           pass_mark: number
           show_result_immediately: boolean | null
@@ -454,6 +460,12 @@ export type Database = {
           instructions?: string | null
           instructions_bn?: string | null
           is_published?: boolean | null
+          merit_approval_status?: string
+          merit_decided_at?: string | null
+          merit_decided_by?: string | null
+          merit_rejection_reason?: string | null
+          merit_submitted_at?: string | null
+          merit_submitted_by?: string | null
           opens_at?: string | null
           pass_mark?: number
           show_result_immediately?: boolean | null
@@ -476,6 +488,12 @@ export type Database = {
           instructions?: string | null
           instructions_bn?: string | null
           is_published?: boolean | null
+          merit_approval_status?: string
+          merit_decided_at?: string | null
+          merit_decided_by?: string | null
+          merit_rejection_reason?: string | null
+          merit_submitted_at?: string | null
+          merit_submitted_by?: string | null
           opens_at?: string | null
           pass_mark?: number
           show_result_immediately?: boolean | null
@@ -4298,6 +4316,63 @@ export type Database = {
             columns: ["staff_organizer_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merit_list_approvals: {
+        Row: {
+          class_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          exam_session_id: string
+          id: string
+          rejection_reason: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          exam_session_id: string
+          id?: string
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          exam_session_id?: string
+          id?: string
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merit_list_approvals_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merit_list_approvals_exam_session_id_fkey"
+            columns: ["exam_session_id"]
+            isOneToOne: false
+            referencedRelation: "exam_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -8275,6 +8350,65 @@ export type Database = {
             Args: { _email: string; _phone: string; _timeout_ms?: number }
             Returns: Json
           }
+      approve_admission_test_merit: {
+        Args: { p_test_id: string }
+        Returns: {
+          academic_session_id: string | null
+          class_id: string | null
+          closes_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          duration_minutes: number
+          id: string
+          instructions: string | null
+          instructions_bn: string | null
+          is_published: boolean | null
+          merit_approval_status: string
+          merit_decided_at: string | null
+          merit_decided_by: string | null
+          merit_rejection_reason: string | null
+          merit_submitted_at: string | null
+          merit_submitted_by: string | null
+          opens_at: string | null
+          pass_mark: number
+          show_result_immediately: boolean | null
+          shuffle_questions: boolean | null
+          title: string
+          title_bn: string
+          total_marks: number
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admission_tests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      approve_merit_list: {
+        Args: { p_class_id: string; p_exam_session_id: string }
+        Returns: {
+          class_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          exam_session_id: string
+          id: string
+          rejection_reason: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merit_list_approvals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_rate_limit: {
         Args: { _action: string; _key: string; _scope: string }
         Returns: Json
@@ -8391,6 +8525,69 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      reject_admission_test_merit: {
+        Args: { p_reason: string; p_test_id: string }
+        Returns: {
+          academic_session_id: string | null
+          class_id: string | null
+          closes_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          duration_minutes: number
+          id: string
+          instructions: string | null
+          instructions_bn: string | null
+          is_published: boolean | null
+          merit_approval_status: string
+          merit_decided_at: string | null
+          merit_decided_by: string | null
+          merit_rejection_reason: string | null
+          merit_submitted_at: string | null
+          merit_submitted_by: string | null
+          opens_at: string | null
+          pass_mark: number
+          show_result_immediately: boolean | null
+          shuffle_questions: boolean | null
+          title: string
+          title_bn: string
+          total_marks: number
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admission_tests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reject_merit_list: {
+        Args: {
+          p_class_id: string
+          p_exam_session_id: string
+          p_reason: string
+        }
+        Returns: {
+          class_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          exam_session_id: string
+          id: string
+          rejection_reason: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merit_list_approvals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       submit_admission_test_attempt: {
         Args: {
           p_applicant_address?: string
@@ -8402,6 +8599,65 @@ export type Database = {
           p_test_id: string
         }
         Returns: string
+      }
+      submit_admission_test_merit_for_approval: {
+        Args: { p_test_id: string }
+        Returns: {
+          academic_session_id: string | null
+          class_id: string | null
+          closes_at: string | null
+          created_at: string | null
+          deleted_at: string | null
+          description: string | null
+          description_bn: string | null
+          duration_minutes: number
+          id: string
+          instructions: string | null
+          instructions_bn: string | null
+          is_published: boolean | null
+          merit_approval_status: string
+          merit_decided_at: string | null
+          merit_decided_by: string | null
+          merit_rejection_reason: string | null
+          merit_submitted_at: string | null
+          merit_submitted_by: string | null
+          opens_at: string | null
+          pass_mark: number
+          show_result_immediately: boolean | null
+          shuffle_questions: boolean | null
+          title: string
+          title_bn: string
+          total_marks: number
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admission_tests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_merit_list_for_approval: {
+        Args: { p_class_id: string; p_exam_session_id: string }
+        Returns: {
+          class_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          exam_session_id: string
+          id: string
+          rejection_reason: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "merit_list_approvals"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       undo_committee_change: {
         Args: {
