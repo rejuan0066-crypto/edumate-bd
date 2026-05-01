@@ -377,6 +377,7 @@ const ParentPortal = () => {
     setSignupPhone('');
     setSignupNid('');
     setMatchPreview([]);
+    setConfirmedUuids(new Set());
     setSignupStudentId('');
     setSignupDob('');
     setMode('login');
