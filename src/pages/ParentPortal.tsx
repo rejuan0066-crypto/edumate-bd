@@ -74,6 +74,48 @@ const ParentPortal = () => {
   const [signupDob, setSignupDob] = useState('');
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [matchPreview, setMatchPreview] = useState<Array<{ student_uuid: string; student_id: string; name_bn: string; name_en: string; match_reason: string }>>([]);
+  const [confirmedUuids, setConfirmedUuids] = useState<Set<string>>(new Set());
+  const [matchLoading, setMatchLoading] = useState(false);
+
+  const matchReasonLabel = (reason: string): { label: string; tone: 'nid' | 'phone' } => {
+    const map: Record<string, { bn: string; en: string; tone: 'nid' | 'phone' }> = {
+      father_nid: { bn: 'পিতার NID', en: 'Father NID', tone: 'nid' },
+      mother_nid: { bn: 'মাতার NID', en: 'Mother NID', tone: 'nid' },
+      guardian_nid: { bn: 'অভিভাবকের NID', en: 'Guardian NID', tone: 'nid' },
+      father_phone: { bn: 'পিতার ফোন', en: 'Father Phone', tone: 'phone' },
+      mother_phone: { bn: 'মাতার ফোন', en: 'Mother Phone', tone: 'phone' },
+      guardian_phone: { bn: 'অভিভাবকের ফোন', en: 'Guardian Phone', tone: 'phone' },
+    };
+    const entry = map[reason] || { bn: 'মিল', en: 'Matched', tone: 'nid' as const };
+    return { label: bn ? entry.bn : entry.en, tone: entry.tone };
+  };
+
+  const runMatchPreview = async () => {
+    const nid = signupNid.trim();
+    const phone = signupPhone.trim();
+    if (!nid && !phone) { setMatchPreview([]); setConfirmedUuids(new Set()); return; }
+    setMatchLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke('parent-auth', {
+        body: { action: 'preview_match', nid: nid || undefined, phone: phone || undefined },
+      });
+      const matches = (data?.matches || []) as Array<{ student_uuid: string }>;
+      setMatchPreview(data?.matches || []);
+      setConfirmedUuids(new Set(matches.map((m) => m.student_uuid)));
+    } catch { /* ignore */ } finally { setMatchLoading(false); }
+  };
+
+  const toggleConfirm = (uuid: string) => {
+    setConfirmedUuids((prev) => {
+      const next = new Set(prev);
+      if (next.has(uuid)) next.delete(uuid); else next.add(uuid);
+      return next;
+    });
+  };
+  const toggleConfirmAll = () => {
+    if (confirmedUuids.size === matchPreview.length) setConfirmedUuids(new Set());
+    else setConfirmedUuids(new Set(matchPreview.map((m) => m.student_uuid)));
+  };
 
   // Dynamic signup field configuration
   const { data: signupFields = [] } = useQuery({
