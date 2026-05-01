@@ -134,7 +134,18 @@ const StudentPortal = () => {
           student_dob: suDob,
         },
       });
-      if (error) throw error;
+      // supabase.functions.invoke returns error for non-2xx; parse body
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
       if (data?.error) throw new Error(data.error);
 
       // Trigger OTP for email verification
