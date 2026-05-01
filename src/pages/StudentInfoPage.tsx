@@ -319,11 +319,16 @@ const StudentInfoPage = () => {
                     {bn ? 'ছাত্র লগইন' : 'Student Login'}
                   </Link>
                 </Button>
-                <Button asChild variant="secondary" className="rounded-full">
-                  <Link to="/student-portal?mode=signup">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    {bn ? 'ছাত্র একাউন্ট তৈরি' : 'Create Student Account'}
-                  </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="rounded-full"
+                  onClick={() => setSignupOpen((v) => !v)}
+                  aria-expanded={signupOpen}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {bn ? 'এখানেই একাউন্ট তৈরি' : 'Create Account Here'}
+                  {signupOpen ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                 </Button>
                 <Button asChild variant="outline" className="rounded-full">
                   <Link to="/parent-portal">
