@@ -15,6 +15,7 @@ import {
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import AdmissionTestBuilderDialog from '@/components/admin/admission-tests/AdmissionTestBuilderDialog';
 import AdmissionTestResultsDialog from '@/components/admin/admission-tests/AdmissionTestResultsDialog';
+import AdmissionTestMeritApprovalControls from '@/components/admin/admission-tests/AdmissionTestMeritApprovalControls';
 
 const AdminAdmissionTests = () => {
   const { language } = useLanguage();
