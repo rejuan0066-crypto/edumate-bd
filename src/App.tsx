@@ -63,6 +63,7 @@ import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminOtpRecovery from "./pages/admin/AdminOtpRecovery";
 import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminDonors from "./pages/admin/AdminDonors";
+import AdminVerifiedPayments from "./pages/admin/AdminVerifiedPayments";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminFeeReceipts from "./pages/admin/AdminFeeReceipts";
 import AdminReceiptStatusAudit from "./pages/admin/AdminReceiptStatusAudit";
@@ -324,6 +325,7 @@ const App = () => (
                     <Route path="website" element={<AdminWebsite />} />
                     <Route path="expenses" element={<ModuleGuard menuPath="/admin/expenses"><AdminExpenses /></ModuleGuard>} />
                     <Route path="donors" element={<ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard>} />
+                    <Route path="verified-payments" element={<ModuleGuard menuPath="/admin/donors"><AdminVerifiedPayments /></ModuleGuard>} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="fee-receipts" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard>} />
                     <Route path="receipt-audit" element={<AdminReceiptStatusAudit />} />
