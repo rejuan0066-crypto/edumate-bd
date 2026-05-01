@@ -132,14 +132,20 @@ const StudentInfoPage = () => {
               </h2>
               <p className="text-muted-foreground">
                 {bn
-                  ? 'শিক্ষার্থীর তথ্য দেখতে অনুগ্রহ করে অভিভাবক পোর্টালে লগইন করুন। শিক্ষক ও প্রশাসন তাদের অ্যাকাউন্ট দিয়ে লগইন করতে পারেন।'
-                  : 'Please log in to view student information. Parents can use the Parent Portal; teachers and admins can use their accounts.'}
+                  ? 'শিক্ষার্থীর তথ্য দেখতে অনুগ্রহ করে অভিভাবক পোর্টালে লগইন করুন। অ্যাকাউন্ট না থাকলে নতুন একাউন্ট তৈরি করুন। শিক্ষক ও প্রশাসন তাদের অ্যাকাউন্ট দিয়ে লগইন করতে পারেন।'
+                  : 'Please log in to view student information. If you don\'t have an account yet, create one. Teachers and admins can use their accounts.'}
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 flex-wrap">
                 <Button asChild className="rounded-full">
                   <Link to="/parent-portal">
                     <LogIn className="w-4 h-4 mr-2" />
                     {bn ? 'অভিভাবক লগইন' : 'Parent Login'}
+                  </Link>
+                </Button>
+                <Button asChild variant="secondary" className="rounded-full">
+                  <Link to="/parent-portal?mode=signup">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {bn ? 'একাউন্ট তৈরি করুন' : 'Create Account'}
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="rounded-full">
@@ -149,6 +155,11 @@ const StudentInfoPage = () => {
                   </Link>
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground pt-2">
+                {bn
+                  ? 'একাউন্ট তৈরি করতে শিক্ষার্থীর রেজিস্ট্রেশন/আইডি ও জন্ম তারিখ প্রয়োজন।'
+                  : 'You will need the student\'s registration/ID number and date of birth to create an account.'}
+              </p>
             </CardContent>
           </Card>
         </div>
