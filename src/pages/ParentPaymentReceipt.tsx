@@ -26,6 +26,7 @@ interface ReceiptData {
   status: string;
   created_at: string;
   verified_at: string | null;
+  rejection_reason: string | null;
   source: 'manual' | 'gateway';
   student?: {
     name: string;
@@ -119,7 +120,9 @@ const ParentPaymentReceipt = () => {
           description:
             newStatus === 'verified'
               ? (bn ? 'আপনার পেমেন্ট সফলভাবে অনুমোদিত হয়েছে।' : 'Your payment has been approved.')
-              : (bn ? 'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' : 'Please contact the admin.'),
+              : (req.rejection_reason?.trim()
+                  ? (bn ? `কারণ: ${req.rejection_reason}` : `Reason: ${req.rejection_reason}`)
+                  : (bn ? 'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' : 'Please contact the admin.')),
         });
       }
       prevStatusRef.current = newStatus;
@@ -134,6 +137,7 @@ const ParentPaymentReceipt = () => {
         status: newStatus,
         created_at: req.created_at,
         verified_at: req.verified_at ?? null,
+        rejection_reason: req.rejection_reason ?? null,
         source: req.method === 'gateway' ? 'gateway' : 'manual',
         student,
         fee_assignment_ids: req.fee_assignment_ids || [],
@@ -386,6 +390,27 @@ const ParentPaymentReceipt = () => {
                 >
                   {qr.url}
                 </a>
+              </div>
+            </div>
+          )}
+
+          {/* Rejection reason banner */}
+          {(data.status === 'rejected' || data.status === 'failed') && (
+            <div className="mx-6 mb-4 rounded-2xl border-2 border-red-300 bg-red-50 p-4">
+              <div className="flex items-start gap-3">
+                <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-red-800 text-sm">
+                    {bn ? 'প্রত্যাখ্যানের কারণ' : 'Reason for Rejection'}
+                  </div>
+                  <div className="mt-1 text-sm text-red-900 whitespace-pre-wrap break-words">
+                    {data.rejection_reason?.trim()
+                      ? data.rejection_reason
+                      : (bn
+                          ? 'কোনো নির্দিষ্ট কারণ উল্লেখ করা হয়নি। বিস্তারিত জানতে অফিসে যোগাযোগ করুন।'
+                          : 'No specific reason provided. Please contact the office for details.')}
+                  </div>
+                </div>
               </div>
             </div>
           )}
