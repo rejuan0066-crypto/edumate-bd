@@ -64,6 +64,58 @@ const DonationPage = () => {
   } | null>(null);
   const [pdfBusy, setPdfBusy] = useState(false);
 
+  // ---- Handle gateway redirect: ?status=success&tran_id=... ----
+  // After SSLCommerz/etc. redirects back, we look up the donor row by TrxID
+  // and poll briefly for the webhook to flip payment_status to 'verified'.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('status');
+    const tranId =
+      params.get('tran_id') || params.get('transaction_id') || params.get('trxId');
+    if (status !== 'success' || !tranId) return;
+
+    let cancelled = false;
+    const lookup = async (): Promise<boolean> => {
+      const { data: donor } = await supabase
+        .from('donors')
+        .select('id, payment_status, receipt_number, donation_amount')
+        .ilike('notes', `%TrxID: ${tranId}%`)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !donor) return false;
+      const verified = donor.payment_status === 'verified';
+      setResult({
+        trxId: tranId,
+        status: verified ? 'verified' : 'pending',
+        donorId: donor.id,
+        receiptNumber: donor.receipt_number ?? null,
+      });
+      setIsDone(true);
+      // Clean URL so refresh doesn't re-trigger
+      window.history.replaceState({}, '', '/donation');
+      if (verified) {
+        toast.success(bn ? 'পেমেন্ট যাচাই সম্পন্ন!' : 'Payment verified!');
+        return true;
+      }
+      return false;
+    };
+
+    (async () => {
+      // Poll up to 10× over ~20s waiting for webhook to verify.
+      for (let i = 0; i < 10; i++) {
+        const done = await lookup();
+        if (cancelled || done) return;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateField = (key: keyof typeof form, value: string) =>
     setForm((p) => ({ ...p, [key]: value }));
 
