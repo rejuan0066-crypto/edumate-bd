@@ -43,6 +43,28 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Admin/manual: update an existing gateway payment's status (will trigger DB reconciliation)
+    if (action === "update_status") {
+      if (!tx_in || !new_status) {
+        return new Response(
+          JSON.stringify({ error: "transaction_id and new_status required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { error: uErr } = await supabase
+        .from("payments")
+        .update({ status: new_status })
+        .eq("transaction_id", tx_in);
+      if (uErr) {
+        return new Response(JSON.stringify({ error: uErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ success: true, transaction_id: tx_in, status: new_status }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
     // Initiate payment
     if (action === "initiate") {
       if (!amount || amount <= 0) {
