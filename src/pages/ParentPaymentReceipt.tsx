@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { Download, Printer, ArrowLeft, CheckCircle2, Clock, XCircle, Wallet } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { generateReceiptQrDataUrl } from '@/lib/receiptQr';
 
 const STORAGE_KEY = 'parent_portal_session';
 
@@ -63,6 +64,7 @@ const ParentPaymentReceipt = () => {
   const [data, setData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [qr, setQr] = useState<{ dataUrl: string; url: string } | null>(null);
 
   const prevStatusRef = useRef<string | null>(null);
 
