@@ -126,6 +126,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
+import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
 import AdminStudentApprovals from "./pages/admin/AdminStudentApprovals";
 import AdminParentMessages from "@/pages/admin/AdminParentMessages";
 import AdminPushNotifications from "@/pages/admin/AdminPushNotifications";
