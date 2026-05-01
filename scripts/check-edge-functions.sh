@@ -80,19 +80,39 @@ else
 fi
 echo
 
+# Per-step timeouts (seconds). Override via env to tune in CI.
+#   STEP_TIMEOUT       — wall-clock budget per individual step
+#   STEP_KILL_AFTER    — extra grace before SIGKILL after SIGTERM
+STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
+STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
+
+if ! command -v timeout >/dev/null 2>&1; then
+  echo "❌ 'timeout' (coreutils) is required for per-step timeouts." >&2
+  exit 127
+fi
+
 run_step() {
   # run_step <label> <logfile> -- <cmd...>
   local label="$1"; shift
   local logfile="$1"; shift
   shift # discard "--"
-  if "$@" >"$logfile" 2>&1; then
+  local rc=0
+  timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
+    >"$logfile" 2>&1 || rc=$?
+  if [ "$rc" -eq 0 ]; then
     echo "  ✓ $label"
     return 0
-  else
-    echo "  ✗ $label"
-    sed 's/^/      /' "$logfile"
-    return 1
   fi
+  # `timeout` exits 124 on SIGTERM expiry, 137 when it had to SIGKILL.
+  if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
+    echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
+    echo "      hangs (network fetches at import time, infinite loops, etc.)"
+  else
+    echo "  ✗ $label (exit $rc)"
+  fi
+  sed 's/^/      /' "$logfile"
+  return 1
 }
 
 for f in "${TARGETS[@]}"; do
