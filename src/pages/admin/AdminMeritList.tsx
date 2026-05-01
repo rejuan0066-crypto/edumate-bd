@@ -13,6 +13,10 @@ import {
 } from 'recharts';
 import MeritApprovalBanner, { type ApprovalStatus } from '@/components/admin/MeritApprovalBanner';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { generateMeritApprovalReport } from '@/lib/meritApprovalReport';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const toBnDigits = (s: string | number) => String(s).replace(/\d/g, (d) => BN_DIGITS[parseInt(d)]);
