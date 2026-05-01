@@ -282,7 +282,33 @@ const DonationPage = () => {
 
       if (insErr) throw insErr;
 
-      // Also drop into approval queue table for admin notification
+      // Server-side rate-limited verification.
+      // - If TrxID + amount match an admin-seeded verified_payments row, the
+      //   donor is flipped to 'verified' here.
+      // - Otherwise, attempt is counted (5/10min per phone, 20/10min per IP).
+      //   On mismatch the row stays 'pending' and admins receive a notification.
+      // - On lockout we surface a clear message + retry-after to the user.
+      let verified = inserted?.payment_status === 'verified';
+      let rateLimited = false;
+      let retryAfter: number | null = null;
+      let remaining: number | null = null;
+
+      if (!verified && inserted?.id) {
+        const { data: rpcRes } = await supabase.rpc('verify_donation_attempt', {
+          _donor_id: inserted.id,
+          _trx_id: trxClean,
+          _amount: amountNum,
+          _phone: form.phone || senderNumber.trim() || '',
+          _client_ip: null,
+        });
+        const r = (rpcRes ?? {}) as Record<string, any>;
+        verified = !!r.matched;
+        rateLimited = !!r.rate_limited;
+        retryAfter = typeof r.retry_after === 'number' ? r.retry_after : null;
+        remaining = typeof r.remaining_attempts === 'number' ? r.remaining_attempts : null;
+      }
+
+      // Record gateway-side payment row (non-fatal; admin can reconcile)
       try {
         await supabase.from('payments').insert({
           transaction_id: trxClean,
@@ -290,7 +316,7 @@ const DonationPage = () => {
           fee_type: 'donation',
           payer_name: form.name,
           payer_phone: form.phone || null,
-          status: inserted?.payment_status === 'verified' ? 'success' : 'pending',
+          status: verified ? 'success' : 'pending',
           payment_method: manualMethod,
           notes: `Donation | ${purposeLabel}`,
         });
@@ -298,7 +324,6 @@ const DonationPage = () => {
         /* non-fatal */
       }
 
-      const verified = inserted?.payment_status === 'verified';
       setResult({
         trxId: trxClean,
         status: verified ? 'verified' : 'pending',
@@ -306,11 +331,29 @@ const DonationPage = () => {
         receiptNumber: inserted?.receipt_number ?? null,
       });
       setIsDone(true);
-      toast.success(
-        verified
-          ? bn ? 'ট্রানজেকশন যাচাই সম্পন্ন!' : 'Transaction verified!'
-          : bn ? 'অনুমোদনের জন্য জমা হয়েছে' : 'Submitted for verification',
-      );
+
+      if (verified) {
+        toast.success(bn ? 'ট্রানজেকশন যাচাই সম্পন্ন!' : 'Transaction verified!');
+      } else if (rateLimited) {
+        const mins = retryAfter ? Math.ceil(retryAfter / 60) : 10;
+        toast.error(
+          bn
+            ? `অনেকবার ভুল TrxID — ${mins} মিনিট পর আবার চেষ্টা করুন। জমাটি pending হিসেবে রইল ও অ্যাডমিনকে জানানো হয়েছে।`
+            : `Too many wrong TrxID attempts — try again in ${mins} min. Saved as pending; admin notified.`,
+          { duration: 6000 },
+        );
+      } else {
+        toast.warning(
+          bn
+            ? `TrxID মিল হয়নি — pending হিসেবে রইল, অ্যাডমিন যাচাই করবেন।${
+                remaining !== null ? ` (বাকি চেষ্টা: ${remaining})` : ''
+              }`
+            : `TrxID did not match — saved as pending for admin review.${
+                remaining !== null ? ` (Attempts left: ${remaining})` : ''
+              }`,
+          { duration: 6000 },
+        );
+      }
     } catch (err: any) {
       toast.error(err.message || 'Error');
     } finally {
