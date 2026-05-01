@@ -23,6 +23,7 @@ const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   '/admin/donors': lazy(() => import('@/pages/admin/AdminDonors')),
   '/admin/profile': lazy(() => import('@/pages/admin/AdminProfile')),
   '/admin/fee-receipts': lazy(() => import('@/pages/admin/AdminFeeReceipts')),
+  '/admin/receipt-audit': lazy(() => import('@/pages/admin/AdminReceiptStatusAudit')),
   '/admin/resign-letters': lazy(() => import('@/pages/admin/AdminResignLetters')),
   '/admin/joining-letters': lazy(() => import('@/pages/admin/AdminJoiningLetters')),
   '/admin/admission-letters': lazy(() => import('@/pages/admin/AdminAdmissionLetters')),
