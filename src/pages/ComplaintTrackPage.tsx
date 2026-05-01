@@ -362,6 +362,52 @@ const ComplaintTrackPage = () => {
                   )}
                 </div>
               </div>
+
+              {/* Complainant reply box */}
+              <div className="rounded-2xl border bg-background/50 p-4">
+                <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <MessageSquarePlus className="w-4 h-4 text-primary" />
+                  {bn ? 'উত্তর দিন বা অতিরিক্ত তথ্য যোগ করুন' : 'Reply or add more information'}
+                </p>
+                {canReply ? (
+                  <>
+                    <Textarea
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      rows={4}
+                      maxLength={4000}
+                      placeholder={bn
+                        ? 'প্রশাসনের জন্য আপনার বার্তা বা অতিরিক্ত তথ্য লিখুন...'
+                        : 'Write your message or additional details for the administration...'}
+                      className="rounded-xl resize-none"
+                      disabled={sendingReply}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        {reply.length}/4000
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSendReply}
+                        disabled={sendingReply || reply.trim().length < 2}
+                        className="rounded-xl"
+                      >
+                        {sendingReply
+                          ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          : <Send className="w-4 h-4 mr-2" />}
+                        {bn ? 'উত্তর পাঠান' : 'Send Reply'}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {bn
+                      ? 'এই অভিযোগটি বন্ধ হয়েছে এবং নতুন উত্তর গ্রহণ করছে না।'
+                      : 'This complaint is closed and no longer accepts new replies.'}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
