@@ -23,6 +23,7 @@ const AdminParentPaymentRequests = () => {
   const [tab, setTab] = useState<'pending' | 'verified' | 'rejected' | 'all'>('pending');
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['parent-payment-requests-admin', tab],
