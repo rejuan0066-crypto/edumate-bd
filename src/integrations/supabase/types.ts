@@ -9408,6 +9408,16 @@ export type Database = {
         Args: { p_password: string }
         Returns: Json
       }
+      verify_donation_attempt: {
+        Args: {
+          _amount: number
+          _client_ip?: string
+          _donor_id: string
+          _phone: string
+          _trx_id: string
+        }
+        Returns: Json
+      }
       verify_donation_payment: {
         Args: { _amount: number; _donor_id?: string; _trx_id: string }
         Returns: Json
