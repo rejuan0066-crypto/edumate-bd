@@ -9,7 +9,7 @@ import {
   ChevronRight, ChevronLeft, Globe, Banknote, Download, ShieldCheck, Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import ManualPaymentMethods from '@/components/ManualPaymentMethods';
