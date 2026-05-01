@@ -21,12 +21,16 @@ import {
   FileText,
   ShieldCheck,
   ArrowLeft,
+  MessageSquarePlus,
+  Send,
+  MessageCircle,
 } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 type ComplaintUpdate = {
   id: string;
-  update_type: 'created' | 'status_change' | 'note' | 'assignment' | 'resolution';
+  update_type: 'created' | 'status_change' | 'note' | 'assignment' | 'resolution' | 'reply';
   from_status?: string | null;
   to_status?: string | null;
   message?: string | null;
@@ -71,6 +75,43 @@ const ComplaintTrackPage = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ComplaintData | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [reply, setReply] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
+  const canReply = data && !['rejected', 'closed'].includes(data.status);
+
+  const handleSendReply = async () => {
+    if (!data) return;
+    const msg = reply.trim();
+    if (msg.length < 2) {
+      toast({ title: bn ? 'বার্তা লিখুন' : 'Please write a message', variant: 'destructive' });
+      return;
+    }
+    if (msg.length > 4000) {
+      toast({ title: bn ? 'বার্তা অনেক বড় (সর্বোচ্চ ৪০০০ অক্ষর)' : 'Message too long (max 4000 chars)', variant: 'destructive' });
+      return;
+    }
+    setSendingReply(true);
+    try {
+      const { error } = await supabase.rpc('add_complaint_reply', {
+        p_ticket: data.ticket_number,
+        p_email: verifiedEmail,
+        p_message: msg,
+      });
+      if (error) throw error;
+      toast({ title: bn ? 'উত্তর যুক্ত হয়েছে' : 'Reply posted', description: bn ? 'আপনার বার্তা টাইমলাইনে যুক্ত হয়েছে' : 'Your message has been added to the timeline' });
+      setReply('');
+      await fetchComplaint(data.ticket_number, verifiedEmail);
+    } catch (err: any) {
+      toast({
+        title: bn ? 'ত্রুটি' : 'Error',
+        description: err?.message || (bn ? 'উত্তর পাঠানো যায়নি' : 'Could not send reply'),
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingReply(false);
+    }
+  };
 
   const statusBadge = (status: string) => {
     const s = STATUS_VARIANT[status] || { bn: status, en: status, cls: 'bg-muted' };
@@ -136,6 +177,7 @@ const ComplaintTrackPage = () => {
       case 'status_change': return <ArrowRightLeft className="w-4 h-4" />;
       case 'assignment': return <UserCheck className="w-4 h-4" />;
       case 'resolution': return <CheckCircle2 className="w-4 h-4" />;
+      case 'reply': return <MessageCircle className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
   };
@@ -149,6 +191,7 @@ const ComplaintTrackPage = () => {
     }
     if (u.update_type === 'assignment') return bn ? 'পর্যালোচনার জন্য অর্পণ করা হয়েছে' : 'Assigned for review';
     if (u.update_type === 'resolution') return bn ? 'সমাধান প্রদান করা হয়েছে' : 'Resolution provided';
+    if (u.update_type === 'reply') return bn ? 'অভিযোগকারীর বার্তা' : 'Complainant reply';
     return bn ? 'আপডেট' : 'Update';
   };
 
@@ -318,6 +361,52 @@ const ComplaintTrackPage = () => {
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Complainant reply box */}
+              <div className="rounded-2xl border bg-background/50 p-4">
+                <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <MessageSquarePlus className="w-4 h-4 text-primary" />
+                  {bn ? 'উত্তর দিন বা অতিরিক্ত তথ্য যোগ করুন' : 'Reply or add more information'}
+                </p>
+                {canReply ? (
+                  <>
+                    <Textarea
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      rows={4}
+                      maxLength={4000}
+                      placeholder={bn
+                        ? 'প্রশাসনের জন্য আপনার বার্তা বা অতিরিক্ত তথ্য লিখুন...'
+                        : 'Write your message or additional details for the administration...'}
+                      className="rounded-xl resize-none"
+                      disabled={sendingReply}
+                    />
+                    <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        {reply.length}/4000
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSendReply}
+                        disabled={sendingReply || reply.trim().length < 2}
+                        className="rounded-xl"
+                      >
+                        {sendingReply
+                          ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          : <Send className="w-4 h-4 mr-2" />}
+                        {bn ? 'উত্তর পাঠান' : 'Send Reply'}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {bn
+                      ? 'এই অভিযোগটি বন্ধ হয়েছে এবং নতুন উত্তর গ্রহণ করছে না।'
+                      : 'This complaint is closed and no longer accepts new replies.'}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
