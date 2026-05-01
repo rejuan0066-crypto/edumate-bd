@@ -2,7 +2,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useGradingSystem } from '@/hooks/useGradingSystem';
 import { Trophy, Medal, TrendingUp, Award, Crown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/card';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts';
+import MeritApprovalBanner, { type ApprovalStatus } from '@/components/admin/MeritApprovalBanner';
+import { toast } from '@/hooks/use-toast';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const toBnDigits = (s: string | number) => String(s).replace(/\d/g, (d) => BN_DIGITS[parseInt(d)]);
@@ -199,6 +201,50 @@ const AdminMeritList = () => {
 
   const top3 = (rankingData?.rankings || []).filter(r => !r.hasFail).slice(0, 3);
 
+  // ----- Approval workflow -----
+  const queryClient = useQueryClient();
+  const { data: approval, isLoading: loadingApproval } = useQuery({
+    queryKey: ['merit-approval', examSessionId, classId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('merit_list_approvals' as any)
+        .select('*')
+        .eq('exam_session_id', examSessionId)
+        .eq('class_id', classId)
+        .maybeSingle();
+      return (data as any) || null;
+    },
+    enabled: !!examSessionId && !!classId,
+  });
+
+  const approvalStatus: ApprovalStatus = (approval?.status as ApprovalStatus) || 'none';
+  const refreshApproval = () => queryClient.invalidateQueries({ queryKey: ['merit-approval', examSessionId, classId] });
+
+  const callRpc = async (fn: string, args: Record<string, unknown>, successMsg: string) => {
+    const { error } = await (supabase as any).rpc(fn, args);
+    if (error) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: error.message, variant: 'destructive' });
+      throw error;
+    }
+    toast({ title: successMsg });
+    refreshApproval();
+  };
+
+  const handleSubmitApproval = () =>
+    callRpc('submit_merit_list_for_approval',
+      { p_exam_session_id: examSessionId, p_class_id: classId },
+      bn ? 'অনুমোদনের জন্য পাঠানো হয়েছে' : 'Submitted for approval');
+
+  const handleApprove = () =>
+    callRpc('approve_merit_list',
+      { p_exam_session_id: examSessionId, p_class_id: classId },
+      bn ? 'মেধা তালিকা অনুমোদিত' : 'Merit list approved');
+
+  const handleReject = (reason: string) =>
+    callRpc('reject_merit_list',
+      { p_exam_session_id: examSessionId, p_class_id: classId, p_reason: reason },
+      bn ? 'মেধা তালিকা প্রত্যাখ্যাত' : 'Merit list rejected');
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -246,6 +292,18 @@ const AdminMeritList = () => {
             </div>
           </div>
         </Card>
+
+        {classId && (
+          <MeritApprovalBanner
+            status={approvalStatus}
+            rejectionReason={approval?.rejection_reason}
+            decidedAt={approval?.decided_at}
+            loading={loadingApproval}
+            onSubmit={handleSubmitApproval}
+            onApprove={handleApprove}
+            onReject={handleReject}
+          />
+        )}
 
         {!classId && (
           <Card className="p-12 rounded-[28px] text-center">
