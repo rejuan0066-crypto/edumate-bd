@@ -135,6 +135,7 @@ const ParentPaymentReceipt = () => {
         status: newStatus,
         created_at: req.created_at,
         verified_at: req.verified_at ?? null,
+        rejection_reason: req.rejection_reason ?? null,
         source: req.method === 'gateway' ? 'gateway' : 'manual',
         student,
         fee_assignment_ids: req.fee_assignment_ids || [],
