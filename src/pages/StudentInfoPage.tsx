@@ -348,9 +348,63 @@ const StudentInfoPage = () => {
                   ? 'একাউন্ট তৈরি করতে শিক্ষার্থীর আইডি ও জন্ম তারিখ প্রয়োজন। প্রতি আইডিতে শুধু একটি একাউন্ট খোলা যাবে।'
                   : 'You need the Student ID and date of birth. Only one account per Student ID.'}
               </p>
+
+              {/* Inline student signup form */}
+              {signupOpen && (
+                <form onSubmit={handleInlineSignup} className="text-left mt-6 pt-6 border-t border-border/50 space-y-4">
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    {bn ? 'নতুন ছাত্র একাউন্ট' : 'New Student Account'}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="flex items-center gap-2"><User className="w-4 h-4" />{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
+                      <Input value={suName} onChange={(e) => setSuName(e.target.value)} maxLength={100} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><IdCard className="w-4 h-4" />{bn ? 'শিক্ষার্থী আইডি' : 'Student ID'}</Label>
+                      <Input value={suStudentId} onChange={(e) => setSuStudentId(e.target.value)} maxLength={50} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" />{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
+                      <Input type="date" value={suDob} onChange={(e) => setSuDob(e.target.value)} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Mail className="w-4 h-4" />{bn ? 'ইমেইল' : 'Email'}</Label>
+                      <Input type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} maxLength={255} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Lock className="w-4 h-4" />{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                      <Input type="password" value={suPassword}
+                        onChange={(e) => setSuPassword(sanitizePasswordInput(e.target.value))}
+                        className="rounded-2xl" required minLength={6} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {bn
+                      ? 'নোট: শিক্ষার্থী আইডি ও জন্ম তারিখ অফিস রেকর্ডের সাথে মিলতে হবে। সাইনআপের পর ইমেইল OTP ভেরিফাই করতে হবে।'
+                      : 'Note: Student ID and DOB must match official records. Email OTP verification required after signup.'}
+                  </p>
+                  <Button type="submit" className="w-full rounded-full" disabled={signupBusy}>
+                    {signupBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                    {signupBusy ? (bn ? 'প্রক্রিয়া...' : 'Processing...') : (bn ? 'একাউন্ট তৈরি করুন' : 'Create Account')}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {otpOpen && (
+          <OtpVerificationDialog
+            open={otpOpen}
+            onOpenChange={setOtpOpen}
+            email={suEmail.trim().toLowerCase()}
+            recipientName={suName}
+            purpose="email_verification"
+            onVerified={handleInlineOtpVerified}
+          />
+        )}
       </PublicLayout>
     );
   }
