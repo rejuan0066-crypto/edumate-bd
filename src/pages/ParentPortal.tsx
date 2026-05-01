@@ -17,7 +17,7 @@ import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, Book
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 type SignupFieldConfig = {
