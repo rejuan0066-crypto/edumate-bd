@@ -334,6 +334,7 @@ const ParentPortal = () => {
           nid: signupNid.trim() || undefined,
           student_id: signupStudentId.trim() || undefined,
           student_dob: signupDob || undefined,
+          confirmed_student_uuids: confirmedUuids.size > 0 ? Array.from(confirmedUuids) : undefined,
         },
       });
       if (error || !data?.success) {
