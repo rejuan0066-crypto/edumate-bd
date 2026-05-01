@@ -151,12 +151,14 @@ const StudentInfoPage = () => {
     }
   };
 
-  // Auto-select for parent
+  // Auto-select student's own profile (student session takes precedence over parent)
   useEffect(() => {
-    if (isParent && parentSession?.studentUuid && !selectedStudentId) {
+    if (isStudent && studentSession?.studentUuid) {
+      setSelectedStudentId(studentSession.studentUuid);
+    } else if (isParent && parentSession?.studentUuid && !selectedStudentId) {
       setSelectedStudentId(parentSession.studentUuid);
     }
-  }, [isParent, parentSession, selectedStudentId]);
+  }, [isStudent, studentSession, isParent, parentSession, selectedStudentId]);
 
   // Staff search
   const { data: searchResults = [], isFetching: searching } = useQuery({
