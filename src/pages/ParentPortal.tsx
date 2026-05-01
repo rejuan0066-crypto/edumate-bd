@@ -43,6 +43,7 @@ interface ParentSession {
   fullName?: string;
   studentId: string;
   studentUuid: string;
+  studentUuids?: string[];
   loggedInAt: string;
 }
 
@@ -67,9 +68,11 @@ const ParentPortal = () => {
   const [signupPassword, setSignupPassword] = useState('');
   const [signupFullName, setSignupFullName] = useState('');
   const [signupPhone, setSignupPhone] = useState('');
+  const [signupNid, setSignupNid] = useState('');
   const [signupStudentId, setSignupStudentId] = useState('');
   const [signupDob, setSignupDob] = useState('');
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [matchPreview, setMatchPreview] = useState<Array<{ student_uuid: string; student_id: string; name_bn: string; name_en: string; match_reason: string }>>([]);
 
   // Dynamic signup field configuration
   const { data: signupFields = [] } = useQuery({
@@ -203,6 +206,7 @@ const ParentPortal = () => {
         fullName: acc.full_name,
         studentId: acc.student_id,
         studentUuid: acc.linked_student_uuid,
+        studentUuids: acc.linked_student_uuids || (acc.linked_student_uuid ? [acc.linked_student_uuid] : []),
         loggedInAt: new Date().toISOString(),
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
@@ -226,6 +230,7 @@ const ParentPortal = () => {
       email: signupEmail.trim(),
       phone: signupPhone.trim(),
       password: signupPassword,
+      nid: signupNid.trim(),
       student_id: signupStudentId.trim(),
       student_dob: signupDob,
     };
@@ -260,7 +265,16 @@ const ParentPortal = () => {
       }
     }
 
-    // Hard auth requirement: password >= 6 regardless of config min_length being lower
+    // Hard requirement: NID or phone must be present (linking)
+    if (!signupNid.trim() && !signupPhone.trim()) {
+      toast({
+        title: bn ? 'ত্রুটি' : 'Error',
+        description: bn ? 'NID অথবা ফোন নম্বর প্রদান করুন (ছাত্র লিঙ্কের জন্য)' : 'NID or phone required to link your child',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (signupPassword.length < 6) {
       toast({ title: 'Error', description: bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password must be at least 6 characters', variant: 'destructive' });
       return;
@@ -274,8 +288,9 @@ const ParentPortal = () => {
           password: signupPassword,
           full_name: signupFullName.trim(),
           phone: signupPhone.trim() || undefined,
-          student_id: signupStudentId.trim(),
-          student_dob: signupDob,
+          nid: signupNid.trim() || undefined,
+          student_id: signupStudentId.trim() || undefined,
+          student_dob: signupDob || undefined,
         },
       });
       if (error || !data?.success) {
@@ -286,7 +301,12 @@ const ParentPortal = () => {
         });
         return;
       }
-      // Open OTP dialog for email verification
+      toast({
+        title: bn ? '✅ সাইনআপ সফল' : '✅ Signup successful',
+        description: bn
+          ? `${data.matched_count || 1} জন ছাত্র লিঙ্ক হয়েছে। এখন ইমেইল ভেরিফাই করুন।`
+          : `${data.matched_count || 1} student(s) linked. Please verify email.`,
+      });
       setOtpDialogOpen(true);
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
