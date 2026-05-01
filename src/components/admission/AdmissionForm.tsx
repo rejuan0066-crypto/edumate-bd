@@ -542,22 +542,25 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     console.log('[AdmissionForm] form state:', JSON.stringify(form, null, 2));
     console.log('[AdmissionForm] selectedDivisionId:', selectedDivisionId);
     console.log('[AdmissionForm] configFields count:', configFields.length, 'isLoaded:', isLoaded);
-    configFields.forEach(f => {
-      const key = f.default_value;
-      if (!key || !f.is_active || !f.is_required) return;
-      const val = form[key];
-      if (key === 'address_permanent' || key === 'address_present') return; // address handled separately
-      if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
-        if (form.guardian_type !== 'other') return; // only required for "other" guardian
-      }
-      if (!val || (typeof val === 'string' && !val.trim())) {
-        errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
-      }
-    });
+    // In edit mode, admins can update without enforcing required fields
+    if (!isEditMode) {
+      configFields.forEach(f => {
+        const key = f.default_value;
+        if (!key || !f.is_active || !f.is_required) return;
+        const val = form[key];
+        if (key === 'address_permanent' || key === 'address_present') return; // address handled separately
+        if (key === 'guardian_name' || key === 'guardian_relation' || key === 'guardian_phone' || key === 'guardian_nid') {
+          if (form.guardian_type !== 'other') return; // only required for "other" guardian
+        }
+        if (!val || (typeof val === 'string' && !val.trim())) {
+          errors[key] = bn ? `${f.label_bn} আবশ্যক` : `${f.label} is required`;
+        }
+      });
 
-    // Division is required
-    if (!selectedDivisionId) {
-      errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
+      // Division is required
+      if (!selectedDivisionId) {
+        errors['admission_class'] = bn ? 'বিভাগ নির্বাচন আবশ্যক' : 'Division selection is required';
+      }
     }
 
     // Special validations
