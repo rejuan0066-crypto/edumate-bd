@@ -80,6 +80,9 @@ gate_log2="$TMP/_fmt.log"
 #   STEP_KILL_AFTER    — extra grace before SIGKILL after SIGTERM
 STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
 STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
+# Steps slower than this (seconds) get a ⚠️ marker in CI logs.
+SLOW_STEP_THRESHOLD="${SLOW_STEP_THRESHOLD:-30}"
+TOTAL_STEP_SECONDS=0
 
 if ! command -v timeout >/dev/null 2>&1; then
   echo "❌ 'timeout' (coreutils) is required for per-step timeouts." >&2
