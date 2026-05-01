@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2, Settings2, MessageSquarePlus, Lock, Globe } from 'lucide-react';
+import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2, Settings2, MessageSquarePlus, Lock, Globe, Printer } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
+import { printComplaintTimeline } from '@/lib/complaintTimelinePrint';
 import { format } from 'date-fns';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -365,6 +366,14 @@ const AdminComplaints = () => {
               )}
 
               <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => printComplaintTimeline(selected, timeline as any)}
+                >
+                  <Printer className="w-4 h-4 mr-2" />{language === 'bn' ? 'প্রিন্ট' : 'Print'}
+                </Button>
                 <Button onClick={() => handleResolve('in_review')} variant="outline" className="rounded-xl flex-1" disabled={updateMutation.isPending}>
                   <Eye className="w-4 h-4 mr-2" />{language === 'bn' ? 'পর্যালোচনায় নিন' : 'Mark In Review'}
                 </Button>
