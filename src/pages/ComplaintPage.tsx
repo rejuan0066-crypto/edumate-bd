@@ -183,6 +183,13 @@ const ComplaintPage = () => {
               ? 'বেনামে অভিযোগ গ্রহণ করা হয় না। সঠিক পরিচয় ও যাচাইকৃত যোগাযোগ মাধ্যম দিয়ে অভিযোগ জমা দিন।'
               : 'Anonymous complaints are not accepted. Please provide a verified contact to submit a complaint.'}
           </p>
+          <div className="mt-4">
+            <Button asChild variant="outline" size="sm" className="rounded-full">
+              <Link to="/complaints/track">
+                {bn ? 'আগের অভিযোগ ট্র্যাক করুন' : 'Track an existing complaint'}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <Card className="rounded-[38px] border-0 bg-card/80 backdrop-blur-xl shadow-2xl">
