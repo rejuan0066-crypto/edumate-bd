@@ -29,8 +29,8 @@ const MeritApprovalBanner = ({
 }: Props) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { hasRole } = useAuth();
-  const isAdmin = hasRole('admin') || hasRole('super_admin');
+  const { role } = useAuth();
+  const isAdmin = role === 'admin' || role === 'super_admin';
 
   const [rejectOpen, setRejectOpen] = useState(false);
   const [reason, setReason] = useState('');
