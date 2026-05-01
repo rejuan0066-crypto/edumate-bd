@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Wallet, Clock, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Check, X, Wallet, Clock, ShieldCheck, RefreshCw, History } from 'lucide-react';
 import { format } from 'date-fns';
+import ReceiptStatusTimeline from '@/components/fees/ReceiptStatusTimeline';
 
 const AdminParentPaymentRequests = () => {
   const { language } = useLanguage();
