@@ -80,9 +80,6 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         .from("committee-attachments")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage
-        .from("committee-attachments")
-        .getPublicUrl(path);
 
       const { data: userData } = await supabase.auth.getUser();
       const { error: insErr } = await supabase
@@ -90,7 +87,9 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         .insert({
           committee_id: committeeId,
           file_name: file.name,
-          file_url: pub.publicUrl,
+          // Bucket is private; store the canonical "<bucket>/<path>" reference
+          // — clients fetch a signed URL on demand via secureStorage helpers.
+          file_url: `committee-attachments/${path}`,
           storage_path: path,
           file_size: file.size,
           mime_type: file.type || null,
