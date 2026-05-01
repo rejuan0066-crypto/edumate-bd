@@ -252,8 +252,7 @@ const ComplaintPage = () => {
                       required
                     />
                   </div>
-              </div>
-
+                </div>
               </div>
 
               {/* Category & priority */}
