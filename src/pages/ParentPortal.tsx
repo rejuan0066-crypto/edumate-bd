@@ -1048,6 +1048,10 @@ const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountI
       setPayOpen(false);
       setPayAmount(''); setPayTrxId(''); setPaySender(''); setPayNote('');
       qc.invalidateQueries({ queryKey: ['parent-payment-requests', studentUuid, accountId] });
+      const newId = (data as any)?.request?.id;
+      if (newId) {
+        navigate(`/parent/receipt/${newId}`);
+      }
     } catch (e: any) {
       toast({ title: 'Error', description: e.message, variant: 'destructive' });
     } finally {
