@@ -32,10 +32,15 @@ const StudentInfoPage = () => {
   const bn = language === 'bn';
   const { user, role, loading: authLoading } = useAuth();
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [parentSession, setParentSession] = useState<ParentSession | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
 
   // Load parent portal session
   useEffect(() => {
@@ -54,8 +59,78 @@ const StudentInfoPage = () => {
     () => !!user && ['admin', 'super_admin', 'teacher', 'staff', 'administrative'].includes(role || ''),
     [user, role]
   );
+  const isAdmin = role === 'admin' || role === 'super_admin';
   const isParent = !!parentSession?.studentUuid;
   const isLoggedIn = isStaff || isParent;
+
+  const openEdit = (s: any) => {
+    // Empty strings allowed → admin can clear any optional field. Only name_bn (NOT NULL) is required.
+    setEditForm({
+      name_bn: s.name_bn || '',
+      name_en: s.name_en || '',
+      father_name: s.father_name || '',
+      father_name_en: s.father_name_en || '',
+      father_phone: s.father_phone || '',
+      father_occupation: s.father_occupation || '',
+      father_nid: s.father_nid || '',
+      mother_name: s.mother_name || '',
+      mother_name_en: s.mother_name_en || '',
+      mother_phone: s.mother_phone || '',
+      mother_occupation: s.mother_occupation || '',
+      mother_nid: s.mother_nid || '',
+      guardian_phone: s.guardian_phone || '',
+      date_of_birth: s.date_of_birth || '',
+      gender: s.gender || '',
+      religion: s.religion || '',
+      blood_group: (s as any).blood_group || '',
+      phone: s.phone || '',
+      email: s.email || '',
+      address: s.address || '',
+      roll_number: s.roll_number || '',
+      registration_no: s.registration_no || '',
+      previous_class: s.previous_class || '',
+      previous_institute: s.previous_institute || '',
+      birth_reg_no: s.birth_reg_no || '',
+      status: s.status || 'active',
+      photo_url: s.photo_url || '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedStudentId) return;
+    if (!String(editForm.name_bn || '').trim()) {
+      toast({ title: bn ? 'নামের ফিল্ড আবশ্যক' : 'Name (Bangla) required', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      // Convert empty strings → null so admin can truly clear optional fields
+      const payload: Record<string, any> = {};
+      Object.entries(editForm).forEach(([k, v]) => {
+        if (k === 'name_bn') {
+          payload[k] = String(v).trim();
+        } else if (typeof v === 'string') {
+          payload[k] = v.trim() === '' ? null : v.trim();
+        } else {
+          payload[k] = v;
+        }
+      });
+      const { error } = await supabase
+        .from('students')
+        .update(payload)
+        .eq('id', selectedStudentId);
+      if (error) throw error;
+      toast({ title: bn ? 'সংরক্ষিত হয়েছে' : 'Saved successfully' });
+      setEditOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['student-info-detail', selectedStudentId] });
+      queryClient.invalidateQueries({ queryKey: ['student-info-search'] });
+    } catch (err: any) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Auto-select for parent
   useEffect(() => {
