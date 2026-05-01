@@ -620,6 +620,9 @@ const AdminSettings = () => {
             <TabsTrigger value="timezone" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'টাইমজোন' : 'Timezone'}
             </TabsTrigger>
+            <TabsTrigger value="receipt_qr" className="gap-1.5">
+              <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="email" className="mt-6">
