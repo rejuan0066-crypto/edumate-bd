@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2 } from 'lucide-react';
+import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
