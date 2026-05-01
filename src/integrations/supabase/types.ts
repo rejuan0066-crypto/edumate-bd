@@ -2621,6 +2621,59 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_payment_allocations: {
+        Row: {
+          actor_id: string | null
+          amount: number
+          created_at: string
+          fee_payment_id: string
+          id: string
+          method: string | null
+          notes: string | null
+          parent_account_id: string | null
+          source: string
+          source_record_id: string | null
+          student_id: string
+          trx_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          amount: number
+          created_at?: string
+          fee_payment_id: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          parent_account_id?: string | null
+          source: string
+          source_record_id?: string | null
+          student_id: string
+          trx_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          amount?: number
+          created_at?: string
+          fee_payment_id?: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          parent_account_id?: string | null
+          source?: string
+          source_record_id?: string | null
+          student_id?: string
+          trx_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_payment_allocations_fee_payment_id_fkey"
+            columns: ["fee_payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_payments: {
         Row: {
           amount: number
@@ -5493,12 +5546,16 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          fee_assignment_ids: string[]
           fee_type: string
           id: string
           notes: string | null
+          parent_account_id: string | null
           payer_name: string | null
           payer_phone: string | null
           payment_method: string | null
+          reconciled_at: string | null
+          source: string
           status: string
           student_id: string | null
           transaction_id: string
@@ -5507,12 +5564,16 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          fee_assignment_ids?: string[]
           fee_type: string
           id?: string
           notes?: string | null
+          parent_account_id?: string | null
           payer_name?: string | null
           payer_phone?: string | null
           payment_method?: string | null
+          reconciled_at?: string | null
+          source?: string
           status?: string
           student_id?: string | null
           transaction_id: string
@@ -5521,12 +5582,16 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          fee_assignment_ids?: string[]
           fee_type?: string
           id?: string
           notes?: string | null
+          parent_account_id?: string | null
           payer_name?: string | null
           payer_phone?: string | null
           payment_method?: string | null
+          reconciled_at?: string | null
+          source?: string
           status?: string
           student_id?: string | null
           transaction_id?: string
@@ -8961,6 +9026,24 @@ export type Database = {
           student_uuid: string
         }[]
       }
+      reconcile_fee_payment: {
+        Args: {
+          p_actor_id?: string
+          p_amount: number
+          p_fee_assignment_ids?: string[]
+          p_method?: string
+          p_parent_account_id?: string
+          p_source?: string
+          p_source_record_id?: string
+          p_student_id: string
+          p_trx_id?: string
+        }
+        Returns: {
+          allocated: number
+          fee_payment_id: string
+          new_status: string
+        }[]
+      }
       refresh_parent_student_links:
         | { Args: { p_account_id: string }; Returns: string[] }
         | {
@@ -9033,6 +9116,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reverse_fee_allocations: {
+        Args: {
+          p_actor_id?: string
+          p_source: string
+          p_source_record_id: string
+        }
+        Returns: number
       }
       submit_admission_test_attempt: {
         Args: {

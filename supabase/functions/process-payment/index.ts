@@ -16,7 +16,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    const { action, amount, student_id, fee_type_id, month, year, callback_data } = body;
+    const { action, amount, student_id, fee_type_id, month, year, callback_data,
+            fee_assignment_ids, parent_account_id, source, transaction_id: tx_in,
+            new_status } = body;
 
     // Load gateway config
     const { data: config, error: cfgErr } = await supabase
@@ -39,6 +41,28 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: true, provider: config.provider, message: "Callback received" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Admin/manual: update an existing gateway payment's status (will trigger DB reconciliation)
+    if (action === "update_status") {
+      if (!tx_in || !new_status) {
+        return new Response(
+          JSON.stringify({ error: "transaction_id and new_status required" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const { error: uErr } = await supabase
+        .from("payments")
+        .update({ status: new_status })
+        .eq("transaction_id", tx_in);
+      if (uErr) {
+        return new Response(JSON.stringify({ error: uErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ success: true, transaction_id: tx_in, status: new_status }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // Initiate payment
@@ -234,6 +258,19 @@ Deno.serve(async (req) => {
           };
         }
       }
+
+      // Record pending payments row so webhook + DB triggers can reconcile later.
+      await supabase.from("payments").insert({
+        student_id: student_id || null,
+        fee_type: fee_type_id || "fee",
+        amount,
+        transaction_id: transactionId,
+        status: "pending",
+        payment_method: config.provider,
+        fee_assignment_ids: fee_assignment_ids || [],
+        parent_account_id: parent_account_id || null,
+        source: source || "gateway",
+      });
 
       return new Response(
         JSON.stringify({
