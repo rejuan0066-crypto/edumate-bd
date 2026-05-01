@@ -268,6 +268,7 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/parent" element={<ParentPortal />} />
                   <Route path="/complaints" element={<ComplaintPage />} />
+                  <Route path="/complaints/track" element={<ComplaintTrackPage />} />
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
