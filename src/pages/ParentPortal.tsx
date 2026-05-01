@@ -710,19 +710,19 @@ const ParentDashboard = ({
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileTab student={student} studentUuid={session.studentUuid} bn={bn} />
+          <ProfileTab student={student} studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="results">
-          <ResultsTab studentUuid={session.studentUuid} bn={bn} />
+          <ResultsTab studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="fees">
-          <FeesTab studentUuid={session.studentUuid} bn={bn} />
+          <FeesTab studentUuid={activeUuid} accountId={session.accountId!} bn={bn} />
         </TabsContent>
         <TabsContent value="routine">
           <RoutineTab student={student} bn={bn} />
         </TabsContent>
         <TabsContent value="library">
-          <LibraryTab studentUuid={session.studentUuid} bn={bn} />
+          <LibraryTab studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="messages">
           <MessagesTab session={session} bn={bn} />
