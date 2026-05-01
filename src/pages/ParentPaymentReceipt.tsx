@@ -12,6 +12,7 @@ import { format } from 'date-fns';
 import { Download, Printer, ArrowLeft, CheckCircle2, Clock, XCircle, Wallet } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { generateReceiptQrDataUrl } from '@/lib/receiptQr';
 
 const STORAGE_KEY = 'parent_portal_session';
 
@@ -63,6 +64,7 @@ const ParentPaymentReceipt = () => {
   const [data, setData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [qr, setQr] = useState<{ dataUrl: string; url: string } | null>(null);
 
   const prevStatusRef = useRef<string | null>(null);
 
@@ -150,6 +152,16 @@ const ParentPaymentReceipt = () => {
   }, [requestId]);
 
   // Realtime subscription + polling fallback for status changes
+  // Generate QR for verification
+  useEffect(() => {
+    if (!requestId) return;
+    let cancelled = false;
+    generateReceiptQrDataUrl('parent_payment_request', requestId, 200).then((q) => {
+      if (!cancelled && q) setQr(q);
+    });
+    return () => { cancelled = true; };
+  }, [requestId]);
+
   useEffect(() => {
     if (!requestId) return;
     const channel = supabase
@@ -347,6 +359,36 @@ const ParentPaymentReceipt = () => {
               </p>
             )}
           </div>
+
+          {/* QR Verification block */}
+          {qr && (
+            <div className="px-6 py-5 border-t border-gray-200 flex items-center gap-4 bg-gray-50">
+              <img
+                src={qr.dataUrl}
+                alt="Verification QR"
+                className="w-24 h-24 rounded-lg bg-white p-1 border border-emerald-200 flex-shrink-0"
+                crossOrigin="anonymous"
+              />
+              <div className="flex-1 text-xs space-y-1">
+                <div className="font-bold text-emerald-800 text-sm">
+                  {bn ? '🔒 যাচাইযোগ্য রসিদ' : '🔒 Verifiable Receipt'}
+                </div>
+                <p className="text-gray-600 leading-snug">
+                  {bn
+                    ? 'যে কেউ এই QR কোড স্ক্যান করে রসিদের প্রকৃত স্ট্যাটাস ও তথ্য যাচাই করতে পারবেন।'
+                    : 'Anyone can scan this QR to verify the authenticity and current status of this receipt.'}
+                </p>
+                <a
+                  href={qr.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-700 hover:underline font-mono break-all text-[10px]"
+                >
+                  {qr.url}
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* Footer note */}
           <div className="p-6 text-xs text-gray-500 text-center space-y-1">

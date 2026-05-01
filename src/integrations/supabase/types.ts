@@ -6282,6 +6282,42 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_verify_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          last_scanned_at: string | null
+          receipt_id: string
+          receipt_type: string
+          revoked_at: string | null
+          scan_count: number
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_scanned_at?: string | null
+          receipt_id: string
+          receipt_type: string
+          revoked_at?: string | null
+          scan_count?: number
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_scanned_at?: string | null
+          receipt_id?: string
+          receipt_type?: string
+          revoked_at?: string | null
+          scan_count?: number
+          token?: string
+        }
+        Relationships: []
+      }
       resign_letters: {
         Row: {
           created_at: string | null
@@ -8932,6 +8968,10 @@ export type Database = {
       }
       get_encryption_key: { Args: never; Returns: string }
       get_next_receipt_serial: { Args: never; Returns: string }
+      get_or_create_receipt_token: {
+        Args: { _receipt_id: string; _receipt_type: string }
+        Returns: string
+      }
       get_password_protection_info: { Args: never; Returns: Json }
       get_public_tables: {
         Args: never
@@ -9208,6 +9248,8 @@ export type Database = {
         Args: { p_password: string }
         Returns: Json
       }
+      verify_receipt_admin: { Args: { _token: string }; Returns: Json }
+      verify_receipt_public: { Args: { _token: string }; Returns: Json }
     }
     Enums: {
       app_role:

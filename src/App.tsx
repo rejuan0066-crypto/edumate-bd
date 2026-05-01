@@ -28,6 +28,7 @@ import FeePaymentPage from "./pages/FeePaymentPage";
 import Login from "./pages/Login";
 import ParentPortal from "./pages/ParentPortal";
 import ParentPaymentReceipt from "./pages/ParentPaymentReceipt";
+import VerifyReceipt from "./pages/VerifyReceipt";
 import StudentPortal from "./pages/StudentPortal";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
@@ -274,6 +275,7 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/parent" element={<ParentPortal />} />
                   <Route path="/parent/receipt/:requestId" element={<ParentPaymentReceipt />} />
+                  <Route path="/verify-receipt/:token" element={<VerifyReceipt />} />
                   <Route path="/student-portal" element={<StudentPortal />} />
                   <Route path="/complaints" element={<ComplaintPage />} />
                   <Route path="/complaints/track" element={<ComplaintTrackPage />} />
