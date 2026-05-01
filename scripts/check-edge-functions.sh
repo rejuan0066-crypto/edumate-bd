@@ -47,8 +47,15 @@ fi
 
 PASS=()
 FAIL=()
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+# Persist per-function logs + summary to REPORT_DIR so CI can upload them
+# as a downloadable artifact. Defaults to a repo-local path.
+REPORT_DIR="${REPORT_DIR:-$ROOT/.edge-function-reports}"
+rm -rf "$REPORT_DIR"
+mkdir -p "$REPORT_DIR"
+TMP="$REPORT_DIR"
+SUMMARY_MD="$REPORT_DIR/summary.md"
+SUMMARY_JSON="$REPORT_DIR/summary.json"
+RUN_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 DENO_CFG="$FN_DIR/deno.json"
 CFG_ARGS=()
