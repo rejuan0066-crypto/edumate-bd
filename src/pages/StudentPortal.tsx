@@ -175,7 +175,13 @@ const StudentPortal = () => {
     await supabase.functions.invoke('student-auth', {
       body: { action: 'mark_verified', contact: suEmail.trim() },
     });
-    toast({ title: bn ? 'ভেরিফাই সফল' : 'Verified', description: bn ? 'এখন লগইন করুন' : 'You can login now' });
+    toast({
+      title: bn ? '✅ ইমেইল ভেরিফাই সফল' : '✅ Email verified',
+      description: bn
+        ? 'আপনার আইডি অনুমোদনের জন্য অপেক্ষমাণ। অ্যাডমিন অনুমোদন করার পর আপনি ইমেইলে বার্তা পাবেন এবং লগইন করতে পারবেন।'
+        : 'Your account is awaiting admin approval. You will receive an email once approved and then you can log in.',
+      duration: 9000,
+    });
     setLoginContact(suEmail.trim());
     setSuEmail(''); setSuPassword(''); setSuName(''); setSuStudentId(''); setSuDob('');
     setMode('login');
