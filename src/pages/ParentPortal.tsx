@@ -332,6 +332,8 @@ const ParentPortal = () => {
     setSignupPassword('');
     setSignupFullName('');
     setSignupPhone('');
+    setSignupNid('');
+    setMatchPreview([]);
     setSignupStudentId('');
     setSignupDob('');
     setMode('login');
