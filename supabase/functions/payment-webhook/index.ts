@@ -30,6 +30,66 @@ function normalizeStatus(s: string | null | undefined): "success" | "failed" | "
   return "pending";
 }
 
+// Auto-verify a donation after a successful gateway webhook.
+// 1) Insert verified_payments row keyed on TrxID+amount.
+// 2) Find matching pending donor row by TrxID in notes.
+// 3) Mark donor as verified and consume verified_payments.
+async function reconcileDonation(
+  trxId: string,
+  amount: number,
+  payload: Record<string, any>,
+): Promise<{ verified: boolean; donor_id?: string; reason?: string }> {
+  if (!trxId || !amount || amount <= 0) {
+    return { verified: false, reason: "missing_trx_or_amount" };
+  }
+
+  const method = String(
+    payload.card_type || payload.payment_method || payload.provider || "Online Gateway",
+  );
+
+  // Insert verified_payments (ignore duplicates).
+  await supabase
+    .from("verified_payments")
+    .insert({ trx_id: trxId, amount, method, source: "gateway-webhook" })
+    .then(() => null, () => null);
+
+  // Find pending donor row containing this TrxID.
+  const { data: donor } = await supabase
+    .from("donors")
+    .select("id, payment_status, donation_amount")
+    .ilike("notes", `%TrxID: ${trxId}%`)
+    .eq("payment_status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!donor) return { verified: false, reason: "donor_not_found" };
+  if (Number(donor.donation_amount) !== amount) {
+    return { verified: false, donor_id: donor.id, reason: "amount_mismatch" };
+  }
+
+  await supabase
+    .from("verified_payments")
+    .update({
+      consumed_at: new Date().toISOString(),
+      consumed_by_donor_id: donor.id,
+    })
+    .eq("trx_id", trxId)
+    .eq("amount", amount)
+    .is("consumed_at", null);
+
+  const { error: updErr } = await supabase
+    .from("donors")
+    .update({
+      payment_status: "verified",
+      verified_at: new Date().toISOString(),
+    })
+    .eq("id", donor.id);
+
+  if (updErr) return { verified: false, donor_id: donor.id, reason: updErr.message };
+  return { verified: true, donor_id: donor.id };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
