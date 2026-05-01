@@ -139,6 +139,9 @@ const AdminParentPaymentRequests = () => {
                                 <X className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" onClick={() => setHistoryId(r.id)} className="h-8 rounded-lg" title={bn ? 'টাইমলাইন' : 'Timeline'}>
+                              <History className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
