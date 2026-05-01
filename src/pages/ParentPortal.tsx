@@ -456,6 +456,45 @@ const ParentPortal = () => {
                             className="rounded-xl h-11" />
                         </div>
                       )}
+                      <div className="space-y-2">
+                        <Label htmlFor="su-nid">
+                          {bn ? 'অভিভাবকের NID (পিতা/মাতা/অভিভাবক)' : "Parent's NID (father/mother/guardian)"} *
+                        </Label>
+                        <Input id="su-nid"
+                          placeholder={bn ? 'NID নম্বর দিন' : 'Enter NID number'}
+                          value={signupNid}
+                          onChange={(e) => setSignupNid(e.target.value.replace(/[^\d]/g, ''))}
+                          onBlur={async () => {
+                            if (!signupNid.trim() && !signupPhone.trim()) { setMatchPreview([]); return; }
+                            try {
+                              const { data } = await supabase.functions.invoke('parent-auth', {
+                                body: { action: 'preview_match', nid: signupNid.trim() || undefined, phone: signupPhone.trim() || undefined },
+                              });
+                              setMatchPreview(data?.matches || []);
+                            } catch { /* ignore */ }
+                          }}
+                          inputMode="numeric"
+                          className="rounded-xl h-11" />
+                        <p className="text-[11px] text-muted-foreground">
+                          {bn
+                            ? 'NID/ফোন দিয়ে আপনার সন্তানদের একাউন্টের সাথে স্বয়ংক্রিয়ভাবে যুক্ত করা হবে। ভবিষ্যতে নতুন ভর্তি হলে অটো যোগ হবে।'
+                            : 'NID/phone is used to auto-link your children. Future admissions will auto-attach.'}
+                        </p>
+                        {matchPreview.length > 0 && (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs">
+                            <p className="font-semibold text-emerald-700 mb-1">
+                              {bn ? `${matchPreview.length} জন ছাত্র পাওয়া গেছে:` : `${matchPreview.length} student(s) found:`}
+                            </p>
+                            <ul className="space-y-0.5">
+                              {matchPreview.map((m) => (
+                                <li key={m.student_uuid} className="text-emerald-800">
+                                  • {bn ? m.name_bn : (m.name_en || m.name_bn)} <span className="text-emerald-600">({m.student_id})</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                       {isVisible('password') && (
                         <div className="space-y-2">
                           <Label htmlFor="su-pwd">
