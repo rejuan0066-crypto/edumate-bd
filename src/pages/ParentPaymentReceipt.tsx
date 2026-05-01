@@ -26,6 +26,7 @@ interface ReceiptData {
   status: string;
   created_at: string;
   verified_at: string | null;
+  rejection_reason: string | null;
   source: 'manual' | 'gateway';
   student?: {
     name: string;
