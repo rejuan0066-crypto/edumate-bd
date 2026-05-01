@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, User, GraduationCap, LogIn, UserPlus, Calendar, IdCard, LogOut, Eye } from 'lucide-react';
+import { Mail, Lock, User, GraduationCap, LogIn, UserPlus, Calendar, IdCard, LogOut, Eye, KeyRound } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { useOtpService } from '@/hooks/useOtpService';
 
 const STUDENT_STORAGE_KEY = 'student_portal_session';
 // Reuse parent_portal_session so /student-info can read student selection too
