@@ -211,12 +211,13 @@ const ComplaintPage = () => {
                     />
                   </div>
                   <div>
-                    <Label>{bn ? 'শিক্ষার্থী/সদস্য আইডি' : 'Student/Member ID'} *</Label>
+                    <Label>{bn ? 'পরিচয়পত্র নম্বর (NID/জন্ম নিবন্ধন/অন্যান্য)' : 'ID Number (NID / Birth Reg. / Other)'} *</Label>
                     <Input
                       value={form.complainant_student_id}
                       onChange={(e) => updateField('complainant_student_id', e.target.value)}
                       className="rounded-xl"
                       maxLength={50}
+                      placeholder={bn ? 'NID, জন্ম নিবন্ধন বা অন্য যেকোনো পরিচয়পত্র নম্বর' : 'NID, Birth Registration or any other ID'}
                       required
                     />
                   </div>
