@@ -76,6 +76,20 @@ export async function getSecureUrl(
   const now = Date.now();
   if (cached && cached.expiresAt - 60_000 > now) return cached.url;
 
+  // Route through the central authorization edge function so every signed-URL
+  // request is JWT-verified, role-checked, and audited (security_logs on denial).
+  // Falls back to direct storage signing only for buckets where RLS is the sole
+  // gate (e.g., db-backups handled by super_admin policy).
+  const routeViaEdge = ref.bucket !== "db-backups";
+  if (routeViaEdge) {
+    const { data, error } = await supabase.functions.invoke("request-signed-url", {
+      body: { bucket: ref.bucket, path: ref.path, expiresIn },
+    });
+    if (error || !data?.url) return null;
+    cache.set(key, { url: data.url as string, expiresAt: now + expiresIn * 1000 });
+    return data.url as string;
+  }
+
   const { data, error } = await supabase.storage
     .from(ref.bucket)
     .createSignedUrl(ref.path, expiresIn);

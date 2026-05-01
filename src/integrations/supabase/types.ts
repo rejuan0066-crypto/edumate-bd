@@ -6772,6 +6772,54 @@ export type Database = {
         }
         Relationships: []
       }
+      security_logs: {
+        Row: {
+          bucket_id: string | null
+          created_at: string
+          event_type: string
+          http_status: number | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          object_path: string | null
+          reason: string | null
+          resource: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bucket_id?: string | null
+          created_at?: string
+          event_type: string
+          http_status?: number | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          object_path?: string | null
+          reason?: string | null
+          resource?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bucket_id?: string | null
+          created_at?: string
+          event_type?: string
+          http_status?: number | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          object_path?: string | null
+          reason?: string | null
+          resource?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       shift_time_audit_log: {
         Row: {
           affected_salary_records: number
@@ -8409,6 +8457,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      can_access_storage_object: {
+        Args: { _bucket: string; _object_path: string; _user_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: { _action: string; _key: string; _scope: string }
         Returns: Json
@@ -8481,6 +8533,7 @@ export type Database = {
         Args: { p_amount: number; p_item_id: string }
         Returns: undefined
       }
+      is_accounts_staff: { Args: { _user_id: string }; Returns: boolean }
       link_administrative_officer_by_email: {
         Args: never
         Returns: {
@@ -8524,6 +8577,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      log_security_event: {
+        Args: {
+          p_bucket_id?: string
+          p_event_type: string
+          p_ip?: string
+          p_metadata?: Json
+          p_object_path?: string
+          p_reason?: string
+          p_resource?: string
+          p_status?: number
+          p_user_agent?: string
+        }
+        Returns: string
       }
       reject_admission_test_merit: {
         Args: { p_reason: string; p_test_id: string }
