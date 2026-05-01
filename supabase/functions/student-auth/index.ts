@@ -177,8 +177,21 @@ Deno.serve(async (req) => {
       if (!account.contact_verified) {
         return json({ error: 'যোগাযোগ ভেরিফাই করা হয়নি', code: 'NOT_VERIFIED' }, 403);
       }
+      if (account.status === 'pending') {
+        return json({
+          error: 'আপনার একাউন্ট এখনো অনুমোদনের জন্য অপেক্ষমাণ। অ্যাডমিন অনুমোদন করার পর আপনি লগইন করতে পারবেন।',
+          code: 'PENDING_APPROVAL',
+        }, 403);
+      }
       if (account.status === 'suspended') return json({ error: 'একাউন্ট স্থগিত', code: 'SUSPENDED' }, 403);
-      if (account.status === 'rejected') return json({ error: 'একাউন্ট প্রত্যাখ্যাত', code: 'REJECTED' }, 403);
+      if (account.status === 'rejected') {
+        return json({
+          error: account.rejection_reason
+            ? `আপনার একাউন্ট প্রত্যাখ্যাত হয়েছে: ${account.rejection_reason}`
+            : 'আপনার একাউন্ট প্রত্যাখ্যাত হয়েছে।',
+          code: 'REJECTED',
+        }, 403);
+      }
 
       await supabase
         .from('student_accounts')
