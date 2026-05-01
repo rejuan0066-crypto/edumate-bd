@@ -1085,20 +1085,25 @@ const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountI
           <CardContent>
             <div className="space-y-2">
               {pendingRequests.map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between text-sm bg-amber-50 rounded-xl p-3">
-                  <div>
-                    <p className="font-medium">৳{Number(r.amount).toLocaleString()} • {r.method?.toUpperCase()} • TrxID: {r.trx_id}</p>
+                <div key={r.id} className="flex items-center justify-between gap-3 text-sm bg-amber-50 rounded-xl p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">৳{Number(r.amount).toLocaleString()} • {r.method?.toUpperCase()} • TrxID: {r.trx_id}</p>
                     <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    r.status === 'pending' ? 'bg-amber-200 text-amber-900' :
-                    r.status === 'verified' ? 'bg-emerald-200 text-emerald-900' :
-                    'bg-red-200 text-red-900'
-                  }`}>
-                    {r.status === 'pending' ? (bn ? 'অপেক্ষমাণ' : 'Pending') :
-                     r.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') :
-                     (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      r.status === 'pending' ? 'bg-amber-200 text-amber-900' :
+                      r.status === 'verified' ? 'bg-emerald-200 text-emerald-900' :
+                      'bg-red-200 text-red-900'
+                    }`}>
+                      {r.status === 'pending' ? (bn ? 'অপেক্ষমাণ' : 'Pending') :
+                       r.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') :
+                       (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
+                    </span>
+                    <Button size="sm" variant="outline" className="rounded-lg h-7 px-2 text-xs" onClick={() => navigate(`/parent/receipt/${r.id}`)}>
+                      {bn ? 'রসিদ' : 'Receipt'}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
