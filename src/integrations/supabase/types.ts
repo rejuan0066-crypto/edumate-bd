@@ -1196,6 +1196,50 @@ export type Database = {
         }
         Relationships: []
       }
+      complaint_updates: {
+        Row: {
+          complaint_id: string
+          created_at: string
+          created_by: string | null
+          from_status: string | null
+          id: string
+          is_public: boolean
+          message: string | null
+          to_status: string | null
+          update_type: string
+        }
+        Insert: {
+          complaint_id: string
+          created_at?: string
+          created_by?: string | null
+          from_status?: string | null
+          id?: string
+          is_public?: boolean
+          message?: string | null
+          to_status?: string | null
+          update_type: string
+        }
+        Update: {
+          complaint_id?: string
+          created_at?: string
+          created_by?: string | null
+          from_status?: string | null
+          id?: string
+          is_public?: boolean
+          message?: string | null
+          to_status?: string | null
+          update_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_updates_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaints: {
         Row: {
           assigned_to: string | null
@@ -8509,6 +8553,10 @@ export type Database = {
       generate_staff_id: {
         Args: { p_category_key: string; p_joining_year?: number }
         Returns: string
+      }
+      get_complaint_by_ticket: {
+        Args: { p_email: string; p_ticket: string }
+        Returns: Json
       }
       get_data_sensitivity_map: {
         Args: never
