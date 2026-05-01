@@ -139,6 +139,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'user-management', path: '/admin/user-management', label_bn: 'ইউজার ম্যানেজমেন্ট', label_en: 'User Management', icon: 'UserPlus', visible: true, sort_order: 2 },
     { id: 'approvals', path: '/admin/approvals', label_bn: 'অনুমোদন', label_en: 'Approvals', icon: 'ShieldCheck', visible: true, sort_order: 3 },
     { id: 'parent-approvals', path: '/admin/parent-approvals', label_bn: 'অভিভাবকবৃন্দ তালিকা', label_en: 'Parent Approvals', icon: 'UserCheck', visible: true, sort_order: 3.5 },
+    { id: 'student-approvals', path: '/admin/student-approvals', label_bn: 'ছাত্র একাউন্ট অনুমোদন', label_en: 'Student Approvals', icon: 'GraduationCap', visible: true, sort_order: 3.55 },
     { id: 'parent-messages', path: '/admin/parent-messages', label_bn: 'অভিভাবক বার্তা', label_en: 'Parent Messages', icon: 'MessageSquare', visible: true, sort_order: 3.6 },
     { id: 'push-notifications', path: '/admin/push-notifications', label_bn: 'পুশ নোটিফিকেশন', label_en: 'Push Notifications', icon: 'Bell', visible: true, sort_order: 3.7 },
     { id: 'menu-manager', path: '/admin/menu-manager', label_bn: 'মেনু ম্যানেজার', label_en: 'Menu Manager', icon: 'ListOrdered', visible: true, sort_order: 4 },

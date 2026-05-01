@@ -7427,6 +7427,8 @@ export type Database = {
       }
       student_accounts: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           contact: string
           contact_type: string
           contact_verified: boolean
@@ -7436,12 +7438,15 @@ export type Database = {
           last_login_at: string | null
           linked_student_uuid: string
           password_hash: string
+          rejection_reason: string | null
           status: string
           student_dob: string
           student_id: string
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           contact: string
           contact_type: string
           contact_verified?: boolean
@@ -7451,12 +7456,15 @@ export type Database = {
           last_login_at?: string | null
           linked_student_uuid: string
           password_hash: string
+          rejection_reason?: string | null
           status?: string
           student_dob: string
           student_id: string
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           contact?: string
           contact_type?: string
           contact_verified?: boolean
@@ -7466,6 +7474,7 @@ export type Database = {
           last_login_at?: string | null
           linked_student_uuid?: string
           password_hash?: string
+          rejection_reason?: string | null
           status?: string
           student_dob?: string
           student_id?: string
