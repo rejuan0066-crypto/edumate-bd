@@ -59,6 +59,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { menuConfig } = useMenuSettings();
+  // Live toast notifications for receipt status changes (admins/staff only via RLS)
+  useReceiptStatusRealtime();
   const { theme: adminTheme } = useThemeSettings();
   const { sections: sidebarSections } = useSidebarSections();
   const { settings: websiteSettings } = useWebsiteSettings();
