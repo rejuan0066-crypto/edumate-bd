@@ -209,6 +209,8 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '"total":%d,' "${#TARGETS[@]}"
   printf '"passed":%d,' "${#PASS[@]}"
   printf '"failed":%d,' "${#FAIL[@]}"
+  printf '"total_step_seconds":%d,' "$TOTAL_STEP_SECONDS"
+  printf '"slow_threshold_seconds":%d,' "$SLOW_STEP_THRESHOLD"
   printf '"gate_ok":%s' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '}'
 } >"$SUMMARY_JSON"
@@ -217,6 +219,16 @@ echo
 echo "================ Summary ================"
 echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
+echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRESHOLD}s)"
+if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
+  echo "Slowest steps:"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step _ dur _ <<<"$row"
+    printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
+  done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
+    printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
+  done
+fi
 if [ "${#FAIL[@]}" -gt 0 ]; then
   printf '  - %s\n' "${FAIL[@]}"
 fi
