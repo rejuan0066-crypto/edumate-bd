@@ -114,10 +114,14 @@ To extend the watch list, add a row to the `watched(tbl) AS (VALUES …)` CTE in
 ## 7. Currently known violations (must fix before next release)
 
 > The automated suite will fail on these until each is remediated.
+> Last suite run: 2026-05-01 — 10 `USING (true)` violations found.
 
-- [ ] **`donors`** — drop policy `Anyone can view donors USING (true)`; replace with admin/staff-gated SELECT.
-- [ ] **`smtp_config`** — drop policy `Authenticated users can read smtp_config USING (true)`; restrict SELECT to `admin`/`super_admin`.
-- [ ] **`budgets`** — drop policy `Authenticated users can view budgets USING (true)`; the gated `Permission-gated budgets manage` already covers SELECT via `view` permission.
+- [ ] **`donors`** — drop `Anyone can view donors USING (true)`; replace with admin/staff-gated SELECT.
+- [ ] **`smtp_config`** — drop `Authenticated users can read smtp_config USING (true)`; restrict SELECT to `admin`/`super_admin`.
+- [ ] **`payments`** — drop `Anyone can view payments USING (true)` (financial PII leak); restrict to admin/`/admin/payments` permission and the paying user.
+- [ ] **`staff`** — drop `Anyone can view staff USING (true)`; replace with role/permission-gated read. Keep the existing INSERT-only policy for `anon` (recruitment form, status='pending').
+- [ ] **`app_settings`** — drop `app_settings public read USING (true)` if it exposes secrets; if only non-sensitive settings (timezone, branding) are needed publicly, move them to a dedicated `app_settings_public` view.
+- [ ] **`budgets`** — drop `Authenticated users can view budgets USING (true)`; the `Permission-gated budgets manage` policy already covers SELECT via the `view` permission.
 - [ ] **`scholarships`** — drop `Authenticated users can view scholarships USING (true)`.
 - [ ] **`scholarship_awards`** — drop `Authenticated users can view scholarship awards USING (true)`.
 - [ ] **`meetings`** — drop `Authenticated users can view meetings USING (true)`; add gated SELECT (admin/super_admin/menu permission/participant).
