@@ -16,7 +16,7 @@ import { User, GraduationCap, Wallet, Bell, LogOut, Calendar, Users, Phone, Book
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
 const STORAGE_KEY = 'parent_portal_session';
@@ -37,7 +37,10 @@ const ParentPortal = () => {
 
   const [session, setSession] = useState<ParentSession | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<'login' | 'signup'>(
+    searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  );
 
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
