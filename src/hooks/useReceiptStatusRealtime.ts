@@ -186,8 +186,9 @@ export const useReceiptStatusRealtime = () => {
       pollDelay = POLL_MIN;
     };
 
+    const channelName = `receipt-status-audit-stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const channel = supabase
-      .channel('receipt-status-audit-stream')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'receipt_status_audit' },
