@@ -309,13 +309,11 @@ const ComplaintPage = () => {
 
               <Button
                 type="submit"
-                disabled={submitting || !emailVerified}
+                disabled={submitting}
                 className="w-full h-12 rounded-2xl text-base"
               >
                 {submitting ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{bn ? 'জমা হচ্ছে...' : 'Submitting...'}</>
-                ) : !emailVerified ? (
-                  bn ? 'প্রথমে ইমেইল ভেরিফাই করুন' : 'Verify email first'
                 ) : (
                   bn ? 'অভিযোগ জমা দিন' : 'Submit Complaint'
                 )}
