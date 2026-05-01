@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     // Look up payment row
     const { data: payment, error: lookupErr } = await supabase
       .from("payments")
-      .select("id, status")
+      .select("id, status, fee_type, amount")
       .eq("transaction_id", transaction_id)
       .maybeSingle();
 
@@ -71,6 +71,10 @@ Deno.serve(async (req) => {
 
     // Idempotent: if already in target state, no-op
     if (payment.status === status) {
+      // Still attempt donation auto-verify (in case the donor row was inserted later)
+      if (status === "success" && payment.fee_type === "donation") {
+        await reconcileDonation(transaction_id, Number(payment.amount), payload);
+      }
       return jsonResp({ ok: true, idempotent: true, status });
     }
 
@@ -81,11 +85,17 @@ Deno.serve(async (req) => {
 
     if (updErr) return jsonResp({ error: updErr.message }, 500);
 
+    let donation: any = null;
+    if (status === "success" && payment.fee_type === "donation") {
+      donation = await reconcileDonation(transaction_id, Number(payment.amount), payload);
+    }
+
     return jsonResp({
       ok: true,
       transaction_id,
       previous_status: payment.status,
       new_status: status,
+      donation,
       message:
         status === "success"
           ? "Payment marked success — fee_payments reconciled via trigger."
