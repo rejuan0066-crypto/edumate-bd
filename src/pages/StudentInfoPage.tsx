@@ -216,6 +216,71 @@ const StudentInfoPage = () => {
     setSelectedStudentId(null);
   };
 
+  // ---- Inline signup ----
+  const handleInlineSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = suName.trim();
+    const sid = suStudentId.trim();
+    const email = suEmail.trim().toLowerCase();
+    if (!name || !sid || !suDob || !email || !suPassword) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'সব ফিল্ড পূরণ করুন' : 'Fill all fields', variant: 'destructive' });
+      return;
+    }
+    if (suPassword.length < 6) {
+      toast({ title: bn ? 'দুর্বল পাসওয়ার্ড' : 'Weak password', description: bn ? 'কমপক্ষে ৬ অক্ষর' : 'At least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setSignupBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('student-auth', {
+        body: {
+          action: 'signup',
+          contact: email,
+          contact_type: 'email',
+          password: suPassword,
+          full_name: name,
+          student_id: sid,
+          student_dob: suDob,
+        },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      setOtpOpen(true);
+      toast({
+        title: bn ? 'একাউন্ট তৈরি হয়েছে' : 'Account created',
+        description: bn ? 'ইমেইলে পাঠানো OTP দিয়ে ভেরিফাই করুন।' : 'Verify the OTP sent to your email.',
+      });
+    } catch (err: any) {
+      toast({ title: bn ? 'সাইনআপ ব্যর্থ' : 'Signup failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
+  const handleInlineOtpVerified = async () => {
+    setOtpOpen(false);
+    await supabase.functions.invoke('student-auth', {
+      body: { action: 'mark_verified', contact: suEmail.trim().toLowerCase() },
+    });
+    toast({
+      title: bn ? 'ভেরিফাই সফল' : 'Verified',
+      description: bn ? 'এখন লগইন করতে যান।' : 'You can log in now.',
+    });
+    // Send them to the portal to log in
+    window.location.href = `/student-portal?mode=login`;
+  };
+
   // ---- Render gates ----
   if (authLoading) {
     return (
