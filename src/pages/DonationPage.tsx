@@ -176,14 +176,29 @@ const DonationPage = () => {
     return p ? (bn ? p.label_bn : p.label_en) : form.purposeKey;
   }, [form.purposeKey, form.purposeOther, purposes, bn]);
 
+  // RFC 5322-lite: standard email regex used across the app.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const emailTrimmed = form.email.trim();
+  const emailFormatValid = emailTrimmed === '' || EMAIL_RE.test(emailTrimmed);
+  const emailError = !emailFormatValid
+    ? bn
+      ? 'সঠিক ইমেইল ঠিকানা দিন (যেমন: name@example.com)'
+      : 'Please enter a valid email address (e.g. name@example.com)'
+    : '';
+
   const step1Valid =
     form.name.trim().length > 0 &&
     form.phone.trim().length >= 6 &&
     amountNum > 0 &&
     !!form.purposeKey &&
-    (form.purposeKey !== 'other' || form.purposeOther.trim().length > 0);
+    (form.purposeKey !== 'other' || form.purposeOther.trim().length > 0) &&
+    emailFormatValid;
 
   const goNextFromStep1 = () => {
+    if (!emailFormatValid) {
+      toast.error(emailError);
+      return;
+    }
     if (!step1Valid) {
       toast.error(bn ? 'নাম, ফোন, পরিমাণ ও উদ্দেশ্য আবশ্যক' : 'Name, phone, amount & purpose required');
       return;
@@ -565,13 +580,22 @@ const DonationPage = () => {
                   {bn ? 'ইমেইল (ঐচ্ছিক)' : 'Email (Optional)'}
                 </Label>
                 <Input
-                  className="bg-background mt-1"
+                  className={`bg-background mt-1 ${emailError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   placeholder="example@email.com"
                   maxLength={255}
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? 'donation-email-error' : undefined}
                 />
+                {emailError && (
+                  <p id="donation-email-error" className="text-xs text-destructive mt-1">
+                    {emailError}
+                  </p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <Label className="text-sm">{bn ? 'দানের উদ্দেশ্য' : 'Donation Purpose'} *</Label>
