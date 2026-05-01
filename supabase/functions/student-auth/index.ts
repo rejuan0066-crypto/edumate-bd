@@ -277,6 +277,79 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    if (body.action === 'notify_approved' || body.action === 'notify_rejected') {
+      const { account_id } = body as NotifyApprovedBody | NotifyRejectedBody;
+      const reason = body.action === 'notify_rejected' ? (body as NotifyRejectedBody).reason : undefined;
+      if (!account_id) return json({ error: 'account_id required' }, 400);
+
+      const { data: account, error: accErr } = await supabase
+        .from('student_accounts')
+        .select('id, contact, contact_type, full_name, student_id')
+        .eq('id', account_id)
+        .maybeSingle();
+      if (accErr) return json({ error: accErr.message }, 500);
+      if (!account) return json({ error: 'একাউন্ট পাওয়া যায়নি' }, 404);
+      if (account.contact_type !== 'email') {
+        return json({ success: true, skipped: 'non-email contact' });
+      }
+
+      // Resolve institution name for branding (best-effort)
+      let brand = 'Institution';
+      try {
+        const { data: inst } = await supabase.from('institution_info').select('name_en, name_bn').limit(1).maybeSingle();
+        brand = inst?.name_bn || inst?.name_en || brand;
+      } catch { /* ignore */ }
+
+      const profile = await resolveSmtpProfile(supabase, 'transactional');
+      if (!profile) {
+        console.warn('No SMTP profile available; skipping notification email');
+        return json({ success: true, skipped: 'no_smtp_profile' });
+      }
+
+      const isApproved = body.action === 'notify_approved';
+      const subject = isApproved
+        ? `${brand} — আপনার একাউন্ট অনুমোদিত হয়েছে`
+        : `${brand} — আপনার একাউন্ট প্রত্যাখ্যাত হয়েছে`;
+
+      const loginUrl = `${Deno.env.get('SUPABASE_URL')?.replace(/\/$/, '') || ''}`;
+      const html = isApproved
+        ? `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#ffffff;padding:24px;color:#111">
+            <div style="max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">
+              <div style="background:#10b981;color:#fff;padding:18px 22px;font-size:18px;font-weight:700">
+                একাউন্ট অনুমোদিত
+              </div>
+              <div style="padding:22px">
+                <p>প্রিয় <b>${escapeHtml(account.full_name)}</b>,</p>
+                <p>${escapeHtml(brand)} এ আপনার ছাত্র পোর্টাল একাউন্ট (Student ID: <b>${escapeHtml(account.student_id)}</b>) সফলভাবে <b>অনুমোদিত</b> হয়েছে।</p>
+                <p>আপনি এখন ছাত্র পোর্টালে লগইন করে আপনার তথ্য দেখতে পারবেন।</p>
+                <p style="margin-top:22px;color:#6b7280;font-size:12px">— ${escapeHtml(brand)}</p>
+              </div>
+            </div>
+          </body></html>`
+        : `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#ffffff;padding:24px;color:#111">
+            <div style="max-width:560px;margin:0 auto;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">
+              <div style="background:#ef4444;color:#fff;padding:18px 22px;font-size:18px;font-weight:700">
+                একাউন্ট প্রত্যাখ্যাত
+              </div>
+              <div style="padding:22px">
+                <p>প্রিয় <b>${escapeHtml(account.full_name)}</b>,</p>
+                <p>দুঃখজনকভাবে ${escapeHtml(brand)} এ আপনার ছাত্র পোর্টাল একাউন্টের অনুরোধ <b>প্রত্যাখ্যাত</b> হয়েছে।</p>
+                ${reason ? `<p><b>কারণ:</b> ${escapeHtml(reason)}</p>` : ''}
+                <p>বিস্তারিত জানতে অনুগ্রহ করে অফিসে যোগাযোগ করুন।</p>
+                <p style="margin-top:22px;color:#6b7280;font-size:12px">— ${escapeHtml(brand)}</p>
+              </div>
+            </div>
+          </body></html>`;
+
+      try {
+        await sendViaSMTP(profile, account.contact, subject, html);
+      } catch (e) {
+        console.error('SMTP send failed:', e);
+        return json({ success: false, error: e instanceof Error ? e.message : 'SMTP send failed' }, 500);
+      }
+      return json({ success: true });
+    }
+
     return json({ error: 'Unknown action' }, 400);
   } catch (e) {
     console.error('student-auth error:', e);
