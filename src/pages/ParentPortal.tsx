@@ -71,6 +71,40 @@ const ParentPortal = () => {
   const [signupDob, setSignupDob] = useState('');
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
 
+  // Dynamic signup field configuration
+  const { data: signupFields = [] } = useQuery({
+    queryKey: ['parent-signup-field-config-public'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('parent_signup_field_config')
+        .select('*')
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return (data || []) as SignupFieldConfig[];
+    },
+  });
+
+  const fieldByKey = (key: string) => signupFields.find((f) => f.field_key === key);
+  const isVisible = (key: string) => {
+    const f = fieldByKey(key);
+    // Default to visible if config not yet loaded (avoids hiding fields on first paint)
+    return f ? f.is_visible : true;
+  };
+  const isRequired = (key: string) => {
+    const f = fieldByKey(key);
+    return f ? f.is_required : true;
+  };
+  const labelOf = (key: string, fallbackBn: string, fallbackEn: string) => {
+    const f = fieldByKey(key);
+    if (!f) return bn ? fallbackBn : fallbackEn;
+    return bn ? f.label_bn : f.label_en;
+  };
+  const placeholderOf = (key: string) => {
+    const f = fieldByKey(key);
+    if (!f) return undefined;
+    return (bn ? f.placeholder_bn : f.placeholder_en) || undefined;
+  };
+
   useEffect(() => {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (raw) {
