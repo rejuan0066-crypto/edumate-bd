@@ -74,3 +74,14 @@ jobs:
 
       - name: Validate edge function env vars
         run: bash scripts/check-edge-function-env.sh
+
+      # Upload per-function logs + markdown/JSON summary so reviewers can
+      # download them from the workflow run page even when checks pass.
+      - name: Upload edge function check report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-function-check-report-${{ github.run_id }}
+          path: .edge-function-reports/
+          if-no-files-found: warn
+          retention-days: 14

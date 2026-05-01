@@ -47,8 +47,15 @@ fi
 
 PASS=()
 FAIL=()
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+# Persist per-function logs + summary to REPORT_DIR so CI can upload them
+# as a downloadable artifact. Defaults to a repo-local path.
+REPORT_DIR="${REPORT_DIR:-$ROOT/.edge-function-reports}"
+rm -rf "$REPORT_DIR"
+mkdir -p "$REPORT_DIR"
+TMP="$REPORT_DIR"
+SUMMARY_MD="$REPORT_DIR/summary.md"
+SUMMARY_JSON="$REPORT_DIR/summary.json"
+RUN_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 DENO_CFG="$FN_DIR/deno.json"
 CFG_ARGS=()
@@ -85,23 +92,28 @@ run_step() {
   local logfile="$1"; shift
   shift # discard "--"
   local rc=0
+  local started; started="$(date +%s)"
   timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
     >"$logfile" 2>&1 || rc=$?
+  local dur=$(( $(date +%s) - started ))
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label"
+    echo "  ✓ $label (${dur}s)"
     return 0
   fi
-  # `timeout` exits 124 on SIGTERM expiry, 137 when it had to SIGKILL.
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
     echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
     echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
     echo "      hangs (network fetches at import time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc)"
+    echo "  ✗ $label (exit $rc, ${dur}s)"
   fi
   sed 's/^/      /' "$logfile"
   return 1
 }
+
+STEP_RESULTS=()
+LAST_FN="_gate"
 
 # Run the lint/fmt gate now that run_step (with timeouts) is defined.
 run_step "deno lint (Edge Functions rule set)" "$gate_log1" -- \
@@ -112,6 +124,7 @@ echo
 
 for f in "${TARGETS[@]}"; do
   name="$(basename "$(dirname "$f")")"
+  LAST_FN="$name"
   echo "── $name ──────────────────────────────────"
 
   ok=1
@@ -134,6 +147,46 @@ for f in "${TARGETS[@]}"; do
   fi
 done
 
+# ── Build downloadable summary report ─────────────────────────────────────
+RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+{
+  echo "# Edge Functions Pre-Deploy Report"
+  echo
+  echo "- **Started:** $RUN_STARTED_AT"
+  echo "- **Finished:** $RUN_FINISHED_AT"
+  echo "- **Functions checked:** ${#TARGETS[@]}"
+  echo "- **Passed:** ${#PASS[@]}"
+  echo "- **Failed:** ${#FAIL[@]}"
+  echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
+  echo
+  echo "## Step results"
+  echo
+  echo "| Function | Step | Exit | Duration | Log |"
+  echo "|---|---|---|---|---|"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step rc dur logf <<<"$row"
+    status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
+    echo "| \`$fn\` | $step | $status | $dur | \`$logf\` |"
+  done
+  if [ "${#FAIL[@]}" -gt 0 ]; then
+    echo
+    echo "## Failed functions"
+    printf -- '- `%s`\n' "${FAIL[@]}"
+  fi
+} >"$SUMMARY_MD"
+
+# Machine-readable summary for downstream tooling
+{
+  printf '{'
+  printf '"started_at":"%s",' "$RUN_STARTED_AT"
+  printf '"finished_at":"%s",' "$RUN_FINISHED_AT"
+  printf '"total":%d,' "${#TARGETS[@]}"
+  printf '"passed":%d,' "${#PASS[@]}"
+  printf '"failed":%d,' "${#FAIL[@]}"
+  printf '"gate_ok":%s' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
+  printf '}'
+} >"$SUMMARY_JSON"
+
 echo
 echo "================ Summary ================"
 echo "Passed: ${#PASS[@]}"
@@ -141,6 +194,13 @@ echo "Failed: ${#FAIL[@]}"
 if [ "${#FAIL[@]}" -gt 0 ]; then
   printf '  - %s\n' "${FAIL[@]}"
 fi
+echo "Report: $SUMMARY_MD"
+
+# Append to GitHub Actions step summary when running in CI
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "$SUMMARY_MD" ]; then
+  cat "$SUMMARY_MD" >>"$GITHUB_STEP_SUMMARY"
+fi
+
 if [ "$GATE_OK" -ne 1 ]; then
   echo "Lint/fmt gate failed. ❌"
   exit 1
