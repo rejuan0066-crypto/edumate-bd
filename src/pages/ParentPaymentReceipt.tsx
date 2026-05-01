@@ -152,6 +152,16 @@ const ParentPaymentReceipt = () => {
   }, [requestId]);
 
   // Realtime subscription + polling fallback for status changes
+  // Generate QR for verification
+  useEffect(() => {
+    if (!requestId) return;
+    let cancelled = false;
+    generateReceiptQrDataUrl('parent_payment_request', requestId, 200).then((q) => {
+      if (!cancelled && q) setQr(q);
+    });
+    return () => { cancelled = true; };
+  }, [requestId]);
+
   useEffect(() => {
     if (!requestId) return;
     const channel = supabase
