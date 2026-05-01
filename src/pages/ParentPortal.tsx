@@ -344,47 +344,95 @@ const ParentPortal = () => {
 
                   <TabsContent value="signup">
                     <form onSubmit={handleSignup} className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="su-name">{bn ? 'আপনার নাম' : 'Your Full Name'}</Label>
-                        <Input id="su-name" value={signupFullName} onChange={(e) => setSignupFullName(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-email">{bn ? 'ইমেইল' : 'Email'}</Label>
-                        <Input id="su-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-phone">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
-                        <Input id="su-phone" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-pwd">{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
-                        <Input id="su-pwd" type="password" value={signupPassword} onChange={(e) => setSignupPassword(sanitizePasswordInput(e.target.value))} className="rounded-xl h-11" />
-                      </div>
-                      <div className="border-t pt-3 mt-3">
-                        <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
+                      {isVisible('full_name') && (
                         <div className="space-y-2">
-                          <Label htmlFor="su-sid">{bn ? 'ছাত্র আইডি' : 'Student ID'}</Label>
-                          <Input id="su-sid" placeholder="STU-2026-001" value={signupStudentId} onChange={(e) => setSignupStudentId(e.target.value)} className="rounded-xl h-11" />
+                          <Label htmlFor="su-name">
+                            {labelOf('full_name', 'আপনার নাম', 'Your Full Name')}
+                            {isRequired('full_name') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-name" value={signupFullName}
+                            placeholder={placeholderOf('full_name')}
+                            onChange={(e) => setSignupFullName(e.target.value)}
+                            className="rounded-xl h-11" />
                         </div>
-                        <div className="space-y-2 mt-2">
-                          <Label htmlFor="su-dob">{bn ? 'সন্তানের জন্মতারিখ (dd/mm/yyyy)' : "Child's Date of Birth (dd/mm/yyyy)"}</Label>
-                          <Input
-                            id="su-dob"
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="dd/mm/yyyy"
-                            maxLength={10}
-                            value={signupDob}
-                            onChange={(e) => {
-                              let v = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
-                              if (v.length >= 5) v = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
-                              else if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
-                              setSignupDob(v);
-                            }}
-                            className="rounded-xl h-11"
-                          />
+                      )}
+                      {isVisible('email') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-email">
+                            {labelOf('email', 'ইমেইল', 'Email')}
+                            {isRequired('email') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-email" type="email" value={signupEmail}
+                            placeholder={placeholderOf('email')}
+                            onChange={(e) => setSignupEmail(e.target.value)}
+                            className="rounded-xl h-11" />
                         </div>
-                      </div>
+                      )}
+                      {isVisible('phone') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-phone">
+                            {labelOf('phone', 'ফোন', 'Phone')}
+                            {isRequired('phone') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-phone" value={signupPhone}
+                            placeholder={placeholderOf('phone')}
+                            onChange={(e) => setSignupPhone(e.target.value)}
+                            className="rounded-xl h-11" />
+                        </div>
+                      )}
+                      {isVisible('password') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-pwd">
+                            {labelOf('password', 'পাসওয়ার্ড', 'Password')}
+                            {isRequired('password') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-pwd" type="password" value={signupPassword}
+                            placeholder={placeholderOf('password')}
+                            onChange={(e) => setSignupPassword(sanitizePasswordInput(e.target.value))}
+                            className="rounded-xl h-11" />
+                        </div>
+                      )}
+                      {(isVisible('student_id') || isVisible('student_dob')) && (
+                        <div className="border-t pt-3 mt-3">
+                          <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
+                          {isVisible('student_id') && (
+                            <div className="space-y-2">
+                              <Label htmlFor="su-sid">
+                                {labelOf('student_id', 'ছাত্র আইডি', 'Student ID')}
+                                {isRequired('student_id') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                              </Label>
+                              <Input id="su-sid"
+                                placeholder={placeholderOf('student_id') || 'STU-2026-001'}
+                                value={signupStudentId}
+                                onChange={(e) => setSignupStudentId(e.target.value)}
+                                className="rounded-xl h-11" />
+                            </div>
+                          )}
+                          {isVisible('student_dob') && (
+                            <div className="space-y-2 mt-2">
+                              <Label htmlFor="su-dob">
+                                {labelOf('student_dob', 'সন্তানের জন্মতারিখ (dd/mm/yyyy)', "Child's Date of Birth (dd/mm/yyyy)")}
+                                {isRequired('student_dob') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                              </Label>
+                              <Input
+                                id="su-dob"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder={placeholderOf('student_dob') || 'dd/mm/yyyy'}
+                                maxLength={10}
+                                value={signupDob}
+                                onChange={(e) => {
+                                  let v = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
+                                  if (v.length >= 5) v = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+                                  else if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
+                                  setSignupDob(v);
+                                }}
+                                className="rounded-xl h-11"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold mt-3">
                         {loading ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'সাইনআপ করুন' : 'Sign Up')}
                       </Button>
