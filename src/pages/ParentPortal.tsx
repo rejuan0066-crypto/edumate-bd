@@ -934,6 +934,7 @@ const ResultsTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) =
 const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountId: string; bn: boolean }) => {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [payOpen, setPayOpen] = useState(false);
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('bkash');
