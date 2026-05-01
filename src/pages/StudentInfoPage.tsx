@@ -17,10 +17,20 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
+const STUDENT_STORAGE_KEY = 'student_portal_session';
 
 interface ParentSession {
   accountId?: string;
   email?: string;
+  fullName?: string;
+  studentId: string;
+  studentUuid: string;
+  loggedInAt: string;
+}
+
+interface StudentSession {
+  accountId?: string;
+  contact?: string;
   fullName?: string;
   studentId: string;
   studentUuid: string;
@@ -35,6 +45,7 @@ const StudentInfoPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [parentSession, setParentSession] = useState<ParentSession | null>(null);
+  const [studentSession, setStudentSession] = useState<StudentSession | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -42,15 +53,15 @@ const StudentInfoPage = () => {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
 
-  // Load parent portal session
+  // Load portal sessions
   useEffect(() => {
-    const raw = sessionStorage.getItem(PARENT_STORAGE_KEY);
-    if (raw) {
-      try {
-        setParentSession(JSON.parse(raw));
-      } catch {
-        sessionStorage.removeItem(PARENT_STORAGE_KEY);
-      }
+    const rawP = sessionStorage.getItem(PARENT_STORAGE_KEY);
+    if (rawP) {
+      try { setParentSession(JSON.parse(rawP)); } catch { sessionStorage.removeItem(PARENT_STORAGE_KEY); }
+    }
+    const rawS = sessionStorage.getItem(STUDENT_STORAGE_KEY);
+    if (rawS) {
+      try { setStudentSession(JSON.parse(rawS)); } catch { sessionStorage.removeItem(STUDENT_STORAGE_KEY); }
     }
   }, []);
 
@@ -60,8 +71,16 @@ const StudentInfoPage = () => {
     [user, role]
   );
   const isAdmin = role === 'admin' || role === 'super_admin';
-  const isParent = !!parentSession?.studentUuid;
-  const isLoggedIn = isStaff || isParent;
+  const isStudent = !!studentSession?.studentUuid;
+  const isParent = !!parentSession?.studentUuid && !isStudent; // student session takes precedence
+  const isLoggedIn = isStaff || isParent || isStudent;
+
+  const handleStudentLogout = () => {
+    sessionStorage.removeItem(STUDENT_STORAGE_KEY);
+    sessionStorage.removeItem(PARENT_STORAGE_KEY);
+    setStudentSession(null);
+    window.location.href = '/student-portal';
+  };
 
   const openEdit = (s: any) => {
     // Empty strings allowed → admin can clear any optional field. Only name_bn (NOT NULL) is required.
