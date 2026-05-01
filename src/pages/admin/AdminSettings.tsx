@@ -18,6 +18,7 @@ import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
+import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 
@@ -618,6 +619,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="timezone" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'টাইমজোন' : 'Timezone'}
+            </TabsTrigger>
+            <TabsTrigger value="receipt_qr" className="gap-1.5">
+              <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
             </TabsTrigger>
           </TabsList>
 
@@ -1375,6 +1379,10 @@ const AdminSettings = () => {
 
           <TabsContent value="timezone" className="mt-6">
             <TimezoneSettings />
+          </TabsContent>
+
+          <TabsContent value="receipt_qr" className="mt-6">
+            <ReceiptQrSettings />
           </TabsContent>
         </Tabs>
       </div>

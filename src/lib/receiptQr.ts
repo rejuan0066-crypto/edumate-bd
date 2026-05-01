@@ -19,6 +19,25 @@ export async function getReceiptToken(
   return data as string;
 }
 
+/**
+ * Force-rotate the QR token for a receipt (admin / accounts staff only).
+ * Revokes the active token and returns a fresh one.
+ */
+export async function rotateReceiptToken(
+  receiptType: ReceiptType,
+  receiptId: string,
+): Promise<string | null> {
+  const { data, error } = await (supabase as any).rpc('rotate_receipt_token', {
+    _receipt_type: receiptType,
+    _receipt_id: receiptId,
+  });
+  if (error) {
+    console.error('rotateReceiptToken error', error);
+    return null;
+  }
+  return data as string;
+}
+
 /** Build the public verification URL for a token. */
 export function buildVerifyUrl(token: string): string {
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
