@@ -21,8 +21,15 @@ interface SignupBody {
   password: string;
   full_name: string;
   phone?: string;
-  student_id: string;
-  student_dob: string;
+  nid?: string;
+  student_id?: string;
+  student_dob?: string;
+}
+
+interface PreviewMatchBody {
+  action: 'preview_match';
+  nid?: string;
+  phone?: string;
 }
 
 interface LoginBody {
@@ -47,7 +54,7 @@ interface NotifyRejectedBody {
   reason?: string;
 }
 
-type Body = SignupBody | LoginBody | MarkVerifiedBody | NotifyApprovedBody | NotifyRejectedBody;
+type Body = SignupBody | LoginBody | MarkVerifiedBody | NotifyApprovedBody | NotifyRejectedBody | PreviewMatchBody;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -55,48 +62,73 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as Body;
 
+    if (body.action === 'preview_match') {
+      const { nid, phone } = body;
+      if ((!nid || !nid.trim()) && (!phone || !phone.trim())) {
+        return json({ matches: [] });
+      }
+      const { data, error } = await supabase.rpc('match_students_for_parent', {
+        p_nid: nid?.trim() || null,
+        p_phone: phone?.trim() || null,
+      });
+      if (error) return json({ error: error.message }, 500);
+      return json({ matches: data || [] });
+    }
+
     if (body.action === 'signup') {
-      const { email, password, full_name, phone, student_id, student_dob } = body;
-      if (!email || !password || !full_name || !student_id || !student_dob) {
+      const { email, password, full_name, phone, nid, student_id, student_dob } = body;
+      if (!email || !password || !full_name) {
         return json({ error: 'Missing required fields' }, 400);
       }
       if (password.length < 6) return json({ error: 'Password must be at least 6 characters' }, 400);
 
-      // Verify student exists with matching DOB
-      const { data: student, error: studentErr } = await supabase
-        .from('students')
-        .select('id, date_of_birth, name_bn, name_en')
-        .eq('student_id', student_id.trim())
-        .maybeSingle();
+      const trimmedNid = nid?.trim() || '';
+      const trimmedPhone = phone?.trim() || '';
 
-      if (studentErr) return json({ error: studentErr.message }, 500);
-      if (!student) return json({ error: 'Student ID not found' }, 404);
-
-      // Normalize DOB to YYYY-MM-DD. Accepts dd/mm/yyyy, dd-mm-yyyy, or YYYY-MM-DD.
-      const normalizeDob = (v: string | null | undefined): string => {
-        if (!v) return '';
-        const s = String(v).trim();
-        const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-        if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
-        const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if (dmy) {
-          const d = dmy[1].padStart(2, '0');
-          const m = dmy[2].padStart(2, '0');
-          return `${dmy[3]}-${m}-${d}`;
-        }
-        return s;
-      };
-
-      const dbDob = normalizeDob(student.date_of_birth);
-      const inputDob = normalizeDob(student_dob);
-      if (!inputDob || !/^\d{4}-\d{2}-\d{2}$/.test(inputDob)) {
-        return json({ error: 'Invalid date format. Use dd/mm/yyyy' }, 400);
+      // NID + phone are the new primary linking method
+      if (!trimmedNid && !trimmedPhone && !student_id) {
+        return json({ error: 'NID অথবা ফোন নম্বর প্রদান করুন', code: 'NID_OR_PHONE_REQUIRED' }, 400);
       }
-      if (dbDob !== inputDob) {
+
+      // Find matching students using new RPC
+      let matchedStudents: Array<{ student_uuid: string; student_id: string }> = [];
+      if (trimmedNid || trimmedPhone) {
+        const { data: matches, error: matchErr } = await supabase.rpc('match_students_for_parent', {
+          p_nid: trimmedNid || null,
+          p_phone: trimmedPhone || null,
+        });
+        if (matchErr) return json({ error: matchErr.message }, 500);
+        matchedStudents = matches || [];
+      }
+
+      // Legacy fallback: if student_id + student_dob provided, also verify
+      let firstStudentId: string | null = null;
+      if (matchedStudents.length === 0 && student_id && student_dob) {
+        const { data: student } = await supabase
+          .from('students')
+          .select('id, date_of_birth')
+          .eq('student_id', student_id.trim())
+          .maybeSingle();
+        if (student) {
+          const normalize = (v: string) => {
+            const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+            const dmy = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+            return v;
+          };
+          if (normalize(student.date_of_birth || '') === normalize(student_dob)) {
+            firstStudentId = student.id;
+            matchedStudents = [{ student_uuid: student.id, student_id: student_id.trim() }];
+          }
+        }
+      }
+
+      if (matchedStudents.length === 0) {
         return json({
-          error: 'Date of birth does not match student record',
-          hint: `Expected ${dbDob}, got ${inputDob}`,
-        }, 400);
+          error: 'এই NID/ফোন নম্বর দিয়ে কোন ছাত্র পাওয়া যায়নি। দয়া করে যাচাই করুন।',
+          code: 'NO_STUDENT_MATCH',
+        }, 404);
       }
 
       // Check duplicate email
@@ -105,12 +137,13 @@ Deno.serve(async (req) => {
         .select('id, status')
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
-
       if (existing) {
-        return json({ error: 'An account with this email already exists', status: existing.status }, 409);
+        return json({ error: 'এই ইমেইল দিয়ে ইতিমধ্যে একাউন্ট আছে', status: existing.status }, 409);
       }
 
       const password_hash = hashSync(password);
+      const studentUuids = matchedStudents.map(m => m.student_uuid);
+      firstStudentId = firstStudentId || studentUuids[0];
 
       const { data: created, error: insErr } = await supabase
         .from('parent_accounts')
@@ -118,10 +151,12 @@ Deno.serve(async (req) => {
           email: email.toLowerCase().trim(),
           password_hash,
           full_name: full_name.trim(),
-          phone: phone?.trim() || null,
-          student_id: student_id.trim(),
-          student_dob,
-          linked_student_uuid: student.id,
+          phone: trimmedPhone || null,
+          nid: trimmedNid || null,
+          student_id: matchedStudents[0]?.student_id || student_id?.trim() || '',
+          student_dob: student_dob || null,
+          linked_student_uuid: firstStudentId,
+          linked_student_uuids: studentUuids,
           email_verified: false,
           status: 'pending',
         })
@@ -129,7 +164,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (insErr) return json({ error: insErr.message }, 500);
-      return json({ success: true, account: created });
+      return json({ success: true, account: created, matched_count: matchedStudents.length });
     }
 
     if (body.action === 'mark_verified') {
