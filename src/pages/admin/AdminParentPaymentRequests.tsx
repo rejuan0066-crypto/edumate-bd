@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Wallet, Clock, ShieldCheck, RefreshCw } from 'lucide-react';
+import { Check, X, Wallet, Clock, ShieldCheck, RefreshCw, History } from 'lucide-react';
 import { format } from 'date-fns';
+import ReceiptStatusTimeline from '@/components/fees/ReceiptStatusTimeline';
 
 const AdminParentPaymentRequests = () => {
   const { language } = useLanguage();
@@ -22,6 +23,7 @@ const AdminParentPaymentRequests = () => {
   const [tab, setTab] = useState<'pending' | 'verified' | 'rejected' | 'all'>('pending');
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [historyId, setHistoryId] = useState<string | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['parent-payment-requests-admin', tab],
@@ -137,6 +139,9 @@ const AdminParentPaymentRequests = () => {
                                 <X className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" onClick={() => setHistoryId(r.id)} className="h-8 rounded-lg" title={bn ? 'টাইমলাইন' : 'Timeline'}>
+                              <History className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -160,6 +165,23 @@ const AdminParentPaymentRequests = () => {
                 {bn ? 'প্রত্যাখ্যান করুন' : 'Reject'}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!historyId} onOpenChange={(o) => !o && setHistoryId(null)}>
+          <DialogContent className="rounded-[28px] max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-4 h-4 text-emerald-600" />
+                {bn ? 'স্ট্যাটাস টাইমলাইন' : 'Status Timeline'}
+              </DialogTitle>
+            </DialogHeader>
+            {historyId && (
+              <ReceiptStatusTimeline
+                sourceTable="parent_payment_requests"
+                sourceId={historyId}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

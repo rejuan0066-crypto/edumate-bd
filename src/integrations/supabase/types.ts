@@ -6282,6 +6282,69 @@ export type Database = {
         }
         Relationships: []
       }
+      receipt_status_audit: {
+        Row: {
+          amount: number | null
+          change_source: string | null
+          changed_at: string
+          changed_by: string | null
+          changed_by_name: string | null
+          id: string
+          ip_address: string | null
+          new_status: string
+          note: string | null
+          old_status: string | null
+          payment_method: string | null
+          receipt_number: string | null
+          rejection_reason: string | null
+          source_id: string
+          source_table: string
+          student_id: string | null
+          trx_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          amount?: number | null
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          id?: string
+          ip_address?: string | null
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          rejection_reason?: string | null
+          source_id: string
+          source_table: string
+          student_id?: string | null
+          trx_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          amount?: number | null
+          change_source?: string | null
+          changed_at?: string
+          changed_by?: string | null
+          changed_by_name?: string | null
+          id?: string
+          ip_address?: string | null
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+          payment_method?: string | null
+          receipt_number?: string | null
+          rejection_reason?: string | null
+          source_id?: string
+          source_table?: string
+          student_id?: string | null
+          trx_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       receipt_verify_tokens: {
         Row: {
           created_at: string
@@ -9157,6 +9220,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_actor_name: { Args: { _uid: string }; Returns: string }
       reverse_fee_allocations: {
         Args: {
           p_actor_id?: string

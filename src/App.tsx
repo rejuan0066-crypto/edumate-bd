@@ -65,6 +65,7 @@ import AdminExpenses from "./pages/admin/AdminExpenses";
 import AdminDonors from "./pages/admin/AdminDonors";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminFeeReceipts from "./pages/admin/AdminFeeReceipts";
+import AdminReceiptStatusAudit from "./pages/admin/AdminReceiptStatusAudit";
 import AdminResignLetters from "./pages/admin/AdminResignLetters";
 import AdminJoiningLetters from "./pages/admin/AdminJoiningLetters";
 import AdminAdmissionLetters from "./pages/admin/AdminAdmissionLetters";
@@ -325,6 +326,7 @@ const App = () => (
                     <Route path="donors" element={<ModuleGuard menuPath="/admin/donors"><AdminDonors /></ModuleGuard>} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="fee-receipts" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard>} />
+                    <Route path="receipt-audit" element={<AdminReceiptStatusAudit />} />
                     <Route path="resign-letters" element={<AdminResignLetters />} />
                     <Route path="joining-letters" element={<AdminJoiningLetters />} />
                     <Route path="admission-letters" element={<AdminAdmissionLetters />} />

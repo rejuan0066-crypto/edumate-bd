@@ -44,6 +44,7 @@ const ALL_ADMIN_PATHS = [
   { path: '/admin/notices', label_en: 'Notices', label_bn: 'নোটিশ' },
   { path: '/admin/students-fees', label_en: 'Student Fees', label_bn: 'ছাত্র ফি' },
   { path: '/admin/fee-receipts', label_en: 'Fee Receipts', label_bn: 'ফি রসিদ' },
+  { path: '/admin/receipt-audit', label_en: 'Receipt Audit Timeline', label_bn: 'রসিদ অডিট টাইমলাইন' },
   { path: '/admin/expenses', label_en: 'Expenses', label_bn: 'খরচ ব্যবস্থাপনা' },
   { path: '/admin/donors', label_en: 'Donors', label_bn: 'দাতা তালিকা' },
   { path: '/admin/attendance', label_en: 'Attendance', label_bn: 'হাজিরা' },
