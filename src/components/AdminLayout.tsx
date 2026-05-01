@@ -13,6 +13,7 @@ import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import { useThemeSettings } from '@/hooks/useThemeSettings';
 import { useSidebarSections } from '@/hooks/useSidebarSections';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useReceiptStatusRealtime } from '@/hooks/useReceiptStatusRealtime';
 import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 import LanguageToggle from './LanguageToggle';
 import BijoyToggle from './BijoyToggle';
