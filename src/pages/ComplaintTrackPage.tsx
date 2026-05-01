@@ -75,6 +75,43 @@ const ComplaintTrackPage = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ComplaintData | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [reply, setReply] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+
+  const canReply = data && !['rejected', 'closed'].includes(data.status);
+
+  const handleSendReply = async () => {
+    if (!data) return;
+    const msg = reply.trim();
+    if (msg.length < 2) {
+      toast({ title: bn ? 'বার্তা লিখুন' : 'Please write a message', variant: 'destructive' });
+      return;
+    }
+    if (msg.length > 4000) {
+      toast({ title: bn ? 'বার্তা অনেক বড় (সর্বোচ্চ ৪০০০ অক্ষর)' : 'Message too long (max 4000 chars)', variant: 'destructive' });
+      return;
+    }
+    setSendingReply(true);
+    try {
+      const { error } = await supabase.rpc('add_complaint_reply', {
+        p_ticket: data.ticket_number,
+        p_email: verifiedEmail,
+        p_message: msg,
+      });
+      if (error) throw error;
+      toast({ title: bn ? 'উত্তর যুক্ত হয়েছে' : 'Reply posted', description: bn ? 'আপনার বার্তা টাইমলাইনে যুক্ত হয়েছে' : 'Your message has been added to the timeline' });
+      setReply('');
+      await fetchComplaint(data.ticket_number, verifiedEmail);
+    } catch (err: any) {
+      toast({
+        title: bn ? 'ত্রুটি' : 'Error',
+        description: err?.message || (bn ? 'উত্তর পাঠানো যায়নি' : 'Could not send reply'),
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingReply(false);
+    }
+  };
 
   const statusBadge = (status: string) => {
     const s = STATUS_VARIANT[status] || { bn: status, en: status, cls: 'bg-muted' };
