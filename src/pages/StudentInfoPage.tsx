@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, User, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert } from 'lucide-react';
+import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
