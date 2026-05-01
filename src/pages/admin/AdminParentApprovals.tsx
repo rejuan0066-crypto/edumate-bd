@@ -46,11 +46,27 @@ const AdminParentApprovals = () => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
       return;
     }
+
+    // Fire-and-forget email notification on approve/reject
+    if (status === 'approved' || status === 'rejected') {
+      try {
+        await supabase.functions.invoke('parent-auth', {
+          body: {
+            action: status === 'approved' ? 'notify_approved' : 'notify_rejected',
+            account_id: id,
+            ...(status === 'rejected' && reason ? { reason } : {}),
+          },
+        });
+      } catch (e) {
+        console.warn('notify email failed:', e);
+      }
+    }
+
     toast({
       title: bn ? 'সফল' : 'Success',
       description:
-        status === 'approved' ? (bn ? 'অনুমোদিত' : 'Approved')
-        : status === 'rejected' ? (bn ? 'প্রত্যাখ্যাত' : 'Rejected')
+        status === 'approved' ? (bn ? 'অনুমোদিত — অভিভাবককে ইমেইলে জানানো হয়েছে' : 'Approved — parent notified by email')
+        : status === 'rejected' ? (bn ? 'প্রত্যাখ্যাত — অভিভাবককে ইমেইলে জানানো হয়েছে' : 'Rejected — parent notified by email')
         : status === 'suspended' ? (bn ? 'স্থগিত' : 'Suspended')
         : 'Updated',
     });
