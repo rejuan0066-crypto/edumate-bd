@@ -120,7 +120,9 @@ const ParentPaymentReceipt = () => {
           description:
             newStatus === 'verified'
               ? (bn ? 'আপনার পেমেন্ট সফলভাবে অনুমোদিত হয়েছে।' : 'Your payment has been approved.')
-              : (bn ? 'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' : 'Please contact the admin.'),
+              : (req.rejection_reason?.trim()
+                  ? (bn ? `কারণ: ${req.rejection_reason}` : `Reason: ${req.rejection_reason}`)
+                  : (bn ? 'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' : 'Please contact the admin.')),
         });
       }
       prevStatusRef.current = newStatus;
