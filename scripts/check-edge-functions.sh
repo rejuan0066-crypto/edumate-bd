@@ -124,6 +124,7 @@ echo
 
 for f in "${TARGETS[@]}"; do
   name="$(basename "$(dirname "$f")")"
+  LAST_FN="$name"
   echo "── $name ──────────────────────────────────"
 
   ok=1
@@ -146,6 +147,46 @@ for f in "${TARGETS[@]}"; do
   fi
 done
 
+# ── Build downloadable summary report ─────────────────────────────────────
+RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+{
+  echo "# Edge Functions Pre-Deploy Report"
+  echo
+  echo "- **Started:** $RUN_STARTED_AT"
+  echo "- **Finished:** $RUN_FINISHED_AT"
+  echo "- **Functions checked:** ${#TARGETS[@]}"
+  echo "- **Passed:** ${#PASS[@]}"
+  echo "- **Failed:** ${#FAIL[@]}"
+  echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
+  echo
+  echo "## Step results"
+  echo
+  echo "| Function | Step | Exit | Duration | Log |"
+  echo "|---|---|---|---|---|"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step rc dur logf <<<"$row"
+    status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
+    echo "| \`$fn\` | $step | $status | $dur | \`$logf\` |"
+  done
+  if [ "${#FAIL[@]}" -gt 0 ]; then
+    echo
+    echo "## Failed functions"
+    printf -- '- `%s`\n' "${FAIL[@]}"
+  fi
+} >"$SUMMARY_MD"
+
+# Machine-readable summary for downstream tooling
+{
+  printf '{'
+  printf '"started_at":"%s",' "$RUN_STARTED_AT"
+  printf '"finished_at":"%s",' "$RUN_FINISHED_AT"
+  printf '"total":%d,' "${#TARGETS[@]}"
+  printf '"passed":%d,' "${#PASS[@]}"
+  printf '"failed":%d,' "${#FAIL[@]}"
+  printf '"gate_ok":%s' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
+  printf '}'
+} >"$SUMMARY_JSON"
+
 echo
 echo "================ Summary ================"
 echo "Passed: ${#PASS[@]}"
@@ -153,6 +194,13 @@ echo "Failed: ${#FAIL[@]}"
 if [ "${#FAIL[@]}" -gt 0 ]; then
   printf '  - %s\n' "${FAIL[@]}"
 fi
+echo "Report: $SUMMARY_MD"
+
+# Append to GitHub Actions step summary when running in CI
+if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "$SUMMARY_MD" ]; then
+  cat "$SUMMARY_MD" >>"$GITHUB_STEP_SUMMARY"
+fi
+
 if [ "$GATE_OK" -ne 1 ]; then
   echo "Lint/fmt gate failed. ❌"
   exit 1
