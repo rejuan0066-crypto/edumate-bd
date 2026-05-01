@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Trash2, Users, Clock, ShieldCheck, Ban } from 'lucide-react';
+import { Check, X, Trash2, Users, Clock, ShieldCheck, Ban, History } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const AdminParentApprovals = () => {
   const { language } = useLanguage();
@@ -98,16 +99,24 @@ const AdminParentApprovals = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Users className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">{bn ? 'অভিভাবক একাউন্ট অনুমোদন' : 'Parent Approvals'}</h1>
+              <p className="text-sm text-muted-foreground">
+                {bn ? 'অভিভাবক পোর্টালের সাইনআপ অনুরোধ পরিচালনা করুন' : 'Manage parent portal signup requests'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-center">{bn ? ' তালিকা' : 'Parent Approvals'}</h1>
-            <p className="text-sm text-muted-foreground">
-              {bn ? 'অভিভাবক পোর্টালের সাইনআপ অনুরোধ পরিচালনা করুন' : 'Manage parent portal signup requests'}
-            </p>
-          </div>
+          <Button asChild variant="outline" className="rounded-xl">
+            <Link to="/admin/parent-link-audit">
+              <History className="w-4 h-4 mr-2" />
+              {bn ? 'লিঙ্ক অডিট লগ' : 'Link Audit Log'}
+            </Link>
+          </Button>
         </div>
 
         <Card className="rounded-[28px] border-0 shadow-lg">
@@ -183,6 +192,11 @@ const AdminParentApprovals = () => {
                                 <Ban className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" asChild className="h-8 rounded-lg" title={bn ? 'লিঙ্ক ইতিহাস' : 'Link history'}>
+                              <Link to={`/admin/parent-link-audit?parent=${a.id}`}>
+                                <History className="w-3.5 h-3.5" />
+                              </Link>
+                            </Button>
                             <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.id)} className="h-8 rounded-lg text-destructive">
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>

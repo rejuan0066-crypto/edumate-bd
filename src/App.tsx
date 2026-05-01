@@ -126,6 +126,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
+import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
 import AdminStudentApprovals from "./pages/admin/AdminStudentApprovals";
 import AdminParentMessages from "@/pages/admin/AdminParentMessages";
 import AdminPushNotifications from "@/pages/admin/AdminPushNotifications";
@@ -357,6 +358,7 @@ const App = () => (
                     <Route path="user-management" element={<AdminUserManagement />} />
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
+                    <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
                     <Route path="student-approvals" element={<AdminStudentApprovals />} />
                     <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="push-notifications" element={<AdminPushNotifications />} />
