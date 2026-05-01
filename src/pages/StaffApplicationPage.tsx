@@ -154,11 +154,12 @@ const StaffApplicationPage = () => {
       return;
     }
     const ext = file.name.split('.').pop();
-    const path = `staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    // Public job-application upload — must use `public-uploads/` prefix (anon RLS).
+    const path = `public-uploads/staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from('photos').upload(path, file);
     if (error) { toast.error(error.message); return; }
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-    setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: urlData.publicUrl }]);
+    // Bucket is private; store storage path for signed-URL resolution on display.
+    setDocuments(prev => [...prev, { id: crypto.randomUUID(), type: selectedType, name: file.name, url: `photos/${path}` }]);
     setDocType('');
     setCustomDocType('');
     if (fileInputRef.current) fileInputRef.current.value = '';
