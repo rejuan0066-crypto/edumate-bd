@@ -309,6 +309,61 @@ const AdminComplaints = () => {
                 <Textarea value={resolution} onChange={(e) => setResolution(e.target.value)} rows={4} className="rounded-xl mt-1" placeholder={language === 'bn' ? 'কী পদক্ষেপ নেওয়া হয়েছে...' : 'What actions were taken...'} />
               </div>
 
+              {/* Add Update */}
+              <div className="p-4 rounded-2xl border border-border/60 bg-muted/20 space-y-3">
+                <div className="flex items-center gap-2">
+                  <MessageSquarePlus className="w-4 h-4 text-primary" />
+                  <Label className="font-semibold">{language === 'bn' ? 'টাইমলাইনে আপডেট যোগ করুন' : 'Add Timeline Update'}</Label>
+                </div>
+                <Textarea
+                  value={updateMessage}
+                  onChange={(e) => setUpdateMessage(e.target.value)}
+                  rows={2}
+                  className="rounded-xl"
+                  placeholder={language === 'bn' ? 'যেমন: তদন্ত শুরু হয়েছে, পক্ষের সাথে যোগাযোগ করা হয়েছে...' : 'e.g. Investigation started, contacted the party...'}
+                />
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 text-sm">
+                    {updateIsPublic ? <Globe className="w-4 h-4 text-green-600" /> : <Lock className="w-4 h-4 text-muted-foreground" />}
+                    <Switch checked={updateIsPublic} onCheckedChange={setUpdateIsPublic} />
+                    <span className="text-muted-foreground">
+                      {updateIsPublic
+                        ? (language === 'bn' ? 'অভিযোগকারী দেখতে পাবে' : 'Visible to complainant')
+                        : (language === 'bn' ? 'শুধু অভ্যন্তরীণ নোট' : 'Internal note only')}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => addUpdateMutation.mutate()}
+                    disabled={!updateMessage.trim() || addUpdateMutation.isPending}
+                    className="rounded-xl"
+                  >
+                    <MessageSquarePlus className="w-4 h-4 mr-2" />
+                    {language === 'bn' ? 'যোগ করুন' : 'Add Update'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Timeline */}
+              {timeline.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">{language === 'bn' ? 'টাইমলাইন' : 'Timeline'}</Label>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {timeline.map((u: any) => (
+                      <div key={u.id} className="p-3 rounded-xl bg-muted/40 border border-border/40">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <Badge variant="outline" className="text-xs capitalize">{u.update_type.replace('_', ' ')}</Badge>
+                          {u.to_status && <Badge variant="outline" className="text-xs">→ {u.to_status}</Badge>}
+                          {!u.is_public && <Badge variant="outline" className="text-xs bg-muted"><Lock className="w-3 h-3 mr-1" />{language === 'bn' ? 'অভ্যন্তরীণ' : 'Internal'}</Badge>}
+                          <span className="text-xs text-muted-foreground ml-auto">{format(new Date(u.created_at), 'dd MMM yyyy, HH:mm')}</span>
+                        </div>
+                        {u.message && <p className="text-sm whitespace-pre-wrap">{u.message}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button onClick={() => handleResolve('in_review')} variant="outline" className="rounded-xl flex-1" disabled={updateMutation.isPending}>
                   <Eye className="w-4 h-4 mr-2" />{language === 'bn' ? 'পর্যালোচনায় নিন' : 'Mark In Review'}
