@@ -21,8 +21,12 @@ import {
   FileText,
   ShieldCheck,
   ArrowLeft,
+  MessageSquarePlus,
+  Send,
+  MessageCircle,
 } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 type ComplaintUpdate = {
   id: string;
