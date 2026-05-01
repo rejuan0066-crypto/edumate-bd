@@ -167,6 +167,8 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "- **Passed:** ${#PASS[@]}"
   echo "- **Failed:** ${#FAIL[@]}"
   echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
+  echo "- **Total step time:** ${TOTAL_STEP_SECONDS}s"
+  echo "- **Slow threshold:** ${SLOW_STEP_THRESHOLD}s"
   echo
   echo "## Step results"
   echo
@@ -175,7 +177,22 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   for row in "${STEP_RESULTS[@]}"; do
     IFS='|' read -r fn step rc dur logf <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
-    echo "| \`$fn\` | $step | $status | $dur | \`$logf\` |"
+    # Strip trailing 's' to compare numerically
+    secs="${dur%s}"
+    marker=""
+    if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | \`$logf\` |"
+  done
+  echo
+  echo "## Slowest steps (top 5)"
+  echo
+  echo "| Duration | Function | Step |"
+  echo "|---|---|---|"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step _ dur _ <<<"$row"
+    printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
+  done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
+    echo "| ${secs}s | \`$fn\` | $step |"
   done
   if [ "${#FAIL[@]}" -gt 0 ]; then
     echo
