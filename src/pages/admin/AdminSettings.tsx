@@ -18,6 +18,7 @@ import WhatsAppSettings from '@/components/admin/WhatsAppSettings';
 import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManager';
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
+import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 
