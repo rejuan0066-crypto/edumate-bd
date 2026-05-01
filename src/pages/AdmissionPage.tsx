@@ -283,11 +283,13 @@ const AdmissionPage = () => {
   const uploadPhoto = async (): Promise<string | null> => {
     if (!photoFile) return form.photo_url || null;
     const ext = photoFile.name.split('.').pop();
-    const path = `students/${Date.now()}.${ext}`;
+    // Anonymous public-form upload — must go under the `public-uploads/` prefix
+    // (the only path the anon RLS policy on the photos bucket allows).
+    const path = `public-uploads/students/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
     const { error } = await supabase.storage.from('photos').upload(path, photoFile);
     if (error) { toast.error('Photo upload failed'); return null; }
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-    return urlData.publicUrl;
+    // Bucket is private; store the storage path so a signed URL can be issued on read.
+    return `photos/${path}`;
   };
 
   const buildAdmissionData = (): Record<string, any> => ({

@@ -17,6 +17,8 @@ import {
   Loader2,
 } from "lucide-react";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import SecureImage from "@/components/SecureImage";
+import { getSecureUrl } from "@/lib/secureStorage";
 
 interface Props {
   committeeId: string;
@@ -80,9 +82,6 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         .from("committee-attachments")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) throw upErr;
-      const { data: pub } = supabase.storage
-        .from("committee-attachments")
-        .getPublicUrl(path);
 
       const { data: userData } = await supabase.auth.getUser();
       const { error: insErr } = await supabase
@@ -90,7 +89,9 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
         .insert({
           committee_id: committeeId,
           file_name: file.name,
-          file_url: pub.publicUrl,
+          // Bucket is private; store the canonical "<bucket>/<path>" reference
+          // — clients fetch a signed URL on demand via secureStorage helpers.
+          file_url: `committee-attachments/${path}`,
           storage_path: path,
           file_size: file.size,
           mime_type: file.type || null,
@@ -202,8 +203,8 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/40 border border-border/30"
               >
                 {isImg ? (
-                  <img
-                    src={f.file_url}
+                  <SecureImage
+                    src={f.storage_path ? `committee-attachments/${f.storage_path}` : f.file_url}
                     alt={f.file_name}
                     className="w-10 h-10 rounded-lg object-cover bg-muted"
                   />
@@ -233,16 +234,23 @@ export default function CommitteeAttachments({ committeeId, committeeName }: Pro
                     </div>
                   )}
                 </div>
-                <a
-                  href={f.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download={f.file_name}
+                <button
+                  onClick={async () => {
+                    const ref = f.storage_path
+                      ? `committee-attachments/${f.storage_path}`
+                      : f.file_url;
+                    const url = await getSecureUrl(ref);
+                    if (!url) {
+                      toast.error(bn ? "ফাইল লোড করা যায়নি" : "Could not load file");
+                      return;
+                    }
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
                   className="p-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
                   title={bn ? "ডাউনলোড" : "Download"}
                 >
                   <Download className="w-4 h-4" />
-                </a>
+                </button>
                 <button
                   onClick={() => setToDelete(f)}
                   className="p-2 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600"
