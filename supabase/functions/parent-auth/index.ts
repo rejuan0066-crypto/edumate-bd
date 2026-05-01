@@ -1,6 +1,7 @@
 // Parent Portal Authentication: signup + login with bcrypt password hashing
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+// Use sync bcrypt to avoid Worker (not available in Deno edge runtime)
+import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -98,7 +99,7 @@ Deno.serve(async (req) => {
         return json({ error: 'An account with this email already exists', status: existing.status }, 409);
       }
 
-      const password_hash = await bcrypt.hash(password);
+      const password_hash = hashSync(password);
 
       const { data: created, error: insErr } = await supabase
         .from('parent_accounts')
@@ -143,7 +144,7 @@ Deno.serve(async (req) => {
       if (accErr) return json({ error: accErr.message }, 500);
       if (!account) return json({ error: 'Invalid email or password' }, 401);
 
-      const valid = await bcrypt.compare(password, account.password_hash);
+      const valid = compareSync(password, account.password_hash);
       if (!valid) return json({ error: 'Invalid email or password' }, 401);
 
       if (!account.email_verified) {

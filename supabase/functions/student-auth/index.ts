@@ -1,7 +1,8 @@
 // Student Account Authentication: signup + login with bcrypt + email/phone OTP
 // One account per student_id (DB-enforced UNIQUE)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+// Use sync bcrypt to avoid Worker (not available in Deno edge runtime)
+import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
         return json({ error: 'এই ইমেইল/ফোন দিয়ে ইতিমধ্যে একটি একাউন্ট আছে।', code: 'CONTACT_EXISTS' }, 409);
       }
 
-      const password_hash = await bcrypt.hash(password);
+      const password_hash = hashSync(password);
 
       const { data: created, error: insErr } = await supabase
         .from('student_accounts')
@@ -161,7 +162,7 @@ Deno.serve(async (req) => {
       if (accErr) return json({ error: accErr.message }, 500);
       if (!account) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
 
-      const valid = await bcrypt.compare(password, account.password_hash);
+      const valid = compareSync(password, account.password_hash);
       if (!valid) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
 
       if (!account.contact_verified) {
@@ -242,7 +243,7 @@ Deno.serve(async (req) => {
         return json({ error: 'একাউন্ট সক্রিয় নয়' }, 403);
       }
 
-      const password_hash = await bcrypt.hash(new_password);
+      const password_hash = hashSync(new_password);
       const { error: updErr } = await supabase
         .from('student_accounts')
         .update({ password_hash, contact_verified: true, updated_at: new Date().toISOString() })
