@@ -13,6 +13,10 @@ import {
 } from 'recharts';
 import MeritApprovalBanner, { type ApprovalStatus } from '@/components/admin/MeritApprovalBanner';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { generateMeritApprovalReport } from '@/lib/meritApprovalReport';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const toBnDigits = (s: string | number) => String(s).replace(/\d/g, (d) => BN_DIGITS[parseInt(d)]);
@@ -245,6 +249,55 @@ const AdminMeritList = () => {
       { p_exam_session_id: examSessionId, p_class_id: classId, p_reason: reason },
       bn ? 'মেধা তালিকা প্রত্যাখ্যাত' : 'Merit list rejected');
 
+  // ----- Print approval report -----
+  const { data: institution } = useInstitutionInfo();
+
+  const resolveUserName = async (userId?: string | null): Promise<string | null> => {
+    if (!userId) return null;
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+    return (data as any)?.full_name || (data as any)?.email || null;
+  };
+
+  const handlePrintApprovalReport = async () => {
+    if (!rankingData?.rankings?.length || !approval) return;
+    const examSessionLabel = examSessions.find((e: any) => e.id === examSessionId);
+    const academicYearLabel = academicSessions.find((a: any) => a.id === examYear);
+    const classLabel = examClasses.find((c: any) => c.id === classId);
+
+    const [submittedByName, decidedByName] = await Promise.all([
+      resolveUserName(approval.submitted_by),
+      resolveUserName(approval.decided_by),
+    ]);
+
+    generateMeritApprovalReport({
+      institution: {
+        name: institution?.name || '',
+        name_en: institution?.name_en,
+        address: institution?.address,
+        phone: institution?.phone,
+        email: institution?.email,
+        logo_url: institution?.logo_url,
+      },
+      academicYear: (bn ? (academicYearLabel?.name_bn || academicYearLabel?.name) : academicYearLabel?.name) || '',
+      examSession: (bn ? examSessionLabel?.name_bn : examSessionLabel?.name) || '',
+      className: (bn ? classLabel?.name_bn : classLabel?.name) || '',
+      approval: {
+        status: approvalStatus,
+        decided_at: approval.decided_at,
+        submitted_at: approval.submitted_at,
+        rejection_reason: approval.rejection_reason,
+        decided_by_name: decidedByName,
+        submitted_by_name: submittedByName,
+      },
+      rankings: rankingData.rankings,
+      bn,
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -294,15 +347,25 @@ const AdminMeritList = () => {
         </Card>
 
         {classId && (
-          <MeritApprovalBanner
-            status={approvalStatus}
-            rejectionReason={approval?.rejection_reason}
-            decidedAt={approval?.decided_at}
-            loading={loadingApproval}
-            onSubmit={handleSubmitApproval}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
+          <div className="space-y-3">
+            <MeritApprovalBanner
+              status={approvalStatus}
+              rejectionReason={approval?.rejection_reason}
+              decidedAt={approval?.decided_at}
+              loading={loadingApproval}
+              onSubmit={handleSubmitApproval}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
+            {approvalStatus === 'approved' && (rankingData?.rankings?.length ?? 0) > 0 && (
+              <div className="flex justify-end">
+                <Button onClick={handlePrintApprovalReport} className="rounded-full" variant="outline">
+                  <Printer className="w-4 h-4 mr-1.5" />
+                  {bn ? 'অনুমোদন প্রতিবেদন প্রিন্ট' : 'Print Approval Report'}
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {!classId && (
