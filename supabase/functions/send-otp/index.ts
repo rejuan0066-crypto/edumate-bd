@@ -326,10 +326,12 @@ Deno.serve(async (req) => {
       .eq("purpose", purpose)
       .eq("is_used", false);
 
-    // Store new OTP
+    // Store new OTP — apply admin-configured max_attempts so per-OTP lockout
+    // matches /admin/settings (otp_config.max_attempts).
+    const CONFIG_MAX_ATTEMPTS = Math.max(1, Number(otpCfg?.max_attempts) || 5);
     const { error: insertError } = await supabase
       .from("otp_codes")
-      .insert({ email, code, purpose, expires_at: expiresAt });
+      .insert({ email, code, purpose, expires_at: expiresAt, max_attempts: CONFIG_MAX_ATTEMPTS });
 
     if (insertError) {
       return new Response(JSON.stringify({ error: "Failed to create OTP" }), {
