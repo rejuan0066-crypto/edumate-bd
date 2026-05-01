@@ -102,8 +102,81 @@ const StudentPortal = () => {
       const { data, error } = await supabase.functions.invoke('student-auth', {
         body: { action: 'login', contact: loginContact.trim(), password: loginPassword },
       });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+
+      // supabase.functions.invoke returns generic error for non-2xx; parse the body for message + code
+      let errMsg: string | null = null;
+      let errCode: string | null = null;
+      if (error) {
+        errMsg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) errMsg = j.error;
+            if (j?.code) errCode = j.code;
+          }
+        } catch { /* ignore */ }
+      } else if (data?.error) {
+        errMsg = data.error;
+        errCode = data.code || null;
+      }
+
+      if (errMsg) {
+        if (errCode === 'ACCOUNT_NOT_FOUND') {
+          toast({
+            title: bn ? '🚫 একাউন্ট নেই' : '🚫 No account found',
+            description: bn
+              ? 'এই ইমেইল/ফোন দিয়ে কোনো একাউন্ট খোলা হয়নি। অনুগ্রহ করে আগে সাইনআপ করে একাউন্ট খুলুন।'
+              : 'No account exists for this email/phone. Please sign up first to create one.',
+            variant: 'destructive',
+            duration: 8000,
+          });
+          setMode('signup');
+          setSuEmail(loginContact.trim());
+          return;
+        }
+        if (errCode === 'PENDING_APPROVAL') {
+          toast({
+            title: bn ? '⏳ অনুমোদনের অপেক্ষায়' : '⏳ Awaiting approval',
+            description: bn
+              ? 'আপনার একাউন্ট এখনো অনুমোদিত হয়নি। অ্যাডমিন অনুমোদন করার পর আপনি ইমেইলে বার্তা পাবেন এবং তখন লগইন করতে পারবেন।'
+              : 'Your account is awaiting admin approval. You will receive an email once approved and then you can log in.',
+            variant: 'destructive',
+            duration: 9000,
+          });
+          return;
+        }
+        if (errCode === 'NOT_VERIFIED') {
+          toast({
+            title: bn ? '✉️ ইমেইল ভেরিফাই করুন' : '✉️ Verify your email',
+            description: bn
+              ? 'আপনি এখনো ইমেইল ভেরিফাই করেননি। সাইনআপ পেজ থেকে OTP দিয়ে ভেরিফাই করুন।'
+              : 'Your email is not verified yet. Please verify via OTP from the signup page.',
+            variant: 'destructive',
+            duration: 8000,
+          });
+          return;
+        }
+        if (errCode === 'REJECTED') {
+          toast({
+            title: bn ? '❌ একাউন্ট প্রত্যাখ্যাত' : '❌ Account rejected',
+            description: errMsg,
+            variant: 'destructive',
+            duration: 9000,
+          });
+          return;
+        }
+        if (errCode === 'SUSPENDED') {
+          toast({
+            title: bn ? '⛔ একাউন্ট স্থগিত' : '⛔ Account suspended',
+            description: bn ? 'আপনার একাউন্ট স্থগিত। অফিসে যোগাযোগ করুন।' : 'Your account is suspended. Please contact the office.',
+            variant: 'destructive',
+            duration: 8000,
+          });
+          return;
+        }
+        throw new Error(errMsg);
+      }
 
       const s: StudentSession = {
         accountId: data.account.id,
