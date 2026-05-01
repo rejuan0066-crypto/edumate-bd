@@ -930,7 +930,17 @@ const ResultsTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) =
 };
 
 // ===== Fees Tab =====
-const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
+const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountId: string; bn: boolean }) => {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [payOpen, setPayOpen] = useState(false);
+  const [payAmount, setPayAmount] = useState('');
+  const [payMethod, setPayMethod] = useState('bkash');
+  const [payTrxId, setPayTrxId] = useState('');
+  const [paySender, setPaySender] = useState('');
+  const [payNote, setPayNote] = useState('');
+  const [paySubmitting, setPaySubmitting] = useState(false);
+
   const { data: payments = [] } = useQuery({
     queryKey: ['parent-fees', studentUuid],
     queryFn: async () => {
@@ -942,6 +952,22 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
         .order('paid_at', { ascending: false, nullsFirst: false });
       return data || [];
     },
+  });
+
+  // Pending parent payment requests for this student
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ['parent-payment-requests', studentUuid, accountId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from('parent_payment_requests')
+        .select('*')
+        .eq('parent_account_id', accountId)
+        .eq('student_uuid', studentUuid)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      return data || [];
+    },
+    enabled: !!accountId && !!studentUuid,
   });
 
   const totals = payments.reduce(
@@ -956,6 +982,77 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
     { total: 0, paid: 0, due: 0 },
   );
 
+  const handleGatewayPay = async () => {
+    const amt = Number(payAmount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'সঠিক পরিমাণ দিন' : 'Enter a valid amount', variant: 'destructive' });
+      return;
+    }
+    setPaySubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parent-pay-fee', {
+        body: {
+          action: 'initiate_gateway',
+          account_id: accountId,
+          student_uuid: studentUuid,
+          amount: amt,
+          return_url: window.location.href,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: bn ? 'গেটওয়ে ত্রুটি' : 'Gateway error', description: data?.error || error?.message, variant: 'destructive' });
+        return;
+      }
+      if (data?.payment_url || data?.redirect_url) {
+        window.location.href = data.payment_url || data.redirect_url;
+      } else {
+        toast({ title: bn ? 'রিকোয়েস্ট পাঠানো হয়েছে' : 'Request sent', description: JSON.stringify(data) });
+      }
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
+
+  const handleManualSubmit = async () => {
+    const amt = Number(payAmount);
+    if (!Number.isFinite(amt) || amt <= 0 || !payTrxId.trim()) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'পরিমাণ ও TrxID আবশ্যক' : 'Amount and TrxID required', variant: 'destructive' });
+      return;
+    }
+    setPaySubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parent-pay-fee', {
+        body: {
+          action: 'submit_manual',
+          account_id: accountId,
+          student_uuid: studentUuid,
+          amount: amt,
+          method: payMethod,
+          trx_id: payTrxId.trim(),
+          sender_phone: paySender.trim() || undefined,
+          note: payNote.trim() || undefined,
+        },
+      });
+      if (error || data?.error) {
+        toast({ title: bn ? 'ত্রুটি' : 'Error', description: data?.error || error?.message, variant: 'destructive' });
+        return;
+      }
+      toast({
+        title: bn ? '✅ রিকোয়েস্ট জমা হয়েছে' : '✅ Submitted',
+        description: bn ? 'অ্যাডমিন যাচাই করার পর পেমেন্ট রেকর্ড হবে।' : 'Admin will verify and record the payment.',
+      });
+      setPayOpen(false);
+      setPayAmount(''); setPayTrxId(''); setPaySender(''); setPayNote('');
+      qc.invalidateQueries({ queryKey: ['parent-payment-requests', studentUuid, accountId] });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setPaySubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -963,6 +1060,45 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
         <StatBox label={bn ? 'পরিশোধিত' : 'Paid'} value={`৳${totals.paid.toLocaleString()}`} color="green-600" />
         <StatBox label={bn ? 'বকেয়া' : 'Due'} value={`৳${totals.due.toLocaleString()}`} color="red-500" />
       </div>
+
+      <div className="flex justify-end">
+        <Button onClick={() => { setPayAmount(String(totals.due || '')); setPayOpen(true); }} className="rounded-xl bg-emerald-600 hover:bg-emerald-700">
+          <Wallet className="w-4 h-4 mr-2" />
+          {bn ? 'অনলাইনে ফি পরিশোধ করুন' : 'Pay Fee Online'}
+        </Button>
+      </div>
+
+      {pendingRequests.length > 0 && (
+        <Card className="rounded-[28px] border-0 shadow-lg border-l-4 border-l-amber-500">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              {bn ? 'যাচাইয়ের অপেক্ষায়' : 'Pending Verification'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingRequests.map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between text-sm bg-amber-50 rounded-xl p-3">
+                  <div>
+                    <p className="font-medium">৳{Number(r.amount).toLocaleString()} • {r.method?.toUpperCase()} • TrxID: {r.trx_id}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    r.status === 'pending' ? 'bg-amber-200 text-amber-900' :
+                    r.status === 'verified' ? 'bg-emerald-200 text-emerald-900' :
+                    'bg-red-200 text-red-900'
+                  }`}>
+                    {r.status === 'pending' ? (bn ? 'অপেক্ষমাণ' : 'Pending') :
+                     r.status === 'verified' ? (bn ? 'যাচাইকৃত' : 'Verified') :
+                     (bn ? 'প্রত্যাখ্যাত' : 'Rejected')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="rounded-[28px] border-0 shadow-lg">
         <CardHeader>
@@ -1012,6 +1148,66 @@ const FeesTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+        <DialogContent className="rounded-[28px] max-w-md">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'অনলাইনে ফি পরিশোধ' : 'Pay Fee Online'}</DialogTitle>
+            <DialogDescription>
+              {bn ? 'গেটওয়ে অথবা ম্যানুয়ালি TrxID জমা দিতে পারেন।' : 'Use online gateway or submit TrxID manually.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Tabs defaultValue="gateway">
+            <TabsList className="grid grid-cols-2 w-full rounded-xl">
+              <TabsTrigger value="gateway" className="rounded-lg">{bn ? 'গেটওয়ে' : 'Gateway'}</TabsTrigger>
+              <TabsTrigger value="manual" className="rounded-lg">{bn ? 'ম্যানুয়াল' : 'Manual'}</TabsTrigger>
+            </TabsList>
+            <TabsContent value="gateway" className="space-y-3 pt-3">
+              <div>
+                <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <Button onClick={handleGatewayPay} disabled={paySubmitting} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                {paySubmitting ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'গেটওয়েতে যান' : 'Proceed to Gateway')}
+              </Button>
+            </TabsContent>
+            <TabsContent value="manual" className="space-y-3 pt-3">
+              <div>
+                <Label>{bn ? 'পদ্ধতি' : 'Method'}</Label>
+                <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full rounded-xl border h-10 px-3 mt-1 bg-background">
+                  <option value="bkash">bKash</option>
+                  <option value="nagad">Nagad</option>
+                  <option value="rocket">Rocket</option>
+                  <option value="bank">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+              <div>
+                <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'TrxID / রেফারেন্স' : 'TrxID / Reference'}</Label>
+                <Input value={payTrxId} onChange={(e) => setPayTrxId(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'প্রেরক ফোন (ঐচ্ছিক)' : 'Sender phone (optional)'}</Label>
+                <Input value={paySender} onChange={(e) => setPaySender(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <div>
+                <Label>{bn ? 'নোট (ঐচ্ছিক)' : 'Note (optional)'}</Label>
+                <Input value={payNote} onChange={(e) => setPayNote(e.target.value)} className="rounded-xl mt-1" />
+              </div>
+              <Button onClick={handleManualSubmit} disabled={paySubmitting} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
+                {paySubmitting ? (bn ? 'জমা হচ্ছে...' : 'Submitting...') : (bn ? 'রিকোয়েস্ট জমা দিন' : 'Submit Request')}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {bn ? 'অ্যাডমিন TrxID যাচাই করার পর পেমেন্ট অফিসিয়ালি রেকর্ড হবে।' : 'After admin verification this becomes an official payment.'}
+              </p>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
