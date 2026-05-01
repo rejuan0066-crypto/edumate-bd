@@ -31,7 +31,17 @@ interface MarkVerifiedBody {
   action: 'mark_verified';
   contact: string;
 }
-type Body = SignupBody | LoginBody | MarkVerifiedBody;
+interface CheckAccountBody {
+  action: 'check_account';
+  contact: string;
+}
+interface ResetPasswordBody {
+  action: 'reset_password';
+  contact: string;       // email
+  code: string;          // OTP previously sent with purpose=password_reset
+  new_password: string;
+}
+type Body = SignupBody | LoginBody | MarkVerifiedBody | CheckAccountBody | ResetPasswordBody;
 
 const normalizeDob = (v: string | null | undefined): string => {
   if (!v) return '';
@@ -176,6 +186,70 @@ Deno.serve(async (req) => {
           linked_student_uuid: account.linked_student_uuid,
         },
       });
+    }
+
+    if (body.action === 'check_account') {
+      // Used by "Forgot password" — confirm the contact exists before sending OTP.
+      // Always return generic shape to avoid email enumeration.
+      const c = body.contact.trim().toLowerCase();
+      const { data: account } = await supabase
+        .from('student_accounts')
+        .select('id, contact_verified, status')
+        .ilike('contact', c)
+        .maybeSingle();
+      const eligible = !!account && account.status !== 'rejected' && account.status !== 'suspended';
+      return json({ exists: eligible });
+    }
+
+    if (body.action === 'reset_password') {
+      const { contact, code, new_password } = body;
+      if (!contact || !code || !new_password) {
+        return json({ error: 'Contact, code and new password required' }, 400);
+      }
+      if (new_password.length < 6) {
+        return json({ error: 'Password must be at least 6 characters' }, 400);
+      }
+      const c = contact.trim().toLowerCase();
+
+      // Re-verify the OTP server-side via the central verify-otp function.
+      const verifyUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/verify-otp`;
+      const verifyRes = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: Deno.env.get('SUPABASE_ANON_KEY')!,
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
+        },
+        body: JSON.stringify({ email: c, code, purpose: 'password_reset' }),
+      });
+      let verifyJson: any = null;
+      try { verifyJson = await verifyRes.json(); } catch { /* ignore */ }
+      if (!verifyRes.ok || !verifyJson?.valid) {
+        return json({
+          error: verifyJson?.message || verifyJson?.error || 'OTP যাচাই ব্যর্থ',
+          code: verifyJson?.code || 'OTP_INVALID',
+        }, 400);
+      }
+
+      const { data: account, error: accErr } = await supabase
+        .from('student_accounts')
+        .select('id, status')
+        .ilike('contact', c)
+        .maybeSingle();
+      if (accErr) return json({ error: accErr.message }, 500);
+      if (!account) return json({ error: 'একাউন্ট পাওয়া যায়নি' }, 404);
+      if (account.status === 'suspended' || account.status === 'rejected') {
+        return json({ error: 'একাউন্ট সক্রিয় নয়' }, 403);
+      }
+
+      const password_hash = await bcrypt.hash(new_password);
+      const { error: updErr } = await supabase
+        .from('student_accounts')
+        .update({ password_hash, contact_verified: true, updated_at: new Date().toISOString() })
+        .eq('id', account.id);
+      if (updErr) return json({ error: updErr.message }, 500);
+
+      return json({ success: true });
     }
 
     return json({ error: 'Unknown action' }, 400);

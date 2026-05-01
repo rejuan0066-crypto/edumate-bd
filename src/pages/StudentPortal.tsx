@@ -10,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, User, GraduationCap, LogIn, UserPlus, Calendar, IdCard, LogOut, Eye } from 'lucide-react';
+import { Mail, Lock, User, GraduationCap, LogIn, UserPlus, Calendar, IdCard, LogOut, Eye, KeyRound } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { useOtpService } from '@/hooks/useOtpService';
 
 const STUDENT_STORAGE_KEY = 'student_portal_session';
 // Reuse parent_portal_session so /student-info can read student selection too
@@ -36,8 +37,10 @@ const StudentPortal = () => {
 
   const [session, setSession] = useState<StudentSession | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'signup'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(
+    searchParams.get('mode') === 'signup' ? 'signup'
+      : searchParams.get('mode') === 'forgot' ? 'forgot'
+      : 'login'
   );
 
   // Login state
@@ -51,6 +54,14 @@ const StudentPortal = () => {
   const [suStudentId, setSuStudentId] = useState('');
   const [suDob, setSuDob] = useState('');
   const [otpOpen, setOtpOpen] = useState(false);
+
+  // Forgot password state
+  const { sendOtp, sending: otpSending } = useOtpService();
+  const [fpEmail, setFpEmail] = useState('');
+  const [fpStep, setFpStep] = useState<'request' | 'reset'>('request');
+  const [fpCode, setFpCode] = useState('');
+  const [fpNewPassword, setFpNewPassword] = useState('');
+  const [fpCooldown, setFpCooldown] = useState(0);
 
   useEffect(() => {
     const raw = sessionStorage.getItem(STUDENT_STORAGE_KEY);
@@ -170,6 +181,113 @@ const StudentPortal = () => {
     setMode('login');
   };
 
+  // Cooldown ticker for "Resend OTP" in forgot flow
+  useEffect(() => {
+    if (fpCooldown <= 0) return;
+    const t = setInterval(() => setFpCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [fpCooldown]);
+
+  const handleForgotRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = fpEmail.trim().toLowerCase();
+    if (!email) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'ইমেইল দিন' : 'Enter email', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      // Don't reveal account existence — but skip OTP send if no account.
+      const { data: chk } = await supabase.functions.invoke('student-auth', {
+        body: { action: 'check_account', contact: email },
+      });
+      if (!chk?.exists) {
+        toast({
+          title: bn ? 'OTP পাঠানো হয়েছে (যদি একাউন্ট থাকে)' : 'OTP sent (if account exists)',
+          description: bn ? 'ইনবক্স চেক করুন।' : 'Please check your inbox.',
+        });
+        setFpStep('reset');
+        setFpCooldown(60);
+        return;
+      }
+      const r = await sendOtp(email, 'password_reset', undefined, 'password_reset');
+      if (!r.success) {
+        if (r.retryAfterSeconds) setFpCooldown(r.retryAfterSeconds);
+        return;
+      }
+      toast({
+        title: bn ? 'OTP পাঠানো হয়েছে' : 'OTP sent',
+        description: bn ? `${r.expiryMinutes ?? 10} মিনিটের মধ্যে কোডটি ব্যবহার করুন।` : `Use the code within ${r.expiryMinutes ?? 10} minutes.`,
+      });
+      setFpStep('reset');
+      setFpCooldown(60);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotResend = async () => {
+    if (fpCooldown > 0) return;
+    const email = fpEmail.trim().toLowerCase();
+    const r = await sendOtp(email, 'password_reset', undefined, 'password_reset');
+    if (r.success) {
+      toast({ title: bn ? 'OTP পুনরায় পাঠানো হয়েছে' : 'OTP resent' });
+      setFpCooldown(60);
+    } else if (r.retryAfterSeconds) {
+      setFpCooldown(r.retryAfterSeconds);
+    }
+  };
+
+  const handleForgotReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = fpEmail.trim().toLowerCase();
+    if (!fpCode.trim() || fpCode.trim().length !== 6) {
+      toast({ title: bn ? 'ভুল কোড' : 'Invalid code', description: bn ? '৬ অঙ্কের OTP দিন' : 'Enter the 6-digit OTP', variant: 'destructive' });
+      return;
+    }
+    if (fpNewPassword.length < 6) {
+      toast({ title: bn ? 'দুর্বল পাসওয়ার্ড' : 'Weak password', description: bn ? 'কমপক্ষে ৬ অক্ষর' : 'At least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('student-auth', {
+        body: {
+          action: 'reset_password',
+          contact: email,
+          code: fpCode.trim(),
+          new_password: fpNewPassword,
+        },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: bn ? 'পাসওয়ার্ড রিসেট সফল' : 'Password reset',
+        description: bn ? 'নতুন পাসওয়ার্ড দিয়ে লগইন করুন।' : 'Login with your new password.',
+      });
+      setLoginContact(email);
+      setLoginPassword('');
+      setFpEmail(''); setFpCode(''); setFpNewPassword('');
+      setFpStep('request');
+      setMode('login');
+    } catch (err: any) {
+      toast({ title: bn ? 'রিসেট ব্যর্থ' : 'Reset failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ----- Logged in view -----
   if (session) {
     return (
@@ -239,12 +357,15 @@ const StudentPortal = () => {
             </CardHeader>
             <CardContent>
               <Tabs value={mode} onValueChange={(v) => setMode(v as any)} className="w-full">
-                <TabsList className="grid grid-cols-2 w-full rounded-2xl mb-6">
+                <TabsList className="grid grid-cols-3 w-full rounded-2xl mb-6">
                   <TabsTrigger value="login" className="rounded-xl py-2.5">
                     <LogIn className="w-4 h-4 mr-2" />{bn ? 'লগইন' : 'Login'}
                   </TabsTrigger>
                   <TabsTrigger value="signup" className="rounded-xl py-2.5">
-                    <UserPlus className="w-4 h-4 mr-2" />{bn ? 'একাউন্ট তৈরি' : 'Sign Up'}
+                    <UserPlus className="w-4 h-4 mr-2" />{bn ? 'সাইনআপ' : 'Sign Up'}
+                  </TabsTrigger>
+                  <TabsTrigger value="forgot" className="rounded-xl py-2.5">
+                    <KeyRound className="w-4 h-4 mr-2" />{bn ? 'রিকভারি' : 'Recovery'}
                   </TabsTrigger>
                 </TabsList>
 
@@ -256,7 +377,13 @@ const StudentPortal = () => {
                         placeholder="student@example.com" className="rounded-2xl" required />
                     </div>
                     <div className="space-y-2">
-                      <Label className="flex items-center gap-2"><Lock className="w-4 h-4" />{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2"><Lock className="w-4 h-4" />{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                        <button type="button" onClick={() => setMode('forgot')}
+                          className="text-xs text-primary hover:underline">
+                          {bn ? 'পাসওয়ার্ড ভুলে গেছেন?' : 'Forgot password?'}
+                        </button>
+                      </div>
                       <Input type="password" value={loginPassword}
                         onChange={(e) => setLoginPassword(sanitizePasswordInput(e.target.value))}
                         className="rounded-2xl" required />
@@ -265,6 +392,61 @@ const StudentPortal = () => {
                       {loading ? (bn ? 'প্রক্রিয়া...' : 'Processing...') : (bn ? 'লগইন' : 'Login')}
                     </Button>
                   </form>
+                </TabsContent>
+
+                <TabsContent value="forgot">
+                  {fpStep === 'request' ? (
+                    <form onSubmit={handleForgotRequest} className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {bn
+                          ? 'আপনার রেজিস্টার্ড ইমেইলে একটি ৬-অঙ্কের OTP পাঠানো হবে।'
+                          : 'A 6-digit OTP will be sent to your registered email.'}
+                      </p>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Mail className="w-4 h-4" />{bn ? 'ইমেইল' : 'Email'}</Label>
+                        <Input type="email" value={fpEmail} onChange={(e) => setFpEmail(e.target.value)}
+                          placeholder="student@example.com" className="rounded-2xl" required />
+                      </div>
+                      <Button type="submit" className="w-full rounded-full" disabled={loading || otpSending}>
+                        {(loading || otpSending) ? (bn ? 'পাঠানো হচ্ছে...' : 'Sending...') : (bn ? 'OTP পাঠান' : 'Send OTP')}
+                      </Button>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleForgotReset} className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {bn
+                          ? <>OTP পাঠানো হয়েছে: <span className="font-medium text-foreground">{fpEmail}</span></>
+                          : <>OTP sent to: <span className="font-medium text-foreground">{fpEmail}</span></>}
+                      </p>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><KeyRound className="w-4 h-4" />{bn ? '৬-অঙ্কের OTP' : '6-digit OTP'}</Label>
+                        <Input value={fpCode} onChange={(e) => setFpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          inputMode="numeric" maxLength={6} className="rounded-2xl tracking-[0.5em] text-center font-mono"
+                          placeholder="• • • • • •" required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2"><Lock className="w-4 h-4" />{bn ? 'নতুন পাসওয়ার্ড' : 'New Password'}</Label>
+                        <Input type="password" value={fpNewPassword}
+                          onChange={(e) => setFpNewPassword(sanitizePasswordInput(e.target.value))}
+                          className="rounded-2xl" required minLength={6} />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <button type="button" onClick={() => { setFpStep('request'); setFpCode(''); setFpNewPassword(''); }}
+                          className="text-xs text-muted-foreground hover:text-foreground">
+                          ← {bn ? 'ইমেইল পরিবর্তন' : 'Change email'}
+                        </button>
+                        <button type="button" onClick={handleForgotResend} disabled={fpCooldown > 0 || otpSending}
+                          className="text-xs text-primary hover:underline disabled:text-muted-foreground disabled:no-underline">
+                          {fpCooldown > 0
+                            ? (bn ? `পুনরায় পাঠান (${fpCooldown}s)` : `Resend (${fpCooldown}s)`)
+                            : (bn ? 'OTP পুনরায় পাঠান' : 'Resend OTP')}
+                        </button>
+                      </div>
+                      <Button type="submit" className="w-full rounded-full" disabled={loading}>
+                        {loading ? (bn ? 'প্রক্রিয়া...' : 'Processing...') : (bn ? 'পাসওয়ার্ড রিসেট করুন' : 'Reset Password')}
+                      </Button>
+                    </form>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="signup">
