@@ -32,6 +32,9 @@ jobs:
       VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
       VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
       VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+      # Pin Deno's module + typecheck cache to a known location so
+      # actions/cache can persist it across runs.
+      DENO_DIR: ${{ github.workspace }}/.deno_cache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,6 +46,28 @@ jobs:
 
       - name: Install jq
         run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+
+      # Cache Deno's download + typecheck artifacts. Key on the contents of
+      # every edge function index.ts + the shared deno.json so the cache
+      # invalidates only when imports/config actually change. Falls back to
+      # the most recent cache on the same OS for partial hits.
+      - name: Cache Deno deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DENO_DIR }}
+          key: ${{ runner.os }}-deno-${{ hashFiles('supabase/functions/deno.json', 'supabase/functions/**/index.ts', 'supabase/functions/**/deps.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      # Warm the cache up-front so the pre-deploy gate doesn't pay the
+      # download cost inside its own per-function loop.
+      - name: Warm Deno cache
+        run: |
+          shopt -s nullglob
+          files=(supabase/functions/*/index.ts)
+          if [ ${#files[@]} -gt 0 ]; then
+            deno cache --no-lock "${files[@]}"
+          fi
 
       - name: Pre-deploy gate (lint + fmt + compile + bundle dry-run)
         run: bash scripts/check-edge-functions.sh
