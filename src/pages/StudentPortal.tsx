@@ -181,6 +181,113 @@ const StudentPortal = () => {
     setMode('login');
   };
 
+  // Cooldown ticker for "Resend OTP" in forgot flow
+  useEffect(() => {
+    if (fpCooldown <= 0) return;
+    const t = setInterval(() => setFpCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [fpCooldown]);
+
+  const handleForgotRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = fpEmail.trim().toLowerCase();
+    if (!email) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'ইমেইল দিন' : 'Enter email', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      // Don't reveal account existence — but skip OTP send if no account.
+      const { data: chk } = await supabase.functions.invoke('student-auth', {
+        body: { action: 'check_account', contact: email },
+      });
+      if (!chk?.exists) {
+        toast({
+          title: bn ? 'OTP পাঠানো হয়েছে (যদি একাউন্ট থাকে)' : 'OTP sent (if account exists)',
+          description: bn ? 'ইনবক্স চেক করুন।' : 'Please check your inbox.',
+        });
+        setFpStep('reset');
+        setFpCooldown(60);
+        return;
+      }
+      const r = await sendOtp(email, 'password_reset', undefined, 'password_reset');
+      if (!r.success) {
+        if (r.retryAfterSeconds) setFpCooldown(r.retryAfterSeconds);
+        return;
+      }
+      toast({
+        title: bn ? 'OTP পাঠানো হয়েছে' : 'OTP sent',
+        description: bn ? `${r.expiryMinutes ?? 10} মিনিটের মধ্যে কোডটি ব্যবহার করুন।` : `Use the code within ${r.expiryMinutes ?? 10} minutes.`,
+      });
+      setFpStep('reset');
+      setFpCooldown(60);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotResend = async () => {
+    if (fpCooldown > 0) return;
+    const email = fpEmail.trim().toLowerCase();
+    const r = await sendOtp(email, 'password_reset', undefined, 'password_reset');
+    if (r.success) {
+      toast({ title: bn ? 'OTP পুনরায় পাঠানো হয়েছে' : 'OTP resent' });
+      setFpCooldown(60);
+    } else if (r.retryAfterSeconds) {
+      setFpCooldown(r.retryAfterSeconds);
+    }
+  };
+
+  const handleForgotReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = fpEmail.trim().toLowerCase();
+    if (!fpCode.trim() || fpCode.trim().length !== 6) {
+      toast({ title: bn ? 'ভুল কোড' : 'Invalid code', description: bn ? '৬ অঙ্কের OTP দিন' : 'Enter the 6-digit OTP', variant: 'destructive' });
+      return;
+    }
+    if (fpNewPassword.length < 6) {
+      toast({ title: bn ? 'দুর্বল পাসওয়ার্ড' : 'Weak password', description: bn ? 'কমপক্ষে ৬ অক্ষর' : 'At least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('student-auth', {
+        body: {
+          action: 'reset_password',
+          contact: email,
+          code: fpCode.trim(),
+          new_password: fpNewPassword,
+        },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      toast({
+        title: bn ? 'পাসওয়ার্ড রিসেট সফল' : 'Password reset',
+        description: bn ? 'নতুন পাসওয়ার্ড দিয়ে লগইন করুন।' : 'Login with your new password.',
+      });
+      setLoginContact(email);
+      setLoginPassword('');
+      setFpEmail(''); setFpCode(''); setFpNewPassword('');
+      setFpStep('request');
+      setMode('login');
+    } catch (err: any) {
+      toast({ title: bn ? 'রিসেট ব্যর্থ' : 'Reset failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ----- Logged in view -----
   if (session) {
     return (
