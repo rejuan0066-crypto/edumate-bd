@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2 } from 'lucide-react';
+import { Inbox, Eye, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, Trash2, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -119,7 +119,7 @@ const AdminComplaints = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Inbox className="w-8 h-8 text-primary" />
@@ -129,6 +129,12 @@ const AdminComplaints = () => {
             {language === 'bn' ? 'সকল অভিযোগ পর্যালোচনা ও সমাধান করুন' : 'Review and resolve all complaints'}
           </p>
         </div>
+        <Button asChild variant="outline" className="rounded-2xl gap-2">
+          <a href="/admin/complaints/fields">
+            <Settings2 className="w-4 h-4" />
+            {language === 'bn' ? 'ফর্ম ফিল্ড সেটিংস' : 'Form Field Settings'}
+          </a>
+        </Button>
       </div>
 
       {/* Stats */}

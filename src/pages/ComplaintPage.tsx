@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import PublicLayout from '@/components/PublicLayout';
@@ -10,8 +10,30 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle2, Inbox, ShieldAlert, ShieldCheck, Loader2 } from 'lucide-react';
+import { CheckCircle2, Inbox, ShieldCheck, Loader2 } from 'lucide-react';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+
+type FieldConfig = {
+  id: string;
+  field_key: string;
+  label_bn: string;
+  label_en: string;
+  placeholder_bn?: string | null;
+  placeholder_en?: string | null;
+  field_type: 'text' | 'email' | 'phone' | 'textarea' | 'select' | 'number';
+  options?: Array<{ value: string; label_bn: string; label_en: string }> | null;
+  is_visible: boolean;
+  is_required: boolean;
+  is_locked: boolean;
+  min_length?: number | null;
+  max_length?: number | null;
+  display_order: number;
+};
+
+const IDENTITY_KEYS = new Set([
+  'complainant_name', 'complainant_phone', 'complainant_email',
+  'complainant_address', 'complainant_student_id',
+]);
 
 const ComplaintPage = () => {
   const { language } = useLanguage();
@@ -23,21 +45,47 @@ const ComplaintPage = () => {
   const [emailVerified, setEmailVerified] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState<string>('');
 
-  const initialForm = {
-    category: 'other',
-    priority: 'medium',
-    subject: '',
-    description: '',
-    complainant_name: '',
-    complainant_phone: '',
-    complainant_email: '',
-    complainant_address: '',
-    complainant_student_id: '',
-  };
-  const [form, setForm] = useState(initialForm);
+  const [fields, setFields] = useState<FieldConfig[]>([]);
+  const [loadingFields, setLoadingFields] = useState(true);
+  const [form, setForm] = useState<Record<string, string>>({});
 
-  // Reset verified flag if email changes
-  const updateField = (key: keyof typeof form, val: string) => {
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from('complaint_field_config')
+        .select('*')
+        .eq('is_visible', true)
+        .order('display_order', { ascending: true });
+      if (!alive) return;
+      if (error) {
+        toast({ title: bn ? 'ফিল্ড লোড ব্যর্থ' : 'Failed to load fields', variant: 'destructive' });
+        setLoadingFields(false);
+        return;
+      }
+      const list = (data || []) as unknown as FieldConfig[];
+      setFields(list);
+      const initial: Record<string, string> = {};
+      list.forEach((f) => {
+        if (f.field_type === 'select' && f.options?.length) {
+          initial[f.field_key] = f.options[Math.min(1, f.options.length - 1)].value;
+        } else {
+          initial[f.field_key] = '';
+        }
+      });
+      setForm(initial);
+      setLoadingFields(false);
+    })();
+    return () => { alive = false; };
+  }, [bn, toast]);
+
+  const fieldByKey = useMemo(() => {
+    const m: Record<string, FieldConfig> = {};
+    fields.forEach((f) => { m[f.field_key] = f; });
+    return m;
+  }, [fields]);
+
+  const updateField = (key: string, val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
     if (key === 'complainant_email' && val.trim().toLowerCase() !== verifiedEmail.toLowerCase()) {
       setEmailVerified(false);
@@ -45,43 +93,49 @@ const ComplaintPage = () => {
   };
 
   const validateRequired = (): string | null => {
-    if (!form.complainant_name.trim() || form.complainant_name.trim().length < 2)
-      return bn ? 'নাম আবশ্যক' : 'Name is required';
-    if (!form.complainant_phone.trim() || form.complainant_phone.trim().length < 6)
-      return bn ? 'মোবাইল নম্বর আবশ্যক' : 'Phone number is required';
-    const email = form.complainant_email.trim();
-    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
-      return bn ? 'বৈধ ইমেইল আবশ্যক' : 'Valid email is required';
-    if (!form.complainant_address.trim() || form.complainant_address.trim().length < 4)
-      return bn ? 'ঠিকানা আবশ্যক' : 'Address is required';
-    if (!form.complainant_student_id.trim())
-      return bn ? 'পরিচয়পত্র নম্বর (NID/জন্ম নিবন্ধন/অন্যান্য) আবশ্যক' : 'ID number (NID/Birth Reg./Other) is required';
-    if (!form.subject.trim()) return bn ? 'বিষয় আবশ্যক' : 'Subject is required';
-    if (!form.description.trim()) return bn ? 'বিবরণ আবশ্যক' : 'Description is required';
+    for (const f of fields) {
+      if (!f.is_required) continue;
+      const val = (form[f.field_key] || '').trim();
+      const labelText = bn ? f.label_bn : f.label_en;
+      if (!val) return bn ? `${f.label_bn} আবশ্যক` : `${f.label_en} is required`;
+      if (f.min_length && val.length < f.min_length)
+        return bn ? `${f.label_bn} কমপক্ষে ${f.min_length} অক্ষর হতে হবে` : `${labelText} must be at least ${f.min_length} characters`;
+      if (f.max_length && val.length > f.max_length)
+        return bn ? `${f.label_bn} সর্বোচ্চ ${f.max_length} অক্ষর` : `${labelText} must be at most ${f.max_length} characters`;
+      if (f.field_type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val))
+        return bn ? `বৈধ ${f.label_bn} দিন` : `Enter a valid ${labelText}`;
+      if (f.field_type === 'phone' && !/^[0-9+\-\s()]{6,20}$/.test(val))
+        return bn ? `বৈধ ${f.label_bn} দিন` : `Enter a valid ${labelText}`;
+    }
+    // Email is mandatory for OTP verification regardless of config
+    const emailVal = (form.complainant_email || '').trim();
+    if (!emailVal || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailVal))
+      return bn ? 'OTP যাচাইয়ের জন্য বৈধ ইমেইল আবশ্যক' : 'A valid email is required for OTP verification';
     return null;
   };
 
   const submitComplaint = async () => {
     setSubmitting(true);
     try {
-      const payload = {
-        category: form.category,
-        priority: form.priority,
-        subject: form.subject.trim(),
-        description: form.description.trim(),
+      const payload: Record<string, any> = {
         is_anonymous: false,
-        complainant_name: form.complainant_name.trim(),
-        complainant_phone: form.complainant_phone.trim(),
-        complainant_email: form.complainant_email.trim(),
-        complainant_address: form.complainant_address.trim(),
-        complainant_student_id: form.complainant_student_id.trim(),
         contact_verified: true,
         contact_verified_at: new Date().toISOString(),
         contact_verification_method: 'email_otp',
-      } as any;
+      };
+      fields.forEach((f) => {
+        const v = (form[f.field_key] || '').trim();
+        if (v !== '') payload[f.field_key] = v;
+      });
+      // Sensible defaults for non-visible required-by-DB fields
+      if (!payload.category) payload.category = 'other';
+      if (!payload.priority) payload.priority = 'medium';
+      if (!payload.subject) payload.subject = (payload.description || '').slice(0, 80) || 'Complaint';
+      if (!payload.description) payload.description = '-';
+
       const { data, error } = await supabase
         .from('complaints')
-        .insert(payload)
+        .insert(payload as any)
         .select('ticket_number')
         .single();
       if (error) throw error;
@@ -99,7 +153,7 @@ const ComplaintPage = () => {
 
   const handleOtpVerified = async () => {
     setEmailVerified(true);
-    setVerifiedEmail(form.complainant_email.trim());
+    setVerifiedEmail((form.complainant_email || '').trim());
     setOtpOpen(false);
     await submitComplaint();
   };
@@ -111,21 +165,78 @@ const ComplaintPage = () => {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
       return;
     }
-    // If email already verified (and unchanged), submit directly. Otherwise open OTP dialog.
-    if (emailVerified && verifiedEmail.toLowerCase() === form.complainant_email.trim().toLowerCase()) {
+    const emailVal = (form.complainant_email || '').trim();
+    if (emailVerified && verifiedEmail.toLowerCase() === emailVal.toLowerCase()) {
       await submitComplaint();
     } else {
       setOtpOpen(true);
     }
   };
 
+  const renderField = (f: FieldConfig) => {
+    const labelText = bn ? f.label_bn : f.label_en;
+    const placeholder = (bn ? f.placeholder_bn : f.placeholder_en) || undefined;
+    const value = form[f.field_key] || '';
+    const wrapperClass = f.field_type === 'textarea' ? 'md:col-span-2' : '';
+
+    if (f.field_type === 'select' && f.options?.length) {
+      return (
+        <div key={f.id} className={wrapperClass}>
+          <Label>{labelText} {f.is_required && '*'}</Label>
+          <Select value={value} onValueChange={(v) => updateField(f.field_key, v)}>
+            <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {f.options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {bn ? opt.label_bn : opt.label_en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+
+    if (f.field_type === 'textarea') {
+      return (
+        <div key={f.id} className={wrapperClass}>
+          <Label>{labelText} {f.is_required && '*'}</Label>
+          <Textarea
+            value={value}
+            onChange={(e) => updateField(f.field_key, e.target.value)}
+            rows={f.field_key === 'description' ? 6 : 3}
+            className="rounded-xl"
+            placeholder={placeholder}
+            maxLength={f.max_length || undefined}
+            required={f.is_required}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div key={f.id} className={wrapperClass}>
+        <Label>{labelText} {f.is_required && '*'}</Label>
+        <Input
+          type={f.field_type === 'email' ? 'email' : f.field_type === 'phone' ? 'tel' : f.field_type === 'number' ? 'text' : 'text'}
+          value={value}
+          onChange={(e) => updateField(f.field_key, e.target.value)}
+          className="rounded-xl"
+          placeholder={placeholder}
+          maxLength={f.max_length || undefined}
+          required={f.is_required}
+        />
+      </div>
+    );
+  };
+
   if (submitted) {
     return (
       <PublicLayout>
-        <div className="container mx-auto px-4 py-16 max-w-2xl">
+        <div className="container mx-auto px-4 py-12 max-w-2xl">
           <Card className="rounded-[38px] border-0 bg-card/80 backdrop-blur-xl shadow-2xl">
-            <CardContent className="p-12 text-center space-y-6">
-              <div className="mx-auto w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center">
+            <CardContent className="text-center py-16 space-y-6">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/10">
                 <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
               <h2 className="text-3xl font-bold">
@@ -144,13 +255,18 @@ const ComplaintPage = () => {
               </p>
               <div className="flex flex-wrap gap-3 justify-center">
                 <Button
+                  variant="outline"
                   onClick={() => {
                     setSubmitted(null);
-                    setForm(initialForm);
                     setEmailVerified(false);
                     setVerifiedEmail('');
+                    const initial: Record<string, string> = {};
+                    fields.forEach((f) => {
+                      initial[f.field_key] = f.field_type === 'select' && f.options?.length
+                        ? f.options[Math.min(1, f.options.length - 1)].value : '';
+                    });
+                    setForm(initial);
                   }}
-                  variant="outline"
                   className="rounded-2xl"
                 >
                   {bn ? 'আরেকটি জমা দিন' : 'Submit Another'}
@@ -167,6 +283,10 @@ const ComplaintPage = () => {
       </PublicLayout>
     );
   }
+
+  // Group fields: identity vs others (preserves the original visual structure)
+  const identityFields = fields.filter((f) => IDENTITY_KEYS.has(f.field_key));
+  const otherFields = fields.filter((f) => !IDENTITY_KEYS.has(f.field_key));
 
   return (
     <PublicLayout>
@@ -194,148 +314,53 @@ const ComplaintPage = () => {
 
         <Card className="rounded-[38px] border-0 bg-card/80 backdrop-blur-xl shadow-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5" />
-              {bn ? 'অভিযোগ ফরম' : 'Complaint Form'}
-            </CardTitle>
+            <CardTitle>{bn ? 'অভিযোগের বিবরণ' : 'Complaint Details'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Identity (REQUIRED) */}
-              <div className="space-y-4 p-5 rounded-2xl border border-primary/30 bg-primary/5">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <p className="text-sm font-semibold">
-                    {bn ? 'পরিচয় ও যোগাযোগ (আবশ্যক)' : 'Identity & Contact (Required)'}
-                  </p>
-                  {emailVerified && (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-500/10 px-3 py-1 rounded-full">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      {bn ? 'ইমেইল ভেরিফাইড' : 'Email Verified'}
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>{bn ? 'নাম' : 'Name'} *</Label>
-                    <Input
-                      value={form.complainant_name}
-                      onChange={(e) => updateField('complainant_name', e.target.value)}
-                      className="rounded-xl"
-                      maxLength={100}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'পরিচয়পত্র নম্বর (NID/জন্ম নিবন্ধন/অন্যান্য)' : 'ID Number (NID / Birth Reg. / Other)'} *</Label>
-                    <Input
-                      value={form.complainant_student_id}
-                      onChange={(e) => updateField('complainant_student_id', e.target.value)}
-                      className="rounded-xl"
-                      maxLength={50}
-                      placeholder={bn ? 'NID, জন্ম নিবন্ধন বা অন্য যেকোনো পরিচয়পত্র নম্বর' : 'NID, Birth Registration or any other ID'}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'মোবাইল' : 'Phone'} *</Label>
-                    <Input
-                      type="tel"
-                      value={form.complainant_phone}
-                      onChange={(e) => updateField('complainant_phone', e.target.value)}
-                      className="rounded-xl"
-                      maxLength={20}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>{bn ? 'ইমেইল' : 'Email'} *</Label>
-                    <Input
-                      type="email"
-                      value={form.complainant_email}
-                      onChange={(e) => updateField('complainant_email', e.target.value)}
-                      className="rounded-xl"
-                      maxLength={255}
-                      required
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label>{bn ? 'ঠিকানা' : 'Address'} *</Label>
-                    <Input
-                      value={form.complainant_address}
-                      onChange={(e) => updateField('complainant_address', e.target.value)}
-                      className="rounded-xl"
-                      maxLength={300}
-                      required
-                    />
-                  </div>
-                </div>
+            {loadingFields ? (
+              <div className="py-16 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-
-              {/* Category & priority */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>{bn ? 'বিভাগ' : 'Category'} *</Label>
-                  <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="academic">{bn ? 'শিক্ষা সংক্রান্ত' : 'Academic'}</SelectItem>
-                      <SelectItem value="financial">{bn ? 'আর্থিক' : 'Financial'}</SelectItem>
-                      <SelectItem value="infrastructure">{bn ? 'অবকাঠামো' : 'Infrastructure'}</SelectItem>
-                      <SelectItem value="staff">{bn ? 'কর্মী সংক্রান্ত' : 'Staff'}</SelectItem>
-                      <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{bn ? 'অগ্রাধিকার' : 'Priority'} *</Label>
-                  <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">{bn ? 'কম' : 'Low'}</SelectItem>
-                      <SelectItem value="medium">{bn ? 'মাঝারি' : 'Medium'}</SelectItem>
-                      <SelectItem value="high">{bn ? 'উচ্চ' : 'High'}</SelectItem>
-                      <SelectItem value="urgent">{bn ? 'জরুরি' : 'Urgent'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label>{bn ? 'বিষয়' : 'Subject'} *</Label>
-                <Input
-                  value={form.subject}
-                  onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                  className="rounded-xl"
-                  required
-                  maxLength={200}
-                />
-              </div>
-
-              <div>
-                <Label>{bn ? 'বিস্তারিত বিবরণ' : 'Detailed Description'} *</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={6}
-                  className="rounded-xl"
-                  required
-                  maxLength={5000}
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full h-12 rounded-2xl text-base"
-              >
-                {submitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{bn ? 'জমা হচ্ছে...' : 'Submitting...'}</>
-                ) : (
-                  bn ? 'অভিযোগ জমা দিন' : 'Submit Complaint'
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {identityFields.length > 0 && (
+                  <div className="space-y-4 p-5 rounded-2xl border border-primary/30 bg-primary/5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <p className="text-sm font-semibold">
+                        {bn ? 'পরিচয় ও যোগাযোগ' : 'Identity & Contact'}
+                      </p>
+                      {emailVerified && (
+                        <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-500/10 px-3 py-1 rounded-full">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          {bn ? 'ইমেইল ভেরিফাইড' : 'Email Verified'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {identityFields.map(renderField)}
+                    </div>
+                  </div>
                 )}
-              </Button>
-            </form>
+
+                {otherFields.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {otherFields.map(renderField)}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full h-12 rounded-2xl text-base"
+                >
+                  {submitting ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{bn ? 'জমা হচ্ছে...' : 'Submitting...'}</>
+                  ) : (
+                    bn ? 'অভিযোগ জমা দিন' : 'Submit Complaint'
+                  )}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -343,9 +368,9 @@ const ComplaintPage = () => {
       <OtpVerificationDialog
         open={otpOpen}
         onOpenChange={setOtpOpen}
-        email={form.complainant_email.trim()}
+        email={(form.complainant_email || '').trim()}
         purpose="email_verification"
-        recipientName={form.complainant_name.trim()}
+        recipientName={(form.complainant_name || '').trim()}
         onVerified={handleOtpVerified}
         title={bn ? 'ইমেইল যাচাই' : 'Verify Email'}
         description={bn ? 'আপনার ইমেইলে পাঠানো ৬-সংখ্যার কোড লিখুন' : 'Enter the 6-digit code sent to your email'}
