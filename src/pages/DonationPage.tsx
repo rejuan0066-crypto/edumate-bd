@@ -44,7 +44,7 @@ const DonationPage = () => {
   const [form, setForm] = useState({
     name: '',
     phone: '',
-    nid: '',
+    email: '',
     purposeKey: '',
     purposeOther: '',
     amount: '',
