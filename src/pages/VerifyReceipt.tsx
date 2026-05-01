@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/usePermissions';
 import PublicLayout from '@/components/PublicLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,9 +54,8 @@ const VerifyReceipt = () => {
   const { token } = useParams<{ token: string }>();
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
-  const { role } = useUserRole();
-  const isStaff = !!user && ['admin', 'super_admin', 'accounts'].includes(role || '');
+  const { user, role } = useAuth();
+  const isStaff = !!user && ['admin', 'super_admin', 'accounts', 'accounts_staff'].includes(role || '');
 
   const [pub, setPub] = useState<PublicResult | null>(null);
   const [adm, setAdm] = useState<AdminResult | null>(null);
