@@ -498,6 +498,7 @@ const ParentPortal = () => {
                           <Input id="su-phone" value={signupPhone}
                             placeholder={placeholderOf('phone')}
                             onChange={(e) => setSignupPhone(e.target.value)}
+                            onBlur={runMatchPreview}
                             className="rounded-xl h-11" />
                         </div>
                       )}
