@@ -142,17 +142,25 @@ const ComplaintPage = () => {
                   ? 'কর্তৃপক্ষ শীঘ্রই আপনার অভিযোগ পর্যালোচনা করবে। ভবিষ্যৎ যোগাযোগের জন্য টিকিট নম্বরটি সংরক্ষণ করুন।'
                   : 'Authority will review your complaint shortly. Please save the ticket number for future reference.'}
               </p>
-              <Button
-                onClick={() => {
-                  setSubmitted(null);
-                  setForm(initialForm);
-                  setEmailVerified(false);
-                  setVerifiedEmail('');
-                }}
-                className="rounded-2xl"
-              >
-                {bn ? 'আরেকটি জমা দিন' : 'Submit Another'}
-              </Button>
+              <div className="flex flex-wrap gap-3 justify-center">
+                <Button
+                  onClick={() => {
+                    setSubmitted(null);
+                    setForm(initialForm);
+                    setEmailVerified(false);
+                    setVerifiedEmail('');
+                  }}
+                  variant="outline"
+                  className="rounded-2xl"
+                >
+                  {bn ? 'আরেকটি জমা দিন' : 'Submit Another'}
+                </Button>
+                <Button asChild className="rounded-2xl">
+                  <Link to={`/complaints/track?ticket=${submitted.ticket}`}>
+                    {bn ? 'অভিযোগ ট্র্যাক করুন' : 'Track This Complaint'}
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
