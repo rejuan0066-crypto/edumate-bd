@@ -674,11 +674,115 @@
   animation: marquee 15s linear infinite;
 }
 
+/* ===== RECEIPT / DOCUMENT PRINT LAYOUT =====
+   Clean, margin-correct printing for receipts, salary slips, certificates, etc.
+   - A4 page with sane margins
+   - Only `.print-section` is printed; the rest is hidden
+   - Backgrounds, gradients, and shadows preserved where useful, but
+     heavy effects (blur, transforms) are neutralized for crisp output. */
+@page {
+  size: A4;
+  margin: 12mm 10mm;
+}
+
 @media print {
+  /* Hide everything by default, then reveal only the print target */
   body * { visibility: hidden; }
-  .print-section, .print-section * { visibility: visible; }
-  .print-section { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
+  .print-section,
+  .print-section * { visibility: visible; }
+
+  .print-section {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Hide anything explicitly marked no-print, plus app chrome */
+  .no-print,
+  .no-print *,
+  nav, header.app-header, aside.app-sidebar,
+  [data-no-print="true"] {
+    display: none !important;
+  }
+
+  /* Reset html/body for predictable margins (works with @page) */
+  html, body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Neutralize sticky/fixed positioning so content flows on paper */
+  .print-section .sticky,
+  .print-section .fixed {
+    position: static !important;
+  }
+
+  /* Remove glass/blur effects inside the receipt — they print muddy */
+  .print-section .glass-card,
+  .print-section [class*="backdrop-blur"],
+  .print-section [class*="bg-white/"],
+  .print-section [class*="bg-black/"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  /* Page-break controls — keep receipts intact */
+  .print-section,
+  .print-keep-together,
+  .print-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Tables: don't split rows across pages, repeat headers */
+  .print-section table { page-break-inside: auto; border-collapse: collapse; width: 100%; }
+  .print-section thead { display: table-header-group; }
+  .print-section tfoot { display: table-footer-group; }
+  .print-section tr    { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Headings shouldn't be orphaned at the bottom of a page */
+  .print-section h1,
+  .print-section h2,
+  .print-section h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Images / QR codes — keep whole, no scaling artifacts */
+  .print-section img,
+  .print-section svg,
+  .print-section canvas {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Links: don't auto-append URLs after anchor text */
+  .print-section a[href]:after { content: "" !important; }
+
+  /* Force readable text colors (avoid washed-out muted greys on paper) */
+  .print-section { color: #000 !important; }
+  .print-section .text-muted-foreground { color: #444 !important; }
 }
 
 /* ─────────────────────────────────────────────────────────
