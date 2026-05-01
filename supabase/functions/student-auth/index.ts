@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
         return json({ error: 'একাউন্ট সক্রিয় নয়' }, 403);
       }
 
-      const password_hash = await bcrypt.hash(new_password);
+      const password_hash = hashSync(new_password);
       const { error: updErr } = await supabase
         .from('student_accounts')
         .update({ password_hash, contact_verified: true, updated_at: new Date().toISOString() })
