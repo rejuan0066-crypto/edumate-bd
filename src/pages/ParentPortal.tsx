@@ -301,10 +301,11 @@ const ParentPortal = () => {
       body: { action: 'mark_verified', email: signupEmail.trim() },
     });
     toast({
-      title: bn ? 'সাইনআপ সম্পন্ন' : 'Signup Complete',
+      title: bn ? '✅ ইমেইল ভেরিফাইড — অনুমোদনের অপেক্ষায়' : '✅ Email Verified — Awaiting Approval',
       description: bn
-        ? 'ইমেইল ভেরিফাইড। অ্যাডমিন অনুমোদনের পর লগইন করতে পারবেন।'
-        : 'Email verified. You can login after admin approval.',
+        ? 'আপনার একাউন্ট অ্যাডমিন অনুমোদনের জন্য পাঠানো হয়েছে। অনুমোদন হলে আপনার ইমেইলে জানানো হবে এবং তারপর লগইন করতে পারবেন।'
+        : 'Your account has been submitted for admin approval. You will receive an email once approved, then you can login.',
+      duration: 8000,
     });
     // Reset signup form & switch to login
     setSignupEmail('');
