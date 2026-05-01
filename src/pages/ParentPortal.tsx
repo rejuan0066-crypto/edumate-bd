@@ -596,18 +596,42 @@ const ParentDashboard = ({
   onLogout: () => void;
   bn: boolean;
 }) => {
-  // Fetch student full info via edge function (service role bypass)
-  const { data: student } = useQuery({
-    queryKey: ['parent-student', session.studentUuid, session.accountId],
+  // Fetch all linked students (multi-student support)
+  const { data: linkedStudents = [] } = useQuery({
+    queryKey: ['parent-linked-students', session.accountId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('parent-student-info', {
-        body: { account_id: session.accountId, student_uuid: session.studentUuid },
+        body: { account_id: session.accountId, list: true },
+      });
+      if (error) throw error;
+      return (data?.students || []) as any[];
+    },
+    enabled: !!session.accountId,
+    staleTime: 30000,
+  });
+
+  // Active student state — defaults to session.studentUuid, falls back to first linked
+  const [activeUuid, setActiveUuid] = useState<string>(session.studentUuid);
+  useEffect(() => {
+    if (linkedStudents.length > 0 && !linkedStudents.some((s: any) => s.id === activeUuid)) {
+      setActiveUuid(linkedStudents[0].id);
+    }
+  }, [linkedStudents, activeUuid]);
+
+  // Fetch active student full info via edge function (service role bypass)
+  const { data: student } = useQuery({
+    queryKey: ['parent-student', activeUuid, session.accountId],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('parent-student-info', {
+        body: { account_id: session.accountId, student_uuid: activeUuid },
       });
       if (error) throw error;
       return data?.student ?? null;
     },
-    enabled: !!session.studentUuid && !!session.accountId,
+    enabled: !!activeUuid && !!session.accountId,
   });
+
+  const activeStudentId = (linkedStudents.find((s: any) => s.id === activeUuid)?.student_id) || session.studentId;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -617,15 +641,37 @@ const ParentDashboard = ({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6"
       >
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold">
             {bn ? 'স্বাগতম, অভিভাবক' : 'Welcome, Parent'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {bn ? 'ছাত্র আইডি' : 'Student ID'}: <span className="font-semibold text-foreground">{session.studentId}</span>
+            {bn ? 'ছাত্র আইডি' : 'Student ID'}: <span className="font-semibold text-foreground">{activeStudentId}</span>
+            {linkedStudents.length > 1 && (
+              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-medium">
+                {bn ? `${linkedStudents.length} জন সন্তান` : `${linkedStudents.length} children`}
+              </span>
+            )}
           </p>
+          {linkedStudents.length > 1 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {linkedStudents.map((s: any) => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveUuid(s.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    activeUuid === s.id
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400'
+                  }`}
+                >
+                  {bn ? s.name_bn : (s.name_en || s.name_bn)} <span className="opacity-70">({s.student_id})</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <Button variant="outline" onClick={onLogout} className="rounded-xl">
+        <Button variant="outline" onClick={onLogout} className="rounded-xl shrink-0">
           <LogOut className="w-4 h-4 mr-2" />
           {bn ? 'লগআউট' : 'Logout'}
         </Button>
