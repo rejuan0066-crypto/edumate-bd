@@ -5,18 +5,33 @@ on:
     paths:
       - 'supabase/functions/**'
       - 'scripts/check-edge-functions.sh'
+      - 'scripts/check-edge-function-env.sh'
       - '.github/workflows/edge-functions-check.yml'
   pull_request:
     paths:
       - 'supabase/functions/**'
       - 'scripts/check-edge-functions.sh'
+      - 'scripts/check-edge-function-env.sh'
       - '.github/workflows/edge-functions-check.yml'
   workflow_dispatch:
 
 jobs:
   pre-deploy:
-    name: TypeScript + Bundle Dry-Run
+    name: TypeScript + Bundle + Env Check
     runs-on: ubuntu-latest
+    # Required env for the env-check step. Wire repository/organization
+    # secrets here so the manifest's `required` list can be validated.
+    env:
+      # Supabase platform-injected (always required)
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      # Function-specific (extend as you add functions / secrets)
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LOVABLE_API_KEY: ${{ secrets.LOVABLE_API_KEY }}
+      VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+      VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+      VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,8 +41,14 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Install jq
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+
       - name: Lint (parse errors / unclosed blocks)
         run: deno lint supabase/functions
 
       - name: Pre-deploy check (compile + bundle dry-run)
         run: bash scripts/check-edge-functions.sh
+
+      - name: Validate edge function env vars
+        run: bash scripts/check-edge-function-env.sh
