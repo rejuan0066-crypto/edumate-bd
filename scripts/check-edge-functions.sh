@@ -95,21 +95,27 @@ run_step() {
   local logfile="$1"; shift
   shift # discard "--"
   local rc=0
+  # Use seconds resolution from `date +%s` (portable on macOS + Linux CI).
   local started; started="$(date +%s)"
   timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
     >"$logfile" 2>&1 || rc=$?
   local dur=$(( $(date +%s) - started ))
+  TOTAL_STEP_SECONDS=$(( TOTAL_STEP_SECONDS + dur ))
+  local slow=""
+  if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
+    slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
+  fi
   STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label (${dur}s)"
+    echo "  ✓ $label  [${dur}s]${slow}"
     return 0
   fi
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
+    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)  [${dur}s]"
     echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
     echo "      hangs (network fetches at import time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc, ${dur}s)"
+    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}"
   fi
   sed 's/^/      /' "$logfile"
   return 1
