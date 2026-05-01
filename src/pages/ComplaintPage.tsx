@@ -60,40 +60,7 @@ const ComplaintPage = () => {
     return null;
   };
 
-  const handleVerifyClick = () => {
-    const err = validateRequired();
-    if (err) {
-      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
-      return;
-    }
-    setOtpOpen(true);
-  };
-
-  const handleOtpVerified = () => {
-    setEmailVerified(true);
-    setVerifiedEmail(form.complainant_email.trim());
-    setOtpOpen(false);
-    toast({
-      title: bn ? 'ইমেইল ভেরিফাই হয়েছে' : 'Email Verified',
-      description: bn ? 'এখন অভিযোগ জমা দিন' : 'You can now submit the complaint',
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const err = validateRequired();
-    if (err) {
-      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
-      return;
-    }
-    if (!emailVerified) {
-      toast({
-        title: bn ? 'যাচাই প্রয়োজন' : 'Verification Required',
-        description: bn ? 'অভিযোগ জমা দিতে ইমেইল ভেরিফাই করুন' : 'Please verify your email before submitting',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const submitComplaint = async () => {
     setSubmitting(true);
     try {
       const payload = {
@@ -126,6 +93,28 @@ const ComplaintPage = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOtpVerified = async () => {
+    setEmailVerified(true);
+    setVerifiedEmail(form.complainant_email.trim());
+    setOtpOpen(false);
+    await submitComplaint();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = validateRequired();
+    if (err) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err, variant: 'destructive' });
+      return;
+    }
+    // If email already verified (and unchanged), submit directly. Otherwise open OTP dialog.
+    if (emailVerified && verifiedEmail.toLowerCase() === form.complainant_email.trim().toLowerCase()) {
+      await submitComplaint();
+    } else {
+      setOtpOpen(true);
     }
   };
 
