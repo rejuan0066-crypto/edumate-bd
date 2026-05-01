@@ -196,8 +196,7 @@ const ParentPortal = () => {
         toast({ title: bn ? 'লগইন ব্যর্থ' : 'Login Failed', description: errMsg, variant: 'destructive' });
         return;
       }
-      data = payload;
-      const acc = data.account;
+      const acc = payload.account;
       const newSession: ParentSession = {
         accountId: acc.id,
         email: acc.email,
