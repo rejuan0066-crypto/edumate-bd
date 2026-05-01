@@ -280,15 +280,25 @@ const StudentInfoPage = () => {
           <h1 className="text-3xl font-display font-bold text-foreground">
             {bn ? 'শিক্ষার্থী তথ্য' : 'Student Info'}
           </h1>
-          <Badge variant="outline" className="rounded-full px-3 py-1">
-            {isStaff
-              ? bn ? `স্টাফ (${role})` : `Staff (${role})`
-              : bn ? 'অভিভাবক' : 'Parent'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="rounded-full px-3 py-1">
+              {isStaff
+                ? bn ? `স্টাফ (${role})` : `Staff (${role})`
+                : isStudent
+                  ? bn ? 'শিক্ষার্থী' : 'Student'
+                  : bn ? 'অভিভাবক' : 'Parent'}
+            </Badge>
+            {isStudent && (
+              <Button onClick={handleStudentLogout} size="sm" variant="outline" className="rounded-full">
+                <LogIn className="w-4 h-4 mr-1 rotate-180" />
+                {bn ? 'লগআউট' : 'Logout'}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Staff search */}
-        {isStaff && (
+        {/* Staff search — only for staff, never for students/parents */}
+        {isStaff && !isStudent && (
           <Card className="rounded-[45px] backdrop-blur-xl border-border/50 bg-card/60 mb-6">
             <CardContent className="p-6">
               <form onSubmit={handleSearch} className="flex gap-3">
@@ -346,8 +356,17 @@ const StudentInfoPage = () => {
           </Card>
         )}
 
+        {/* Student: chip showing self */}
+        {isStudent && studentSession && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {bn
+              ? `শিক্ষার্থী: ${studentSession.fullName || ''} • আইডি: ${studentSession.studentId}`
+              : `Student: ${studentSession.fullName || ''} • ID: ${studentSession.studentId}`}
+          </p>
+        )}
+
         {/* Parent: small chip showing own student */}
-        {isParent && !isStaff && parentSession && (
+        {isParent && !isStaff && !isStudent && parentSession && (
           <p className="text-sm text-muted-foreground mb-4">
             {bn
               ? `অভিভাবক: ${parentSession.fullName || parentSession.email || ''} • শিক্ষার্থী আইডি: ${parentSession.studentId}`
