@@ -372,3 +372,12 @@ function maskContact(c: string): string {
   }
   return c.length > 4 ? `${c.slice(0, 3)}****${c.slice(-2)}` : '****';
 }
+
+function escapeHtml(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
