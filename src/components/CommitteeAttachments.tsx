@@ -17,6 +17,8 @@ import {
   Loader2,
 } from "lucide-react";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog";
+import SecureImage from "@/components/SecureImage";
+import { getSecureUrl } from "@/lib/secureStorage";
 
 interface Props {
   committeeId: string;
