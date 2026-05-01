@@ -49,6 +49,43 @@ const AdminComplaints = () => {
   const [selected, setSelected] = useState<any | null>(null);
   const [resolution, setResolution] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [updateIsPublic, setUpdateIsPublic] = useState(true);
+
+  const { data: timeline = [] } = useQuery({
+    queryKey: ['admin-complaint-updates', selected?.id],
+    enabled: !!selected?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('complaint_updates')
+        .select('*')
+        .eq('complaint_id', selected.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const addUpdateMutation = useMutation({
+    mutationFn: async () => {
+      if (!selected?.id || !updateMessage.trim()) throw new Error('Message required');
+      const { data: auth } = await supabase.auth.getUser();
+      const { error } = await supabase.from('complaint_updates').insert({
+        complaint_id: selected.id,
+        update_type: 'note',
+        message: updateMessage.trim(),
+        is_public: updateIsPublic,
+        created_by: auth.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-complaint-updates', selected?.id] });
+      setUpdateMessage('');
+      toast({ title: language === 'bn' ? 'আপডেট যোগ হয়েছে' : 'Update added' });
+    },
+    onError: (e) => toast({ title: 'Error', description: (e as Error).message, variant: 'destructive' }),
+  });
 
   const { data: complaints = [], isLoading } = useQuery({
     queryKey: ['admin-complaints'],
