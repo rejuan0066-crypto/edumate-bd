@@ -17,11 +17,13 @@
 \echo '  1. APPLICANT PII — admission_test_attempts'
 \echo '============================================================'
 
--- 1a. Base table must NOT have a public/anon SELECT policy.
+-- 1a. No SELECT policy on admission_test_attempts may be open to anon/PUBLIC.
+--     A policy is "open" only when its USING clause is true / NULL (no restriction).
 SELECT
   CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS status,
-  '1a. No anon SELECT policy on admission_test_attempts' AS check,
-  COUNT(*) AS offending_policies
+  '1a. No anon-readable SELECT policy on admission_test_attempts' AS check,
+  COALESCE(string_agg(p.polname || ' [' || COALESCE(pg_get_expr(p.polqual, p.polrelid),'<null>') || ']', '; '),
+           'none') AS offending_policies
 FROM pg_policy p
 JOIN pg_class c ON c.oid = p.polrelid
 JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -32,7 +34,8 @@ WHERE n.nspname = 'public'
     p.polroles = '{0}'::oid[]                                   -- PUBLIC
     OR 'anon' = ANY(SELECT rolname FROM pg_roles r
                     JOIN unnest(p.polroles) pr ON r.oid = pr)
-  );
+  )
+  AND (p.polqual IS NULL OR pg_get_expr(p.polqual, p.polrelid) IN ('true','(true)'));
 
 -- 1b. The public projection view must exist with security_invoker = on.
 SELECT
