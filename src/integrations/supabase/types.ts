@@ -9229,6 +9229,10 @@ export type Database = {
         }
         Returns: number
       }
+      rotate_receipt_token: {
+        Args: { _receipt_id: string; _receipt_type: string }
+        Returns: string
+      }
       submit_admission_test_attempt: {
         Args: {
           p_applicant_address?: string
