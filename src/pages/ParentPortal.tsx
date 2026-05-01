@@ -510,15 +510,7 @@ const ParentPortal = () => {
                           placeholder={bn ? 'NID নম্বর দিন' : 'Enter NID number'}
                           value={signupNid}
                           onChange={(e) => setSignupNid(e.target.value.replace(/[^\d]/g, ''))}
-                          onBlur={async () => {
-                            if (!signupNid.trim() && !signupPhone.trim()) { setMatchPreview([]); return; }
-                            try {
-                              const { data } = await supabase.functions.invoke('parent-auth', {
-                                body: { action: 'preview_match', nid: signupNid.trim() || undefined, phone: signupPhone.trim() || undefined },
-                              });
-                              setMatchPreview(data?.matches || []);
-                            } catch { /* ignore */ }
-                          }}
+                          onBlur={runMatchPreview}
                           inputMode="numeric"
                           className="rounded-xl h-11" />
                         <p className="text-[11px] text-muted-foreground">
@@ -526,18 +518,75 @@ const ParentPortal = () => {
                             ? 'NID/ফোন দিয়ে আপনার সন্তানদের একাউন্টের সাথে স্বয়ংক্রিয়ভাবে যুক্ত করা হবে। ভবিষ্যতে নতুন ভর্তি হলে অটো যোগ হবে।'
                             : 'NID/phone is used to auto-link your children. Future admissions will auto-attach.'}
                         </p>
-                        {matchPreview.length > 0 && (
-                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2 text-xs">
-                            <p className="font-semibold text-emerald-700 mb-1">
-                              {bn ? `${matchPreview.length} জন ছাত্র পাওয়া গেছে:` : `${matchPreview.length} student(s) found:`}
-                            </p>
-                            <ul className="space-y-0.5">
-                              {matchPreview.map((m) => (
-                                <li key={m.student_uuid} className="text-emerald-800">
-                                  • {bn ? m.name_bn : (m.name_en || m.name_bn)} <span className="text-emerald-600">({m.student_id})</span>
-                                </li>
-                              ))}
+                        {matchLoading && (
+                          <div className="rounded-xl border border-muted bg-muted/30 p-2 text-xs text-muted-foreground">
+                            {bn ? 'মিল খোঁজা হচ্ছে…' : 'Searching matches…'}
+                          </div>
+                        )}
+                        {!matchLoading && matchPreview.length > 0 && (
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="font-semibold text-emerald-700">
+                                {bn
+                                  ? `${matchPreview.length} জন ছাত্র পাওয়া গেছে — লিঙ্ক করতে নিশ্চিত করুন:`
+                                  : `${matchPreview.length} student(s) found — confirm to link:`}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={toggleConfirmAll}
+                                className="text-[11px] font-medium text-emerald-700 underline hover:text-emerald-900"
+                              >
+                                {confirmedUuids.size === matchPreview.length
+                                  ? (bn ? 'সব বাদ' : 'Deselect all')
+                                  : (bn ? 'সব নির্বাচন' : 'Select all')}
+                              </button>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {matchPreview.map((m) => {
+                                const reason = matchReasonLabel(m.match_reason);
+                                const checked = confirmedUuids.has(m.student_uuid);
+                                return (
+                                  <li
+                                    key={m.student_uuid}
+                                    className={`flex items-start gap-2 rounded-lg border p-2 transition-colors ${
+                                      checked ? 'border-emerald-300 bg-white' : 'border-muted bg-muted/20 opacity-70'
+                                    }`}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => toggleConfirm(m.student_uuid)}
+                                      className="mt-0.5 h-4 w-4 accent-emerald-600 cursor-pointer"
+                                      id={`confirm-${m.student_uuid}`}
+                                    />
+                                    <label htmlFor={`confirm-${m.student_uuid}`} className="flex-1 cursor-pointer">
+                                      <div className="font-medium text-emerald-900">
+                                        {bn ? m.name_bn : (m.name_en || m.name_bn)}{' '}
+                                        <span className="font-normal text-emerald-600">({m.student_id})</span>
+                                      </div>
+                                      <div className="mt-0.5">
+                                        <span
+                                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                            reason.tone === 'nid'
+                                              ? 'bg-indigo-100 text-indigo-700'
+                                              : 'bg-amber-100 text-amber-700'
+                                          }`}
+                                        >
+                                          {bn ? `মিল: ${reason.label}` : `Matched: ${reason.label}`}
+                                        </span>
+                                      </div>
+                                    </label>
+                                  </li>
+                                );
+                              })}
                             </ul>
+                            {confirmedUuids.size === 0 && (
+                              <p className="text-[11px] font-medium text-rose-600">
+                                {bn
+                                  ? 'কমপক্ষে একজন ছাত্র নির্বাচন করুন, অন্যথায় সাইনআপ ব্যর্থ হবে।'
+                                  : 'Select at least one student, otherwise signup will fail.'}
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>
