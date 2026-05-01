@@ -177,6 +177,7 @@ const ComplaintTrackPage = () => {
       case 'status_change': return <ArrowRightLeft className="w-4 h-4" />;
       case 'assignment': return <UserCheck className="w-4 h-4" />;
       case 'resolution': return <CheckCircle2 className="w-4 h-4" />;
+      case 'reply': return <MessageCircle className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
   };
@@ -190,6 +191,7 @@ const ComplaintTrackPage = () => {
     }
     if (u.update_type === 'assignment') return bn ? 'পর্যালোচনার জন্য অর্পণ করা হয়েছে' : 'Assigned for review';
     if (u.update_type === 'resolution') return bn ? 'সমাধান প্রদান করা হয়েছে' : 'Resolution provided';
+    if (u.update_type === 'reply') return bn ? 'অভিযোগকারীর বার্তা' : 'Complainant reply';
     return bn ? 'আপডেট' : 'Update';
   };
 
