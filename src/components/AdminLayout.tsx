@@ -13,6 +13,7 @@ import { useMenuSettings, MenuItemConfig } from '@/hooks/useMenuSettings';
 import { useThemeSettings } from '@/hooks/useThemeSettings';
 import { useSidebarSections } from '@/hooks/useSidebarSections';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { useReceiptStatusRealtime } from '@/hooks/useReceiptStatusRealtime';
 import { useCurrentStaff } from '@/hooks/useCurrentStaff';
 import LanguageToggle from './LanguageToggle';
 import BijoyToggle from './BijoyToggle';
@@ -58,6 +59,8 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { menuConfig } = useMenuSettings();
+  // Live toast notifications for receipt status changes (admins/staff only via RLS)
+  useReceiptStatusRealtime();
   const { theme: adminTheme } = useThemeSettings();
   const { sections: sidebarSections } = useSidebarSections();
   const { settings: websiteSettings } = useWebsiteSettings();
