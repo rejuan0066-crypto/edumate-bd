@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, Trash2, Users, Clock, ShieldCheck, Ban } from 'lucide-react';
+import { Check, X, Trash2, Users, Clock, ShieldCheck, Ban, History } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const AdminParentApprovals = () => {
   const { language } = useLanguage();
