@@ -130,6 +130,7 @@ import AdminCertificates from "./pages/admin/AdminCertificates";
 import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
 import AdminComplaints from "./pages/admin/AdminComplaints";
+import AdminComplaintFields from "./pages/admin/AdminComplaintFields";
 import AdminHostel from "@/pages/admin/AdminHostel";
 import AdminHealthRecords from "@/pages/admin/AdminHealthRecords";
 import AdminCommittees from "@/pages/admin/AdminCommittees";
