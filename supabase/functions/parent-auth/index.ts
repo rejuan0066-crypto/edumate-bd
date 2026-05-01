@@ -263,6 +263,15 @@ Deno.serve(async (req) => {
       if (accErr) return json({ error: accErr.message }, 500);
       if (!account) return json({ error: 'একাউন্ট পাওয়া যায়নি' }, 404);
 
+      // On approval, refresh student links from current NID/phone
+      if (body.action === 'notify_approved') {
+        try {
+          await supabase.rpc('refresh_parent_student_links', { p_account_id: account_id });
+        } catch (e) {
+          console.warn('refresh on approval failed:', e);
+        }
+      }
+
       let brand = 'Institution';
       try {
         const { data: inst } = await supabase.from('institution_info').select('name_en, name_bn').limit(1).maybeSingle();
