@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 
 type ComplaintUpdate = {
   id: string;
-  update_type: 'created' | 'status_change' | 'note' | 'assignment' | 'resolution';
+  update_type: 'created' | 'status_change' | 'note' | 'assignment' | 'resolution' | 'reply';
   from_status?: string | null;
   to_status?: string | null;
   message?: string | null;
