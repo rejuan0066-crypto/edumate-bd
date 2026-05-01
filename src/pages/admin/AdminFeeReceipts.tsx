@@ -202,15 +202,17 @@ const AdminFeeReceipts = () => {
           </div>
 
           <div class="receipt-footer">
+            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="QR" style="height:60px;width:60px;float:right;margin-left:6px;border:1px solid #d1fae5;border-radius:4px;padding:2px;background:#fff;" />` : ''}
             <p>কম্পিউটার জেনারেটেড মানি রিসিট | Computer Generated Money Receipt</p>
+            ${qrDataUrl ? `<p style="font-size:9px;color:#059669;margin-top:2px;">🔒 যাচাই করতে QR স্ক্যান করুন | Scan QR to verify</p>` : ''}
           </div>
         </div>
       </td>`;
   };
 
-  const getReceiptHtml = (receipt: ReceiptData) => {
-    const officeCopy = buildReceiptBlock(receipt, '📋 অফিস কপি | Office Copy', false);
-    const studentCopy = buildReceiptBlock(receipt, '🎓 ছাত্র কপি | Student Copy', true);
+  const getReceiptHtml = (receipt: ReceiptData, qrDataUrl: string | null = null) => {
+    const officeCopy = buildReceiptBlock(receipt, '📋 অফিস কপি | Office Copy', false, qrDataUrl);
+    const studentCopy = buildReceiptBlock(receipt, '🎓 ছাত্র কপি | Student Copy', true, qrDataUrl);
 
     return `<!DOCTYPE html>
 <html>
@@ -453,20 +455,21 @@ const AdminFeeReceipts = () => {
 </html>`;
   };
 
-  const handlePrint = (receipt: ReceiptData) => {
+  const handlePrint = async (receipt: ReceiptData) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
-    printWindow.document.write(getReceiptHtml(receipt));
+    const qr = await generateReceiptQrDataUrl('fee_payment', receipt.id, 180);
+    printWindow.document.write(getReceiptHtml(receipt, qr?.dataUrl ?? null));
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 700);
   };
 
   const handleDownload = async (receipt: ReceiptData) => {
     try {
+      const qr = await generateReceiptQrDataUrl('fee_payment', receipt.id, 180);
       const { downloadReceiptAsPdf } = await import('@/lib/receiptPdfDownload');
       await downloadReceiptAsPdf(
-        getReceiptHtml(receipt),
+        getReceiptHtml(receipt, qr?.dataUrl ?? null),
         `money-receipt-${receipt.receipt_number.replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`
       );
       toast.success(language === 'bn' ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
