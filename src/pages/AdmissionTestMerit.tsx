@@ -18,15 +18,17 @@ const AdmissionTestMerit = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from('admission_tests')
-        .select('*')
+        .select('id, title, title_bn, is_published, merit_approval_status')
         .eq('id', testId)
         .eq('is_published', true)
         .is('deleted_at', null)
         .maybeSingle();
-      return data;
+      return data as any;
     },
     enabled: !!testId,
   });
+
+  const meritApproved = (test as any)?.merit_approval_status === 'approved';
 
   const { data: attempts = [], isLoading } = useQuery({
     queryKey: ['public-merit-attempts', testId],
