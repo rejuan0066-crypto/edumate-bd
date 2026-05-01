@@ -16,7 +16,9 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await req.json();
-    const { action, amount, student_id, fee_type_id, month, year, callback_data } = body;
+    const { action, amount, student_id, fee_type_id, month, year, callback_data,
+            fee_assignment_ids, parent_account_id, source, transaction_id: tx_in,
+            new_status } = body;
 
     // Load gateway config
     const { data: config, error: cfgErr } = await supabase
