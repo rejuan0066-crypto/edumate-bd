@@ -381,6 +381,16 @@ const StudentInfoPage = () => {
                     <Badge className="rounded-full">{student.status || 'active'}</Badge>
                   </div>
                 </div>
+                {isAdmin && (
+                  <Button
+                    onClick={() => openEdit(student)}
+                    className="rounded-full self-start"
+                    variant="secondary"
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    {bn ? 'সম্পাদনা' : 'Edit'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
