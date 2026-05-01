@@ -37,8 +37,10 @@ const StudentPortal = () => {
 
   const [session, setSession] = useState<StudentSession | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'signup'>(
-    searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>(
+    searchParams.get('mode') === 'signup' ? 'signup'
+      : searchParams.get('mode') === 'forgot' ? 'forgot'
+      : 'login'
   );
 
   // Login state
@@ -52,6 +54,14 @@ const StudentPortal = () => {
   const [suStudentId, setSuStudentId] = useState('');
   const [suDob, setSuDob] = useState('');
   const [otpOpen, setOtpOpen] = useState(false);
+
+  // Forgot password state
+  const { sendOtp, sending: otpSending } = useOtpService();
+  const [fpEmail, setFpEmail] = useState('');
+  const [fpStep, setFpStep] = useState<'request' | 'reset'>('request');
+  const [fpCode, setFpCode] = useState('');
+  const [fpNewPassword, setFpNewPassword] = useState('');
+  const [fpCooldown, setFpCooldown] = useState(0);
 
   useEffect(() => {
     const raw = sessionStorage.getItem(STUDENT_STORAGE_KEY);
