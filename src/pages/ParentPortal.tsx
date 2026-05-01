@@ -19,6 +19,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link, useSearchParams } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
+type SignupFieldConfig = {
+  id: string;
+  field_key: string;
+  label_bn: string;
+  label_en: string;
+  placeholder_bn: string | null;
+  placeholder_en: string | null;
+  field_type: string;
+  is_visible: boolean;
+  is_required: boolean;
+  is_locked: boolean;
+  min_length: number | null;
+  max_length: number | null;
+  display_order: number;
+};
+
 const STORAGE_KEY = 'parent_portal_session';
 
 interface ParentSession {
