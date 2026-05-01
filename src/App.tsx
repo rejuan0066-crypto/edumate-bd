@@ -27,6 +27,7 @@ import DonationPage from "./pages/DonationPage";
 import FeePaymentPage from "./pages/FeePaymentPage";
 import Login from "./pages/Login";
 import ParentPortal from "./pages/ParentPortal";
+import ParentPaymentReceipt from "./pages/ParentPaymentReceipt";
 import StudentPortal from "./pages/StudentPortal";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminStudents from "./pages/admin/AdminStudents";
