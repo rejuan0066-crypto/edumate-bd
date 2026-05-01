@@ -103,6 +103,13 @@ run_step() {
   return 1
 }
 
+# Run the lint/fmt gate now that run_step (with timeouts) is defined.
+run_step "deno lint (Edge Functions rule set)" "$gate_log1" -- \
+  deno lint "${CFG_ARGS[@]}" "$FN_DIR" || GATE_OK=0
+run_step "deno fmt --check" "$gate_log2" -- \
+  deno fmt --check "${CFG_ARGS[@]}" "$FN_DIR" || GATE_OK=0
+echo
+
 for f in "${TARGETS[@]}"; do
   name="$(basename "$(dirname "$f")")"
   echo "── $name ──────────────────────────────────"
