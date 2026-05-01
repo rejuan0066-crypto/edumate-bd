@@ -323,10 +323,14 @@ const AdmissionForm = ({ open, onOpenChange, editStudent }: AdmissionFormProps) 
     const today = new Date();
     let years = today.getFullYear() - birth.getFullYear();
     let months = today.getMonth() - birth.getMonth();
-    const days = today.getDate() - birth.getDate();
-    if (days < 0) months--;
+    let days = today.getDate() - birth.getDate();
+    if (days < 0) {
+      months--;
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
     if (months < 0) { years--; months += 12; }
-    return `${years} ${bn ? 'বছর' : 'years'} ${months} ${bn ? 'মাস' : 'months'}`;
+    return `${years} ${bn ? 'বছর' : 'years'} ${months} ${bn ? 'মাস' : 'months'} ${days} ${bn ? 'দিন' : 'days'}`;
   }, [bn]);
 
   const validateNid = (val: string, key: string, errorSetter: (v: string) => void) => {
