@@ -371,6 +371,7 @@ const App = () => (
                     <Route path="scholarships" element={<ModuleGuard menuPath="/admin/scholarships"><AdminScholarships /></ModuleGuard>} />
                     <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
                     <Route path="complaints" element={<AdminComplaints />} />
+                    <Route path="complaints/fields" element={<AdminComplaintFields />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
                     <Route path="otp-recovery" element={<AdminOtpRecovery />} />
