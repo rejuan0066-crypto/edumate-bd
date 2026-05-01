@@ -5355,6 +5355,56 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_student_link_audit: {
+        Row: {
+          action: string
+          after_uuids: string[]
+          before_uuids: string[]
+          created_at: string
+          id: string
+          match_reason: string | null
+          notes: string | null
+          parent_account_id: string
+          source: string
+          student_uuid: string | null
+          triggered_by_student_uuid: string | null
+        }
+        Insert: {
+          action: string
+          after_uuids?: string[]
+          before_uuids?: string[]
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          notes?: string | null
+          parent_account_id: string
+          source?: string
+          student_uuid?: string | null
+          triggered_by_student_uuid?: string | null
+        }
+        Update: {
+          action?: string
+          after_uuids?: string[]
+          before_uuids?: string[]
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          notes?: string | null
+          parent_account_id?: string
+          source?: string
+          student_uuid?: string | null
+          triggered_by_student_uuid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_link_audit_parent_account_id_fkey"
+            columns: ["parent_account_id"]
+            isOneToOne: false
+            referencedRelation: "parent_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       password_policy: {
         Row: {
           block_leaked_passwords: boolean
@@ -8911,10 +8961,16 @@ export type Database = {
           student_uuid: string
         }[]
       }
-      refresh_parent_student_links: {
-        Args: { p_account_id: string }
-        Returns: string[]
-      }
+      refresh_parent_student_links:
+        | { Args: { p_account_id: string }; Returns: string[] }
+        | {
+            Args: {
+              p_account_id: string
+              p_source?: string
+              p_triggered_by_student?: string
+            }
+            Returns: string[]
+          }
       reject_admission_test_merit: {
         Args: { p_reason: string; p_test_id: string }
         Returns: {
