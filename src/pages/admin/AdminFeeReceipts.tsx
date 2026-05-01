@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { generateReceiptQrDataUrl } from '@/lib/receiptQr';
 
 interface ReceiptData {
   id: string;
@@ -112,7 +113,7 @@ const AdminFeeReceipts = () => {
     { value: 'december', en: 'December', bn: 'ডিসেম্বর' },
   ];
 
-  const buildReceiptBlock = (receipt: ReceiptData, copyLabel: string, isStudentCopy: boolean = false) => {
+  const buildReceiptBlock = (receipt: ReceiptData, copyLabel: string, isStudentCopy: boolean = false, qrDataUrl: string | null = null) => {
     const amountWords = numberToBanglaWords(receipt.paid_amount);
     const amountBn = toBanglaDigits(receipt.paid_amount.toLocaleString());
     const dateBn = receipt.paid_at ? new Date(receipt.paid_at).toLocaleDateString('bn-BD') : '-';
