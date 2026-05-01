@@ -192,6 +192,11 @@ const AdminParentApprovals = () => {
                                 <Ban className="w-3.5 h-3.5" />
                               </Button>
                             )}
+                            <Button size="sm" variant="outline" asChild className="h-8 rounded-lg" title={bn ? 'লিঙ্ক ইতিহাস' : 'Link history'}>
+                              <Link to={`/admin/parent-link-audit?parent=${a.id}`}>
+                                <History className="w-3.5 h-3.5" />
+                              </Link>
+                            </Button>
                             <Button size="sm" variant="ghost" onClick={() => deleteAccount(a.id)} className="h-8 rounded-lg text-destructive">
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
