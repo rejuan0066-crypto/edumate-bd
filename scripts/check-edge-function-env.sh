@@ -74,9 +74,12 @@ for fn in "${TARGETS[@]}"; do
   echo "── $fn ──────────────────────────────"
 
   # Vars referenced in source
+  # Vars referenced in source. The sed pulls the quoted name from
+  # `Deno.env.get("FOO")` / `Deno.env.get('FOO')`, leaving the var name only.
   mapfile -t USED < <(
-    grep -oE 'Deno\.env\.get\(\s*["'\''][A-Z0-9_]+["'\'']' "$src" \
-      | grep -oE '[A-Z0-9_]+' | grep -v '^Deno$\|^env$\|^get$' | sort -u
+    grep -oE 'Deno\.env\.get\(\s*["'\''][A-Z][A-Z0-9_]*["'\'']' "$src" \
+      | sed -E 's/.*["'\'']([A-Z][A-Z0-9_]*)["'\''].*/\1/' \
+      | sort -u
   )
 
   # Declared in manifest
