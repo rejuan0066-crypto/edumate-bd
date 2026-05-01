@@ -171,7 +171,12 @@ Deno.serve(async (req) => {
         .ilike('contact', c)
         .maybeSingle();
       if (accErr) return json({ error: accErr.message }, 500);
-      if (!account) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
+      if (!account) {
+        return json({
+          error: 'এই ইমেইল/ফোন দিয়ে কোনো একাউন্ট খোলা হয়নি। অনুগ্রহ করে আগে সাইনআপ করুন।',
+          code: 'ACCOUNT_NOT_FOUND',
+        }, 404);
+      }
 
       const valid = compareSync(password, account.password_hash);
       if (!valid) return json({ error: 'ভুল তথ্য বা পাসওয়ার্ড' }, 401);
