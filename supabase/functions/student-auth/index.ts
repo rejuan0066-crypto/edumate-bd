@@ -83,14 +83,18 @@ Deno.serve(async (req) => {
         return json({ error: 'Date of birth does not match student record' }, 400);
       }
 
-      // One account per student_id
+      // One account per student_id (check both text id and linked uuid)
       const { data: existingForStudent } = await supabase
         .from('student_accounts')
-        .select('id')
-        .ilike('student_id', student_id.trim())
+        .select('id, contact, status, contact_verified')
+        .or(`student_id.ilike.${student_id.trim()},linked_student_uuid.eq.${student.id}`)
         .maybeSingle();
       if (existingForStudent) {
-        return json({ error: 'এই শিক্ষার্থী আইডির জন্য ইতিমধ্যেই একটি একাউন্ট আছে। লগইন করুন।', code: 'STUDENT_ALREADY_REGISTERED' }, 409);
+        return json({
+          error: 'এই শিক্ষার্থী আইডির জন্য ইতিমধ্যেই একটি একাউন্ট রয়েছে। অনুগ্রহ করে লগইন করুন অথবা পাসওয়ার্ড রিসেট করুন।',
+          code: 'STUDENT_ALREADY_REGISTERED',
+          existing_contact_masked: maskContact(existingForStudent.contact),
+        }, 409);
       }
 
       // Duplicate contact?
@@ -186,4 +190,13 @@ function json(data: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
+}
+
+function maskContact(c: string): string {
+  if (!c) return '';
+  if (c.includes('@')) {
+    const [u, d] = c.split('@');
+    return `${u.slice(0, 2)}***@${d}`;
+  }
+  return c.length > 4 ? `${c.slice(0, 3)}****${c.slice(-2)}` : '****';
 }
