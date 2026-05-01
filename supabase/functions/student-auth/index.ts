@@ -31,7 +31,17 @@ interface MarkVerifiedBody {
   action: 'mark_verified';
   contact: string;
 }
-type Body = SignupBody | LoginBody | MarkVerifiedBody;
+interface CheckAccountBody {
+  action: 'check_account';
+  contact: string;
+}
+interface ResetPasswordBody {
+  action: 'reset_password';
+  contact: string;       // email
+  code: string;          // OTP previously sent with purpose=password_reset
+  new_password: string;
+}
+type Body = SignupBody | LoginBody | MarkVerifiedBody | CheckAccountBody | ResetPasswordBody;
 
 const normalizeDob = (v: string | null | undefined): string => {
   if (!v) return '';
