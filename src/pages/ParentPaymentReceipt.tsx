@@ -392,6 +392,27 @@ const ParentPaymentReceipt = () => {
             </div>
           )}
 
+          {/* Rejection reason banner */}
+          {(data.status === 'rejected' || data.status === 'failed') && (
+            <div className="mx-6 mb-4 rounded-2xl border-2 border-red-300 bg-red-50 p-4">
+              <div className="flex items-start gap-3">
+                <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-red-800 text-sm">
+                    {bn ? 'প্রত্যাখ্যানের কারণ' : 'Reason for Rejection'}
+                  </div>
+                  <div className="mt-1 text-sm text-red-900 whitespace-pre-wrap break-words">
+                    {data.rejection_reason?.trim()
+                      ? data.rejection_reason
+                      : (bn
+                          ? 'কোনো নির্দিষ্ট কারণ উল্লেখ করা হয়নি। বিস্তারিত জানতে অফিসে যোগাযোগ করুন।'
+                          : 'No specific reason provided. Please contact the office for details.')}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Footer note */}
           <div className="p-6 text-xs text-gray-500 text-center space-y-1">
             {data.status === 'pending' && (
