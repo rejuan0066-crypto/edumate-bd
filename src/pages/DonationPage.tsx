@@ -580,13 +580,22 @@ const DonationPage = () => {
                   {bn ? 'ইমেইল (ঐচ্ছিক)' : 'Email (Optional)'}
                 </Label>
                 <Input
-                  className="bg-background mt-1"
+                  className={`bg-background mt-1 ${emailError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(e) => updateField('email', e.target.value)}
                   placeholder="example@email.com"
                   maxLength={255}
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? 'donation-email-error' : undefined}
                 />
+                {emailError && (
+                  <p id="donation-email-error" className="text-xs text-destructive mt-1">
+                    {emailError}
+                  </p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <Label className="text-sm">{bn ? 'দানের উদ্দেশ্য' : 'Donation Purpose'} *</Label>
