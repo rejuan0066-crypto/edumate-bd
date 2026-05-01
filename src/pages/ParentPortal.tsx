@@ -167,14 +167,47 @@ const ParentPortal = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupEmail.trim() || !signupPassword || !signupFullName.trim() || !signupStudentId.trim() || !signupDob) {
-      toast({
-        title: bn ? 'ত্রুটি' : 'Error',
-        description: bn ? 'সব তথ্য পূরণ করুন' : 'Fill all required fields',
-        variant: 'destructive',
-      });
-      return;
+    // Build value lookup for dynamic validation
+    const values: Record<string, string> = {
+      full_name: signupFullName.trim(),
+      email: signupEmail.trim(),
+      phone: signupPhone.trim(),
+      password: signupPassword,
+      student_id: signupStudentId.trim(),
+      student_dob: signupDob,
+    };
+
+    // Validate every visible+required field per backend config
+    for (const f of signupFields) {
+      if (!f.is_visible) continue;
+      const val = values[f.field_key] ?? '';
+      if (f.is_required && !val) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: (bn ? 'আবশ্যক ফিল্ড পূরণ করুন: ' : 'Required field missing: ') + (bn ? f.label_bn : f.label_en),
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (val && f.min_length && val.length < f.min_length) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: `${bn ? f.label_bn : f.label_en}: ${bn ? 'ন্যূনতম' : 'min'} ${f.min_length} ${bn ? 'অক্ষর' : 'chars'}`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (val && f.max_length && val.length > f.max_length) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: `${bn ? f.label_bn : f.label_en}: ${bn ? 'সর্বোচ্চ' : 'max'} ${f.max_length} ${bn ? 'অক্ষর' : 'chars'}`,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
+
+    // Hard auth requirement: password >= 6 regardless of config min_length being lower
     if (signupPassword.length < 6) {
       toast({ title: 'Error', description: bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password must be at least 6 characters', variant: 'destructive' });
       return;
