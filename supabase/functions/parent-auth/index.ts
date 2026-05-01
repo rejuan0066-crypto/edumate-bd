@@ -24,6 +24,7 @@ interface SignupBody {
   nid?: string;
   student_id?: string;
   student_dob?: string;
+  confirmed_student_uuids?: string[];
 }
 
 interface PreviewMatchBody {
