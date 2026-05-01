@@ -131,6 +131,7 @@ import AdminScholarships from "./pages/admin/AdminScholarships";
 import AdminBudgets from "./pages/admin/AdminBudgets";
 import AdminComplaints from "./pages/admin/AdminComplaints";
 import AdminComplaintFields from "./pages/admin/AdminComplaintFields";
+import AdminParentSignupFields from "./pages/admin/AdminParentSignupFields";
 import AdminHostel from "@/pages/admin/AdminHostel";
 import AdminHealthRecords from "@/pages/admin/AdminHealthRecords";
 import AdminCommittees from "@/pages/admin/AdminCommittees";
@@ -372,6 +373,7 @@ const App = () => (
                     <Route path="budgets" element={<ModuleGuard menuPath="/admin/budgets"><AdminBudgets /></ModuleGuard>} />
                     <Route path="complaints" element={<AdminComplaints />} />
                     <Route path="complaints/fields" element={<AdminComplaintFields />} />
+                    <Route path="parent-signup-fields" element={<AdminParentSignupFields />} />
                     <Route path="settings" element={<AdminSettings />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
                     <Route path="otp-recovery" element={<AdminOtpRecovery />} />
