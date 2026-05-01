@@ -19,6 +19,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link, useSearchParams } from 'react-router-dom';
 import OtpVerificationDialog from '@/components/OtpVerificationDialog';
 
+type SignupFieldConfig = {
+  id: string;
+  field_key: string;
+  label_bn: string;
+  label_en: string;
+  placeholder_bn: string | null;
+  placeholder_en: string | null;
+  field_type: string;
+  is_visible: boolean;
+  is_required: boolean;
+  is_locked: boolean;
+  min_length: number | null;
+  max_length: number | null;
+  display_order: number;
+};
+
 const STORAGE_KEY = 'parent_portal_session';
 
 interface ParentSession {
@@ -54,6 +70,40 @@ const ParentPortal = () => {
   const [signupStudentId, setSignupStudentId] = useState('');
   const [signupDob, setSignupDob] = useState('');
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+
+  // Dynamic signup field configuration
+  const { data: signupFields = [] } = useQuery({
+    queryKey: ['parent-signup-field-config-public'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('parent_signup_field_config')
+        .select('*')
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return (data || []) as SignupFieldConfig[];
+    },
+  });
+
+  const fieldByKey = (key: string) => signupFields.find((f) => f.field_key === key);
+  const isVisible = (key: string) => {
+    const f = fieldByKey(key);
+    // Default to visible if config not yet loaded (avoids hiding fields on first paint)
+    return f ? f.is_visible : true;
+  };
+  const isRequired = (key: string) => {
+    const f = fieldByKey(key);
+    return f ? f.is_required : true;
+  };
+  const labelOf = (key: string, fallbackBn: string, fallbackEn: string) => {
+    const f = fieldByKey(key);
+    if (!f) return bn ? fallbackBn : fallbackEn;
+    return bn ? f.label_bn : f.label_en;
+  };
+  const placeholderOf = (key: string) => {
+    const f = fieldByKey(key);
+    if (!f) return undefined;
+    return (bn ? f.placeholder_bn : f.placeholder_en) || undefined;
+  };
 
   useEffect(() => {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -117,14 +167,47 @@ const ParentPortal = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupEmail.trim() || !signupPassword || !signupFullName.trim() || !signupStudentId.trim() || !signupDob) {
-      toast({
-        title: bn ? 'ত্রুটি' : 'Error',
-        description: bn ? 'সব তথ্য পূরণ করুন' : 'Fill all required fields',
-        variant: 'destructive',
-      });
-      return;
+    // Build value lookup for dynamic validation
+    const values: Record<string, string> = {
+      full_name: signupFullName.trim(),
+      email: signupEmail.trim(),
+      phone: signupPhone.trim(),
+      password: signupPassword,
+      student_id: signupStudentId.trim(),
+      student_dob: signupDob,
+    };
+
+    // Validate every visible+required field per backend config
+    for (const f of signupFields) {
+      if (!f.is_visible) continue;
+      const val = values[f.field_key] ?? '';
+      if (f.is_required && !val) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: (bn ? 'আবশ্যক ফিল্ড পূরণ করুন: ' : 'Required field missing: ') + (bn ? f.label_bn : f.label_en),
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (val && f.min_length && val.length < f.min_length) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: `${bn ? f.label_bn : f.label_en}: ${bn ? 'ন্যূনতম' : 'min'} ${f.min_length} ${bn ? 'অক্ষর' : 'chars'}`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (val && f.max_length && val.length > f.max_length) {
+        toast({
+          title: bn ? 'ত্রুটি' : 'Error',
+          description: `${bn ? f.label_bn : f.label_en}: ${bn ? 'সর্বোচ্চ' : 'max'} ${f.max_length} ${bn ? 'অক্ষর' : 'chars'}`,
+          variant: 'destructive',
+        });
+        return;
+      }
     }
+
+    // Hard auth requirement: password >= 6 regardless of config min_length being lower
     if (signupPassword.length < 6) {
       toast({ title: 'Error', description: bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password must be at least 6 characters', variant: 'destructive' });
       return;
@@ -261,47 +344,95 @@ const ParentPortal = () => {
 
                   <TabsContent value="signup">
                     <form onSubmit={handleSignup} className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="su-name">{bn ? 'আপনার নাম' : 'Your Full Name'}</Label>
-                        <Input id="su-name" value={signupFullName} onChange={(e) => setSignupFullName(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-email">{bn ? 'ইমেইল' : 'Email'}</Label>
-                        <Input id="su-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-phone">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
-                        <Input id="su-phone" value={signupPhone} onChange={(e) => setSignupPhone(e.target.value)} className="rounded-xl h-11" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="su-pwd">{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
-                        <Input id="su-pwd" type="password" value={signupPassword} onChange={(e) => setSignupPassword(sanitizePasswordInput(e.target.value))} className="rounded-xl h-11" />
-                      </div>
-                      <div className="border-t pt-3 mt-3">
-                        <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
+                      {isVisible('full_name') && (
                         <div className="space-y-2">
-                          <Label htmlFor="su-sid">{bn ? 'ছাত্র আইডি' : 'Student ID'}</Label>
-                          <Input id="su-sid" placeholder="STU-2026-001" value={signupStudentId} onChange={(e) => setSignupStudentId(e.target.value)} className="rounded-xl h-11" />
+                          <Label htmlFor="su-name">
+                            {labelOf('full_name', 'আপনার নাম', 'Your Full Name')}
+                            {isRequired('full_name') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-name" value={signupFullName}
+                            placeholder={placeholderOf('full_name')}
+                            onChange={(e) => setSignupFullName(e.target.value)}
+                            className="rounded-xl h-11" />
                         </div>
-                        <div className="space-y-2 mt-2">
-                          <Label htmlFor="su-dob">{bn ? 'সন্তানের জন্মতারিখ (dd/mm/yyyy)' : "Child's Date of Birth (dd/mm/yyyy)"}</Label>
-                          <Input
-                            id="su-dob"
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="dd/mm/yyyy"
-                            maxLength={10}
-                            value={signupDob}
-                            onChange={(e) => {
-                              let v = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
-                              if (v.length >= 5) v = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
-                              else if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
-                              setSignupDob(v);
-                            }}
-                            className="rounded-xl h-11"
-                          />
+                      )}
+                      {isVisible('email') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-email">
+                            {labelOf('email', 'ইমেইল', 'Email')}
+                            {isRequired('email') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-email" type="email" value={signupEmail}
+                            placeholder={placeholderOf('email')}
+                            onChange={(e) => setSignupEmail(e.target.value)}
+                            className="rounded-xl h-11" />
                         </div>
-                      </div>
+                      )}
+                      {isVisible('phone') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-phone">
+                            {labelOf('phone', 'ফোন', 'Phone')}
+                            {isRequired('phone') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-phone" value={signupPhone}
+                            placeholder={placeholderOf('phone')}
+                            onChange={(e) => setSignupPhone(e.target.value)}
+                            className="rounded-xl h-11" />
+                        </div>
+                      )}
+                      {isVisible('password') && (
+                        <div className="space-y-2">
+                          <Label htmlFor="su-pwd">
+                            {labelOf('password', 'পাসওয়ার্ড', 'Password')}
+                            {isRequired('password') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                          </Label>
+                          <Input id="su-pwd" type="password" value={signupPassword}
+                            placeholder={placeholderOf('password')}
+                            onChange={(e) => setSignupPassword(sanitizePasswordInput(e.target.value))}
+                            className="rounded-xl h-11" />
+                        </div>
+                      )}
+                      {(isVisible('student_id') || isVisible('student_dob')) && (
+                        <div className="border-t pt-3 mt-3">
+                          <p className="text-xs text-muted-foreground mb-2">{bn ? 'সন্তানের তথ্য (যাচাইয়ের জন্য)' : 'Child Info (for verification)'}</p>
+                          {isVisible('student_id') && (
+                            <div className="space-y-2">
+                              <Label htmlFor="su-sid">
+                                {labelOf('student_id', 'ছাত্র আইডি', 'Student ID')}
+                                {isRequired('student_id') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                              </Label>
+                              <Input id="su-sid"
+                                placeholder={placeholderOf('student_id') || 'STU-2026-001'}
+                                value={signupStudentId}
+                                onChange={(e) => setSignupStudentId(e.target.value)}
+                                className="rounded-xl h-11" />
+                            </div>
+                          )}
+                          {isVisible('student_dob') && (
+                            <div className="space-y-2 mt-2">
+                              <Label htmlFor="su-dob">
+                                {labelOf('student_dob', 'সন্তানের জন্মতারিখ (dd/mm/yyyy)', "Child's Date of Birth (dd/mm/yyyy)")}
+                                {isRequired('student_dob') ? ' *' : ` (${bn ? 'ঐচ্ছিক' : 'optional'})`}
+                              </Label>
+                              <Input
+                                id="su-dob"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder={placeholderOf('student_dob') || 'dd/mm/yyyy'}
+                                maxLength={10}
+                                value={signupDob}
+                                onChange={(e) => {
+                                  let v = e.target.value.replace(/[^\d]/g, '').slice(0, 8);
+                                  if (v.length >= 5) v = `${v.slice(0, 2)}/${v.slice(2, 4)}/${v.slice(4)}`;
+                                  else if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
+                                  setSignupDob(v);
+                                }}
+                                className="rounded-xl h-11"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-semibold mt-3">
                         {loading ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'সাইনআপ করুন' : 'Sign Up')}
                       </Button>
