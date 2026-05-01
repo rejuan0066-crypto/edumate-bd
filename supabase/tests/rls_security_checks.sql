@@ -194,17 +194,19 @@ ORDER BY tbl, cmd;
 \echo '  5. ANON / PUBLIC ROLE SURFACE AREA'
 \echo '============================================================'
 
--- 5a. anon must not have any policy on these PII tables.
+-- 5a. anon must not have READ (SELECT/ALL) access on these PII tables.
+--     INSERT-only policies (e.g. recruitment form on `staff`) are allowed.
 SELECT
   CASE WHEN COUNT(*) = 0 THEN 'PASS' ELSE 'FAIL' END AS status,
-  '5a. anon has no policies on PII tables' AS check,
-  COALESCE(string_agg(c.relname || '.' || p.polname, '; '), 'none') AS offenders
+  '5a. anon has no SELECT/ALL policies on PII tables' AS check,
+  COALESCE(string_agg(c.relname || '.' || p.polname || ' (' || p.polcmd || ')', '; '), 'none') AS offenders
 FROM pg_policy p
 JOIN pg_class c ON c.oid = p.polrelid
 JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname='public'
   AND c.relname IN ('admission_test_attempts','salary_records','donors','smtp_config',
                     'staff','payments','user_roles','vapid_keys')
+  AND p.polcmd IN ('r','*')
   AND 'anon' = ANY(SELECT rolname FROM pg_roles r
                    JOIN unnest(p.polroles) pr ON r.oid = pr);
 
