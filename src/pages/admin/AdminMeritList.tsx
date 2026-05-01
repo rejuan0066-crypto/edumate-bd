@@ -298,15 +298,25 @@ const AdminMeritList = () => {
         </Card>
 
         {classId && (
-          <MeritApprovalBanner
-            status={approvalStatus}
-            rejectionReason={approval?.rejection_reason}
-            decidedAt={approval?.decided_at}
-            loading={loadingApproval}
-            onSubmit={handleSubmitApproval}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
+          <div className="space-y-3">
+            <MeritApprovalBanner
+              status={approvalStatus}
+              rejectionReason={approval?.rejection_reason}
+              decidedAt={approval?.decided_at}
+              loading={loadingApproval}
+              onSubmit={handleSubmitApproval}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
+            {approvalStatus === 'approved' && (rankingData?.rankings?.length ?? 0) > 0 && (
+              <div className="flex justify-end">
+                <Button onClick={handlePrintApprovalReport} className="rounded-full" variant="outline">
+                  <Printer className="w-4 h-4 mr-1.5" />
+                  {bn ? 'অনুমোদন প্রতিবেদন প্রিন্ট' : 'Print Approval Report'}
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {!classId && (
