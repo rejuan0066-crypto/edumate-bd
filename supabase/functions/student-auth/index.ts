@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
         return json({ error: 'এই ইমেইল/ফোন দিয়ে ইতিমধ্যে একটি একাউন্ট আছে।', code: 'CONTACT_EXISTS' }, 409);
       }
 
-      const password_hash = await bcrypt.hash(password);
+      const password_hash = hashSync(password);
 
       const { data: created, error: insErr } = await supabase
         .from('student_accounts')
