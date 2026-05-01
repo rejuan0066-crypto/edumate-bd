@@ -293,7 +293,7 @@ const ParentPaymentReceipt = () => {
         </div>
 
         {/* Receipt body */}
-        <div ref={receiptRef} className="bg-white text-black rounded-[28px] border border-gray-200 shadow-lg overflow-hidden">
+        <div ref={receiptRef} className="print-section bg-white text-black rounded-[28px] border border-gray-200 shadow-lg overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b-2 border-emerald-600 bg-gradient-to-r from-emerald-50 to-white">
             <div className="flex items-center gap-4">
