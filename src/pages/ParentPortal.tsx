@@ -131,18 +131,72 @@ const ParentPortal = () => {
       const { data, error } = await supabase.functions.invoke('parent-auth', {
         body: { action: 'login', email: loginEmail.trim(), password: loginPassword },
       });
-      if (error || !data?.success) {
-        const errMsg = data?.error || error?.message || 'Login failed';
-        const code = data?.code;
-        const friendly =
-          code === 'PENDING_APPROVAL' ? (bn ? 'আপনার অ্যাকাউন্ট অনুমোদনের অপেক্ষায়' : 'Account pending admin approval')
-          : code === 'EMAIL_NOT_VERIFIED' ? (bn ? 'ইমেইল ভেরিফাই হয়নি' : 'Email not verified')
-          : code === 'REJECTED' ? (bn ? `প্রত্যাখ্যাত: ${errMsg}` : `Rejected: ${errMsg}`)
-          : code === 'SUSPENDED' ? (bn ? 'অ্যাকাউন্ট স্থগিত' : 'Account suspended')
-          : errMsg;
-        toast({ title: bn ? 'লগইন ব্যর্থ' : 'Login Failed', description: friendly, variant: 'destructive' });
+
+      // Parse error context from FunctionsHttpError (Supabase wraps non-2xx in error.context)
+      let payload: any = data;
+      if (error && (error as any).context && typeof (error as any).context.json === 'function') {
+        try { payload = await (error as any).context.json(); } catch { /* ignore */ }
+      }
+
+      if (error || !payload?.success) {
+        const errMsg = payload?.error || error?.message || 'Login failed';
+        const code = payload?.code;
+
+        if (code === 'ACCOUNT_NOT_FOUND') {
+          toast({
+            title: bn ? '🚫 একাউন্ট নেই' : '🚫 No account found',
+            description: bn
+              ? 'এই ইমেইল দিয়ে কোন একাউন্ট খোলা হয়নি — অনুগ্রহ করে সাইনআপ করুন'
+              : 'No account exists with this email — please sign up',
+            variant: 'destructive',
+          });
+          setMode('signup');
+          setSignupEmail(loginEmail.trim());
+          return;
+        }
+
+        if (code === 'PENDING_APPROVAL') {
+          toast({
+            title: bn ? '⏳ অনুমোদনের অপেক্ষায়' : '⏳ Awaiting Approval',
+            description: bn
+              ? 'আপনার একাউন্ট এখনো অনুমোদনের জন্য অপেক্ষমাণ। অ্যাডমিন অনুমোদন দিলে ইমেইলে জানানো হবে।'
+              : 'Your account is awaiting admin approval. You will be notified by email once approved.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        if (code === 'EMAIL_NOT_VERIFIED') {
+          toast({
+            title: bn ? '📧 ইমেইল ভেরিফাই হয়নি' : '📧 Email Not Verified',
+            description: bn ? 'অনুগ্রহ করে আগে ইমেইল ভেরিফাই করুন' : 'Please verify your email first',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        if (code === 'REJECTED') {
+          toast({
+            title: bn ? '❌ প্রত্যাখ্যাত' : '❌ Rejected',
+            description: bn ? `কারণ: ${errMsg}` : `Reason: ${errMsg}`,
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        if (code === 'SUSPENDED') {
+          toast({
+            title: bn ? '⛔ স্থগিত' : '⛔ Suspended',
+            description: bn ? 'আপনার একাউন্ট স্থগিত করা হয়েছে' : 'Your account has been suspended',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        toast({ title: bn ? 'লগইন ব্যর্থ' : 'Login Failed', description: errMsg, variant: 'destructive' });
         return;
       }
+      data = payload;
       const acc = data.account;
       const newSession: ParentSession = {
         accountId: acc.id,
