@@ -293,6 +293,18 @@ const AdminMeritList = () => {
           </div>
         </Card>
 
+        {classId && (
+          <MeritApprovalBanner
+            status={approvalStatus}
+            rejectionReason={approval?.rejection_reason}
+            decidedAt={approval?.decided_at}
+            loading={loadingApproval}
+            onSubmit={handleSubmitApproval}
+            onApprove={handleApprove}
+            onReject={handleReject}
+          />
+        )}
+
         {!classId && (
           <Card className="p-12 rounded-[28px] text-center">
             <Trophy className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
