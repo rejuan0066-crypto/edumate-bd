@@ -191,15 +191,10 @@ const ComplaintPage = () => {
                   <p className="text-sm font-semibold">
                     {bn ? 'পরিচয় ও যোগাযোগ (আবশ্যক)' : 'Identity & Contact (Required)'}
                   </p>
-                  {emailVerified ? (
+                  {emailVerified && (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-500/10 px-3 py-1 rounded-full">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       {bn ? 'ইমেইল ভেরিফাইড' : 'Email Verified'}
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      {bn ? 'যাচাই বাকি' : 'Not Verified'}
                     </span>
                   )}
                 </div>
