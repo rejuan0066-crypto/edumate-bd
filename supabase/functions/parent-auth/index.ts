@@ -215,6 +215,20 @@ Deno.serve(async (req) => {
         return json({ error: 'Account is suspended', code: 'SUSPENDED' }, 403);
       }
 
+      // Refresh student links (in case new students were added under this NID/phone)
+      try {
+        await supabase.rpc('refresh_parent_student_links', { p_account_id: account.id });
+      } catch (e) {
+        console.warn('refresh_parent_student_links failed:', e);
+      }
+
+      // Re-fetch latest linked uuids
+      const { data: fresh } = await supabase
+        .from('parent_accounts')
+        .select('linked_student_uuid, linked_student_uuids')
+        .eq('id', account.id)
+        .maybeSingle();
+
       // Update last_login
       await supabase
         .from('parent_accounts')
@@ -228,8 +242,10 @@ Deno.serve(async (req) => {
           email: account.email,
           full_name: account.full_name,
           phone: account.phone,
+          nid: account.nid,
           student_id: account.student_id,
-          linked_student_uuid: account.linked_student_uuid,
+          linked_student_uuid: fresh?.linked_student_uuid ?? account.linked_student_uuid,
+          linked_student_uuids: fresh?.linked_student_uuids ?? account.linked_student_uuids ?? [],
         },
       });
     }
