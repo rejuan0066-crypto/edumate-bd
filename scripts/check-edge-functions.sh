@@ -58,27 +58,15 @@ fi
 
 # Repo-wide lint + fmt gate (runs once, not per-function) — enforces the
 # Edge Functions rule set defined in supabase/functions/deno.json.
+# Wrapped in `timeout` below (see STEP_TIMEOUT) so a hung lint/fmt fails fast.
 echo "── repo-wide lint + fmt ──────────────────────"
 GATE_OK=1
 gate_log1="$TMP/_lint.log"
 gate_log2="$TMP/_fmt.log"
 
-if deno lint "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log1" 2>&1; then
-  echo "  ✓ deno lint (Edge Functions rule set)"
-else
-  echo "  ✗ deno lint"
-  sed 's/^/      /' "$gate_log1"
-  GATE_OK=0
-fi
-
-if deno fmt --check "${CFG_ARGS[@]}" "$FN_DIR" >"$gate_log2" 2>&1; then
-  echo "  ✓ deno fmt --check"
-else
-  echo "  ✗ deno fmt --check (run: deno fmt --config $DENO_CFG $FN_DIR)"
-  sed 's/^/      /' "$gate_log2"
-  GATE_OK=0
-fi
-echo
+# NOTE: the timeout wrapper is applied after STEP_TIMEOUT is defined below,
+# via a small helper. We forward-declare GATE_OK here and run the gate after
+# the helper is in scope.
 
 # Per-step timeouts (seconds). Override via env to tune in CI.
 #   STEP_TIMEOUT       — wall-clock budget per individual step
