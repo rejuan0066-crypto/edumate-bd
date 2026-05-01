@@ -358,6 +358,7 @@ const App = () => (
                     <Route path="user-management" element={<AdminUserManagement />} />
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
+                    <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
                     <Route path="student-approvals" element={<AdminStudentApprovals />} />
                     <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="push-notifications" element={<AdminPushNotifications />} />
