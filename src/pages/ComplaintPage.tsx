@@ -252,19 +252,8 @@ const ComplaintPage = () => {
                       required
                     />
                   </div>
-                </div>
+              </div>
 
-                {!emailVerified && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleVerifyClick}
-                    className="w-full rounded-xl"
-                  >
-                    <ShieldCheck className="w-4 h-4 mr-2" />
-                    {bn ? 'ইমেইল OTP দিয়ে ভেরিফাই করুন' : 'Verify Email via OTP'}
-                  </Button>
-                )}
               </div>
 
               {/* Category & priority */}
