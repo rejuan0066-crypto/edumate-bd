@@ -5230,6 +5230,60 @@ export type Database = {
           },
         ]
       }
+      parent_signup_field_config: {
+        Row: {
+          created_at: string
+          display_order: number
+          field_key: string
+          field_type: string
+          id: string
+          is_locked: boolean
+          is_required: boolean
+          is_visible: boolean
+          label_bn: string
+          label_en: string
+          max_length: number | null
+          min_length: number | null
+          placeholder_bn: string | null
+          placeholder_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          field_key: string
+          field_type?: string
+          id?: string
+          is_locked?: boolean
+          is_required?: boolean
+          is_visible?: boolean
+          label_bn: string
+          label_en: string
+          max_length?: number | null
+          min_length?: number | null
+          placeholder_bn?: string | null
+          placeholder_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          field_key?: string
+          field_type?: string
+          id?: string
+          is_locked?: boolean
+          is_required?: boolean
+          is_visible?: boolean
+          label_bn?: string
+          label_en?: string
+          max_length?: number | null
+          min_length?: number | null
+          placeholder_bn?: string | null
+          placeholder_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       password_policy: {
         Row: {
           block_leaked_passwords: boolean
