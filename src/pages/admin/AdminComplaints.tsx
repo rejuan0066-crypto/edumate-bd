@@ -366,6 +366,14 @@ const AdminComplaints = () => {
               )}
 
               <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => printComplaintTimeline(selected, timeline as any)}
+                >
+                  <Printer className="w-4 h-4 mr-2" />{language === 'bn' ? 'প্রিন্ট' : 'Print'}
+                </Button>
                 <Button onClick={() => handleResolve('in_review')} variant="outline" className="rounded-xl flex-1" disabled={updateMutation.isPending}>
                   <Eye className="w-4 h-4 mr-2" />{language === 'bn' ? 'পর্যালোচনায় নিন' : 'Mark In Review'}
                 </Button>
