@@ -63,7 +63,8 @@ const ComplaintTrackPage = () => {
   const bn = language === 'bn';
   const { toast } = useToast();
 
-  const [ticket, setTicket] = useState('');
+  const [searchParams] = useSearchParams();
+  const [ticket, setTicket] = useState(searchParams.get('ticket') || '');
   const [email, setEmail] = useState('');
   const [otpOpen, setOtpOpen] = useState(false);
   const [verifiedEmail, setVerifiedEmail] = useState('');
