@@ -102,6 +102,17 @@ Deno.serve(async (req) => {
         matchedStudents = matches || [];
       }
 
+      // Honor user-confirmed selection from signup preview (if provided)
+      if (confirmed_student_uuids && Array.isArray(confirmed_student_uuids) && confirmed_student_uuids.length > 0) {
+        const confirmSet = new Set(confirmed_student_uuids);
+        matchedStudents = matchedStudents.filter((m) => confirmSet.has(m.student_uuid));
+        if (matchedStudents.length === 0) {
+          return json({
+            error: 'কোনো ছাত্র নিশ্চিত করা হয়নি। অনুগ্রহ করে কমপক্ষে একজন ছাত্র নির্বাচন করুন।',
+            code: 'NO_CONFIRMED_STUDENT',
+          }, 400);
+        }
+
       // Legacy fallback: if student_id + student_dob provided, also verify
       let firstStudentId: string | null = null;
       if (matchedStudents.length === 0 && student_id && student_dob) {
