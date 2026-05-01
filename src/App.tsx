@@ -135,6 +135,7 @@ import AdminHealthRecords from "@/pages/admin/AdminHealthRecords";
 import AdminCommittees from "@/pages/admin/AdminCommittees";
 import AdminCommitteeAuditLog from "@/pages/admin/AdminCommitteeAuditLog";
 import ComplaintPage from "./pages/ComplaintPage";
+import ComplaintTrackPage from "./pages/ComplaintTrackPage";
 import NotFound from "./pages/NotFound";
 import AttendanceCheckin from "./pages/AttendanceCheckin";
 import StaffCheckin from "./pages/StaffCheckin";
