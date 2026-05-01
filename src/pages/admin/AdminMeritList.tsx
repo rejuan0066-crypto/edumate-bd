@@ -201,6 +201,50 @@ const AdminMeritList = () => {
 
   const top3 = (rankingData?.rankings || []).filter(r => !r.hasFail).slice(0, 3);
 
+  // ----- Approval workflow -----
+  const queryClient = useQueryClient();
+  const { data: approval, isLoading: loadingApproval } = useQuery({
+    queryKey: ['merit-approval', examSessionId, classId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('merit_list_approvals' as any)
+        .select('*')
+        .eq('exam_session_id', examSessionId)
+        .eq('class_id', classId)
+        .maybeSingle();
+      return (data as any) || null;
+    },
+    enabled: !!examSessionId && !!classId,
+  });
+
+  const approvalStatus: ApprovalStatus = (approval?.status as ApprovalStatus) || 'none';
+  const refreshApproval = () => queryClient.invalidateQueries({ queryKey: ['merit-approval', examSessionId, classId] });
+
+  const callRpc = async (fn: string, args: Record<string, unknown>, successMsg: string) => {
+    const { error } = await (supabase as any).rpc(fn, args);
+    if (error) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: error.message, variant: 'destructive' });
+      throw error;
+    }
+    toast({ title: successMsg });
+    refreshApproval();
+  };
+
+  const handleSubmitApproval = () =>
+    callRpc('submit_merit_list_for_approval',
+      { p_exam_session_id: examSessionId, p_class_id: classId },
+      bn ? 'অনুমোদনের জন্য পাঠানো হয়েছে' : 'Submitted for approval');
+
+  const handleApprove = () =>
+    callRpc('approve_merit_list',
+      { p_exam_session_id: examSessionId, p_class_id: classId },
+      bn ? 'মেধা তালিকা অনুমোদিত' : 'Merit list approved');
+
+  const handleReject = (reason: string) =>
+    callRpc('reject_merit_list',
+      { p_exam_session_id: examSessionId, p_class_id: classId, p_reason: reason },
+      bn ? 'মেধা তালিকা প্রত্যাখ্যাত' : 'Merit list rejected');
+
   return (
     <AdminLayout>
       <div className="space-y-6">
