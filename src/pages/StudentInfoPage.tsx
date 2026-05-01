@@ -10,11 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save } from 'lucide-react';
+import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save, Mail, Lock, IdCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import OtpVerificationDialog from '@/components/OtpVerificationDialog';
+import { sanitizePasswordInput } from '@/lib/passwordInput';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
 const STUDENT_STORAGE_KEY = 'student_portal_session';
@@ -52,6 +54,16 @@ const StudentInfoPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+
+  // Inline student signup state
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [signupBusy, setSignupBusy] = useState(false);
+  const [suName, setSuName] = useState('');
+  const [suStudentId, setSuStudentId] = useState('');
+  const [suDob, setSuDob] = useState('');
+  const [suEmail, setSuEmail] = useState('');
+  const [suPassword, setSuPassword] = useState('');
+  const [otpOpen, setOtpOpen] = useState(false);
 
   // Load portal sessions
   useEffect(() => {
@@ -204,6 +216,71 @@ const StudentInfoPage = () => {
     setSelectedStudentId(null);
   };
 
+  // ---- Inline signup ----
+  const handleInlineSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = suName.trim();
+    const sid = suStudentId.trim();
+    const email = suEmail.trim().toLowerCase();
+    if (!name || !sid || !suDob || !email || !suPassword) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: bn ? 'সব ফিল্ড পূরণ করুন' : 'Fill all fields', variant: 'destructive' });
+      return;
+    }
+    if (suPassword.length < 6) {
+      toast({ title: bn ? 'দুর্বল পাসওয়ার্ড' : 'Weak password', description: bn ? 'কমপক্ষে ৬ অক্ষর' : 'At least 6 characters', variant: 'destructive' });
+      return;
+    }
+    setSignupBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('student-auth', {
+        body: {
+          action: 'signup',
+          contact: email,
+          contact_type: 'email',
+          password: suPassword,
+          full_name: name,
+          student_id: sid,
+          student_dob: suDob,
+        },
+      });
+      if (error) {
+        let msg = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          }
+        } catch {}
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
+
+      setOtpOpen(true);
+      toast({
+        title: bn ? 'একাউন্ট তৈরি হয়েছে' : 'Account created',
+        description: bn ? 'ইমেইলে পাঠানো OTP দিয়ে ভেরিফাই করুন।' : 'Verify the OTP sent to your email.',
+      });
+    } catch (err: any) {
+      toast({ title: bn ? 'সাইনআপ ব্যর্থ' : 'Signup failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setSignupBusy(false);
+    }
+  };
+
+  const handleInlineOtpVerified = async () => {
+    setOtpOpen(false);
+    await supabase.functions.invoke('student-auth', {
+      body: { action: 'mark_verified', contact: suEmail.trim().toLowerCase() },
+    });
+    toast({
+      title: bn ? 'ভেরিফাই সফল' : 'Verified',
+      description: bn ? 'এখন লগইন করতে যান।' : 'You can log in now.',
+    });
+    // Send them to the portal to log in
+    window.location.href = `/student-portal?mode=login`;
+  };
+
   // ---- Render gates ----
   if (authLoading) {
     return (
@@ -242,11 +319,16 @@ const StudentInfoPage = () => {
                     {bn ? 'ছাত্র লগইন' : 'Student Login'}
                   </Link>
                 </Button>
-                <Button asChild variant="secondary" className="rounded-full">
-                  <Link to="/student-portal?mode=signup">
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    {bn ? 'ছাত্র একাউন্ট তৈরি' : 'Create Student Account'}
-                  </Link>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="rounded-full"
+                  onClick={() => setSignupOpen((v) => !v)}
+                  aria-expanded={signupOpen}
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  {bn ? 'এখানেই একাউন্ট তৈরি' : 'Create Account Here'}
+                  {signupOpen ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
                 </Button>
                 <Button asChild variant="outline" className="rounded-full">
                   <Link to="/parent-portal">
@@ -266,9 +348,63 @@ const StudentInfoPage = () => {
                   ? 'একাউন্ট তৈরি করতে শিক্ষার্থীর আইডি ও জন্ম তারিখ প্রয়োজন। প্রতি আইডিতে শুধু একটি একাউন্ট খোলা যাবে।'
                   : 'You need the Student ID and date of birth. Only one account per Student ID.'}
               </p>
+
+              {/* Inline student signup form */}
+              {signupOpen && (
+                <form onSubmit={handleInlineSignup} className="text-left mt-6 pt-6 border-t border-border/50 space-y-4">
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-primary" />
+                    {bn ? 'নতুন ছাত্র একাউন্ট' : 'New Student Account'}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="flex items-center gap-2"><User className="w-4 h-4" />{bn ? 'পূর্ণ নাম' : 'Full Name'}</Label>
+                      <Input value={suName} onChange={(e) => setSuName(e.target.value)} maxLength={100} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><IdCard className="w-4 h-4" />{bn ? 'শিক্ষার্থী আইডি' : 'Student ID'}</Label>
+                      <Input value={suStudentId} onChange={(e) => setSuStudentId(e.target.value)} maxLength={50} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Calendar className="w-4 h-4" />{bn ? 'জন্ম তারিখ' : 'Date of Birth'}</Label>
+                      <Input type="date" value={suDob} onChange={(e) => setSuDob(e.target.value)} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Mail className="w-4 h-4" />{bn ? 'ইমেইল' : 'Email'}</Label>
+                      <Input type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} maxLength={255} className="rounded-2xl" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2"><Lock className="w-4 h-4" />{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+                      <Input type="password" value={suPassword}
+                        onChange={(e) => setSuPassword(sanitizePasswordInput(e.target.value))}
+                        className="rounded-2xl" required minLength={6} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {bn
+                      ? 'নোট: শিক্ষার্থী আইডি ও জন্ম তারিখ অফিস রেকর্ডের সাথে মিলতে হবে। সাইনআপের পর ইমেইল OTP ভেরিফাই করতে হবে।'
+                      : 'Note: Student ID and DOB must match official records. Email OTP verification required after signup.'}
+                  </p>
+                  <Button type="submit" className="w-full rounded-full" disabled={signupBusy}>
+                    {signupBusy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                    {signupBusy ? (bn ? 'প্রক্রিয়া...' : 'Processing...') : (bn ? 'একাউন্ট তৈরি করুন' : 'Create Account')}
+                  </Button>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {otpOpen && (
+          <OtpVerificationDialog
+            open={otpOpen}
+            onOpenChange={setOtpOpen}
+            email={suEmail.trim().toLowerCase()}
+            recipientName={suName}
+            purpose="email_verification"
+            onVerified={handleInlineOtpVerified}
+          />
+        )}
       </PublicLayout>
     );
   }
