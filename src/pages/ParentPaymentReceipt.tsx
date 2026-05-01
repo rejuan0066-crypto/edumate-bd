@@ -64,63 +64,119 @@ const ParentPaymentReceipt = () => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const sessionRaw = localStorage.getItem(STORAGE_KEY);
-        if (!sessionRaw) {
-          navigate('/parent');
-          return;
-        }
-        const session = JSON.parse(sessionRaw);
+  const prevStatusRef = useRef<string | null>(null);
 
-        const { data: req, error } = await (supabase as any)
-          .from('parent_payment_requests')
-          .select('*')
-          .eq('id', requestId)
-          .eq('parent_account_id', session.accountId)
-          .maybeSingle();
+  const loadReceipt = async (opts: { silent?: boolean } = {}) => {
+    try {
+      const sessionRaw = localStorage.getItem(STORAGE_KEY);
+      if (!sessionRaw) {
+        navigate('/parent');
+        return;
+      }
+      const session = JSON.parse(sessionRaw);
 
-        if (error || !req) {
+      const { data: req, error } = await (supabase as any)
+        .from('parent_payment_requests')
+        .select('*')
+        .eq('id', requestId)
+        .eq('parent_account_id', session.accountId)
+        .maybeSingle();
+
+      if (error || !req) {
+        if (!opts.silent) {
           toast({
             title: bn ? 'রসিদ পাওয়া যায়নি' : 'Receipt not found',
             description: bn ? 'এই রসিদটি আপনার অ্যাকাউন্টের অধীনে নেই।' : 'This receipt does not belong to your account.',
             variant: 'destructive',
           });
-          setLoading(false);
-          return;
         }
-
-        let student: ReceiptData['student'] = null;
-        if (req.student_uuid) {
-          const { data: s } = await supabase.functions.invoke('parent-student-info', {
-            body: { account_id: session.accountId, student_uuid: req.student_uuid },
-          });
-          student = (s as any)?.student ?? null;
-        }
-
-        setData({
-          id: req.id,
-          amount: Number(req.amount || 0),
-          method: req.method || '—',
-          trx_id: req.trx_id || '—',
-          sender_phone: req.sender_phone,
-          note: req.note,
-          status: req.status || 'pending',
-          created_at: req.created_at,
-          verified_at: req.verified_at ?? null,
-          source: req.method === 'gateway' ? 'gateway' : 'manual',
-          student,
-          fee_assignment_ids: req.fee_assignment_ids || [],
-        });
-      } catch (e: any) {
-        toast({ title: 'Error', description: e.message, variant: 'destructive' });
-      } finally {
         setLoading(false);
+        return;
       }
+
+      let student: ReceiptData['student'] = null;
+      if (req.student_uuid) {
+        const { data: s } = await supabase.functions.invoke('parent-student-info', {
+          body: { account_id: session.accountId, student_uuid: req.student_uuid },
+        });
+        student = (s as any)?.student ?? null;
+      }
+
+      const newStatus: string = req.status || 'pending';
+      // Toast only on real status transitions (not on initial load)
+      if (
+        prevStatusRef.current &&
+        prevStatusRef.current !== newStatus &&
+        (newStatus === 'verified' || newStatus === 'rejected')
+      ) {
+        toast({
+          title:
+            newStatus === 'verified'
+              ? (bn ? '✅ পেমেন্ট ভেরিফাই হয়েছে' : '✅ Payment Verified')
+              : (bn ? '❌ পেমেন্ট প্রত্যাখ্যাত' : '❌ Payment Rejected'),
+          description:
+            newStatus === 'verified'
+              ? (bn ? 'আপনার পেমেন্ট সফলভাবে অনুমোদিত হয়েছে।' : 'Your payment has been approved.')
+              : (bn ? 'অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' : 'Please contact the admin.'),
+        });
+      }
+      prevStatusRef.current = newStatus;
+
+      setData({
+        id: req.id,
+        amount: Number(req.amount || 0),
+        method: req.method || '—',
+        trx_id: req.trx_id || '—',
+        sender_phone: req.sender_phone,
+        note: req.note,
+        status: newStatus,
+        created_at: req.created_at,
+        verified_at: req.verified_at ?? null,
+        source: req.method === 'gateway' ? 'gateway' : 'manual',
+        student,
+        fee_assignment_ids: req.fee_assignment_ids || [],
+      });
+    } catch (e: any) {
+      if (!opts.silent) toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    if (requestId) loadReceipt();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId]);
+
+  // Realtime subscription + polling fallback for status changes
+  useEffect(() => {
+    if (!requestId) return;
+    const channel = supabase
+      .channel(`parent-receipt-${requestId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'parent_payment_requests',
+          filter: `id=eq.${requestId}`,
+        },
+        () => { loadReceipt({ silent: true }); },
+      )
+      .subscribe();
+
+    // Polling fallback (every 15s) in case realtime is blocked or RLS filters out the row
+    const poll = setInterval(() => {
+      if (prevStatusRef.current === 'pending') loadReceipt({ silent: true });
+    }, 15000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
     };
-    if (requestId) load();
-  }, [requestId, navigate, toast, bn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId]);
 
   const handlePrint = () => window.print();
 
