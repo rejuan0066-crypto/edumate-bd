@@ -127,23 +127,18 @@ const AdmissionTestTake = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('admission_test_attempts')
-        .insert({
-          test_id: testId,
-          applicant_name: applicantName.trim(),
-          applicant_phone: applicantPhone.trim(),
-          applicant_email: applicantEmail.trim() || null,
-          applicant_guardian: applicantGuardian.trim() || null,
-          applicant_address: applicantAddress.trim() || null,
-          applicant_nid_birth: applicantNidBirth.trim() || null,
-          status: 'in_progress',
-        })
-        .select('id')
-        .single();
+      const { data, error } = await supabase.rpc('submit_admission_test_attempt' as any, {
+        p_test_id: testId,
+        p_applicant_name: applicantName.trim(),
+        p_applicant_phone: applicantPhone.trim(),
+        p_applicant_email: applicantEmail.trim() || null,
+        p_applicant_guardian: applicantGuardian.trim() || null,
+        p_applicant_address: applicantAddress.trim() || null,
+        p_applicant_nid_birth: applicantNidBirth.trim() || null,
+      });
       if (error) throw error;
 
-      setAttemptId(data.id);
+      setAttemptId(data as unknown as string);
       setOrderedQuestions(test?.shuffle_questions ? shuffle(questions) : questions);
       setSecondsLeft((test?.duration_minutes || 60) * 60);
       startedAtRef.current = Date.now();

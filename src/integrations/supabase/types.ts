@@ -8118,6 +8118,56 @@ export type Database = {
         }
         Relationships: []
       }
+      admission_test_attempts_public: {
+        Row: {
+          applicant_name: string | null
+          correct_count: number | null
+          id: string | null
+          passed: boolean | null
+          percentage: number | null
+          rank: number | null
+          score: number | null
+          status: string | null
+          submitted_at: string | null
+          test_id: string | null
+          total_questions: number | null
+        }
+        Insert: {
+          applicant_name?: string | null
+          correct_count?: number | null
+          id?: string | null
+          passed?: boolean | null
+          percentage?: number | null
+          rank?: number | null
+          score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          test_id?: string | null
+          total_questions?: number | null
+        }
+        Update: {
+          applicant_name?: string | null
+          correct_count?: number | null
+          id?: string | null
+          passed?: boolean | null
+          percentage?: number | null
+          rank?: number | null
+          score?: number | null
+          status?: string | null
+          submitted_at?: string | null
+          test_id?: string | null
+          total_questions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_test_attempts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       committee_staff_ids: {
         Row: {
           staff_id: string | null
@@ -8340,6 +8390,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      submit_admission_test_attempt: {
+        Args: {
+          p_applicant_address?: string
+          p_applicant_email?: string
+          p_applicant_guardian?: string
+          p_applicant_name: string
+          p_applicant_nid_birth?: string
+          p_applicant_phone: string
+          p_test_id: string
+        }
+        Returns: string
       }
       undo_committee_change: {
         Args: {

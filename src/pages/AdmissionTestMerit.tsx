@@ -32,12 +32,11 @@ const AdmissionTestMerit = () => {
     queryKey: ['public-merit-attempts', testId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('admission_test_attempts')
-        .select('id, applicant_name, applicant_phone, score, percentage, passed, rank, correct_count, total_questions')
+        .from('admission_test_attempts_public' as any)
+        .select('id, applicant_name, score, percentage, passed, rank, correct_count, total_questions')
         .eq('test_id', testId)
-        .eq('status', 'submitted')
         .order('rank', { ascending: true, nullsFirst: false });
-      return data || [];
+      return (data as any[]) || [];
     },
     enabled: !!testId,
   });
