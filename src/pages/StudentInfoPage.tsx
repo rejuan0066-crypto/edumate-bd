@@ -7,9 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, Loader2, User, UserPlus, GraduationCap, Phone, MapPin, Calendar, Users, BookOpen, LogIn, ShieldAlert, Pencil, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 const PARENT_STORAGE_KEY = 'parent_portal_session';
@@ -28,10 +32,15 @@ const StudentInfoPage = () => {
   const bn = language === 'bn';
   const { user, role, loading: authLoading } = useAuth();
 
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [parentSession, setParentSession] = useState<ParentSession | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, any>>({});
+  const [saving, setSaving] = useState(false);
 
   // Load parent portal session
   useEffect(() => {
@@ -50,8 +59,78 @@ const StudentInfoPage = () => {
     () => !!user && ['admin', 'super_admin', 'teacher', 'staff', 'administrative'].includes(role || ''),
     [user, role]
   );
+  const isAdmin = role === 'admin' || role === 'super_admin';
   const isParent = !!parentSession?.studentUuid;
   const isLoggedIn = isStaff || isParent;
+
+  const openEdit = (s: any) => {
+    // Empty strings allowed → admin can clear any optional field. Only name_bn (NOT NULL) is required.
+    setEditForm({
+      name_bn: s.name_bn || '',
+      name_en: s.name_en || '',
+      father_name: s.father_name || '',
+      father_name_en: s.father_name_en || '',
+      father_phone: s.father_phone || '',
+      father_occupation: s.father_occupation || '',
+      father_nid: s.father_nid || '',
+      mother_name: s.mother_name || '',
+      mother_name_en: s.mother_name_en || '',
+      mother_phone: s.mother_phone || '',
+      mother_occupation: s.mother_occupation || '',
+      mother_nid: s.mother_nid || '',
+      guardian_phone: s.guardian_phone || '',
+      date_of_birth: s.date_of_birth || '',
+      gender: s.gender || '',
+      religion: s.religion || '',
+      blood_group: (s as any).blood_group || '',
+      phone: s.phone || '',
+      email: s.email || '',
+      address: s.address || '',
+      roll_number: s.roll_number || '',
+      registration_no: s.registration_no || '',
+      previous_class: s.previous_class || '',
+      previous_institute: s.previous_institute || '',
+      birth_reg_no: s.birth_reg_no || '',
+      status: s.status || 'active',
+      photo_url: s.photo_url || '',
+    });
+    setEditOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedStudentId) return;
+    if (!String(editForm.name_bn || '').trim()) {
+      toast({ title: bn ? 'নামের ফিল্ড আবশ্যক' : 'Name (Bangla) required', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      // Convert empty strings → null so admin can truly clear optional fields
+      const payload: Record<string, any> = {};
+      Object.entries(editForm).forEach(([k, v]) => {
+        if (k === 'name_bn') {
+          payload[k] = String(v).trim();
+        } else if (typeof v === 'string') {
+          payload[k] = v.trim() === '' ? null : v.trim();
+        } else {
+          payload[k] = v;
+        }
+      });
+      const { error } = await supabase
+        .from('students')
+        .update(payload)
+        .eq('id', selectedStudentId);
+      if (error) throw error;
+      toast({ title: bn ? 'সংরক্ষিত হয়েছে' : 'Saved successfully' });
+      setEditOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['student-info-detail', selectedStudentId] });
+      queryClient.invalidateQueries({ queryKey: ['student-info-search'] });
+    } catch (err: any) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Auto-select for parent
   useEffect(() => {
@@ -302,6 +381,16 @@ const StudentInfoPage = () => {
                     <Badge className="rounded-full">{student.status || 'active'}</Badge>
                   </div>
                 </div>
+                {isAdmin && (
+                  <Button
+                    onClick={() => openEdit(student)}
+                    className="rounded-full self-start"
+                    variant="secondary"
+                  >
+                    <Pencil className="w-4 h-4 mr-2" />
+                    {bn ? 'সম্পাদনা' : 'Edit'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -379,6 +468,83 @@ const StudentInfoPage = () => {
           </Card>
         )}
       </div>
+
+      {/* Admin / super_admin: edit student dialog — all fields optional except name_bn (DB NOT NULL) */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="rounded-[38px] max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-primary" />
+              {bn ? 'শিক্ষার্থীর তথ্য সম্পাদনা' : 'Edit Student Information'}
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'যেকোনো ফিল্ড ফাঁকা রেখে সংরক্ষণ করা যাবে। শুধু নাম (বাংলা) আবশ্যক।'
+                : 'Any field can be left blank. Only Name (Bangla) is required.'}
+            </p>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            {[
+              { k: 'name_bn', l_bn: 'নাম (বাংলা) *', l_en: 'Name (BN) *' },
+              { k: 'name_en', l_bn: 'নাম (ইংরেজি)', l_en: 'Name (EN)' },
+              { k: 'roll_number', l_bn: 'রোল', l_en: 'Roll' },
+              { k: 'registration_no', l_bn: 'রেজিস্ট্রেশন নম্বর', l_en: 'Registration No' },
+              { k: 'date_of_birth', l_bn: 'জন্ম তারিখ', l_en: 'Date of Birth', type: 'date' },
+              { k: 'gender', l_bn: 'লিঙ্গ', l_en: 'Gender' },
+              { k: 'religion', l_bn: 'ধর্ম', l_en: 'Religion' },
+              { k: 'blood_group', l_bn: 'রক্তের গ্রুপ', l_en: 'Blood Group' },
+              { k: 'phone', l_bn: 'মোবাইল', l_en: 'Phone' },
+              { k: 'email', l_bn: 'ইমেইল', l_en: 'Email', type: 'email' },
+              { k: 'birth_reg_no', l_bn: 'জন্ম নিবন্ধন নম্বর', l_en: 'Birth Reg No' },
+              { k: 'father_name', l_bn: 'পিতার নাম', l_en: "Father's Name" },
+              { k: 'father_name_en', l_bn: 'পিতার নাম (EN)', l_en: "Father's Name (EN)" },
+              { k: 'father_phone', l_bn: 'পিতার ফোন', l_en: "Father's Phone" },
+              { k: 'father_occupation', l_bn: 'পিতার পেশা', l_en: "Father's Occupation" },
+              { k: 'father_nid', l_bn: 'পিতার NID', l_en: "Father's NID" },
+              { k: 'mother_name', l_bn: 'মাতার নাম', l_en: "Mother's Name" },
+              { k: 'mother_name_en', l_bn: 'মাতার নাম (EN)', l_en: "Mother's Name (EN)" },
+              { k: 'mother_phone', l_bn: 'মাতার ফোন', l_en: "Mother's Phone" },
+              { k: 'mother_occupation', l_bn: 'মাতার পেশা', l_en: "Mother's Occupation" },
+              { k: 'mother_nid', l_bn: 'মাতার NID', l_en: "Mother's NID" },
+              { k: 'guardian_phone', l_bn: 'অভিভাবকের ফোন', l_en: 'Guardian Phone' },
+              { k: 'previous_class', l_bn: 'পূর্ববর্তী শ্রেণি', l_en: 'Previous Class' },
+              { k: 'previous_institute', l_bn: 'পূর্ববর্তী প্রতিষ্ঠান', l_en: 'Previous Institute' },
+              { k: 'status', l_bn: 'স্ট্যাটাস', l_en: 'Status' },
+              { k: 'photo_url', l_bn: 'ছবির URL', l_en: 'Photo URL' },
+            ].map((f) => (
+              <div key={f.k} className="space-y-1.5">
+                <Label className="text-xs">{bn ? f.l_bn : f.l_en}</Label>
+                <Input
+                  type={(f as any).type || 'text'}
+                  value={editForm[f.k] ?? ''}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, [f.k]: e.target.value }))}
+                  className="rounded-xl"
+                />
+              </div>
+            ))}
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs">{bn ? 'ঠিকানা' : 'Address'}</Label>
+              <Textarea
+                value={editForm.address ?? ''}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, address: e.target.value }))}
+                className="rounded-xl"
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setEditOpen(false)} className="rounded-full">
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button onClick={handleSave} disabled={saving} className="rounded-full">
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {bn ? 'সংরক্ষণ করুন' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PublicLayout>
   );
 };
