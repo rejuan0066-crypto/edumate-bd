@@ -80,6 +80,9 @@ gate_log2="$TMP/_fmt.log"
 #   STEP_KILL_AFTER    — extra grace before SIGKILL after SIGTERM
 STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
 STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
+# Steps slower than this (seconds) get a ⚠️ marker in CI logs.
+SLOW_STEP_THRESHOLD="${SLOW_STEP_THRESHOLD:-30}"
+TOTAL_STEP_SECONDS=0
 
 if ! command -v timeout >/dev/null 2>&1; then
   echo "❌ 'timeout' (coreutils) is required for per-step timeouts." >&2
@@ -92,21 +95,27 @@ run_step() {
   local logfile="$1"; shift
   shift # discard "--"
   local rc=0
+  # Use seconds resolution from `date +%s` (portable on macOS + Linux CI).
   local started; started="$(date +%s)"
   timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
     >"$logfile" 2>&1 || rc=$?
   local dur=$(( $(date +%s) - started ))
+  TOTAL_STEP_SECONDS=$(( TOTAL_STEP_SECONDS + dur ))
+  local slow=""
+  if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
+    slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
+  fi
   STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label (${dur}s)"
+    echo "  ✓ $label  [${dur}s]${slow}"
     return 0
   fi
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)"
+    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)  [${dur}s]"
     echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
     echo "      hangs (network fetches at import time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc, ${dur}s)"
+    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}"
   fi
   sed 's/^/      /' "$logfile"
   return 1
@@ -158,6 +167,8 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "- **Passed:** ${#PASS[@]}"
   echo "- **Failed:** ${#FAIL[@]}"
   echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
+  echo "- **Total step time:** ${TOTAL_STEP_SECONDS}s"
+  echo "- **Slow threshold:** ${SLOW_STEP_THRESHOLD}s"
   echo
   echo "## Step results"
   echo
@@ -166,7 +177,22 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   for row in "${STEP_RESULTS[@]}"; do
     IFS='|' read -r fn step rc dur logf <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
-    echo "| \`$fn\` | $step | $status | $dur | \`$logf\` |"
+    # Strip trailing 's' to compare numerically
+    secs="${dur%s}"
+    marker=""
+    if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | \`$logf\` |"
+  done
+  echo
+  echo "## Slowest steps (top 5)"
+  echo
+  echo "| Duration | Function | Step |"
+  echo "|---|---|---|"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step _ dur _ <<<"$row"
+    printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
+  done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
+    echo "| ${secs}s | \`$fn\` | $step |"
   done
   if [ "${#FAIL[@]}" -gt 0 ]; then
     echo
@@ -183,6 +209,8 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '"total":%d,' "${#TARGETS[@]}"
   printf '"passed":%d,' "${#PASS[@]}"
   printf '"failed":%d,' "${#FAIL[@]}"
+  printf '"total_step_seconds":%d,' "$TOTAL_STEP_SECONDS"
+  printf '"slow_threshold_seconds":%d,' "$SLOW_STEP_THRESHOLD"
   printf '"gate_ok":%s' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '}'
 } >"$SUMMARY_JSON"
@@ -191,6 +219,16 @@ echo
 echo "================ Summary ================"
 echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
+echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRESHOLD}s)"
+if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
+  echo "Slowest steps:"
+  for row in "${STEP_RESULTS[@]}"; do
+    IFS='|' read -r fn step _ dur _ <<<"$row"
+    printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
+  done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
+    printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
+  done
+fi
 if [ "${#FAIL[@]}" -gt 0 ]; then
   printf '  - %s\n' "${FAIL[@]}"
 fi
