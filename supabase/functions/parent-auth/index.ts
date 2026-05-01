@@ -112,6 +112,7 @@ Deno.serve(async (req) => {
             code: 'NO_CONFIRMED_STUDENT',
           }, 400);
         }
+      }
 
       // Legacy fallback: if student_id + student_dob provided, also verify
       let firstStudentId: string | null = null;
