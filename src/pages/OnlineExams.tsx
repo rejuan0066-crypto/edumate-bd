@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ListChecks, Clock, FileText, Award, KeyRound, Calendar, Search } from 'lucide-react';
+import { toast } from 'sonner';
 
 const OnlineExams = () => {
   const { language } = useLanguage();
@@ -43,7 +44,7 @@ const OnlineExams = () => {
       .is('deleted_at', null)
       .maybeSingle();
     if (error || !data) {
-      alert(bn ? 'অবৈধ অ্যাক্সেস কোড' : 'Invalid access code');
+      toast.error(bn ? 'অবৈধ অ্যাক্সেস কোড' : 'Invalid access code');
       return;
     }
     navigate(`/exam/${data.id}?code=${encodeURIComponent(trimmed)}`);

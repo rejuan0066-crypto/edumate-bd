@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface ComplaintData {
   ticket_number: string;
@@ -208,7 +209,7 @@ export const printComplaintTimeline = (complaint: ComplaintData, updates: Timeli
 
   const w = window.open('', '_blank', 'width=900,height=1000');
   if (!w) {
-    alert('Please allow pop-ups to print the complaint timeline.');
+    toast.error('Please allow pop-ups to print the complaint timeline.');
     return;
   }
   w.document.open();

@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const DashboardSearch = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
@@ -51,7 +53,7 @@ const DashboardSearch = () => {
   };
 
   const deleteItem = async (item: any) => {
-    if (!confirm(language === 'bn' ? 'মুছে ফেলতে চান?' : 'Delete this record?')) return;
+    if (!(await confirm({ description: language === 'bn' ? 'মুছে ফেলতে চান?' : 'Delete this record?', variant: 'destructive' }))) return;
     const table = item._source === 'administrative' ? 'administrative_officers' : item._type;
     const { error } = await supabase.from(table as any).update({ deleted_at: new Date().toISOString() }).eq('id', item.id);
     if (error) { toast.error(error.message); return; }

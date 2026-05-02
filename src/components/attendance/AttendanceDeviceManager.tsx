@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit2, Fingerprint, QrCode, CreditCard, Wifi, WifiOff, Monitor, Save } from 'lucide-react';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 interface Props {
   open: boolean;
@@ -33,6 +34,7 @@ const emptyForm = {
 };
 
 const AttendanceDeviceManager = ({ open, onOpenChange }: Props) => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -189,8 +191,8 @@ const AttendanceDeviceManager = ({ open, onOpenChange }: Props) => {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => editDevice(d)}>
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
-                          if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete this device?')) deleteMutation.mutate(d.id);
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={async () => {
+                          if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete this device?', variant: 'destructive' }))) deleteMutation.mutate(d.id);
                         }}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

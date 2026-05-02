@@ -21,8 +21,10 @@ import TimezoneSettings from '@/components/admin/TimezoneSettings';
 import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminSettings = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { canEditItem } = usePagePermissions('/admin/settings');
@@ -416,7 +418,7 @@ const AdminSettings = () => {
 
   const removeSmtpProfile = async (idx: number) => {
     const target = smtpProfiles[idx];
-    if (!confirm(bn ? 'এই SMTP প্রোফাইলটি মুছবেন?' : 'Delete this SMTP profile?')) return;
+    if (!(await confirm({ description: bn ? 'এই SMTP প্রোফাইলটি মুছবেন?' : 'Delete this SMTP profile?', variant: 'destructive' }))) return;
     if (target.id && !target._new) {
       const { error } = await supabase.from('smtp_config').delete().eq('id', target.id);
       if (error) {

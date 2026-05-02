@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type ListType = 'all-books' | 'total-copies' | 'new-books' | 'old-books' | 'available' | 'issued' | 'lost' | 'damaged' | 'value' | 'sales';
 
 const LibraryDashboard = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const navigate = useNavigate();
@@ -113,8 +115,8 @@ const LibraryDashboard = () => {
 
   const { items, isBook } = getListItems();
 
-  const handleDelete = (id: string, table: 'library_books' | 'library_issuances') => {
-    if (!confirm(bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?')) return;
+  const handleDelete = async (id: string, table: 'library_books' | 'library_issuances') => {
+    if (!(await confirm({ description: bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?', variant: 'destructive' }))) return;
     deleteMut.mutate({ id, table });
   };
 

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ConfirmProvider } from "@/contexts/ConfirmContext";
 import { useDeviceRegistration } from "@/hooks/useDeviceRegistration";
 import { useDeviceTrack } from "@/hooks/useDeviceTrack";
 
@@ -253,6 +254,7 @@ const App = () => (
           <ThemeProvider>
             <BijoyProvider>
             <TooltipProvider>
+              <ConfirmProvider>
               <Toaster />
               <Sonner />
               <DynamicFavicon />
@@ -419,6 +421,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </ConfirmProvider>
             </TooltipProvider>
             </BijoyProvider>
           </ThemeProvider>

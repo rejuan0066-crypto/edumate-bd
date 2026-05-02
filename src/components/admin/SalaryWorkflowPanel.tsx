@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
 import { useSalaryWorkflowGating } from '@/hooks/useSalaryWorkflowGating';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -67,6 +68,7 @@ const STAGE_COLOR: Record<Stage, string> = {
 export default function SalaryWorkflowPanel({
   monthYear, monthLabel, year, records, eligibleIds, onChanged, onPrintWithWorkflow,
 }: Props) {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { user } = useAuth();
@@ -462,10 +464,10 @@ export default function SalaryWorkflowPanel({
                 variant="outline"
                 className="border-amber-400 text-amber-700 hover:bg-amber-50"
                 disabled={autoAdvanceMutation.isPending}
-                onClick={() => {
-                  if (confirm(bn
+                onClick={async () => {
+                  if ((await confirm({ description: bn
                     ? 'ডিফল্ট যাচাইকারী/অনুমোদনকারী/কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
-                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.')) {
+                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.', variant: 'destructive' }))) {
                     autoAdvanceMutation.mutate();
                   }
                 }}

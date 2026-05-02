@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Save, Plus, Pencil, Trash2, Clock, Calendar, MapPin, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const CALC_METHODS = [
   { value: 1, label: 'University of Islamic Sciences, Karachi', labelBn: 'করাচী ইউনিভার্সিটি' },
@@ -56,6 +57,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const AdminPrayerCalendar = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/prayer-calendar');
@@ -114,7 +116,7 @@ const AdminPrayerCalendar = () => {
   };
 
   const handleDeleteHoliday = async (id: string) => {
-    if (!confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete this holiday?')) return;
+    if (!(await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete this holiday?', variant: 'destructive' }))) return;
     try {
       await deleteHoliday.mutateAsync(id);
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');

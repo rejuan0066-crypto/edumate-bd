@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Mail, Save, Eye, Code2, RotateCcw, Loader2, Send, History, Plus, Copy, Trash2, BookOpen, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useRateLimitConfig } from "@/hooks/useRateLimitConfig";
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type EmailTemplate = {
   id: string;
@@ -77,6 +78,7 @@ const BLANK_HTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 </body></html>`;
 
 export default function AdminEmailTemplates() {
+  const confirm = useConfirm();
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [activeKey, setActiveKey] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -161,7 +163,7 @@ export default function AdminEmailTemplates() {
 
   const rollback = async (v: TemplateVersion) => {
     if (!active) return;
-    if (!confirm(`ভার্সন #${v.version_number}-এ ফিরিয়ে আনবেন? বর্তমান সংস্করণ ভার্সন হিস্ট্রিতে সংরক্ষিত হবে।`)) return;
+    if (!(await confirm({ description: `ভার্সন #${v.version_number}-এ ফিরিয়ে আনবেন? বর্তমান সংস্করণ ভার্সন হিস্ট্রিতে সংরক্ষিত হবে।`, variant: 'destructive' }))) return;
     const { error } = await supabase.from("email_templates").update({
       subject: v.subject, html_body: v.html_body, brand_color: v.brand_color || active.brand_color,
     }).eq("id", active.id);
@@ -230,7 +232,7 @@ export default function AdminEmailTemplates() {
 
   const deleteTemplate = async () => {
     if (!active || active.is_system) return;
-    if (!confirm(`"${active.name}" টেমপ্লেটটি মুছবেন? এই অপারেশন বাতিল করা যাবে না।`)) return;
+    if (!(await confirm({ description: `"${active.name}" টেমপ্লেটটি মুছবেন? এই অপারেশন বাতিল করা যাবে না।`, variant: 'destructive' }))) return;
     const { error } = await supabase.from("email_templates").delete().eq("id", active.id);
     if (error) toast.error("মোছা ব্যর্থ: " + error.message);
     else { toast.success("টেমপ্লেট মোছা হয়েছে"); setActiveKey(""); load(); }

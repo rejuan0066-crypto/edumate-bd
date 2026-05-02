@@ -13,8 +13,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, Trash2, GraduationCap, Clock, ShieldCheck, Ban } from 'lucide-react';
 import { format } from 'date-fns';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminStudentApprovals = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { toast } = useToast();
@@ -69,7 +71,7 @@ const AdminStudentApprovals = () => {
   };
 
   const deleteAccount = async (id: string) => {
-    if (!confirm(bn ? 'নিশ্চিত?' : 'Are you sure?')) return;
+    if (!(await confirm({ description: bn ? 'নিশ্চিত?' : 'Are you sure?', variant: 'destructive' }))) return;
     const { error } = await supabase.from('student_accounts').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

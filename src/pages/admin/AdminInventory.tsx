@@ -18,6 +18,7 @@ import {
   Box, Monitor, ArrowDownUp, BarChart3, Search, TrendingDown
 } from 'lucide-react';
 import InventoryConsumptionReport from '@/components/inventory/InventoryConsumptionReport';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const UNITS = ['pcs', 'kg', 'gram', 'liter', 'meter', 'feet', 'set', 'packet', 'bag', 'ream', 'box'];
 const UNITS_BN: Record<string, string> = { pcs: 'পিস', kg: 'কেজি', gram: 'গ্রাম', liter: 'লিটার', meter: 'মিটার', feet: 'ফুট', set: 'সেট', packet: 'প্যাকেট', bag: 'বস্তা', ream: 'রিম', box: 'বক্স' };
@@ -29,6 +30,7 @@ const ASSET_STATUS = ['good', 'damaged', 'repairing', 'disposed'];
 const ASSET_STATUS_BN: Record<string, string> = { good: 'ভালো', damaged: 'নষ্ট', repairing: 'মেরামত', disposed: 'পরিত্যক্ত' };
 
 const AdminInventory = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -354,7 +356,7 @@ const AdminInventory = () => {
                             <div className="flex gap-1 justify-center">
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openStockAdjust(item)} title={bn ? 'স্টক সমন্বয়' : 'Adjust Stock'}><ArrowDownUp className="w-4 h-4" /></Button>
                               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openItemEdit(item)}><Edit2 className="w-4 h-4" /></Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { if (confirm(bn ? 'নিশ্চিত?' : 'Sure?')) deleteItem.mutate(item.id); }}><Trash2 className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => { if ((await confirm({ description: bn ? 'নিশ্চিত?' : 'Sure?', variant: 'destructive' }))) deleteItem.mutate(item.id); }}><Trash2 className="w-4 h-4" /></Button>
                             </div>
                           </td>
                         </tr>
@@ -408,7 +410,7 @@ const AdminInventory = () => {
                         <td className="p-3 text-center">
                           <div className="flex gap-1 justify-center">
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openAssetEdit(a)}><Edit2 className="w-4 h-4" /></Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => { if (confirm(bn ? 'নিশ্চিত?' : 'Sure?')) deleteAsset.mutate(a.id); }}><Trash2 className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => { if ((await confirm({ description: bn ? 'নিশ্চিত?' : 'Sure?', variant: 'destructive' }))) deleteAsset.mutate(a.id); }}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </td>
                       </tr>

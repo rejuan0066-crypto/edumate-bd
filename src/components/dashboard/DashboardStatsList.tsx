@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Pencil, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type TableType = 'students' | 'staff' | 'donors' | 'divisions' | 'subjects' | 'exam_sessions' | 'results';
 
@@ -30,6 +31,7 @@ const TABLE_CONFIG: Record<TableType, { selectQuery: string; editPath: string; n
 };
 
 const DashboardStatsList = ({ open, onClose, title, table, filters = {} }: StatsListProps) => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const navigate = useNavigate();
@@ -75,9 +77,9 @@ const DashboardStatsList = ({ open, onClose, title, table, filters = {} }: Stats
     navigate(config.editPath);
   };
 
-  const handleDelete = (item: any) => {
+  const handleDelete = async (item: any) => {
     if (!config.softDeleteField) return;
-    if (!confirm(bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?')) return;
+    if (!(await confirm({ description: bn ? 'আপনি কি নিশ্চিত?' : 'Are you sure?', variant: 'destructive' }))) return;
     deleteMut.mutate({ id: item.id, field: config.softDeleteField });
   };
 

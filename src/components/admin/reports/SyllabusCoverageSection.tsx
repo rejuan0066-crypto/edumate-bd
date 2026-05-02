@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { BookOpen, Download, FileText, Plus, Pencil, Trash2 } from 'lucide-react';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
 import { toast } from 'sonner';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const monthAgo = () => {
@@ -52,6 +53,7 @@ const emptyRow = (): CoverageRow => ({
 });
 
 const SyllabusCoverageSection = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { settings: ws } = useWebsiteSettings();
@@ -549,8 +551,8 @@ const SyllabusCoverageSection = () => {
                             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(r)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
-                              if (confirm(bn ? 'মুছে ফেলবেন?' : 'Delete this entry?')) deleteMutation.mutate(r.id);
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => {
+                              if ((await confirm({ description: bn ? 'মুছে ফেলবেন?' : 'Delete this entry?', variant: 'destructive' }))) deleteMutation.mutate(r.id);
                             }}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>

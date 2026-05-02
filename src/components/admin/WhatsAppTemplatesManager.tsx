@@ -17,6 +17,7 @@ import {
   Receipt, GraduationCap, CalendarX, ClipboardList, Bell, Sparkles,
   AsteriskSquare, X, GripVertical, AlertCircle,
 } from 'lucide-react';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type VarType = 'text' | 'number' | 'date' | 'currency';
 
@@ -90,6 +91,7 @@ const detectVars = (text: string) => {
 };
 
 const WhatsAppTemplatesManager = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -229,7 +231,7 @@ const WhatsAppTemplatesManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(bn ? 'এই টেমপ্লেট মুছে ফেলবেন?' : 'Delete this template?')) return;
+    if (!(await confirm({ description: bn ? 'এই টেমপ্লেট মুছে ফেলবেন?' : 'Delete this template?', variant: 'destructive' }))) return;
     const { error } = await supabase.from('whatsapp_templates').delete().eq('id', id);
     if (error) {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: error.message, variant: 'destructive' });

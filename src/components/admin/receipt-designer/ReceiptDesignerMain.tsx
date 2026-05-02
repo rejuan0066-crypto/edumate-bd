@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { buildSingleStudentPrintHtml, ReceiptData, ReceiptStyleConfig } from '@/components/fees/receiptPrintLayouts';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const DEFAULT_STYLE: ReceiptStyleConfig = {
   primaryColor: '#1a5c2e',
@@ -26,6 +27,7 @@ const DEFAULT_STYLE: ReceiptStyleConfig = {
 };
 
 const ReceiptDesignerMain = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { settings, isLoading, saveMutation, deleteMutation } = useReceiptSettings();
@@ -194,7 +196,7 @@ const ReceiptDesignerMain = () => {
           <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10"
             disabled={deleteMutation.isPending}
             onClick={async () => {
-              if (!confirm(bn ? 'ডিলিট করতে চান?' : 'Delete?')) return;
+              if (!(await confirm({ description: bn ? 'ডিলিট করতে চান?' : 'Delete?', variant: 'destructive' }))) return;
               try {
                 await deleteMutation.mutateAsync(selectedSettingId);
                 setSelectedSettingId('');

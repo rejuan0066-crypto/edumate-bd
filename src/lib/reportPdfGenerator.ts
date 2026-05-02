@@ -3,6 +3,7 @@
  * Opens HTML reports in a new window with embedded SutonnyOMJ font for Bengali.
  * User triggers browser "Save as PDF" via print dialog.
  */
+import { toast } from "sonner";
 
 export interface ReportSection {
   title_bn: string;
@@ -64,7 +65,7 @@ export const generateBilingualReport = (
 ) => {
   const win = window.open('', '_blank', 'width=1200,height=900');
   if (!win) {
-    alert('Popup blocked. Please allow popups to download the report.');
+    toast.error('Popup blocked. Please allow popups to download the report.');
     return;
   }
 
