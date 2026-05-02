@@ -83,9 +83,10 @@ export default function AdminEmailTemplates() {
   const [saving, setSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
-  // Session-level guard: max 5 test sends per browser tab session
-  const SESSION_MAX = 5;
+  // Session-level guard: limit configured via /admin/settings → Security tab (action='test_email_send')
+  const { max: SESSION_MAX, windowSeconds: SESSION_WINDOW, enabled: testLimitEnabled } = useRateLimitConfig("test_email_send", { max: 5, windowSeconds: 3600 });
   const [sessionAttempts, setSessionAttempts] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [edits, setEdits] = useState<Record<string, Partial<EmailTemplate>>>({});
 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
