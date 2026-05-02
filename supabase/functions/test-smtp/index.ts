@@ -2,6 +2,7 @@
 // Uses the same shared SMTP helper as send-welcome-email so issues are reproduced consistently.
 
 import { sendViaSMTP } from "../_shared/smtp.ts";
+import { requireAuth, unauthorized } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  // Admin-only: this endpoint connects to arbitrary host:port (SSRF surface) and tests credentials
+  const guard = await requireAuth(req, { roles: ['admin'] });
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
 
   try {
     const body = await req.json();
