@@ -69,11 +69,11 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('photos')
-        .getPublicUrl(fileName);
+      // Store as "<bucket>/<path>" so SecureImage / useSecureUrl can resolve a
+      // short-lived signed URL on demand. Avoids getPublicUrl on a private bucket.
+      const storageRef = `photos/${fileName}`;
 
-      onChange(publicUrl);
+      onChange(storageRef);
       setPreview(null);
       toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
     } catch (err: any) {
