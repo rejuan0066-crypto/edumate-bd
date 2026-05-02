@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth, unauthorized } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +16,10 @@ const PROMPTS: Record<string, string> = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // AUTHZ: any authenticated user can use bg removal
+  const guard = await requireAuth(req);
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
 
   try {
     const { image_base64, mode = "auto" } = await req.json();

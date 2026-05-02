@@ -63,6 +63,7 @@ const OnlineExamTake = () => {
   const [guestId, setGuestId] = useState('');
 
   const submittedRef = useRef(false);
+  const attemptTokenRef = useRef<string | null>(null);
 
   // Load exam
   const { data: exam, isLoading: examLoading } = useQuery({
@@ -108,6 +109,7 @@ const OnlineExamTake = () => {
       if (saved.attemptId && saved.expiresAt && new Date(saved.expiresAt).getTime() > Date.now()) {
         // Auto-resume
         setAttemptId(saved.attemptId);
+        attemptTokenRef.current = saved.attemptToken || null;
         setAnswers(saved.answers || {});
         setStage('taking');
       } else {
@@ -168,7 +170,7 @@ const OnlineExamTake = () => {
     const expiresAt = new Date(Date.now() + secondsLeft * 1000).toISOString();
     localStorage.setItem(
       STORAGE_KEY(examId),
-      JSON.stringify({ attemptId, answers, expiresAt })
+      JSON.stringify({ attemptId, attemptToken: attemptTokenRef.current, answers, expiresAt })
     );
   }, [answers, attemptId, examId, exam, secondsLeft, stage]);
 
@@ -180,12 +182,12 @@ const OnlineExamTake = () => {
         setTabSwitches((c) => {
           const next = c + 1;
           // Update server-side counter (best effort)
-          if (attemptId) {
-            supabase
-              .from('online_exam_attempts')
-              .update({ tab_switch_count: next })
-              .eq('id', attemptId)
-              .then(() => {});
+          if (attemptId && attemptTokenRef.current) {
+            supabase.rpc('rpc_update_exam_attempt', {
+              p_attempt_id: attemptId,
+              p_attempt_token: attemptTokenRef.current,
+              p_tab_switch_count: next,
+            }).then(() => {});
           }
           const limit = settings.tab_switch_limit ?? 3;
           if (settings.auto_submit_on_limit && next >= limit && !submittedRef.current) {
@@ -240,7 +242,7 @@ const OnlineExamTake = () => {
     const { data, error } = await supabase
       .from('online_exam_attempts')
       .insert(insertPayload)
-      .select('id')
+      .select('id, attempt_token')
       .single();
 
     if (error || !data) {
@@ -249,9 +251,10 @@ const OnlineExamTake = () => {
     }
 
     setAttemptId(data.id);
+    attemptTokenRef.current = (data as any).attempt_token || null;
     localStorage.setItem(
       STORAGE_KEY(examId),
-      JSON.stringify({ attemptId: data.id, answers: {}, expiresAt })
+      JSON.stringify({ attemptId: data.id, attemptToken: attemptTokenRef.current, answers: {}, expiresAt })
     );
     setStage('taking');
   };

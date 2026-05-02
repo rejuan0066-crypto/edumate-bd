@@ -5049,6 +5049,7 @@ export type Database = {
       }
       online_exam_attempts: {
         Row: {
+          attempt_token: string
           attempted_by_identifier: string | null
           attempted_by_name: string | null
           auto_graded_score: number
@@ -5076,6 +5077,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          attempt_token?: string
           attempted_by_identifier?: string | null
           attempted_by_name?: string | null
           auto_graded_score?: number
@@ -5103,6 +5105,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          attempt_token?: string
           attempted_by_identifier?: string | null
           attempted_by_name?: string | null
           auto_graded_score?: number
@@ -9610,6 +9613,29 @@ export type Database = {
           year: number
         }[]
       }
+      get_parent_messages: {
+        Args: { p_account_id: string }
+        Returns: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          parent_account_id: string | null
+          parent_thread_id: string | null
+          read_at: string | null
+          sender_name: string | null
+          sender_type: string
+          student_id: string | null
+          subject: string
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "parent_messages"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_password_protection_info: { Args: never; Returns: Json }
       get_public_tables: {
         Args: never
@@ -10119,6 +10145,42 @@ export type Database = {
       rotate_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
         Returns: string
+      }
+      rpc_finish_exam_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_parent_account_id?: string
+          p_student_account_id?: string
+        }
+        Returns: undefined
+      }
+      rpc_start_exam_attempt: {
+        Args: {
+          p_exam_id: string
+          p_parent_account_id?: string
+          p_student_account_id?: string
+          p_student_id: string
+        }
+        Returns: string
+      }
+      rpc_submit_exam_answer: {
+        Args: {
+          p_answer: Json
+          p_attempt_id: string
+          p_parent_account_id?: string
+          p_question_id: string
+          p_student_account_id?: string
+        }
+        Returns: undefined
+      }
+      rpc_update_exam_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_attempt_token: string
+          p_status?: string
+          p_tab_switch_count?: number
+        }
+        Returns: undefined
       }
       set_device_home_location: {
         Args: {

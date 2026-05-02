@@ -14,19 +14,46 @@ Deno.serve(async (req) => {
   let backupId: string | null = null;
 
   try {
-    // Determine trigger source (manual call passes user JWT; cron passes service role)
+    // AUTHZ: either a valid super_admin JWT (manual trigger) OR a matching
+    // cron secret header (scheduled trigger). Reject anything else.
     const authHeader = req.headers.get("authorization") || "";
+    const cronSecretHeader = req.headers.get("x-cron-secret") || "";
+    let CRON_SECRET = "";
+    try {
+      const { data: s } = await admin.from("app_settings").select("value").eq("key", "backup_cron_secret").maybeSingle();
+      if (s?.value) CRON_SECRET = String(s.value).replace(/^"|"$/g, "");
+    } catch { /* ignore */ }
     let triggeredBy: string | null = null;
     let backupType: "manual" | "daily" = "daily";
+    let authorized = false;
 
-    if (authHeader && !authHeader.includes(SERVICE_KEY)) {
+    if (CRON_SECRET && cronSecretHeader && cronSecretHeader === CRON_SECRET) {
+      authorized = true;
+      backupType = "daily";
+    } else if (authHeader.toLowerCase().startsWith("bearer ")) {
+      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
       try {
         const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-          global: { headers: { Authorization: authHeader } },
+          global: { headers: { Authorization: `Bearer ${token}` } },
         });
-        const { data: { user } } = await userClient.auth.getUser();
-        if (user) { triggeredBy = user.id; backupType = "manual"; }
-      } catch { /* ignore */ }
+        const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+        if (!claimsErr && claimsData?.claims?.sub) {
+          const uid = claimsData.claims.sub as string;
+          const { data: isSuper } = await admin.rpc("has_role", { _user_id: uid, _role: "super_admin" });
+          if (isSuper === true) {
+            authorized = true;
+            triggeredBy = uid;
+            backupType = "manual";
+          }
+        }
+      } catch { /* fall through */ }
+    }
+
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Create history row
