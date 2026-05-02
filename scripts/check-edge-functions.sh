@@ -546,6 +546,16 @@ if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
       "$fn" "$step" "$dur" "$lim" "$key"
   done
 fi
+if [ "${#BUNDLE_SIZES[@]}" -gt 0 ]; then
+  total_b=0; total_m=0; total_g=0
+  for row in "${BUNDLE_SIZES[@]}"; do
+    IFS='|' read -r _ bs ms gs <<<"$row"
+    total_b=$(( total_b + ${bs:-0} ))
+    total_m=$(( total_m + ${ms:-0} ))
+    total_g=$(( total_g + ${gs:-0} ))
+  done
+  echo "Bundle totals: $(human_bytes "$total_b") (gzip $(human_bytes "$total_g"), sourcemap $(human_bytes "$total_m"))"
+fi
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
