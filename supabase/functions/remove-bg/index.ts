@@ -17,6 +17,10 @@ const PROMPTS: Record<string, string> = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // AUTHZ: any authenticated user can use bg removal
+  const guard = await requireAuth(req);
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
+
   try {
     const { image_base64, mode = "auto" } = await req.json();
     if (!image_base64) {
