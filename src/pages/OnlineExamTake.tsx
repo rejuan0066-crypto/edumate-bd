@@ -87,7 +87,7 @@ const OnlineExamTake = () => {
     queryKey: ['online-exam-questions', examId, attemptId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('online_exam_questions')
+        .from('online_exam_questions_public' as any)
         .select('id, question_text, question_text_bn, question_type, options, marks, sort_order')
         .eq('exam_id', examId)
         .order('sort_order');
