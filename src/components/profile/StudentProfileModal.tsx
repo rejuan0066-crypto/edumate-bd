@@ -43,6 +43,17 @@ const StudentProfileModal = ({
   const [showWaiverDialog, setShowWaiverDialog] = useState(false);
   const [waiverForm, setWaiverForm] = useState({ fee_type_id: '', waiver_amount: '', reason: '' });
   const [duesSessionId, setDuesSessionId] = useState<string>('');
+  const { data: institution } = useInstitutionInfo();
+
+  const handlePrintProfile = () => {
+    printStudentProfile({
+      student,
+      bn,
+      institution: institution || {},
+      className: getClassName(student.class_id),
+      sessionName: getSessionName(student.session_id, student.admission_session),
+    });
+  };
 
   const { data: allSessions = [] } = useQuery({
     queryKey: ['profile-academic-sessions'],
