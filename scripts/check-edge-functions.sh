@@ -76,8 +76,17 @@ gate_log2="$TMP/_fmt.log"
 # the helper is in scope.
 
 # Per-step timeouts (seconds). Override via env to tune in CI.
-#   STEP_TIMEOUT       — wall-clock budget per individual step
-#   STEP_KILL_AFTER    — extra grace before SIGKILL after SIGTERM
+#   STEP_TIMEOUT       — default wall-clock budget per individual step
+#   STEP_KILL_AFTER    — default extra grace before SIGKILL after SIGTERM
+#
+# Per-step overrides via STEP_TIMEOUT_<KEY> / STEP_KILL_AFTER_<KEY>, where
+# <KEY> is derived from the step label (uppercased, non-alphanumerics → '_').
+# Examples that work today:
+#   STEP_TIMEOUT_DENO_CHECK=60     # "TypeScript compile (deno check)"
+#   STEP_TIMEOUT_DENO_BUNDLE=300   # "Bundle dry-run (deno bundle)"
+#   STEP_TIMEOUT_DENO_LINT=45      # "deno lint (Edge Functions rule set)"
+#   STEP_TIMEOUT_DENO_FMT=30       # "deno fmt --check"
+# A matching STEP_KILL_AFTER_<KEY> can override the grace period per step.
 STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
 STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
 # Steps slower than this (seconds) get a ⚠️ marker in CI logs.
@@ -89,15 +98,56 @@ if ! command -v timeout >/dev/null 2>&1; then
   exit 127
 fi
 
+# Derive an env-var-friendly key from a step label.
+# Prefers a parenthesised hint when present, otherwise the full label.
+#   "TypeScript compile (deno check)"     → "DENO_CHECK"
+#   "Bundle dry-run (deno bundle)"        → "DENO_BUNDLE"
+#   "deno lint (Edge Functions rule set)" → "EDGE_FUNCTIONS_RULE_SET"
+#   "deno fmt --check"                    → "DENO_FMT_CHECK"
+step_key() {
+  local label="$1"
+  local hint=""
+  if [[ "$label" =~ \(([^\)]+)\) ]]; then
+    hint="${BASH_REMATCH[1]}"
+  fi
+  local source="${hint:-$label}"
+  local key
+  key="$(printf '%s' "$source" \
+    | tr '[:lower:]' '[:upper:]' \
+    | sed -E 's/[^A-Z0-9]+/_/g; s/^_+//; s/_+$//')"
+  printf '%s' "$key"
+}
+
+# Look up a per-step env override by prefix (e.g. STEP_TIMEOUT_, STEP_KILL_AFTER_).
+# Falls back to the supplied default. Strips a trailing 's' if the user wrote
+# "60s" instead of "60".
+resolve_step_env() {
+  local prefix="$1" key="$2" default="$3"
+  local var="${prefix}${key}"
+  local val="${!var:-}"
+  if [ -z "$val" ]; then
+    printf '%s' "$default"
+    return
+  fi
+  printf '%s' "${val%s}"
+}
+
 run_step() {
   # run_step <label> <logfile> -- <cmd...>
   local label="$1"; shift
   local logfile="$1"; shift
   shift # discard "--"
   local rc=0
+  local key; key="$(step_key "$label")"
+  local step_to; step_to="$(resolve_step_env STEP_TIMEOUT_ "$key" "$STEP_TIMEOUT")"
+  local step_kill; step_kill="$(resolve_step_env STEP_KILL_AFTER_ "$key" "$STEP_KILL_AFTER")"
+  local override_tag=""
+  if [ "$step_to" != "$STEP_TIMEOUT" ] || [ "$step_kill" != "$STEP_KILL_AFTER" ]; then
+    override_tag=" (timeout=${step_to}s, kill+${step_kill}s via STEP_TIMEOUT_${key})"
+  fi
   # Use seconds resolution from `date +%s` (portable on macOS + Linux CI).
   local started; started="$(date +%s)"
-  timeout --kill-after="${STEP_KILL_AFTER}s" "${STEP_TIMEOUT}s" "$@" \
+  timeout --kill-after="${step_kill}s" "${step_to}s" "$@" \
     >"$logfile" 2>&1 || rc=$?
   local dur=$(( $(date +%s) - started ))
   TOTAL_STEP_SECONDS=$(( TOTAL_STEP_SECONDS + dur ))
@@ -105,17 +155,18 @@ run_step() {
   if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
     slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
   fi
-  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}")
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label  [${dur}s]${slow}"
+    echo "  ✓ $label  [${dur}s]${slow}${override_tag}"
     return 0
   fi
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-    echo "  ✗ $label — TIMEOUT after ${STEP_TIMEOUT}s (exit $rc)  [${dur}s]"
-    echo "      Hint: increase STEP_TIMEOUT, or inspect the function for"
-    echo "      hangs (network fetches at import time, infinite loops, etc.)"
+    echo "  ✗ $label — TIMEOUT after ${step_to}s (exit $rc)  [${dur}s]${override_tag}"
+    echo "      Hint: increase STEP_TIMEOUT_${key} (or STEP_TIMEOUT), or"
+    echo "      inspect the function for hangs (network fetches at import"
+    echo "      time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}"
+    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}${override_tag}"
   fi
   sed 's/^/      /' "$logfile"
   return 1
@@ -172,16 +223,18 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo
   echo "## Step results"
   echo
-  echo "| Function | Step | Exit | Duration | Log |"
-  echo "|---|---|---|---|---|"
+  echo "| Function | Step | Exit | Duration | Timeout | Env key | Log |"
+  echo "|---|---|---|---|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step rc dur logf <<<"$row"
+    IFS='|' read -r fn step rc dur logf step_to key <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
     # Strip trailing 's' to compare numerically
     secs="${dur%s}"
     marker=""
     if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
-    echo "| \`$fn\` | $step | $status | ${dur}${marker} | \`$logf\` |"
+    to_cell="${step_to:-$STEP_TIMEOUT}s"
+    if [ "${step_to:-$STEP_TIMEOUT}" != "$STEP_TIMEOUT" ]; then to_cell="${to_cell} *override*"; fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
   done
   echo
   echo "## Slowest steps (top 5)"
@@ -189,7 +242,7 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "| Duration | Function | Step |"
   echo "|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
@@ -223,7 +276,7 @@ echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRES
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
     printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
