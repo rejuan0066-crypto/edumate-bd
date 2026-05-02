@@ -282,6 +282,7 @@ const SortableLiveField = ({ field, bn, openEditField, deleteField }: any) => {
 };
 
 const AdminFormBuilder = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
