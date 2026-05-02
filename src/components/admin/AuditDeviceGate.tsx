@@ -33,6 +33,8 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
   const qc = useQueryClient();
   const location = useLocation();
   const [copied, setCopied] = useState(false);
+  const reStatus = useDeviceReregisterStatus();
+  const reMut = useRequestDeviceReregistration();
 
   if (isLoading) {
     return (
