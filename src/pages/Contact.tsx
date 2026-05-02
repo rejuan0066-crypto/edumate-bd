@@ -113,9 +113,9 @@ const Contact = () => {
             )}
 
             {/* Map */}
-            {settings.contact_map_embed && (
+            {safeMapEmbed && (
               <div className="card-elevated overflow-hidden rounded-xl">
-                <div dangerouslySetInnerHTML={{ __html: settings.contact_map_embed }} className="w-full [&>iframe]:w-full [&>iframe]:h-[250px] [&>iframe]:border-0" />
+                <div dangerouslySetInnerHTML={{ __html: safeMapEmbed }} className="w-full [&>iframe]:w-full [&>iframe]:h-[250px] [&>iframe]:border-0" />
               </div>
             )}
           </div>
