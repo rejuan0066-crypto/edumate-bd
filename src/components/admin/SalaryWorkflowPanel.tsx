@@ -43,7 +43,6 @@ interface Props {
 const STAGE_ORDER: Stage[] = ['draft', 'pending_verification', 'verified', 'pending_approval', 'approved', 'paid'];
 
 const STAGE_LABEL = (s: Stage, bn: boolean): string => {
-  const confirm = useConfirm();
   const map: Record<Stage, [string, string]> = {
     draft: ['খসড়া (প্রস্তুতকৃত)', 'Draft (Prepared)'],
     pending_verification: ['যাচাইয়ের অপেক্ষায়', 'Pending Verification'],
