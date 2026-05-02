@@ -1038,15 +1038,22 @@ const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountI
   const [paySubmitting, setPaySubmitting] = useState(false);
 
   const { data: payments = [] } = useQuery({
-    queryKey: ['parent-fees', studentUuid],
+    queryKey: ['parent-fees', studentUuid, accountId],
+    enabled: !!studentUuid && !!accountId,
     queryFn: async () => {
-      const { data } = await supabase
-        .from('fee_payments')
-        .select('*, fee_types(name, name_bn)')
-        .eq('student_id', studentUuid)
-        .is('deleted_at', null)
-        .order('paid_at', { ascending: false, nullsFirst: false });
-      return data || [];
+      const { data, error } = await (supabase as any).rpc('get_parent_fee_payments', {
+        _parent_account_id: accountId,
+        _student_uuid: studentUuid,
+      });
+      if (error) {
+        console.error('parent fee payments error', error);
+        return [];
+      }
+      // Reshape to match the previous join shape so downstream UI keeps working
+      return (data || []).map((r: any) => ({
+        ...r,
+        fee_types: { name: r.fee_type_name, name_bn: r.fee_type_name_bn },
+      }));
     },
   });
 
