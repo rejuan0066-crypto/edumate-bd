@@ -9,9 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Mail, Save, Eye, Code2, RotateCcw, Loader2, Send, History, Plus, Copy, Trash2, BookOpen, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { useRateLimitConfig } from "@/hooks/useRateLimitConfig";
 
 type EmailTemplate = {
   id: string;
