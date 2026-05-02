@@ -170,6 +170,19 @@ STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
 STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
 # Steps slower than this (seconds) get a ⚠️ marker in CI logs.
 SLOW_STEP_THRESHOLD="${SLOW_STEP_THRESHOLD:-30}"
+
+# ── Hard-timeout alert thresholds ─────────────────────────────────────────
+# A step that *succeeds* but exceeds STEP_HARD_LIMIT (or its per-step override
+# STEP_HARD_LIMIT_<KEY>) is recorded as a hard-timeout alert. By default any
+# alert fails CI; set HARD_LIMIT_FAIL_CI=0 to demote alerts to warnings.
+# Set STEP_HARD_LIMIT=0 (or a per-step 0) to disable the alert for that scope.
+#   STEP_HARD_LIMIT=90                   # global ceiling (seconds)
+#   STEP_HARD_LIMIT_DENO_BUNDLE=180      # higher ceiling for slow bundles
+#   STEP_HARD_LIMIT_DENO_FMT=15          # tighter ceiling for fast steps
+#   HARD_LIMIT_FAIL_CI=0                 # warn instead of failing CI
+STEP_HARD_LIMIT="${STEP_HARD_LIMIT:-0}"
+HARD_LIMIT_FAIL_CI="${HARD_LIMIT_FAIL_CI:-1}"
+HARD_LIMIT_ALERTS=()
 TOTAL_STEP_SECONDS=0
 
 if ! command -v timeout >/dev/null 2>&1; then
@@ -234,9 +247,19 @@ run_step() {
   if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
     slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
   fi
-  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}")
+  local step_hard; step_hard="$(resolve_step_env STEP_HARD_LIMIT_ "$key" "$STEP_HARD_LIMIT")"
+  local hard_breached=0
+  if [ "${step_hard:-0}" -gt 0 ] && [ "$dur" -gt "$step_hard" ]; then
+    hard_breached=1
+    HARD_LIMIT_ALERTS+=("${LAST_FN:-_gate}|$label|${dur}|${step_hard}|${key}")
+  fi
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}|${step_hard}|${hard_breached}")
+  local hard_tag=""
+  if [ "$hard_breached" -eq 1 ]; then
+    hard_tag=" 🚨 HARD LIMIT (${dur}s > ${step_hard}s, STEP_HARD_LIMIT_${key})"
+  fi
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label  [${dur}s]${slow}${override_tag}"
+    echo "  ✓ $label  [${dur}s]${slow}${override_tag}${hard_tag}"
     return 0
   fi
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
@@ -245,7 +268,7 @@ run_step() {
     echo "      inspect the function for hangs (network fetches at import"
     echo "      time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}${override_tag}"
+    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}${override_tag}${hard_tag}"
   fi
   sed 's/^/      /' "$logfile"
   return 1
@@ -340,22 +363,31 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
   echo "- **Total step time:** ${TOTAL_STEP_SECONDS}s"
   echo "- **Slow threshold:** ${SLOW_STEP_THRESHOLD}s"
+  echo "- **Hard-limit default:** $([ "${STEP_HARD_LIMIT:-0}" -gt 0 ] && echo "${STEP_HARD_LIMIT}s" || echo 'disabled')"
+  echo "- **Hard-limit fails CI:** $([ "$HARD_LIMIT_FAIL_CI" = "1" ] && echo 'yes' || echo 'no (warn only)')"
+  echo "- **Hard-limit alerts:** ${#HARD_LIMIT_ALERTS[@]}"
   echo "- **Cache:** ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
   echo
   echo "## Step results"
   echo
-  echo "| Function | Step | Exit | Duration | Timeout | Env key | Log |"
-  echo "|---|---|---|---|---|---|---|"
+  echo "| Function | Step | Exit | Duration | Timeout | Hard limit | Env key | Log |"
+  echo "|---|---|---|---|---|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step rc dur logf step_to key <<<"$row"
+    IFS='|' read -r fn step rc dur logf step_to key step_hard hard_breached <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
-    # Strip trailing 's' to compare numerically
     secs="${dur%s}"
     marker=""
     if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
+    if [ "${hard_breached:-0}" = "1" ]; then marker="${marker} 🚨"; fi
     to_cell="${step_to:-$STEP_TIMEOUT}s"
     if [ "${step_to:-$STEP_TIMEOUT}" != "$STEP_TIMEOUT" ]; then to_cell="${to_cell} *override*"; fi
-    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
+    if [ "${step_hard:-0}" -gt 0 ]; then
+      hard_cell="${step_hard}s"
+      [ "${hard_breached:-0}" = "1" ] && hard_cell="**${hard_cell} ❌**"
+    else
+      hard_cell="—"
+    fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | ${hard_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
   done
   echo
   echo "## Slowest steps (top 5)"
@@ -363,11 +395,22 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "| Duration | Function | Step |"
   echo "|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
   done
+  if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
+    echo
+    echo "## 🚨 Hard-timeout alerts"
+    echo
+    echo "| Function | Step | Duration | Limit | Override env |"
+    echo "|---|---|---|---|---|"
+    for row in "${HARD_LIMIT_ALERTS[@]}"; do
+      IFS='|' read -r fn step dur lim key <<<"$row"
+      echo "| \`$fn\` | $step | ${dur}s | ${lim}s | \`STEP_HARD_LIMIT_${key}\` |"
+    done
+  fi
   if [ "${#FAIL[@]}" -gt 0 ]; then
     echo
     echo "## Failed functions"
@@ -385,6 +428,19 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '"failed":%d,' "${#FAIL[@]}"
   printf '"total_step_seconds":%d,' "$TOTAL_STEP_SECONDS"
   printf '"slow_threshold_seconds":%d,' "$SLOW_STEP_THRESHOLD"
+  printf '"hard_limit_default_seconds":%d,' "${STEP_HARD_LIMIT:-0}"
+  printf '"hard_limit_fail_ci":%s,' "$([ "$HARD_LIMIT_FAIL_CI" = "1" ] && echo true || echo false)"
+  printf '"hard_limit_alert_count":%d,' "${#HARD_LIMIT_ALERTS[@]}"
+  printf '"hard_limit_alerts":['
+  first=1
+  for row in "${HARD_LIMIT_ALERTS[@]}"; do
+    IFS='|' read -r fn step dur lim key <<<"$row"
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    printf '{"function":"%s","step":"%s","duration_seconds":%d,"limit_seconds":%d,"override_env":"STEP_HARD_LIMIT_%s"}' \
+      "$fn" "$step" "$dur" "$lim" "$key"
+  done
+  printf '],'
   printf '"gate_ok":%s,' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '"cache_hits":%d,"cache_misses":%d,"cache_skips":%d,"cache_disabled":%s' \
     "$CACHE_HITS" "$CACHE_MISSES" "$CACHE_SKIPS" \
@@ -398,10 +454,18 @@ echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
 echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRESHOLD}s)"
 echo "Cache: ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
+if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
+  echo "🚨 Hard-timeout alerts: ${#HARD_LIMIT_ALERTS[@]}"
+  for row in "${HARD_LIMIT_ALERTS[@]}"; do
+    IFS='|' read -r fn step dur lim key <<<"$row"
+    printf '  - %s — %s: %ss > %ss limit (STEP_HARD_LIMIT_%s)\n' \
+      "$fn" "$step" "$dur" "$lim" "$key"
+  done
+fi
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
     printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
@@ -423,5 +487,10 @@ if [ "$GATE_OK" -ne 1 ]; then
 fi
 if [ "${#FAIL[@]}" -gt 0 ]; then
   exit 1
+fi
+if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ] && [ "$HARD_LIMIT_FAIL_CI" = "1" ]; then
+  echo "Failing CI: ${#HARD_LIMIT_ALERTS[@]} step(s) exceeded their hard timeout limit. ❌"
+  echo "Set HARD_LIMIT_FAIL_CI=0 to demote to warnings, or raise STEP_HARD_LIMIT_<KEY>."
+  exit 2
 fi
 echo "All edge functions lint, format, type-check, and bundle cleanly. ✅"
