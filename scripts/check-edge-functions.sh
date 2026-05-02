@@ -57,6 +57,85 @@ SUMMARY_MD="$REPORT_DIR/summary.md"
 SUMMARY_JSON="$REPORT_DIR/summary.json"
 RUN_STARTED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+# ── Step-level content-hash cache ──────────────────────────────────────────
+# Persists "<step-id>:<input-hash>" markers across runs. When a step's input
+# hash matches a previously-recorded successful run AND the Deno module cache
+# (DENO_DIR) is warm, the step is skipped — saving the cost of re-running
+# `deno check` / `deno bundle` when nothing has changed.
+#
+# Cache invalidates automatically when ANY of these change:
+#   - source files under the function directory
+#   - supabase/functions/deno.json (shared compiler/lint/fmt config)
+#   - supabase/functions/deno.lock (if present)
+#   - deno --version (toolchain bump)
+#   - this script's own contents (so a logic change re-runs everything)
+#
+# Disable with SKIP_CACHE=1 or by passing --no-cache as the first argument.
+CACHE_DIR="${EDGE_CHECK_CACHE_DIR:-$ROOT/.edge-function-cache}"
+SKIP_CACHE="${SKIP_CACHE:-0}"
+if [ "${1:-}" = "--no-cache" ]; then
+  SKIP_CACHE=1
+  shift
+fi
+mkdir -p "$CACHE_DIR"
+CACHE_HITS=0
+CACHE_MISSES=0
+CACHE_SKIPS=0
+
+# Pick a portable sha256 helper (sha256sum on Linux, shasum -a 256 on macOS).
+if command -v sha256sum >/dev/null 2>&1; then
+  _sha256() { sha256sum | awk '{print $1}'; }
+elif command -v shasum >/dev/null 2>&1; then
+  _sha256() { shasum -a 256 | awk '{print $1}'; }
+else
+  echo "❌ Neither sha256sum nor shasum found; cannot compute cache keys." >&2
+  echo "   Re-run with SKIP_CACHE=1 to bypass." >&2
+  exit 127
+fi
+
+# Hash a list of files (missing files contribute a stable empty marker so
+# the absence of e.g. deno.lock is also part of the cache key).
+_hash_files() {
+  local f
+  for f in "$@"; do
+    if [ -f "$f" ]; then
+      printf '%s\0' "$f"
+      cat "$f"
+      printf '\0'
+    else
+      printf '%s\0<missing>\0' "$f"
+    fi
+  done | _sha256
+}
+
+# True when the Deno module cache directory contains data (i.e. deps cached).
+_deno_cache_warm() {
+  local dir="${DENO_DIR:-$HOME/.cache/deno}"
+  [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null || true)" ]
+}
+
+DENO_VERSION_HASH="$(deno --version 2>/dev/null | _sha256)"
+SCRIPT_HASH="$(_hash_files "$0")"
+SHARED_HASH="$(_hash_files "$DENO_CFG" "$FN_DIR/deno.lock")"
+
+# Compute the input hash for a function (recursively over its directory),
+# combined with the shared, toolchain, and script hashes.
+function_input_hash() {
+  local fn_dir="$1"
+  local src_hash
+  # Sort for deterministic order across filesystems.
+  src_hash="$(find "$fn_dir" -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.mjs' -o -name '*.json' \) -print0 \
+    | sort -z \
+    | xargs -0 cat 2>/dev/null \
+    | _sha256)"
+  printf '%s' "${src_hash}|${SHARED_HASH}|${DENO_VERSION_HASH}|${SCRIPT_HASH}" | _sha256
+}
+
+# Cache key file path for a given function + step id.
+cache_marker() {
+  printf '%s/%s.%s.hash' "$CACHE_DIR" "$1" "$2"
+}
+
 DENO_CFG="$FN_DIR/deno.json"
 CFG_ARGS=()
 if [ -f "$DENO_CFG" ]; then
