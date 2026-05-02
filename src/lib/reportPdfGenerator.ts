@@ -3,6 +3,7 @@
  * Opens HTML reports in a new window with embedded SutonnyOMJ font for Bengali.
  * User triggers browser "Save as PDF" via print dialog.
  */
+import { toast } from "sonner";
 
 export interface ReportSection {
   title_bn: string;
