@@ -26,6 +26,7 @@ const AdminStudents = () => {
   const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/students');
   const bn = language === 'bn';
+  const { data: institution } = useInstitutionInfo();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showDetail, setShowDetail] = useState<any>(null);
