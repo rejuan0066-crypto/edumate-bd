@@ -252,7 +252,7 @@ const DonationPage = () => {
           callback_url: window.location.origin + '/donation?status=success',
         },
       });
-      if (error) throw new Error(bn ? 'পেমেন্ট গেটওয়ে ত্রুটি' : 'Payment gateway error');
+      if (error) throw new Error(t('gatewayError'));
 
       // Pre-record pending donor row so admin sees it
       await supabase.from('donors').insert({
