@@ -183,11 +183,7 @@ const DonationPage = () => {
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const emailTrimmed = form.email.trim();
   const emailFormatValid = emailTrimmed === '' || EMAIL_RE.test(emailTrimmed);
-  const emailError = !emailFormatValid
-    ? bn
-      ? 'সঠিক ইমেইল ঠিকানা দিন (যেমন: name@example.com)'
-      : 'Please enter a valid email address (e.g. name@example.com)'
-    : '';
+  const emailError = !emailFormatValid ? t('emailInvalid') : '';
 
   // Phone validation:
   //  - Bangladeshi mobile: 11 digits starting with 01[3-9] (e.g. 017XXXXXXXX)
@@ -203,9 +199,7 @@ const DonationPage = () => {
   const phoneError = phoneRaw === ''
     ? ''
     : !phoneFormatValid
-      ? bn
-        ? 'সঠিক মোবাইল নম্বর দিন (যেমন: 01712345678 অথবা +8801712345678)'
-        : 'Enter a valid mobile number (e.g. 01712345678 or +8801712345678)'
+      ? t('phoneInvalid')
       : '';
 
   const step1Valid =
