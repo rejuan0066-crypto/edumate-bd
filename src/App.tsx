@@ -421,6 +421,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </BrowserRouter>
+              </ConfirmProvider>
             </TooltipProvider>
             </BijoyProvider>
           </ThemeProvider>
