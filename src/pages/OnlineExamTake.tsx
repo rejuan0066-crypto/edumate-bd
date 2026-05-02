@@ -63,6 +63,7 @@ const OnlineExamTake = () => {
   const [guestId, setGuestId] = useState('');
 
   const submittedRef = useRef(false);
+  const attemptTokenRef = useRef<string | null>(null);
 
   // Load exam
   const { data: exam, isLoading: examLoading } = useQuery({
