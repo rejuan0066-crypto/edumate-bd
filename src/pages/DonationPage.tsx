@@ -368,24 +368,13 @@ const DonationPage = () => {
       setIsDone(true);
 
       if (verified) {
-        toast.success(bn ? 'ট্রানজেকশন যাচাই সম্পন্ন!' : 'Transaction verified!');
+        toast.success(t('trxVerified'));
       } else if (rateLimited) {
         const mins = retryAfter ? Math.ceil(retryAfter / 60) : 10;
-        toast.error(
-          bn
-            ? `অনেকবার ভুল TrxID — ${mins} মিনিট পর আবার চেষ্টা করুন। জমাটি pending হিসেবে রইল ও অ্যাডমিনকে জানানো হয়েছে।`
-            : `Too many wrong TrxID attempts — try again in ${mins} min. Saved as pending; admin notified.`,
-          { duration: 6000 },
-        );
+        toast.error(t('trxRateLimited', { mins }), { duration: 6000 });
       } else {
         toast.warning(
-          bn
-            ? `TrxID মিল হয়নি — pending হিসেবে রইল, অ্যাডমিন যাচাই করবেন।${
-                remaining !== null ? ` (বাকি চেষ্টা: ${remaining})` : ''
-              }`
-            : `TrxID did not match — saved as pending for admin review.${
-                remaining !== null ? ` (Attempts left: ${remaining})` : ''
-              }`,
+          t('trxMismatch', remaining !== null ? { remaining } : {}),
           { duration: 6000 },
         );
       }
