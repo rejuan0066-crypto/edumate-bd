@@ -100,7 +100,7 @@ const ParentPaymentReceipt = () => {
       let student: ReceiptData['student'] = null;
       if (req.student_uuid) {
         const { data: s } = await supabase.functions.invoke('parent-student-info', {
-          body: { account_id: session.accountId, student_uuid: req.student_uuid },
+          body: { account_id: session.accountId, student_uuid: req.student_uuid, session_token: session.sessionToken },
         });
         student = (s as any)?.student ?? null;
       }

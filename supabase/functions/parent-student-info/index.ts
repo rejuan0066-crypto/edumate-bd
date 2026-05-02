@@ -3,6 +3,7 @@
 //   - { account_id, student_uuid } -> returns single student detail
 //   - { account_id, list: true }   -> returns list of all linked students (lite info)
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { requireParentSession } from '../_shared/cron-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,8 +25,12 @@ function jsonResp(data: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
-    const { account_id, student_uuid, list } = await req.json();
+    const { account_id, student_uuid, list, session_token } = await req.json();
     if (!account_id) return jsonResp({ error: 'Missing account_id' }, 400);
+
+    // AUTHZ: validate parent session token
+    const sessionOk = await requireParentSession(account_id, session_token);
+    if (!sessionOk) return jsonResp({ error: 'Unauthorized: invalid session' }, 401);
 
     // Verify the parent account is approved
     const { data: acc } = await supabase

@@ -5462,6 +5462,8 @@ export type Database = {
           password_hash: string
           phone: string | null
           rejection_reason: string | null
+          session_expires_at: string | null
+          session_token: string | null
           status: string
           student_dob: string
           student_id: string
@@ -5482,6 +5484,8 @@ export type Database = {
           password_hash: string
           phone?: string | null
           rejection_reason?: string | null
+          session_expires_at?: string | null
+          session_token?: string | null
           status?: string
           student_dob: string
           student_id: string
@@ -5502,6 +5506,8 @@ export type Database = {
           password_hash?: string
           phone?: string | null
           rejection_reason?: string | null
+          session_expires_at?: string | null
+          session_token?: string | null
           status?: string
           student_dob?: string
           student_id?: string
@@ -10142,6 +10148,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rotate_parent_session: { Args: { p_account_id: string }; Returns: string }
       rotate_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
         Returns: string
@@ -10292,6 +10299,10 @@ export type Database = {
           _village: string
         }
         Returns: Json
+      }
+      validate_parent_session: {
+        Args: { p_account_id: string; p_session_token: string }
+        Returns: boolean
       }
       validate_password_strength: {
         Args: { p_password: string }

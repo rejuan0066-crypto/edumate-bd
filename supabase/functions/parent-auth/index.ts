@@ -246,8 +246,18 @@ Deno.serve(async (req) => {
         .update({ last_login_at: new Date().toISOString() })
         .eq('id', account.id);
 
+      // Issue a fresh session token (30-day TTL)
+      let session_token: string | null = null;
+      try {
+        const { data: tok } = await supabase.rpc('rotate_parent_session', { p_account_id: account.id });
+        session_token = (tok as string) || null;
+      } catch (e) {
+        console.warn('rotate_parent_session failed:', e);
+      }
+
       return json({
         success: true,
+        session_token,
         account: {
           id: account.id,
           email: account.email,
