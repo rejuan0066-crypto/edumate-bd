@@ -109,6 +109,7 @@ const OnlineExamTake = () => {
       if (saved.attemptId && saved.expiresAt && new Date(saved.expiresAt).getTime() > Date.now()) {
         // Auto-resume
         setAttemptId(saved.attemptId);
+        attemptTokenRef.current = saved.attemptToken || null;
         setAnswers(saved.answers || {});
         setStage('taking');
       } else {
