@@ -80,13 +80,57 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
   if (!data?.ok) {
     const deviceId = getDeviceId();
     const supportPhone = (inst?.phone ?? '').replace(/[^\d+]/g, '');
+    const supportEmail = (inst?.email ?? '').trim();
     const path = location.pathname;
+    const staffName = (user?.user_metadata as any)?.full_name || user?.email || 'Staff';
+    const loc = formatLocation(geo);
+    const ipStr = geo?.ip || 'Unknown IP';
+
     const supportMsg = bn
-      ? `আস-সালামু আলাইকুম,\nআমার ডিভাইস আইডি: ${deviceId}\nআমি ${path} অডিট পেজটি এক্সেস করতে পারছি না। অনুগ্রহ করে আমার ডিভাইসটি অনুমোদন করুন।`
-      : `Assalamu Alaikum,\nMy device ID: ${deviceId}\nI cannot access the ${path} audit page. Please approve my device.`;
+      ? `আস-সালামু আলাইকুম,\nআমার ডিভাইস আইডি: ${deviceId}\nঅবস্থান: ${loc}\nIP: ${ipStr}\nআমি ${path} অডিট পেজটি এক্সেস করতে পারছি না। অনুগ্রহ করে আমার ডিভাইসটি অনুমোদন করুন।`
+      : `Assalamu Alaikum,\nMy device ID: ${deviceId}\nLocation: ${loc}\nIP: ${ipStr}\nI cannot access the ${path} audit page. Please approve my device.`;
+
+    const emailSubject = `Device Authorization Request - ${staffName}`;
+    const emailBody = `Hi Admin, I cannot access the audit routes. Here are my details:\n\nDevice ID: ${deviceId}\nLocation: ${loc}\nIP: ${ipStr}\nPath: ${path}`;
+    const smsBody = `Security Alert: Access Denied. ID: ${deviceId}. Loc: ${loc}. Please authorize.`;
+
     const waUrl = supportPhone
       ? `https://wa.me/${supportPhone.replace(/^\+/, '')}?text=${encodeURIComponent(supportMsg)}`
       : null;
+    const mailUrl = supportEmail
+      ? `mailto:${supportEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+      : null;
+    const smsUrl = supportPhone
+      ? `sms:${supportPhone}?&body=${encodeURIComponent(smsBody)}`
+      : null;
+
+    const openWhatsApp = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (!waUrl) {
+        toast.error(bn ? 'হোয়াটসঅ্যাপ নম্বর কনফিগার করা নেই' : 'WhatsApp number not configured');
+        return;
+      }
+      // Open in new tab; if WhatsApp is not installed wa.me falls back to web,
+      // but on some devices the popup may be blocked or fail to load.
+      const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
+      // Detect failure after a short delay
+      window.setTimeout(() => {
+        try {
+          if (!w || w.closed || typeof w.closed === 'undefined') {
+            toast.error(
+              bn ? 'WhatsApp খোলা যায়নি। ইমেইল বা SMS ব্যবহার করুন।'
+                 : 'WhatsApp not found. Try Email or SMS instead.',
+            );
+          }
+        } catch {
+          toast.error(
+            bn ? 'WhatsApp খোলা যায়নি। ইমেইল বা SMS ব্যবহার করুন।'
+               : 'WhatsApp not found. Try Email or SMS instead.',
+          );
+        }
+      }, 1500);
+    };
+
 
     const handleCopy = async () => {
       try {
