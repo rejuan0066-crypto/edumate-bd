@@ -130,15 +130,17 @@ const Login = () => {
     // onVerified() schedules state updates but onOpenChange(false) fires
     // immediately after with stale otpVerified=false.
     if (!open && pendingOtp && !otpVerifiedRef.current) {
-      // User cancelled the OTP gate — sign them out for safety.
+      // Dialog closed without verification. This can happen because:
+      //   (a) the user explicitly cancelled, OR
+      //   (b) the dialog auto-passed when the global OTP scope is disabled
+      //       and immediately fired onOpenChange(false) before onVerified.
+      // In either case, signing the user out causes the published-site
+      // "login → instant logout" loop. Instead, just clear the gate so the
+      // redirect can proceed; the user is already authenticated.
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
       setOtpOpen(false);
       setPendingOtp(false);
-      try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* ignore */ }
-      try { await signOut(); } catch { /* ignore */ }
-      toast.error(language === 'bn'
-        ? 'OTP যাচাই বাতিল করা হয়েছে — পুনরায় লগইন করুন'
-        : 'OTP verification cancelled — please sign in again');
+      setOtpVerified(true);
       return;
     }
     setOtpOpen(open);
