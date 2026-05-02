@@ -137,6 +137,7 @@ import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
 import AdminDonorsRoleAudit from "./pages/admin/AdminDonorsRoleAudit";
+import AdminAuditDeviceAllowlist from "./pages/admin/AdminAuditDeviceAllowlist";
 import AdminVerifiedPaymentsRoleAudit from "./pages/admin/AdminVerifiedPaymentsRoleAudit";
 import AdminComplaintsRoleAudit from "./pages/admin/AdminComplaintsRoleAudit";
 import AdminReceiptsRoleAudit from "./pages/admin/AdminReceiptsRoleAudit";
@@ -377,6 +378,7 @@ const App = () => (
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
                     <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
                     <Route path="donors-role-audit" element={<AdminDonorsRoleAudit />} />
+                    <Route path="audit-device-allowlist" element={<AdminAuditDeviceAllowlist />} />
                     <Route path="verified-payments-role-audit" element={<AdminVerifiedPaymentsRoleAudit />} />
                     <Route path="complaints-role-audit" element={<AdminComplaintsRoleAudit />} />
                     <Route path="receipts-role-audit" element={<AdminReceiptsRoleAudit />} />

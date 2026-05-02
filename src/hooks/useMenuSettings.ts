@@ -136,6 +136,7 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'complaint-fields', path: '/admin/complaints/fields', label_bn: 'অভিযোগ ফিল্ড সেটিংস', label_en: 'Complaint Fields', icon: 'ListChecks', visible: true, sort_order: 4 },
     { id: 'parent-signup-fields', path: '/admin/parent-signup-fields', label_bn: 'অভিভাবক সাইনআপ ফিল্ড', label_en: 'Parent Signup Fields', icon: 'UserPlus', visible: true, sort_order: 5 },
     { id: 'donors-role-audit', path: '/admin/donors-role-audit', label_bn: 'দাতা মডিউল রোল অডিট', label_en: 'Donors Role Audit', icon: 'ShieldCheck', visible: true, sort_order: 6 },
+    { id: 'audit-device-allowlist', path: '/admin/audit-device-allowlist', label_bn: 'অডিট ডিভাইস অ্যালাউলিস্ট', label_en: 'Audit Device Allowlist', icon: 'ShieldCheck', visible: true, sort_order: 10 },
     { id: 'verified-payments-role-audit', path: '/admin/verified-payments-role-audit', label_bn: 'ভেরিফায়েড পেমেন্ট রোল অডিট', label_en: 'Verified Payments Role Audit', icon: 'ShieldCheck', visible: true, sort_order: 7 },
     { id: 'complaints-role-audit', path: '/admin/complaints-role-audit', label_bn: 'অভিযোগ রোল অডিট', label_en: 'Complaints Role Audit', icon: 'ShieldCheck', visible: true, sort_order: 8 },
     { id: 'receipts-role-audit', path: '/admin/receipts-role-audit', label_bn: 'রসিদ রোল অডিট', label_en: 'Receipts Role Audit', icon: 'ShieldCheck', visible: true, sort_order: 9 },
