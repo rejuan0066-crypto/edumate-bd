@@ -698,7 +698,7 @@ const ParentDashboard = ({
     queryKey: ['parent-linked-students', session.accountId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('parent-student-info', {
-        body: { account_id: session.accountId, list: true },
+        body: { account_id: session.accountId, list: true, session_token: session.sessionToken },
       });
       if (error) throw error;
       return (data?.students || []) as any[];
@@ -720,7 +720,7 @@ const ParentDashboard = ({
     queryKey: ['parent-student', activeUuid, session.accountId],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('parent-student-info', {
-        body: { account_id: session.accountId, student_uuid: activeUuid },
+        body: { account_id: session.accountId, student_uuid: activeUuid, session_token: session.sessionToken },
       });
       if (error) throw error;
       return data?.student ?? null;
@@ -813,7 +813,7 @@ const ParentDashboard = ({
           <ResultsTab studentUuid={activeUuid} bn={bn} />
         </TabsContent>
         <TabsContent value="fees">
-          <FeesTab studentUuid={activeUuid} accountId={session.accountId!} bn={bn} />
+          <FeesTab studentUuid={activeUuid} accountId={session.accountId!} sessionToken={session.sessionToken} bn={bn} />
         </TabsContent>
         <TabsContent value="routine">
           <RoutineTab student={student} bn={bn} />
@@ -1027,7 +1027,7 @@ const ResultsTab = ({ studentUuid, bn }: { studentUuid: string; bn: boolean }) =
 };
 
 // ===== Fees Tab =====
-const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountId: string; bn: boolean }) => {
+const FeesTab = ({ studentUuid, accountId, sessionToken, bn }: { studentUuid: string; accountId: string; sessionToken?: string; bn: boolean }) => {
   const { toast } = useToast();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -1102,6 +1102,7 @@ const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountI
           student_uuid: studentUuid,
           amount: amt,
           return_url: window.location.href,
+          session_token: sessionToken,
         },
       });
       if (error || data?.error) {
@@ -1138,6 +1139,7 @@ const FeesTab = ({ studentUuid, accountId, bn }: { studentUuid: string; accountI
           trx_id: payTrxId.trim(),
           sender_phone: paySender.trim() || undefined,
           note: payNote.trim() || undefined,
+          session_token: sessionToken,
         },
       });
       if (error || data?.error) {
