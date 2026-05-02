@@ -307,14 +307,17 @@ for f in "${TARGETS[@]}"; do
   ok=1
   log1="$TMP/$name.check.log"
   log2="$TMP/$name.bundle.log"
+  fn_hash="$(function_input_hash "$(dirname "$f")")"
 
-  run_step "TypeScript compile (deno check)" "$log1" -- \
+  run_step_cached "deno_check" "$fn_hash" \
+    "TypeScript compile (deno check)" "$log1" -- \
     deno check --no-lock --quiet "$f" || ok=0
 
   # Bundle dry-run: write to /dev/null so we only validate that the module
   # graph resolves and parses end-to-end, mirroring what Supabase does at
   # deploy time. `deno bundle` is the simplest portable equivalent.
-  run_step "Bundle dry-run (deno bundle)" "$log2" -- \
+  run_step_cached "deno_bundle" "$fn_hash" \
+    "Bundle dry-run (deno bundle)" "$log2" -- \
     deno bundle --no-lock --quiet "$f" /dev/null || ok=0
 
   if [ "$ok" -eq 1 ]; then
