@@ -5049,6 +5049,7 @@ export type Database = {
       }
       online_exam_attempts: {
         Row: {
+          attempt_token: string
           attempted_by_identifier: string | null
           attempted_by_name: string | null
           auto_graded_score: number
@@ -5076,6 +5077,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          attempt_token?: string
           attempted_by_identifier?: string | null
           attempted_by_name?: string | null
           auto_graded_score?: number
@@ -5103,6 +5105,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          attempt_token?: string
           attempted_by_identifier?: string | null
           attempted_by_name?: string | null
           auto_graded_score?: number
@@ -10167,6 +10170,15 @@ export type Database = {
           p_parent_account_id?: string
           p_question_id: string
           p_student_account_id?: string
+        }
+        Returns: undefined
+      }
+      rpc_update_exam_attempt: {
+        Args: {
+          p_attempt_id: string
+          p_attempt_token: string
+          p_status?: string
+          p_tab_switch_count?: number
         }
         Returns: undefined
       }
