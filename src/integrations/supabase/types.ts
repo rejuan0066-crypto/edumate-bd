@@ -805,6 +805,75 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_devices: {
+        Row: {
+          attempt_count: number
+          blocked_at: string
+          blocked_by: string | null
+          created_at: string
+          device_id: string
+          id: string
+          is_active: boolean
+          last_attempt_at: string
+          last_city: string | null
+          last_country: string | null
+          last_ip: string | null
+          last_upazila: string | null
+          last_user_agent: string | null
+          last_village: string | null
+          notes: string | null
+          reason: string
+          unblocked_at: string | null
+          unblocked_by: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempt_count?: number
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          is_active?: boolean
+          last_attempt_at?: string
+          last_city?: string | null
+          last_country?: string | null
+          last_ip?: string | null
+          last_upazila?: string | null
+          last_user_agent?: string | null
+          last_village?: string | null
+          notes?: string | null
+          reason: string
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempt_count?: number
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          is_active?: boolean
+          last_attempt_at?: string
+          last_city?: string | null
+          last_country?: string | null
+          last_ip?: string | null
+          last_upazila?: string | null
+          last_user_agent?: string | null
+          last_village?: string | null
+          notes?: string | null
+          reason?: string
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           budget_type: string
@@ -1862,6 +1931,42 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
           village?: string | null
+        }
+        Relationships: []
+      }
+      device_route_allowlist: {
+        Row: {
+          approved_by: string | null
+          created_at: string
+          device_id: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          route_path: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          approved_by?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          route_path: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          approved_by?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          route_path?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -9319,6 +9424,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_device_for_routes: {
+        Args: { _device_id: string; _notes?: string; _routes: string[] }
+        Returns: Json
+      }
       approve_device_request: {
         Args: { _notes?: string; _request_id: string }
         Returns: Json
@@ -9479,6 +9588,26 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      list_blocked_device_attempts: {
+        Args: { _limit?: number; _only_blocked?: boolean; _search?: string }
+        Returns: {
+          alert_type: string
+          attempt_count: number
+          blocked_at: string
+          blocked_reason: string
+          city: string
+          country: string
+          device_id: string
+          ip_address: string
+          is_blocked: boolean
+          last_attempt_at: string
+          reason: string
+          upazila: string
+          user_agent: string
+          user_id: string
+          village: string
+        }[]
+      }
       list_device_approval_requests: {
         Args: { _status?: string }
         Returns: {
@@ -9497,6 +9626,15 @@ export type Database = {
           user_id: string
           user_name: string
           village: string
+        }[]
+      }
+      list_device_route_approvals: {
+        Args: { _device_id: string }
+        Returns: {
+          approved_by: string
+          created_at: string
+          notes: string
+          route_path: string
         }[]
       }
       list_staff_devices: {
@@ -9553,6 +9691,10 @@ export type Database = {
           student_id: string
           student_uuid: string
         }[]
+      }
+      permanent_block_device: {
+        Args: { _device_id: string; _notes?: string; _reason: string }
+        Returns: Json
       }
       reconcile_fee_payment: {
         Args: {
@@ -9760,6 +9902,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_device_route_approval: {
+        Args: { _device_id: string; _route_path: string }
+        Returns: Json
+      }
       revoke_staff_device: {
         Args: { _device_uuid: string; _reason?: string }
         Returns: Json
@@ -9888,6 +10034,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      unblock_device: { Args: { _device_id: string }; Returns: Json }
       undo_committee_change: {
         Args: {
           p_audit_id: string
