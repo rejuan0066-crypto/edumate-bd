@@ -86,13 +86,15 @@ Deno.serve(async (req) => {
     const { to, subject, html, template_key, audit_only } = body;
 
     if (audit_only) {
-      // Probe — don't actually send; just return current usage
-      const log = (sendLog.get(userId) || []).filter((t) => t > Date.now() - RATE_LIMIT_WINDOW_MS);
+      // Probe — return current configured usage (no increment)
+      const { data: cfg } = await supabase
+        .from("rate_limit_config").select("max_requests, window_seconds, enabled")
+        .eq("action", RATE_LIMIT_ACTION).maybeSingle();
       return new Response(JSON.stringify({
         success: true,
-        used: log.length,
-        limit: RATE_LIMIT_MAX,
-        remaining: Math.max(0, RATE_LIMIT_MAX - log.length),
+        limit: cfg?.max_requests ?? 5,
+        window_seconds: cfg?.window_seconds ?? 3600,
+        enabled: cfg?.enabled ?? true,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -102,13 +104,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- Per-admin rate limit ----
-    const rl = recordAndCheckLimit(userId);
+    // ---- DB-driven rate limit (super_admin bypasses inside check_rate_limit) ----
+    const rl = await checkRateLimit(supabase, userId);
     if (!rl.allowed) {
       return new Response(JSON.stringify({
         error: "RATE_LIMIT_EXCEEDED",
-        message: `Test-send limit reached (${RATE_LIMIT_MAX}/hour). Try again in ${rl.resetInSec}s.`,
+        message: `Test-send limit reached (${rl.max} per ${Math.round(rl.window / 60)} min). Try again in ${rl.resetInSec}s.`,
         retry_after_seconds: rl.resetInSec,
+        limit: rl.max,
       }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": String(rl.resetInSec) },
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
       success: true,
       smtp_profile: { name: (smtp as any).name, purpose: (smtp as any).purpose, resolved_via: (smtp as any).resolved_via },
       remaining: rl.remaining,
-      limit: RATE_LIMIT_MAX,
+      limit: rl.max,
     }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal error";
