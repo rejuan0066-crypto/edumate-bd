@@ -267,6 +267,7 @@ const OnlineExamTake = () => {
 
       const payload = {
         attempt_id: attemptId,
+        attempt_token: attemptTokenRef.current,
         auto_submitted: autoSubmitted,
         answers: Object.entries(answers).map(([qid, ans]) => ({
           question_id: qid,
