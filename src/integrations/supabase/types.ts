@@ -9072,6 +9072,10 @@ export type Database = {
         Args: { _bucket: string; _object_path: string; _user_id: string }
         Returns: boolean
       }
+      canonical_module_roles: {
+        Args: { _menu_path: string }
+        Returns: string[]
+      }
       check_rate_limit: {
         Args: { _action: string; _key: string; _scope: string }
         Returns: Json
@@ -9313,6 +9317,14 @@ export type Database = {
         }
       }
       resolve_actor_name: { Args: { _uid: string }; Returns: string }
+      resync_canonical_module_roles: {
+        Args: never
+        Returns: {
+          menu_path: string
+          new_roles: string[]
+          old_roles: string[]
+        }[]
+      }
       reverse_fee_allocations: {
         Args: {
           p_actor_id?: string
