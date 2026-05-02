@@ -3,19 +3,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   ShieldOff, Loader2, Copy, MessageCircle, RefreshCw, Check, AlertTriangle,
-  Send, Clock, BadgeCheck,
+  Send, Clock, BadgeCheck, LifeBuoy, Mail, Smartphone,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
 import { useAuditDeviceCheck } from '@/hooks/useAuditDeviceCheck';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useAuth } from '@/hooks/useAuth';
 import {
   useDeviceReregisterStatus, useRequestDeviceReregistration, formatRemaining,
 } from '@/hooks/useDeviceReregistration';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+type GeoInfo = { ip: string; city: string; region: string; country: string };
+
+function formatLocation(g: GeoInfo | null): string {
+  if (!g) return 'Unknown location';
+  return [g.city, g.region, g.country].filter(Boolean).join(', ') || 'Unknown location';
+}
 
 /**
  * Wrap any audit page in this gate. While checking → spinner. If the device
@@ -35,6 +44,28 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
   const [copied, setCopied] = useState(false);
   const reStatus = useDeviceReregisterStatus();
   const reMut = useRequestDeviceReregistration();
+  const { user } = useAuth();
+  const [geo, setGeo] = useState<GeoInfo | null>(null);
+
+  useEffect(() => {
+    if (data?.ok) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (cancelled) return;
+        setGeo({
+          ip: j.ip ?? '',
+          city: j.city ?? '',
+          region: j.region ?? '',
+          country: j.country_name ?? '',
+        });
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [data?.ok]);
 
   if (isLoading) {
     return (
@@ -49,13 +80,57 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
   if (!data?.ok) {
     const deviceId = getDeviceId();
     const supportPhone = (inst?.phone ?? '').replace(/[^\d+]/g, '');
+    const supportEmail = (inst?.email ?? '').trim();
     const path = location.pathname;
+    const staffName = (user?.user_metadata as any)?.full_name || user?.email || 'Staff';
+    const loc = formatLocation(geo);
+    const ipStr = geo?.ip || 'Unknown IP';
+
     const supportMsg = bn
-      ? `আস-সালামু আলাইকুম,\nআমার ডিভাইস আইডি: ${deviceId}\nআমি ${path} অডিট পেজটি এক্সেস করতে পারছি না। অনুগ্রহ করে আমার ডিভাইসটি অনুমোদন করুন।`
-      : `Assalamu Alaikum,\nMy device ID: ${deviceId}\nI cannot access the ${path} audit page. Please approve my device.`;
+      ? `আস-সালামু আলাইকুম,\nআমার ডিভাইস আইডি: ${deviceId}\nঅবস্থান: ${loc}\nIP: ${ipStr}\nআমি ${path} অডিট পেজটি এক্সেস করতে পারছি না। অনুগ্রহ করে আমার ডিভাইসটি অনুমোদন করুন।`
+      : `Assalamu Alaikum,\nMy device ID: ${deviceId}\nLocation: ${loc}\nIP: ${ipStr}\nI cannot access the ${path} audit page. Please approve my device.`;
+
+    const emailSubject = `Device Authorization Request - ${staffName}`;
+    const emailBody = `Hi Admin, I cannot access the audit routes. Here are my details:\n\nDevice ID: ${deviceId}\nLocation: ${loc}\nIP: ${ipStr}\nPath: ${path}`;
+    const smsBody = `Security Alert: Access Denied. ID: ${deviceId}. Loc: ${loc}. Please authorize.`;
+
     const waUrl = supportPhone
       ? `https://wa.me/${supportPhone.replace(/^\+/, '')}?text=${encodeURIComponent(supportMsg)}`
       : null;
+    const mailUrl = supportEmail
+      ? `mailto:${supportEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+      : null;
+    const smsUrl = supportPhone
+      ? `sms:${supportPhone}?&body=${encodeURIComponent(smsBody)}`
+      : null;
+
+    const openWhatsApp = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (!waUrl) {
+        toast.error(bn ? 'হোয়াটসঅ্যাপ নম্বর কনফিগার করা নেই' : 'WhatsApp number not configured');
+        return;
+      }
+      // Open in new tab; if WhatsApp is not installed wa.me falls back to web,
+      // but on some devices the popup may be blocked or fail to load.
+      const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
+      // Detect failure after a short delay
+      window.setTimeout(() => {
+        try {
+          if (!w || w.closed || typeof w.closed === 'undefined') {
+            toast.error(
+              bn ? 'WhatsApp খোলা যায়নি। ইমেইল বা SMS ব্যবহার করুন।'
+                 : 'WhatsApp not found. Try Email or SMS instead.',
+            );
+          }
+        } catch {
+          toast.error(
+            bn ? 'WhatsApp খোলা যায়নি। ইমেইল বা SMS ব্যবহার করুন।'
+               : 'WhatsApp not found. Try Email or SMS instead.',
+          );
+        }
+      }, 1500);
+    };
+
 
     const handleCopy = async () => {
       try {
@@ -232,30 +307,121 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
                 {bn ? 'আবার চেষ্টা করুন' : 'Try Again'}
               </Button>
 
-              {waUrl ? (
-                <Button
-                  asChild
-                  className="rounded-2xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <a href={waUrl} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    {bn ? 'হোয়াটসঅ্যাপে যোগাযোগ' : 'Contact Support'}
-                  </a>
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="rounded-2xl h-12"
-                  variant="secondary"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(supportMsg);
-                    toast.success(bn ? 'বার্তা কপি হয়েছে — সুপার অ্যাডমিনকে পাঠান' : 'Message copied — send to super admin');
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                  {bn ? 'সাপোর্ট বার্তা কপি' : 'Copy Support Message'}
-                </Button>
-              )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    className="rounded-2xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <LifeBuoy className="h-4 w-4" />
+                    {bn ? 'সাপোর্ট-এ যোগাযোগ' : 'Contact Support'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-2 space-y-1">
+                  <button
+                    type="button"
+                    onClick={openWhatsApp}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-500/10 text-left transition-colors"
+                  >
+                    <span className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                      <MessageCircle className="h-4 w-4 text-emerald-600" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold">WhatsApp</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {supportPhone || (bn ? 'কনফিগার করা নেই' : 'Not configured')}
+                      </span>
+                    </span>
+                  </button>
+
+                  {mailUrl ? (
+                    <a
+                      href={mailUrl}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-500/10 text-left transition-colors"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">Email Support</span>
+                        <span className="block text-[11px] text-muted-foreground truncate">
+                          {supportEmail}
+                        </span>
+                      </span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-not-allowed text-left"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">Email Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {bn ? 'ইমেইল কনফিগার করা নেই' : 'Email not configured'}
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  {smsUrl ? (
+                    <a
+                      href={smsUrl}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-500/10 text-left transition-colors"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Smartphone className="h-4 w-4 text-amber-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">SMS Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {supportPhone}
+                        </span>
+                      </span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-not-allowed text-left"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Smartphone className="h-4 w-4 text-amber-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">SMS Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {bn ? 'ফোন কনফিগার করা নেই' : 'Phone not configured'}
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(supportMsg);
+                      toast.success(bn ? 'বার্তা কপি হয়েছে' : 'Message copied');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted text-left transition-colors border-t border-border/50 mt-1"
+                  >
+                    <span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                      <Copy className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold">
+                        {bn ? 'বার্তা কপি করুন' : 'Copy Message'}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {bn ? 'যেকোনো জায়গায় পেস্ট করুন' : 'Paste anywhere'}
+                      </span>
+                    </span>
+                  </button>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Footnote */}
