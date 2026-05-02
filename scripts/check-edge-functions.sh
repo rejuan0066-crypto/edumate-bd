@@ -363,22 +363,31 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
   echo "- **Total step time:** ${TOTAL_STEP_SECONDS}s"
   echo "- **Slow threshold:** ${SLOW_STEP_THRESHOLD}s"
+  echo "- **Hard-limit default:** $([ "${STEP_HARD_LIMIT:-0}" -gt 0 ] && echo "${STEP_HARD_LIMIT}s" || echo 'disabled')"
+  echo "- **Hard-limit fails CI:** $([ "$HARD_LIMIT_FAIL_CI" = "1" ] && echo 'yes' || echo 'no (warn only)')"
+  echo "- **Hard-limit alerts:** ${#HARD_LIMIT_ALERTS[@]}"
   echo "- **Cache:** ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
   echo
   echo "## Step results"
   echo
-  echo "| Function | Step | Exit | Duration | Timeout | Env key | Log |"
-  echo "|---|---|---|---|---|---|---|"
+  echo "| Function | Step | Exit | Duration | Timeout | Hard limit | Env key | Log |"
+  echo "|---|---|---|---|---|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step rc dur logf step_to key <<<"$row"
+    IFS='|' read -r fn step rc dur logf step_to key step_hard hard_breached <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
-    # Strip trailing 's' to compare numerically
     secs="${dur%s}"
     marker=""
     if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
+    if [ "${hard_breached:-0}" = "1" ]; then marker="${marker} 🚨"; fi
     to_cell="${step_to:-$STEP_TIMEOUT}s"
     if [ "${step_to:-$STEP_TIMEOUT}" != "$STEP_TIMEOUT" ]; then to_cell="${to_cell} *override*"; fi
-    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
+    if [ "${step_hard:-0}" -gt 0 ]; then
+      hard_cell="${step_hard}s"
+      [ "${hard_breached:-0}" = "1" ] && hard_cell="**${hard_cell} ❌**"
+    else
+      hard_cell="—"
+    fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | ${hard_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
   done
   echo
   echo "## Slowest steps (top 5)"
@@ -386,11 +395,22 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "| Duration | Function | Step |"
   echo "|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
   done
+  if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
+    echo
+    echo "## 🚨 Hard-timeout alerts"
+    echo
+    echo "| Function | Step | Duration | Limit | Override env |"
+    echo "|---|---|---|---|---|"
+    for row in "${HARD_LIMIT_ALERTS[@]}"; do
+      IFS='|' read -r fn step dur lim key <<<"$row"
+      echo "| \`$fn\` | $step | ${dur}s | ${lim}s | \`STEP_HARD_LIMIT_${key}\` |"
+    done
+  fi
   if [ "${#FAIL[@]}" -gt 0 ]; then
     echo
     echo "## Failed functions"
