@@ -6462,31 +6462,46 @@ export type Database = {
       rate_limit_config: {
         Row: {
           action: string
+          category: string
           created_at: string
           description: string | null
           enabled: boolean
           id: string
+          is_user_managed: boolean
+          label_bn: string | null
+          label_en: string | null
           max_requests: number
+          scope: string
           updated_at: string
           window_seconds: number
         }
         Insert: {
           action: string
+          category?: string
           created_at?: string
           description?: string | null
           enabled?: boolean
           id?: string
+          is_user_managed?: boolean
+          label_bn?: string | null
+          label_en?: string | null
           max_requests?: number
+          scope?: string
           updated_at?: string
           window_seconds?: number
         }
         Update: {
           action?: string
+          category?: string
           created_at?: string
           description?: string | null
           enabled?: boolean
           id?: string
+          is_user_managed?: boolean
+          label_bn?: string | null
+          label_en?: string | null
           max_requests?: number
+          scope?: string
           updated_at?: string
           window_seconds?: number
         }
