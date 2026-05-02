@@ -16,6 +16,7 @@ import ManualPaymentMethods from '@/components/ManualPaymentMethods';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { buildDonationReceiptHtml, type DonationReceiptData } from '@/components/fees/receiptPrintLayouts';
+import { dMsg, type Lang } from '@/lib/donationMessages';
 
 // Bengali → English digit conversion
 const toEnDigits = (s: string) =>
@@ -37,6 +38,8 @@ type PayMode = 'online' | 'manual' | '';
 const DonationPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const lang: Lang = bn ? 'bn' : 'en';
+  const t = (k: Parameters<typeof dMsg>[1], v?: Record<string, string | number>) => dMsg(lang, k, v);
 
   // Step: 1 = details, 2 = payment selection, 3 = pay (manual or online launch)
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -95,7 +98,7 @@ const DonationPage = () => {
       // Clean URL so refresh doesn't re-trigger
       window.history.replaceState({}, '', '/donation');
       if (verified) {
-        toast.success(bn ? 'পেমেন্ট যাচাই সম্পন্ন!' : 'Payment verified!');
+        toast.success(t('paymentVerified'));
         return true;
       }
       return false;
@@ -180,11 +183,7 @@ const DonationPage = () => {
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   const emailTrimmed = form.email.trim();
   const emailFormatValid = emailTrimmed === '' || EMAIL_RE.test(emailTrimmed);
-  const emailError = !emailFormatValid
-    ? bn
-      ? 'সঠিক ইমেইল ঠিকানা দিন (যেমন: name@example.com)'
-      : 'Please enter a valid email address (e.g. name@example.com)'
-    : '';
+  const emailError = !emailFormatValid ? t('emailInvalid') : '';
 
   // Phone validation:
   //  - Bangladeshi mobile: 11 digits starting with 01[3-9] (e.g. 017XXXXXXXX)
@@ -200,9 +199,7 @@ const DonationPage = () => {
   const phoneError = phoneRaw === ''
     ? ''
     : !phoneFormatValid
-      ? bn
-        ? 'সঠিক মোবাইল নম্বর দিন (যেমন: 01712345678 অথবা +8801712345678)'
-        : 'Enter a valid mobile number (e.g. 01712345678 or +8801712345678)'
+      ? t('phoneInvalid')
       : '';
 
   const step1Valid =
@@ -215,10 +212,7 @@ const DonationPage = () => {
 
   const goNextFromStep1 = () => {
     if (!phoneFormatValid) {
-      toast.error(
-        phoneError ||
-          (bn ? 'সঠিক মোবাইল নম্বর দিন' : 'Please enter a valid mobile number'),
-      );
+      toast.error(phoneError || t('phoneInvalidShort'));
       return;
     }
     if (!emailFormatValid) {
@@ -226,7 +220,7 @@ const DonationPage = () => {
       return;
     }
     if (!step1Valid) {
-      toast.error(bn ? 'নাম, ফোন, পরিমাণ ও উদ্দেশ্য আবশ্যক' : 'Name, phone, amount & purpose required');
+      toast.error(t('step1Required'));
       return;
     }
     setStep(2);
@@ -240,7 +234,7 @@ const DonationPage = () => {
   // ---- Submit handlers ----
   const handleOnlinePay = async () => {
     if (!hasGateway) {
-      toast.error(bn ? 'অনলাইন গেটওয়ে সক্রিয় নয়' : 'Online gateway not configured');
+      toast.error(t('gatewayDisabled'));
       return;
     }
     setIsSubmitting(true);
@@ -258,7 +252,7 @@ const DonationPage = () => {
           callback_url: window.location.origin + '/donation?status=success',
         },
       });
-      if (error) throw new Error(bn ? 'পেমেন্ট গেটওয়ে ত্রুটি' : 'Payment gateway error');
+      if (error) throw new Error(t('gatewayError'));
 
       // Pre-record pending donor row so admin sees it
       await supabase.from('donors').insert({
@@ -277,7 +271,7 @@ const DonationPage = () => {
         window.location.href = data.redirect_url;
         return;
       }
-      throw new Error(bn ? 'গেটওয়ে রেসপন্স পাওয়া যায়নি' : 'No gateway response');
+      throw new Error(t('noGatewayResponse'));
     } catch (err: any) {
       toast.error(err.message || 'Error');
     } finally {
@@ -287,15 +281,15 @@ const DonationPage = () => {
 
   const handleManualSubmit = async () => {
     if (!manualMethod) {
-      toast.error(bn ? 'মাধ্যম নির্বাচন করুন' : 'Select payment method');
+      toast.error(t('selectMethod'));
       return;
     }
     if (!manualTrxId.trim()) {
-      toast.error(bn ? 'ট্রানজেকশন আইডি আবশ্যক' : 'Transaction ID required');
+      toast.error(t('trxIdRequired'));
       return;
     }
     if (!senderNumber.trim()) {
-      toast.error(bn ? 'প্রেরকের নম্বর আবশ্যক' : 'Sender number required');
+      toast.error(t('senderRequired'));
       return;
     }
 
@@ -374,24 +368,13 @@ const DonationPage = () => {
       setIsDone(true);
 
       if (verified) {
-        toast.success(bn ? 'ট্রানজেকশন যাচাই সম্পন্ন!' : 'Transaction verified!');
+        toast.success(t('trxVerified'));
       } else if (rateLimited) {
         const mins = retryAfter ? Math.ceil(retryAfter / 60) : 10;
-        toast.error(
-          bn
-            ? `অনেকবার ভুল TrxID — ${mins} মিনিট পর আবার চেষ্টা করুন। জমাটি pending হিসেবে রইল ও অ্যাডমিনকে জানানো হয়েছে।`
-            : `Too many wrong TrxID attempts — try again in ${mins} min. Saved as pending; admin notified.`,
-          { duration: 6000 },
-        );
+        toast.error(t('trxRateLimited', { mins }), { duration: 6000 });
       } else {
         toast.warning(
-          bn
-            ? `TrxID মিল হয়নি — pending হিসেবে রইল, অ্যাডমিন যাচাই করবেন।${
-                remaining !== null ? ` (বাকি চেষ্টা: ${remaining})` : ''
-              }`
-            : `TrxID did not match — saved as pending for admin review.${
-                remaining !== null ? ` (Attempts left: ${remaining})` : ''
-              }`,
+          t('trxMismatch', remaining !== null ? { remaining } : {}),
           { duration: 6000 },
         );
       }
