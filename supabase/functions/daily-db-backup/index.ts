@@ -18,7 +18,11 @@ Deno.serve(async (req) => {
     // cron secret header (scheduled trigger). Reject anything else.
     const authHeader = req.headers.get("authorization") || "";
     const cronSecretHeader = req.headers.get("x-cron-secret") || "";
-    const CRON_SECRET = Deno.env.get("BACKUP_CRON_SECRET") || "";
+    let CRON_SECRET = "";
+    try {
+      const { data: s } = await admin.from("app_settings").select("value").eq("key", "backup_cron_secret").maybeSingle();
+      if (s?.value) CRON_SECRET = String(s.value).replace(/^"|"$/g, "");
+    } catch { /* ignore */ }
     let triggeredBy: string | null = null;
     let backupType: "manual" | "daily" = "daily";
     let authorized = false;
