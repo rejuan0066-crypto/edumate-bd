@@ -281,15 +281,15 @@ const DonationPage = () => {
 
   const handleManualSubmit = async () => {
     if (!manualMethod) {
-      toast.error(bn ? 'মাধ্যম নির্বাচন করুন' : 'Select payment method');
+      toast.error(t('selectMethod'));
       return;
     }
     if (!manualTrxId.trim()) {
-      toast.error(bn ? 'ট্রানজেকশন আইডি আবশ্যক' : 'Transaction ID required');
+      toast.error(t('trxIdRequired'));
       return;
     }
     if (!senderNumber.trim()) {
-      toast.error(bn ? 'প্রেরকের নম্বর আবশ্যক' : 'Sender number required');
+      toast.error(t('senderRequired'));
       return;
     }
 
