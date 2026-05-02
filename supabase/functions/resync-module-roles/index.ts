@@ -54,7 +54,14 @@ Deno.serve(async (req) => {
       });
     }
     const userId = claimsData.claims.sub as string;
-    const deviceId = req.headers.get("x-device-id") ?? null;
+
+    // 2a) Device-binding enforcement: require x-device-id matching a registered device.
+    // On mismatch this returns 403 + logs to security_alerts (with IP + UA).
+    const guard = await verifyDevice(req, supabase, {
+      endpoint: "/resync-module-roles",
+    });
+    if (!guard.ok) return guard.response;
+    const deviceId = guard.deviceId;
 
     // 2) Role check: must be admin OR super_admin
     const { data: roleRows, error: roleErr } = await supabase
