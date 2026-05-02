@@ -44,13 +44,24 @@ const DonationPage = () => {
   // Step: 1 = details, 2 = payment selection, 3 = pay (manual or online launch)
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    purposeKey: '',
-    purposeOther: '',
-    amount: '',
+  const DONATION_EMAIL_LS_KEY = 'donation:email';
+  const [form, setForm] = useState(() => {
+    let savedEmail = '';
+    if (typeof window !== 'undefined') {
+      try {
+        savedEmail = window.localStorage.getItem(DONATION_EMAIL_LS_KEY) ?? '';
+      } catch {
+        // localStorage may be unavailable (private mode / SSR) — ignore
+      }
+    }
+    return {
+      name: '',
+      phone: '',
+      email: savedEmail,
+      purposeKey: '',
+      purposeOther: '',
+      amount: '',
+    };
   });
   const [payMode, setPayMode] = useState<PayMode>('');
   const [manualMethod, setManualMethod] = useState('');
@@ -121,6 +132,22 @@ const DonationPage = () => {
 
   const updateField = (key: keyof typeof form, value: string) =>
     setForm((p) => ({ ...p, [key]: value }));
+
+  // Persist the donor's email to localStorage so a refresh doesn't lose it.
+  // Stored under DONATION_EMAIL_LS_KEY; cleared when the field is emptied.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const trimmed = form.email.trim();
+      if (trimmed) {
+        window.localStorage.setItem(DONATION_EMAIL_LS_KEY, trimmed);
+      } else {
+        window.localStorage.removeItem(DONATION_EMAIL_LS_KEY);
+      }
+    } catch {
+      // ignore storage failures (quota / private mode)
+    }
+  }, [form.email]);
 
   // ---- Data ----
   const { data: gateways = [] } = useQuery({
@@ -427,7 +454,7 @@ const DonationPage = () => {
     setIsDone(false);
     setResult(null);
     setStep(1);
-    setForm({ name: '', phone: '', email: '', purposeKey: '', purposeOther: '', amount: '' });
+    setForm((p) => ({ name: '', phone: '', email: p.email, purposeKey: '', purposeOther: '', amount: '' }));
     setPayMode('');
     setManualMethod('');
     setManualTrxId('');
