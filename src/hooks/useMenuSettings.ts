@@ -130,6 +130,11 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
   // প্রশাসন
   { id: 'administration', path: '/admin/administrative', label_bn: 'প্রশাসন', label_en: 'Administration', icon: 'ShieldCheck', visible: true, sort_order: 8.5, children: [
     { id: 'administrative-officers', path: '/admin/administrative', label_bn: 'প্রশাসনিক কর্মকর্তা', label_en: 'Administrative Officers', icon: 'ShieldCheck', visible: true, sort_order: 0 },
+    { id: 'parent-link-audit', path: '/admin/parent-link-audit', label_bn: 'অভিভাবক লিংক অডিট', label_en: 'Parent Link Audit', icon: 'GitBranch', visible: true, sort_order: 1 },
+    { id: 'receipt-audit', path: '/admin/receipt-audit', label_bn: 'রসিদ অডিট', label_en: 'Receipt Audit', icon: 'ClipboardList', visible: true, sort_order: 2 },
+    { id: 'verified-payments', path: '/admin/verified-payments', label_bn: 'যাচাইকৃত পেমেন্ট', label_en: 'Verified Payments', icon: 'BadgeCheck', visible: true, sort_order: 3 },
+    { id: 'complaint-fields', path: '/admin/complaints/fields', label_bn: 'অভিযোগ ফিল্ড সেটিংস', label_en: 'Complaint Fields', icon: 'ListChecks', visible: true, sort_order: 4 },
+    { id: 'parent-signup-fields', path: '/admin/parent-signup-fields', label_bn: 'অভিভাবক সাইনআপ ফিল্ড', label_en: 'Parent Signup Fields', icon: 'UserPlus', visible: true, sort_order: 5 },
   ]},
 
   // সিস্টেম ও সেটিংস
