@@ -9569,6 +9569,24 @@ export type Database = {
         Args: { _receipt_id: string; _receipt_type: string }
         Returns: string
       }
+      get_parent_fee_payments: {
+        Args: { _parent_account_id: string; _student_uuid: string }
+        Returns: {
+          amount: number
+          created_at: string
+          fee_type_id: string
+          fee_type_name: string
+          fee_type_name_bn: string
+          id: string
+          month: string
+          paid_amount: number
+          paid_at: string
+          receipt_number: string
+          status: string
+          student_id: string
+          year: number
+        }[]
+      }
       get_password_protection_info: { Args: never; Returns: Json }
       get_public_tables: {
         Args: never
