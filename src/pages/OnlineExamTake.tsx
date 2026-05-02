@@ -92,7 +92,7 @@ const OnlineExamTake = () => {
         .eq('exam_id', examId)
         .order('sort_order');
       if (error) throw error;
-      return (data || []) as Q[];
+      return ((data || []) as unknown) as Q[];
     },
     enabled: !!attemptId,
   });
