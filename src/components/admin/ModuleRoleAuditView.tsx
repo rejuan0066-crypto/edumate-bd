@@ -503,6 +503,7 @@ export const ModuleRoleAuditView = ({ config }: { config: ModuleRoleAuditConfig 
         </DialogContent>
       </Dialog>
     </div>
+    </AuditDeviceGate>
   );
 };
 
