@@ -241,7 +241,7 @@ const OnlineExamTake = () => {
     const { data, error } = await supabase
       .from('online_exam_attempts')
       .insert(insertPayload)
-      .select('id')
+      .select('id, attempt_token')
       .single();
 
     if (error || !data) {
@@ -250,9 +250,10 @@ const OnlineExamTake = () => {
     }
 
     setAttemptId(data.id);
+    attemptTokenRef.current = (data as any).attempt_token || null;
     localStorage.setItem(
       STORAGE_KEY(examId),
-      JSON.stringify({ attemptId: data.id, answers: {}, expiresAt })
+      JSON.stringify({ attemptId: data.id, attemptToken: attemptTokenRef.current, answers: {}, expiresAt })
     );
     setStage('taking');
   };
