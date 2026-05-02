@@ -140,7 +140,82 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
               </p>
             </div>
 
-            {/* Action buttons */}
+            {/* Re-registration request */}
+            {(() => {
+              const s = reStatus.data;
+              const hasPending = !!s?.has_pending;
+              const canRequest = !!s?.can_request && !hasPending;
+              const remaining = s?.next_allowed_at ? formatRemaining(s.next_allowed_at, bn) : '';
+              const cooldownH = s?.cooldown_hours ?? 24;
+              const onRequest = async () => {
+                try {
+                  const res = await reMut.mutateAsync();
+                  if (!res.ok) {
+                    if (res.reason === 'cooldown_active') {
+                      toast.error(formatRemaining(res.next_allowed_at ?? null, bn));
+                    } else {
+                      toast.error(res.reason ?? (bn ? 'রিকোয়েস্ট ব্যর্থ' : 'Request failed'));
+                    }
+                    return;
+                  }
+                  toast.success(
+                    bn ? 'রিকোয়েস্ট পাঠানো হয়েছে — অ্যাডমিনের অনুমোদনের অপেক্ষায়'
+                       : 'Request sent — waiting for admin approval',
+                  );
+                } catch (e) {
+                  toast.error((e as Error)?.message ?? 'Error');
+                }
+              };
+              return (
+                <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/[0.04] p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+                      <Send className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm">
+                        {bn ? 'নতুন ডিভাইস রি-রেজিস্ট্রেশন রিকোয়েস্ট' : 'Request Device Re-registration'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {bn
+                          ? `রিকোয়েস্ট পাঠালে ${cooldownH} ঘণ্টা পর আবার পাঠাতে পারবেন। অ্যাপ্রুভ হলে পুরাতন ডিভাইস স্বয়ংক্রিয়ভাবে রিমুভ হয়ে নতুনটি অ্যাক্টিভ হবে।`
+                          : `After requesting you must wait ${cooldownH}h to request again. Once approved your old device is auto-rotated out and the new one becomes active.`}
+                      </p>
+                    </div>
+                  </div>
+                  {hasPending && (
+                    <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {bn ? 'অ্যাডমিনের অনুমোদনের অপেক্ষায়' : 'Pending admin approval'}
+                    </Badge>
+                  )}
+                  {!hasPending && !canRequest && remaining && (
+                    <div className="text-xs flex items-center gap-1.5 text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" />
+                      {remaining}
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={onRequest}
+                    disabled={!canRequest || reMut.isPending || reStatus.isLoading}
+                    className="w-full rounded-2xl h-11"
+                  >
+                    {reMut.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : hasPending ? (
+                      <BadgeCheck className="h-4 w-4" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    {hasPending
+                      ? (bn ? 'রিকোয়েস্ট পাঠানো হয়েছে' : 'Request submitted')
+                      : (bn ? 'রি-রেজিস্ট্রেশন রিকোয়েস্ট পাঠান' : 'Request Re-registration')}
+                  </Button>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <Button
                 type="button"
