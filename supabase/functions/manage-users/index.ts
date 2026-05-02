@@ -541,6 +541,7 @@ Deno.serve(async (req) => {
       try {
         const origin = req.headers.get("origin") || req.headers.get("referer") || "";
         const loginUrl = origin ? `${new URL(origin).origin}/login` : undefined;
+        const internalSecret = Deno.env.get("WELCOME_EMAIL_INTERNAL_SECRET") || "";
         const { error: mailErr } = await supabaseAdmin.functions.invoke("send-welcome-email", {
           body: {
             email: trimmedEmail,
@@ -550,6 +551,7 @@ Deno.serve(async (req) => {
             kind: "user",
             login_url: loginUrl,
           },
+          headers: internalSecret ? { 'x-internal-secret': internalSecret } : undefined,
         });
         welcome_email_status = mailErr ? 'failed' : 'sent';
         if (mailErr) {
