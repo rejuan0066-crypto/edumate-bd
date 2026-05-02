@@ -3,19 +3,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   ShieldOff, Loader2, Copy, MessageCircle, RefreshCw, Check, AlertTriangle,
-  Send, Clock, BadgeCheck,
+  Send, Clock, BadgeCheck, LifeBuoy, Mail, Smartphone,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
 import { useAuditDeviceCheck } from '@/hooks/useAuditDeviceCheck';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useAuth } from '@/hooks/useAuth';
 import {
   useDeviceReregisterStatus, useRequestDeviceReregistration, formatRemaining,
 } from '@/hooks/useDeviceReregistration';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+type GeoInfo = { ip: string; city: string; region: string; country: string };
+
+function formatLocation(g: GeoInfo | null): string {
+  if (!g) return 'Unknown location';
+  return [g.city, g.region, g.country].filter(Boolean).join(', ') || 'Unknown location';
+}
 
 /**
  * Wrap any audit page in this gate. While checking → spinner. If the device
