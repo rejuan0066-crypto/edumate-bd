@@ -25,6 +25,8 @@ import {
   RefreshCcw, ListChecks, History, Unlock,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { DEFAULT_MENU_CONFIG, MenuItemConfig } from '@/hooks/useMenuSettings';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Row = {
   device_id: string;
