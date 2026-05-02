@@ -307,30 +307,121 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
                 {bn ? 'আবার চেষ্টা করুন' : 'Try Again'}
               </Button>
 
-              {waUrl ? (
-                <Button
-                  asChild
-                  className="rounded-2xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <a href={waUrl} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    {bn ? 'হোয়াটসঅ্যাপে যোগাযোগ' : 'Contact Support'}
-                  </a>
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  className="rounded-2xl h-12"
-                  variant="secondary"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(supportMsg);
-                    toast.success(bn ? 'বার্তা কপি হয়েছে — সুপার অ্যাডমিনকে পাঠান' : 'Message copied — send to super admin');
-                  }}
-                >
-                  <Copy className="h-4 w-4" />
-                  {bn ? 'সাপোর্ট বার্তা কপি' : 'Copy Support Message'}
-                </Button>
-              )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    className="rounded-2xl h-12 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <LifeBuoy className="h-4 w-4" />
+                    {bn ? 'সাপোর্ট-এ যোগাযোগ' : 'Contact Support'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-2 space-y-1">
+                  <button
+                    type="button"
+                    onClick={openWhatsApp}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-emerald-500/10 text-left transition-colors"
+                  >
+                    <span className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                      <MessageCircle className="h-4 w-4 text-emerald-600" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold">WhatsApp</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {supportPhone || (bn ? 'কনফিগার করা নেই' : 'Not configured')}
+                      </span>
+                    </span>
+                  </button>
+
+                  {mailUrl ? (
+                    <a
+                      href={mailUrl}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-500/10 text-left transition-colors"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">Email Support</span>
+                        <span className="block text-[11px] text-muted-foreground truncate">
+                          {supportEmail}
+                        </span>
+                      </span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-not-allowed text-left"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-blue-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">Email Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {bn ? 'ইমেইল কনফিগার করা নেই' : 'Email not configured'}
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  {smsUrl ? (
+                    <a
+                      href={smsUrl}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-500/10 text-left transition-colors"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Smartphone className="h-4 w-4 text-amber-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">SMS Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {supportPhone}
+                        </span>
+                      </span>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl opacity-50 cursor-not-allowed text-left"
+                    >
+                      <span className="h-9 w-9 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Smartphone className="h-4 w-4 text-amber-600" />
+                      </span>
+                      <span className="flex-1">
+                        <span className="block text-sm font-semibold">SMS Support</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {bn ? 'ফোন কনফিগার করা নেই' : 'Phone not configured'}
+                        </span>
+                      </span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(supportMsg);
+                      toast.success(bn ? 'বার্তা কপি হয়েছে' : 'Message copied');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted text-left transition-colors border-t border-border/50 mt-1"
+                  >
+                    <span className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                      <Copy className="h-4 w-4" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold">
+                        {bn ? 'বার্তা কপি করুন' : 'Copy Message'}
+                      </span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {bn ? 'যেকোনো জায়গায় পেস্ট করুন' : 'Paste anywhere'}
+                      </span>
+                    </span>
+                  </button>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Footnote */}
