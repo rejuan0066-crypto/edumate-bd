@@ -9,9 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Mail, Save, Eye, Code2, RotateCcw, Loader2, Send, History, Plus, Copy, Trash2, BookOpen, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { useRateLimitConfig } from "@/hooks/useRateLimitConfig";
 
 type EmailTemplate = {
   id: string;
@@ -81,9 +83,10 @@ export default function AdminEmailTemplates() {
   const [saving, setSaving] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [sending, setSending] = useState(false);
-  // Session-level guard: max 5 test sends per browser tab session
-  const SESSION_MAX = 5;
+  // Session-level guard: limit configured via /admin/settings → Security tab (action='test_email_send')
+  const { max: SESSION_MAX, windowSeconds: SESSION_WINDOW, enabled: testLimitEnabled } = useRateLimitConfig("test_email_send", { max: 5, windowSeconds: 3600 });
   const [sessionAttempts, setSessionAttempts] = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [edits, setEdits] = useState<Record<string, Partial<EmailTemplate>>>({});
 
   const [versions, setVersions] = useState<TemplateVersion[]>([]);
@@ -171,20 +174,19 @@ export default function AdminEmailTemplates() {
     }
   };
 
-  const sendTest = async () => {
+  const requestSendTest = () => {
     if (!active || !edit) return;
     if (!testEmail || !/^\S+@\S+\.\S+$/.test(testEmail)) { toast.error("সঠিক ইমেইল দিন"); return; }
-    if (sessionAttempts >= SESSION_MAX) {
+    if (testLimitEnabled && sessionAttempts >= SESSION_MAX) {
       toast.error(`এই সেশনে সর্বোচ্চ ${SESSION_MAX}টি টেস্ট ইমেইল পাঠানো যাবে। পেজ রিলোড করুন।`);
       return;
     }
-    // Confirm-once gate to prevent unauthorized rapid testing
-    const confirmed = window.confirm(
-      `টেস্ট ইমেইল পাঠানো হবে: ${testEmail}\n\n` +
-      `সেশনে বাকি: ${SESSION_MAX - sessionAttempts} বার\nচালিয়ে যেতে চান?`
-    );
-    if (!confirmed) return;
+    setConfirmOpen(true);
+  };
 
+  const confirmSendTest = async () => {
+    setConfirmOpen(false);
+    if (!active || !edit) return;
     setSending(true);
     try {
       const sample = SAMPLE_VARS[active.template_key] || SAMPLE_VARS.welcome;
@@ -194,7 +196,6 @@ export default function AdminEmailTemplates() {
         body: { to: testEmail, subject, html, template_key: active.template_key },
       });
       if (error) {
-        // Try to read structured error for rate limits
         const ctxBody = await (error as any)?.context?.json?.().catch(() => null);
         if (ctxBody?.error === "RATE_LIMIT_EXCEEDED") {
           toast.error(ctxBody.message || "সার্ভার রেট-লিমিট পৌঁছে গেছে");
@@ -460,7 +461,7 @@ export default function AdminEmailTemplates() {
                 <div className="flex-1" />
                 <Input type="email" placeholder="test@email.com" value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)} className="max-w-[240px]" />
-                <Button onClick={sendTest} disabled={sending || !testEmail} variant="secondary">
+                <Button onClick={requestSendTest} disabled={sending || !testEmail} variant="secondary">
                   {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} টেস্ট পাঠান
                 </Button>
               </div>
@@ -536,6 +537,37 @@ export default function AdminEmailTemplates() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Themed confirmation for sending a test email */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-[38px] bg-white/90 backdrop-blur-xl border-emerald-100/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-700">
+              <Send className="w-5 h-5" /> টেস্ট ইমেইল পাঠাবেন?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>প্রাপক: <span className="font-medium text-foreground">{testEmail}</span></div>
+                {testLimitEnabled ? (
+                  <div className="text-xs text-muted-foreground">
+                    এই সেশনে বাকি: <span className="font-semibold text-emerald-700">{Math.max(0, SESSION_MAX - sessionAttempts)}</span> বার
+                    {" "}(সীমা: প্রতি {Math.round(SESSION_WINDOW / 60)} মিনিটে {SESSION_MAX}টি)
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">টেস্ট ইমেইল রেট-লিমিট নিষ্ক্রিয় আছে।</div>
+                )}
+                <div className="text-xs text-muted-foreground">এই সীমা <span className="font-medium">/admin/settings → নিরাপত্তা</span> ট্যাব থেকে পরিবর্তন করা যায়।</div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">বাতিল</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendTest} className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white">
+              পাঠান
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
