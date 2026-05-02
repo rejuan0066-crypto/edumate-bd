@@ -38,6 +38,8 @@ type PayMode = 'online' | 'manual' | '';
 const DonationPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const lang: Lang = bn ? 'bn' : 'en';
+  const t = (k: Parameters<typeof dMsg>[1], v?: Record<string, string | number>) => dMsg(lang, k, v);
 
   // Step: 1 = details, 2 = payment selection, 3 = pay (manual or online launch)
   const [step, setStep] = useState<1 | 2 | 3>(1);
