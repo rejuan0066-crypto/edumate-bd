@@ -340,6 +340,7 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "- **Lint/fmt gate:** $([ "$GATE_OK" -eq 1 ] && echo '✅ pass' || echo '❌ fail')"
   echo "- **Total step time:** ${TOTAL_STEP_SECONDS}s"
   echo "- **Slow threshold:** ${SLOW_STEP_THRESHOLD}s"
+  echo "- **Cache:** ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
   echo
   echo "## Step results"
   echo
