@@ -276,7 +276,7 @@ echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRES
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
     printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
