@@ -101,6 +101,30 @@ const AdminBlockedDevicesInner = () => {
   const [unblockReason, setUnblockReason] = useState('');
   const [unblockNotes, setUnblockNotes] = useState('');
   const [historyTarget, setHistoryTarget] = useState<Row | null>(null);
+  const [routeSearch, setRouteSearch] = useState('');
+
+  const filteredRoutes = useMemo(() => {
+    const q = routeSearch.trim().toLowerCase();
+    if (!q) return ALL_ADMIN_ROUTES;
+    return ALL_ADMIN_ROUTES.filter(
+      (r) =>
+        r.path.toLowerCase().includes(q) ||
+        r.label_en.toLowerCase().includes(q) ||
+        r.label_bn.toLowerCase().includes(q) ||
+        r.group_en.toLowerCase().includes(q) ||
+        r.group_bn.toLowerCase().includes(q),
+    );
+  }, [routeSearch]);
+
+  const groupedRoutes = useMemo(() => {
+    const map = new Map<string, { group_bn: string; group_en: string; items: RouteOption[] }>();
+    for (const r of filteredRoutes) {
+      const key = r.group_en;
+      if (!map.has(key)) map.set(key, { group_bn: r.group_bn, group_en: r.group_en, items: [] });
+      map.get(key)!.items.push(r);
+    }
+    return Array.from(map.values());
+  }, [filteredRoutes]);
 
   const list = useQuery({
     queryKey: ['blocked-device-attempts', search, onlyBlocked],
