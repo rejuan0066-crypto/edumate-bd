@@ -16,25 +16,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// In-memory per-admin rate limit. Edge function instances are short-lived but
-// this still meaningfully limits a single sustained admin session.
-const RATE_LIMIT_MAX = 10;             // sends per window
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;  // 1 hour
-const sendLog = new Map<string, number[]>();
+// Rate limit is now driven by rate_limit_config table (action='test_email_send').
+// Admins can configure max_requests + window_seconds via /admin/settings → Security tab.
+const RATE_LIMIT_ACTION = "test_email_send";
 
-function recordAndCheckLimit(userId: string): { allowed: boolean; remaining: number; resetInSec: number } {
-  const now = Date.now();
-  const windowStart = now - RATE_LIMIT_WINDOW_MS;
-  const prev = (sendLog.get(userId) || []).filter((t) => t > windowStart);
-  if (prev.length >= RATE_LIMIT_MAX) {
-    const earliest = prev[0];
-    const resetInSec = Math.ceil((earliest + RATE_LIMIT_WINDOW_MS - now) / 1000);
-    sendLog.set(userId, prev);
-    return { allowed: false, remaining: 0, resetInSec: Math.max(resetInSec, 1) };
+async function checkRateLimit(supabase: any, userId: string): Promise<{ allowed: boolean; remaining: number; resetInSec: number; max: number; window: number }> {
+  // Fetch config (defaults if not present / disabled)
+  const { data: cfg } = await supabase
+    .from("rate_limit_config")
+    .select("max_requests, window_seconds, enabled")
+    .eq("action", RATE_LIMIT_ACTION)
+    .maybeSingle();
+  const max = cfg?.max_requests ?? 5;
+  const window = cfg?.window_seconds ?? 3600;
+  if (cfg && cfg.enabled === false) {
+    return { allowed: true, remaining: max, resetInSec: 0, max, window };
   }
-  prev.push(now);
-  sendLog.set(userId, prev);
-  return { allowed: true, remaining: RATE_LIMIT_MAX - prev.length, resetInSec: 0 };
+  const { data, error } = await supabase.rpc("check_rate_limit", {
+    _key: userId,
+    _scope: "admin",
+    _action: RATE_LIMIT_ACTION,
+  });
+  if (error) {
+    // Fail-open on infra errors but log
+    console.error("check_rate_limit RPC error", error);
+    return { allowed: true, remaining: max, resetInSec: 0, max, window };
+  }
+  const allowed = !!data?.allowed;
+  const remaining = typeof data?.remaining === "number" ? data.remaining : (allowed ? max - 1 : 0);
+  const resetInSec = typeof data?.retry_after === "number" ? data.retry_after : (allowed ? 0 : window);
+  return { allowed, remaining, resetInSec, max, window };
 }
 
 Deno.serve(async (req) => {
