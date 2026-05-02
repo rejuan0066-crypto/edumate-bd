@@ -315,6 +315,36 @@ run_step_cached() {
 STEP_RESULTS=()
 LAST_FN="_gate"
 
+# Bundle size metrics: rows of "fn|bundle_bytes|sourcemap_bytes|gzip_bytes"
+# Captured per function after a successful (or cached) bundle step. Sizes are
+# 0 when the artifact is missing (e.g. cached step skipped re-bundling).
+BUNDLE_SIZES=()
+
+# Helpers: portable byte size + gzip size. Return 0 when the file is missing
+# so missing artifacts surface as "0 B" instead of breaking the report.
+file_bytes() {
+  local f="$1"
+  [ -f "$f" ] || { printf '0'; return; }
+  if stat -c '%s' "$f" >/dev/null 2>&1; then
+    stat -c '%s' "$f"
+  else
+    stat -f '%z' "$f"
+  fi
+}
+gzip_bytes() {
+  local f="$1"
+  [ -f "$f" ] || { printf '0'; return; }
+  gzip -c "$f" 2>/dev/null | wc -c | tr -d ' '
+}
+human_bytes() {
+  # KiB-style human-friendly sizes (B / KB / MB) without depending on numfmt
+  awk -v b="${1:-0}" 'BEGIN{
+    if (b < 1024) { printf "%d B", b }
+    else if (b < 1048576) { printf "%.1f KB", b/1024 }
+    else { printf "%.2f MB", b/1048576 }
+  }'
+}
+
 # Run the lint/fmt gate now that run_step (with timeouts) is defined.
 run_step "deno lint (Edge Functions rule set)" "$gate_log1" -- \
   deno lint "${CFG_ARGS[@]}" "$FN_DIR" || GATE_OK=0
@@ -336,12 +366,23 @@ for f in "${TARGETS[@]}"; do
     "TypeScript compile (deno check)" "$log1" -- \
     deno check --no-lock --quiet "$f" || ok=0
 
-  # Bundle dry-run: write to /dev/null so we only validate that the module
-  # graph resolves and parses end-to-end, mirroring what Supabase does at
-  # deploy time. `deno bundle` is the simplest portable equivalent.
+  # Bundle dry-run: emit to a real temp file (with sourcemap) so we can
+  # measure artifact size as a deploy-time signal. The bundle/sourcemap are
+  # discarded after measurement.
+  bundle_out="$TMP/$name.bundle.js"
+  bundle_map="$TMP/$name.bundle.js.map"
   run_step_cached "deno_bundle" "$fn_hash" \
     "Bundle dry-run (deno bundle)" "$log2" -- \
-    deno bundle --no-lock --quiet "$f" /dev/null || ok=0
+    deno bundle --no-lock --quiet --source-map "$f" "$bundle_out" || ok=0
+
+  bsize="$(file_bytes "$bundle_out")"
+  msize="$(file_bytes "$bundle_map")"
+  gsize="$(gzip_bytes "$bundle_out")"
+  BUNDLE_SIZES+=("$name|$bsize|$msize|$gsize")
+  if [ "$bsize" != "0" ]; then
+    echo "    ↳ bundle: $(human_bytes "$bsize")  · gzip: $(human_bytes "$gsize")  · sourcemap: $(human_bytes "$msize")"
+  fi
+  rm -f "$bundle_out" "$bundle_map"
 
   if [ "$ok" -eq 1 ]; then
     PASS+=("$name")
@@ -400,6 +441,32 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
   done
+  if [ "${#BUNDLE_SIZES[@]}" -gt 0 ]; then
+    echo
+    echo "## Bundle sizes"
+    echo
+    echo "| Function | Bundle | Gzip | Source map |"
+    echo "|---|---:|---:|---:|"
+    total_b=0; total_m=0; total_g=0
+    # Sort by bundle size descending (largest first).
+    for row in "${BUNDLE_SIZES[@]}"; do
+      IFS='|' read -r fn bs ms gs <<<"$row"
+      printf '%s\t%s\t%s\t%s\n' "${bs:-0}" "$fn" "${ms:-0}" "${gs:-0}"
+    done | sort -rn | while IFS=$'\t' read -r bs fn ms gs; do
+      if [ "$bs" = "0" ]; then
+        echo "| \`$fn\` | _(cached / not built)_ | — | — |"
+      else
+        echo "| \`$fn\` | $(human_bytes "$bs") | $(human_bytes "$gs") | $(human_bytes "$ms") |"
+      fi
+    done
+    for row in "${BUNDLE_SIZES[@]}"; do
+      IFS='|' read -r _ bs ms gs <<<"$row"
+      total_b=$(( total_b + ${bs:-0} ))
+      total_m=$(( total_m + ${ms:-0} ))
+      total_g=$(( total_g + ${gs:-0} ))
+    done
+    echo "| **Total** | **$(human_bytes "$total_b")** | **$(human_bytes "$total_g")** | **$(human_bytes "$total_m")** |"
+  fi
   if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
     echo
     echo "## 🚨 Hard-timeout alerts"
@@ -441,6 +508,23 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       "$fn" "$step" "$dur" "$lim" "$key"
   done
   printf '],'
+  # Per-function bundle metrics
+  printf '"bundles":['
+  first=1
+  total_b=0; total_m=0; total_g=0
+  for row in "${BUNDLE_SIZES[@]}"; do
+    IFS='|' read -r fn bs ms gs <<<"$row"
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    printf '{"function":"%s","bundle_bytes":%d,"sourcemap_bytes":%d,"gzip_bytes":%d}' \
+      "$fn" "${bs:-0}" "${ms:-0}" "${gs:-0}"
+    total_b=$(( total_b + ${bs:-0} ))
+    total_m=$(( total_m + ${ms:-0} ))
+    total_g=$(( total_g + ${gs:-0} ))
+  done
+  printf '],'
+  printf '"bundle_totals":{"bundle_bytes":%d,"sourcemap_bytes":%d,"gzip_bytes":%d},' \
+    "$total_b" "$total_m" "$total_g"
   printf '"gate_ok":%s,' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '"cache_hits":%d,"cache_misses":%d,"cache_skips":%d,"cache_disabled":%s' \
     "$CACHE_HITS" "$CACHE_MISSES" "$CACHE_SKIPS" \
@@ -461,6 +545,16 @@ if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
     printf '  - %s — %s: %ss > %ss limit (STEP_HARD_LIMIT_%s)\n' \
       "$fn" "$step" "$dur" "$lim" "$key"
   done
+fi
+if [ "${#BUNDLE_SIZES[@]}" -gt 0 ]; then
+  total_b=0; total_m=0; total_g=0
+  for row in "${BUNDLE_SIZES[@]}"; do
+    IFS='|' read -r _ bs ms gs <<<"$row"
+    total_b=$(( total_b + ${bs:-0} ))
+    total_m=$(( total_m + ${ms:-0} ))
+    total_g=$(( total_g + ${gs:-0} ))
+  done
+  echo "Bundle totals: $(human_bytes "$total_b") (gzip $(human_bytes "$total_g"), sourcemap $(human_bytes "$total_m"))"
 fi
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
