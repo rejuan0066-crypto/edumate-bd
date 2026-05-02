@@ -46,7 +46,8 @@ type Row = {
   user_agent: string | null;
 };
 
-const ROUTE_OPTIONS: { path: string; label_bn: string; label_en: string }[] = [
+// Curated quick-pick routes shown at the top of the picker
+const QUICK_ROUTES: { path: string; label_bn: string; label_en: string }[] = [
   { path: '/admin/receipts', label_bn: 'ফি রসিদ', label_en: 'Receipts' },
   { path: '/admin/verified-payments', label_bn: 'ভেরিফাইড পেমেন্ট', label_en: 'Verified Payments' },
   { path: '/admin/complaints', label_bn: 'অভিযোগ', label_en: 'Complaints' },
@@ -55,6 +56,26 @@ const ROUTE_OPTIONS: { path: string; label_bn: string; label_en: string }[] = [
   { path: '/admin/donors', label_bn: 'ডোনার', label_en: 'Donors' },
   { path: '/admin/audit-device-allowlist', label_bn: 'অডিট ডিভাইস', label_en: 'Audit Devices' },
 ];
+
+// Flatten the full admin sidebar into a searchable route list grouped by parent
+type RouteOption = { path: string; label_bn: string; label_en: string; group_bn: string; group_en: string };
+const ALL_ADMIN_ROUTES: RouteOption[] = (() => {
+  const out: RouteOption[] = [];
+  const seen = new Set<string>();
+  const push = (r: RouteOption) => {
+    if (!r.path?.startsWith('/admin')) return;
+    if (seen.has(r.path)) return;
+    seen.add(r.path);
+    out.push(r);
+  };
+  for (const top of DEFAULT_MENU_CONFIG.sidebar as MenuItemConfig[]) {
+    push({ path: top.path, label_bn: top.label_bn, label_en: top.label_en, group_bn: top.label_bn, group_en: top.label_en });
+    for (const child of top.children ?? []) {
+      push({ path: child.path, label_bn: child.label_bn, label_en: child.label_en, group_bn: top.label_bn, group_en: top.label_en });
+    }
+  }
+  return out;
+})();
 
 const formatLocation = (r: Row) => {
   const parts = [r.village, r.upazila, r.city, r.country].filter(Boolean);
