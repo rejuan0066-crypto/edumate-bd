@@ -223,16 +223,18 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo
   echo "## Step results"
   echo
-  echo "| Function | Step | Exit | Duration | Log |"
-  echo "|---|---|---|---|---|"
+  echo "| Function | Step | Exit | Duration | Timeout | Env key | Log |"
+  echo "|---|---|---|---|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step rc dur logf <<<"$row"
+    IFS='|' read -r fn step rc dur logf step_to key <<<"$row"
     status=$([ "$rc" = "0" ] && echo "✅ $rc" || echo "❌ $rc")
     # Strip trailing 's' to compare numerically
     secs="${dur%s}"
     marker=""
     if [ "${secs:-0}" -ge "$SLOW_STEP_THRESHOLD" ]; then marker=" ⚠️"; fi
-    echo "| \`$fn\` | $step | $status | ${dur}${marker} | \`$logf\` |"
+    to_cell="${step_to:-$STEP_TIMEOUT}s"
+    if [ "${step_to:-$STEP_TIMEOUT}" != "$STEP_TIMEOUT" ]; then to_cell="${to_cell} *override*"; fi
+    echo "| \`$fn\` | $step | $status | ${dur}${marker} | ${to_cell} | \`STEP_TIMEOUT_${key}\` | \`$logf\` |"
   done
   echo
   echo "## Slowest steps (top 5)"
