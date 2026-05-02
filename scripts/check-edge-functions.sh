@@ -251,6 +251,44 @@ run_step() {
   return 1
 }
 
+# run_step_cached <step-id> <cache-key-hash> <label> <logfile> -- <cmd...>
+#
+# Skips the step (returns 0) when:
+#   - SKIP_CACHE is not 1
+#   - the cache marker for (LAST_FN, step-id) holds the same hash, AND
+#   - the Deno module cache directory is warm (deps available offline)
+# Otherwise runs the command via run_step and, on success, persists the hash.
+run_step_cached() {
+  local step_id="$1"; shift
+  local input_hash="$1"; shift
+  local label="$1"; shift
+  local logfile="$1"; shift
+  shift # discard "--"
+  local marker; marker="$(cache_marker "${LAST_FN}" "${step_id}")"
+  local key; key="$(step_key "$label")"
+
+  if [ "$SKIP_CACHE" != "1" ] && [ -f "$marker" ] \
+      && [ "$(cat "$marker")" = "$input_hash" ] && _deno_cache_warm; then
+    CACHE_HITS=$(( CACHE_HITS + 1 ))
+    CACHE_SKIPS=$(( CACHE_SKIPS + 1 ))
+    : >"$logfile"
+    echo "(cache hit: inputs unchanged since last successful run)" >"$logfile"
+    STEP_RESULTS+=("${LAST_FN:-_gate}|$label|0|0s|$(basename "$logfile")|cached|${key}")
+    echo "  ⤳ $label  [cached, 0s]"
+    return 0
+  fi
+
+  CACHE_MISSES=$(( CACHE_MISSES + 1 ))
+  if run_step "$label" "$logfile" -- "$@"; then
+    printf '%s' "$input_hash" >"$marker"
+    return 0
+  else
+    # On failure, drop any stale marker so the next run is forced to re-execute.
+    rm -f "$marker"
+    return 1
+  fi
+}
+
 STEP_RESULTS=()
 LAST_FN="_gate"
 
