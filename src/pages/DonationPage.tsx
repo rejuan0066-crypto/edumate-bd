@@ -16,6 +16,7 @@ import ManualPaymentMethods from '@/components/ManualPaymentMethods';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { downloadReceiptAsPdf } from '@/lib/receiptPdfDownload';
 import { buildDonationReceiptHtml, type DonationReceiptData } from '@/components/fees/receiptPrintLayouts';
+import { dMsg, type Lang } from '@/lib/donationMessages';
 
 // Bengali → English digit conversion
 const toEnDigits = (s: string) =>
