@@ -38,6 +38,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Need history so the lint-diff gate can resolve the baseline ref
+          # (defaults to origin/main) without a separate fetch round-trip.
+          fetch-depth: 0
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
