@@ -130,6 +130,7 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
+import AdminDonorsRoleAudit from "./pages/admin/AdminDonorsRoleAudit";
 import AdminStudentApprovals from "./pages/admin/AdminStudentApprovals";
 import AdminParentMessages from "@/pages/admin/AdminParentMessages";
 import AdminPushNotifications from "@/pages/admin/AdminPushNotifications";
@@ -365,6 +366,7 @@ const App = () => (
                     <Route path="approvals" element={<AdminApprovals />} />
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
                     <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
+                    <Route path="donors-role-audit" element={<AdminDonorsRoleAudit />} />
                     <Route path="student-approvals" element={<AdminStudentApprovals />} />
                     <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="push-notifications" element={<AdminPushNotifications />} />
