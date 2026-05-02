@@ -593,13 +593,22 @@ const DonationPage = () => {
               <div>
                 <Label className="text-sm">{bn ? 'মোবাইল নম্বর' : 'Mobile Number'} *</Label>
                 <Input
-                  className="bg-background mt-1"
+                  className={`bg-background mt-1 ${phoneError ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   value={form.phone}
                   onChange={(e) => updateField('phone', toEnDigits(e.target.value))}
                   placeholder="01XXXXXXXXX"
-                  maxLength={15}
+                  maxLength={20}
+                  aria-invalid={!!phoneError}
+                  aria-describedby={phoneError ? 'donation-phone-error' : undefined}
                 />
+                {phoneError && (
+                  <p id="donation-phone-error" className="text-xs text-destructive mt-1">
+                    {phoneError}
+                  </p>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <Label className="text-sm">
