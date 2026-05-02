@@ -44,6 +44,28 @@ export const AuditDeviceGate = ({ children }: { children: React.ReactNode }) => 
   const [copied, setCopied] = useState(false);
   const reStatus = useDeviceReregisterStatus();
   const reMut = useRequestDeviceReregistration();
+  const { user } = useAuth();
+  const [geo, setGeo] = useState<GeoInfo | null>(null);
+
+  useEffect(() => {
+    if (data?.ok) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+        if (!r.ok) return;
+        const j = await r.json();
+        if (cancelled) return;
+        setGeo({
+          ip: j.ip ?? '',
+          city: j.city ?? '',
+          region: j.region ?? '',
+          country: j.country_name ?? '',
+        });
+      } catch { /* non-fatal */ }
+    })();
+    return () => { cancelled = true; };
+  }, [data?.ok]);
 
   if (isLoading) {
     return (
