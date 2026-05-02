@@ -242,7 +242,7 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "| Duration | Function | Step |"
   echo "|---|---|---|"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
