@@ -25,6 +25,8 @@ import {
   RefreshCcw, ListChecks, History, Unlock,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { DEFAULT_MENU_CONFIG, MenuItemConfig } from '@/hooks/useMenuSettings';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Row = {
   device_id: string;
@@ -44,7 +46,8 @@ type Row = {
   user_agent: string | null;
 };
 
-const ROUTE_OPTIONS: { path: string; label_bn: string; label_en: string }[] = [
+// Curated quick-pick routes shown at the top of the picker
+const QUICK_ROUTES: { path: string; label_bn: string; label_en: string }[] = [
   { path: '/admin/receipts', label_bn: 'ফি রসিদ', label_en: 'Receipts' },
   { path: '/admin/verified-payments', label_bn: 'ভেরিফাইড পেমেন্ট', label_en: 'Verified Payments' },
   { path: '/admin/complaints', label_bn: 'অভিযোগ', label_en: 'Complaints' },
@@ -53,6 +56,26 @@ const ROUTE_OPTIONS: { path: string; label_bn: string; label_en: string }[] = [
   { path: '/admin/donors', label_bn: 'ডোনার', label_en: 'Donors' },
   { path: '/admin/audit-device-allowlist', label_bn: 'অডিট ডিভাইস', label_en: 'Audit Devices' },
 ];
+
+// Flatten the full admin sidebar into a searchable route list grouped by parent
+type RouteOption = { path: string; label_bn: string; label_en: string; group_bn: string; group_en: string };
+const ALL_ADMIN_ROUTES: RouteOption[] = (() => {
+  const out: RouteOption[] = [];
+  const seen = new Set<string>();
+  const push = (r: RouteOption) => {
+    if (!r.path?.startsWith('/admin')) return;
+    if (seen.has(r.path)) return;
+    seen.add(r.path);
+    out.push(r);
+  };
+  for (const top of DEFAULT_MENU_CONFIG.sidebar as MenuItemConfig[]) {
+    push({ path: top.path, label_bn: top.label_bn, label_en: top.label_en, group_bn: top.label_bn, group_en: top.label_en });
+    for (const child of top.children ?? []) {
+      push({ path: child.path, label_bn: child.label_bn, label_en: child.label_en, group_bn: top.label_bn, group_en: top.label_en });
+    }
+  }
+  return out;
+})();
 
 const formatLocation = (r: Row) => {
   const parts = [r.village, r.upazila, r.city, r.country].filter(Boolean);
@@ -78,6 +101,30 @@ const AdminBlockedDevicesInner = () => {
   const [unblockReason, setUnblockReason] = useState('');
   const [unblockNotes, setUnblockNotes] = useState('');
   const [historyTarget, setHistoryTarget] = useState<Row | null>(null);
+  const [routeSearch, setRouteSearch] = useState('');
+
+  const filteredRoutes = useMemo(() => {
+    const q = routeSearch.trim().toLowerCase();
+    if (!q) return ALL_ADMIN_ROUTES;
+    return ALL_ADMIN_ROUTES.filter(
+      (r) =>
+        r.path.toLowerCase().includes(q) ||
+        r.label_en.toLowerCase().includes(q) ||
+        r.label_bn.toLowerCase().includes(q) ||
+        r.group_en.toLowerCase().includes(q) ||
+        r.group_bn.toLowerCase().includes(q),
+    );
+  }, [routeSearch]);
+
+  const groupedRoutes = useMemo(() => {
+    const map = new Map<string, { group_bn: string; group_en: string; items: RouteOption[] }>();
+    for (const r of filteredRoutes) {
+      const key = r.group_en;
+      if (!map.has(key)) map.set(key, { group_bn: r.group_bn, group_en: r.group_en, items: [] });
+      map.get(key)!.items.push(r);
+    }
+    return Array.from(map.values());
+  }, [filteredRoutes]);
 
   const list = useQuery({
     queryKey: ['blocked-device-attempts', search, onlyBlocked],
@@ -402,8 +449,8 @@ const AdminBlockedDevicesInner = () => {
       </Card>
 
       {/* Approve-for-routes dialog */}
-      <Dialog open={!!approveTarget} onOpenChange={(o) => !o && setApproveTarget(null)}>
-        <DialogContent className="rounded-[38px] max-w-lg">
+      <Dialog open={!!approveTarget} onOpenChange={(o) => { if (!o) { setApproveTarget(null); setRouteSearch(''); } }}>
+        <DialogContent className="rounded-[38px] max-w-2xl">
           <DialogHeader>
             <DialogTitle>{bn ? 'নির্দিষ্ট রুটের জন্য অনুমোদন' : 'Approve for specific routes'}</DialogTitle>
             <DialogDescription>
@@ -417,32 +464,121 @@ const AdminBlockedDevicesInner = () => {
               <p className="text-xs text-muted-foreground">{bn ? 'ডিভাইস আইডি' : 'Device ID'}</p>
               <code className="text-xs font-mono break-all">{approveTarget?.device_id}</code>
             </div>
+
+            {/* Quick picks */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold">{bn ? 'রুট নির্বাচন করুন' : 'Select routes'}</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {ROUTE_OPTIONS.map((r) => {
+              <Label className="text-xs font-semibold">{bn ? 'দ্রুত নির্বাচন' : 'Quick picks'}</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_ROUTES.map((r) => {
                   const checked = approveRoutes.includes(r.path);
                   return (
-                    <label
+                    <button
                       key={r.path}
-                      className="flex items-center gap-2 rounded-xl border p-2.5 cursor-pointer hover:bg-muted/40"
+                      type="button"
+                      onClick={() =>
+                        setApproveRoutes((prev) =>
+                          checked ? prev.filter((p) => p !== r.path) : [...prev, r.path],
+                        )
+                      }
+                      className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                        checked
+                          ? 'bg-emerald-500 text-white border-emerald-500'
+                          : 'bg-muted/40 hover:bg-muted border-border'
+                      }`}
                     >
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={(v) => {
-                          setApproveRoutes((prev) =>
-                            v ? [...prev, r.path] : prev.filter((p) => p !== r.path),
-                          );
-                        }}
-                      />
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold truncate">{bn ? r.label_bn : r.label_en}</p>
-                        <code className="text-[10px] text-muted-foreground">{r.path}</code>
-                      </div>
-                    </label>
+                      {bn ? r.label_bn : r.label_en}
+                    </button>
                   );
                 })}
               </div>
+            </div>
+
+            {/* Search + select-all */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs font-semibold">
+                  {bn ? 'সব রুট' : 'All routes'}{' '}
+                  <span className="text-muted-foreground font-normal">
+                    ({approveRoutes.length} {bn ? 'নির্বাচিত' : 'selected'})
+                  </span>
+                </Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={() =>
+                      setApproveRoutes((prev) =>
+                        Array.from(new Set([...prev, ...filteredRoutes.map((r) => r.path)])),
+                      )
+                    }
+                  >
+                    {bn ? 'সব নির্বাচন' : 'Select all'}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={() => setApproveRoutes([])}
+                  >
+                    {bn ? 'মুছুন' : 'Clear'}
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  value={routeSearch}
+                  onChange={(e) => setRouteSearch(e.target.value)}
+                  placeholder={bn ? 'রুট খুঁজুন (path/label)...' : 'Search routes (path/label)...'}
+                  className="pl-9 rounded-2xl h-9 text-xs"
+                />
+              </div>
+              <ScrollArea className="h-[280px] rounded-2xl border p-2">
+                {groupedRoutes.length === 0 ? (
+                  <div className="text-center text-xs text-muted-foreground py-8">
+                    {bn ? 'কোনো রুট মেলেনি' : 'No matching routes'}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {groupedRoutes.map((g) => (
+                      <div key={g.group_en}>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-1 mb-1">
+                          {bn ? g.group_bn : g.group_en}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                          {g.items.map((r) => {
+                            const checked = approveRoutes.includes(r.path);
+                            return (
+                              <label
+                                key={r.path}
+                                className={`flex items-center gap-2 rounded-xl border p-2 cursor-pointer transition ${
+                                  checked ? 'bg-emerald-500/10 border-emerald-500/40' : 'hover:bg-muted/40'
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(v) =>
+                                    setApproveRoutes((prev) =>
+                                      v ? [...prev, r.path] : prev.filter((p) => p !== r.path),
+                                    )
+                                  }
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-semibold truncate">{bn ? r.label_bn : r.label_en}</p>
+                                  <code className="text-[10px] text-muted-foreground truncate block">{r.path}</code>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
             </div>
             <div>
               <Label className="text-xs">{bn ? 'নোট (ঐচ্ছিক)' : 'Notes (optional)'}</Label>
