@@ -1799,6 +1799,72 @@ export type Database = {
         }
         Relationships: []
       }
+      device_approval_requests: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          device_id: string
+          device_model: string | null
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          region: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          upazila: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+          village: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_id: string
+          device_model?: string | null
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          region?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          upazila?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+          village?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_id?: string
+          device_model?: string | null
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          region?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          upazila?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+          village?: string | null
+        }
+        Relationships: []
+      }
       divisions: {
         Row: {
           created_at: string | null
@@ -8437,46 +8503,97 @@ export type Database = {
       }
       user_devices: {
         Row: {
+          approval_status: string
+          browser: string | null
+          city: string | null
+          country: string | null
           created_at: string
           device_id: string
+          device_model: string | null
           first_seen_at: string
+          home_city: string | null
+          home_country: string | null
+          home_upazila: string | null
           id: string
           is_active: boolean
+          isp: string | null
           label: string | null
+          last_anomaly: string | null
+          last_anomaly_at: string | null
           last_ip: string | null
           last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          os: string | null
+          region: string | null
           revoked_at: string | null
+          upazila: string | null
           updated_at: string
           user_agent: string | null
           user_id: string
+          village: string | null
         }
         Insert: {
+          approval_status?: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           device_id: string
+          device_model?: string | null
           first_seen_at?: string
+          home_city?: string | null
+          home_country?: string | null
+          home_upazila?: string | null
           id?: string
           is_active?: boolean
+          isp?: string | null
           label?: string | null
+          last_anomaly?: string | null
+          last_anomaly_at?: string | null
           last_ip?: string | null
           last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
           revoked_at?: string | null
+          upazila?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id: string
+          village?: string | null
         }
         Update: {
+          approval_status?: string
+          browser?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           device_id?: string
+          device_model?: string | null
           first_seen_at?: string
+          home_city?: string | null
+          home_country?: string | null
+          home_upazila?: string | null
           id?: string
           is_active?: boolean
+          isp?: string | null
           label?: string | null
+          last_anomaly?: string | null
+          last_anomaly_at?: string | null
           last_ip?: string | null
           last_seen_at?: string
+          latitude?: number | null
+          longitude?: number | null
+          os?: string | null
+          region?: string | null
           revoked_at?: string | null
+          upazila?: string | null
           updated_at?: string
           user_agent?: string | null
           user_id?: string
+          village?: string | null
         }
         Relationships: []
       }
@@ -9202,6 +9319,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_device_request: {
+        Args: { _notes?: string; _request_id: string }
+        Returns: Json
+      }
       approve_merit_list: {
         Args: { p_class_id: string; p_exam_session_id: string }
         Returns: {
@@ -9357,6 +9478,57 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      list_device_approval_requests: {
+        Args: { _status?: string }
+        Returns: {
+          city: string
+          country: string
+          created_at: string
+          device_id: string
+          device_model: string
+          id: string
+          ip_address: string
+          region: string
+          status: string
+          upazila: string
+          user_agent: string
+          user_email: string
+          user_id: string
+          user_name: string
+          village: string
+        }[]
+      }
+      list_staff_devices: {
+        Args: never
+        Returns: {
+          approval_status: string
+          browser: string
+          city: string
+          country: string
+          created_at: string
+          device_id: string
+          device_model: string
+          first_seen_at: string
+          id: string
+          is_active: boolean
+          isp: string
+          label: string
+          last_anomaly: string
+          last_anomaly_at: string
+          last_ip: string
+          last_seen_at: string
+          latitude: number
+          longitude: number
+          os: string
+          region: string
+          upazila: string
+          user_agent: string
+          user_email: string
+          user_id: string
+          user_name: string
+          village: string
+        }[]
+      }
       log_security_event: {
         Args: {
           p_bucket_id?: string
@@ -9417,18 +9589,35 @@ export type Database = {
           _user_agent?: string
         }
         Returns: {
+          approval_status: string
+          browser: string | null
+          city: string | null
+          country: string | null
           created_at: string
           device_id: string
+          device_model: string | null
           first_seen_at: string
+          home_city: string | null
+          home_country: string | null
+          home_upazila: string | null
           id: string
           is_active: boolean
+          isp: string | null
           label: string | null
+          last_anomaly: string | null
+          last_anomaly_at: string | null
           last_ip: string | null
           last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          os: string | null
+          region: string | null
           revoked_at: string | null
+          upazila: string | null
           updated_at: string
           user_agent: string | null
           user_id: string
+          village: string | null
         }
         SetofOptions: {
           from: "*"
@@ -9473,6 +9662,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reject_device_request: {
+        Args: { _notes?: string; _request_id: string }
+        Returns: Json
       }
       reject_merit_list: {
         Args: {
@@ -9550,21 +9743,42 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revoke_staff_device: {
+        Args: { _device_uuid: string; _reason?: string }
+        Returns: Json
+      }
       revoke_user_device: {
         Args: { _device_uuid: string }
         Returns: {
+          approval_status: string
+          browser: string | null
+          city: string | null
+          country: string | null
           created_at: string
           device_id: string
+          device_model: string | null
           first_seen_at: string
+          home_city: string | null
+          home_country: string | null
+          home_upazila: string | null
           id: string
           is_active: boolean
+          isp: string | null
           label: string | null
+          last_anomaly: string | null
+          last_anomaly_at: string | null
           last_ip: string | null
           last_seen_at: string
+          latitude: number | null
+          longitude: number | null
+          os: string | null
+          region: string | null
           revoked_at: string | null
+          upazila: string | null
           updated_at: string
           user_agent: string | null
           user_id: string
+          village: string | null
         }
         SetofOptions: {
           from: "*"
@@ -9576,6 +9790,15 @@ export type Database = {
       rotate_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
         Returns: string
+      }
+      set_device_home_location: {
+        Args: {
+          _city: string
+          _country: string
+          _device_uuid: string
+          _upazila: string
+        }
+        Returns: Json
       }
       submit_admission_test_attempt: {
         Args: {
@@ -9653,6 +9876,25 @@ export type Database = {
           p_audit_id: string
           p_expected_deleted?: boolean
           p_expected_is_active?: boolean
+        }
+        Returns: Json
+      }
+      update_device_location: {
+        Args: {
+          _browser: string
+          _city: string
+          _country: string
+          _device_id: string
+          _device_model: string
+          _ip: string
+          _isp: string
+          _latitude: number
+          _longitude: number
+          _os: string
+          _region: string
+          _upazila: string
+          _user_id: string
+          _village: string
         }
         Returns: Json
       }
