@@ -44,7 +44,7 @@ const OnlineExams = () => {
       .is('deleted_at', null)
       .maybeSingle();
     if (error || !data) {
-      alert(bn ? 'অবৈধ অ্যাক্সেস কোড' : 'Invalid access code');
+      toast.error(bn ? 'অবৈধ অ্যাক্সেস কোড' : 'Invalid access code');
       return;
     }
     navigate(`/exam/${data.id}?code=${encodeURIComponent(trimmed)}`);
