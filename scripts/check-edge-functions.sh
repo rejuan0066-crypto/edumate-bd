@@ -428,6 +428,19 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '"failed":%d,' "${#FAIL[@]}"
   printf '"total_step_seconds":%d,' "$TOTAL_STEP_SECONDS"
   printf '"slow_threshold_seconds":%d,' "$SLOW_STEP_THRESHOLD"
+  printf '"hard_limit_default_seconds":%d,' "${STEP_HARD_LIMIT:-0}"
+  printf '"hard_limit_fail_ci":%s,' "$([ "$HARD_LIMIT_FAIL_CI" = "1" ] && echo true || echo false)"
+  printf '"hard_limit_alert_count":%d,' "${#HARD_LIMIT_ALERTS[@]}"
+  printf '"hard_limit_alerts":['
+  first=1
+  for row in "${HARD_LIMIT_ALERTS[@]}"; do
+    IFS='|' read -r fn step dur lim key <<<"$row"
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    printf '{"function":"%s","step":"%s","duration_seconds":%d,"limit_seconds":%d,"override_env":"STEP_HARD_LIMIT_%s"}' \
+      "$fn" "$step" "$dur" "$lim" "$key"
+  done
+  printf '],'
   printf '"gate_ok":%s,' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '"cache_hits":%d,"cache_misses":%d,"cache_skips":%d,"cache_disabled":%s' \
     "$CACHE_HITS" "$CACHE_MISSES" "$CACHE_SKIPS" \
@@ -441,10 +454,18 @@ echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
 echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRESHOLD}s)"
 echo "Cache: ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
+if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
+  echo "🚨 Hard-timeout alerts: ${#HARD_LIMIT_ALERTS[@]}"
+  for row in "${HARD_LIMIT_ALERTS[@]}"; do
+    IFS='|' read -r fn step dur lim key <<<"$row"
+    printf '  - %s — %s: %ss > %ss limit (STEP_HARD_LIMIT_%s)\n' \
+      "$fn" "$step" "$dur" "$lim" "$key"
+  done
+fi
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
-    IFS='|' read -r fn step _ dur _ _ _ <<<"$row"
+    IFS='|' read -r fn step _ dur _ _ _ _ _ <<<"$row"
     printf '%s\t%s\t%s\n' "${dur%s}" "$fn" "$step"
   done | sort -rn | head -3 | while IFS=$'\t' read -r secs fn step; do
     printf '  %4ss  %s — %s\n' "$secs" "$fn" "$step"
@@ -466,5 +487,10 @@ if [ "$GATE_OK" -ne 1 ]; then
 fi
 if [ "${#FAIL[@]}" -gt 0 ]; then
   exit 1
+fi
+if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ] && [ "$HARD_LIMIT_FAIL_CI" = "1" ]; then
+  echo "Failing CI: ${#HARD_LIMIT_ALERTS[@]} step(s) exceeded their hard timeout limit. ❌"
+  echo "Set HARD_LIMIT_FAIL_CI=0 to demote to warnings, or raise STEP_HARD_LIMIT_<KEY>."
+  exit 2
 fi
 echo "All edge functions lint, format, type-check, and bundle cleanly. ✅"
