@@ -114,6 +114,12 @@ _deno_cache_warm() {
   [ -d "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null || true)" ]
 }
 
+DENO_CFG="$FN_DIR/deno.json"
+CFG_ARGS=()
+if [ -f "$DENO_CFG" ]; then
+  CFG_ARGS=(--config "$DENO_CFG")
+fi
+
 DENO_VERSION_HASH="$(deno --version 2>/dev/null | _sha256)"
 SCRIPT_HASH="$(_hash_files "$0")"
 SHARED_HASH="$(_hash_files "$DENO_CFG" "$FN_DIR/deno.lock")"
@@ -135,12 +141,6 @@ function_input_hash() {
 cache_marker() {
   printf '%s/%s.%s.hash' "$CACHE_DIR" "$1" "$2"
 }
-
-DENO_CFG="$FN_DIR/deno.json"
-CFG_ARGS=()
-if [ -f "$DENO_CFG" ]; then
-  CFG_ARGS=(--config "$DENO_CFG")
-fi
 
 # Repo-wide lint + fmt gate (runs once, not per-function) — enforces the
 # Edge Functions rule set defined in supabase/functions/deno.json.
