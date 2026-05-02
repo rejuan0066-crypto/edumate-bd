@@ -151,13 +151,8 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === 'mark_verified') {
-      const c = body.contact.trim().toLowerCase();
-      const { error } = await supabase
-        .from('student_accounts')
-        .update({ contact_verified: true })
-        .ilike('contact', c);
-      if (error) return json({ error: error.message }, 500);
-      return json({ success: true });
+      // SECURITY: disabled. Verification must happen via verify-otp.
+      return json({ error: 'This action is no longer supported. Use verify-otp instead.' }, 410);
     }
 
     if (body.action === 'login') {

@@ -9563,6 +9563,14 @@ export type Database = {
         }[]
       }
       get_device_reregister_status: { Args: never; Returns: Json }
+      get_emailjs_public_key: {
+        Args: never
+        Returns: {
+          public_key: string
+          service_id: string
+          template_id: string
+        }[]
+      }
       get_encryption_key: { Args: never; Returns: string }
       get_next_receipt_serial: { Args: never; Returns: string }
       get_or_create_receipt_token: {
@@ -9677,6 +9685,19 @@ export type Database = {
           village: string
         }[]
       }
+      list_committee_members_public: {
+        Args: { p_committee_id?: string }
+        Returns: {
+          committee_id: string
+          designation: string
+          designation_en: string
+          id: string
+          name: string
+          name_en: string
+          photo_url: string
+          sort_order: number
+        }[]
+      }
       list_device_approval_requests: {
         Args: { _status?: string }
         Returns: {
@@ -9762,6 +9783,17 @@ export type Database = {
           village: string
         }[]
       }
+      list_staff_directory: {
+        Args: never
+        Returns: {
+          designation: string
+          id: string
+          name_bn: string
+          name_en: string
+          photo_url: string
+          staff_category: string
+        }[]
+      }
       log_security_event: {
         Args: {
           p_bucket_id?: string
@@ -9775,6 +9807,31 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: string
+      }
+      lookup_student_admission: {
+        Args: { p_reg_no: string }
+        Returns: {
+          admission_session: string
+          id: string
+          registration_no: string
+          roll_number: string
+          student_id: string
+        }[]
+      }
+      lookup_student_for_fee: {
+        Args: { p_dob?: string; p_reg_no: string }
+        Returns: {
+          class_id: string
+          division_id: string
+          id: string
+          name_bn: string
+          name_en: string
+          photo_url: string
+          registration_no: string
+          roll_number: string
+          session_id: string
+          student_id: string
+        }[]
       }
       match_students_for_parent: {
         Args: { p_nid: string; p_phone: string }
