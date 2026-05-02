@@ -8,6 +8,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useDeviceRegistration } from "@/hooks/useDeviceRegistration";
+
+const DeviceRegistrar = () => {
+  useDeviceRegistration();
+  return null;
+};
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DynamicFavicon from "@/components/DynamicFavicon";
 import UpdatePrompt from "@/components/UpdatePrompt";
@@ -238,6 +244,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
+          <DeviceRegistrar />
           <ThemeProvider>
             <BijoyProvider>
             <TooltipProvider>
