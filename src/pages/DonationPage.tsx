@@ -271,7 +271,7 @@ const DonationPage = () => {
         window.location.href = data.redirect_url;
         return;
       }
-      throw new Error(bn ? 'গেটওয়ে রেসপন্স পাওয়া যায়নি' : 'No gateway response');
+      throw new Error(t('noGatewayResponse'));
     } catch (err: any) {
       toast.error(err.message || 'Error');
     } finally {
