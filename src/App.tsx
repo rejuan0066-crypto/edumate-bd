@@ -9,9 +9,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useDeviceRegistration } from "@/hooks/useDeviceRegistration";
+import { useDeviceTrack } from "@/hooks/useDeviceTrack";
 
 const DeviceRegistrar = () => {
   useDeviceRegistration();
+  useDeviceTrack();
   return null;
 };
 import ProtectedRoute from "@/components/ProtectedRoute";
