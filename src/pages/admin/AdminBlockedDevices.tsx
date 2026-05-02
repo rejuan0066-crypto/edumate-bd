@@ -22,10 +22,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   ShieldX, Search, Loader2, Lock, Ban, CheckCircle2, MapPin, Copy,
-  RefreshCcw, ListChecks,
+  RefreshCcw, ListChecks, History, Unlock,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 type Row = {
   device_id: string;
