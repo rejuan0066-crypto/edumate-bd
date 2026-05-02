@@ -718,6 +718,48 @@ export type Database = {
         }
         Relationships: []
       }
+      authorized_audit_devices: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          device_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          notes: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          device_id: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          notes?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          device_id?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          notes?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       backup_history: {
         Row: {
           backup_type: string
@@ -9092,6 +9134,33 @@ export type Database = {
             Args: { _email: string; _phone: string; _timeout_ms?: number }
             Returns: Json
           }
+      add_audit_device: {
+        Args: {
+          _device_id: string
+          _label?: string
+          _notes?: string
+          _user_id?: string
+        }
+        Returns: {
+          added_by: string | null
+          created_at: string
+          device_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          notes: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "authorized_audit_devices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       add_complaint_reply: {
         Args: { p_email: string; p_message: string; p_ticket: string }
         Returns: Json
@@ -9459,6 +9528,28 @@ export type Database = {
         }
         Returns: number
       }
+      revoke_audit_device: {
+        Args: { _device_uuid: string }
+        Returns: {
+          added_by: string | null
+          created_at: string
+          device_id: string
+          id: string
+          is_active: boolean
+          label: string | null
+          notes: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "authorized_audit_devices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revoke_user_device: {
         Args: { _device_uuid: string }
         Returns: {
@@ -9567,6 +9658,15 @@ export type Database = {
       }
       validate_password_strength: {
         Args: { p_password: string }
+        Returns: Json
+      }
+      verify_audit_device: {
+        Args: {
+          _device_id: string
+          _endpoint?: string
+          _ip?: string
+          _user_agent?: string
+        }
         Returns: Json
       }
       verify_donation_attempt: {

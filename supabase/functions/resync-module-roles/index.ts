@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
     // On mismatch this returns 403 + logs to security_alerts (with IP + UA).
     const guard = await verifyDevice(req, supabase, {
       endpoint: "/resync-module-roles",
+      audit: true,
     });
     if (!guard.ok) return guard.response;
     const deviceId = guard.deviceId;
