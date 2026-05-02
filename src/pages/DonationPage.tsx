@@ -186,15 +186,41 @@ const DonationPage = () => {
       : 'Please enter a valid email address (e.g. name@example.com)'
     : '';
 
+  // Phone validation:
+  //  - Bangladeshi mobile: 11 digits starting with 01[3-9] (e.g. 017XXXXXXXX)
+  //  - International:      +<country code><number>, total 10–15 digits
+  // Strip spaces/hyphens/parentheses before testing so users can type
+  // "+880 1712-345678" or "(017) 1234 5678" naturally.
+  const phoneRaw = form.phone.trim();
+  const phoneDigits = phoneRaw.replace(/[\s\-()]/g, '');
+  const BD_MOBILE_RE = /^01[3-9]\d{8}$/;
+  const INTL_RE = /^\+\d{10,15}$/;
+  const phoneFormatValid =
+    phoneRaw === '' ? false : BD_MOBILE_RE.test(phoneDigits) || INTL_RE.test(phoneDigits);
+  const phoneError = phoneRaw === ''
+    ? ''
+    : !phoneFormatValid
+      ? bn
+        ? 'সঠিক মোবাইল নম্বর দিন (যেমন: 01712345678 অথবা +8801712345678)'
+        : 'Enter a valid mobile number (e.g. 01712345678 or +8801712345678)'
+      : '';
+
   const step1Valid =
     form.name.trim().length > 0 &&
-    form.phone.trim().length >= 6 &&
+    phoneFormatValid &&
     amountNum > 0 &&
     !!form.purposeKey &&
     (form.purposeKey !== 'other' || form.purposeOther.trim().length > 0) &&
     emailFormatValid;
 
   const goNextFromStep1 = () => {
+    if (!phoneFormatValid) {
+      toast.error(
+        phoneError ||
+          (bn ? 'সঠিক মোবাইল নম্বর দিন' : 'Please enter a valid mobile number'),
+      );
+      return;
+    }
     if (!emailFormatValid) {
       toast.error(emailError);
       return;
