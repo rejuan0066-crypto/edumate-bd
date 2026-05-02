@@ -4954,6 +4954,7 @@ export type Database = {
           link: string | null
           message: string | null
           message_bn: string | null
+          recipient_user_id: string | null
           title: string
           title_bn: string | null
           type: string
@@ -4967,6 +4968,7 @@ export type Database = {
           link?: string | null
           message?: string | null
           message_bn?: string | null
+          recipient_user_id?: string | null
           title: string
           title_bn?: string | null
           type?: string
@@ -4980,6 +4982,7 @@ export type Database = {
           link?: string | null
           message?: string | null
           message_bn?: string | null
+          recipient_user_id?: string | null
           title?: string
           title_bn?: string | null
           type?: string
@@ -5043,6 +5046,13 @@ export type Database = {
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "online_exam_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "online_exam_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "online_exam_questions_public"
             referencedColumns: ["id"]
           },
         ]
@@ -9324,6 +9334,101 @@ export type Database = {
           },
         ]
       }
+      admission_test_questions_public: {
+        Row: {
+          id: string | null
+          marks: number | null
+          options: Json | null
+          question_text: string | null
+          question_text_bn: string | null
+          sort_order: number | null
+          test_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "admission_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      committee_members_public: {
+        Row: {
+          allow_overlap: boolean | null
+          committee_id: string | null
+          created_at: string | null
+          deleted_at: string | null
+          designation: string | null
+          designation_en: string | null
+          id: string | null
+          is_active: boolean | null
+          joining_date: string | null
+          name: string | null
+          name_en: string | null
+          occupation: string | null
+          occupation_en: string | null
+          photo_url: string | null
+          sort_order: number | null
+          staff_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allow_overlap?: boolean | null
+          committee_id?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          designation?: string | null
+          designation_en?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          joining_date?: string | null
+          name?: string | null
+          name_en?: string | null
+          occupation?: string | null
+          occupation_en?: string | null
+          photo_url?: string | null
+          sort_order?: number | null
+          staff_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allow_overlap?: boolean | null
+          committee_id?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          designation?: string | null
+          designation_en?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          joining_date?: string | null
+          name?: string | null
+          name_en?: string | null
+          occupation?: string | null
+          occupation_en?: string | null
+          photo_url?: string | null
+          sort_order?: number | null
+          staff_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "committee_members_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "committee_members_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       committee_staff_ids: {
         Row: {
           staff_id: string | null
@@ -9334,6 +9439,27 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      online_exam_questions_public: {
+        Row: {
+          exam_id: string | null
+          id: string | null
+          marks: number | null
+          options: Json | null
+          question_text: string | null
+          question_text_bn: string | null
+          question_type: string | null
+          sort_order: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "online_exam_questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "online_exams"
             referencedColumns: ["id"]
           },
         ]

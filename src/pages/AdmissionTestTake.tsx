@@ -70,7 +70,7 @@ const AdmissionTestTake = () => {
     queryKey: ['public-admission-questions', testId],
     queryFn: async () => {
       const { data } = await supabase
-        .from('admission_test_questions')
+        .from('admission_test_questions_public' as any)
         .select('id, question_text, question_text_bn, options, marks, sort_order')
         .eq('test_id', testId)
         .order('sort_order');
