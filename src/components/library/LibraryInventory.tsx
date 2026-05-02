@@ -15,6 +15,7 @@ import { Plus, Pencil, Trash2, Loader2, Search, BookOpen } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import SearchableSelect from '@/components/SearchableSelect';
 import { DatePicker } from '@/components/ui/date-picker';
+import { useConfirm } from "@/contexts/ConfirmContext";
 const DEFAULT_BOOK_CATEGORIES = [
   { key: 'textbook', label: 'Textbook', label_bn: 'পাঠ্যবই' },
   { key: 'reference', label: 'Reference', label_bn: 'রেফারেন্স' },
@@ -32,6 +33,7 @@ const emptyBook = {
 };
 
 const LibraryInventory = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const { user } = useAuth();
   const bn = language === 'bn';
@@ -243,7 +245,7 @@ const LibraryInventory = () => {
                   <TableCell className="text-center">
                     <div className="flex justify-center gap-1">
                       <Button size="icon" variant="ghost" onClick={() => openEdit(b)}><Pencil className="w-4 h-4" /></Button>
-                      <Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm(bn ? 'মুছে ফেলবেন?' : 'Delete?')) deleteMut.mutate(b.id); }}><Trash2 className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" className="text-destructive" onClick={async () => { if ((await confirm({ description: bn ? 'মুছে ফেলবেন?' : 'Delete?', variant: 'destructive' }))) deleteMut.mutate(b.id); }}><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

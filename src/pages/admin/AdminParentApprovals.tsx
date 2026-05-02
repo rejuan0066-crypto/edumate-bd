@@ -14,8 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Check, X, Trash2, Users, Clock, ShieldCheck, Ban, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminParentApprovals = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { toast } = useToast();
@@ -75,7 +77,7 @@ const AdminParentApprovals = () => {
   };
 
   const deleteAccount = async (id: string) => {
-    if (!confirm(bn ? 'নিশ্চিত?' : 'Are you sure?')) return;
+    if (!(await confirm({ description: bn ? 'নিশ্চিত?' : 'Are you sure?', variant: 'destructive' }))) return;
     const { error } = await supabase.from('parent_accounts').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

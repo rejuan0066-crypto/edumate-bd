@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { autoAdvanceMonth, pickDefaultActor } from '@/lib/salary-workflow-auto-advance';
 import { useSalaryWorkflowGating } from '@/hooks/useSalaryWorkflowGating';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type Stage = 'draft' | 'pending_verification' | 'verified' | 'pending_approval' | 'approved' | 'paid' | 'rejected';
 
@@ -42,6 +43,7 @@ interface Props {
 const STAGE_ORDER: Stage[] = ['draft', 'pending_verification', 'verified', 'pending_approval', 'approved', 'paid'];
 
 const STAGE_LABEL = (s: Stage, bn: boolean): string => {
+  const confirm = useConfirm();
   const map: Record<Stage, [string, string]> = {
     draft: ['খসড়া (প্রস্তুতকৃত)', 'Draft (Prepared)'],
     pending_verification: ['যাচাইয়ের অপেক্ষায়', 'Pending Verification'],
@@ -462,10 +464,10 @@ export default function SalaryWorkflowPanel({
                 variant="outline"
                 className="border-amber-400 text-amber-700 hover:bg-amber-50"
                 disabled={autoAdvanceMutation.isPending}
-                onClick={() => {
-                  if (confirm(bn
+                onClick={async () => {
+                  if ((await confirm({ description: bn
                     ? 'ডিফল্ট যাচাইকারী/অনুমোদনকারী/কোষাধ্যক্ষ ব্যবহার করে সকল ধাপ এক ক্লিকে সম্পন্ন করবেন? এটি বেতন পরিশোধিত হিসেবে চিহ্নিত করবে।'
-                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.')) {
+                    : 'Auto-advance through all stages using default verifier/approver/treasurer? This will mark salaries as Paid.', variant: 'destructive' }))) {
                     autoAdvanceMutation.mutate();
                   }
                 }}

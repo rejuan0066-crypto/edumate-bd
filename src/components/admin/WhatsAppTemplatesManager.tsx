@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import {
+import { useConfirm } from "@/contexts/ConfirmContext";
   Loader2, Plus, Pencil, Trash2, FileText, Save, Tag, Eye, Copy,
   Receipt, GraduationCap, CalendarX, ClipboardList, Bell, Sparkles,
   AsteriskSquare, X, GripVertical, AlertCircle,
@@ -90,6 +91,7 @@ const detectVars = (text: string) => {
 };
 
 const WhatsAppTemplatesManager = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -229,7 +231,7 @@ const WhatsAppTemplatesManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(bn ? 'এই টেমপ্লেট মুছে ফেলবেন?' : 'Delete this template?')) return;
+    if (!(await confirm({ description: bn ? 'এই টেমপ্লেট মুছে ফেলবেন?' : 'Delete this template?', variant: 'destructive' }))) return;
     const { error } = await supabase.from('whatsapp_templates').delete().eq('id', id);
     if (error) {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: error.message, variant: 'destructive' });

@@ -14,8 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, ArrowLeft, CalendarDays } from 'lucide-react';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AdminExamRoutine = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -356,8 +358,8 @@ const AdminExamRoutine = () => {
                                 setEditingId(r.id);
                                 setShowEdit(true);
                               }}><Edit className="h-3.5 w-3.5" /></Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
-                                if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteRoutine.mutate(r.id);
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => {
+                                if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRoutine.mutate(r.id);
                               }}><Trash2 className="h-3.5 w-3.5" /></Button>
                             </div>
                           </TableCell>

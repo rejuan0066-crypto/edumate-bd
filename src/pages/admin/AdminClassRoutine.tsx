@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { Plus, Trash2, Edit, Copy, Eye, Clock, BookOpen, Printer, LayoutGrid, List } from 'lucide-react';
 import MasterRoutineView from '@/components/routine/MasterRoutineView';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const DAYS = [
   { value: 0, label_bn: 'শনিবার', label_en: 'Saturday' },
@@ -43,6 +44,7 @@ interface RoutinePeriod {
 }
 
 const AdminClassRoutine = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -382,8 +384,8 @@ const AdminClassRoutine = () => {
                                     setEditingRoutineId(r.id);
                                     setShowEdit(true);
                                   }}><Edit className="h-3.5 w-3.5" /></Button>
-                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => {
-                                    if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteRoutine.mutate(r.id);
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async () => {
+                                    if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRoutine.mutate(r.id);
                                   }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                 </div>
                               </TableCell>
@@ -573,8 +575,8 @@ const AdminClassRoutine = () => {
                 {periodForm.id ? (bn ? 'আপডেট' : 'Update') : (bn ? 'যোগ করুন' : 'Add')}
               </Button>
               {periodForm.id && (
-                <Button variant="destructive" size="icon" onClick={() => {
-                  if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) {
+                <Button variant="destructive" size="icon" onClick={async () => {
+                  if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) {
                     deletePeriod.mutate(periodForm.id!);
                     setShowPeriodDialog(false);
                   }

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 export interface DesignTemplate {
   id: string;
@@ -34,6 +35,7 @@ interface Props {
 const CATEGORIES = ['all', 'header', 'hero', 'form', 'table', 'dashboard', 'card', 'footer', 'sidebar', 'custom'];
 
 const TemplatesDialog = ({ open, onOpenChange, onInsert, onCapture }: Props) => {
+  const confirm = useConfirm();
   const [templates, setTemplates] = useState<DesignTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -89,7 +91,7 @@ const TemplatesDialog = ({ open, onOpenChange, onInsert, onCapture }: Props) => 
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this template?')) return;
+    if (!(await confirm({ description: 'Delete this template?', variant: 'destructive' }))) return;
     const { error } = await supabase.from('design_templates').delete().eq('id', id);
     if (error) { toast.error(error.message); return; }
     toast.success('Deleted');

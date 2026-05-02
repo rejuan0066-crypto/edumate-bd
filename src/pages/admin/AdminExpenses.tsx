@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedCounter from '@/components/expenses/AnimatedCounter';
 import MiniSparkline from '@/components/expenses/MiniSparkline';
 import { generateBilingualReport } from '@/lib/reportPdfGenerator';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const QUANTITY_UNITS = ['পিস', 'কেজি', 'গ্রাম', 'লিটার', 'ফুট', 'মিটার', 'সেট', 'প্যাকেট', 'বস্তা', 'রিম'];
 const EXPENSE_METHODS = ['ক্যাশ', 'চেক', 'বিকাশ', 'নগদ', 'রকেট', 'ব্যাংক ট্রান্সফার', 'অন্যান্য'];
@@ -56,6 +57,7 @@ const getMonthYearOptions = (lang: string) => {
 };
 
 const AdminExpenses = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const qc = useQueryClient();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/expenses');
@@ -1469,7 +1471,7 @@ const AdminExpenses = () => {
                             </div>
                             <div className="flex gap-1">
                               <Button variant="ghost" size="icon" onClick={() => { setEditingExpInstId(inst.id); setExpInstForm({ name: inst.name, name_bn: inst.name_bn }); setExpInstDialog(true); }}><Edit2 className="w-4 h-4 text-muted-foreground" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteExpInst.mutate(inst.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                              <Button variant="ghost" size="icon" onClick={async () => { if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteExpInst.mutate(inst.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                             </div>
                           </li>
                         );
@@ -1626,7 +1628,7 @@ const AdminExpenses = () => {
                             <Button variant="ghost" size="icon" onClick={() => { setEditingInstitutionId(inst.id); setInstitutionForm({ name: inst.name, name_en: inst.name_en || '', address: inst.address || '', phone: inst.phone || '', email: inst.email || '', other_info: inst.other_info || '', logo_url: inst.logo_url || '' }); setInstitutionDialog(true); }}>
                               <Edit2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => { if (confirm(bn ? 'এই প্রতিষ্ঠান মুছে ফেলতে চান?' : 'Delete this institution?')) { deleteInstitution.mutate(inst.id); if (selectedInstitutionId === inst.id) setSelectedInstitutionId(''); } }}>
+                            <Button variant="ghost" size="icon" onClick={async () => { if ((await confirm({ description: bn ? 'এই প্রতিষ্ঠান মুছে ফেলতে চান?' : 'Delete this institution?', variant: 'destructive' }))) { deleteInstitution.mutate(inst.id); if (selectedInstitutionId === inst.id) setSelectedInstitutionId(''); } }}>
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </div>

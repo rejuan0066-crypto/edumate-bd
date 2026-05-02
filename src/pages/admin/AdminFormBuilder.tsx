@@ -33,6 +33,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import AddressFields, { type AddressData } from '@/components/AddressFields';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const FORM_TYPES = [
   { value: 'custom', label: 'Custom Form', label_bn: 'কাস্টম ফর্ম' },
@@ -179,6 +180,7 @@ const emptyField: FieldData = { field_type: 'text', label: '', label_bn: '', pla
 
 // Sortable field item component
 const SortableLiveField = ({ field, bn, openEditField, deleteField }: any) => {
+  const confirm = useConfirm();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: field.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : undefined, opacity: isDragging ? 0.7 : (!field.is_active ? 0.4 : 1) };
   let opts: string[] = [];
@@ -267,7 +269,7 @@ const SortableLiveField = ({ field, bn, openEditField, deleteField }: any) => {
               <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => openEditField(field)}>
                 <Edit2 className="h-3 w-3" />
               </Button>
-              <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteField(field.id); }}>
+              <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={async () => { if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteField(field.id); }}>
                 <Trash2 className="h-3 w-3" />
               </Button>
             </div>
@@ -728,7 +730,7 @@ const AdminFormBuilder = () => {
                                {canEditItem && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={e => { e.stopPropagation(); openEditForm(form); }}>
                                  <Edit2 className="h-3.5 w-3.5" />
                                </Button>}
-                               {canDeleteItem && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={e => { e.stopPropagation(); if (confirm(bn ? 'ফর্মটি মুছে ফেলতে চান?' : 'Delete this form?')) deleteForm.mutate(form.id); }}>
+                               {canDeleteItem && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={async e => { e.stopPropagation(); if ((await confirm({ description: bn ? 'ফর্মটি মুছে ফেলতে চান?' : 'Delete this form?', variant: 'destructive' }))) deleteForm.mutate(form.id); }}>
                                  <Trash2 className="h-3.5 w-3.5" />
                                </Button>}
                              </div>

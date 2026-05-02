@@ -23,6 +23,7 @@ import { useOtpService } from '@/hooks/useOtpService';
 import { useAuth } from '@/hooks/useAuth';
 import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 import { sanitizePasswordInput } from '@/lib/passwordInput';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 interface UserItem {
   id: string;
@@ -124,6 +125,7 @@ const MENU_PATHS = [
 ];
 
 const AdminUserManagement = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const passwordPolicy = usePasswordPolicy();
@@ -554,7 +556,7 @@ const AdminUserManagement = () => {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm(bn ? 'এই ইউজার ডিলিট করতে চান?' : 'Delete this user?')) return;
+    if (!(await confirm({ description: bn ? 'এই ইউজার ডিলিট করতে চান?' : 'Delete this user?', variant: 'destructive' }))) return;
     setDeleting(userId);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
@@ -914,7 +916,7 @@ const AdminUserManagement = () => {
   };
 
   const deleteCustomRole = async (id: string) => {
-    if (!confirm(bn ? 'এই রোল ডিলিট করতে চান?' : 'Delete this role?')) return;
+    if (!(await confirm({ description: bn ? 'এই রোল ডিলিট করতে চান?' : 'Delete this role?', variant: 'destructive' }))) return;
     try {
       const { error } = await supabase.from('custom_roles').delete().eq('id', id);
       if (error) throw error;

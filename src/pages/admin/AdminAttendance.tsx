@@ -33,6 +33,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -61,6 +62,7 @@ const MEAL_SHIFTS = [
 ];
 
 const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
@@ -1870,8 +1872,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       }}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => {
-                        if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteRuleMutation.mutate(rule.id);
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={async () => {
+                        if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRuleMutation.mutate(rule.id);
                       }}>
                         <Trash2 className="h-3 w-3" />
                       </Button>

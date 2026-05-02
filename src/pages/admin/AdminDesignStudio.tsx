@@ -32,11 +32,13 @@ import VersionHistoryDialog, { type VersionEntry } from '@/components/design-stu
 import AiImageHistoryPanel, { type AiImageOp, type AiImageOpKind } from '@/components/design-studio/AiImageHistoryPanel';
 import type { AiCommandEntry } from '@/components/design-studio/AiCommandHistory';
 import { getPromptHints, getSelectionTypeLabel } from '@/components/design-studio/promptHints';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 const AUTO_SAVE_MS = 8000;
 const GRID_SIZE = 20;
 
 const AdminDesignStudio = () => {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const canvasRef = useRef<DesignCanvasHandle>(null);
   const [fc, setFc] = useState<fabric.Canvas | null>(null);
@@ -375,9 +377,9 @@ const AdminDesignStudio = () => {
     setOpenDialog(false);
   };
 
-  const newProject = () => {
+  const newProject = async () => {
     if (!fc) return;
-    if (!confirm('Start a new design? Unsaved changes will be lost.')) return;
+    if (!(await confirm({ description: 'Start a new design? Unsaved changes will be lost.', variant: 'destructive' }))) return;
     setProjectId(null);
     setProjectName('Untitled Design');
     setBackground('#ffffff');

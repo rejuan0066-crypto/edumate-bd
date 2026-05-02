@@ -17,6 +17,7 @@ import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
 import { format } from 'date-fns';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type Officer = {
   id: string;
@@ -75,6 +76,7 @@ const emptyForm: Partial<Officer> = {
 };
 
 const AdminAdministrative = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -1133,8 +1135,8 @@ const AdminAdministrative = () => {
                                 size="icon"
                                 variant="ghost"
                                 className="rounded-full text-destructive"
-                                onClick={() => {
-                                  if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete this entry?')) {
+                                onClick={async () => {
+                                  if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete this entry?', variant: 'destructive' }))) {
                                     deleteOption.mutate({ kind, id: row.id });
                                   }
                                 }}

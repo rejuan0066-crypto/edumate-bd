@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { toast } from 'sonner';
 import {
+import { useConfirm } from "@/contexts/ConfirmContext";
   Plus, Edit2, Trash2, Calculator, GraduationCap, Wallet,
   Receipt, CreditCard, Variable, FlaskConical, Search
 } from 'lucide-react';
@@ -87,6 +88,7 @@ const emptyGradeFormula: FormulaData = {
 };
 
 const AdminFormulaBuilder = () => {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const queryClient = useQueryClient();
@@ -282,7 +284,7 @@ const AdminFormulaBuilder = () => {
                       <Edit2 className="h-3.5 w-3.5" />
                     </Button>}
                     {canDeleteItem && <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive"
-                      onClick={() => { if (confirm(bn ? 'মুছে ফেলতে চান?' : 'Delete?')) deleteMutation.mutate(f.id); }}>
+                      onClick={async () => { if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteMutation.mutate(f.id); }}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>}
                   </div>
