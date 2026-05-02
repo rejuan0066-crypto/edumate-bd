@@ -873,11 +873,18 @@ const StudentProfileModal = ({
       </Dialog>
 
       {/* ═══════════ BOTTOM ACTIONS (Ghost Buttons) ═══════════ */}
-      <div className="flex gap-2 pt-4 border-t border-border/20">
+      <div className="flex flex-wrap gap-2 pt-4 border-t border-border/20">
+        <Button
+          variant="outline"
+          onClick={handlePrintProfile}
+          className="flex-1 min-w-[140px] rounded-full h-11 border-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
+        >
+          <Printer className="w-4 h-4 mr-2" /> {bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}
+        </Button>
         <Button
           variant="outline"
           onClick={() => { setEditStudent(student); setShowDetail(null); setShowAdd(true); }}
-          className="flex-1 rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
+          className="flex-1 min-w-[140px] rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
         >
           <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
         </Button>
