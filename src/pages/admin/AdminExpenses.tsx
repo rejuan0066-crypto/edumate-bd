@@ -388,8 +388,8 @@ const AdminExpenses = () => {
           .upload(fileName, receiptFile);
         setUploading(false);
         if (uploadError) throw uploadError;
-        const { data: urlData } = supabase.storage.from('receipts').getPublicUrl(uploadData.path);
-        receiptUrl = urlData.publicUrl;
+        // Store storage ref instead of broken public URL on private bucket; signed URL is fetched on demand.
+        receiptUrl = `receipts/${uploadData.path}`;
       }
       
       let descWithTags = (expenseForm.description || '').trim();
