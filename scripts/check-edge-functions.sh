@@ -508,6 +508,23 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       "$fn" "$step" "$dur" "$lim" "$key"
   done
   printf '],'
+  # Per-function bundle metrics
+  printf '"bundles":['
+  first=1
+  total_b=0; total_m=0; total_g=0
+  for row in "${BUNDLE_SIZES[@]}"; do
+    IFS='|' read -r fn bs ms gs <<<"$row"
+    [ "$first" -eq 1 ] || printf ','
+    first=0
+    printf '{"function":"%s","bundle_bytes":%d,"sourcemap_bytes":%d,"gzip_bytes":%d}' \
+      "$fn" "${bs:-0}" "${ms:-0}" "${gs:-0}"
+    total_b=$(( total_b + ${bs:-0} ))
+    total_m=$(( total_m + ${ms:-0} ))
+    total_g=$(( total_g + ${gs:-0} ))
+  done
+  printf '],'
+  printf '"bundle_totals":{"bundle_bytes":%d,"sourcemap_bytes":%d,"gzip_bytes":%d},' \
+    "$total_b" "$total_m" "$total_g"
   printf '"gate_ok":%s,' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
   printf '"cache_hits":%d,"cache_misses":%d,"cache_skips":%d,"cache_disabled":%s' \
     "$CACHE_HITS" "$CACHE_MISSES" "$CACHE_SKIPS" \
