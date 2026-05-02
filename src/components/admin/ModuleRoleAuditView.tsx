@@ -23,6 +23,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
+import AuditDeviceGate from '@/components/admin/AuditDeviceGate';
 import { toast } from 'sonner';
 import {
   ShieldCheck,
@@ -216,6 +217,7 @@ export const ModuleRoleAuditView = ({ config }: { config: ModuleRoleAuditConfig 
   const loading = moduleQuery.isLoading || canonicalQuery.isLoading;
 
   return (
+    <AuditDeviceGate>
     <div className="max-w-[1440px] mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
