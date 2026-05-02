@@ -3,11 +3,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   ShieldOff, Loader2, Copy, MessageCircle, RefreshCw, Check, AlertTriangle,
+  Send, Clock, BadgeCheck,
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getDeviceId } from '@/hooks/useDeviceRegistration';
 import { useAuditDeviceCheck } from '@/hooks/useAuditDeviceCheck';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import {
+  useDeviceReregisterStatus, useRequestDeviceReregistration, formatRemaining,
+} from '@/hooks/useDeviceReregistration';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
 import { useState } from 'react';
