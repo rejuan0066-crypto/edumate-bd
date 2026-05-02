@@ -397,6 +397,7 @@ echo "================ Summary ================"
 echo "Passed: ${#PASS[@]}"
 echo "Failed: ${#FAIL[@]}"
 echo "Total step time: ${TOTAL_STEP_SECONDS}s (slow threshold: ${SLOW_STEP_THRESHOLD}s)"
+echo "Cache: ${CACHE_HITS} hit · ${CACHE_MISSES} miss · ${CACHE_SKIPS} skipped$([ "$SKIP_CACHE" = "1" ] && echo ' (disabled)')"
 if [ "${#STEP_RESULTS[@]}" -gt 0 ]; then
   echo "Slowest steps:"
   for row in "${STEP_RESULTS[@]}"; do
