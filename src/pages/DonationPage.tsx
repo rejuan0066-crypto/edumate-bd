@@ -212,10 +212,7 @@ const DonationPage = () => {
 
   const goNextFromStep1 = () => {
     if (!phoneFormatValid) {
-      toast.error(
-        phoneError ||
-          (bn ? 'সঠিক মোবাইল নম্বর দিন' : 'Please enter a valid mobile number'),
-      );
+      toast.error(phoneError || t('phoneInvalidShort'));
       return;
     }
     if (!emailFormatValid) {
@@ -223,7 +220,7 @@ const DonationPage = () => {
       return;
     }
     if (!step1Valid) {
-      toast.error(bn ? 'নাম, ফোন, পরিমাণ ও উদ্দেশ্য আবশ্যক' : 'Name, phone, amount & purpose required');
+      toast.error(t('step1Required'));
       return;
     }
     setStep(2);
