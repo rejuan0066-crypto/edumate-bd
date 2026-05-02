@@ -254,6 +254,7 @@ const App = () => (
           <ThemeProvider>
             <BijoyProvider>
             <TooltipProvider>
+              <ConfirmProvider>
               <Toaster />
               <Sonner />
               <DynamicFavicon />
