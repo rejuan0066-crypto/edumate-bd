@@ -338,14 +338,26 @@ const AdminBlockedDevicesInner = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setHistoryTarget(r)}
+                            title={bn ? 'হিস্ট্রি' : 'History'}
+                          >
+                            <History className="h-3.5 w-3.5" />
+                          </Button>
                           {r.is_blocked ? (
                             <Button
                               size="sm"
                               variant="outline"
                               disabled={!isSuperAdmin}
-                              onClick={() => setUnblockTarget(r)}
+                              onClick={() => {
+                                setUnblockTarget(r);
+                                setUnblockReason('');
+                                setUnblockNotes('');
+                              }}
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              <Unlock className="h-3.5 w-3.5 text-emerald-600" />
                               {bn ? 'আনব্লক' : 'Unblock'}
                             </Button>
                           ) : (
