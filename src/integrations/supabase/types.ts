@@ -1934,6 +1934,57 @@ export type Database = {
         }
         Relationships: []
       }
+      device_block_history: {
+        Row: {
+          action: string
+          city: string | null
+          country: string | null
+          device_id: string
+          id: string
+          ip_address: string | null
+          notes: string | null
+          performed_at: string
+          performed_by: string | null
+          reason: string
+          upazila: string | null
+          user_agent: string | null
+          user_id: string | null
+          village: string | null
+        }
+        Insert: {
+          action: string
+          city?: string | null
+          country?: string | null
+          device_id: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          reason: string
+          upazila?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          village?: string | null
+        }
+        Update: {
+          action?: string
+          city?: string | null
+          country?: string | null
+          device_id?: string
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          performed_at?: string
+          performed_by?: string | null
+          reason?: string
+          upazila?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          village?: string | null
+        }
+        Relationships: []
+      }
       device_route_allowlist: {
         Row: {
           approved_by: string | null
@@ -9628,6 +9679,31 @@ export type Database = {
           village: string
         }[]
       }
+      list_device_block_history: {
+        Args: { _device_id: string; _limit?: number }
+        Returns: {
+          action: string
+          city: string | null
+          country: string | null
+          device_id: string
+          id: string
+          ip_address: string | null
+          notes: string | null
+          performed_at: string
+          performed_by: string | null
+          reason: string
+          upazila: string | null
+          user_agent: string | null
+          user_id: string | null
+          village: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "device_block_history"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       list_device_route_approvals: {
         Args: { _device_id: string }
         Returns: {
@@ -10034,7 +10110,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      unblock_device: { Args: { _device_id: string }; Returns: Json }
+      unblock_device: {
+        Args: { _device_id: string; _notes?: string; _reason: string }
+        Returns: Json
+      }
       undo_committee_change: {
         Args: {
           p_audit_id: string
