@@ -6,10 +6,58 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { toast } from 'sonner';
+import { useMemo } from 'react';
+import DOMPurify from 'dompurify';
+
+// Allowlist of trusted map iframe hosts. Anything else is stripped.
+const ALLOWED_MAP_HOSTS = [
+  'www.google.com',
+  'maps.google.com',
+  'www.openstreetmap.org',
+  'www.bing.com',
+  'maps.apple.com',
+  'www.mapbox.com',
+  'api.mapbox.com',
+];
+
+const sanitizeMapEmbed = (raw: string): string => {
+  if (!raw) return '';
+  // Only allow <iframe> with a strict attribute allowlist. Strip scripts, styles, event handlers.
+  const clean = DOMPurify.sanitize(raw, {
+    ALLOWED_TAGS: ['iframe'],
+    ALLOWED_ATTR: [
+      'src', 'width', 'height', 'style', 'frameborder',
+      'allow', 'allowfullscreen', 'loading', 'referrerpolicy', 'title',
+    ],
+    ALLOW_UNKNOWN_PROTOCOLS: false,
+    FORBID_ATTR: ['srcdoc', 'sandbox', 'name'],
+  });
+
+  // Validate src host against allowlist
+  if (typeof window === 'undefined') return clean;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = clean;
+  const iframe = tpl.content.querySelector('iframe');
+  if (!iframe) return '';
+  const src = iframe.getAttribute('src') || '';
+  try {
+    const url = new URL(src, window.location.origin);
+    if (url.protocol !== 'https:') return '';
+    if (!ALLOWED_MAP_HOSTS.includes(url.hostname)) return '';
+  } catch {
+    return '';
+  }
+  return tpl.innerHTML;
+};
 
 const Contact = () => {
   const { t, language } = useLanguage();
   const { settings } = useWebsiteSettings();
+
+  const safeMapEmbed = useMemo(
+    () => sanitizeMapEmbed(settings.contact_map_embed || ''),
+    [settings.contact_map_embed],
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
