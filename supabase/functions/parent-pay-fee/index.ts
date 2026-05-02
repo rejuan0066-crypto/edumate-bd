@@ -3,6 +3,7 @@
 //   - initiate_gateway: { account_id, student_uuid, amount, fee_assignment_ids[], return_url }
 //   - submit_manual:    { account_id, student_uuid, amount, fee_assignment_ids[], method, trx_id, sender_phone, note }
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { requireParentSession } from '../_shared/cron-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,11 +39,15 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
     const body = await req.json();
-    const { action, account_id, student_uuid, amount, fee_assignment_ids } = body;
+    const { action, account_id, student_uuid, amount, fee_assignment_ids, session_token } = body;
 
     if (!action || !account_id || !student_uuid) {
       return jsonResp({ error: 'Missing required params' }, 400);
     }
+
+    // AUTHZ: validate parent session token
+    const sessionOk = await requireParentSession(account_id, session_token);
+    if (!sessionOk) return jsonResp({ error: 'Unauthorized: invalid session' }, 401);
 
     const acc = await verifyParentForStudent(account_id, student_uuid);
     if (!acc) return jsonResp({ error: 'Unauthorized' }, 403);
