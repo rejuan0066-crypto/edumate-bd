@@ -98,7 +98,7 @@ const DonationPage = () => {
       // Clean URL so refresh doesn't re-trigger
       window.history.replaceState({}, '', '/donation');
       if (verified) {
-        toast.success(bn ? 'পেমেন্ট যাচাই সম্পন্ন!' : 'Payment verified!');
+        toast.success(t('paymentVerified'));
         return true;
       }
       return false;
