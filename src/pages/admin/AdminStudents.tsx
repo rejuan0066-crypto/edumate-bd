@@ -4,8 +4,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck } from 'lucide-react';
+import { Search, Plus, Trash2, Loader2, CheckCircle, Eye, XCircle, Clock, Pencil, Filter, UserX, UserCheck, Printer } from 'lucide-react';
 import StudentProfileModal from '@/components/profile/StudentProfileModal';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { printStudentProfile } from '@/lib/studentProfilePrint';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +26,7 @@ const AdminStudents = () => {
   const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/students');
   const bn = language === 'bn';
+  const { data: institution } = useInstitutionInfo();
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showDetail, setShowDetail] = useState<any>(null);
@@ -340,6 +343,7 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 flex-nowrap">
                           <button onClick={() => setShowDetail(s)} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/30 shadow-sm border border-blue-200/50 dark:border-blue-800/30 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:shadow-md hover:scale-110 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all duration-200" title={bn ? 'দেখুন' : 'View'}><Eye className="w-4 h-4" strokeWidth={1.75} /></button>
+                          <button onClick={() => printStudentProfile({ student: s, bn, institution: institution || {}, className: getClassName(s.class_id), sessionName: getSessionName(s.session_id, s.admission_session) })} className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/30 shadow-sm border border-indigo-200/50 dark:border-indigo-800/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 hover:shadow-md hover:scale-110 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all duration-200" title={bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}><Printer className="w-4 h-4" strokeWidth={1.75} /></button>
                           {canEditItem && (
                             <button onClick={() => { setEditStudent(s); setShowAdd(true); }} className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/30 shadow-sm border border-emerald-200/50 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:shadow-md hover:scale-110 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all duration-200" title={bn ? 'সম্পাদনা' : 'Edit'}><Pencil className="w-4 h-4" strokeWidth={1.75} /></button>
                           )}

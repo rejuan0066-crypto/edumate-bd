@@ -11,12 +11,15 @@ import {
   User, Hash, Calendar, Heart, Phone, Mail, MapPin, BookOpen, Banknote,
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
-  Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp
+  Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
+  Printer
 } from 'lucide-react';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { printStudentProfile } from '@/lib/studentProfilePrint';
 
 interface StudentProfileModalProps {
   student: any;
@@ -40,6 +43,17 @@ const StudentProfileModal = ({
   const [showWaiverDialog, setShowWaiverDialog] = useState(false);
   const [waiverForm, setWaiverForm] = useState({ fee_type_id: '', waiver_amount: '', reason: '' });
   const [duesSessionId, setDuesSessionId] = useState<string>('');
+  const { data: institution } = useInstitutionInfo();
+
+  const handlePrintProfile = () => {
+    printStudentProfile({
+      student,
+      bn,
+      institution: institution || {},
+      className: getClassName(student.class_id),
+      sessionName: getSessionName(student.session_id, student.admission_session),
+    });
+  };
 
   const { data: allSessions = [] } = useQuery({
     queryKey: ['profile-academic-sessions'],
@@ -859,11 +873,18 @@ const StudentProfileModal = ({
       </Dialog>
 
       {/* ═══════════ BOTTOM ACTIONS (Ghost Buttons) ═══════════ */}
-      <div className="flex gap-2 pt-4 border-t border-border/20">
+      <div className="flex flex-wrap gap-2 pt-4 border-t border-border/20">
+        <Button
+          variant="outline"
+          onClick={handlePrintProfile}
+          className="flex-1 min-w-[140px] rounded-full h-11 border-blue-500/20 text-blue-700 dark:text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
+        >
+          <Printer className="w-4 h-4 mr-2" /> {bn ? 'প্রোফাইল প্রিন্ট' : 'Print Profile'}
+        </Button>
         <Button
           variant="outline"
           onClick={() => { setEditStudent(student); setShowDetail(null); setShowAdd(true); }}
-          className="flex-1 rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
+          className="flex-1 min-w-[140px] rounded-full h-11 border-emerald-500/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300"
         >
           <Pencil className="w-4 h-4 mr-2" /> {bn ? 'সম্পাদনা' : 'Edit'}
         </Button>
