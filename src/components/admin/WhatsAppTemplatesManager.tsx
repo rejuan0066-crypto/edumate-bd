@@ -13,11 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 import {
-import { useConfirm } from "@/contexts/ConfirmContext";
   Loader2, Plus, Pencil, Trash2, FileText, Save, Tag, Eye, Copy,
   Receipt, GraduationCap, CalendarX, ClipboardList, Bell, Sparkles,
   AsteriskSquare, X, GripVertical, AlertCircle,
 } from 'lucide-react';
+import { useConfirm } from "@/contexts/ConfirmContext";
 
 type VarType = 'text' | 'number' | 'date' | 'currency';
 
