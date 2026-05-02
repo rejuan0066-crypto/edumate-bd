@@ -181,13 +181,11 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === 'mark_verified') {
-      const { email } = body;
-      const { error: updErr } = await supabase
-        .from('parent_accounts')
-        .update({ email_verified: true })
-        .eq('email', email.toLowerCase().trim());
-      if (updErr) return json({ error: updErr.message }, 500);
-      return json({ success: true });
+      // SECURITY: this action is disabled. Email verification must go through
+      // the verify-otp edge function, which validates the OTP server-side and
+      // sets email_verified atomically. Allowing an unauthenticated caller to
+      // mark any email as verified bypasses OTP entirely.
+      return json({ error: 'This action is no longer supported. Use verify-otp instead.' }, 410);
     }
 
     if (body.action === 'login') {
