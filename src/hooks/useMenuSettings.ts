@@ -142,6 +142,8 @@ const DEFAULT_SIDEBAR: MenuItemConfig[] = [
     { id: 'settings', path: '/admin/settings', label_bn: 'সেটিংস', label_en: 'Settings', icon: 'Settings', visible: true, sort_order: 0 },
     { id: 'permissions', path: '/admin/permissions', label_bn: 'পারমিশন', label_en: 'Permissions', icon: 'KeyRound', visible: true, sort_order: 1 },
     { id: 'user-management', path: '/admin/user-management', label_bn: 'ইউজার ম্যানেজমেন্ট', label_en: 'User Management', icon: 'UserPlus', visible: true, sort_order: 2 },
+    { id: 'email-templates', path: '/admin/email-templates', label_bn: 'ইমেইল টেমপ্লেট', label_en: 'Email Templates', icon: 'Mail', visible: true, sort_order: 2.3 },
+    { id: 'otp-recovery', path: '/admin/otp-recovery', label_bn: 'OTP রিকভারি', label_en: 'OTP Recovery', icon: 'KeyRound', visible: true, sort_order: 2.6 },
     { id: 'approvals', path: '/admin/approvals', label_bn: 'অনুমোদন', label_en: 'Approvals', icon: 'ShieldCheck', visible: true, sort_order: 3 },
     { id: 'parent-approvals', path: '/admin/parent-approvals', label_bn: 'অভিভাবকবৃন্দ তালিকা', label_en: 'Parent Approvals', icon: 'UserCheck', visible: true, sort_order: 3.5 },
     { id: 'student-approvals', path: '/admin/student-approvals', label_bn: 'ছাত্র একাউন্ট অনুমোদন', label_en: 'Student Approvals', icon: 'GraduationCap', visible: true, sort_order: 3.55 },
