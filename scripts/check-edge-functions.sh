@@ -170,6 +170,19 @@ STEP_TIMEOUT="${STEP_TIMEOUT:-120}"
 STEP_KILL_AFTER="${STEP_KILL_AFTER:-10}"
 # Steps slower than this (seconds) get a ⚠️ marker in CI logs.
 SLOW_STEP_THRESHOLD="${SLOW_STEP_THRESHOLD:-30}"
+
+# ── Hard-timeout alert thresholds ─────────────────────────────────────────
+# A step that *succeeds* but exceeds STEP_HARD_LIMIT (or its per-step override
+# STEP_HARD_LIMIT_<KEY>) is recorded as a hard-timeout alert. By default any
+# alert fails CI; set HARD_LIMIT_FAIL_CI=0 to demote alerts to warnings.
+# Set STEP_HARD_LIMIT=0 (or a per-step 0) to disable the alert for that scope.
+#   STEP_HARD_LIMIT=90                   # global ceiling (seconds)
+#   STEP_HARD_LIMIT_DENO_BUNDLE=180      # higher ceiling for slow bundles
+#   STEP_HARD_LIMIT_DENO_FMT=15          # tighter ceiling for fast steps
+#   HARD_LIMIT_FAIL_CI=0                 # warn instead of failing CI
+STEP_HARD_LIMIT="${STEP_HARD_LIMIT:-0}"
+HARD_LIMIT_FAIL_CI="${HARD_LIMIT_FAIL_CI:-1}"
+HARD_LIMIT_ALERTS=()
 TOTAL_STEP_SECONDS=0
 
 if ! command -v timeout >/dev/null 2>&1; then
