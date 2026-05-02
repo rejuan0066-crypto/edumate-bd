@@ -11,12 +11,15 @@ import {
   User, Hash, Calendar, Heart, Phone, Mail, MapPin, BookOpen, Banknote,
   BadgePercent, FileText, Pencil, CheckCircle, XCircle, Clock, Loader2,
   Plus, Trash2, GraduationCap, Users, Home, CreditCard, ClipboardList,
-  Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp
+  Fingerprint, School, Building2, Library, CalendarCheck, BarChart3, Award, TrendingUp,
+  Printer
 } from 'lucide-react';
 import ProfileInfoItem from './ProfileInfoItem';
 import ProfileSectionCard from './ProfileSectionCard';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { printStudentProfile } from '@/lib/studentProfilePrint';
 
 interface StudentProfileModalProps {
   student: any;
