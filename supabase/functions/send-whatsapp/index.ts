@@ -3,6 +3,7 @@
 // Requires secret: WHATSAPP_ACCESS_TOKEN
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
+import { requireAuth, unauthorized } from '../_shared/auth-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,29 +22,11 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Restrict to admin or staff roles only
+  const guard = await requireAuth(req, { roles: ['admin', 'staff'] });
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
+
   try {
-    // 1. Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     // 2. Parse and validate body
     const body: SendRequest = await req.json();

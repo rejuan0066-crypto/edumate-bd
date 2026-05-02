@@ -127,8 +127,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
         upsert: false,
       });
       if (!upErr) {
-        const { data: urlData } = supabase.storage.from('staff-letters').getPublicUrl(path);
-        publicUrl = urlData.publicUrl;
+        // Store storage ref; signed URLs are fetched on demand via request-signed-url edge fn.
+        publicUrl = `staff-letters/${path}`;
       }
     } catch (e) {
       console.warn('Letter file upload failed:', e);

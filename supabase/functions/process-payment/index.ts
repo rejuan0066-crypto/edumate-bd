@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.100.1";
+import { requireAuth, unauthorized } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,42 @@ Deno.serve(async (req) => {
     const { action, amount, student_id, fee_type_id, month, year, callback_data,
             fee_assignment_ids, parent_account_id, source, transaction_id: tx_in,
             new_status } = body;
+
+    // ---- AUTHENTICATION & AUTHORIZATION ----
+    // `initiate` requires any authenticated user (parent / staff / student portal session).
+    // `update_status` is privileged — admin or accounts/staff only.
+    // `verify_callback` is reachable for gateway IPN flows; it does not mutate payment status.
+    if (action === 'update_status') {
+      const guard = await requireAuth(req, { roles: ['admin', 'staff', 'accounts'] });
+      if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
+    } else if (action === 'initiate') {
+      // Accept either a Supabase JWT or a parent-portal session token in the body.
+      const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+      let authed = false;
+      if (authHeader?.toLowerCase().startsWith('bearer ')) {
+        const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+        try {
+          const { data } = await supabase.auth.getClaims(token);
+          if (data?.claims?.sub) authed = true;
+        } catch { /* fall through */ }
+      }
+      // Parent-portal custom session
+      const parentSessionToken = body?.parent_session_token as string | undefined;
+      if (!authed && parentSessionToken && parent_account_id) {
+        const { data: ok } = await supabase.rpc('validate_parent_session', {
+          p_parent_account_id: parent_account_id,
+          p_session_token: parentSessionToken,
+        });
+        if (ok === true) authed = true;
+      }
+      if (!authed) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: payment initiation requires authentication' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
 
     // Load gateway config
     const { data: config, error: cfgErr } = await supabase

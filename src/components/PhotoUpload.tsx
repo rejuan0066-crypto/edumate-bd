@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import SecureImage from '@/components/SecureImage';
 
 const MAX_SIZE = 300 * 1024; // 300KB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -69,11 +70,11 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('photos')
-        .getPublicUrl(fileName);
+      // Store as "<bucket>/<path>" so SecureImage / useSecureUrl can resolve a
+      // short-lived signed URL on demand. Avoids getPublicUrl on a private bucket.
+      const storageRef = `photos/${fileName}`;
 
-      onChange(publicUrl);
+      onChange(storageRef);
       setPreview(null);
       toast.success(bn ? 'ফটো আপলোড সফল' : 'Photo uploaded');
     } catch (err: any) {
@@ -130,7 +131,11 @@ const PhotoUpload = ({ value, onChange, folder = 'general', className, size = 'm
 
         {displayUrl ? (
           <>
-            <img src={displayUrl} alt="Photo" className="w-full h-full object-cover" />
+            {preview ? (
+              <img src={preview} alt="Photo" className="w-full h-full object-cover" />
+            ) : (
+              <SecureImage src={displayUrl} alt="Photo" className="w-full h-full object-cover" />
+            )}
             {!uploading && (
               <button
                 onClick={handleRemove}

@@ -90,25 +90,73 @@ async function reconcileDonation(
   return { verified: true, donor_id: donor.id };
 }
 
+async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
+  const secret = Deno.env.get('PAYMENT_WEBHOOK_SECRET');
+  if (!secret) {
+    // Hard-fail if no secret configured — admin must configure before webhooks are trusted.
+    console.error('PAYMENT_WEBHOOK_SECRET is not configured; rejecting webhook.');
+    return false;
+  }
+  const provided =
+    req.headers.get('x-webhook-signature') ||
+    req.headers.get('x-hub-signature-256') ||
+    req.headers.get('x-signature') ||
+    '';
+  if (!provided) return false;
+
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(rawBody));
+  const hex = Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  // Allow either "sha256=<hex>" or raw hex
+  const normalized = provided.toLowerCase().replace(/^sha256=/, '').trim();
+  // constant-time-ish compare
+  if (normalized.length !== hex.length) return false;
+  let diff = 0;
+  for (let i = 0; i < hex.length; i++) diff |= normalized.charCodeAt(i) ^ hex.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const url = new URL(req.url);
     let payload: Record<string, any> = {};
+    let rawBody = '';
 
     if (req.method === "POST") {
+      rawBody = await req.text();
       const ct = req.headers.get("content-type") || "";
       if (ct.includes("application/json")) {
-        payload = await req.json().catch(() => ({}));
+        try { payload = JSON.parse(rawBody); } catch { payload = {}; }
       } else {
-        const text = await req.text();
-        try { payload = Object.fromEntries(new URLSearchParams(text)); }
+        try { payload = Object.fromEntries(new URLSearchParams(rawBody)); }
         catch { payload = {}; }
       }
     }
     // Merge query params (gateways often redirect with ?tran_id=&status=)
     url.searchParams.forEach((v, k) => { if (!(k in payload)) payload[k] = v; });
+
+    // Verify HMAC signature for POST callbacks. Browser-redirect flows
+    // (no body) are explicitly rejected — those must be reconciled via the
+    // authenticated `process-payment` `update_status` path instead.
+    if (req.method !== 'POST' || !rawBody) {
+      return jsonResp({ error: 'Webhook requires signed POST body' }, 401);
+    }
+    const sigOk = await verifySignature(req, rawBody);
+    if (!sigOk) {
+      return jsonResp({ error: 'Invalid or missing webhook signature' }, 401);
+    }
+
 
     const transaction_id =
       payload.transaction_id || payload.tran_id || payload.merchantInvoiceNumber || payload.paymentID || payload.order_id;

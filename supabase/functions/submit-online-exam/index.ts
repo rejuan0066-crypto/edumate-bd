@@ -21,8 +21,9 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
 
     const body = await req.json();
-    const { attempt_id, answers, auto_submitted } = body as {
+    const { attempt_id, attempt_token, answers, auto_submitted } = body as {
       attempt_id: string;
+      attempt_token?: string;
       answers: AnswerInput[];
       auto_submitted?: boolean;
     };
@@ -34,14 +35,44 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 1. Load attempt + verify state
+    // 1. Load attempt + verify state + verify ownership via attempt_token
     const { data: attempt, error: aErr } = await admin
       .from('online_exam_attempts')
-      .select('id, exam_id, status, started_at, expires_at')
+      .select('id, exam_id, status, started_at, expires_at, attempt_token')
       .eq('id', attempt_id)
       .maybeSingle();
 
     if (aErr || !attempt) throw new Error('Attempt not found');
+
+    // Ownership check: caller must hold the matching attempt_token issued at exam start.
+    // Admin/staff JWTs may also submit on behalf (e.g. proctor force-submit).
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+    let isStaff = false;
+    if (authHeader?.toLowerCase().startsWith('bearer ')) {
+      try {
+        const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+        const { data: claimsData } = await admin.auth.getClaims(token);
+        const sub = claimsData?.claims?.sub as string | undefined;
+        if (sub) {
+          for (const role of ['admin', 'super_admin', 'staff', 'teacher'] as const) {
+            const { data: ok } = await admin.rpc('has_role', { _user_id: sub, _role: role });
+            if (ok === true) { isStaff = true; break; }
+          }
+        }
+      } catch {
+        // ignore — fall back to attempt_token check
+      }
+    }
+
+    if (!isStaff) {
+      if (!attempt_token || !attempt.attempt_token || attempt_token !== attempt.attempt_token) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: invalid attempt_token' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (attempt.status !== 'in_progress') {
       return new Response(JSON.stringify({ error: 'Already submitted', status: attempt.status }), {
         status: 409,

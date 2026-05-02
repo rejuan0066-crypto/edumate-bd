@@ -4,6 +4,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 // @ts-ignore — Deno-compatible web-push via esm.sh
 import webpush from "https://esm.sh/web-push@3.6.7?target=deno";
+import { requireAuth, unauthorized } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,10 @@ const corsHeaders = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Restrict push delivery to admins (privileged broadcast action)
+  const guard = await requireAuth(req, { roles: ['admin'] });
+  if (!guard.ok) return unauthorized(guard.status, guard.error, corsHeaders);
 
   try {
     const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";

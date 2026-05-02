@@ -502,13 +502,14 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     const path = `staff-docs/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from('photos').upload(path, file);
     if (error) { toast.error(error.message); return; }
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
+    // Store storage ref ("<bucket>/<path>") instead of broken public URL.
+    const storageRef = `photos/${path}`;
 
     setDocuments(prev => [...prev, {
       id: crypto.randomUUID(),
       type: selectedType,
       name: file.name,
-      url: urlData.publicUrl,
+      url: storageRef,
     }]);
     setDocType('');
     setCustomDocType('');
@@ -774,8 +775,8 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     const path = `approver-signatures/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('photos').upload(path, file);
     if (error) { toast.error(bn ? 'আপলোড ব্যর্থ' : 'Upload failed'); return; }
-    const { data: urlData } = supabase.storage.from('photos').getPublicUrl(path);
-    setApproverSignatureUrl(urlData.publicUrl);
+    // Store storage ref so SecureImage / useSecureUrl can resolve a signed URL on demand.
+    setApproverSignatureUrl(`photos/${path}`);
     toast.success(bn ? 'স্বাক্ষর আপলোড হয়েছে' : 'Signature uploaded');
   };
 
