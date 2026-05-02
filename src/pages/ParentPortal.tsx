@@ -45,6 +45,7 @@ interface ParentSession {
   studentId: string;
   studentUuid: string;
   studentUuids?: string[];
+  sessionToken?: string;
   loggedInAt: string;
 }
 
