@@ -170,7 +170,7 @@ const OnlineExamTake = () => {
     const expiresAt = new Date(Date.now() + secondsLeft * 1000).toISOString();
     localStorage.setItem(
       STORAGE_KEY(examId),
-      JSON.stringify({ attemptId, answers, expiresAt })
+      JSON.stringify({ attemptId, attemptToken: attemptTokenRef.current, answers, expiresAt })
     );
   }, [answers, attemptId, examId, exam, secondsLeft, stage]);
 
