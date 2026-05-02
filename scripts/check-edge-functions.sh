@@ -441,6 +441,32 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   done | sort -rn | head -5 | while IFS=$'\t' read -r secs fn step; do
     echo "| ${secs}s | \`$fn\` | $step |"
   done
+  if [ "${#BUNDLE_SIZES[@]}" -gt 0 ]; then
+    echo
+    echo "## Bundle sizes"
+    echo
+    echo "| Function | Bundle | Gzip | Source map |"
+    echo "|---|---:|---:|---:|"
+    total_b=0; total_m=0; total_g=0
+    # Sort by bundle size descending (largest first).
+    for row in "${BUNDLE_SIZES[@]}"; do
+      IFS='|' read -r fn bs ms gs <<<"$row"
+      printf '%s\t%s\t%s\t%s\n' "${bs:-0}" "$fn" "${ms:-0}" "${gs:-0}"
+    done | sort -rn | while IFS=$'\t' read -r bs fn ms gs; do
+      if [ "$bs" = "0" ]; then
+        echo "| \`$fn\` | _(cached / not built)_ | — | — |"
+      else
+        echo "| \`$fn\` | $(human_bytes "$bs") | $(human_bytes "$gs") | $(human_bytes "$ms") |"
+      fi
+    done
+    for row in "${BUNDLE_SIZES[@]}"; do
+      IFS='|' read -r _ bs ms gs <<<"$row"
+      total_b=$(( total_b + ${bs:-0} ))
+      total_m=$(( total_m + ${ms:-0} ))
+      total_g=$(( total_g + ${gs:-0} ))
+    done
+    echo "| **Total** | **$(human_bytes "$total_b")** | **$(human_bytes "$total_g")** | **$(human_bytes "$total_m")** |"
+  fi
   if [ "${#HARD_LIMIT_ALERTS[@]}" -gt 0 ]; then
     echo
     echo "## 🚨 Hard-timeout alerts"
