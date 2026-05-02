@@ -234,7 +234,7 @@ const DonationPage = () => {
   // ---- Submit handlers ----
   const handleOnlinePay = async () => {
     if (!hasGateway) {
-      toast.error(bn ? 'অনলাইন গেটওয়ে সক্রিয় নয়' : 'Online gateway not configured');
+      toast.error(t('gatewayDisabled'));
       return;
     }
     setIsSubmitting(true);
