@@ -19,12 +19,20 @@ export const deviceCorsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-const FORBIDDEN_PAYLOAD = {
+const FORBIDDEN_PAYLOAD_DEFAULT = {
   error: "Unauthorized Device",
   message:
     "আপনি এই ডিভাইস থেকে এক্সেস করার অনুমতিপ্রাপ্ত নন। অনুগ্রহ করে অনুমোদিত ডিভাইস ব্যবহার করুন।",
   message_en:
     "You are not allowed to access from this device. Please use an approved device.",
+};
+
+const FORBIDDEN_PAYLOAD_AUDIT = {
+  error: "Unauthorized Device",
+  message:
+    "আপনার এই ডিভাইসটি অডিট রিপোর্ট দেখার জন্য অনুমোদিত নয়। দয়া করে আপনার নিবন্ধিত অ্যাডমিন ডিভাইস ব্যবহার করুন অথবা সুপার অ্যাডমিনের সাথে যোগাযোগ করুন।",
+  message_en:
+    "This device is not authorized to view audit reports. Please use your registered admin device or contact a super admin.",
 };
 
 const getClientIp = (req: Request): string | null => {
@@ -44,14 +52,23 @@ export type DeviceGuardResult = DeviceGuardOk | DeviceGuardFail;
 export async function verifyDevice(
   req: Request,
   supabase: SupabaseClient,
-  opts: { endpoint?: string; cors?: Record<string, string> } = {},
+  opts: {
+    endpoint?: string;
+    cors?: Record<string, string>;
+    /** When true, also enforces the audit-route allowlist via verify_audit_device RPC. */
+    audit?: boolean;
+  } = {},
 ): Promise<DeviceGuardResult> {
   const cors = opts.cors ?? deviceCorsHeaders;
   const deviceId = req.headers.get("x-device-id") ?? "";
   const ip = getClientIp(req);
   const ua = req.headers.get("user-agent");
+  const rpcName = opts.audit ? "verify_audit_device" : "verify_user_device";
+  const denyPayload = opts.audit
+    ? FORBIDDEN_PAYLOAD_AUDIT
+    : FORBIDDEN_PAYLOAD_DEFAULT;
 
-  const { data, error } = await supabase.rpc("verify_user_device", {
+  const { data, error } = await supabase.rpc(rpcName, {
     _device_id: deviceId,
     _ip: ip,
     _user_agent: ua,
@@ -63,7 +80,7 @@ export async function verifyDevice(
       ok: false,
       response: new Response(
         JSON.stringify({
-          ...FORBIDDEN_PAYLOAD,
+          ...denyPayload,
           error: "Device verification failed",
           detail: error.message,
         }),
@@ -81,7 +98,7 @@ export async function verifyDevice(
       ok: false,
       response: new Response(
         JSON.stringify({
-          ...FORBIDDEN_PAYLOAD,
+          ...denyPayload,
           reason: result.reason ?? "device_mismatch",
         }),
         {
