@@ -9402,6 +9402,7 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_device_reregister_status: { Args: never; Returns: Json }
       get_encryption_key: { Args: never; Returns: string }
       get_next_receipt_serial: { Args: never; Returns: string }
       get_or_create_receipt_token: {
@@ -9692,6 +9693,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      request_device_reregistration: {
+        Args: {
+          _city?: string
+          _country?: string
+          _device_id: string
+          _device_model?: string
+          _ip?: string
+          _latitude?: number
+          _longitude?: number
+          _region?: string
+          _upazila?: string
+          _user_agent?: string
+          _village?: string
+        }
+        Returns: Json
       }
       resolve_actor_name: { Args: { _uid: string }; Returns: string }
       resync_canonical_module_roles: {
