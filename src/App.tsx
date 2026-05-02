@@ -131,6 +131,9 @@ import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminParentApprovals from "./pages/admin/AdminParentApprovals";
 import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
 import AdminDonorsRoleAudit from "./pages/admin/AdminDonorsRoleAudit";
+import AdminVerifiedPaymentsRoleAudit from "./pages/admin/AdminVerifiedPaymentsRoleAudit";
+import AdminComplaintsRoleAudit from "./pages/admin/AdminComplaintsRoleAudit";
+import AdminReceiptsRoleAudit from "./pages/admin/AdminReceiptsRoleAudit";
 import AdminStudentApprovals from "./pages/admin/AdminStudentApprovals";
 import AdminParentMessages from "@/pages/admin/AdminParentMessages";
 import AdminPushNotifications from "@/pages/admin/AdminPushNotifications";
@@ -367,6 +370,9 @@ const App = () => (
                     <Route path="parent-approvals" element={<AdminParentApprovals />} />
                     <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
                     <Route path="donors-role-audit" element={<AdminDonorsRoleAudit />} />
+                    <Route path="verified-payments-role-audit" element={<AdminVerifiedPaymentsRoleAudit />} />
+                    <Route path="complaints-role-audit" element={<AdminComplaintsRoleAudit />} />
+                    <Route path="receipts-role-audit" element={<AdminReceiptsRoleAudit />} />
                     <Route path="student-approvals" element={<AdminStudentApprovals />} />
                     <Route path="parent-messages" element={<AdminParentMessages />} />
                     <Route path="push-notifications" element={<AdminPushNotifications />} />
