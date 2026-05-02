@@ -174,20 +174,19 @@ export default function AdminEmailTemplates() {
     }
   };
 
-  const sendTest = async () => {
+  const requestSendTest = () => {
     if (!active || !edit) return;
     if (!testEmail || !/^\S+@\S+\.\S+$/.test(testEmail)) { toast.error("সঠিক ইমেইল দিন"); return; }
-    if (sessionAttempts >= SESSION_MAX) {
+    if (testLimitEnabled && sessionAttempts >= SESSION_MAX) {
       toast.error(`এই সেশনে সর্বোচ্চ ${SESSION_MAX}টি টেস্ট ইমেইল পাঠানো যাবে। পেজ রিলোড করুন।`);
       return;
     }
-    // Confirm-once gate to prevent unauthorized rapid testing
-    const confirmed = window.confirm(
-      `টেস্ট ইমেইল পাঠানো হবে: ${testEmail}\n\n` +
-      `সেশনে বাকি: ${SESSION_MAX - sessionAttempts} বার\nচালিয়ে যেতে চান?`
-    );
-    if (!confirmed) return;
+    setConfirmOpen(true);
+  };
 
+  const confirmSendTest = async () => {
+    setConfirmOpen(false);
+    if (!active || !edit) return;
     setSending(true);
     try {
       const sample = SAMPLE_VARS[active.template_key] || SAMPLE_VARS.welcome;
@@ -197,7 +196,6 @@ export default function AdminEmailTemplates() {
         body: { to: testEmail, subject, html, template_key: active.template_key },
       });
       if (error) {
-        // Try to read structured error for rate limits
         const ctxBody = await (error as any)?.context?.json?.().catch(() => null);
         if (ctxBody?.error === "RATE_LIMIT_EXCEEDED") {
           toast.error(ctxBody.message || "সার্ভার রেট-লিমিট পৌঁছে গেছে");
