@@ -133,6 +133,22 @@ const DonationPage = () => {
   const updateField = (key: keyof typeof form, value: string) =>
     setForm((p) => ({ ...p, [key]: value }));
 
+  // Persist the donor's email to localStorage so a refresh doesn't lose it.
+  // Stored under DONATION_EMAIL_LS_KEY; cleared when the field is emptied.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const trimmed = form.email.trim();
+      if (trimmed) {
+        window.localStorage.setItem(DONATION_EMAIL_LS_KEY, trimmed);
+      } else {
+        window.localStorage.removeItem(DONATION_EMAIL_LS_KEY);
+      }
+    } catch {
+      // ignore storage failures (quota / private mode)
+    }
+  }, [form.email]);
+
   // ---- Data ----
   const { data: gateways = [] } = useQuery({
     queryKey: ['public-payment-gateways'],
