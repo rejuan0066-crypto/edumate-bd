@@ -251,6 +251,7 @@ const ParentPortal = () => {
         studentId: acc.student_id,
         studentUuid: acc.linked_student_uuid,
         studentUuids: acc.linked_student_uuids || (acc.linked_student_uuid ? [acc.linked_student_uuid] : []),
+        sessionToken: payload.session_token,
         loggedInAt: new Date().toISOString(),
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
