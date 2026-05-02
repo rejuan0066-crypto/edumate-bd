@@ -44,13 +44,24 @@ const DonationPage = () => {
   // Step: 1 = details, 2 = payment selection, 3 = pay (manual or online launch)
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
-  const [form, setForm] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    purposeKey: '',
-    purposeOther: '',
-    amount: '',
+  const DONATION_EMAIL_LS_KEY = 'donation:email';
+  const [form, setForm] = useState(() => {
+    let savedEmail = '';
+    if (typeof window !== 'undefined') {
+      try {
+        savedEmail = window.localStorage.getItem(DONATION_EMAIL_LS_KEY) ?? '';
+      } catch {
+        // localStorage may be unavailable (private mode / SSR) — ignore
+      }
+    }
+    return {
+      name: '',
+      phone: '',
+      email: savedEmail,
+      purposeKey: '',
+      purposeOther: '',
+      amount: '',
+    };
   });
   const [payMode, setPayMode] = useState<PayMode>('');
   const [manualMethod, setManualMethod] = useState('');
