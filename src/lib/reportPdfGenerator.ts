@@ -65,7 +65,7 @@ export const generateBilingualReport = (
 ) => {
   const win = window.open('', '_blank', 'width=1200,height=900');
   if (!win) {
-    alert('Popup blocked. Please allow popups to download the report.');
+    toast.error('Popup blocked. Please allow popups to download the report.');
     return;
   }
 
