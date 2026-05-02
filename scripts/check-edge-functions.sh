@@ -247,9 +247,19 @@ run_step() {
   if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
     slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
   fi
-  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}")
+  local step_hard; step_hard="$(resolve_step_env STEP_HARD_LIMIT_ "$key" "$STEP_HARD_LIMIT")"
+  local hard_breached=0
+  if [ "${step_hard:-0}" -gt 0 ] && [ "$dur" -gt "$step_hard" ]; then
+    hard_breached=1
+    HARD_LIMIT_ALERTS+=("${LAST_FN:-_gate}|$label|${dur}|${step_hard}|${key}")
+  fi
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}|${step_hard}|${hard_breached}")
+  local hard_tag=""
+  if [ "$hard_breached" -eq 1 ]; then
+    hard_tag=" 🚨 HARD LIMIT (${dur}s > ${step_hard}s, STEP_HARD_LIMIT_${key})"
+  fi
   if [ "$rc" -eq 0 ]; then
-    echo "  ✓ $label  [${dur}s]${slow}${override_tag}"
+    echo "  ✓ $label  [${dur}s]${slow}${override_tag}${hard_tag}"
     return 0
   fi
   if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
@@ -258,7 +268,7 @@ run_step() {
     echo "      inspect the function for hangs (network fetches at import"
     echo "      time, infinite loops, etc.)"
   else
-    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}${override_tag}"
+    echo "  ✗ $label (exit $rc)  [${dur}s]${slow}${override_tag}${hard_tag}"
   fi
   sed 's/^/      /' "$logfile"
   return 1
