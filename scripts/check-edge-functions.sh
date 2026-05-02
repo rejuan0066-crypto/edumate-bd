@@ -155,7 +155,7 @@ run_step() {
   if [ "$dur" -ge "$SLOW_STEP_THRESHOLD" ]; then
     slow=" ⚠️ slow (>${SLOW_STEP_THRESHOLD}s)"
   fi
-  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")")
+  STEP_RESULTS+=("${LAST_FN:-_gate}|$label|$rc|${dur}s|$(basename "$logfile")|${step_to}|${key}")
   if [ "$rc" -eq 0 ]; then
     echo "  ✓ $label  [${dur}s]${slow}${override_tag}"
     return 0
