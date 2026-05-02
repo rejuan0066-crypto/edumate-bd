@@ -461,7 +461,7 @@ export default function AdminEmailTemplates() {
                 <div className="flex-1" />
                 <Input type="email" placeholder="test@email.com" value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)} className="max-w-[240px]" />
-                <Button onClick={sendTest} disabled={sending || !testEmail} variant="secondary">
+                <Button onClick={requestSendTest} disabled={sending || !testEmail} variant="secondary">
                   {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} টেস্ট পাঠান
                 </Button>
               </div>
