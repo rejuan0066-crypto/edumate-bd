@@ -75,6 +75,9 @@ const AdminBlockedDevicesInner = () => {
   const [blockReason, setBlockReason] = useState('');
   const [blockNotes, setBlockNotes] = useState('');
   const [unblockTarget, setUnblockTarget] = useState<Row | null>(null);
+  const [unblockReason, setUnblockReason] = useState('');
+  const [unblockNotes, setUnblockNotes] = useState('');
+  const [historyTarget, setHistoryTarget] = useState<Row | null>(null);
 
   const list = useQuery({
     queryKey: ['blocked-device-attempts', search, onlyBlocked],
@@ -142,16 +145,44 @@ const AdminBlockedDevicesInner = () => {
   });
 
   const unblockMut = useMutation({
-    mutationFn: async (deviceId: string) => {
-      const { error } = await supabase.rpc('unblock_device', { _device_id: deviceId });
+    mutationFn: async () => {
+      if (!unblockTarget) throw new Error('No target');
+      const reason = unblockReason.trim();
+      if (reason.length < 5) {
+        throw new Error(bn ? 'কারণ লিখুন (অন্তত ৫ অক্ষর)' : 'Reason required (min 5 chars)');
+      }
+      const { error } = await supabase.rpc('unblock_device', {
+        _device_id: unblockTarget.device_id,
+        _reason: reason,
+        _notes: unblockNotes.trim() || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(bn ? 'আনব্লক হয়েছে' : 'Unblocked');
       setUnblockTarget(null);
+      setUnblockReason('');
+      setUnblockNotes('');
       qc.invalidateQueries({ queryKey: ['blocked-device-attempts'] });
     },
     onError: (e: any) => toast.error(e?.message ?? 'Error'),
+  });
+
+  const historyQuery = useQuery({
+    queryKey: ['device-block-history', historyTarget?.device_id],
+    enabled: !!historyTarget,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('list_device_block_history', {
+        _device_id: historyTarget!.device_id,
+        _limit: 50,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; action: 'block' | 'unblock'; reason: string; notes: string | null;
+        performed_at: string; performed_by: string | null; ip_address: string | null;
+        country: string | null; city: string | null; upazila: string | null; village: string | null;
+      }>;
+    },
   });
 
   const copy = async (txt: string) => {
