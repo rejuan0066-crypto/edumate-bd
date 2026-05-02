@@ -68,6 +68,7 @@ const STAGE_COLOR: Record<Stage, string> = {
 export default function SalaryWorkflowPanel({
   monthYear, monthLabel, year, records, eligibleIds, onChanged, onPrintWithWorkflow,
 }: Props) {
+  const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { user } = useAuth();
