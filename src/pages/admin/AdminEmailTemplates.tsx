@@ -537,6 +537,37 @@ export default function AdminEmailTemplates() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Themed confirmation for sending a test email */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="rounded-[38px] bg-white/90 backdrop-blur-xl border-emerald-100/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-emerald-700">
+              <Send className="w-5 h-5" /> টেস্ট ইমেইল পাঠাবেন?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>প্রাপক: <span className="font-medium text-foreground">{testEmail}</span></div>
+                {testLimitEnabled ? (
+                  <div className="text-xs text-muted-foreground">
+                    এই সেশনে বাকি: <span className="font-semibold text-emerald-700">{Math.max(0, SESSION_MAX - sessionAttempts)}</span> বার
+                    {" "}(সীমা: প্রতি {Math.round(SESSION_WINDOW / 60)} মিনিটে {SESSION_MAX}টি)
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">টেস্ট ইমেইল রেট-লিমিট নিষ্ক্রিয় আছে।</div>
+                )}
+                <div className="text-xs text-muted-foreground">এই সীমা <span className="font-medium">/admin/settings → নিরাপত্তা</span> ট্যাব থেকে পরিবর্তন করা যায়।</div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">বাতিল</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendTest} className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white">
+              পাঠান
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
