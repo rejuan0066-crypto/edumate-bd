@@ -76,6 +76,15 @@ jobs:
       - name: Pre-deploy gate (lint + fmt + compile + bundle dry-run)
         run: bash scripts/check-edge-functions.sh
 
+      - name: Lint regression gate (no new warnings vs base branch)
+        env:
+          # On PRs, diff against the target branch; on push events, against main.
+          LINT_DIFF_BASE_REF: >-
+            ${{ github.event_name == 'pull_request'
+                && format('origin/{0}', github.base_ref)
+                || 'origin/main' }}
+        run: bash scripts/check-edge-lint-diff.sh
+
       - name: Validate edge function env vars
         run: bash scripts/check-edge-function-env.sh
 
