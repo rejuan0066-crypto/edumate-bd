@@ -180,12 +180,12 @@ const OnlineExamTake = () => {
         setTabSwitches((c) => {
           const next = c + 1;
           // Update server-side counter (best effort)
-          if (attemptId) {
-            supabase
-              .from('online_exam_attempts')
-              .update({ tab_switch_count: next })
-              .eq('id', attemptId)
-              .then(() => {});
+          if (attemptId && attemptTokenRef.current) {
+            supabase.rpc('rpc_update_exam_attempt', {
+              p_attempt_id: attemptId,
+              p_attempt_token: attemptTokenRef.current,
+              p_tab_switch_count: next,
+            }).then(() => {});
           }
           const limit = settings.tab_switch_limit ?? 3;
           if (settings.auto_submit_on_limit && next >= limit && !submittedRef.current) {
