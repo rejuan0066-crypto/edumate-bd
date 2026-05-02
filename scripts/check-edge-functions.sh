@@ -385,7 +385,10 @@ RUN_FINISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '"failed":%d,' "${#FAIL[@]}"
   printf '"total_step_seconds":%d,' "$TOTAL_STEP_SECONDS"
   printf '"slow_threshold_seconds":%d,' "$SLOW_STEP_THRESHOLD"
-  printf '"gate_ok":%s' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
+  printf '"gate_ok":%s,' "$([ "$GATE_OK" -eq 1 ] && echo true || echo false)"
+  printf '"cache_hits":%d,"cache_misses":%d,"cache_skips":%d,"cache_disabled":%s' \
+    "$CACHE_HITS" "$CACHE_MISSES" "$CACHE_SKIPS" \
+    "$([ "$SKIP_CACHE" = "1" ] && echo true || echo false)"
   printf '}'
 } >"$SUMMARY_JSON"
 
