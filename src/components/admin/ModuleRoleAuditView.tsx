@@ -22,6 +22,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
+import { getDeviceId } from '@/hooks/useDeviceRegistration';
 import { toast } from 'sonner';
 import {
   ShieldCheck,
@@ -75,20 +76,7 @@ type ResyncResponse = {
   timestamp: string;
 };
 
-const DEVICE_KEY = 'lovable.device_id';
 
-const getDeviceId = (): string => {
-  try {
-    let id = localStorage.getItem(DEVICE_KEY);
-    if (!id) {
-      id = (crypto.randomUUID?.() ?? `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-      localStorage.setItem(DEVICE_KEY, id);
-    }
-    return id;
-  } catch {
-    return `dev-${Date.now()}`;
-  }
-};
 
 const arraysEqual = (a: string[] = [], b: string[] = []) => {
   if (a.length !== b.length) return false;

@@ -7227,6 +7227,48 @@ export type Database = {
           },
         ]
       }
+      security_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json | null
+          device_id: string | null
+          endpoint: string | null
+          id: string
+          ip_address: string | null
+          registered_devices: string[] | null
+          severity: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json | null
+          device_id?: string | null
+          endpoint?: string | null
+          id?: string
+          ip_address?: string | null
+          registered_devices?: string[] | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json | null
+          device_id?: string | null
+          endpoint?: string | null
+          id?: string
+          ip_address?: string | null
+          registered_devices?: string[] | null
+          severity?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string
@@ -8351,6 +8393,51 @@ export type Database = {
           },
         ]
       }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          first_seen_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          first_seen_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          first_seen_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_permissions: {
         Row: {
           approval_add: boolean
@@ -9253,6 +9340,34 @@ export type Database = {
             }
             Returns: string[]
           }
+      register_user_device: {
+        Args: {
+          _device_id: string
+          _ip?: string
+          _label?: string
+          _user_agent?: string
+        }
+        Returns: {
+          created_at: string
+          device_id: string
+          first_seen_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_devices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       reject_admission_test_merit: {
         Args: { p_reason: string; p_test_id: string }
         Returns: {
@@ -9343,6 +9458,29 @@ export type Database = {
           p_source_record_id: string
         }
         Returns: number
+      }
+      revoke_user_device: {
+        Args: { _device_uuid: string }
+        Returns: {
+          created_at: string
+          device_id: string
+          first_seen_at: string
+          id: string
+          is_active: boolean
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_devices"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       rotate_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
@@ -9447,6 +9585,15 @@ export type Database = {
       }
       verify_receipt_admin: { Args: { _token: string }; Returns: Json }
       verify_receipt_public: { Args: { _token: string }; Returns: Json }
+      verify_user_device: {
+        Args: {
+          _device_id: string
+          _endpoint?: string
+          _ip?: string
+          _user_agent?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role:

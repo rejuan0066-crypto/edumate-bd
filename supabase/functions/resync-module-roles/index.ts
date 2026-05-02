@@ -1,15 +1,11 @@
 // Admin-only Edge Function: resync canonical roles for a single menu_path.
 // Access: super_admin OR admin (validated server-side via has_role + RLS).
-// Headers: Authorization (Bearer JWT, required), x-device-id (optional, logged).
+// Headers: Authorization (Bearer JWT, required), x-device-id (REQUIRED — bound to user).
 // Body or query: { menu_path: string }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { deviceCorsHeaders, verifyDevice } from "../_shared/device-verify.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-device-id",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
+const corsHeaders = deviceCorsHeaders;
 
 const json = (status: number, payload: unknown) =>
   new Response(JSON.stringify(payload), {
@@ -58,7 +54,14 @@ Deno.serve(async (req) => {
       });
     }
     const userId = claimsData.claims.sub as string;
-    const deviceId = req.headers.get("x-device-id") ?? null;
+
+    // 2a) Device-binding enforcement: require x-device-id matching a registered device.
+    // On mismatch this returns 403 + logs to security_alerts (with IP + UA).
+    const guard = await verifyDevice(req, supabase, {
+      endpoint: "/resync-module-roles",
+    });
+    if (!guard.ok) return guard.response;
+    const deviceId = guard.deviceId;
 
     // 2) Role check: must be admin OR super_admin
     const { data: roleRows, error: roleErr } = await supabase
