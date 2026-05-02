@@ -45,7 +45,40 @@ Deno.serve(async (req) => {
     email = body?.email || "";
     full_name = body?.full_name;
     kind = (body?.kind === 'user' || body?.kind === 'student') ? body.kind : 'other';
-    const { role, password, student_id, login_url } = body || {};
+    let { role, password, student_id, login_url } = body || {};
+
+    // Determine caller trust level:
+    // - Trusted: valid Supabase JWT belonging to an admin/staff/super_admin (e.g. manage-users invocation)
+    //   OR a request carrying the WELCOME_EMAIL_INTERNAL_SECRET shared secret header.
+    // - Untrusted: public callers (admission form). They MUST NOT be able to inject `password`
+    //   or `role` into the rendered email — those fields are stripped server-side.
+    const internalSecret = Deno.env.get('WELCOME_EMAIL_INTERNAL_SECRET');
+    const providedSecret = req.headers.get('x-internal-secret') || '';
+    let trusted = !!(internalSecret && providedSecret && providedSecret === internalSecret);
+
+    if (!trusted) {
+      const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+      if (authHeader?.toLowerCase().startsWith('bearer ')) {
+        try {
+          const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+          const { data: claimsData } = await supabase.auth.getClaims(token);
+          const sub = claimsData?.claims?.sub as string | undefined;
+          if (sub) {
+            for (const r of ['admin', 'super_admin', 'staff'] as const) {
+              const { data: ok } = await supabase.rpc('has_role', { _user_id: sub, _role: r });
+              if (ok === true) { trusted = true; break; }
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }
+
+    if (!trusted) {
+      // Strip privileged content for anonymous callers (public admission form path).
+      // They still get the welcome email, just without a server-rendered password or role injection.
+      password = undefined;
+      role = undefined;
+    }
 
     if (!email || !body?.kind) {
       await logDelivery('failed', 'email and kind are required');
