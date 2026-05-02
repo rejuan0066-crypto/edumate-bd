@@ -22,10 +22,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   ShieldX, Search, Loader2, Lock, Ban, CheckCircle2, MapPin, Copy,
-  RefreshCcw, ListChecks,
+  RefreshCcw, ListChecks, History, Unlock,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
 type Row = {
   device_id: string;
@@ -76,6 +75,9 @@ const AdminBlockedDevicesInner = () => {
   const [blockReason, setBlockReason] = useState('');
   const [blockNotes, setBlockNotes] = useState('');
   const [unblockTarget, setUnblockTarget] = useState<Row | null>(null);
+  const [unblockReason, setUnblockReason] = useState('');
+  const [unblockNotes, setUnblockNotes] = useState('');
+  const [historyTarget, setHistoryTarget] = useState<Row | null>(null);
 
   const list = useQuery({
     queryKey: ['blocked-device-attempts', search, onlyBlocked],
@@ -143,16 +145,44 @@ const AdminBlockedDevicesInner = () => {
   });
 
   const unblockMut = useMutation({
-    mutationFn: async (deviceId: string) => {
-      const { error } = await supabase.rpc('unblock_device', { _device_id: deviceId });
+    mutationFn: async () => {
+      if (!unblockTarget) throw new Error('No target');
+      const reason = unblockReason.trim();
+      if (reason.length < 5) {
+        throw new Error(bn ? 'কারণ লিখুন (অন্তত ৫ অক্ষর)' : 'Reason required (min 5 chars)');
+      }
+      const { error } = await supabase.rpc('unblock_device', {
+        _device_id: unblockTarget.device_id,
+        _reason: reason,
+        _notes: unblockNotes.trim() || null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(bn ? 'আনব্লক হয়েছে' : 'Unblocked');
       setUnblockTarget(null);
+      setUnblockReason('');
+      setUnblockNotes('');
       qc.invalidateQueries({ queryKey: ['blocked-device-attempts'] });
     },
     onError: (e: any) => toast.error(e?.message ?? 'Error'),
+  });
+
+  const historyQuery = useQuery({
+    queryKey: ['device-block-history', historyTarget?.device_id],
+    enabled: !!historyTarget,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('list_device_block_history', {
+        _device_id: historyTarget!.device_id,
+        _limit: 50,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string; action: 'block' | 'unblock'; reason: string; notes: string | null;
+        performed_at: string; performed_by: string | null; ip_address: string | null;
+        country: string | null; city: string | null; upazila: string | null; village: string | null;
+      }>;
+    },
   });
 
   const copy = async (txt: string) => {
@@ -308,14 +338,26 @@ const AdminBlockedDevicesInner = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setHistoryTarget(r)}
+                            title={bn ? 'হিস্ট্রি' : 'History'}
+                          >
+                            <History className="h-3.5 w-3.5" />
+                          </Button>
                           {r.is_blocked ? (
                             <Button
                               size="sm"
                               variant="outline"
                               disabled={!isSuperAdmin}
-                              onClick={() => setUnblockTarget(r)}
+                              onClick={() => {
+                                setUnblockTarget(r);
+                                setUnblockReason('');
+                                setUnblockNotes('');
+                              }}
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                              <Unlock className="h-3.5 w-3.5 text-emerald-600" />
                               {bn ? 'আনব্লক' : 'Unblock'}
                             </Button>
                           ) : (
@@ -472,18 +514,145 @@ const AdminBlockedDevicesInner = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Unblock confirm */}
-      <DeleteConfirmDialog
+      {/* Unblock dialog with required reason */}
+      <Dialog
         open={!!unblockTarget}
-        onOpenChange={(o) => !o && setUnblockTarget(null)}
-        onConfirm={() => unblockTarget && unblockMut.mutate(unblockTarget.device_id)}
-        title={bn ? 'আনব্লক করবেন?' : 'Unblock device?'}
-        description={
-          bn
-            ? 'এই ডিভাইস আবার লগইন/অ্যাক্সেস চেষ্টা করতে পারবে (অ্যালাউলিস্টে যোগ করা পর্যন্ত অডিট রুট পাবে না)।'
-            : 'The device will be allowed to attempt access again (audit routes still require allowlisting).'
-        }
-      />
+        onOpenChange={(o) => {
+          if (!o) {
+            setUnblockTarget(null);
+            setUnblockReason('');
+            setUnblockNotes('');
+          }
+        }}
+      >
+        <DialogContent className="rounded-[38px] max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Unlock className="h-5 w-5 text-emerald-600" />
+              {bn ? 'ডিভাইস আনব্লক করুন' : 'Unblock Device'}
+            </DialogTitle>
+            <DialogDescription>
+              {bn
+                ? 'এই ডিভাইস আবার লগইন/অ্যাক্সেস চেষ্টা করতে পারবে। কারণ লিখুন — হিস্ট্রিতে রেকর্ড হবে।'
+                : 'The device will be allowed to attempt access again. The reason will be recorded in the device history.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {unblockTarget && (
+              <div className="text-xs font-mono bg-muted/50 rounded-lg p-2 break-all">
+                {unblockTarget.device_id}
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">
+                {bn ? 'কারণ' : 'Reason'} <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                value={unblockReason}
+                onChange={(e) => setUnblockReason(e.target.value)}
+                placeholder={
+                  bn
+                    ? 'যেমন: ব্যবহারকারী যাচাইকৃত, ভুল ব্লক ছিল, ইত্যাদি (অন্তত ৫ অক্ষর)'
+                    : 'e.g. User identity verified, false-positive, etc. (min 5 chars)'
+                }
+                rows={3}
+                className="mt-1"
+              />
+              <div className="text-[10px] text-muted-foreground mt-1">
+                {unblockReason.trim().length}/5 {bn ? 'অক্ষর' : 'chars min'}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">{bn ? 'নোট (ঐচ্ছিক)' : 'Notes (optional)'}</Label>
+              <Input
+                value={unblockNotes}
+                onChange={(e) => setUnblockNotes(e.target.value)}
+                placeholder={bn ? 'অতিরিক্ত মন্তব্য' : 'Additional comment'}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setUnblockTarget(null)}>
+              {bn ? 'বাতিল' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={() => unblockMut.mutate()}
+              disabled={unblockMut.isPending || unblockReason.trim().length < 5}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {unblockMut.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Unlock className="h-4 w-4" />
+              )}
+              {bn ? 'আনব্লক করুন' : 'Unblock'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* History dialog */}
+      <Dialog open={!!historyTarget} onOpenChange={(o) => !o && setHistoryTarget(null)}>
+        <DialogContent className="rounded-[38px] max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5" />
+              {bn ? 'ডিভাইস হিস্ট্রি' : 'Device History'}
+            </DialogTitle>
+            <DialogDescription className="font-mono text-xs break-all">
+              {historyTarget?.device_id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {historyQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !historyQuery.data || historyQuery.data.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">
+                {bn ? 'কোনো হিস্ট্রি নেই' : 'No history yet'}
+              </div>
+            ) : (
+              historyQuery.data.map((h) => (
+                <div
+                  key={h.id}
+                  className={`rounded-[20px] border p-3 ${
+                    h.action === 'block'
+                      ? 'border-destructive/30 bg-destructive/5'
+                      : 'border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <Badge
+                      variant={h.action === 'block' ? 'destructive' : 'default'}
+                      className={h.action === 'unblock' ? 'bg-emerald-600' : ''}
+                    >
+                      {h.action === 'block'
+                        ? bn ? 'ব্লক' : 'BLOCKED'
+                        : bn ? 'আনব্লক' : 'UNBLOCKED'}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground">
+                      {format(new Date(h.performed_at), 'dd/MM/yyyy HH:mm:ss')}
+                    </span>
+                  </div>
+                  <div className="text-sm font-medium">{h.reason}</div>
+                  {h.notes && (
+                    <div className="text-xs text-muted-foreground mt-1">{h.notes}</div>
+                  )}
+                  {(h.ip_address || h.city || h.country) && (
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-2">
+                      <MapPin className="h-3 w-3" />
+                      {[h.village, h.upazila, h.city, h.country].filter(Boolean).join(', ')}
+                      {h.ip_address && <span className="ml-1 font-mono">({h.ip_address})</span>}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
