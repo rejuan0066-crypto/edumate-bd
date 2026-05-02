@@ -454,7 +454,7 @@ const DonationPage = () => {
     setIsDone(false);
     setResult(null);
     setStep(1);
-    setForm({ name: '', phone: '', email: '', purposeKey: '', purposeOther: '', amount: '' });
+    setForm((p) => ({ name: '', phone: '', email: p.email, purposeKey: '', purposeOther: '', amount: '' }));
     setPayMode('');
     setManualMethod('');
     setManualTrxId('');
