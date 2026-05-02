@@ -9325,6 +9325,17 @@ export type Database = {
           old_roles: string[]
         }[]
       }
+      resync_canonical_module_roles_for_path: {
+        Args: { _menu_path: string }
+        Returns: {
+          added_roles: string[]
+          changed: boolean
+          menu_path: string
+          new_roles: string[]
+          old_roles: string[]
+          removed_roles: string[]
+        }[]
+      }
       reverse_fee_allocations: {
         Args: {
           p_actor_id?: string
