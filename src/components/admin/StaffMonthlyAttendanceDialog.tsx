@@ -111,7 +111,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const setStatus = async (
     dateKey: string,
     newStatus: string | null,
-    extra?: { check_in_time?: string | null; check_out_time?: string | null }
+    extra?: { check_in_time?: string | null; check_out_time?: string | null; leave_type?: string | null; leave_reason?: string | null }
   ) => {
     if (!staff?.id) return;
     setSavingKey(dateKey);
@@ -126,6 +126,13 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         const payload: any = { status: newStatus, updated_at: new Date().toISOString() };
         if (extra && 'check_in_time' in extra) payload.check_in_time = extra.check_in_time;
         if (extra && 'check_out_time' in extra) payload.check_out_time = extra.check_out_time;
+        if (extra && 'leave_type' in extra) payload.leave_type = extra.leave_type;
+        if (extra && 'leave_reason' in extra) payload.leave_reason = extra.leave_reason;
+        // When switching away from leave, clear leave fields
+        if (newStatus !== 'leave' && existing.status === 'leave' && !('leave_type' in (extra || {}))) {
+          payload.leave_type = null;
+          payload.leave_reason = null;
+        }
         const { error } = await supabase.from('attendance_records').update(payload).eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
@@ -138,13 +145,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           status: newStatus,
           check_in_time: extra?.check_in_time ?? null,
           check_out_time: extra?.check_out_time ?? null,
+          leave_type: extra?.leave_type ?? null,
+          leave_reason: extra?.leave_reason ?? null,
         });
         if (error) throw error;
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      if (newStatus !== 'late') setOpenKey(null);
+      if (newStatus !== 'late' && newStatus !== 'leave') setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
     } finally {
