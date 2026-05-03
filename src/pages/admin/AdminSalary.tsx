@@ -591,7 +591,7 @@ const AdminSalary = () => {
 
     // Treat absent records on paid holidays as paid leave (no deduction)
     const present = records.filter((r: any) => r.status === 'present').length;
-    const absent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
+    const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
     const leave = records.filter((r: any) => r.status === 'leave').length;
@@ -702,8 +702,22 @@ const AdminSalary = () => {
     const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
     totalDailyEarnings += holidayPaidEarnings;
 
+    // Untracked working days (no attendance record AND not a paid holiday)
+    // → treated as absent so subtractive mode pro-rates correctly.
+    const [yy, mm] = monthYear.split('-').map(Number);
+    const lastDay = new Date(yy, mm, 0).getDate();
+    let untrackedAbsentDays = 0;
+    for (let d = 1; d <= lastDay; d++) {
+      const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
+      if (recordedDates.has(dateStr)) continue;
+      if (paidHolidaySet.has(dateStr)) continue;
+      untrackedAbsentDays += 1;
+    }
+    const absent = recordedAbsent + untrackedAbsentDays;
+
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
+      untrackedAbsentDays, recordedAbsent,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
