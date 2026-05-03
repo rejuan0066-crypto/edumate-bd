@@ -130,14 +130,91 @@ Deno.serve(async (req) => {
     const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
 
-    // Official govt-grade rows (no color pills)
-    const staffRows = staff.map((s: any, i: number) => `
-      <tr>
-        <td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>
-        <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
-        <td class="c-desig">${s.designation}</td>
+    const escapeHtml = (val: unknown): string => String(val ?? "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[ch] as string));
+
+    const logoBlock = instLogo
+      ? `<img src="${escapeHtml(instLogo)}" alt="logo" class="logo-img"/>`
+      : `<div class="logo-fallback">${escapeHtml((instName || 'A').charAt(0))}</div>`;
+
+    const colGroup = `
+      <colgroup>
+        <col style="width:4%"/>
+        <col style="width:18%"/>
+        <col style="width:14%"/>
+        <col style="width:9%"/>
+        <col style="width:4%"/>
+        <col style="width:4%"/>
+        <col style="width:4%"/>
+        <col style="width:9%"/>
+        <col style="width:9%"/>
+        <col style="width:9%"/>
+        <col style="width:16%"/>
+      </colgroup>`;
+
+    const renderPageHeader = () => `
+      <tr class="page-header-row">
+        <th colspan="11" class="header-cell">
+          <div class="page-header">
+            <div class="letterhead">
+              <div class="logo-wrap">${logoBlock}</div>
+              <div class="inst-name">${escapeHtml(instName)}</div>
+              ${instAddress ? `<div class="inst-address">${escapeHtml(instAddress)}</div>` : ""}
+              <div class="inst-contact">
+                ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${escapeHtml(bn ? toBnDigits(instPhone) : instPhone)}</span>` : ""}
+                ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
+                ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${escapeHtml(instEmail)}</span>` : ""}
+              </div>
+              ${(instEstablished || instRegNo) ? `
+              <div class="inst-contact">
+                ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${escapeHtml(bn ? toBnDigits(instEstablished) : instEstablished)}</span>` : ""}
+                ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
+                ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${escapeHtml(bn ? toBnDigits(instRegNo) : instRegNo)}</span>` : ""}
+              </div>` : ""}
+            </div>
+
+            <div class="doc-title">
+              <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
+              <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${escapeHtml(monthLabel)} ${escapeHtml(bn ? toBnDigits(year) : year)}</div>
+            </div>
+
+            <div class="memo-row">
+              <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${escapeHtml(sheetId)}</span>
+              <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${escapeHtml(issueDate)}</span>
+            </div>
+          </div>
+        </th>
+      </tr>`;
+
+    const renderColumnHeaders = () => `
+      <tr class="column-header-row">
+        <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
+        <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
+        <th>${bn ? "পদবি" : "Designation"}</th>
+        <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
+        <th class="center">${bn ? "উপ" : "P"}</th>
+        <th class="center">${bn ? "অনু" : "A"}</th>
+        <th class="center">${bn ? "বি" : "L"}</th>
+        <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
+        <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
+        <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
+        <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
+      </tr>`;
+
+    const renderStaffRows = (rows: any[], startIndex: number) => rows.map((s: any, i: number) => `
+      <tr class="staff-row">
+        <td class="c-num">${bn ? toBnDigits(startIndex + i + 1) : startIndex + i + 1}</td>
+        <td class="c-name"><div class="nm">${escapeHtml(s.name)}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${escapeHtml(s.staff_id)}</div>` : ""}</td>
+        <td>${escapeHtml(s.designation)}</td>
         <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
-        <td class="c-pal"><span>${bn ? toBnDigits(s.present) : s.present}</span> / <span>${bn ? toBnDigits(s.absent) : s.absent}</span> / <span>${bn ? toBnDigits(s.late) : s.late}</span></td>
+        <td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>
+        <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
+        <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
         <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
         <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
         <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
@@ -145,9 +222,82 @@ Deno.serve(async (req) => {
       </tr>
     `).join("");
 
-    const logoBlock = instLogo
-      ? `<img src="${instLogo}" alt="logo" class="logo-img"/>`
-      : `<div class="logo-fallback">${(instName || 'A').charAt(0)}</div>`;
+    const renderTotalsAndNote = () => `
+      <tr class="totals">
+        <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
+        <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
+        <td></td><td></td><td></td>
+        <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
+        <td></td><td></td>
+        <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
+      </tr>
+      <tr class="note-row">
+        <td colspan="11" class="note-cell">
+          <strong>${bn ? "নোটঃ" : "Note:"}</strong>
+          ${bn
+            ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধক্য কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
+            : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
+        </td>
+      </tr>`;
+
+    const renderFooter = () => `
+      <tfoot>
+        <tr>
+          <td colspan="11" class="footer-cell">
+            <div class="footer-inner">
+              <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${escapeHtml((prepared_by && String(prepared_by).trim()) || accountantName || "\u00A0")}</div>
+                  <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+                  <div class="role-meta">${escapeHtml((prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধক্য)" : "(Accountant)"))}</div>
+                </div>
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${escapeHtml((verified_by && String(verified_by).trim()) || verifierName || "\u00A0")}</div>
+                  <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+                  <div class="role-meta">${escapeHtml((verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)"))}</div>
+                </div>
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${escapeHtml((approved_by && String(approved_by).trim()) || principalName || "\u00A0")}</div>
+                  <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+                  <div class="role-meta">${escapeHtml((approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)"))}</div>
+                </div>
+                ${(paid_by && String(paid_by).trim()) ? `
+                <div class="sig">
+                  <div class="sig-line"></div>
+                  <div class="sig-name">${escapeHtml(paid_by)}</div>
+                  <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
+                  <div class="role-meta">${escapeHtml((paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)"))}</div>
+                </div>` : ''}
+              </div>
+              <div class="footer">
+                <div>© ${escapeHtml(instName)}</div>
+                <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${escapeHtml(sheetId)} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${escapeHtml(issueDate)}</div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tfoot>`;
+
+    const rowsPerPage = 12;
+    const staffPages: any[][] = [];
+    for (let i = 0; i < staff.length; i += rowsPerPage) staffPages.push(staff.slice(i, i + rowsPerPage));
+    if (staffPages.length === 0) staffPages.push([]);
+    const pagesHtml = staffPages.map((pageRows, pageIndex) => `
+      <section class="salary-page">
+        <table class="page-table">
+          ${colGroup}
+          <thead>${renderPageHeader()}${renderColumnHeaders()}</thead>
+          <tbody>
+            ${renderStaffRows(pageRows, pageIndex * rowsPerPage)}
+            ${pageIndex === staffPages.length - 1 ? renderTotalsAndNote() : ""}
+          </tbody>
+          ${renderFooter()}
+        </table>
+      </section>
+    `).join("");
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
