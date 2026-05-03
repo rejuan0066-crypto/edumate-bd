@@ -13,8 +13,10 @@ import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen } from 'lucide-r
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const COLOR_OPTIONS = [
   { value: 'blue', label: 'Blue', className: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
@@ -85,9 +87,25 @@ const AdminDesignations = () => {
   const openAdd = () => { resetForm(); setStaffCategory(staffCategories[0]?.key || ''); setDialogOpen(true); };
   const openEdit = (item: any) => { setEditItem(item); setName(item.name || ''); setNameBn(item.name_bn || ''); setDescription(item.description || ''); setSortOrder(item.sort_order || 0); setIsActive(item.is_active ?? true); setStaffCategory(item.staff_category || ''); setDialogOpen(true); };
 
+  // Spelling check (excluding the row being edited)
+  const nameBnCheck = useMemo(() => {
+    const others = (designations as any[])
+      .filter((d) => !editItem || d.id !== editItem.id)
+      .map((d) => d.name_bn);
+    return checkBanglaDesignation(nameBn, others);
+  }, [nameBn, designations, editItem]);
+
+  const catNameBnCheck = useMemo(() => {
+    const others = (staffCategories as any[])
+      .filter((c) => !catEditItem || c.id !== catEditItem.id)
+      .map((c) => c.name_bn);
+    return checkBanglaDesignation(catNameBn, others);
+  }, [catNameBn, staffCategories, catEditItem]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim() || !nameBn.trim()) throw new Error(bn ? 'নাম আবশ্যক' : 'Name is required');
+      if (nameBnCheck.level === 'error') throw new Error(nameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
       const record = { name: name.trim(), name_bn: nameBn.trim(), description: description.trim() || null, sort_order: sortOrder, is_active: isActive, staff_category: staffCategory };
       if (editItem) { const { error } = await supabase.from('designations').update(record).eq('id', editItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('designations').insert(record); if (error) throw error; }
@@ -120,6 +138,7 @@ const AdminDesignations = () => {
   const saveCatMutation = useMutation({
     mutationFn: async () => {
       if (!catName.trim() || !catNameBn.trim() || !catKey.trim()) throw new Error(bn ? 'নাম ও কী আবশ্যক' : 'Name and Key are required');
+      if (catNameBnCheck.level === 'error') throw new Error(catNameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
       const record = { key: catKey.trim().toLowerCase().replace(/\s+/g, '_'), name: catName.trim(), name_bn: catNameBn.trim(), description: catDescription.trim() || null, route_path: catRoutePath.trim() || null, color: catColor, sort_order: catSortOrder, is_active: catIsActive, id_prefix: catIdPrefix.trim().toUpperCase() || null, id_start_range: catIdStartRange } as any;
       if (catEditItem) { const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('staff_categories').insert(record); if (error) throw error; }
@@ -294,7 +313,33 @@ const AdminDesignations = () => {
               <DialogTitle className="flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> {editItem ? (bn ? 'পদবি সম্পাদনা' : 'Edit Designation') : (bn ? 'নতুন পদবি যোগ করুন' : 'Add New Designation')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
-              <div><Label>{bn ? 'পদবি (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={nameBn} onChange={e => setNameBn(e.target.value)} placeholder={bn ? 'যেমন: প্রধান শিক্ষক' : 'e.g. প্রধান শিক্ষক'} /></div>
+              <div>
+                <Label>{bn ? 'পদবি (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label>
+                <Input
+                  className={`bg-background mt-1 ${nameBnCheck.level === 'error' ? 'border-destructive focus-visible:ring-destructive' : nameBnCheck.level === 'warn' ? 'border-amber-500 focus-visible:ring-amber-500' : ''}`}
+                  value={nameBn}
+                  onChange={e => setNameBn(e.target.value)}
+                  placeholder={bn ? 'যেমন: প্রধান শিক্ষক' : 'e.g. প্রধান শিক্ষক'}
+                />
+                {nameBn.trim() && nameBnCheck.level !== 'ok' && (
+                  <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${nameBnCheck.level === 'error' ? 'text-destructive' : 'text-amber-600 dark:text-amber-500'}`}>
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span>{nameBnCheck.message}</span>
+                      {nameBnCheck.suggestion && nameBnCheck.suggestion !== nameBn && (
+                        <button type="button" className="ml-2 underline font-semibold hover:opacity-80" onClick={() => setNameBn(nameBnCheck.suggestion!)}>
+                          {bn ? 'প্রয়োগ করুন' : 'Apply'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {nameBn.trim() && nameBnCheck.level === 'ok' && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-500">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {bn ? 'বানান ঠিক আছে' : 'Spelling OK'}
+                  </div>
+                )}
+              </div>
               <div><Label>{bn ? 'পদবি (ইংরেজি)' : 'Name (English)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={name} onChange={e => setName(e.target.value)} placeholder={bn ? 'যেমন: Head Teacher' : 'e.g. Head Teacher'} /></div>
               <div><Label>{bn ? 'বিবরণ' : 'Description'}</Label><Input className="bg-background mt-1" value={description} onChange={e => setDescription(e.target.value)} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} /></div>
               <div>
@@ -326,7 +371,28 @@ const AdminDesignations = () => {
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div><Label>{bn ? 'কী (ইউনিক)' : 'Key (unique)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono" value={catKey} onChange={e => setCatKey(e.target.value)} placeholder="e.g. teacher" disabled={!!catEditItem} /></div>
-              <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={catNameBn} onChange={e => setCatNameBn(e.target.value)} placeholder={bn ? 'যেমন: শিক্ষক' : 'e.g. শিক্ষক'} /></div>
+              <div>
+                <Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label>
+                <Input
+                  className={`bg-background mt-1 ${catNameBnCheck.level === 'error' ? 'border-destructive focus-visible:ring-destructive' : catNameBnCheck.level === 'warn' ? 'border-amber-500 focus-visible:ring-amber-500' : ''}`}
+                  value={catNameBn}
+                  onChange={e => setCatNameBn(e.target.value)}
+                  placeholder={bn ? 'যেমন: শিক্ষক' : 'e.g. শিক্ষক'}
+                />
+                {catNameBn.trim() && catNameBnCheck.level !== 'ok' && (
+                  <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${catNameBnCheck.level === 'error' ? 'text-destructive' : 'text-amber-600 dark:text-amber-500'}`}>
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span>{catNameBnCheck.message}</span>
+                      {catNameBnCheck.suggestion && catNameBnCheck.suggestion !== catNameBn && (
+                        <button type="button" className="ml-2 underline font-semibold hover:opacity-80" onClick={() => setCatNameBn(catNameBnCheck.suggestion!)}>
+                          {bn ? 'প্রয়োগ করুন' : 'Apply'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={catName} onChange={e => setCatName(e.target.value)} placeholder="e.g. Teacher" /></div>
               <div><Label>{bn ? 'বিবরণ' : 'Description'}</Label><Input className="bg-background mt-1" value={catDescription} onChange={e => setCatDescription(e.target.value)} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} /></div>
               <div><Label>{bn ? 'রাউট পাথ' : 'Route Path'}</Label><Input className="bg-background mt-1 font-mono" value={catRoutePath} onChange={e => setCatRoutePath(e.target.value)} placeholder="/admin/teachers" /></div>
