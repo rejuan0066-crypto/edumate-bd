@@ -343,13 +343,14 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             </button>
                           );
                         })}
-                        {rec?.status === 'late' && (
+                        {(rec?.status === 'present' || rec?.status === 'late' || rec?.status === 'half_day') && (
                           <LateTimeEditor
                             bn={bn}
+                            status={rec.status}
                             initialIn={rec?.check_in_time || ''}
                             initialOut={rec?.check_out_time || ''}
                             saving={isSaving}
-                            onSave={(ci, co) => setStatus(key, 'late', { check_in_time: ci || null, check_out_time: co || null })}
+                            onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
                           />
                         )}
                         {rec && (
