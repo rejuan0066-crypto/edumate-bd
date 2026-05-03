@@ -9802,6 +9802,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      backfill_salary_workflow_names: {
+        Args: never
+        Returns: {
+          seeded_config: boolean
+          updated_count: number
+        }[]
+      }
       can_access_storage_object: {
         Args: { _bucket: string; _object_path: string; _user_id: string }
         Returns: boolean
