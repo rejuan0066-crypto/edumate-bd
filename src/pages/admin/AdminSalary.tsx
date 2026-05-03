@@ -712,8 +712,12 @@ const AdminSalary = () => {
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
 
-    // পূর্ণ বেতন ভিত্তি — ছুটির দিনও এর মধ্যে অন্তর্ভুক্ত
-    let earnedFromAttendance = Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
+    // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
+    // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
+    const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
+    let earnedFromAttendance = calcBasis === 'additive'
+      ? Math.round(attStats.totalDailyEarnings)
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
@@ -738,8 +742,13 @@ const AdminSalary = () => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
+    // additive মডেলে per-minute overtime ইতিমধ্যে totalDailyEarnings-এ যোগ আছে — double-count এড়াতে বাদ দিই
+    const overtimeForNet = calcBasis === 'additive'
+      ? overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate)
+      : overtime;
+
     const netSalary = Math.max(0,
-      earnedFromAttendance + overtime + bonus + otherAllowance
+      earnedFromAttendance + overtimeForNet + bonus + otherAllowance
       - advanceDeduction - savingsDeduction
     );
 
@@ -2604,6 +2613,25 @@ const AdminSalary = () => {
                     checked={getSetting('require_attendance')?.enabled !== false}
                     onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_attendance', value: { enabled: v } })}
                   />
+                </div>
+
+                <div className="p-3 border rounded-lg space-y-2">
+                  <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
+                  <Select
+                    value={getSetting('salary_calc_basis')?.mode || 'subtractive'}
+                    onValueChange={v => saveSettingMutation.mutate({ key: 'salary_calc_basis', value: { mode: v } })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="subtractive">{bn ? 'কর্তনভিত্তিক (পূর্ণ মাস − অনুপস্থিতি/দেরি; ছুটির দিন বেতনসহ)' : 'Subtractive (Full month − absences/late; holidays paid)'}</SelectItem>
+                      <SelectItem value="additive">{bn ? 'যোগভিত্তিক (শুধু উপস্থিত দিনের আয়; ছুটির দিন বেতনহীন)' : 'Additive (Only present days earned; holidays unpaid)'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    {bn
+                      ? 'কর্তনভিত্তিক: শুক্রবার/সরকারি ছুটি স্বয়ংক্রিয়ভাবে বেতনসহ। যোগভিত্তিক: প্রতিদিন উপস্থিতি রেকর্ড থাকতে হবে নাহলে সেদিনের বেতন হবে না।'
+                      : 'Subtractive: weekend/holidays auto-paid. Additive: each day must have an attendance record to be paid.'}
+                  </p>
                 </div>
               </TabsContent>
 
