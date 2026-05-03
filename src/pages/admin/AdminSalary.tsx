@@ -2088,7 +2088,8 @@ const AdminSalary = () => {
                               >
                                 <span className="text-emerald-600">{bn ? toBnDigits(attStats.present) : attStats.present}</span>/
                                 <span className="text-red-500">{bn ? toBnDigits(attStats.absent) : attStats.absent}</span>/
-                                <span className="text-yellow-600">{bn ? toBnDigits(attStats.late) : attStats.late}</span>
+                                <span className="text-yellow-600">{bn ? toBnDigits(attStats.late) : attStats.late}</span>/
+                                <span className="text-blue-600">{bn ? toBnDigits(attStats.leave || 0) : (attStats.leave || 0)}</span>
                                 {attStats.totalLateArrivalMinutes > 0 && (
                                   <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
                                 )}
