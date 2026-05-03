@@ -1939,12 +1939,10 @@ const AdminSalary = () => {
               ` : ''}
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
-              <!-- যাচাই: সম্পূর্ণ যোগফল -->
-              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-size:11px;font-style:italic">
-                <span class="l">${bn
-                  ? `যাচাই: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`
-                  : `Check: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`}</span>
-                <span class="v">= ৳${slipNum(netSalary)}</span>
+              <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
+              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
+                <span class="l">${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span>
+                <span class="v">৳${slipNum(netSalary)}</span>
               </div>
             </div>
             <div class="col-foot"><span>${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span><span>৳${slipNum(netSalary)}</span></div>
