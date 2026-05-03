@@ -2434,8 +2434,96 @@ const AdminSalary = () => {
                               </button>
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
-                              ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}{!rec && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                              {(() => {
+                                const src = usePending ? autoCalc : (rec || autoCalc);
+                                const absD = Number(src.absence_deduction || 0);
+                                const lateD = Number(src.late_deduction || 0);
+                                const advD = Number((rec?.advance_deduction) ?? src.advance_deduction ?? 0);
+                                const otherD = Number((rec?.other_deduction) ?? src.other_deduction ?? 0);
+                                const savD = Number(rec?.savings_deduction ?? savingsAmt ?? 0);
+                                const bonusV = Number(rec?.bonus || 0);
+                                const otherA = Number(rec?.other_allowance || 0);
+                                const baseV = Number(rec?.base_salary || s.salary || 0);
+                                const otV = Number((rec?.overtime) ?? src.overtime ?? 0);
+                                const sumDed = absD + lateD + advD + otherD + savD;
+                                const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
+                                const mismatch = Math.abs(expectedNet - displayNet) > 1;
+                                return (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className={`hover:underline decoration-dotted underline-offset-2 ${mismatch ? 'ring-1 ring-red-400 rounded px-1' : ''}`}
+                                        title={bn ? 'কর্তন ব্রেকডাউন দেখুন' : 'View deduction breakdown'}
+                                      >
+                                        ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}
+                                        {!rec && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent align="end" className="w-72 p-0 rounded-2xl overflow-hidden">
+                                      <div className="px-4 py-2.5 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/40 dark:to-rose-950/40 border-b">
+                                        <div className="text-xs font-bold text-red-700 dark:text-red-300">
+                                          {bn ? 'কর্তন ব্রেকডাউন' : 'Deduction Breakdown'}
+                                        </div>
+                                        <div className="text-[10px] text-muted-foreground">{bn ? s.name_bn : (s.name_en || s.name_bn)}</div>
+                                      </div>
+                                      <div className="px-4 py-3 space-y-1.5 text-xs">
+                                        {[
+                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
+                                          { lbl: bn ? 'বিলম্ব' : 'Late', v: lateD, k: 'late' },
+                                          { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
+                                          { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
+                                          { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
+                                        ].map(row => (
+                                          <div key={row.k} className="flex justify-between items-center">
+                                            <span className="text-muted-foreground flex items-center gap-1">
+                                              <Minus className="h-2.5 w-2.5 opacity-60" />{row.lbl}
+                                            </span>
+                                            <span className={`font-mono ${row.v > 0 ? (row.blue ? 'text-blue-600' : 'text-red-600') : 'text-muted-foreground/50'}`}>
+                                              ৳{bn ? toBnDigits(row.v.toLocaleString()) : row.v.toLocaleString()}
+                                            </span>
+                                          </div>
+                                        ))}
+                                        <div className="flex justify-between items-center pt-1.5 mt-1.5 border-t font-bold">
+                                          <span>{bn ? 'মোট কর্তন' : 'Total Deduction'}</span>
+                                          <span className="font-mono text-red-700">৳{bn ? toBnDigits(sumDed.toLocaleString()) : sumDed.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+                                      <div className="px-4 py-2.5 bg-muted/40 border-t space-y-1 text-[11px]">
+                                        <div className="flex justify-between"><span className="text-muted-foreground">{bn ? 'মূল বেতন' : 'Base'}</span><span className="font-mono">৳{bn ? toBnDigits(baseV.toLocaleString()) : baseV.toLocaleString()}</span></div>
+                                        {(otV > 0 || bonusV > 0 || otherA > 0) && (
+                                          <div className="flex justify-between text-emerald-700">
+                                            <span className="text-muted-foreground">+ {bn ? 'ওভারটাইম/বোনাস/ভাতা' : 'OT / Bonus / Allow'}</span>
+                                            <span className="font-mono">৳{bn ? toBnDigits((otV + bonusV + otherA).toLocaleString()) : (otV + bonusV + otherA).toLocaleString()}</span>
+                                          </div>
+                                        )}
+                                        <div className="flex justify-between text-red-600">
+                                          <span className="text-muted-foreground">− {bn ? 'মোট কর্তন' : 'Total Ded.'}</span>
+                                          <span className="font-mono">৳{bn ? toBnDigits(sumDed.toLocaleString()) : sumDed.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between pt-1 border-t mt-1 font-bold">
+                                          <span>{bn ? 'প্রত্যাশিত নিট' : 'Expected Net'}</span>
+                                          <span className="font-mono text-emerald-700">৳{bn ? toBnDigits(expectedNet.toLocaleString()) : expectedNet.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">{bn ? 'প্রদর্শিত নিট' : 'Shown Net'}</span>
+                                          <span className={`font-mono ${mismatch ? 'text-red-600 font-bold' : 'text-emerald-700'}`}>
+                                            ৳{bn ? toBnDigits(displayNet.toLocaleString()) : displayNet.toLocaleString()}
+                                          </span>
+                                        </div>
+                                        {mismatch && (
+                                          <div className="mt-1.5 px-2 py-1 rounded bg-red-100 text-red-700 text-[10px] flex items-center gap-1">
+                                            <AlertCircle className="h-3 w-3" />
+                                            {bn ? 'সম্ভাব্য ডাবল-কাট! Recalculate চাপুন।' : 'Possible double-deduction! Click Recalculate.'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                );
+                              })()}
                             </td>
+
                             <td className="px-3 py-2 text-right text-blue-600">
                               ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}{!rec && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                             </td>
