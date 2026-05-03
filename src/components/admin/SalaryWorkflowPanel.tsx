@@ -71,7 +71,7 @@ export default function SalaryWorkflowPanel({
   const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<null | {
@@ -396,16 +396,23 @@ export default function SalaryWorkflowPanel({
     );
   }
 
-  // Role-based gating (hook moved to top of component to keep hook order stable)
+  // Helpers: resolve assigned settings rows (settings_id preferred, staff_id fallback)
+  const assignedVerifier = verifiers.find(v => v.id === wf.verifier_settings_id)
+    || verifiers.find(v => v.staff_id && v.staff_id === wf.verifier_staff_id);
+  const assignedApprover = approvers.find(a => a.id === wf.approver_settings_id)
+    || approvers.find(a => a.staff_id && a.staff_id === wf.approver_staff_id);
+
+  // Role-based gating
   const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id, wf.verifier_settings_id);
   const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id, wf.approver_settings_id);
+  const isAdminOrSuper = gating.isSuperAdmin || role === 'admin';
 
-  // Action availability — combines stage + role gating
-  const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
+  // Action availability — combines stage + role gating + setup readiness
+  const canSendToVerifier = sheetStage === 'draft' && isAdminOrSuper && verifiers.length > 0;
   const canVerify = sheetStage === 'pending_verification' && isAssignedVerifier;
-  const canSendToApprover = sheetStage === 'verified' && isAssignedVerifier;
+  const canSendToApprover = sheetStage === 'verified' && (isAssignedVerifier || gating.isSuperAdmin) && approvers.length > 0;
   const canApprove = sheetStage === 'pending_approval' && isAssignedApprover;
-  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer;
+  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer && treasurers.length > 0;
   const canReset = gating.isSuperAdmin;
   const canAutoAdvance = gating.isSuperAdmin;
 
@@ -445,7 +452,7 @@ export default function SalaryWorkflowPanel({
           <div className="flex items-center gap-1 overflow-x-auto py-1 text-xs">
             {[
               { s: 'draft' as Stage, icon: ClipboardEdit, label: bn ? 'প্রস্তুতকৃত' : 'Prepared', who: wf.prepared_by_name },
-              { s: 'pending_verification' as Stage, icon: Send, label: bn ? 'যাচাইয়ের অপেক্ষায়' : 'Sent', who: verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name },
+              { s: 'pending_verification' as Stage, icon: Send, label: bn ? 'যাচাইয়ের অপেক্ষায়' : 'Sent', who: assignedVerifier?.display_name },
               { s: 'verified' as Stage, icon: ShieldCheck, label: bn ? 'যাচাইকৃত' : 'Verified', who: wf.verified_by_name },
               { s: 'approved' as Stage, icon: BadgeCheck, label: bn ? 'অনুমোদিত' : 'Approved', who: wf.approved_by_name },
               { s: 'paid' as Stage, icon: Wallet, label: bn ? 'পরিশোধিত' : 'Paid', who: wf.paid_by_name },
@@ -519,14 +526,14 @@ export default function SalaryWorkflowPanel({
             {sheetStage !== 'paid' && !canSendToVerifier && !canVerify && !canSendToApprover && !canApprove && !canMarkPaid && !gating.loading && (
               <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 font-normal">
                 {sheetStage === 'pending_verification' && (bn
-                  ? `অপেক্ষমাণ: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'যাচাইকারী'} এর যাচাই`
-                  : `Waiting: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'verifier'} to verify`)}
+                  ? `অপেক্ষমাণ: ${assignedVerifier?.display_name || 'যাচাইকারী'} এর যাচাই`
+                  : `Waiting: ${assignedVerifier?.display_name || 'verifier'} to verify`)}
                 {sheetStage === 'verified' && (bn
-                  ? `অপেক্ষমাণ: যাচাইকারীর forward to অনুমোদনকারী`
-                  : `Waiting: verifier to forward to approver`)}
+                  ? `অপেক্ষমাণ: যাচাইকারী/অ্যাডমিন কর্তৃক অনুমোদনকারীর কাছে প্রেরণ`
+                  : `Waiting: verifier/admin to forward to approver`)}
                 {sheetStage === 'pending_approval' && (bn
-                  ? `অপেক্ষমাণ: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'অনুমোদনকারী'} এর অনুমোদন`
-                  : `Waiting: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'approver'} to approve`)}
+                  ? `অপেক্ষমাণ: ${assignedApprover?.display_name || 'অনুমোদনকারী'} এর অনুমোদন`
+                  : `Waiting: ${assignedApprover?.display_name || 'approver'} to approve`)}
                 {sheetStage === 'approved' && (bn
                   ? `অপেক্ষমাণ: কোষাধ্যক্ষ/হিসাবরক্ষক এর পরিশোধ`
                   : `Waiting: treasurer/accountant to mark paid`)}
