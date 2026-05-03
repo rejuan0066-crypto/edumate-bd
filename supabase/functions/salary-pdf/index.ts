@@ -394,15 +394,17 @@ Deno.serve(async (req) => {
     if (staffPages.length === 0) staffPages.push([]);
     const pagesHtml = staffPages.map((pageRows, pageIndex) => `
       <section class="salary-page">
-        <table class="page-table">
-          ${colGroup}
-          <thead>${renderPageHeader()}${renderColumnHeaders()}</thead>
-          <tbody>
-            ${renderStaffRows(pageRows, pageIndex * rowsPerPage)}
-            ${pageIndex === staffPages.length - 1 ? renderTotalsAndNote() : ""}
-          </tbody>
-          ${renderFooter()}
-        </table>
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}${renderColumnHeaders()}</thead>
+            <tbody>
+              ${renderStaffRows(pageRows, pageIndex * rowsPerPage)}
+              ${pageIndex === staffPages.length - 1 ? renderTotalsAndNote() : ""}
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
       </section>
     `).join("");
 
@@ -432,6 +434,10 @@ Deno.serve(async (req) => {
     position: relative;
     break-after: page;
     page-break-after: always;
+  }
+  .print-fit {
+    width: 100%;
+    transform-origin: top left;
   }
   .salary-page:last-child {
     break-after: auto;
@@ -725,11 +731,11 @@ Deno.serve(async (req) => {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      /* Don't force a fixed height — let content determine page; prevents extra blank page on mobile */
-      height: auto;
+      height: var(--print-page-height, auto);
+      max-height: var(--print-page-height, none);
       min-height: 0;
-      padding: 3mm 3mm 4mm;
-      overflow: hidden;
+      padding: 0;
+      overflow: visible;
       break-after: page;
       page-break-after: always;
       page-break-inside: avoid;
@@ -816,7 +822,7 @@ Deno.serve(async (req) => {
   }
   /* Auto-fit hooks */
   @media print {
-    .salary-page { transform-origin: top left; }
+    .print-fit { transform-origin: top left; }
     /* Strip trailing break on the last page — Safari mobile otherwise renders an empty 2nd page */
     .salary-page:last-child { break-after: avoid !important; page-break-after: avoid !important; }
     .sheet > *:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }
@@ -909,19 +915,24 @@ Deno.serve(async (req) => {
       var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
       var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
       pages.forEach(function(p){
-        p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
+        var inner = p.querySelector('.print-fit') || p;
+        p.style.setProperty('--print-page-height', maxH + 'px');
+        p.style.width = maxW + 'px';
         p.style.maxWidth = maxW + 'px';
-        var h = p.scrollHeight, w = p.scrollWidth;
+        p.style.height = maxH + 'px';
+        inner.style.zoom = ''; inner.style.transform = ''; inner.style.width = ''; inner.style.height = '';
+        inner.style.maxWidth = maxW + 'px';
+        var h = inner.scrollHeight, w = inner.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
         scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
-          p.style.transform = 'scale(' + scale + ')';
-          p.style.transformOrigin = 'top left';
-          p.style.width = (100 / scale) + '%';
-          p.style.height = (h * scale) + 'px';
+          inner.style.transform = 'scale(' + scale + ')';
+          inner.style.transformOrigin = 'top left';
+          inner.style.width = (maxW / scale) + 'px';
+          inner.style.height = (h * scale) + 'px';
         } else {
-          p.style.zoom = String(scale);
+          inner.style.zoom = String(scale);
         }
       });
     }
@@ -1005,7 +1016,10 @@ Deno.serve(async (req) => {
     window.addEventListener('beforeprint', applyAll);
     window.addEventListener('afterprint', function(){
       document.querySelectorAll('.salary-page').forEach(function(p){
-        p.style.zoom=''; p.style.transform=''; p.style.width=''; p.style.height='';
+        var inner = p.querySelector('.print-fit') || p;
+        p.style.removeProperty('--print-page-height');
+        p.style.width=''; p.style.maxWidth=''; p.style.height='';
+        inner.style.zoom=''; inner.style.transform=''; inner.style.width=''; inner.style.height=''; inner.style.maxWidth='';
       });
     });
     if (document.fonts && document.fonts.ready) {
