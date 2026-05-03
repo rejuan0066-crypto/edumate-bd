@@ -30,9 +30,10 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   staff: { id: string; name_bn?: string; name_en?: string; designation?: string; photo_url?: string } | null;
   shift?: string;
+  initialDate?: string; // YYYY-MM-DD — opens on this month
 }
 
-export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift }: Props) {
+export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift, initialDate }: Props) {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
@@ -42,7 +43,16 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
-  useEffect(() => { if (open) setCursor(new Date()); }, [open, staff?.id]);
+  useEffect(() => {
+    if (!open) return;
+    if (initialDate) {
+      const [y, m, d] = initialDate.split('-').map(Number);
+      if (y && m) setCursor(new Date(y, m - 1, d || 1));
+      else setCursor(new Date());
+    } else {
+      setCursor(new Date());
+    }
+  }, [open, staff?.id, initialDate]);
 
   const monthStart = useMemo(() => startOfMonth(cursor), [cursor]);
   const monthEnd = useMemo(() => endOfMonth(cursor), [cursor]);
