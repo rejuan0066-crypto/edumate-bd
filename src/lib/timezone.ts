@@ -293,3 +293,31 @@ export function getDeviceTz(): string {
     return 'UTC';
   }
 }
+
+/** Returns YYYY-MM-DD for the given Date in the given timezone (no UTC drift). */
+export function toIsoDateInTz(date: Date, tz: string): string {
+  const { year, month, day } = getDatePartsInTz(date, tz);
+  return `${year}-${pad2(month + 1)}-${pad2(day)}`;
+}
+
+/** Returns YYYY-MM (month identifier) for the given Date in the given timezone. */
+export function toMonthYearInTz(date: Date, tz: string): string {
+  const { year, month } = getDatePartsInTz(date, tz);
+  return `${year}-${pad2(month + 1)}`;
+}
+
+/** "Today" as YYYY-MM-DD in the given timezone. */
+export function todayIsoInTz(tz: string): string {
+  return toIsoDateInTz(new Date(), tz);
+}
+
+/** Add N days to a YYYY-MM-DD date string in the given timezone, returning YYYY-MM-DD. */
+export function addDaysIsoInTz(isoDate: string, days: number, tz: string): string {
+  // Parse YYYY-MM-DD as a wall-clock date, shift via UTC math (24h * days), then re-render in tz.
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  // Build a UTC date at noon to avoid DST edge issues for the +N days arithmetic.
+  const base = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  base.setUTCDate(base.getUTCDate() + days);
+  return toIsoDateInTz(base, tz);
+}

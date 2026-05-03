@@ -34,6 +34,8 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { useAppTimezone } from '@/hooks/useAppTimezone';
+import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
@@ -68,6 +70,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const queryClient = useQueryClient();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/attendance');
   const { timeFormat, setTimeFormat } = useTimeFormat();
+  const { tz: appTz } = useAppTimezone();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const [searchParams] = useSearchParams();
 
@@ -85,7 +88,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [staffSubTab, setStaffSubTab] = useState<'fulltime' | 'duty' | 'meal'>('fulltime');
   const [selectedStaffCategory, setSelectedStaffCategory] = useState<string>('all');
   const [studentMealShift, setStudentMealShift] = useState('meal_breakfast');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(todayIsoInTz(appTz));
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSessionYear, setSelectedSessionYear] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -468,7 +471,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         actorName = (prof as any)?.full_name || user.email || null;
       }
 
-      const monthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const monthYear = toMonthYearInTz(new Date(), appTz); // YYYY-MM in app tz
       let totalRecalc = 0;
       const auditEntries: any[] = [];
 
@@ -761,9 +764,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   }, [entities, attendance]);
 
   const changeDate = (dir: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + dir);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysIsoInTz(selectedDate, dir, appTz));
   };
 
   // Current tab label

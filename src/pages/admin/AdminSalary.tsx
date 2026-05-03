@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
+import { useAppTimezone } from '@/hooks/useAppTimezone';
+import { toIsoDateInTz, getDatePartsInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -86,10 +88,12 @@ const AdminSalary = () => {
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
+  const { tz: appTz } = useAppTimezone();
 
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()));
+  // Use app-timezone "now" so the default month/year don't drift before midnight in BD
+  const tzParts = getDatePartsInTz(new Date(), appTz);
+  const [selectedMonth, setSelectedMonth] = useState(String(tzParts.month + 1).padStart(2, '0'));
+  const [selectedYear, setSelectedYear] = useState(String(tzParts.year));
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialog, setEditDialog] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -99,7 +103,7 @@ const AdminSalary = () => {
   const [savingsDialog, setSavingsDialog] = useState<any>(null);
   const [savingsLedgerOpen, setSavingsLedgerOpen] = useState(false);
   const [mainTab, setMainTab] = useState('salary');
-  const [bonusYear, setBonusYear] = useState(String(now.getFullYear()));
+  const [bonusYear, setBonusYear] = useState(String(tzParts.year));
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
@@ -932,15 +936,15 @@ const AdminSalary = () => {
         const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const pdfUrl = `https://${projectRef}.supabase.co/functions/v1/salary-pdf`;
 
-        // Use payment date's month for expense categorization
-        const today = new Date();
+        // Use payment date's month for expense categorization (in app timezone)
+        const todayParts = getDatePartsInTz(new Date(), appTz);
         const paymentMonthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-        const expenseMonthYear = `${paymentMonthNames[today.getMonth()]}-${today.getFullYear()}`;
+        const expenseMonthYear = `${paymentMonthNames[todayParts.month]}-${todayParts.year}`;
         const { error: expError } = await supabase.from('expenses').insert({
           institution_id: projectId,
           category_id: categoryId,
           month_year: expenseMonthYear,
-          expense_date: today.toISOString().split('T')[0],
+          expense_date: toIsoDateInTz(new Date(), appTz),
           amount: Number(record.net_salary),
           description,
           has_receipt: true,
