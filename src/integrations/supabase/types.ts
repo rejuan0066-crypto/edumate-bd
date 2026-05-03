@@ -9794,6 +9794,7 @@ export type Database = {
         Returns: undefined
       }
       is_accounts_staff: { Args: { _user_id: string }; Returns: boolean }
+      is_valid_result_signatories: { Args: { v: Json }; Returns: boolean }
       link_administrative_officer_by_email: {
         Args: never
         Returns: {
