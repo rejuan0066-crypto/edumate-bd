@@ -9985,6 +9985,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assert_no_function_overloads: {
+        Args: { fn_names: string[] }
+        Returns: undefined
+      }
       backfill_salary_workflow_names: {
         Args: never
         Returns: {
@@ -10265,6 +10269,14 @@ export type Database = {
           created_at: string
           notes: string
           route_path: string
+        }[]
+      }
+      list_function_overloads: {
+        Args: never
+        Returns: {
+          function_name: string
+          overload_count: number
+          signatures: string[]
         }[]
       }
       list_staff_devices: {
