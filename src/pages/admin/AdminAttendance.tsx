@@ -410,9 +410,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       return data?.value as any;
     },
   });
-  useMemo(() => {
-    if (savedCategoryTimes) {
-      setCategoryShiftTimes({ ...defaultCategoryTimes, ...savedCategoryTimes });
+  useEffect(() => {
+    if (savedCategoryTimes && typeof savedCategoryTimes === 'object') {
+      setCategoryShiftTimes((prev) => ({ ...defaultCategoryTimes, ...prev, ...savedCategoryTimes }));
     }
   }, [savedCategoryTimes]);
 
