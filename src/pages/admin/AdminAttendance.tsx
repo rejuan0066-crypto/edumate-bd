@@ -1714,8 +1714,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 {dynamicStaffCategories
                   .filter(catKey => !['director', 'committee_member'].includes(catKey))
                   .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
-                  <div key={cat.key} className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground">{cat.label}</p>
+                  <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                      <p className="text-xs font-semibold text-foreground">{cat.label}</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
