@@ -322,12 +322,14 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  <div class="summary-wrap">
   <div class="summary">
     <div class="stat"><div class="stat-k">${bn ? 'মোট' : 'Total'}</div><div class="stat-v">${computed.length}</div></div>
     <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'Pass'}</div><div class="stat-v" style="color:#059669;">${passCount}</div></div>
     <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'Fail'}</div><div class="stat-v" style="color:#dc2626;">${failCount}</div></div>
     <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'Class Avg'}</div><div class="stat-v">${classAvg}</div></div>
     <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
+  </div>
   </div>
   <div class="signatures">
     ${sigList.map((s) => {
