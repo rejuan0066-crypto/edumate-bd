@@ -138,7 +138,19 @@ Deno.serve(async (req) => {
     const accountantName = pick("accountant_name", "accountant_name", "");
     const verifierName = pick("verifier_name", "verifier_name", "");
 
-    const sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    // Stable per-month memo number — same value every time the same month is regenerated.
+    let sheetId = `SS-${monthYear || ""}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    if (monthYear) {
+      try {
+        const { data: memoData, error: memoErr } = await supabase
+          .rpc("get_or_create_salary_memo", { p_month_year: monthYear });
+        if (!memoErr && typeof memoData === "string" && memoData.length > 0) {
+          sheetId = memoData;
+        }
+      } catch (_e) {
+        // fall back to random sheetId
+      }
+    }
     const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
 
     const escapeHtml = (val: unknown): string => String(val ?? "").replace(/[&<>"']/g, (ch) => ({
