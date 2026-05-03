@@ -445,10 +445,20 @@ const AdminSalary = () => {
         const calc = calculateSalary(staffMember);
         const activeSavings = getActiveSavings(existing.staff_id);
         const savingsDed = activeSavings ? activeSavings.amount : 0;
-        const baseNet = Number(calc.net_salary || 0);
-        const extras = Number(existing.bonus || 0) + Number(existing.other_allowance || 0);
-        const manualDeds = Number(existing.advance_deduction || 0) + savingsDed;
-        const netSalary = Math.max(0, baseNet + extras - manualDeds);
+        const advanceDed = Number(existing.advance_deduction || 0);
+        const bonusVal = Number(existing.bonus || 0);
+        const otherAllowVal = Number(existing.other_allowance || 0);
+        // calc.net_salary ইতিমধ্যে savings বাদ দিয়েছে (calculateSalary-এ),
+        // কিন্তু advance/bonus/other_allowance ০ ধরা ছিল। তাই net পুনঃনির্মাণ করি
+        // calc-এর component থেকে — যাতে কোনো deduction দুইবার না কাটে।
+        const earnedPlusOvertime = Number(calc.base_salary || 0)
+          - Number(calc.absence_deduction || 0)
+          - Number(calc.late_deduction || 0)
+          - Number(calc.other_deduction || 0)
+          + Number(calc.overtime || 0);
+        const netSalary = Math.max(0,
+          earnedPlusOvertime + bonusVal + otherAllowVal - advanceDed - savingsDed
+        );
         const { error } = await supabase.from('salary_records').update({
           ...calc,
           bonus: Number(existing.bonus || 0),
