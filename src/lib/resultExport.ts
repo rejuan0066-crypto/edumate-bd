@@ -18,16 +18,43 @@ interface ExportData {
   signatories?: ResultSignatory[];
   showPageNumbers?: boolean;
   showFooterInstitution?: boolean;
+  margins?: PrintMargins;
 }
+
+export interface PrintMargins {
+  top: number;    // mm
+  right: number;  // mm
+  bottom: number; // mm
+  left: number;   // mm
+}
+
+export const DEFAULT_PRINT_MARGINS: PrintMargins = { top: 10, right: 10, bottom: 14, left: 10 };
+
+export const PRINT_MARGIN_PRESETS: Record<string, PrintMargins> = {
+  narrow:   { top: 6,  right: 6,  bottom: 10, left: 6  },
+  normal:   { top: 10, right: 10, bottom: 14, left: 10 },
+  moderate: { top: 13, right: 13, bottom: 16, left: 13 },
+  wide:     { top: 18, right: 18, bottom: 20, left: 18 },
+};
+
+const clampMargin = (v: number) => Math.max(3, Math.min(25, Number.isFinite(v) ? v : 10));
+export const sanitizeMargins = (m?: Partial<PrintMargins>): PrintMargins => ({
+  top:    clampMargin(m?.top    ?? DEFAULT_PRINT_MARGINS.top),
+  right:  clampMargin(m?.right  ?? DEFAULT_PRINT_MARGINS.right),
+  bottom: clampMargin(Math.max(10, m?.bottom ?? DEFAULT_PRINT_MARGINS.bottom)), // ensure footer space
+  left:   clampMargin(m?.left   ?? DEFAULT_PRINT_MARGINS.left),
+});
 
 export interface ResultPrintFooterOptions {
   show_page_numbers: boolean;
   show_footer_institution: boolean;
+  margins?: PrintMargins;
 }
 
 export const DEFAULT_PRINT_FOOTER_OPTIONS: ResultPrintFooterOptions = {
   show_page_numbers: true,
   show_footer_institution: true,
+  margins: DEFAULT_PRINT_MARGINS,
 };
 
 export interface ResultSignatory {
@@ -87,10 +114,11 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape', margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
-  const margin = 10;
+  const m = sanitizeMargins(margins);
+  const margin = Math.min(m.left, m.right);
 
   doc.setFontSize(14);
   doc.text(institutionName || '', pageW / 2, 12, { align: 'center' });
@@ -166,7 +194,8 @@ export const exportResultPDF = ({ title, students, subjects, marksMap, getOveral
   doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true, margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  const m = sanitizeMargins(margins);
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
   // Build computed rows + ranking by total (desc)
   const computed = students.map((st: any, idx: number) => {
@@ -222,7 +251,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
     size:A4 ${orientation};
-    margin:10mm 10mm 14mm 10mm;
+    margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
     @bottom-left{
       content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
