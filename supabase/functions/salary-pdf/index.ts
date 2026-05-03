@@ -546,7 +546,16 @@ Deno.serve(async (req) => {
   @media print {
     html, body { width: 100%; min-height: 100%; }
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 5mm; overflow: visible; }
+    .salary-page {
+      border: 1pt solid #000;
+      max-width: 100%;
+      height: calc(210mm - 30mm);
+      padding: 4mm 5mm 5mm;
+      overflow: hidden;
+      break-after: page;
+      page-break-after: always;
+    }
+    .salary-page:last-child { break-after: auto; page-break-after: auto; }
     @page {
       size: A4 landscape;
       margin: 15mm;
@@ -558,17 +567,18 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
-    table { page-break-inside: auto; break-inside: auto; font-size: 7.2pt; }
+    table { page-break-inside: avoid; break-inside: avoid; font-size: 7.2pt; height: 100%; }
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
-    thead { display: table-header-group; }
-    tfoot { display: table-footer-group; }
+    thead { display: table-header-group !important; }
+    tbody { display: table-row-group !important; }
+    tfoot { display: table-footer-group !important; }
     tfoot tr.totals td { page-break-inside: avoid; break-inside: avoid; }
     .page-header {
       position: static;
       max-height: none; overflow: visible;
       background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm;
     }
-    .footer-inner { padding-top: 5mm; }
+    .footer-inner { padding-top: 4mm; min-height: 27mm; }
     .letterhead { min-height: 42px; margin-bottom: 3pt; padding-bottom: 3pt; }
     .logo-wrap { width: 42px; height: 42px; }
     .inst-name { font-size: 13pt; }
@@ -578,6 +588,7 @@ Deno.serve(async (req) => {
     .doc-title h2 { font-size: 9.5pt; padding: 1.5pt 12pt; }
     thead th { font-size: 7.1pt; padding: 2pt 2pt; line-height: 1.05; }
     tbody td { font-size: 7pt; padding: 1.7pt 2pt; line-height: 1.08; }
+    .staff-row { height: 7.4mm; }
     .c-name .nm { font-size: 7.1pt; line-height: 1.05; }
     .c-name .sid { font-size: 6.2pt; line-height: 1.05; }
     .note { font-size: 6.8pt; padding: 2pt 4pt; margin-top: 3pt; }
@@ -591,143 +602,7 @@ Deno.serve(async (req) => {
 </head><body>
 <div class="sheet">
 
-  <table>
-    <colgroup>
-      <col style="width:4%"/>
-      <col style="width:18%"/>
-      <col style="width:14%"/>
-      <col style="width:9%"/>
-      <col style="width:4%"/>
-      <col style="width:4%"/>
-      <col style="width:4%"/>
-      <col style="width:9%"/>
-      <col style="width:9%"/>
-      <col style="width:9%"/>
-      <col style="width:16%"/>
-    </colgroup>
-    <thead>
-      <tr class="page-header-row">
-        <td colspan="11" class="header-cell">
-          <div class="page-header">
-            <div class="letterhead">
-              <div class="logo-wrap">${logoBlock}</div>
-              <div class="inst-name">${instName}</div>
-              ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ""}
-              <div class="inst-contact">
-                ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
-                ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
-                ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
-              </div>
-              ${(instEstablished || instRegNo) ? `
-              <div class="inst-contact">
-                ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${bn ? toBnDigits(instEstablished) : instEstablished}</span>` : ""}
-                ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
-                ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${bn ? toBnDigits(instRegNo) : instRegNo}</span>` : ""}
-              </div>` : ""}
-            </div>
-
-            <div class="doc-title">
-              <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
-              <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</div>
-            </div>
-
-            <div class="memo-row">
-              <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${sheetId}</span>
-              <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${issueDate}</span>
-            </div>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
-        <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
-        <th>${bn ? "পদবি" : "Designation"}</th>
-        <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center">${bn ? "উপ" : "P"}</th>
-        <th class="center">${bn ? "অনু" : "A"}</th>
-        <th class="center">${bn ? "বি" : "L"}</th>
-        <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
-        <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
-        <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
-        <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${staff.map((s: any, i: number) => `
-        <tr>
-          <td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>
-          <td class="c-name"><div class="nm">${s.name}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${s.staff_id}</div>` : ""}</td>
-          <td>${s.designation}</td>
-          <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
-          <td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>
-          <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
-          <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
-          <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
-          <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
-          <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
-          <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
-        </tr>
-      `).join("")}
-      <tr class="totals">
-        <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
-        <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
-        <td></td>
-        <td></td>
-        <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
-      </tr>
-      <tr class="note-row">
-        <td colspan="11" style="border:0.4pt solid #000;background:#fafafa;padding:3pt 5pt;font-size:7.5pt;line-height:1.3;">
-          <strong>${bn ? "নোটঃ" : "Note:"}</strong>
-          ${bn
-            ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধক্য কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
-            : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
-        </td>
-      </tr>
-    </tbody>
-    <tfoot>
-      <tr>
-        <td colspan="11" class="footer-cell">
-          <div class="footer-inner">
-            <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
-              <div class="sig">
-                <div class="sig-line"></div>
-                <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
-                <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-                <div class="role-meta">${(prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধক্য)" : "(Accountant)")}</div>
-              </div>
-              <div class="sig">
-                <div class="sig-line"></div>
-                <div class="sig-name">${(verified_by && String(verified_by).trim()) || verifierName || "&nbsp;"}</div>
-                <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-                <div class="role-meta">${(verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)")}</div>
-              </div>
-              <div class="sig">
-                <div class="sig-line"></div>
-                <div class="sig-name">${(approved_by && String(approved_by).trim()) || principalName || "&nbsp;"}</div>
-                <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-                <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
-              </div>
-              ${(paid_by && String(paid_by).trim()) ? `
-              <div class="sig">
-                <div class="sig-line"></div>
-                <div class="sig-name">${paid_by}</div>
-                <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
-                <div class="role-meta">${(paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)")}</div>
-              </div>` : ''}
-            </div>
-            <div class="footer">
-              <div>© ${instName}</div>
-              <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
-            </div>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
-  </table>
+  ${pagesHtml}
 
 </div>
 </body></html>`;
