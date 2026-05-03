@@ -287,6 +287,36 @@ const AdminResults = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: signatories = DEFAULT_RESULT_SIGNATORIES } = useQuery<ResultSignatory[]>({
+    queryKey: ['result-signatories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
+      const v = (data?.value as any);
+      if (Array.isArray(v) && v.length) return v as ResultSignatory[];
+      return DEFAULT_RESULT_SIGNATORIES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
+  useEffect(() => { setSigDraft(signatories); }, [signatories]);
+
+  const saveSignatories = useMutation({
+    mutationFn: async (rows: ResultSignatory[]) => {
+      const { error } = await supabase
+        .from('website_settings')
+        .upsert({ key: 'result_signatories', value: rows as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'স্বাক্ষরকারীর তথ্য সংরক্ষিত' : 'Signatories saved');
+      queryClient.invalidateQueries({ queryKey: ['result-signatories'] });
+      setSigDialogOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || 'Save failed'),
+  });
+
   const handleClassExport = async (classId: string, type: 'csv' | 'pdf' | 'print') => {
     setExportingClassId(classId);
     try {
