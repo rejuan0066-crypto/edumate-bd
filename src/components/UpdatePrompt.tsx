@@ -158,26 +158,35 @@ const UpdatePrompt = () => {
     }, 400);
   };
 
-  // Floating manual-update button: only visible in installed PWA when no update banner is showing
-  const showFloatingButton =
-    standalone && !updateAvailable && !updating;
+  // Floating update button: only ENABLED when a new build is actually detected.
+  // Otherwise it stays visible but disabled, so user can see status without triggering anything.
+  const showFloatingButton = standalone && !updating && (!updateAvailable || dismissed);
+  const canUpdate = updateAvailable;
 
   return (
     <>
       {showFloatingButton && (
         <button
-          onClick={handleManualCheck}
-          disabled={checking}
-          aria-label={bn ? 'আপডেট চেক করুন' : 'Check for update'}
-          className="fixed right-3 z-[90] w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg backdrop-blur-xl flex items-center justify-center hover:bg-muted transition-colors"
+          onClick={() => {
+            if (!canUpdate) return;
+            setDismissed(false);
+            handleUpdate();
+          }}
+          disabled={!canUpdate}
+          aria-label={bn
+            ? (canUpdate ? 'আপডেট ইনস্টল করুন' : 'কোনো নতুন আপডেট নেই')
+            : (canUpdate ? 'Install update' : 'No update available')}
+          title={bn
+            ? (canUpdate ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'সর্বশেষ ভার্সন চলছে')
+            : (canUpdate ? 'Update available — click to install' : 'Up to date')}
+          className={`fixed right-3 z-[90] w-11 h-11 rounded-full border shadow-lg backdrop-blur-xl flex items-center justify-center transition-colors ${
+            canUpdate
+              ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 cursor-pointer animate-pulse'
+              : 'bg-card/60 border-border text-muted-foreground opacity-50 cursor-not-allowed'
+          }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
         >
-          <RefreshCw className={`w-5 h-5 text-primary ${checking ? 'animate-spin' : ''}`} />
-          {noUpdateMsg && (
-            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card border border-border text-foreground text-xs rounded-full px-3 py-1 shadow-md">
-              {bn ? 'সর্বশেষ ভার্সন চলছে' : 'Up to date'}
-            </span>
-          )}
+          <RefreshCw className="w-5 h-5" />
         </button>
       )}
 
