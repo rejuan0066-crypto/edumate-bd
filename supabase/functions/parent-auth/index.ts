@@ -99,7 +99,11 @@ Deno.serve(async (req) => {
       if (!email || !password || !full_name) {
         return json({ error: 'Missing required fields' }, 400);
       }
-      if (password.length < 6) return json({ error: 'Password must be at least 6 characters' }, 400);
+      const pwCheck = await enforcePasswordPolicy(supabase, password);
+      if (!pwCheck.ok) {
+        await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email, reason: 'parent_signup', details: pwCheck.body, req });
+        return json(pwCheck.body, pwCheck.status);
+      }
 
       const trimmedNid = nid?.trim() || '';
       const trimmedPhone = phone?.trim() || '';
