@@ -224,12 +224,12 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     size:A4 ${orientation};
     margin:10mm 10mm 14mm 10mm;
     @bottom-left{
-      content:"${(institutionName || '').replace(/"/g, '\\"')}";
+      content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
     @bottom-right{
-      content:"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''});
+      content:${showPageNumbers ? `"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''})` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
