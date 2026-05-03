@@ -487,9 +487,14 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       // ===== Capture old values for audit =====
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
 
-      // ===== Save settings =====
+      // ===== Save settings (strip transient warnings field) =====
+      const cleanTimes: Record<string, { start: string; end: string }> = {};
+      for (const [k, v] of Object.entries(times)) {
+        if (k === '__overnightWarnings') continue;
+        cleanTimes[k] = { start: (v as any).start, end: (v as any).end };
+      }
       const { error } = await supabase.from('website_settings').upsert(
-        { key: 'category_shift_times', value: times, updated_at: new Date().toISOString() },
+        { key: 'category_shift_times', value: cleanTimes, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       );
       if (error) throw error;
