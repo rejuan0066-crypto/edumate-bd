@@ -574,7 +574,7 @@ const AdminResults = () => {
 
         {/* Export options dialog: PDF vs Browser Print + A4 orientation */}
         <Dialog open={exportOptions.open} onOpenChange={(o) => setExportOptions(s => ({ ...s, open: o }))}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{bn ? 'এক্সপোর্ট অপশন' : 'Export Options'}</DialogTitle>
             </DialogHeader>
@@ -695,6 +695,34 @@ const AdminResults = () => {
                     />
                   </label>
                 </div>
+              </div>
+              {/* Live footer preview */}
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'ফুটার প্রিভিউ (লাইভ)' : 'Footer Preview (live)'}</p>
+                <div className="rounded-lg border bg-white text-black overflow-hidden">
+                  <div className="px-3 py-6 text-[11px] text-gray-400 italic text-center border-b border-dashed">
+                    {bn ? '— রেজাল্ট শীটের বিষয়বস্তু —' : '— result sheet content —'}
+                  </div>
+                  <div
+                    className="flex items-center justify-between gap-3 px-3 py-2 text-[10px] border-t"
+                    style={{ fontFamily: '"Times New Roman", serif' }}
+                  >
+                    <span className="truncate flex-1 text-left">
+                      {footerOptions.show_footer_institution
+                        ? ((bn ? institution?.name : (institution?.name_en || institution?.name)) || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name'))
+                        : '\u00A0'}
+                    </span>
+                    <span className="shrink-0 text-center text-gray-600">
+                      {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
+                    </span>
+                    <span className="shrink-0 text-right flex-1">
+                      {footerOptions.show_page_numbers ? (bn ? 'পৃষ্ঠা ১ / ৩' : 'Page 1 of 3') : '\u00A0'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  {bn ? 'উপরের টগল অনুযায়ী ফুটার রিয়েল-টাইম আপডেট হয়।' : 'Footer updates in real-time based on the toggles above.'}
+                </p>
               </div>
             </div>
             <DialogFooter className="gap-2">
