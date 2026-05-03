@@ -1223,6 +1223,49 @@ const AdminAdministrative = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Account Creation Dialog */}
+      <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-[32px]">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {bn ? `কর্মকর্তা: ${selectedOfficer?.name_bn || ''}` : `Officer: ${selectedOfficer?.name_en || selectedOfficer?.name_bn || ''}`}
+            </p>
+            <div className="space-y-2">
+              <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+              <Input type="email" value={accEmail} onChange={e => setAccEmail(e.target.value)} placeholder="email@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+              <div className="relative">
+                <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{bn ? 'রোল' : 'Role'}</Label>
+              <Select value={accRole} onValueChange={setAccRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{bn ? 'রোল ছাড়া' : 'No Role'}</SelectItem>
+                  <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
+                  <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                  <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleCreateAccount} disabled={accCreating} className="w-full">
+              {accCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
+              {bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
