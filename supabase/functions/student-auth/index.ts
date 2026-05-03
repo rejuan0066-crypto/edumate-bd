@@ -239,8 +239,12 @@ Deno.serve(async (req) => {
       if (!contact || !code || !new_password) {
         return json({ error: 'Contact, code and new password required' }, 400);
       }
-      if (new_password.length < 6) {
-        return json({ error: 'Password must be at least 6 characters' }, 400);
+      {
+        const pwCheck = await enforcePasswordPolicy(supabase, new_password);
+        if (!pwCheck.ok) {
+          await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email: contact, reason: 'student_password_reset', details: pwCheck.body, req });
+          return json(pwCheck.body, pwCheck.status);
+        }
       }
       const c = contact.trim().toLowerCase();
 
