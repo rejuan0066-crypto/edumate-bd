@@ -2477,61 +2477,6 @@ const AdminSalary = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Duty Time Dialog */}
-        <Dialog open={!!dutyDialog} onOpenChange={() => setDutyDialog(null)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle><Timer className="inline h-5 w-5 mr-2" />{bn ? 'ডিউটি সময় সেট করুন' : 'Set Duty Time'}</DialogTitle>
-            </DialogHeader>
-            {dutyDialog && (
-              <div className="space-y-4">
-                <p className="text-sm font-medium">{dutyDialog.name}</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">{bn ? 'শুরু' : 'Start Time'}</Label>
-                    <Input type="time" value={dutyDialog.duty_start_time}
-                      onChange={e => setDutyDialog({ ...dutyDialog, duty_start_time: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'শেষ' : 'End Time'}</Label>
-                    <Input type="time" value={dutyDialog.duty_end_time}
-                      onChange={e => setDutyDialog({ ...dutyDialog, duty_end_time: e.target.value })} />
-                  </div>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg text-sm flex items-center justify-between gap-2">
-                  {(() => {
-                    const sM = timeToMinutes(dutyDialog.duty_start_time);
-                    const eM = timeToMinutes(dutyDialog.duty_end_time);
-                    const raw = eM - sM;
-                    const overnight = !!dutyDialog.duty_start_time && !!dutyDialog.duty_end_time && eM <= sM;
-                    const total = (!dutyDialog.duty_start_time || !dutyDialog.duty_end_time)
-                      ? 0
-                      : (raw > 0 ? raw : (sM === eM ? 24 * 60 : raw + 24 * 60));
-                    return (
-                      <>
-                        <p>
-                          <strong>{bn ? 'মোট ডিউটি:' : 'Total Duty:'}</strong>{' '}
-                          {total} {bn ? 'মিনিট' : 'minutes'} ({Math.floor(total / 60)}h {total % 60}m)
-                        </p>
-                        {overnight && total > 0 && (
-                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium whitespace-nowrap">
-                            {bn ? 'ওভারনাইট ⏵ পরের দিন' : 'Overnight ⏵ next day'}
-                          </span>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-                <Button className="w-full" onClick={() => updateDutyMutation.mutate({
-                  staffId: dutyDialog.id, dutyStart: dutyDialog.duty_start_time, dutyEnd: dutyDialog.duty_end_time
-                })}>
-                  <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
         {/* Edit Salary Dialog */}
         <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
           <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
