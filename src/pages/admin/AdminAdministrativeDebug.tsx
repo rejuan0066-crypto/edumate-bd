@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb, Timer, Activity } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb, Timer, Activity, Fingerprint, Copy } from 'lucide-react';
+import { newCorrelationId, logAdminNameRequest } from '@/lib/adminNameRequestLog';
+import { toast } from 'sonner';
 
 type ProbeResult = {
   key: string;
@@ -17,9 +19,11 @@ type ProbeResult = {
   ok: boolean;
   count: number | null;
   error?: string | null;
+  errorCode?: string | null;
   durationMs: number;
   sample: any[];
   query: string;
+  correlationId: string;
 };
 
 export default function AdminAdministrativeDebug() {
@@ -40,40 +44,63 @@ export default function AdminAdministrativeDebug() {
   const [deletedFilter, setDeletedFilter] = useState<'not_deleted' | 'deleted_only' | 'any'>('not_deleted');
   const [roleProbe, setRoleProbe] = useState<'admin' | 'super_admin' | 'staff' | 'teacher'>('admin');
 
+  // Parent batch correlation prefix; each probe gets its own child correlation ID
+  const [batchId, setBatchId] = useState<string | null>(null);
+
   const runProbe = async (
     key: string,
     label: string,
     source: string,
     query: string,
     fn: () => PromiseLike<{ data: any; error: any }>,
+    parentBatch?: string,
   ): Promise<ProbeResult> => {
+    const correlationId = `${parentBatch ?? 'anr'}::${key}`;
     const t0 = performance.now();
+    let data: any = null;
+    let error: any = null;
     try {
-      const { data, error } = await fn();
-      const ms = Math.round(performance.now() - t0);
-      const arr = Array.isArray(data) ? data : data ? [data] : [];
-      return {
-        key, label, source, query,
-        ok: !error,
-        count: arr.length,
-        error: error?.message || null,
-        durationMs: ms,
-        sample: arr.slice(0, 3),
-      };
+      const r = await fn();
+      data = r.data;
+      error = r.error;
     } catch (e: any) {
-      return {
-        key, label, source, query,
-        ok: false, count: null,
-        error: e?.message || String(e),
-        durationMs: Math.round(performance.now() - t0),
-        sample: [],
-      };
+      error = e;
     }
+    const ms = Math.round(performance.now() - t0);
+    const arr = Array.isArray(data) ? data : data ? [data] : [];
+    // Persist diagnostic log row (best-effort, never blocks UI)
+    logAdminNameRequest({
+      correlationId,
+      sourcePath: `AdminAdministrativeDebug:${key}`,
+      sqlPath: source,
+      filters: { query, statusFilter, deletedFilter, roleProbe },
+      resultCount: arr.length,
+      errorCode: error?.code ?? (error ? 'unknown' : null),
+      errorMessage: error?.message ?? null,
+      durationMs: ms,
+    });
+    return {
+      key, label, source, query,
+      ok: !error,
+      count: error ? null : arr.length,
+      error: error?.message || null,
+      errorCode: error?.code || null,
+      durationMs: ms,
+      sample: arr.slice(0, 3),
+      correlationId,
+    };
   };
 
   const runAll = async () => {
     setRunning(true);
+    const batch = newCorrelationId('batch');
+    setBatchId(batch);
     const out: ProbeResult[] = [];
+    const probe = (
+      key: string, label: string, source: string, query: string,
+      fn: () => PromiseLike<{ data: any; error: any }>,
+    ) => runProbe(key, label, source, query, fn, batch);
+
 
     // Helper to apply current filters to a query builder
     const applyFilters = (q: any) => {
@@ -85,7 +112,7 @@ export default function AdminAdministrativeDebug() {
     const filterDesc =
       `status=${statusFilter} • deleted=${deletedFilter}`;
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_filtered',
       bn ? `প্রশাসনিক টেবিল (${filterDesc})` : `administrative_officers table (${filterDesc})`,
       'table: administrative_officers',
@@ -96,7 +123,7 @@ export default function AdminAdministrativeDebug() {
       ),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_all',
       bn ? 'প্রশাসনিক টেবিল (কোনো ফিল্টার ছাড়া)' : 'administrative_officers table (no filters)',
       'table: administrative_officers',
@@ -105,7 +132,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at'),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_active_only',
       bn ? "শুধু status='active' (deleted ignore)" : "Only status='active' (deleted ignored)",
       'table: administrative_officers',
@@ -114,7 +141,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at').eq('status', 'active'),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_deleted_only',
       bn ? 'শুধু soft-deleted রেকর্ড' : 'Only soft-deleted records',
       'table: administrative_officers',
@@ -123,7 +150,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at').not('deleted_at', 'is', null),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'directory_admin',
       bn ? `staff_directory ভিউ (administrative, ${filterDesc})` : `staff_directory view (administrative, ${filterDesc})`,
       'view: staff_directory',
@@ -135,7 +162,7 @@ export default function AdminAdministrativeDebug() {
       },
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'directory_all',
       bn ? `staff_directory ভিউ (সব sources, ${filterDesc})` : `staff_directory view (all sources, ${filterDesc})`,
       'view: staff_directory',
@@ -147,7 +174,7 @@ export default function AdminAdministrativeDebug() {
       },
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'rpc_list_directory',
       bn ? 'RPC list_staff_directory' : 'RPC list_staff_directory',
       'rpc: list_staff_directory',
@@ -156,7 +183,7 @@ export default function AdminAdministrativeDebug() {
     ));
 
     // Role-based access probes — check the *current logged-in user*'s effective role
-    out.push(await runProbe(
+    out.push(await probe(
       'has_role_check',
       bn ? `has_role(auth.uid(), '${roleProbe}')` : `has_role(auth.uid(), '${roleProbe}')`,
       `rpc: has_role`,
@@ -165,7 +192,7 @@ export default function AdminAdministrativeDebug() {
     ));
 
     // Probe the resolved role: how many rows can THIS user see vs an unfiltered count
-    out.push(await runProbe(
+    out.push(await probe(
       'visibility_compare',
       bn ? 'দৃশ্যমানতা তুলনা (current user vs no filter)' : 'Visibility compare (current user vs unfiltered)',
       'table: administrative_officers',
@@ -343,6 +370,30 @@ export default function AdminAdministrativeDebug() {
           </CardContent>
         </Card>
 
+        {/* Batch correlation banner */}
+        {batchId && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-xl flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <Fingerprint className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold">{bn ? 'ব্যাচ করিলেশন আইডি' : 'Batch correlation ID'}:</span>
+              <code className="px-2 py-0.5 rounded-full bg-card/80 text-xs font-mono">{batchId}</code>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm" variant="outline" className="rounded-full h-7 text-xs"
+                onClick={() => { navigator.clipboard.writeText(batchId); toast.success(bn ? 'কপি হয়েছে' : 'Copied'); }}
+              >
+                <Copy className="w-3 h-3 mr-1" /> {bn ? 'কপি' : 'Copy'}
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                {bn
+                  ? 'প্রতিটি প্রোব <batch>::<probe-key> ফরম্যাটে admin_name_request_log টেবিলে লগ হয়।'
+                  : 'Each probe is logged to admin_name_request_log as <batch>::<probe-key>.'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Results */}
         {results.length === 0 && !running && (
           <Card className="rounded-[32px] backdrop-blur-xl bg-card/60">
@@ -365,11 +416,23 @@ export default function AdminAdministrativeDebug() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px]">{r.source}</Badge>
                   <Badge className={r.ok ? 'bg-emerald-500/15 text-emerald-700' : 'bg-red-500/15 text-red-700'} variant="outline">
                     {r.ok ? (bn ? `সফল • ${r.count} সারি` : `OK • ${r.count} rows`) : (bn ? 'ব্যর্থ' : 'FAILED')}
                   </Badge>
+                  {r.errorCode && (
+                    <Badge variant="outline" className="text-[10px] border-red-500/40 text-red-700">code: {r.errorCode}</Badge>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(r.correlationId); toast.success(bn ? 'করিলেশন আইডি কপি হয়েছে' : 'Correlation ID copied'); }}
+                    className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/60 hover:bg-muted text-[10px] font-mono text-muted-foreground hover:text-foreground transition"
+                    title={bn ? 'করিলেশন আইডি কপি করুন' : 'Copy correlation ID'}
+                  >
+                    <Fingerprint className="w-3 h-3" /> {r.correlationId}
+                    <Copy className="w-3 h-3 opacity-60" />
+                  </button>
                 </div>
 
                 <div>
