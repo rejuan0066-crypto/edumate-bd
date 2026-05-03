@@ -6,6 +6,7 @@ import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts'
 import { resolveSmtpProfile } from '../_shared/smtp-resolver.ts';
 import { sendViaSMTP } from '../_shared/smtp.ts';
 import { requireAuth } from '../_shared/auth-guard.ts';
+import { enforcePasswordPolicy, logSecurityEvent } from '../_shared/password.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
