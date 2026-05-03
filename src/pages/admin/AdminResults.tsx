@@ -298,6 +298,33 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: footerOptions = DEFAULT_PRINT_FOOTER_OPTIONS, refetch: refetchFooterOptions } = useQuery<ResultPrintFooterOptions>({
+    queryKey: ['result-print-footer'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_print_footer').maybeSingle();
+      const v = (data?.value as any);
+      if (v && typeof v === 'object') {
+        return {
+          show_page_numbers: v.show_page_numbers !== false,
+          show_footer_institution: v.show_footer_institution !== false,
+        };
+      }
+      return DEFAULT_PRINT_FOOTER_OPTIONS;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const saveFooterOptions = async (next: ResultPrintFooterOptions) => {
+    const { error } = await supabase
+      .from('website_settings')
+      .upsert({ key: 'result_print_footer', value: next as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(bn ? 'প্রিন্ট ফুটার সেটিং সংরক্ষিত' : 'Print footer setting saved');
+    refetchFooterOptions();
+  };
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
