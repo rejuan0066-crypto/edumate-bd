@@ -32,7 +32,7 @@ import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
   Calculator, Plus, Trash2, DollarSign, FileText, FolderOpen,
-  PiggyBank, Landmark, RefreshCw
+  PiggyBank, Landmark, RefreshCw, Minus
 } from 'lucide-react';
 
 const MONTHS = [
