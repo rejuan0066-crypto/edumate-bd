@@ -273,18 +273,18 @@ const AdminSalary = () => {
     },
   });
 
-  // Helper: resolve duty time for a staff member — prefers category shift, falls back to staff record
+  // Helper: resolve duty time for a staff member — prefers staff-specific time, falls back to category shift, then default
   const getDutyTime = (staffMember: any): { start: string; end: string } => {
     return getDutyTimeWithSource(staffMember);
   };
   const getDutyTimeWithSource = (staffMember: any): { start: string; end: string; source: 'category' | 'staff' | 'default' } => {
+    if (staffMember?.duty_start_time && staffMember?.duty_end_time) {
+      return { start: staffMember.duty_start_time, end: staffMember.duty_end_time, source: 'staff' };
+    }
     const catKey = staffMember?.staff_category;
     if (catKey && (categoryShiftTimes as any)[catKey]) {
       const t = (categoryShiftTimes as any)[catKey];
       if (t.start && t.end) return { start: t.start, end: t.end, source: 'category' };
-    }
-    if (staffMember?.duty_start_time && staffMember?.duty_end_time) {
-      return { start: staffMember.duty_start_time, end: staffMember.duty_end_time, source: 'staff' };
     }
     return { start: '08:00', end: '17:00', source: 'default' };
   };
