@@ -1666,8 +1666,10 @@ const AdminSalary = () => {
         staff: filtered.map((s: any) => {
           const rec = getRecord(s.id);
           const savings = Number(rec?.savings_deduction || 0);
+          // কর্তন কলামে শুধু attendance/অগ্রিম/অন্যান্য — জমা (savings) আলাদা কলামে দেখানো হবে,
+          // তাই এখানে savings যোগ করা হবে না (নাহলে দ্বিগুণ গণনা হয়ে কর্তন বেশি দেখায়)।
           const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) + savings : 0;
+            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
           return {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
