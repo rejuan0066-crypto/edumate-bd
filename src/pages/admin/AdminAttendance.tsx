@@ -464,37 +464,25 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const saveCategoryTimesMutation = useMutation({
     mutationFn: async (times: Record<string, { start: string; end: string }>) => {
-      // ===== Validation =====
-      const tToMin = (t: string) => {
-        if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return NaN;
-        const [h, m] = t.split(':').map(Number);
-        if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
-        return h * 60 + m;
-      };
+      // ===== Validation (overnight-aware via shared validateShiftWindow) =====
       const errors: string[] = [];
+      const overnightWarnings: string[] = [];
       for (const [k, v] of Object.entries(times)) {
         const label = getCategoryLabel(k) || k;
-        if (!v?.start || !v?.end) {
-          errors.push(`${label}: ${bn ? 'শুরু/শেষ সময় ফাঁকা' : 'start/end empty'}`);
+        const res = validateShiftWindow(v?.start, v?.end);
+        if (!res.ok) {
+          errors.push(`${label}: ${res.error}`);
           continue;
         }
-        const s = tToMin(v.start);
-        const e = tToMin(v.end);
-        if (isNaN(s) || isNaN(e)) {
-          errors.push(`${label}: ${bn ? 'অবৈধ সময় ফরম্যাট' : 'invalid time format'}`);
-          continue;
-        }
-        if (e <= s) {
-          errors.push(`${label}: ${bn ? 'শেষ সময় শুরুর পরে হতে হবে' : 'end must be after start'}`);
-          continue;
-        }
-        if (e - s < 30) {
-          errors.push(`${label}: ${bn ? 'কমপক্ষে ৩০ মিনিট হতে হবে' : 'minimum 30 minutes required'}`);
+        if (res.overnight) {
+          overnightWarnings.push(`${label} (${v.start} → ${v.end})`);
         }
       }
       if (errors.length) {
         throw new Error(errors.join(' • '));
       }
+      // Stash warnings for onSuccess
+      (times as any).__overnightWarnings = overnightWarnings;
 
       // ===== Capture old values for audit =====
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
