@@ -1939,22 +1939,19 @@ const AdminSalary = () => {
 
         <div class="signatures">
           <div class="sig">
-            <div class="sig-name">${staffMember.name_bn || ''}</div>
-            <div class="line">
-              <div class="role">${bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature"}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${recipientName}</div>
+            <div class="role">${recipientRole}</div>
           </div>
           <div class="sig">
-            <div class="sig-name">&nbsp;</div>
-            <div class="line">
-              <div class="role">${bn ? 'হিসাবরক্ষক' : 'Accountant'}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${accountantName || '&nbsp;'}</div>
+            <div class="role">${accountantRole}</div>
           </div>
           <div class="sig">
-            <div class="sig-name">${principalName}</div>
-            <div class="line">
-              <div class="role">${bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)'}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${approverName}</div>
+            <div class="role">${approverRole}</div>
           </div>
         </div>
       </div>
