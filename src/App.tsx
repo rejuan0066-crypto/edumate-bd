@@ -107,6 +107,7 @@ import AdminSalary from "./pages/admin/AdminSalary";
 import AdminShiftAuditLog from "./pages/admin/AdminShiftAuditLog";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
+import AdminStaffHolidays from "./pages/admin/AdminStaffHolidays";
 import AdminAcademicSessions from "./pages/admin/AdminAcademicSessions";
 import AdminAddressManager from "./pages/admin/AdminAddressManager";
 import AdminApiVerification from "./pages/admin/AdminApiVerification";
@@ -380,6 +381,7 @@ const App = () => (
                     <Route path="shift-audit-log" element={<AdminShiftAuditLog />} />
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />
+                    <Route path="staff-holidays" element={<AdminStaffHolidays />} />
                     <Route path="academic-sessions" element={<AdminAcademicSessions />} />
                     <Route path="address-manager" element={<AdminAddressManager />} />
                     <Route path="api-verification" element={<AdminApiVerification />} />

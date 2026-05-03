@@ -311,6 +311,26 @@ const AdminSalary = () => {
     },
   });
 
+  // Fetch holidays for the selected month (paid holidays only affect calculations)
+  const { data: monthHolidays = [] } = useQuery({
+    queryKey: ['staff-holidays-month', monthYear],
+    queryFn: async () => {
+      const y = Number(selectedYear); const m = Number(selectedMonth);
+      const lastDay = new Date(y, m, 0).getDate();
+      const start = `${monthYear}-01`;
+      const end = `${monthYear}-${String(lastDay).padStart(2, '0')}`;
+      const { data, error } = await supabase
+        .from('staff_holidays' as any)
+        .select('holiday_date, is_paid')
+        .gte('holiday_date', start)
+        .lte('holiday_date', end);
+      if (error) return [] as any[];
+      return (data || []) as any[];
+    },
+  });
+  const paidHolidaySet = useMemo(() => new Set(
+    monthHolidays.filter((h: any) => h.is_paid).map((h: any) => h.holiday_date)
+  ), [monthHolidays]);
   // Fetch salary settings
   const { data: settings = [] } = useQuery({
     queryKey: ['salary-settings'],
@@ -569,11 +589,13 @@ const AdminSalary = () => {
       a.attendance_date.localeCompare(b.attendance_date)
     );
 
+    // Treat absent records on paid holidays as paid leave (no deduction)
     const present = records.filter((r: any) => r.status === 'present').length;
-    const absent = records.filter((r: any) => r.status === 'absent').length;
+    const absent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
     const leave = records.filter((r: any) => r.status === 'leave').length;
+    const holidayCovered = records.filter((r: any) => r.status === 'absent' && paidHolidaySet.has(r.attendance_date)).length;
 
     const dutyTime = getDutyTime(staffMember);
     const dutyStart = timeToMinutes(dutyTime.start);
@@ -606,6 +628,14 @@ const AdminSalary = () => {
       };
 
       if (r.status === 'absent') {
+        // If this absent date is a paid holiday, treat as paid (no deduction)
+        if (paidHolidaySet.has(r.attendance_date)) {
+          entry.status = 'holiday';
+          entry.dailyEarning = Math.round(dailyRate);
+          totalDailyEarnings += entry.dailyEarning;
+          dailyBreakdown.push(entry);
+          return;
+        }
         entry.deduction = Math.round(dailyRate);
         entry.dailyEarning = 0;
         dailyBreakdown.push(entry);
@@ -662,8 +692,19 @@ const AdminSalary = () => {
 
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
+    // For additive mode: add paid holidays that have NO attendance record
+    // (so weekend/public holidays still count as paid days)
+    const recordedDates = new Set(records.map((r: any) => r.attendance_date));
+    let untouchedHolidayDays = 0;
+    paidHolidaySet.forEach((d: any) => {
+      if (!recordedDates.has(d)) untouchedHolidayDays += 1;
+    });
+    const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
+    totalDailyEarnings += holidayPaidEarnings;
+
     return {
-      present, absent, late, halfDay, leave, total: records.length,
+      present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
+      total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
     };
