@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
 
     const renderPageHeader = () => `
       <tr class="page-header-row">
-        <th colspan="12" class="header-cell">
+        <th colspan="13" class="header-cell">
           <div class="page-header">
             <div class="letterhead">
               <div class="logo-wrap">${logoBlock}</div>
@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
     const renderFooter = () => `
       <tfoot>
         <tr>
-          <td colspan="12" class="footer-cell">
+          <td colspan="13" class="footer-cell">
             <div class="footer-inner">
               <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
                 <div class="sig">
