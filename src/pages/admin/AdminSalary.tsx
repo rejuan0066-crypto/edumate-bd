@@ -2149,6 +2149,54 @@ const AdminSalary = () => {
           />
 
           <TabsContent value="salary">
+            {/* Attendance Validation Banner */}
+            {(() => {
+              const issues = filtered
+                .filter((s: any) => !getRecord(s.id))
+                .map((s: any) => ({ s, v: getAttendanceValidation(s) }))
+                .filter(x => x.v.hasErrors || x.v.hasWarnings);
+              if (issues.length === 0) return null;
+              const errCount = issues.filter(x => x.v.hasErrors).length;
+              const warnCount = issues.length - errCount;
+              return (
+                <div className={`mb-3 rounded-2xl border p-3 backdrop-blur-sm ${
+                  errCount > 0
+                    ? 'border-red-300/50 bg-red-50/70 dark:bg-red-950/20 dark:border-red-900/40'
+                    : 'border-amber-300/50 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-900/40'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className={`h-5 w-5 mt-0.5 shrink-0 ${errCount > 0 ? 'text-red-600' : 'text-amber-600'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-bold ${errCount > 0 ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                        {bn
+                          ? `উপস্থিতি ডেটা পরীক্ষা: ${errCount > 0 ? `${toBnDigits(errCount)} জনের ত্রুটি (বেতন বন্ধ)` : ''}${errCount > 0 && warnCount > 0 ? ' • ' : ''}${warnCount > 0 ? `${toBnDigits(warnCount)} জনের সতর্কতা` : ''}`
+                          : `Attendance check: ${errCount > 0 ? `${errCount} have errors (blocked)` : ''}${errCount > 0 && warnCount > 0 ? ' • ' : ''}${warnCount > 0 ? `${warnCount} warnings` : ''}`}
+                      </div>
+                      <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground max-h-28 overflow-y-auto">
+                        {issues.slice(0, 6).map(({ s, v }) => (
+                          <li key={s.id} className="truncate">
+                            <span className={`font-semibold ${v.hasErrors ? 'text-red-600' : 'text-amber-600'}`}>
+                              {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}:
+                            </span>{' '}
+                            {[...v.errors, ...v.warnings].slice(0, 2).join(' • ')}
+                          </li>
+                        ))}
+                        {issues.length > 6 && (
+                          <li className="italic opacity-70">
+                            {bn ? `…আরও ${toBnDigits(issues.length - 6)} জন` : `…and ${issues.length - 6} more`}
+                          </li>
+                        )}
+                      </ul>
+                      <div className="mt-1.5 text-[10px] text-muted-foreground italic">
+                        {bn
+                          ? 'ত্রুটি থাকা স্টাফদের বেতন স্বয়ংক্রিয়ভাবে স্কিপ হবে। আগে উপস্থিতি ঠিক করুন।'
+                          : 'Staff with errors will be skipped automatically. Fix attendance data first.'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             {/* Salary Table */}
             <Card>
               <CardContent className="p-0">
