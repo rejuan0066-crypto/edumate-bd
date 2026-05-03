@@ -394,15 +394,17 @@ Deno.serve(async (req) => {
     if (staffPages.length === 0) staffPages.push([]);
     const pagesHtml = staffPages.map((pageRows, pageIndex) => `
       <section class="salary-page">
-        <table class="page-table">
-          ${colGroup}
-          <thead>${renderPageHeader()}${renderColumnHeaders()}</thead>
-          <tbody>
-            ${renderStaffRows(pageRows, pageIndex * rowsPerPage)}
-            ${pageIndex === staffPages.length - 1 ? renderTotalsAndNote() : ""}
-          </tbody>
-          ${renderFooter()}
-        </table>
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}${renderColumnHeaders()}</thead>
+            <tbody>
+              ${renderStaffRows(pageRows, pageIndex * rowsPerPage)}
+              ${pageIndex === staffPages.length - 1 ? renderTotalsAndNote() : ""}
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
       </section>
     `).join("");
 
