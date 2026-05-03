@@ -2214,8 +2214,24 @@ const AdminSalary = () => {
           <SegmentedTabs
             tabs={[
               { key: 'salary', label: bn ? 'বেতন তালিকা' : 'Salary Sheet', icon: Wallet },
-              { key: 'bonus', label: bn ? 'বাৎসরিক বোনাস শিট' : 'Annual Bonus Sheet', icon: DollarSign },
-              { key: 'savings', label: bn ? 'জমার তালিকা' : 'Savings Ledger', icon: PiggyBank },
+              {
+                key: 'bonus',
+                label: bn ? 'বাৎসরিক বোনাস শিট' : 'Annual Bonus Sheet',
+                icon: ((props: any) => (
+                  <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
+                    <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
+                  </span>
+                )) as any,
+              },
+              {
+                key: 'savings',
+                label: bn ? 'জমার তালিকা' : 'Savings Ledger',
+                icon: ((props: any) => (
+                  <span className={`inline-flex items-center font-extrabold leading-none ${props.className || ''}`}>
+                    <span>৳</span><Plus className="h-3 w-3 -ml-0.5" strokeWidth={3} />
+                  </span>
+                )) as any,
+              },
             ]}
             value={mainTab}
             onChange={setMainTab}
