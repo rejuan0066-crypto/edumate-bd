@@ -311,6 +311,26 @@ const AdminSalary = () => {
     },
   });
 
+  // Fetch holidays for the selected month (paid holidays only affect calculations)
+  const { data: monthHolidays = [] } = useQuery({
+    queryKey: ['staff-holidays-month', monthYear],
+    queryFn: async () => {
+      const y = Number(selectedYear); const m = Number(selectedMonth);
+      const lastDay = new Date(y, m, 0).getDate();
+      const start = `${monthYear}-01`;
+      const end = `${monthYear}-${String(lastDay).padStart(2, '0')}`;
+      const { data, error } = await supabase
+        .from('staff_holidays' as any)
+        .select('holiday_date, is_paid')
+        .gte('holiday_date', start)
+        .lte('holiday_date', end);
+      if (error) return [] as any[];
+      return (data || []) as any[];
+    },
+  });
+  const paidHolidaySet = useMemo(() => new Set(
+    monthHolidays.filter((h: any) => h.is_paid).map((h: any) => h.holiday_date)
+  ), [monthHolidays]);
   // Fetch salary settings
   const { data: settings = [] } = useQuery({
     queryKey: ['salary-settings'],
