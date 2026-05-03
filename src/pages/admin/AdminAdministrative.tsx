@@ -46,6 +46,7 @@ type Officer = {
   responsibilities: string | null;
   office_room: string | null;
   officer_id: string | null;
+  user_id: string | null;
   created_at: string;
 };
 
