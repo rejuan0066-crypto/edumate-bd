@@ -339,13 +339,16 @@ export default function SalaryWorkflowPanel({
   });
 
   const handlePrint = () => {
+    const verDef = pickDefaultActor(wfSettings, 'verifier');
+    const aprDef = pickDefaultActor(wfSettings, 'approver');
+    const treDef = pickDefaultActor(wfSettings, 'treasurer');
     onPrintWithWorkflow({
-      prepared_by: wf.prepared_by_name || undefined,
-      prepared_by_role: wf.prepared_by_role || undefined,
-      verified_by: wf.verified_by_name || undefined,
-      verified_by_role: wf.verified_by_role || undefined,
-      approved_by: wf.approved_by_name || undefined,
-      approved_by_role: wf.approved_by_role || undefined,
+      prepared_by: wf.prepared_by_name || treDef?.display_name || currentUserName || undefined,
+      prepared_by_role: wf.prepared_by_role || treDef?.designation || (bn ? 'প্রস্তুতকারী' : 'Prepared by') || undefined,
+      verified_by: wf.verified_by_name || verDef?.display_name || undefined,
+      verified_by_role: wf.verified_by_role || verDef?.designation || undefined,
+      approved_by: wf.approved_by_name || aprDef?.display_name || undefined,
+      approved_by_role: wf.approved_by_role || aprDef?.designation || undefined,
       paid_by: wf.paid_by_name || undefined,
       paid_by_role: wf.paid_by_role || undefined,
     });
