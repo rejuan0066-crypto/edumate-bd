@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2 } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb } from 'lucide-react';
 
 type ProbeResult = {
   key: string;
@@ -236,37 +236,251 @@ export default function AdminAdministrativeDebug() {
           ))}
         </div>
 
-        {/* Diagnosis hint */}
-        {results.length > 0 && (
-          <Card className="rounded-[32px] backdrop-blur-xl bg-emerald-500/5 border-emerald-500/30">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">{bn ? 'নির্ণয়' : 'Diagnosis'}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs space-y-1.5">
-              {(() => {
-                const tableR = results.find(r => r.key === 'admin_officers_active');
-                const dirR = results.find(r => r.key === 'directory_admin');
-                const lines: string[] = [];
-                if (tableR && !tableR.ok) lines.push(bn
-                  ? `❌ administrative_officers টেবিল থেকে পড়া যাচ্ছে না: ${tableR.error}`
-                  : `❌ Cannot read administrative_officers table: ${tableR.error}`);
-                if (tableR && tableR.ok && tableR.count === 0) lines.push(bn
-                  ? '⚠ active প্রশাসনিক কর্মকর্তা ০ — status="active" আছে কি না দেখুন।'
-                  : '⚠ 0 active officers — check that rows have status="active".');
-                if (dirR && !dirR.ok) lines.push(bn
-                  ? `❌ staff_directory ভিউ থেকে administrative অংশ পড়া যাচ্ছে না: ${dirR.error}`
-                  : `❌ Cannot read administrative slice from staff_directory: ${dirR.error}`);
-                if (tableR?.ok && tableR.count! > 0 && dirR?.ok && dirR.count === 0) lines.push(bn
-                  ? '⚠ টেবিলে ডেটা আছে কিন্তু ভিউতে আসছে না — ভিউ পুনরায় তৈরি দরকার হতে পারে।'
-                  : '⚠ Data exists in table but not in view — view may need rebuild.');
-                if (lines.length === 0) lines.push(bn
-                  ? '✅ সব সোর্স ঠিক আছে — UI অংশ (useStaffDirectory) চেক করুন।'
-                  : '✅ All sources OK — check UI hook (useStaffDirectory).');
-                return lines.map((l, i) => <div key={i}>{l}</div>);
-              })()}
-            </CardContent>
-          </Card>
-        )}
+        {/* Smart diagnosis */}
+        {results.length > 0 && (() => {
+          type Sev = 'critical' | 'warn' | 'info' | 'ok';
+          type Finding = {
+            sev: Sev;
+            title: string;
+            detail: string;
+            target?: string;       // table / view / policy / RPC name to inspect
+            policyHint?: string;   // suggested RLS policy / SQL hint
+          };
+
+          const findings: Finding[] = [];
+          const r = (k: string) => results.find(x => x.key === k);
+          const tableActive = r('admin_officers_active');
+          const tableAll = r('admin_officers_all');
+          const dirAdmin = r('directory_admin');
+          const dirAll = r('directory_all');
+          const rpcDir = r('rpc_list_directory');
+
+          const isRlsErr = (e?: string | null) =>
+            !!e && /row[- ]level security|permission denied|rls|policy/i.test(e);
+          const is401or403 = (e?: string | null) =>
+            !!e && /\b(401|403|JWT|not authenticated|unauthorized|forbidden)\b/i.test(e);
+          const isMissingRel = (e?: string | null) =>
+            !!e && /(does not exist|not found|relation .* does not exist|undefined function)/i.test(e);
+
+          // 1) Auth / role-level blocks
+          if (!user) {
+            findings.push({
+              sev: 'critical',
+              title: bn ? 'লগইন নেই — RLS সব row লুকাবে' : 'Not logged in — RLS will hide all rows',
+              detail: bn
+                ? 'প্রায় সব টেবিলে authenticated role প্রয়োজন। প্রথমে লগইন করুন।'
+                : 'Most tables require an authenticated role. Sign in first, then re-run probes.',
+            });
+          } else if (!adminOnly) {
+            findings.push({
+              sev: 'warn',
+              title: bn ? 'admin/super_admin role নয়' : 'Not admin / super_admin',
+              detail: bn
+                ? 'has_role(auth.uid(),\'admin\') এর উপর নির্ভরশীল RLS পলিসিগুলো ০ row দেবে।'
+                : 'Any RLS policy gated on has_role(auth.uid(),\'admin\') will return 0 rows for this user.',
+              target: 'public.administrative_officers',
+              policyHint:
+                "USING (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'super_admin'))",
+            });
+          }
+
+          // 2) administrative_officers table-level diagnosis
+          if (tableActive && !tableActive.ok) {
+            if (isRlsErr(tableActive.error) || is401or403(tableActive.error)) {
+              findings.push({
+                sev: 'critical',
+                title: bn
+                  ? 'administrative_officers — RLS দ্বারা ব্লকড'
+                  : 'administrative_officers — blocked by RLS',
+                detail: tableActive.error || '',
+                target: 'public.administrative_officers',
+                policyHint:
+                  "CREATE POLICY \"admins read officers\" ON public.administrative_officers FOR SELECT TO authenticated USING (has_role(auth.uid(),'admin') OR has_role(auth.uid(),'super_admin'));",
+              });
+            } else if (isMissingRel(tableActive.error)) {
+              findings.push({
+                sev: 'critical',
+                title: bn ? 'টেবিল পাওয়া যায়নি' : 'Table not found',
+                detail: tableActive.error || '',
+                target: 'public.administrative_officers',
+              });
+            } else {
+              findings.push({
+                sev: 'critical',
+                title: bn ? 'administrative_officers পড়া ব্যর্থ' : 'Failed to read administrative_officers',
+                detail: tableActive.error || '',
+                target: 'public.administrative_officers',
+              });
+            }
+          } else if (tableActive?.ok) {
+            // RLS-shadow check: zero active rows but rows exist when removing the status filter?
+            const allCount = tableAll?.count ?? 0;
+            if (tableActive.count === 0 && allCount === 0) {
+              findings.push({
+                sev: 'warn',
+                title: bn ? 'কোনো প্রশাসনিক কর্মকর্তা নেই' : 'No administrative officers exist',
+                detail: bn
+                  ? '/admin/administrative থেকে কর্মকর্তা যোগ করুন।'
+                  : 'Add officers from /admin/administrative.',
+                target: 'public.administrative_officers',
+              });
+            } else if (tableActive.count === 0 && allCount > 0) {
+              findings.push({
+                sev: 'warn',
+                title: bn ? 'সব row আছে কিন্তু status="active" নেই' : 'Rows exist but none have status="active"',
+                detail: bn
+                  ? 'অথবা সবগুলোতে deleted_at সেট করা — সেগুলো active হিসেবে চিহ্নিত করুন।'
+                  : 'Either status is not "active" or deleted_at is set — mark them active to appear.',
+                target: 'public.administrative_officers (status, deleted_at)',
+              });
+            }
+          }
+
+          // 3) staff_directory view-level diagnosis
+          if (dirAdmin && !dirAdmin.ok) {
+            if (isRlsErr(dirAdmin.error) || is401or403(dirAdmin.error)) {
+              findings.push({
+                sev: 'critical',
+                title: bn
+                  ? 'staff_directory ভিউ — RLS দ্বারা ব্লকড'
+                  : 'staff_directory view — blocked by RLS',
+                detail: dirAdmin.error || '',
+                target: 'public.staff_directory (view)',
+                policyHint:
+                  "Views with security_invoker=on inherit base-table RLS. Add a SELECT policy on the underlying tables (administrative_officers + staff) for the same role.",
+              });
+            } else if (isMissingRel(dirAdmin.error)) {
+              findings.push({
+                sev: 'critical',
+                title: bn ? 'staff_directory ভিউ নেই' : 'staff_directory view does not exist',
+                detail: dirAdmin.error || '',
+                target: 'public.staff_directory',
+                policyHint:
+                  'Re-create the view: CREATE VIEW public.staff_directory WITH (security_invoker=on) AS SELECT ... FROM staff UNION ALL SELECT ... FROM administrative_officers;',
+              });
+            } else {
+              findings.push({
+                sev: 'critical',
+                title: bn ? 'staff_directory পড়া ব্যর্থ' : 'Failed to read staff_directory',
+                detail: dirAdmin.error || '',
+                target: 'public.staff_directory',
+              });
+            }
+          } else if (dirAdmin?.ok && tableActive?.ok) {
+            // Cross-source consistency: table has rows but view doesn't → view is filtering/joining wrong
+            if ((tableActive.count ?? 0) > 0 && (dirAdmin.count ?? 0) === 0) {
+              findings.push({
+                sev: 'critical',
+                title: bn
+                  ? 'টেবিলে আছে, ভিউতে নেই — staff_directory ভাঙা/RLS-শ্যাডোড'
+                  : 'In table but missing from view — staff_directory broken or RLS-shadowed',
+                detail: bn
+                  ? 'ভিউয়ের UNION ALL শাখায় administrative_officers ঠিকমতো জয়েন হচ্ছে কিনা চেক করুন; অথবা ভিউয়ের base-table-এ admin role-এর জন্য SELECT policy নেই।'
+                  : 'Either the UNION ALL branch for administrative_officers is filtered out, or the underlying RLS on administrative_officers blocks SELECT from the view.',
+                target: 'public.staff_directory + public.administrative_officers',
+                policyHint:
+                  "Check: SELECT * FROM pg_policies WHERE tablename='administrative_officers'; — and the view definition's WHERE clause.",
+              });
+            } else if ((dirAll?.count ?? 0) > 0 && (dirAdmin.count ?? 0) === 0 && (tableActive.count ?? 0) > 0) {
+              findings.push({
+                sev: 'warn',
+                title: bn
+                  ? "ভিউতে source='administrative' সারি নেই"
+                  : "View returns no rows where source='administrative'",
+                detail: bn
+                  ? "ভিউয়ের administrative শাখায় source কলামটি 'administrative' হিসেবে সেট হচ্ছে কিনা যাচাই করুন।"
+                  : "Verify the view's administrative branch sets source='administrative' literal.",
+                target: 'public.staff_directory (source column)',
+              });
+            }
+          }
+
+          // 4) RPC fallback diagnosis
+          if (rpcDir && !rpcDir.ok) {
+            if (isRlsErr(rpcDir.error) || is401or403(rpcDir.error)) {
+              findings.push({
+                sev: 'warn',
+                title: bn ? 'list_staff_directory RPC — অনুমতি নেই' : 'list_staff_directory RPC — permission denied',
+                detail: rpcDir.error || '',
+                target: 'public.list_staff_directory()',
+                policyHint:
+                  'GRANT EXECUTE ON FUNCTION public.list_staff_directory() TO authenticated; — or mark the function SECURITY DEFINER with a hardened search_path.',
+              });
+            } else if (isMissingRel(rpcDir.error)) {
+              findings.push({
+                sev: 'warn',
+                title: bn ? 'RPC নেই' : 'RPC does not exist',
+                detail: rpcDir.error || '',
+                target: 'public.list_staff_directory()',
+              });
+            }
+          }
+
+          // 5) All-good case
+          if (findings.length === 0) {
+            findings.push({
+              sev: 'ok',
+              title: bn ? 'সব ব্যাকএন্ড সোর্স ঠিক আছে' : 'All backend sources are healthy',
+              detail: bn
+                ? 'সমস্যা সম্ভবত ফ্রন্টএন্ড: useStaffDirectory হুকের ফিল্টার ({ source:"all", status:"active" }), React Query cache, অথবা SalaryWorkflowSettings-এ usedDirIds লজিক চেক করুন।'
+                : 'Issue is likely client-side: inspect the useStaffDirectory hook filters ({ source:"all", status:"active" }), React Query cache, or the usedDirIds filter inside SalaryWorkflowSettings.',
+              target: 'src/hooks/useStaffDirectory.ts + SalaryWorkflowSettings.tsx',
+            });
+          }
+
+          const sevMeta: Record<Sev, { color: string; bg: string; border: string; label: string; Icon: any }> = {
+            critical: { color: 'text-red-700 dark:text-red-400',     bg: 'bg-red-500/10',     border: 'border-red-500/40',     label: bn ? 'গুরুতর' : 'Critical', Icon: ShieldAlert },
+            warn:     { color: 'text-amber-700 dark:text-amber-400', bg: 'bg-amber-500/10',   border: 'border-amber-500/40',   label: bn ? 'সতর্কতা' : 'Warning',  Icon: AlertTriangle },
+            info:     { color: 'text-blue-700 dark:text-blue-400',   bg: 'bg-blue-500/10',    border: 'border-blue-500/40',    label: 'Info',                       Icon: Lightbulb },
+            ok:       { color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/40', label: 'OK',                  Icon: CheckCircle2 },
+          };
+
+          return (
+            <Card className="rounded-[32px] backdrop-blur-xl bg-card/60 border-emerald-500/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-amber-500" />
+                  {bn ? 'স্মার্ট নির্ণয়' : 'Smart Diagnosis'}
+                </CardTitle>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn
+                    ? 'প্রতিটি পর্যবেক্ষণে কোন টেবিল/ভিউ/RLS পলিসি যাচাই করতে হবে তা নির্দেশিত আছে।'
+                    : 'Each finding pinpoints which table, view, or RLS policy to inspect.'}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-2.5">
+                {findings.map((f, i) => {
+                  const m = sevMeta[f.sev];
+                  const Icon = m.Icon;
+                  return (
+                    <div key={i} className={`rounded-2xl border ${m.border} ${m.bg} p-3 space-y-1.5`}>
+                      <div className={`flex items-center gap-2 text-sm font-semibold ${m.color}`}>
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="flex-1">{f.title}</span>
+                        <Badge variant="outline" className={`text-[10px] ${m.color} border-current/40`}>{m.label}</Badge>
+                      </div>
+                      {f.detail && (
+                        <div className="text-xs text-foreground/80 whitespace-pre-wrap break-words">{f.detail}</div>
+                      )}
+                      {f.target && (
+                        <div className="text-[11px] flex flex-wrap items-center gap-1.5">
+                          <span className="text-muted-foreground">{bn ? 'যাচাই করুন:' : 'Inspect:'}</span>
+                          <code className="px-1.5 py-0.5 rounded-md bg-background/70 border border-border/40">{f.target}</code>
+                        </div>
+                      )}
+                      {f.policyHint && (
+                        <div className="space-y-1">
+                          <div className="text-[11px] text-muted-foreground">{bn ? 'প্রস্তাবিত SQL/পলিসি:' : 'Suggested SQL / policy:'}</div>
+                          <pre className="bg-background/70 border border-border/40 rounded-lg p-2 overflow-x-auto text-[10px] leading-relaxed whitespace-pre-wrap">{f.policyHint}</pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
     </AdminLayout>
   );
