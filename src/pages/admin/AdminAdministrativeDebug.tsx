@@ -35,6 +35,11 @@ export default function AdminAdministrativeDebug() {
   const [nextInSec, setNextInSec] = useState<number>(0);
   const runAllRef = useRef<(() => Promise<void>) | null>(null);
 
+  // Filters that change which probes run + what they query
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'pending' | 'any'>('active');
+  const [deletedFilter, setDeletedFilter] = useState<'not_deleted' | 'deleted_only' | 'any'>('not_deleted');
+  const [roleProbe, setRoleProbe] = useState<'admin' | 'super_admin' | 'staff' | 'teacher'>('admin');
+
   const runProbe = async (
     key: string,
     label: string,
@@ -70,49 +75,76 @@ export default function AdminAdministrativeDebug() {
     setRunning(true);
     const out: ProbeResult[] = [];
 
+    // Helper to apply current filters to a query builder
+    const applyFilters = (q: any) => {
+      if (statusFilter !== 'any') q = q.eq('status', statusFilter);
+      if (deletedFilter === 'not_deleted') q = q.is('deleted_at', null);
+      else if (deletedFilter === 'deleted_only') q = q.not('deleted_at', 'is', null);
+      return q;
+    };
+    const filterDesc =
+      `status=${statusFilter} • deleted=${deletedFilter}`;
+
     out.push(await runProbe(
-      'admin_officers_active',
-      bn ? 'প্রশাসনিক টেবিল (active)' : 'administrative_officers table (active)',
+      'admin_officers_filtered',
+      bn ? `প্রশাসনিক টেবিল (${filterDesc})` : `administrative_officers table (${filterDesc})`,
       'table: administrative_officers',
-      `supabase.from('administrative_officers').select('id,name_bn,name_en,designation,officer_id,status,user_id,deleted_at').is('deleted_at', null).eq('status','active')`,
-      () => supabase
-        .from('administrative_officers' as any)
-        .select('id,name_bn,name_en,designation,officer_id,status,user_id,deleted_at')
-        .is('deleted_at', null)
-        .eq('status', 'active'),
+      `from('administrative_officers').select(...).${statusFilter === 'any' ? '' : `eq('status','${statusFilter}').`}${deletedFilter === 'not_deleted' ? "is('deleted_at',null)" : deletedFilter === 'deleted_only' ? "not('deleted_at','is',null)" : '/* any deleted */'}`,
+      () => applyFilters(
+        supabase.from('administrative_officers' as any)
+          .select('id,name_bn,name_en,designation,officer_id,status,user_id,deleted_at')
+      ),
     ));
 
     out.push(await runProbe(
       'admin_officers_all',
-      bn ? 'প্রশাসনিক টেবিল (সব)' : 'administrative_officers table (all)',
+      bn ? 'প্রশাসনিক টেবিল (কোনো ফিল্টার ছাড়া)' : 'administrative_officers table (no filters)',
       'table: administrative_officers',
-      `supabase.from('administrative_officers').select('id,name_bn,status,deleted_at')`,
-      () => supabase
-        .from('administrative_officers' as any)
+      `from('administrative_officers').select('id,name_bn,status,deleted_at')`,
+      () => supabase.from('administrative_officers' as any)
         .select('id,name_bn,status,deleted_at'),
     ));
 
     out.push(await runProbe(
+      'admin_officers_active_only',
+      bn ? "শুধু status='active' (deleted ignore)" : "Only status='active' (deleted ignored)",
+      'table: administrative_officers',
+      `from('administrative_officers').eq('status','active')`,
+      () => supabase.from('administrative_officers' as any)
+        .select('id,name_bn,status,deleted_at').eq('status', 'active'),
+    ));
+
+    out.push(await runProbe(
+      'admin_officers_deleted_only',
+      bn ? 'শুধু soft-deleted রেকর্ড' : 'Only soft-deleted records',
+      'table: administrative_officers',
+      `from('administrative_officers').not('deleted_at','is',null)`,
+      () => supabase.from('administrative_officers' as any)
+        .select('id,name_bn,status,deleted_at').not('deleted_at', 'is', null),
+    ));
+
+    out.push(await runProbe(
       'directory_admin',
-      bn ? 'staff_directory ভিউ (administrative)' : 'staff_directory view (administrative)',
+      bn ? `staff_directory ভিউ (administrative, ${filterDesc})` : `staff_directory view (administrative, ${filterDesc})`,
       'view: staff_directory',
-      `supabase.from('staff_directory').select('*').eq('source','administrative').eq('status','active')`,
-      () => supabase
-        .from('staff_directory' as any)
-        .select('*')
-        .eq('source', 'administrative')
-        .eq('status', 'active'),
+      `from('staff_directory').eq('source','administrative').${statusFilter === 'any' ? '' : `eq('status','${statusFilter}')`}`,
+      () => {
+        let q = supabase.from('staff_directory' as any).select('*').eq('source', 'administrative');
+        if (statusFilter !== 'any') q = q.eq('status', statusFilter);
+        return q;
+      },
     ));
 
     out.push(await runProbe(
       'directory_all',
-      bn ? 'staff_directory ভিউ (all active)' : 'staff_directory view (all active)',
+      bn ? `staff_directory ভিউ (সব sources, ${filterDesc})` : `staff_directory view (all sources, ${filterDesc})`,
       'view: staff_directory',
-      `supabase.from('staff_directory').select('source,id,name_bn').eq('status','active')`,
-      () => supabase
-        .from('staff_directory' as any)
-        .select('source,id,name_bn,designation')
-        .eq('status', 'active'),
+      `from('staff_directory').select('source,id,name_bn,designation,status')`,
+      () => {
+        let q = supabase.from('staff_directory' as any).select('source,id,name_bn,designation,status');
+        if (statusFilter !== 'any') q = q.eq('status', statusFilter);
+        return q;
+      },
     ));
 
     out.push(await runProbe(
@@ -121,6 +153,29 @@ export default function AdminAdministrativeDebug() {
       'rpc: list_staff_directory',
       `supabase.rpc('list_staff_directory')`,
       () => supabase.rpc('list_staff_directory' as any),
+    ));
+
+    // Role-based access probes — check the *current logged-in user*'s effective role
+    out.push(await runProbe(
+      'has_role_check',
+      bn ? `has_role(auth.uid(), '${roleProbe}')` : `has_role(auth.uid(), '${roleProbe}')`,
+      `rpc: has_role`,
+      `supabase.rpc('has_role', { _user_id: '${user?.id || 'null'}', _role: '${roleProbe}' })`,
+      () => supabase.rpc('has_role' as any, { _user_id: user?.id, _role: roleProbe }),
+    ));
+
+    // Probe the resolved role: how many rows can THIS user see vs an unfiltered count
+    out.push(await runProbe(
+      'visibility_compare',
+      bn ? 'দৃশ্যমানতা তুলনা (current user vs no filter)' : 'Visibility compare (current user vs unfiltered)',
+      'table: administrative_officers',
+      `Counts rows visible under RLS for the logged-in user`,
+      async () => {
+        const { count, error } = await supabase
+          .from('administrative_officers' as any)
+          .select('id', { count: 'exact', head: true });
+        return { data: count != null ? Array.from({ length: Math.min(count, 50) }).map((_, i) => ({ row: i + 1 })) : [], error };
+      },
     ));
 
     setResults(out);
@@ -201,6 +256,64 @@ export default function AdminAdministrativeDebug() {
             </Button>
           </div>
         </div>
+
+        {/* Filters */}
+        <Card className="rounded-[32px] backdrop-blur-xl bg-card/60 border-border/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Database className="w-4 h-4 text-emerald-600" />
+              {bn ? 'প্রোব ফিল্টার' : 'Probe Filters'}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground">
+              {bn
+                ? 'এই ফিল্টারগুলো administrative_officers ও staff_directory প্রোবে প্রয়োগ হবে — UI কী দেখবে তা অনুকরণ করতে।'
+                : 'These filters are applied to administrative_officers + staff_directory probes to mirror what the UI should see.'}
+            </p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                {bn ? 'স্ট্যাটাস' : 'Status'}
+              </label>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">active</SelectItem>
+                  <SelectItem value="inactive">inactive</SelectItem>
+                  <SelectItem value="pending">pending</SelectItem>
+                  <SelectItem value="any">{bn ? 'যেকোনো' : 'any'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                deleted_at
+              </label>
+              <Select value={deletedFilter} onValueChange={(v) => setDeletedFilter(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_deleted">{bn ? 'মুছে ফেলা হয়নি (NULL)' : 'Not deleted (NULL)'}</SelectItem>
+                  <SelectItem value="deleted_only">{bn ? 'শুধু soft-deleted' : 'Soft-deleted only'}</SelectItem>
+                  <SelectItem value="any">{bn ? 'যেকোনো' : 'any'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                {bn ? 'role যাচাই' : 'Role to test'}
+              </label>
+              <Select value={roleProbe} onValueChange={(v) => setRoleProbe(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">admin</SelectItem>
+                  <SelectItem value="super_admin">super_admin</SelectItem>
+                  <SelectItem value="staff">staff</SelectItem>
+                  <SelectItem value="teacher">teacher</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Session info */}
         <Card className="rounded-[32px] backdrop-blur-xl bg-card/60">
@@ -307,7 +420,7 @@ export default function AdminAdministrativeDebug() {
 
           const findings: Finding[] = [];
           const r = (k: string) => results.find(x => x.key === k);
-          const tableActive = r('admin_officers_active');
+          const tableActive = r('admin_officers_filtered');
           const tableAll = r('admin_officers_all');
           const dirAdmin = r('directory_admin');
           const dirAll = r('directory_all');
