@@ -2072,6 +2072,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
           onOpenChange={(v) => { if (!v) setMonthlyStaff(null); }}
           staff={monthlyStaff}
           shift={entityType === 'staff' ? effectiveShift : undefined}
+          initialDate={selectedDate}
         />
       </div>
     </AdminLayout>
