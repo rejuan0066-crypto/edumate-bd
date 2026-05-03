@@ -277,7 +277,7 @@ Deno.serve(async (req) => {
     const renderFooter = () => `
       <tfoot>
         <tr>
-          <td colspan="13" class="footer-cell">
+          <td colspan="${COL_COUNT}" class="footer-cell">
             <div class="footer-inner">
               <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
                 <div class="sig">
