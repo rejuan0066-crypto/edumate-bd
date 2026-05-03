@@ -370,6 +370,7 @@ const AdminResults = () => {
         className: bn ? cls?.name_bn : cls?.name,
         examName: bn ? examSession.name_bn : examSession.name,
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
+        signatories,
       };
 
       if (type === 'csv') exportResultCSV(params);
