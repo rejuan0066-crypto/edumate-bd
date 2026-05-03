@@ -381,6 +381,7 @@ const App = () => (
                     <Route path="shift-audit-log" element={<AdminShiftAuditLog />} />
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />
+                    <Route path="staff-holidays" element={<AdminStaffHolidays />} />
                     <Route path="academic-sessions" element={<AdminAcademicSessions />} />
                     <Route path="address-manager" element={<AdminAddressManager />} />
                     <Route path="api-verification" element={<AdminApiVerification />} />
