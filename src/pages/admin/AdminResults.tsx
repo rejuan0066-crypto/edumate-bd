@@ -303,6 +303,11 @@ const AdminResults = () => {
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
 
+  // Export options: PDF vs browser print + A4 portrait/landscape
+  const [exportOptions, setExportOptions] = useState<{ open: boolean; classId: string | null; mode: 'pdf' | 'print'; orientation: 'landscape' | 'portrait' }>(
+    { open: false, classId: null, mode: 'print', orientation: 'landscape' }
+  );
+
   const MAX_LEN = 100;
   const validateSignatories = (rows: ResultSignatory[]) => {
     const errs: typeof sigErrors = {};
