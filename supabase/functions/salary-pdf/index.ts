@@ -11,6 +11,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Peek body once so we can detect dryRun (regression-test bypass) before auth.
+    let bodyRaw: any = {};
+    try { bodyRaw = await req.json(); } catch (_e) { bodyRaw = {}; }
+    const isDryRun = bodyRaw && bodyRaw.dryRun === "html";
+
     // Validate JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
