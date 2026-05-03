@@ -14,7 +14,7 @@ import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import { GraduationCap } from 'lucide-react';
-import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, type ResultSignatory } from '@/lib/resultExport';
+import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, DEFAULT_PRINT_FOOTER_OPTIONS, type ResultSignatory, type ResultPrintFooterOptions } from '@/lib/resultExport';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -298,6 +298,33 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: footerOptions = DEFAULT_PRINT_FOOTER_OPTIONS, refetch: refetchFooterOptions } = useQuery<ResultPrintFooterOptions>({
+    queryKey: ['result-print-footer'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_print_footer').maybeSingle();
+      const v = (data?.value as any);
+      if (v && typeof v === 'object') {
+        return {
+          show_page_numbers: v.show_page_numbers !== false,
+          show_footer_institution: v.show_footer_institution !== false,
+        };
+      }
+      return DEFAULT_PRINT_FOOTER_OPTIONS;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const saveFooterOptions = async (next: ResultPrintFooterOptions) => {
+    const { error } = await supabase
+      .from('website_settings')
+      .upsert({ key: 'result_print_footer', value: next as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(bn ? 'প্রিন্ট ফুটার সেটিং সংরক্ষিত' : 'Print footer setting saved');
+    refetchFooterOptions();
+  };
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
@@ -416,6 +443,8 @@ const AdminResults = () => {
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
         orientation,
+        showPageNumbers: footerOptions.show_page_numbers,
+        showFooterInstitution: footerOptions.show_footer_institution,
       };
 
       if (mode === 'csv') exportResultCSV(params);
@@ -582,6 +611,29 @@ const AdminResults = () => {
                     {bn ? 'অনেক বিষয় থাকলে পোর্ট্রেটে কলাম সংকুচিত হতে পারে।' : 'Columns may be narrower in portrait when many subjects are present.'}
                   </p>
                 )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'প্রিন্ট ফুটার (সংরক্ষিত হবে)' : 'Print Footer (saved)'}</p>
+                <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm">{bn ? 'প্রতিটি পৃষ্ঠায় পৃষ্ঠা নম্বর দেখান' : 'Show page numbers (Page X of Y)'}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                      checked={footerOptions.show_page_numbers}
+                      onChange={(e) => saveFooterOptions({ ...footerOptions, show_page_numbers: e.target.checked })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm">{bn ? 'ফুটারে প্রতিষ্ঠানের নাম দেখান' : 'Show institution name in footer'}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                      checked={footerOptions.show_footer_institution}
+                      onChange={(e) => saveFooterOptions({ ...footerOptions, show_footer_institution: e.target.checked })}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
             <DialogFooter className="gap-2">

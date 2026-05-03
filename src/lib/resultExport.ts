@@ -16,7 +16,19 @@ interface ExportData {
   sessionName?: string;
   passMark?: number;
   signatories?: ResultSignatory[];
+  showPageNumbers?: boolean;
+  showFooterInstitution?: boolean;
 }
+
+export interface ResultPrintFooterOptions {
+  show_page_numbers: boolean;
+  show_footer_institution: boolean;
+}
+
+export const DEFAULT_PRINT_FOOTER_OPTIONS: ResultPrintFooterOptions = {
+  show_page_numbers: true,
+  show_footer_institution: true,
+};
 
 export interface ResultSignatory {
   title_bn?: string;
@@ -154,7 +166,7 @@ export const exportResultPDF = ({ title, students, subjects, marksMap, getOveral
   doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
   // Build computed rows + ranking by total (desc)
   const computed = students.map((st: any, idx: number) => {
@@ -212,12 +224,12 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     size:A4 ${orientation};
     margin:10mm 10mm 14mm 10mm;
     @bottom-left{
-      content:"${(institutionName || '').replace(/"/g, '\\"')}";
+      content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
     @bottom-right{
-      content:"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''});
+      content:${showPageNumbers ? `"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''})` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
