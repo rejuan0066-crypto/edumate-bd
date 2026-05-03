@@ -34,6 +34,8 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import { useAppTimezone } from '@/hooks/useAppTimezone';
+import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
