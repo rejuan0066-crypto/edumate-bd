@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -6,7 +6,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb, Timer, Activity } from 'lucide-react';
 
 type ProbeResult = {
   key: string;
@@ -27,6 +29,11 @@ export default function AdminAdministrativeDebug() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<ProbeResult[]>([]);
   const [ranAt, setRanAt] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [intervalSec, setIntervalSec] = useState<number>(15);
+  const [runCount, setRunCount] = useState(0);
+  const [nextInSec, setNextInSec] = useState<number>(0);
+  const runAllRef = useRef<(() => Promise<void>) | null>(null);
 
   const runProbe = async (
     key: string,
@@ -118,8 +125,32 @@ export default function AdminAdministrativeDebug() {
 
     setResults(out);
     setRanAt(new Date());
+    setRunCount((n) => n + 1);
     setRunning(false);
   };
+
+  // Keep ref in sync so the auto-refresh interval always calls the latest runAll
+  runAllRef.current = runAll;
+
+  // Auto-refresh: re-run probes every intervalSec seconds
+  useEffect(() => {
+    if (!autoRefresh) {
+      setNextInSec(0);
+      return;
+    }
+    setNextInSec(intervalSec);
+    const tick = setInterval(() => {
+      setNextInSec((s) => {
+        if (s <= 1) {
+          // Fire next run (skip if a run is still in progress)
+          if (!running) runAllRef.current?.();
+          return intervalSec;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [autoRefresh, intervalSec, running]);
 
   const adminOnly = role === 'admin' || role === 'super_admin';
 
@@ -138,10 +169,37 @@ export default function AdminAdministrativeDebug() {
                 : 'Probes each data source to confirm administrative names load correctly and surface any errors / RLS blocks.'}
             </p>
           </div>
-          <Button onClick={runAll} disabled={running} className="rounded-full">
-            {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            {bn ? 'সব প্রোব চালান' : 'Run All Probes'}
-          </Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Auto-refresh toggle */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl border backdrop-blur transition-colors ${autoRefresh ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border/40 bg-card/60'}`}>
+              <Activity className={`w-4 h-4 ${autoRefresh ? 'text-emerald-600 animate-pulse' : 'text-muted-foreground'}`} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-xs font-semibold">{bn ? 'অটো-রিফ্রেশ' : 'Auto-refresh'}</span>
+                {autoRefresh && (
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    {bn ? `পরবর্তী রান: ${nextInSec}সে` : `Next run in ${nextInSec}s`}
+                    {runCount > 0 && <span className="ml-1.5 opacity-70">• {bn ? `রান: ${runCount}` : `runs: ${runCount}`}</span>}
+                  </span>
+                )}
+              </div>
+              <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+              <Select value={String(intervalSec)} onValueChange={(v) => setIntervalSec(Number(v))}>
+                <SelectTrigger className="h-8 w-[88px] text-xs rounded-xl">
+                  <Timer className="w-3 h-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 15, 30, 60, 120].map((s) => (
+                    <SelectItem key={s} value={String(s)} className="text-xs">{s}s</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={runAll} disabled={running} className="rounded-full">
+              {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              {bn ? 'সব প্রোব চালান' : 'Run All Probes'}
+            </Button>
+          </div>
         </div>
 
         {/* Session info */}
