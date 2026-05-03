@@ -1464,9 +1464,8 @@ const AdminSalary = () => {
     },
   });
 
-  // Auto-fill signatory dialog from settings whenever it opens or data changes
+  // Auto-fill signatory inputs as soon as settings/user load (even if dialog is open)
   useEffect(() => {
-    if (!sigDialogOpen) return;
     const prep = pickSig('treasurer');
     const ver = pickSig('verifier');
     const apr = pickSig('approver');
@@ -1479,7 +1478,8 @@ const AdminSalary = () => {
     if (!sigApprovedBy && apr?.display_name) setSigApprovedBy(apr.display_name);
     if (!sigApprovedRole && apr?.designation) setSigApprovedRole(apr.designation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sigDialogOpen, workflowSignatories, currentUserName]);
+  }, [workflowSignatories, currentUserName, bn]);
+
   const exportPDF = async (sigOverride?: {
     prepared_by?: string; prepared_by_role?: string;
     verified_by?: string; verified_by_role?: string;
