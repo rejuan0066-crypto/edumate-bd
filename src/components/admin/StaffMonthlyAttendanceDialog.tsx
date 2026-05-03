@@ -372,6 +372,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
                           />
                         )}
+                        {rec?.status === 'leave' && (
+                          <LeaveEditor
+                            bn={bn}
+                            initialType={rec?.leave_type || ''}
+                            initialReason={rec?.leave_reason || ''}
+                            saving={isSaving}
+                            onSave={(lt, lr) => setStatus(key, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
+                          />
+                        )}
                         {rec && (
                           <button
                             onClick={() => setStatus(key, null)}
