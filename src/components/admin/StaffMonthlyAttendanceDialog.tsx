@@ -111,7 +111,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const setStatus = async (
     dateKey: string,
     newStatus: string | null,
-    extra?: { check_in_time?: string | null; check_out_time?: string | null }
+    extra?: { check_in_time?: string | null; check_out_time?: string | null; leave_type?: string | null; leave_reason?: string | null }
   ) => {
     if (!staff?.id) return;
     setSavingKey(dateKey);
@@ -126,6 +126,13 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         const payload: any = { status: newStatus, updated_at: new Date().toISOString() };
         if (extra && 'check_in_time' in extra) payload.check_in_time = extra.check_in_time;
         if (extra && 'check_out_time' in extra) payload.check_out_time = extra.check_out_time;
+        if (extra && 'leave_type' in extra) payload.leave_type = extra.leave_type;
+        if (extra && 'leave_reason' in extra) payload.leave_reason = extra.leave_reason;
+        // When switching away from leave, clear leave fields
+        if (newStatus !== 'leave' && existing.status === 'leave' && !('leave_type' in (extra || {}))) {
+          payload.leave_type = null;
+          payload.leave_reason = null;
+        }
         const { error } = await supabase.from('attendance_records').update(payload).eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
@@ -138,13 +145,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           status: newStatus,
           check_in_time: extra?.check_in_time ?? null,
           check_out_time: extra?.check_out_time ?? null,
+          leave_type: extra?.leave_type ?? null,
+          leave_reason: extra?.leave_reason ?? null,
         });
         if (error) throw error;
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      if (newStatus !== 'late') setOpenKey(null);
+      if (newStatus !== 'late' && newStatus !== 'leave') setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
     } finally {
@@ -363,6 +372,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
                           />
                         )}
+                        {rec?.status === 'leave' && (
+                          <LeaveEditor
+                            bn={bn}
+                            initialType={rec?.leave_type || ''}
+                            initialReason={rec?.leave_reason || ''}
+                            saving={isSaving}
+                            onSave={(lt, lr) => setStatus(key, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
+                          />
+                        )}
                         {rec && (
                           <button
                             onClick={() => setStatus(key, null)}
@@ -428,6 +446,72 @@ function LateTimeEditor({ bn, status, initialIn, initialOut, saving, onSave }: {
         className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
       >
         <Save className="h-3 w-3 mr-1" /> {bn ? 'সময় সেভ করুন' : 'Save time'}
+      </Button>
+    </div>
+  );
+}
+
+function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
+  bn: boolean;
+  initialType: string;
+  initialReason: string;
+  saving: boolean;
+  onSave: (leaveType: string, leaveReason: string) => void;
+}) {
+  const [lt, setLt] = useState(initialType || '');
+  const [lr, setLr] = useState(initialReason || '');
+  useEffect(() => { setLt(initialType || ''); setLr(initialReason || ''); }, [initialType, initialReason]);
+  const types = [
+    { v: 'weekly',  bn: 'সাপ্তাহিক', en: 'Weekly' },
+    { v: 'monthly', bn: 'মাসিক',     en: 'Monthly' },
+    { v: 'casual',  bn: 'নৈমিত্তিক', en: 'Casual' },
+    { v: 'sick',    bn: 'অসুস্থতা',   en: 'Sick' },
+    { v: 'other',   bn: 'অন্যান্য',   en: 'Other' },
+  ];
+  const showReason = lt === 'other' || lt === 'monthly' || lt === 'weekly';
+  return (
+    <div className="mt-1 p-2.5 rounded-xl border border-blue-300/40 bg-blue-50/60 dark:bg-blue-950/20 space-y-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
+        <CalendarOff className="h-3 w-3" /> {bn ? 'ছুটির ধরন ও কারণ' : 'Leave type & reason'}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {types.map(t => {
+          const active = lt === t.v;
+          return (
+            <button
+              key={t.v}
+              type="button"
+              onClick={() => setLt(t.v)}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                active
+                  ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                  : 'bg-background border-border/50 text-foreground/80 hover:border-blue-400/60 hover:text-blue-700'
+              }`}
+            >
+              {bn ? t.bn : t.en}
+            </button>
+          );
+        })}
+      </div>
+      {showReason && (
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'কারণ লিখুন' : 'Type reason'}</div>
+          <textarea
+            value={lr}
+            onChange={(e) => setLr(e.target.value)}
+            rows={2}
+            placeholder={bn ? 'যেমন: পারিবারিক কাজে...' : 'e.g. Family matter...'}
+            className="w-full text-xs rounded-lg border border-border/50 bg-background/80 p-2 outline-none focus:border-blue-400 resize-none"
+          />
+        </div>
+      )}
+      <Button
+        size="sm"
+        disabled={saving || !lt || (lt === 'other' && !lr.trim())}
+        onClick={() => onSave(lt, lr.trim())}
+        className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+      >
+        <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
       </Button>
     </div>
   );
