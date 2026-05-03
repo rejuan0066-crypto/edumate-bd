@@ -446,8 +446,20 @@ const AdminResults = () => {
               {sigDraft.map((s, i) => {
                 const err = sigErrors[i] || {};
                 const setField = (field: keyof ResultSignatory, val: string) => {
-                  setSigDraft(d => d.map((x, j) => j === i ? { ...x, [field]: val } : x));
+                  // Collapse internal whitespace runs and strip leading spaces while typing.
+                  // Trailing space is preserved during typing so users can type multi-word values,
+                  // but is trimmed on blur (see trimField below).
+                  const cleaned = val.replace(/^\s+/, '').replace(/\s{2,}/g, ' ');
+                  setSigDraft(d => d.map((x, j) => j === i ? { ...x, [field]: cleaned } : x));
                   setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                };
+                const trimField = (field: keyof ResultSignatory) => {
+                  setSigDraft(d => d.map((x, j) => {
+                    if (j !== i) return x;
+                    const cur = (x[field] as string | undefined) || '';
+                    const trimmed = cur.trim().replace(/\s{2,}/g, ' ');
+                    return trimmed === cur ? x : { ...x, [field]: trimmed };
+                  }));
                 };
                 return (
                   <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
