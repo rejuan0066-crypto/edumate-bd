@@ -9,13 +9,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
+import { validateDesignationCsv, type ImportSummary } from '@/lib/bulkDesignationImport';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const COLOR_OPTIONS = [
