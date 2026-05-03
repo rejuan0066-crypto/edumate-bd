@@ -541,6 +541,66 @@ const AdminResults = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Export options dialog: PDF vs Browser Print + A4 orientation */}
+        <Dialog open={exportOptions.open} onOpenChange={(o) => setExportOptions(s => ({ ...s, open: o }))}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'এক্সপোর্ট অপশন' : 'Export Options'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-5 py-2">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'ফরম্যাট' : 'Format'}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['pdf', 'print'] as const).map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setExportOptions(s => ({ ...s, mode: m }))}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${exportOptions.mode === m ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}
+                    >
+                      {m === 'pdf' ? (bn ? 'PDF ডাউনলোড' : 'Download PDF') : (bn ? 'ব্রাউজার প্রিন্ট' : 'Browser Print')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'A4 ওরিয়েন্টেশন' : 'A4 Orientation'}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['landscape', 'portrait'] as const).map(o => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => setExportOptions(s => ({ ...s, orientation: o }))}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${exportOptions.orientation === o ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}
+                    >
+                      {o === 'landscape' ? (bn ? 'ল্যান্ডস্কেপ' : 'Landscape') : (bn ? 'পোর্ট্রেট' : 'Portrait')}
+                    </button>
+                  ))}
+                </div>
+                {exportOptions.orientation === 'portrait' && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    {bn ? 'অনেক বিষয় থাকলে পোর্ট্রেটে কলাম সংকুচিত হতে পারে।' : 'Columns may be narrower in portrait when many subjects are present.'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setExportOptions(s => ({ ...s, open: false }))}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                onClick={() => {
+                  const { classId, mode, orientation } = exportOptions;
+                  setExportOptions(s => ({ ...s, open: false }));
+                  if (classId) runClassExport(classId, mode, orientation);
+                }}
+              >
+                {bn ? 'এক্সপোর্ট করুন' : 'Export'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         <ResultSearchFilters
           searchMode={searchMode}
