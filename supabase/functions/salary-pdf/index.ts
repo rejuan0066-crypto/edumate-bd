@@ -159,9 +159,9 @@ Deno.serve(async (req) => {
   html, body {
     background: #ffffff;
     color: #000000;
-    font-family: 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
-    font-size: 8.5pt;
-    line-height: 1.25;
+    font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
+    font-size: 10pt;
+    line-height: 1.3;
   }
   body { padding: 5mm 6mm; }
 
