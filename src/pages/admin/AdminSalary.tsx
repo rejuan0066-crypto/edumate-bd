@@ -1763,6 +1763,17 @@ const AdminSalary = () => {
       (bn ? webSettings?.principal_name : (webSettings?.principal_name_en || webSettings?.principal_name)) ||
       (bn ? 'প্রিন্সিপাল' : 'Principal');
 
+    // Dynamic signatories from salary workflow settings (with fallbacks)
+    const _prep = pickSig('treasurer');
+    const _ver = pickSig('verifier');
+    const _apr = pickSig('approver');
+    const accountantName = (sigVerifiedBy?.trim() || _ver?.display_name || instRow?.accountant_name || (bn ? '' : '')).toString();
+    const accountantRole = (sigVerifiedRole?.trim() || _ver?.designation || (bn ? 'হিসাবরক্ষক' : 'Accountant')).toString();
+    const approverName = (sigApprovedBy?.trim() || _apr?.display_name || principalName).toString();
+    const approverRole = (sigApprovedRole?.trim() || _apr?.designation || (bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)')).toString();
+    const recipientName = staffMember.name_bn || '';
+    const recipientRole = bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature";
+
     const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
@@ -1820,9 +1831,9 @@ const AdminSalary = () => {
       .words strong{color:#0f766e;font-style:normal;font-weight:700}
       .signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:55px;padding:0 8px}
       .sig{text-align:center;font-size:11.5px;color:#475569}
-      .sig .sig-name{font-size:12px;font-weight:700;color:#0f172a;min-height:18px;padding:0 6px 4px}
-      .sig .line{border-top:1.5px solid #94a3b8;padding-top:6px;margin-top:0}
-      .sig .role{font-weight:700;color:#0f172a;font-size:12px}
+      .sig .line{border-top:1.5px solid #94a3b8;margin:0 6px;height:0}
+      .sig .sig-name{font-size:12px;font-weight:700;color:#0f172a;padding-top:6px;min-height:18px}
+      .sig .role{font-weight:600;color:#475569;font-size:11px;margin-top:2px}
       .footer{background:#f1f5f9;padding:10px 32px;text-align:center;font-size:10.5px;color:#64748b;border-top:1px solid #e2e8f0;margin-top:30px}
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
       @media print{
@@ -1928,22 +1939,19 @@ const AdminSalary = () => {
 
         <div class="signatures">
           <div class="sig">
-            <div class="sig-name">${staffMember.name_bn || ''}</div>
-            <div class="line">
-              <div class="role">${bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature"}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${recipientName}</div>
+            <div class="role">${recipientRole}</div>
           </div>
           <div class="sig">
-            <div class="sig-name">&nbsp;</div>
-            <div class="line">
-              <div class="role">${bn ? 'হিসাবরক্ষক' : 'Accountant'}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${accountantName || '&nbsp;'}</div>
+            <div class="role">${accountantRole}</div>
           </div>
           <div class="sig">
-            <div class="sig-name">${principalName}</div>
-            <div class="line">
-              <div class="role">${bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)'}</div>
-            </div>
+            <div class="line"></div>
+            <div class="sig-name">${approverName}</div>
+            <div class="role">${approverRole}</div>
           </div>
         </div>
       </div>
