@@ -337,6 +337,7 @@ Deno.serve(async (req) => {
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${bn ? "বেতন বিবরণী" : "Salary Statement"} — ${monthLabel} ${year}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
@@ -777,7 +778,9 @@ Deno.serve(async (req) => {
       var styleId = 'dynamic-page-rule';
       var el = document.getElementById(styleId);
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
-      el.textContent = '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }';
+      el.textContent =
+        '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }' +
+        '@media print { @page { size: auto; margin: ' + m + 'mm; } }';
       // expose for autoFit
       settings._pageW = w; settings._pageH = h;
     }
@@ -785,15 +788,16 @@ Deno.serve(async (req) => {
     function autoFit(){
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
-      var pageH = settings._pageH || 210;
-      var pageW = settings._pageW || 297;
-      var maxH = (pageH - settings.marginMm * 2) * MM_TO_PX;
-      var maxW = (pageW - settings.marginMm * 2) * MM_TO_PX;
+      var pp = PAPER[settings.paper] || PAPER.A4;
+      var shortSide = Math.min(pp.w, pp.h) - settings.marginMm * 2;
+      var longSide  = Math.max(pp.w, pp.h) - settings.marginMm * 2;
+      var maxW = shortSide * MM_TO_PX;
+      var maxH = longSide * MM_TO_PX;
       pages.forEach(function(p){
         p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
         var h = p.scrollHeight, w = p.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
-        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.985));
+        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
           p.style.transform = 'scale(' + scale + ')';
