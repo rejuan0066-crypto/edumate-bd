@@ -399,16 +399,13 @@ Deno.serve(async (req) => {
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
+    tfoot tr.totals td { page-break-inside: avoid; break-inside: avoid; }
     .page-header {
       position: static;
       max-height: none; overflow: visible;
       background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm;
     }
-    .page-footer {
-      position: static;
-      max-height: none; overflow: visible;
-      background: #fff; border-top: 0.6pt solid #000; padding-top: 2mm; margin-top: 5mm;
-    }
+    .footer-inner { padding-top: 5mm; }
     .letterhead { min-height: 42px; margin-bottom: 3pt; padding-bottom: 3pt; }
     .logo-wrap { width: 42px; height: 42px; }
     .inst-name { font-size: 13pt; }
