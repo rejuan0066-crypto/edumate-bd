@@ -778,7 +778,7 @@ Deno.serve(async (req) => {
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
       el.textContent =
         '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }' +
-        '@media print { @page { size: auto; margin: ' + m + 'mm; } }';
+        '@media print { @page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; } }';
       // expose for autoFit
       settings._pageW = w; settings._pageH = h;
     }
