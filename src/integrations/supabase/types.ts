@@ -688,6 +688,8 @@ export type Database = {
           entity_id: string
           entity_type: string
           id: string
+          leave_reason: string | null
+          leave_type: string | null
           recorded_by: string | null
           remarks: string | null
           shift: string
@@ -702,6 +704,8 @@ export type Database = {
           entity_id: string
           entity_type?: string
           id?: string
+          leave_reason?: string | null
+          leave_type?: string | null
           recorded_by?: string | null
           remarks?: string | null
           shift?: string
@@ -716,6 +720,8 @@ export type Database = {
           entity_id?: string
           entity_type?: string
           id?: string
+          leave_reason?: string | null
+          leave_type?: string | null
           recorded_by?: string | null
           remarks?: string | null
           shift?: string
