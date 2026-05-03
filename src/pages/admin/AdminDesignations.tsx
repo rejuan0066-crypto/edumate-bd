@@ -13,8 +13,10 @@ import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen } from 'lucide-r
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
+import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const COLOR_OPTIONS = [
   { value: 'blue', label: 'Blue', className: 'bg-blue-500/10 text-blue-600 border-blue-500/30' },
