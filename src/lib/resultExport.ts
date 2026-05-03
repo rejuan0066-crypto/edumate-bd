@@ -405,6 +405,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
   </div>
   </div>
+  <div class="signatures-keeper">
   <div class="signatures-wrap">
   <div class="signatures">
     ${sigList.map((s) => {
@@ -412,6 +413,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       const n = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
       return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${n || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
     }).join('')}
+  </div>
   </div>
   </div>
   <div class="footer">
