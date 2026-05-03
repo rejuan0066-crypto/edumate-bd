@@ -227,8 +227,8 @@ export const printStudentProfile = ({
 
     <footer class="sigs">
       <div class="sig"><div class="line"></div><small>${t("Guardian's Signature", 'অভিভাবকের স্বাক্ষর')}</small></div>
-      <div class="sig"><div class="line"></div><small>${t('Class Teacher', 'শ্রেণী শিক্ষক')}</small></div>
-      <div class="sig"><div class="line"></div><small>${esc(institution.principal_name || institution.principal_name_en) || t('Principal', 'অধ্যক্ষ')}</small></div>
+      <div class="sig"><div class="line"></div><small>${t('Class Teacher', L.classTeacher)}</small></div>
+      <div class="sig"><div class="line"></div><small>${esc(institution.principal_name || institution.principal_name_en) || t('Principal', L.headmaster)}</small></div>
     </footer>
 
     <div class="meta">
