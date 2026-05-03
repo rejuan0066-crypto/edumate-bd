@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useStaffDirectory } from '@/hooks/useStaffDirectory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Trash2, Plus, ShieldCheck, BadgeCheck, Wallet, Star } from 'lucide-react';
+import { Trash2, Plus, ShieldCheck, BadgeCheck, Wallet, Star, UserPlus } from 'lucide-react';
 
 type Role = 'verifier' | 'approver' | 'treasurer';
 
@@ -20,21 +25,49 @@ const ROLE_META: Record<Role, { bn: string; en: string; icon: any; color: string
 
 export default function SalaryWorkflowSettings() {
   const { language } = useLanguage();
+  const { role: authRole } = useAuth();
+  const isSuperAdmin = authRole === 'super_admin';
   const bn = language === 'bn';
   const queryClient = useQueryClient();
   const [picker, setPicker] = useState<Record<Role, string>>({ verifier: '', approver: '', treasurer: '' });
+  const [tab, setTab] = useState<Record<Role, 'directory' | 'custom'>>({
+    verifier: 'directory', approver: 'directory', treasurer: 'directory',
+  });
+  const [custom, setCustom] = useState<Record<Role, { name: string; designation: string }>>({
+    verifier: { name: '', designation: '' },
+    approver: { name: '', designation: '' },
+    treasurer: { name: '', designation: '' },
+  });
 
-  const { data: staff = [] } = useQuery({
-    queryKey: ['workflow-staff-list'],
+  // Pull from unified directory (staff + administrative officers)
+  const { data: directory = [] } = useStaffDirectory({ source: 'all', status: 'active' });
+
+  // Global toggle: allow custom entries
+  const { data: configRow } = useQuery({
+    queryKey: ['salary-workflow-config'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('staff')
-        .select('id, name_bn, name_en, designation, staff_id')
-        .eq('status', 'active')
-        .order('name_bn');
-      if (error) throw error;
-      return data as any[];
+      const { data } = await supabase
+        .from('website_settings')
+        .select('value')
+        .eq('key', 'salary_workflow_config')
+        .maybeSingle();
+      return (data?.value as any) || { allow_custom_entries: true };
     },
+  });
+  const allowCustom = configRow?.allow_custom_entries !== false;
+
+  const setAllowCustomMutation = useMutation({
+    mutationFn: async (val: boolean) => {
+      const { error } = await supabase
+        .from('website_settings')
+        .upsert({ key: 'salary_workflow_config', value: { ...(configRow || {}), allow_custom_entries: val } }, { onConflict: 'key' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-config'] });
+      toast.success(bn ? 'সংরক্ষিত হয়েছে' : 'Saved');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error'),
   });
 
   const { data: settings = [] } = useQuery({
@@ -50,17 +83,21 @@ export default function SalaryWorkflowSettings() {
     },
   });
 
-  const addMutation = useMutation({
-    mutationFn: async ({ role, staffId }: { role: Role; staffId: string }) => {
-      const s = staff.find((x: any) => x.id === staffId);
-      if (!s) throw new Error('Staff not found');
-      const { error } = await supabase.from('salary_workflow_settings').insert({
+  const addFromDirectoryMutation = useMutation({
+    mutationFn: async ({ role, personId }: { role: Role; personId: string }) => {
+      const p = directory.find((x) => x.id === personId);
+      if (!p) throw new Error('Person not found');
+      // staff_id column references staff(id) historically; only set when source is staff to avoid FK violation
+      const payload: any = {
         role,
-        staff_id: staffId,
-        display_name: s.name_bn || s.name_en,
-        designation: s.designation || null,
+        staff_id: p.source === 'staff' ? p.id : null,
+        display_name: p.name_bn || p.name_en || '',
+        designation: p.designation || null,
+        source: p.source,
+        is_custom: false,
         sort_order: settings.filter((x: any) => x.role === role).length,
-      });
+      };
+      const { error } = await supabase.from('salary_workflow_settings').insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -72,6 +109,29 @@ export default function SalaryWorkflowSettings() {
       if (e?.code === '23505') toast.error(bn ? 'ইতিমধ্যে যোগ করা আছে' : 'Already added');
       else toast.error(e?.message || 'Error');
     },
+  });
+
+  const addCustomMutation = useMutation({
+    mutationFn: async ({ role, name, designation }: { role: Role; name: string; designation: string }) => {
+      if (!name.trim()) throw new Error(bn ? 'নাম লিখুন' : 'Enter a name');
+      const { error } = await supabase.from('salary_workflow_settings').insert({
+        role,
+        staff_id: null,
+        display_name: name.trim(),
+        designation: designation.trim() || null,
+        source: 'custom',
+        is_custom: true,
+        sort_order: settings.filter((x: any) => x.role === role).length,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-settings-admin'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-workflow-settings'] });
+      setCustom((c) => ({ ...c, [vars.role]: { name: '', designation: '' } }));
+      toast.success(bn ? 'কাস্টম এন্ট্রি যোগ হয়েছে' : 'Custom entry added');
+    },
+    onError: (e: any) => toast.error(e?.message || 'Error'),
   });
 
   const toggleMutation = useMutation({
@@ -87,7 +147,6 @@ export default function SalaryWorkflowSettings() {
 
   const setDefaultMutation = useMutation({
     mutationFn: async ({ id, role }: { id: string; role: Role }) => {
-      // Clear other defaults in same role, then mark this one default
       const { error: e1 } = await supabase
         .from('salary_workflow_settings')
         .update({ is_default: false })
@@ -123,8 +182,8 @@ export default function SalaryWorkflowSettings() {
     const meta = ROLE_META[role];
     const Icon = meta.icon;
     const list = settings.filter((s: any) => s.role === role);
-    const usedIds = new Set(list.map((s: any) => s.staff_id));
-    const available = staff.filter((s: any) => !usedIds.has(s.id));
+    const usedDirIds = new Set(list.filter((s: any) => !s.is_custom && s.staff_id).map((s: any) => s.staff_id));
+    const available = directory.filter((p) => !(p.source === 'staff' && usedDirIds.has(p.id)));
 
     return (
       <Card key={role} className="rounded-2xl">
@@ -134,30 +193,86 @@ export default function SalaryWorkflowSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2">
-            <Select value={picker[role]} onValueChange={(v) => setPicker({ ...picker, [role]: v })}>
-              <SelectTrigger className="flex-1"><SelectValue placeholder={bn ? 'স্টাফ নির্বাচন করুন' : 'Select staff'} /></SelectTrigger>
-              <SelectContent>
-                {available.map((s: any) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {bn ? s.name_bn : (s.name_en || s.name_bn)}
-                    {s.designation ? ` · ${s.designation}` : ''}
-                    {s.staff_id ? ` (${s.staff_id})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              disabled={!picker[role] || addMutation.isPending}
-              onClick={() => {
-                addMutation.mutate({ role, staffId: picker[role] });
-                setPicker({ ...picker, [role]: '' });
-              }}
-            >
-              <Plus className="h-3 w-3 mr-1" /> {bn ? 'যোগ করুন' : 'Add'}
-            </Button>
-          </div>
+          <Tabs value={tab[role]} onValueChange={(v) => setTab({ ...tab, [role]: v as any })}>
+            <TabsList className="grid grid-cols-2 w-full h-8">
+              <TabsTrigger value="directory" className="text-xs">
+                {bn ? 'ডিরেক্টরি থেকে' : 'From directory'}
+              </TabsTrigger>
+              <TabsTrigger value="custom" className="text-xs" disabled={!allowCustom}>
+                {bn ? 'কাস্টম' : 'Custom'}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="directory" className="mt-3">
+              <div className="flex gap-2">
+                <Select value={picker[role]} onValueChange={(v) => setPicker({ ...picker, [role]: v })}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={bn ? 'স্টাফ / কর্মকর্তা নির্বাচন করুন' : 'Select person'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {available.map((p) => (
+                      <SelectItem key={`${p.source}-${p.id}`} value={p.id}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[10px] px-1 py-0">
+                            {p.source === 'administrative' ? (bn ? 'প্রশাসনিক' : 'Admin') : (bn ? 'স্টাফ' : 'Staff')}
+                          </Badge>
+                          {bn ? p.name_bn : (p.name_en || p.name_bn)}
+                          {p.designation ? ` · ${p.designation}` : ''}
+                          {p.code ? ` (${p.code})` : ''}
+                        </span>
+                      </SelectItem>
+                    ))}
+                    {available.length === 0 && (
+                      <div className="px-2 py-3 text-xs text-muted-foreground text-center">
+                        {bn ? 'সব ব্যক্তি যোগ করা হয়েছে' : 'All people added'}
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  disabled={!picker[role] || addFromDirectoryMutation.isPending}
+                  onClick={() => {
+                    addFromDirectoryMutation.mutate({ role, personId: picker[role] });
+                    setPicker({ ...picker, [role]: '' });
+                  }}
+                >
+                  <Plus className="h-3 w-3 mr-1" /> {bn ? 'যোগ' : 'Add'}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="custom" className="mt-3 space-y-2">
+              {!allowCustom ? (
+                <p className="text-xs text-muted-foreground italic">
+                  {bn ? 'কাস্টম এন্ট্রি বন্ধ আছে।' : 'Custom entries are disabled.'}
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 gap-2">
+                    <Input
+                      placeholder={bn ? 'পূর্ণ নাম' : 'Full name'}
+                      value={custom[role].name}
+                      onChange={(e) => setCustom({ ...custom, [role]: { ...custom[role], name: e.target.value } })}
+                    />
+                    <Input
+                      placeholder={bn ? 'পদবি (ঐচ্ছিক)' : 'Designation (optional)'}
+                      value={custom[role].designation}
+                      onChange={(e) => setCustom({ ...custom, [role]: { ...custom[role], designation: e.target.value } })}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    disabled={!custom[role].name.trim() || addCustomMutation.isPending}
+                    onClick={() => addCustomMutation.mutate({ role, name: custom[role].name, designation: custom[role].designation })}
+                  >
+                    <UserPlus className="h-3 w-3 mr-1" /> {bn ? 'কাস্টম যোগ করুন' : 'Add custom'}
+                  </Button>
+                </>
+              )}
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-1.5">
             {list.length === 0 && (
@@ -165,11 +280,23 @@ export default function SalaryWorkflowSettings() {
             )}
             {list.map((item: any) => (
               <div key={item.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border bg-muted/30">
-                <div className="text-sm">
-                  <div className="font-medium">{item.display_name}</div>
-                  {item.designation && <div className="text-xs text-muted-foreground">{item.designation}</div>}
+                <div className="text-sm min-w-0">
+                  <div className="font-medium flex items-center gap-1.5">
+                    <span className="truncate">{item.display_name}</span>
+                    {item.is_custom && (
+                      <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                        {bn ? 'কাস্টম' : 'Custom'}
+                      </Badge>
+                    )}
+                    {item.source === 'administrative' && !item.is_custom && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                        {bn ? 'প্রশাসনিক' : 'Admin'}
+                      </Badge>
+                    )}
+                  </div>
+                  {item.designation && <div className="text-xs text-muted-foreground truncate">{item.designation}</div>}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     size="icon"
                     variant="ghost"
@@ -199,9 +326,30 @@ export default function SalaryWorkflowSettings() {
     <div className="space-y-4">
       <div className="text-sm text-muted-foreground">
         {bn
-          ? 'বেতন বিবরণীর অনুমোদন প্রক্রিয়ায় যাচাইকারী, অনুমোদনকারী ও পরিশোধকারী হিসেবে কাজ করতে পারবেন এমন স্টাফদের নির্ধারণ করুন। প্রস্তুতকারী হিসেবে স্বয়ংক্রিয়ভাবে বর্তমান লগইন ব্যবহারকারীর নাম আসবে।'
-          : 'Configure which staff can act as verifier, approver, and treasurer in the salary approval workflow. The current logged-in user is automatically used as the preparer.'}
+          ? 'বেতন বিবরণীর অনুমোদন প্রক্রিয়ায় যাচাইকারী, অনুমোদনকারী ও পরিশোধকারী হিসেবে কাজ করতে পারবেন এমন স্টাফ ও প্রশাসনিক কর্মকর্তাদের নির্ধারণ করুন। প্রস্তুতকারী হিসেবে স্বয়ংক্রিয়ভাবে বর্তমান লগইন ব্যবহারকারীর নাম আসবে।'
+          : 'Configure which staff and administrative officers can act as verifier, approver, and treasurer. The current logged-in user is automatically used as the preparer.'}
       </div>
+
+      <Card className="rounded-2xl border-emerald-200/60 bg-emerald-50/30">
+        <CardContent className="p-4 flex items-start sm:items-center gap-3 flex-col sm:flex-row justify-between">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-semibold">
+              {bn ? 'কাস্টম এন্ট্রি অনুমোদন' : 'Allow custom entries'}
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'বন্ধ থাকলে শুধুমাত্র ডিরেক্টরির স্টাফ/কর্মকর্তা যোগ করা যাবে; ম্যানুয়াল নাম/পদবি যোগ করা বন্ধ থাকবে।'
+                : 'When off, only directory staff/officers can be added; manual name/designation entries are blocked.'}
+            </p>
+          </div>
+          <Switch
+            checked={allowCustom}
+            disabled={!isSuperAdmin || setAllowCustomMutation.isPending}
+            onCheckedChange={(v) => setAllowCustomMutation.mutate(v)}
+          />
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {(['verifier', 'approver', 'treasurer'] as Role[]).map(renderSection)}
       </div>
