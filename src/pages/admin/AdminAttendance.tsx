@@ -639,7 +639,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
       }
     })();
-  }, [attendance, filtered, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
+  }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
 
   const statusOptions = useMemo(() => {
     return rules.filter((r: any) => r.entity_type === entityType && r.rule_type === 'status' && r.is_active);
