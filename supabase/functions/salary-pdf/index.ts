@@ -325,13 +325,14 @@ Deno.serve(async (req) => {
 
   /* ===== Page Header (repeats on every printed page) ===== */
   .page-header { background: #fff; }
-  /* ===== Page Footer (repeats on every printed page) ===== */
-  .page-footer { background: #fff; break-inside: avoid; page-break-inside: avoid; }
+  /* ===== Persistent footer cell inside <tfoot> (repeats every page) ===== */
+  .footer-cell { padding: 0 !important; border: none !important; background: #fff !important; }
+  .footer-inner { padding-top: 6mm; vertical-align: bottom; }
   .signatures {
     display: grid;
     grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
     gap: 8mm;
-    margin: 8mm 4mm 2mm;
+    margin: 4mm 4mm 2mm;
   }
   .sig {
     text-align: center;
@@ -398,16 +399,13 @@ Deno.serve(async (req) => {
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
+    tfoot tr.totals td { page-break-inside: avoid; break-inside: avoid; }
     .page-header {
       position: static;
       max-height: none; overflow: visible;
       background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm;
     }
-    .page-footer {
-      position: static;
-      max-height: none; overflow: visible;
-      background: #fff; border-top: 0.6pt solid #000; padding-top: 2mm; margin-top: 5mm;
-    }
+    .footer-inner { padding-top: 5mm; }
     .letterhead { min-height: 42px; margin-bottom: 3pt; padding-bottom: 3pt; }
     .logo-wrap { width: 42px; height: 42px; }
     .inst-name { font-size: 13pt; }
@@ -515,50 +513,55 @@ Deno.serve(async (req) => {
         <td></td>
         <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
       </tr>
+      <tr class="note-row">
+        <td colspan="11" style="border:0.4pt solid #000;background:#fafafa;padding:3pt 5pt;font-size:7.5pt;line-height:1.3;">
+          <strong>${bn ? "নোটঃ" : "Note:"}</strong>
+          ${bn
+            ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধক্য কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
+            : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
+        </td>
+      </tr>
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="11" class="footer-cell">
+          <div class="footer-inner">
+            <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
+              <div class="sig">
+                <div class="sig-line"></div>
+                <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
+                <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
+                <div class="role-meta">${(prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধক্য)" : "(Accountant)")}</div>
+              </div>
+              <div class="sig">
+                <div class="sig-line"></div>
+                <div class="sig-name">${(verified_by && String(verified_by).trim()) || verifierName || "&nbsp;"}</div>
+                <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
+                <div class="role-meta">${(verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)")}</div>
+              </div>
+              <div class="sig">
+                <div class="sig-line"></div>
+                <div class="sig-name">${(approved_by && String(approved_by).trim()) || principalName || "&nbsp;"}</div>
+                <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
+                <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
+              </div>
+              ${(paid_by && String(paid_by).trim()) ? `
+              <div class="sig">
+                <div class="sig-line"></div>
+                <div class="sig-name">${paid_by}</div>
+                <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
+                <div class="role-meta">${(paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)")}</div>
+              </div>` : ''}
+            </div>
+            <div class="footer">
+              <div>© ${instName}</div>
+              <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
   </table>
-
-  <div class="note">
-    <strong>${bn ? "নোটঃ" : "Note:"}</strong>
-    ${bn
-      ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধক্য কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
-      : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
-  </div>
-
-  <div class="page-footer">
-    <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
-      <div class="sig">
-        <div class="sig-line"></div>
-        <div class="sig-name">${(prepared_by && String(prepared_by).trim()) || accountantName || "&nbsp;"}</div>
-        <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-        <div class="role-meta">${(prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধক্য)" : "(Accountant)")}</div>
-      </div>
-      <div class="sig">
-        <div class="sig-line"></div>
-        <div class="sig-name">${(verified_by && String(verified_by).trim()) || verifierName || "&nbsp;"}</div>
-        <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-        <div class="role-meta">${(verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)")}</div>
-      </div>
-      <div class="sig">
-        <div class="sig-line"></div>
-        <div class="sig-name">${(approved_by && String(approved_by).trim()) || principalName || "&nbsp;"}</div>
-        <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-        <div class="role-meta">${(approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)")}</div>
-      </div>
-      ${(paid_by && String(paid_by).trim()) ? `
-      <div class="sig">
-        <div class="sig-line"></div>
-        <div class="sig-name">${paid_by}</div>
-        <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
-        <div class="role-meta">${(paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)")}</div>
-      </div>` : ''}
-    </div>
-
-    <div class="footer">
-      <div>${bn ? `© ${instName}` : `© ${instName}`}</div>
-      <div class="ref">${bn ? "স্মারক:" : "Ref:"} ${sheetId} &nbsp;•&nbsp; ${bn ? "মুদ্রণ:" : "Printed:"} ${issueDate}</div>
-    </div>
-  </div>
 
 </div>
 </body></html>`;
