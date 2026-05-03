@@ -336,6 +336,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
     <span>${institutionName || ''}</span>
   </div>
+  <div class="screen-pageinfo">${bn ? 'প্রিন্টে প্রতিটি পৃষ্ঠার নিচে পৃষ্ঠা সংখ্যা দেখাবে (যেমন: পৃষ্ঠা ১ এর ৩)' : 'Page numbers (e.g., Page 1 of 3) will appear at the bottom of every printed page'}</div>
 </div>
 </body></html>`;
 
