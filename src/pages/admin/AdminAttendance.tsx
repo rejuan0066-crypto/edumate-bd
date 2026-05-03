@@ -598,11 +598,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   // Auto-backfill: existing present/late/half_day staff records without check_in/out get scheduled shift times
   const backfillRanRef = useRef<string>('');
   useEffect(() => {
-    if (entityType !== 'staff' || !attendance?.length || !filtered?.length) return;
+    if (entityType !== 'staff' || !attendance?.length || !entities?.length) return;
     const key = `${selectedDate}|${effectiveShift}|${attendance.length}`;
     if (backfillRanRef.current === key) return;
     backfillRanRef.current = key;
-    const entityMap = new Map(filtered.map((e: any) => [e.id, e]));
+    const entityMap = new Map(entities.map((e: any) => [e.id, e]));
     const targets = (attendance as any[]).filter(a =>
       ['present', 'late', 'half_day'].includes(a.status) &&
       (!a.check_in_time || !a.check_out_time) &&
