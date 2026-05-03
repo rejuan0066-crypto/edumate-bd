@@ -452,7 +452,7 @@ export default function SalaryWorkflowPanel({
           <div className="flex items-center gap-1 overflow-x-auto py-1 text-xs">
             {[
               { s: 'draft' as Stage, icon: ClipboardEdit, label: bn ? 'প্রস্তুতকৃত' : 'Prepared', who: wf.prepared_by_name },
-              { s: 'pending_verification' as Stage, icon: Send, label: bn ? 'যাচাইয়ের অপেক্ষায়' : 'Sent', who: verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name },
+              { s: 'pending_verification' as Stage, icon: Send, label: bn ? 'যাচাইয়ের অপেক্ষায়' : 'Sent', who: assignedVerifier?.display_name },
               { s: 'verified' as Stage, icon: ShieldCheck, label: bn ? 'যাচাইকৃত' : 'Verified', who: wf.verified_by_name },
               { s: 'approved' as Stage, icon: BadgeCheck, label: bn ? 'অনুমোদিত' : 'Approved', who: wf.approved_by_name },
               { s: 'paid' as Stage, icon: Wallet, label: bn ? 'পরিশোধিত' : 'Paid', who: wf.paid_by_name },
