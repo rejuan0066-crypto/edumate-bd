@@ -298,10 +298,11 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
   </div>
   <div class="signatures">
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শ্রেণি শিক্ষক' : 'Class Teacher'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শিক্ষা সচিব' : 'Education Secretary'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+    ${sigList.map((s) => {
+      const t = (bn ? s.title_bn : s.title_en) || (bn ? s.title_en : s.title_bn) || '';
+      const n = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
+      return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${n || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
+    }).join('')}
   </div>
   <div class="footer">
     <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
