@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { newCorrelationId, logAdminNameRequest } from '@/lib/adminNameRequestLog';
 
 /**
  * Unified directory of all institution personnel:
@@ -38,6 +39,9 @@ export function useStaffDirectory(opts: Options = {}) {
     queryKey: ['staff-directory', source, status],
     enabled,
     queryFn: async (): Promise<DirectoryPerson[]> => {
+      const correlationId = newCorrelationId('dir');
+      const start = performance.now();
+
       let query = supabase
         .from('staff_directory' as any)
         .select('*')
@@ -47,7 +51,24 @@ export function useStaffDirectory(opts: Options = {}) {
       if (status !== 'all') query = query.eq('status', status);
 
       const { data, error } = await query;
-      if (error) throw error;
+      const duration = Math.round(performance.now() - start);
+
+      // Fire-and-forget log (does not block UI)
+      logAdminNameRequest({
+        correlationId,
+        sourcePath: 'useStaffDirectory',
+        sqlPath: 'view:staff_directory',
+        filters: { source, status },
+        resultCount: Array.isArray(data) ? data.length : null,
+        errorCode: error?.code ?? null,
+        errorMessage: error?.message ?? null,
+        durationMs: duration,
+      });
+
+      if (error) {
+        (error as any).correlationId = correlationId;
+        throw error;
+      }
       return ((data || []) as unknown) as DirectoryPerson[];
     },
     staleTime: 60_000,
@@ -60,13 +81,31 @@ export function useDirectoryByUserId(userId: string | null | undefined) {
     queryKey: ['staff-directory-user', userId],
     enabled: !!userId,
     queryFn: async (): Promise<DirectoryPerson | null> => {
+      const correlationId = newCorrelationId('diru');
+      const start = performance.now();
       const { data, error } = await supabase
         .from('staff_directory' as any)
         .select('*')
         .eq('user_id', userId!)
         .limit(1)
         .maybeSingle();
-      if (error) throw error;
+      const duration = Math.round(performance.now() - start);
+
+      logAdminNameRequest({
+        correlationId,
+        sourcePath: 'useDirectoryByUserId',
+        sqlPath: 'view:staff_directory',
+        filters: { user_id: userId },
+        resultCount: data ? 1 : 0,
+        errorCode: error?.code ?? null,
+        errorMessage: error?.message ?? null,
+        durationMs: duration,
+      });
+
+      if (error) {
+        (error as any).correlationId = correlationId;
+        throw error;
+      }
       return (data as unknown) as DirectoryPerson | null;
     },
   });
