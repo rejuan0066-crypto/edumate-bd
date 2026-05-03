@@ -1746,24 +1746,41 @@ const AdminSalary = () => {
 
         <div class="single-col">
           <div class="col earn">
-            <div class="col-head">${bn ? '＋ বেতন ও কর্তন বিবরণ' : '＋ Salary & Deductions'}</div>
+            <div class="col-head">${bn ? '＋ বেতন গণনার সম্পূর্ণ ব্রেকডাউন' : '＋ Full Salary Breakdown'}</div>
             <div class="col-body">
-              <div class="ln"><span class="l">${bn ? 'মূল বেতন' : 'Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary))}</span></div>
-              ${Number(record.absence_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction))}</span></div>` : ''}
-              ${Number(record.late_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction))}</span></div>` : ''}
-              ${Number(record.other_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}</span><span class="v">৳${slipNum(Number(record.other_deduction))}</span></div>` : ''}
-              <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4"><span class="l"><strong>${bn ? 'উপস্থিতি ভিত্তিক বেতন' : 'Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
-              ${Number(record.advance_deduction || 0) > 0 ? `<div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction))}</span></div>` : ''}
-              ${savingsAmt > 0 ? `<div class="ln savings"><span class="l">− ${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>` : ''}
-              ${Number(record.bonus || 0) > 0 ? `<div class="ln"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus))}</span></div>` : ''}
-              ${Number(record.overtime || 0) > 0 ? `<div class="ln"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime))}</span></div>` : ''}
+              <!-- ১. মূল বেতন -->
+              <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary || 0))}</span></div>
+
+              <!-- ২. উপস্থিতি কর্তন -->
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
+
+              <!-- সাবটোটাল: উপস্থিতি ভিত্তিক বেতন -->
+              <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
+
+              <!-- ৩. অগ্রিম ও জমা কর্তন -->
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অগ্রিম কর্তন' : 'Advance Deduction'}</span><span class="v">৳${slipNum(Number(record.advance_deduction || 0))}</span></div>
+              <div class="ln savings" style="color:#dc2626"><span class="l">− ${bn ? '⊕ বেতন জমা' : '⊕ Salary Savings'}</span><span class="v">৳${slipNum(savingsAmt)}</span></div>
+
+              <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
               ${dutyBreakdown ? `
                 <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সকাল ডিউটি' : 'Morning Duty'}: ${bn ? toBnDigits(dutyBreakdown.morningPresent) : dutyBreakdown.morningPresent}/${bn ? toBnDigits(dutyBreakdown.morningScheduled) : dutyBreakdown.morningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.morningEarning)}</span></div>
                 <div class="ln" style="background:#f0f9ff;color:#0369a1;font-size:11px"><span class="l">↳ ${bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}: ${bn ? toBnDigits(dutyBreakdown.eveningPresent) : dutyBreakdown.eveningPresent}/${bn ? toBnDigits(dutyBreakdown.eveningScheduled) : dutyBreakdown.eveningScheduled} ${bn ? 'দিন × ৳' : 'd × ৳'}${slipNum(dutyBreakdown.rate)}</span><span class="v">৳${slipNum(dutyBreakdown.eveningEarning)}</span></div>
               ` : ''}
-              ${Number(record.other_allowance || 0) > 0 ? `<div class="ln"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance))}</span></div>` : ''}
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+
+              <!-- যাচাই: সম্পূর্ণ যোগফল -->
+              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-size:11px;font-style:italic">
+                <span class="l">${bn
+                  ? `যাচাই: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`
+                  : `Check: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`}</span>
+                <span class="v">= ৳${slipNum(netSalary)}</span>
+              </div>
             </div>
-            <div class="col-foot"><span>${bn ? 'মোট বেতন' : 'Total'}</span><span>৳${slipNum(netSalary)}</span></div>
+            <div class="col-foot"><span>${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span><span>৳${slipNum(netSalary)}</span></div>
           </div>
         </div>
 
