@@ -1016,7 +1016,10 @@ Deno.serve(async (req) => {
     window.addEventListener('beforeprint', applyAll);
     window.addEventListener('afterprint', function(){
       document.querySelectorAll('.salary-page').forEach(function(p){
-        p.style.zoom=''; p.style.transform=''; p.style.width=''; p.style.height='';
+        var inner = p.querySelector('.print-fit') || p;
+        p.style.removeProperty('--print-page-height');
+        p.style.width=''; p.style.maxWidth=''; p.style.height='';
+        inner.style.zoom=''; inner.style.transform=''; inner.style.width=''; inner.style.height=''; inner.style.maxWidth='';
       });
     });
     if (document.fonts && document.fonts.ready) {
