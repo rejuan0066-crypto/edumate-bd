@@ -11,6 +11,17 @@ const extractBuildId = (html: string): string | null => {
   return match ? match[1] : null;
 };
 
+const isStandalonePWA = () => {
+  try {
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    );
+  } catch {
+    return false;
+  }
+};
+
 const UpdatePrompt = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
@@ -19,7 +30,38 @@ const UpdatePrompt = () => {
   const [updating, setUpdating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
+  const [standalone, setStandalone] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [noUpdateMsg, setNoUpdateMsg] = useState(false);
   const intervalRef = useRef<number | null>(null);
+
+  const checkForUpdate = async (manual = false): Promise<boolean> => {
+    if (manual) {
+      setChecking(true);
+      setNoUpdateMsg(false);
+    }
+    try {
+      const res = await fetch(`/index.html?_=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!res.ok) return false;
+      const html = await res.text();
+      const newBuildId = extractBuildId(html);
+      if (!newBuildId) return false;
+      const currentBuildId = localStorage.getItem(BUILD_ID_KEY);
+      if (currentBuildId && newBuildId !== currentBuildId) {
+        setUpdateAvailable(true);
+        setDismissed(false);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    } finally {
+      if (manual) setChecking(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -27,30 +69,13 @@ const UpdatePrompt = () => {
     } catch {
       return;
     }
+    setStandalone(isStandalonePWA());
+
     const host = window.location.hostname;
     if (host.includes('id-preview--') || host.includes('lovableproject.com') || host === 'localhost') return;
 
-    const checkForUpdate = async () => {
-      try {
-        const res = await fetch(`/index.html?_=${Date.now()}`, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        if (!res.ok) return;
-        const html = await res.text();
-        const newBuildId = extractBuildId(html);
-        if (!newBuildId) return;
-        const currentBuildId = localStorage.getItem(BUILD_ID_KEY);
-        if (currentBuildId && newBuildId !== currentBuildId) {
-          setUpdateAvailable(true);
-        }
-      } catch {
-        // silent
-      }
-    };
-
-    const initialTimer = window.setTimeout(checkForUpdate, 5000);
-    intervalRef.current = window.setInterval(checkForUpdate, CHECK_INTERVAL);
+    const initialTimer = window.setTimeout(() => checkForUpdate(), 5000);
+    intervalRef.current = window.setInterval(() => checkForUpdate(), CHECK_INTERVAL);
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') checkForUpdate();
@@ -63,6 +88,14 @@ const UpdatePrompt = () => {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
+
+  const handleManualCheck = async () => {
+    const found = await checkForUpdate(true);
+    if (!found) {
+      setNoUpdateMsg(true);
+      setTimeout(() => setNoUpdateMsg(false), 2500);
+    }
+  };
 
   const handleUpdate = async () => {
     setUpdating(true);
@@ -94,56 +127,82 @@ const UpdatePrompt = () => {
     setTimeout(() => window.location.reload(), 400);
   };
 
-  if (!updateAvailable || dismissed) return null;
+  // Floating manual-update button: only visible in installed PWA when no update banner is showing
+  const showFloatingButton =
+    standalone && !updateAvailable && !updating;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm text-foreground">
-              {updating
-                ? (bn ? 'আপডেট হচ্ছে…' : 'Updating…')
-                : (bn ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available')}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {updating
-                ? statusText
-                : (bn ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready')}
-            </p>
-          </div>
-          {!updating ? (
-            <>
-              <Button size="sm" onClick={handleUpdate} className="rounded-full">
-                {bn ? 'আপডেট' : 'Update'}
-              </Button>
-              <button
-                onClick={() => setDismissed(true)}
-                className="p-1 rounded-full hover:bg-muted transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </>
-          ) : (
-            <span className="text-xs font-semibold text-primary tabular-nums w-10 text-right">
-              {progress}%
+    <>
+      {showFloatingButton && (
+        <button
+          onClick={handleManualCheck}
+          disabled={checking}
+          aria-label={bn ? 'আপডেট চেক করুন' : 'Check for update'}
+          className="fixed right-3 z-[90] w-11 h-11 rounded-full bg-card/90 border border-border shadow-lg backdrop-blur-xl flex items-center justify-center hover:bg-muted transition-colors"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+        >
+          <RefreshCw className={`w-5 h-5 text-primary ${checking ? 'animate-spin' : ''}`} />
+          {noUpdateMsg && (
+            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card border border-border text-foreground text-xs rounded-full px-3 py-1 shadow-md">
+              {bn ? 'সর্বশেষ ভার্সন চলছে' : 'Up to date'}
             </span>
           )}
-        </div>
-        {updating && (
-          <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
+        </button>
+      )}
+
+      {updateAvailable && !dismissed && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+        >
+          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-foreground">
+                  {updating
+                    ? (bn ? 'আপডেট হচ্ছে…' : 'Updating…')
+                    : (bn ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available')}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {updating
+                    ? statusText
+                    : (bn ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready')}
+                </p>
+              </div>
+              {!updating ? (
+                <>
+                  <Button size="sm" onClick={handleUpdate} className="rounded-full">
+                    {bn ? 'আপডেট' : 'Update'}
+                  </Button>
+                  <button
+                    onClick={() => setDismissed(true)}
+                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                    aria-label="Dismiss"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs font-semibold text-primary tabular-nums w-10 text-right">
+                  {progress}%
+                </span>
+              )}
+            </div>
+            {updating && (
+              <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 
