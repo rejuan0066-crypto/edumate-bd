@@ -451,3 +451,69 @@ function LateTimeEditor({ bn, status, initialIn, initialOut, saving, onSave }: {
   );
 }
 
+function LeaveEditor({ bn, initialType, initialReason, saving, onSave }: {
+  bn: boolean;
+  initialType: string;
+  initialReason: string;
+  saving: boolean;
+  onSave: (leaveType: string, leaveReason: string) => void;
+}) {
+  const [lt, setLt] = useState(initialType || '');
+  const [lr, setLr] = useState(initialReason || '');
+  useEffect(() => { setLt(initialType || ''); setLr(initialReason || ''); }, [initialType, initialReason]);
+  const types = [
+    { v: 'weekly',  bn: 'সাপ্তাহিক', en: 'Weekly' },
+    { v: 'monthly', bn: 'মাসিক',     en: 'Monthly' },
+    { v: 'casual',  bn: 'নৈমিত্তিক', en: 'Casual' },
+    { v: 'sick',    bn: 'অসুস্থতা',   en: 'Sick' },
+    { v: 'other',   bn: 'অন্যান্য',   en: 'Other' },
+  ];
+  const showReason = lt === 'other' || lt === 'monthly' || lt === 'weekly';
+  return (
+    <div className="mt-1 p-2.5 rounded-xl border border-blue-300/40 bg-blue-50/60 dark:bg-blue-950/20 space-y-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1">
+        <CalendarOff className="h-3 w-3" /> {bn ? 'ছুটির ধরন ও কারণ' : 'Leave type & reason'}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {types.map(t => {
+          const active = lt === t.v;
+          return (
+            <button
+              key={t.v}
+              type="button"
+              onClick={() => setLt(t.v)}
+              className={`text-[11px] px-2.5 py-1 rounded-full border transition ${
+                active
+                  ? 'bg-blue-500 text-white border-blue-500 shadow-sm'
+                  : 'bg-background border-border/50 text-foreground/80 hover:border-blue-400/60 hover:text-blue-700'
+              }`}
+            >
+              {bn ? t.bn : t.en}
+            </button>
+          );
+        })}
+      </div>
+      {showReason && (
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'কারণ লিখুন' : 'Type reason'}</div>
+          <textarea
+            value={lr}
+            onChange={(e) => setLr(e.target.value)}
+            rows={2}
+            placeholder={bn ? 'যেমন: পারিবারিক কাজে...' : 'e.g. Family matter...'}
+            className="w-full text-xs rounded-lg border border-border/50 bg-background/80 p-2 outline-none focus:border-blue-400 resize-none"
+          />
+        </div>
+      )}
+      <Button
+        size="sm"
+        disabled={saving || !lt || (lt === 'other' && !lr.trim())}
+        onClick={() => onSave(lt, lr.trim())}
+        className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
+      >
+        <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+      </Button>
+    </div>
+  );
+}
+
