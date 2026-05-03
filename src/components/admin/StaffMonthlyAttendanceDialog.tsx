@@ -136,7 +136,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto rounded-[38px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
+      <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
         {/* Hero header with gradient */}
         <div className="relative overflow-hidden rounded-t-[38px] border-b border-border/30">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15" />
