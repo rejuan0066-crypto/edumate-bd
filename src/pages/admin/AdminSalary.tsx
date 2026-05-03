@@ -1605,7 +1605,7 @@ const AdminSalary = () => {
     const slipNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
     const netSalary = Number(record.net_salary);
     const inWords = bn
-      ? `${numberToBanglaWords(Math.floor(netSalary))} টাকা মাত্র`
+      ? numberToBanglaWords(Math.floor(netSalary))
       : `${netSalary.toLocaleString()} Taka Only`;
 
 
