@@ -1547,12 +1547,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     {entityType === 'staff' && att?.check_in_time && (() => {
                       const effStart = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_start : dutyTimes.evening_start) : getCategoryTime(entity).start;
                       const effEnd = staffSubTab === 'duty' ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end) : getCategoryTime(entity).end;
-                      const dutyStart = effStart.split(':').map(Number);
-                      const checkIn = att.check_in_time.split(':').map(Number);
-                      const dutyEnd = effEnd.split(':').map(Number);
-                      const checkOut = att.check_out_time ? att.check_out_time.split(':').map(Number) : dutyEnd;
-                      const lateMin = Math.max(0, (checkIn[0] * 60 + checkIn[1]) - (dutyStart[0] * 60 + dutyStart[1]));
-                      const earlyMin = Math.max(0, (dutyEnd[0] * 60 + dutyEnd[1]) - (checkOut[0] * 60 + checkOut[1]));
+                      const toMin = (t: string) => { const [h, m] = (t || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+                      const sStart = toMin(effStart);
+                      let sEnd = toMin(effEnd);
+                      const overnight = sEnd <= sStart; // overnight shift (e.g. 17:00 → 05:00)
+                      if (overnight) sEnd += 24 * 60;
+                      let cIn = toMin(att.check_in_time);
+                      let cOut = att.check_out_time ? toMin(att.check_out_time) : sEnd;
+                      // For overnight: if check_in is earlier than start (e.g. 02:00 vs 17:00) treat as next-day
+                      if (overnight && cIn < sStart) cIn += 24 * 60;
+                      if (overnight && cOut <= cIn) cOut += 24 * 60;
+                      const lateMin = Math.max(0, cIn - sStart);
+                      const earlyMin = Math.max(0, sEnd - cOut);
                       return (lateMin > 0 || earlyMin > 0) ? (
                         <div className="flex gap-1.5 shrink-0">
                           {lateMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">{bn ? `${lateMin} মি. বিলম্ব` : `${lateMin}m late`}</span>}
