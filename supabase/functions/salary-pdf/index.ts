@@ -787,12 +787,13 @@ Deno.serve(async (req) => {
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
       var pp = PAPER[settings.paper] || PAPER.A4;
-      var shortSide = Math.min(pp.w, pp.h) - settings.marginMm * 2;
-      var longSide  = Math.max(pp.w, pp.h) - settings.marginMm * 2;
-      var maxW = shortSide * MM_TO_PX;
-      var maxH = longSide * MM_TO_PX;
+      var pageWmm = settings.orientation === 'landscape' ? pp.h : pp.w;
+      var pageHmm = settings.orientation === 'landscape' ? pp.w : pp.h;
+      var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
+      var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
       pages.forEach(function(p){
         p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
+        p.style.maxWidth = maxW + 'px';
         var h = p.scrollHeight, w = p.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
         scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
