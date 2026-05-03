@@ -262,8 +262,9 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .grade-B{color:#0284c7;}
   .grade-C{color:#d97706;}
   .grade-D,.grade-F{color:#dc2626;}
-  .summary{margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;page-break-inside:avoid;break-inside:avoid;}
-  .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;}
+  .summary-wrap{margin-top:14px;page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;}
+  .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;page-break-inside:avoid;break-inside:avoid;}
+  .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;page-break-inside:avoid;break-inside:avoid;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
   .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;page-break-inside:avoid;break-inside:avoid;}
