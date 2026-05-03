@@ -1665,8 +1665,9 @@ const AdminSalary = () => {
         language: bn ? 'bn' : 'en',
         staff: filtered.map((s: any) => {
           const rec = getRecord(s.id);
+          const savings = Number(rec?.savings_deduction || 0);
           const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
+            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) + savings : 0;
           return {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
@@ -1679,6 +1680,7 @@ const AdminSalary = () => {
             overtime: Number(rec?.overtime || 0),
             deductions: totalDed,
             advance: Number(rec?.advance_deduction || 0),
+            savings,
             net_salary: Number(rec?.net_salary || 0),
             status: rec?.status || 'not_generated',
           };

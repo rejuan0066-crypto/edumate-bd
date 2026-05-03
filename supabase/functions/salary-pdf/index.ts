@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
         <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
         <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
         <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
-        <td class="c-amt">${Number(s.advance || 0) > 0 ? fmtNum(Number(s.advance)) : "—"}</td>
+        <td class="c-amt">${Number(s.savings ?? s.advance ?? 0) > 0 ? fmtNum(Number(s.savings ?? s.advance ?? 0)) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
       </tr>
     `).join("");
