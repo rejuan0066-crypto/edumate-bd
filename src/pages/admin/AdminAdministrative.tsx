@@ -630,6 +630,18 @@ const AdminAdministrative = () => {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${o.status === 'active' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' : 'bg-gray-500/10 text-gray-600'}`}>
                         {o.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
                       </span>
+                      {o.user_id ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 inline-flex items-center gap-1">
+                          <Check className="w-3 h-3" /> {bn ? 'আইডি আছে' : 'Account linked'}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => openAccountDialog(o)}
+                          className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 inline-flex items-center gap-1"
+                        >
+                          <UserPlus className="w-3 h-3" /> {bn ? 'অ্যাকাউন্ট তৈরি' : 'Create Account'}
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                       {o.designation && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{o.designation}</span>}
