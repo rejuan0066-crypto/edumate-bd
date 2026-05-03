@@ -313,7 +313,33 @@ const AdminDesignations = () => {
               <DialogTitle className="flex items-center gap-2"><Tag className="w-5 h-5 text-primary" /> {editItem ? (bn ? 'পদবি সম্পাদনা' : 'Edit Designation') : (bn ? 'নতুন পদবি যোগ করুন' : 'Add New Designation')}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
-              <div><Label>{bn ? 'পদবি (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={nameBn} onChange={e => setNameBn(e.target.value)} placeholder={bn ? 'যেমন: প্রধান শিক্ষক' : 'e.g. প্রধান শিক্ষক'} /></div>
+              <div>
+                <Label>{bn ? 'পদবি (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label>
+                <Input
+                  className={`bg-background mt-1 ${nameBnCheck.level === 'error' ? 'border-destructive focus-visible:ring-destructive' : nameBnCheck.level === 'warn' ? 'border-amber-500 focus-visible:ring-amber-500' : ''}`}
+                  value={nameBn}
+                  onChange={e => setNameBn(e.target.value)}
+                  placeholder={bn ? 'যেমন: প্রধান শিক্ষক' : 'e.g. প্রধান শিক্ষক'}
+                />
+                {nameBn.trim() && nameBnCheck.level !== 'ok' && (
+                  <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${nameBnCheck.level === 'error' ? 'text-destructive' : 'text-amber-600 dark:text-amber-500'}`}>
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span>{nameBnCheck.message}</span>
+                      {nameBnCheck.suggestion && nameBnCheck.suggestion !== nameBn && (
+                        <button type="button" className="ml-2 underline font-semibold hover:opacity-80" onClick={() => setNameBn(nameBnCheck.suggestion!)}>
+                          {bn ? 'প্রয়োগ করুন' : 'Apply'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {nameBn.trim() && nameBnCheck.level === 'ok' && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-500">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {bn ? 'বানান ঠিক আছে' : 'Spelling OK'}
+                  </div>
+                )}
+              </div>
               <div><Label>{bn ? 'পদবি (ইংরেজি)' : 'Name (English)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={name} onChange={e => setName(e.target.value)} placeholder={bn ? 'যেমন: Head Teacher' : 'e.g. Head Teacher'} /></div>
               <div><Label>{bn ? 'বিবরণ' : 'Description'}</Label><Input className="bg-background mt-1" value={description} onChange={e => setDescription(e.target.value)} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} /></div>
               <div>
