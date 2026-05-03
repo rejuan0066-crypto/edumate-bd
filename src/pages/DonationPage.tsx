@@ -711,64 +711,83 @@ const DonationPage = () => {
           </div>
         )}
 
-        {/* STEP 2: Choose Payment Mode */}
+        {/* STEP 2: Choose Payment Mode — professional checkout style */}
         {step === 2 && (
           <div className="space-y-5">
-            <div className="card-elevated p-6">
-              <h2 className="font-display font-bold text-foreground text-lg mb-1">
-                {bn ? 'পেমেন্ট পদ্ধতি বেছে নিন' : 'Choose Payment Method'}
-              </h2>
-              <p className="text-xs text-muted-foreground mb-5">
-                {bn
-                  ? 'অনলাইনে তাৎক্ষণিক পেমেন্ট অথবা নিজে টাকা পাঠিয়ে যাচাই — যেকোনো একটি'
-                  : 'Pay instantly online or send money manually and verify — pick one'}
-              </p>
+            <div className="card-elevated p-6 sm:p-7">
+              <div className="mb-6">
+                <h2 className="font-display font-bold text-foreground text-xl sm:text-2xl tracking-tight">
+                  {bn ? 'পেমেন্ট পদ্ধতি নির্বাচন' : 'Select payment method'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {bn
+                    ? 'নিরাপদ ও এনক্রিপ্টেড — যেকোনো একটি পদ্ধতি বেছে নিন।'
+                    : 'Secure & encrypted — choose any one method below.'}
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Option A — Online */}
+              {/* Amount summary chip */}
+              <div className="flex items-center justify-between px-4 py-3 mb-5 rounded-2xl bg-secondary/40 border border-border/60">
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                  {bn ? 'পরিশোধযোগ্য' : 'Amount due'}
+                </span>
+                <span className="font-display font-bold text-lg text-foreground">
+                  ৳ {amountNum.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {/* Option A — Online (recommended) */}
                 <button
                   type="button"
                   onClick={() => hasGateway && choosePayMode('online')}
                   disabled={!hasGateway}
-                  className={`group relative text-left p-5 rounded-3xl border-2 transition-all ${
+                  aria-disabled={!hasGateway}
+                  className={`group relative w-full text-left rounded-2xl border transition-all overflow-hidden ${
                     hasGateway
-                      ? 'border-border hover:border-primary hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30'
-                      : 'border-border opacity-50 cursor-not-allowed bg-secondary/30'
+                      ? 'border-border hover:border-primary/60 hover:shadow-md bg-card'
+                      : 'border-border/60 bg-muted/30 cursor-not-allowed'
                   }`}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center">
-                      <Globe className="w-6 h-6 text-emerald-600" />
+                  <div className="flex items-start gap-4 p-4 sm:p-5">
+                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${hasGateway ? 'border-primary' : 'border-muted-foreground/40'}`}>
+                      <span className={`w-2 h-2 rounded-full ${hasGateway ? 'bg-primary opacity-0 group-hover:opacity-100 transition-opacity' : 'bg-transparent'}`} />
                     </div>
-                    <div>
-                      <p className="font-bold text-foreground">
-                        {bn ? 'অপশন A — অনলাইন পেমেন্ট' : 'Option A — Online Payment'}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <p className="font-semibold text-foreground text-[15px]">
+                          {bn ? 'অনলাইন পেমেন্ট' : 'Online payment'}
+                        </p>
+                        {hasGateway && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+                            {bn ? 'রেকমেন্ডেড' : 'Recommended'}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {bn
+                          ? 'তাৎক্ষণিক যাচাই — পেমেন্ট সম্পন্ন হলে রিসিট সঙ্গে সঙ্গে।'
+                          : 'Instant verification — receipt issued immediately on success.'}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {bn ? 'তাৎক্ষণিক যাচাই' : 'Instant verification'}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {['bKash', 'Nagad', 'Rocket', 'Visa', 'Mastercard'].map((m) => (
+                          <span
+                            key={m}
+                            className="text-[11px] font-medium px-2.5 py-1 rounded-md bg-secondary/70 text-foreground/80 border border-border/50"
+                          >
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                      {!hasGateway && (
+                        <p className="mt-3 text-[11px] text-amber-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {bn ? 'গেটওয়ে এখনো সেটআপ হয়নি' : 'Gateway not configured'}
+                        </p>
+                      )}
                     </div>
+                    <ChevronRight className={`w-5 h-5 mt-1 flex-shrink-0 transition-all ${hasGateway ? 'text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5' : 'text-muted-foreground/40'}`} />
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {bn
-                      ? 'বিকাশ, নগদ, রকেট, ভিসা, মাস্টারকার্ড — সব ধরনের পেমেন্ট সমর্থিত।'
-                      : 'bKash, Nagad, Rocket, Visa, Mastercard — all supported.'}
-                  </p>
-                  <div className="flex gap-2 flex-wrap">
-                    {['bKash', 'Nagad', 'Rocket', 'Card'].map((m) => (
-                      <span
-                        key={m}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-background border border-border text-muted-foreground"
-                      >
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                  {!hasGateway && (
-                    <p className="mt-3 text-[11px] text-amber-600">
-                      {bn ? 'গেটওয়ে এখনো সেটআপ হয়নি' : 'Gateway not configured'}
-                    </p>
-                  )}
                 </button>
 
                 {/* Option B — Manual */}
@@ -776,40 +795,52 @@ const DonationPage = () => {
                   type="button"
                   onClick={() => hasManualMethods && choosePayMode('manual')}
                   disabled={!hasManualMethods}
-                  className={`group relative text-left p-5 rounded-3xl border-2 transition-all ${
+                  aria-disabled={!hasManualMethods}
+                  className={`group relative w-full text-left rounded-2xl border transition-all overflow-hidden ${
                     hasManualMethods
-                      ? 'border-border hover:border-primary hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br from-amber-50 to-pink-50 dark:from-amber-950/30 dark:to-pink-950/30'
-                      : 'border-border opacity-50 cursor-not-allowed bg-secondary/30'
+                      ? 'border-border hover:border-primary/60 hover:shadow-md bg-card'
+                      : 'border-border/60 bg-muted/30 cursor-not-allowed'
                   }`}
                 >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-12 h-12 rounded-2xl bg-pink-500/15 flex items-center justify-center">
-                      <Banknote className="w-6 h-6 text-pink-600" />
+                  <div className="flex items-start gap-4 p-4 sm:p-5">
+                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${hasManualMethods ? 'border-primary' : 'border-muted-foreground/40'}`}>
+                      <span className={`w-2 h-2 rounded-full ${hasManualMethods ? 'bg-primary opacity-0 group-hover:opacity-100 transition-opacity' : 'bg-transparent'}`} />
                     </div>
-                    <div>
-                      <p className="font-bold text-foreground">
-                        {bn ? 'অপশন B — ম্যানুয়াল ট্রানজেকশন' : 'Option B — Manual Transaction'}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <p className="font-semibold text-foreground text-[15px]">
+                          {bn ? 'ম্যানুয়াল ট্রানজেকশন' : 'Manual transaction'}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {bn
+                          ? 'মাদরাসার বিকাশ/নগদ/রকেট নম্বরে টাকা পাঠিয়ে TrxID দিন।'
+                          : 'Send to our bKash/Nagad/Rocket and submit the TrxID.'}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {bn ? 'আপনি নিজে পাঠাবেন' : 'Send & verify yourself'}
-                      </p>
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {bn ? 'অটো-ভেরিফিকেশন সক্রিয়' : 'Auto-verification enabled'}
+                      </div>
+                      {!hasManualMethods && (
+                        <p className="mt-3 text-[11px] text-amber-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {bn ? 'ম্যানুয়াল মাধ্যম সেটআপ নেই' : 'No manual methods set up'}
+                        </p>
+                      )}
                     </div>
+                    <ChevronRight className={`w-5 h-5 mt-1 flex-shrink-0 transition-all ${hasManualMethods ? 'text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5' : 'text-muted-foreground/40'}`} />
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {bn
-                      ? 'মাদরাসার বিকাশ/নগদ/রকেট নম্বরে টাকা পাঠিয়ে TrxID দিন — মিলে গেলে অটো-ভেরিফাই।'
-                      : 'Send money to our bKash/Nagad/Rocket and submit TrxID — auto-verified if matched.'}
-                  </p>
-                  <div className="flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-400">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    {bn ? 'অটো-ভেরিফিকেশন সক্রিয়' : 'Auto-verification enabled'}
-                  </div>
-                  {!hasManualMethods && (
-                    <p className="mt-3 text-[11px] text-amber-600">
-                      {bn ? 'ম্যানুয়াল মাধ্যম সেটআপ নেই' : 'No manual methods set up'}
-                    </p>
-                  )}
                 </button>
+              </div>
+
+              {/* Trust footer */}
+              <div className="mt-6 pt-5 border-t border-border/60 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>
+                  {bn
+                    ? 'SSL এনক্রিপ্টেড সংযোগ · আপনার তথ্য সুরক্ষিত'
+                    : 'SSL-encrypted connection · Your data is protected'}
+                </span>
               </div>
 
               {!hasGateway && !hasManualMethods && (
