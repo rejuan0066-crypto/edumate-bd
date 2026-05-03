@@ -138,6 +138,7 @@ const AdminDesignations = () => {
   const saveCatMutation = useMutation({
     mutationFn: async () => {
       if (!catName.trim() || !catNameBn.trim() || !catKey.trim()) throw new Error(bn ? 'নাম ও কী আবশ্যক' : 'Name and Key are required');
+      if (catNameBnCheck.level === 'error') throw new Error(catNameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
       const record = { key: catKey.trim().toLowerCase().replace(/\s+/g, '_'), name: catName.trim(), name_bn: catNameBn.trim(), description: catDescription.trim() || null, route_path: catRoutePath.trim() || null, color: catColor, sort_order: catSortOrder, is_active: catIsActive, id_prefix: catIdPrefix.trim().toUpperCase() || null, id_start_range: catIdStartRange } as any;
       if (catEditItem) { const { error } = await supabase.from('staff_categories').update(record).eq('id', catEditItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('staff_categories').insert(record); if (error) throw error; }
