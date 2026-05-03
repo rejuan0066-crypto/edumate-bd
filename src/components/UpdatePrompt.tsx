@@ -84,8 +84,6 @@ const UpdatePrompt = () => {
         return false;
       }
       if (newBuildId !== currentBuildId) {
-        // Stash the new id so handleUpdate can persist it after reload.
-        try { sessionStorage.setItem('app_build_id_pending', newBuildId); } catch {}
         setUpdateAvailable(true);
         setDismissed(false);
         return true;
