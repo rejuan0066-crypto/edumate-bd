@@ -607,9 +607,18 @@ const AdminSalary = () => {
     const leave = records.filter((r: any) => r.status === 'leave').length;
     const holidayCovered = records.filter((r: any) => r.status === 'absent' && paidHolidaySet.has(r.attendance_date)).length;
 
-    const dutyTime = getDutyTime(staffMember);
+    const dutyInfo = getDutyTimeWithSource(staffMember);
+    const dutyTime = { start: dutyInfo.start, end: dutyInfo.end };
+    const fallbackDutyTime = (() => {
+      const catKey = staffMember?.staff_category;
+      const categoryTime = catKey ? (categoryShiftTimes as any)[catKey] : null;
+      return categoryTime?.start && categoryTime?.end
+        ? { start: categoryTime.start, end: categoryTime.end }
+        : { start: '08:00', end: '17:00' };
+    })();
     const dutyStart = timeToMinutes(dutyTime.start);
     let dutyEnd = timeToMinutes(dutyTime.end);
+    const dutyEndClock = timeToMinutes(dutyTime.end);
     const isOvernight = dutyEnd <= dutyStart;
     if (isOvernight) dutyEnd += 24 * 60; // shift end into next day
     const scheduledMinutesPerDay = dutyEnd - dutyStart;
@@ -667,14 +676,28 @@ const AdminSalary = () => {
         entry.dailyEarning = Math.round(dailyRate);
       }
 
-      let checkIn = r.check_in_time ? timeToMinutes(r.check_in_time) : dutyStart;
-      let checkOut = r.check_out_time ? timeToMinutes(r.check_out_time) : dutyEnd;
+      const staleAutoFilledFallback = dutyInfo.source === 'staff' &&
+        fallbackDutyTime &&
+        (fallbackDutyTime.start !== dutyTime.start || fallbackDutyTime.end !== dutyTime.end) &&
+        r.check_in_time === fallbackDutyTime.start &&
+        r.check_out_time === fallbackDutyTime.end;
+
+      const effectiveCheckIn = staleAutoFilledFallback ? dutyTime.start : r.check_in_time;
+      const effectiveCheckOut = staleAutoFilledFallback ? dutyTime.end : r.check_out_time;
+      if (staleAutoFilledFallback) {
+        entry.checkIn = dutyTime.start;
+        entry.checkOut = dutyTime.end;
+      }
+
+      let checkIn = effectiveCheckIn ? timeToMinutes(effectiveCheckIn) : dutyStart;
+      let checkOut = effectiveCheckOut ? timeToMinutes(effectiveCheckOut) : dutyEnd;
 
       if (isOvernight) {
-        // Check-in: if clock time precedes start (e.g. 02:00 < 17:00), it belongs to next day
-        if (checkIn < dutyStart) checkIn += 24 * 60;
-        // Check-out is almost always the next day for overnight shifts
-        if (checkOut <= checkIn) checkOut += 24 * 60;
+        // Only post-midnight times (00:00 → duty end) belong to the next day.
+        // Daytime fallback values from an old category shift must not become huge late/overtime.
+        if (effectiveCheckIn && checkIn <= dutyEndClock) checkIn += 24 * 60;
+        if (effectiveCheckOut && checkOut <= dutyEndClock) checkOut += 24 * 60;
+        else if (effectiveCheckOut && checkOut <= checkIn) checkOut += 24 * 60;
       }
 
       const lateMinutes = Math.max(0, checkIn - dutyStart);
