@@ -459,6 +459,13 @@ const AdminSalary = () => {
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+      // Hard validation — block on any data error
+      const v = getAttendanceValidation(s);
+      if (v.hasErrors) {
+        const reason = v.errors.join(' • ');
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+        throw new Error(reason);
+      }
       if (requireAttendance) {
         const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
         if (!hasAttendance) {
