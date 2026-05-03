@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff, Settings2, Check, X, UserPlus, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Label as L2 } from '@/components/ui/label';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
