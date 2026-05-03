@@ -275,12 +275,13 @@ Deno.serve(async (req) => {
   thead th.center { text-align: center; }
   thead th.right { text-align: right; }
   tbody td {
-    padding: 2.5pt 3pt;
+    padding: 2pt 2.5pt;
     border: 0.4pt solid #000;
     vertical-align: middle;
     color: #000;
-    line-height: 1.2;
-    word-break: break-word;
+    line-height: 1.15;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
@@ -323,23 +324,9 @@ Deno.serve(async (req) => {
   .note strong { font-weight: 700; }
 
   /* ===== Page Header (repeats on every printed page) ===== */
-  .page-header {
-    position: fixed;
-    top: 3mm;
-    left: 5mm;
-    right: 5mm;
-    background: #fff;
-    z-index: 10;
-  }
+  .page-header { background: #fff; }
   /* ===== Page Footer (repeats on every printed page) ===== */
-  .page-footer {
-    position: fixed;
-    left: 5mm;
-    right: 5mm;
-    bottom: 3mm;
-    background: #fff;
-    z-index: 10;
-  }
+  .page-footer { background: #fff; break-inside: avoid; page-break-inside: avoid; }
   .signatures {
     display: grid;
     grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
