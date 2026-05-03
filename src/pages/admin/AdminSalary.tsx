@@ -165,21 +165,44 @@ const AdminSalary = () => {
     : (staffRaw as any[]).filter((s: any) => !committeeInfo.ids.has(s.id));
   const committeeHiddenCount = (staffRaw as any[]).filter((s: any) => committeeInfo.ids.has(s.id)).length;
 
-  // Reorder staff in salary list (swap salary_order with neighbor)
+  // Reorder staff in salary list — supports neighbor-swap OR jump-to-position
   const reorderStaffMutation = useMutation({
-    mutationFn: async ({ direction, currentId }: { direction: 'up' | 'down'; currentId: string }) => {
+    mutationFn: async (
+      args:
+        | { direction: 'up' | 'down'; currentId: string }
+        | { targetPosition: number; currentId: string }
+    ) => {
       const list = (staffRaw as any[]).filter((s: any) => showCommitteeStaff || !committeeInfo.ids.has(s.id));
-      const idx = list.findIndex((s) => s.id === currentId);
+      const idx = list.findIndex((s) => s.id === args.currentId);
       if (idx === -1) return;
-      const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+      // Jump-to-position mode: rewrite salary_order for the whole list
+      if ('targetPosition' in args) {
+        const target = Math.max(1, Math.min(list.length, Math.floor(args.targetPosition)));
+        const targetIdx = target - 1;
+        if (targetIdx === idx) return;
+        const reordered = [...list];
+        const [moved] = reordered.splice(idx, 1);
+        reordered.splice(targetIdx, 0, moved);
+        // Assign sequential 10,20,30… so future single-step swaps stay clean
+        const updates = reordered.map((s: any, i: number) =>
+          supabase.from('staff').update({ salary_order: (i + 1) * 10 }).eq('id', s.id)
+        );
+        const results = await Promise.all(updates);
+        const firstErr = results.find((r: any) => r.error);
+        if (firstErr?.error) throw firstErr.error;
+        return;
+      }
+
+      // Neighbor swap mode (up/down arrows)
+      const swapIdx = args.direction === 'up' ? idx - 1 : idx + 1;
       if (swapIdx < 0 || swapIdx >= list.length) return;
       const a = list[idx];
       const b = list[swapIdx];
       const aOrder = a.salary_order ?? (idx + 1) * 10;
       const bOrder = b.salary_order ?? (swapIdx + 1) * 10;
-      // If equal, force a difference
       const newA = bOrder;
-      const newB = aOrder === bOrder ? aOrder + (direction === 'up' ? 1 : -1) : aOrder;
+      const newB = aOrder === bOrder ? aOrder + (args.direction === 'up' ? 1 : -1) : aOrder;
       const { error: e1 } = await supabase.from('staff').update({ salary_order: newA }).eq('id', a.id);
       if (e1) throw e1;
       const { error: e2 } = await supabase.from('staff').update({ salary_order: newB }).eq('id', b.id);
@@ -187,11 +210,16 @@ const AdminSalary = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
+      toast.success(bn ? 'সিরিয়াল আপডেট হয়েছে' : 'Order updated');
     },
     onError: (err: any) => {
       toast.error(bn ? 'সিরিয়াল পরিবর্তন ব্যর্থ' : 'Reorder failed', { description: err?.message });
     },
   });
+
+  // Inline editing state for the serial-number cell
+  const [editingSerialId, setEditingSerialId] = useState<string | null>(null);
+  const [serialDraft, setSerialDraft] = useState<string>('');
 
   // Fetch salary records for selected month
   const { data: salaryRecords = [] } = useQuery({
@@ -1898,7 +1926,37 @@ const AdminSalary = () => {
                                     <ChevronDown className="h-3.5 w-3.5" />
                                   </button>
                                 </div>
-                                <span className="text-xs">{bn ? toBnDigits(idx + 1) : idx + 1}</span>
+                                {editingSerialId === s.id ? (
+                                  <input
+                                    autoFocus
+                                    type="number"
+                                    min={1}
+                                    max={filtered.length}
+                                    value={serialDraft}
+                                    onChange={(e) => setSerialDraft(e.target.value)}
+                                    onBlur={() => {
+                                      const n = parseInt(serialDraft, 10);
+                                      if (!isNaN(n) && n >= 1 && n <= filtered.length && n !== idx + 1) {
+                                        reorderStaffMutation.mutate({ targetPosition: n, currentId: s.id });
+                                      }
+                                      setEditingSerialId(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                      if (e.key === 'Escape') setEditingSerialId(null);
+                                    }}
+                                    className="w-12 h-6 px-1 text-xs text-center border border-emerald-400 rounded outline-none focus:ring-2 focus:ring-emerald-200"
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingSerialId(s.id); setSerialDraft(String(idx + 1)); }}
+                                    className="text-xs px-1.5 py-0.5 rounded hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                                    title={bn ? 'ক্লিক করে নতুন সিরিয়াল লিখুন' : 'Click to set new position'}
+                                  >
+                                    {bn ? toBnDigits(idx + 1) : idx + 1}
+                                  </button>
+                                )}
                               </div>
                             </td>
                             <td className="px-3 py-2">
