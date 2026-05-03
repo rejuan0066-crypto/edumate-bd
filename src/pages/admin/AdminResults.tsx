@@ -615,6 +615,65 @@ const AdminResults = () => {
                 )}
               </div>
               <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'প্রিন্ট মার্জিন (mm)' : 'Print Margins (mm)'}</p>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {(Object.keys(PRINT_MARGIN_PRESETS) as Array<keyof typeof PRINT_MARGIN_PRESETS>).map(key => {
+                    const preset = PRINT_MARGIN_PRESETS[key];
+                    const cur = footerOptions.margins || DEFAULT_PRINT_MARGINS;
+                    const active = cur.top === preset.top && cur.right === preset.right && cur.bottom === preset.bottom && cur.left === preset.left;
+                    const labels: Record<string, { en: string; bn: string }> = {
+                      narrow: { en: 'Narrow', bn: 'সংকীর্ণ' },
+                      normal: { en: 'Normal', bn: 'সাধারণ' },
+                      moderate: { en: 'Moderate', bn: 'মাঝারি' },
+                      wide: { en: 'Wide', bn: 'প্রশস্ত' },
+                    };
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => saveFooterOptions({ ...footerOptions, margins: preset })}
+                        className={`p-2 rounded-lg border text-xs font-medium transition-all ${active ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}
+                        title={`T${preset.top} R${preset.right} B${preset.bottom} L${preset.left}`}
+                      >
+                        {bn ? labels[key].bn : labels[key].en}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['top', 'right', 'bottom', 'left'] as const).map(side => {
+                    const cur = footerOptions.margins || DEFAULT_PRINT_MARGINS;
+                    const sideLabels: Record<typeof side, { en: string; bn: string }> = {
+                      top: { en: 'Top', bn: 'উপর' },
+                      right: { en: 'Right', bn: 'ডান' },
+                      bottom: { en: 'Bottom', bn: 'নিচ' },
+                      left: { en: 'Left', bn: 'বাম' },
+                    };
+                    return (
+                      <div key={side} className="space-y-1">
+                        <label className="text-[10px] text-muted-foreground uppercase">{bn ? sideLabels[side].bn : sideLabels[side].en}</label>
+                        <input
+                          type="number"
+                          min={3}
+                          max={25}
+                          step={1}
+                          value={cur[side]}
+                          onChange={(e) => {
+                            const v = Number(e.target.value);
+                            const next = sanitizeMargins({ ...cur, [side]: v });
+                            saveFooterOptions({ ...footerOptions, margins: next });
+                          }}
+                          className="w-full h-8 px-2 text-sm rounded-md border border-border bg-background"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2">
+                  {bn ? 'প্রিন্টার ভেদে টেবিল কাটা গেলে মার্জিন কমান বা বাড়ান (3–25 mm)। ফুটার দেখানোর জন্য নিচের মার্জিন কমপক্ষে 10 mm রাখা হয়।' : 'Tweak margins (3–25 mm) if your printer clips the table. Bottom is kept ≥ 10 mm to fit the footer.'}
+                </p>
+              </div>
+              <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'প্রিন্ট ফুটার (সংরক্ষিত হবে)' : 'Print Footer (saved)'}</p>
                 <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
                   <label className="flex items-center justify-between gap-3 cursor-pointer">
