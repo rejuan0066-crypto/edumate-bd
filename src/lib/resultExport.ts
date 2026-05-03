@@ -16,7 +16,19 @@ interface ExportData {
   sessionName?: string;
   passMark?: number;
   signatories?: ResultSignatory[];
+  showPageNumbers?: boolean;
+  showFooterInstitution?: boolean;
 }
+
+export interface ResultPrintFooterOptions {
+  show_page_numbers: boolean;
+  show_footer_institution: boolean;
+}
+
+export const DEFAULT_PRINT_FOOTER_OPTIONS: ResultPrintFooterOptions = {
+  show_page_numbers: true,
+  show_footer_institution: true,
+};
 
 export interface ResultSignatory {
   title_bn?: string;
