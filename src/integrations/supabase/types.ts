@@ -7449,10 +7449,12 @@ export type Database = {
           display_name: string | null
           id: string
           is_active: boolean
+          is_custom: boolean
           is_default: boolean
           role: string
           sort_order: number
-          staff_id: string
+          source: string | null
+          staff_id: string | null
           updated_at: string
         }
         Insert: {
@@ -7461,10 +7463,12 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_active?: boolean
+          is_custom?: boolean
           is_default?: boolean
           role: string
           sort_order?: number
-          staff_id: string
+          source?: string | null
+          staff_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -7473,10 +7477,12 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_active?: boolean
+          is_custom?: boolean
           is_default?: boolean
           role?: string
           sort_order?: number
-          staff_id?: string
+          source?: string | null
+          staff_id?: string | null
           updated_at?: string
         }
         Relationships: []
