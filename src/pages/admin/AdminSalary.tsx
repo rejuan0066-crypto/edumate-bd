@@ -2241,13 +2241,11 @@ const AdminSalary = () => {
                           : (rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0));
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
-                        const eligibilityReason = !rec ? getEligibilityReason(s) : null;
-                        const isHardBlocked = !rec && eligibilityReason !== null && (
-                          eligibilityReason.includes('উপস্থিতি') ||
-                          eligibilityReason.toLowerCase().includes('attendance') ||
-                          eligibilityReason.includes('মূল বেতন') ||
-                          eligibilityReason.toLowerCase().includes('base salary')
-                        );
+                        const validation = !rec ? getAttendanceValidation(s) : null;
+                        const eligibilityReason = !rec
+                          ? (validation?.errors[0] || validation?.warnings[0] || getEligibilityReason(s))
+                          : null;
+                        const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
                           <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
