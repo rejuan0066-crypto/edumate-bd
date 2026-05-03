@@ -777,7 +777,12 @@ Deno.serve(async (req) => {
       var styleId = 'dynamic-page-rule';
       var el = document.getElementById(styleId);
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
-      el.textContent = '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }';
+      // Use `size: auto` so the OS print dialog choice (paper/orientation) always wins —
+      // critical on iOS Safari which ignores explicit @page size. We still hint with the
+      // chosen orientation as a fallback for desktop browsers.
+      el.textContent =
+        '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }' +
+        '@media print { @page { size: auto; margin: ' + m + 'mm; } }';
       // expose for autoFit
       settings._pageW = w; settings._pageH = h;
     }
@@ -785,15 +790,19 @@ Deno.serve(async (req) => {
     function autoFit(){
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
-      var pageH = settings._pageH || 210;
-      var pageW = settings._pageW || 297;
-      var maxH = (pageH - settings.marginMm * 2) * MM_TO_PX;
-      var maxW = (pageW - settings.marginMm * 2) * MM_TO_PX;
+      // Fit to the SMALLER of the two orientations so the page also fits when the user
+      // picks the opposite orientation in the OS print dialog (common on iOS).
+      var p = PAPER[settings.paper] || PAPER.A4;
+      var shortSide = Math.min(p.w, p.h) - settings.marginMm * 2;
+      var longSide  = Math.max(p.w, p.h) - settings.marginMm * 2;
+      // Width budget = short side (portrait width); Height budget = long side.
+      var maxW = shortSide * MM_TO_PX;
+      var maxH = longSide * MM_TO_PX;
       pages.forEach(function(p){
         p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
         var h = p.scrollHeight, w = p.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
-        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.985));
+        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
           p.style.transform = 'scale(' + scale + ')';
