@@ -217,7 +217,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       font-size:9pt;color:#64748b;
     }
     @bottom-right{
-      content:"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page) " ${bn ? 'এর' : 'of'} " counter(pages);
+      content:"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''});
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
