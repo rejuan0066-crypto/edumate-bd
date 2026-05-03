@@ -625,8 +625,15 @@ const AdminSalary = () => {
         entry.dailyEarning = Math.round(dailyRate);
       }
 
-      const checkIn = r.check_in_time ? timeToMinutes(r.check_in_time) : dutyStart;
-      const checkOut = r.check_out_time ? timeToMinutes(r.check_out_time) : dutyEnd;
+      let checkIn = r.check_in_time ? timeToMinutes(r.check_in_time) : dutyStart;
+      let checkOut = r.check_out_time ? timeToMinutes(r.check_out_time) : dutyEnd;
+
+      if (isOvernight) {
+        // Check-in: if clock time precedes start (e.g. 02:00 < 17:00), it belongs to next day
+        if (checkIn < dutyStart) checkIn += 24 * 60;
+        // Check-out is almost always the next day for overnight shifts
+        if (checkOut <= checkIn) checkOut += 24 * 60;
+      }
 
       const lateMinutes = Math.max(0, checkIn - dutyStart);
       const earlyExitMinutes = Math.max(0, dutyEnd - checkOut);
