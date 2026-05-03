@@ -304,7 +304,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         ) : null}
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-60 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
+                    <PopoverContent className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
                       <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-border/30">
                         <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
                         {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
@@ -332,6 +332,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             </button>
                           );
                         })}
+                        {rec?.status === 'late' && (
+                          <LateTimeEditor
+                            bn={bn}
+                            initialIn={rec?.check_in_time || ''}
+                            initialOut={rec?.check_out_time || ''}
+                            saving={isSaving}
+                            onSave={(ci, co) => setStatus(key, 'late', { check_in_time: ci || null, check_out_time: co || null })}
+                          />
+                        )}
                         {rec && (
                           <button
                             onClick={() => setStatus(key, null)}
