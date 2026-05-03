@@ -282,7 +282,9 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto;}
     thead{display:table-header-group;}
     tfoot{display:table-footer-group;}
-    .summary{page-break-before:auto;}
+    .summary-wrap{page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;break-before:auto;}
+    .summary{page-break-inside:avoid;break-inside:avoid;}
+    .stat{page-break-inside:avoid;break-inside:avoid;}
     .signatures{page-break-inside:avoid;break-inside:avoid;}
   }
 </style>
