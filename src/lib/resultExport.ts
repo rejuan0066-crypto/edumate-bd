@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 
 interface ExportData {
   title: string;
