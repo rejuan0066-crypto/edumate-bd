@@ -613,7 +613,9 @@ const AdminSalary = () => {
       }
       
       if (r.status === 'leave') {
-        entry.dailyEarning = 0;
+        // ছুটি = বেতনসহ ছুটি (paid leave)। পূর্ণ দিনের বেতন গণ্য হবে, কোনো কর্তন নয়।
+        entry.dailyEarning = Math.round(dailyRate);
+        totalDailyEarnings += entry.dailyEarning;
         dailyBreakdown.push(entry);
         return;
       }
