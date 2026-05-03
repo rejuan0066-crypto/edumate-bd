@@ -25,8 +25,9 @@ const DynamicFavicon = () => {
 
   const faviconSrc = settings.favicon_url || settings.logo_url;
   const appIconSrc = settings.logo_url || settings.favicon_url;
-  const appName = settings.institution_name_en || settings.institution_name || 'Madrasah';
-  const shortName = (settings.institution_name_en || settings.institution_name || 'App').slice(0, 12);
+  const rawName = settings.institution_name_en || settings.institution_name || 'Madrasah';
+  const appName = trimWordAware(rawName, 30);
+  const shortName = trimWordAware(rawName, 12);
   const themeColor = (settings as any).theme_color || '#0f766e';
 
   // Update when settings load from DB
@@ -67,6 +68,7 @@ const DynamicFavicon = () => {
           });
           applyManifest(manifestUrl);
           localStorage.setItem(MANIFEST_CACHE_KEY, manifestUrl);
+          applyAppleWebAppTitle(shortName);
           // Use the high-quality 192 PNG for apple-touch-icon too
           applyAppleTouchIcon(icon192!);
         } catch (e) {
@@ -79,6 +81,7 @@ const DynamicFavicon = () => {
             theme_color: themeColor,
           });
           applyManifest(manifestUrl);
+          applyAppleWebAppTitle(shortName);
         }
       })();
     }
@@ -208,6 +211,26 @@ function buildManifest(opts: {
   // Use data URL (not blob:) — Android Chrome requires same-origin or data: manifest for install
   const json = JSON.stringify(manifest);
   return 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(json);
+}
+
+function applyAppleWebAppTitle(title: string) {
+  let meta = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'apple-mobile-web-app-title';
+    document.head.appendChild(meta);
+  }
+  meta.content = title;
+}
+
+function trimWordAware(input: string, max: number): string {
+  const s = (input || '').trim().replace(/\s+/g, ' ');
+  if (s.length <= max) return s;
+  const slice = s.slice(0, max);
+  const lastSpace = slice.lastIndexOf(' ');
+  // If we have a reasonable word boundary, cut there; else hard slice with ellipsis
+  if (lastSpace >= Math.floor(max * 0.6)) return slice.slice(0, lastSpace).trim();
+  return slice.trim().replace(/[\s\-_,.;:]+$/, '') + '…';
 }
 
 export default DynamicFavicon;
