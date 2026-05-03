@@ -619,7 +619,10 @@ Deno.serve(async (req) => {
     .sig .role-meta, .footer, .footer .ref { font-size: 6.4pt; }
     .footer { margin-top: 3pt; padding-top: 2pt; }
   }
-
+  /* Auto-fit hooks */
+  @media print {
+    .salary-page { transform-origin: top left; }
+  }
 </style>
 </head><body>
 <div class="sheet">
@@ -627,6 +630,45 @@ Deno.serve(async (req) => {
   ${pagesHtml}
 
 </div>
+<script>
+  (function(){
+    // A4 landscape printable area in CSS pixels at 96dpi: 297mm x 210mm minus @page margins (8mm top/bottom, 10mm sides)
+    // Available content box ≈ 277mm x 194mm  → at 96dpi: ~1047px x 733px
+    // We measure each .salary-page; if it overflows, we apply CSS zoom to shrink it down to fit.
+    function autoFit(){
+      var pages = document.querySelectorAll('.salary-page');
+      // Target inner content height in px (matches @page size: A4 landscape minus margins)
+      var MM_TO_PX = 96 / 25.4;
+      var maxH = (210 - 16) * MM_TO_PX; // page height - top/bottom margin
+      var maxW = (297 - 20) * MM_TO_PX; // page width - left/right margin
+      pages.forEach(function(p){
+        // reset
+        p.style.zoom = '';
+        p.style.transform = '';
+        // Force reflow then measure
+        var h = p.scrollHeight;
+        var w = p.scrollWidth;
+        if (h <= maxH && w <= maxW) return;
+        var scale = Math.min(maxH / h, maxW / w);
+        // Don't shrink below 0.55 to keep text readable
+        scale = Math.max(0.55, Math.min(1, scale * 0.985));
+        // Prefer 'zoom' (better for print on Chromium/WebKit); fall back to transform.
+        if ('zoom' in document.body.style || true) {
+          p.style.zoom = String(scale);
+        } else {
+          p.style.transform = 'scale(' + scale + ')';
+          p.style.width = (100 / scale) + '%';
+        }
+      });
+    }
+    // Run on load, before print, and after font load.
+    window.addEventListener('load', function(){ setTimeout(autoFit, 50); });
+    window.addEventListener('beforeprint', autoFit);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function(){ setTimeout(autoFit, 30); });
+    }
+  })();
+</script>
 </body></html>`;
 
 
