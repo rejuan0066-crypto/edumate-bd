@@ -778,7 +778,7 @@ Deno.serve(async (req) => {
       var styleId = 'dynamic-page-rule';
       var el = document.getElementById(styleId);
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
-      // Use `size: auto` so the OS print dialog choice (paper/orientation) always wins —
+      // Use 'size: auto' so the OS print dialog choice (paper/orientation) always wins —
       // critical on iOS Safari which ignores explicit @page size. We still hint with the
       // chosen orientation as a fallback for desktop browsers.
       el.textContent =
