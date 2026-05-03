@@ -1907,7 +1907,8 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'বিলম্ব দিন' : 'Late Days'}</span><span class="val" style="color:#d97706">${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'ছুটি' : 'Leave'}</span><span class="val" style="color:#2563eb">${bn ? toBnDigits(leaveDays) : leaveDays}</span></div>
+          <div class="info-cell" style="grid-column:1 / -1;border-right:none"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
         </div>
 
         <div class="single-col">
