@@ -317,9 +317,10 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;page-break-inside:avoid;break-inside:avoid;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures-wrap{margin-top:42px;page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;}
-  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;padding:0 10px;page-break-inside:avoid;break-inside:avoid;}
-  .sig-block{text-align:center;page-break-inside:avoid;break-inside:avoid;}
+  .signatures-keeper{page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
+  .signatures-wrap{margin-top:42px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;display:block;}
+  .signatures{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:16px;padding:0 10px;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
+  .sig-block{flex:1 1 0;min-width:0;text-align:center;page-break-inside:avoid;break-inside:avoid-page;-webkit-column-break-inside:avoid;}
   .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
   .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
   .sig-title{font-size:11.5px;font-weight:700;color:#064e3b;margin-top:1px;}
@@ -336,9 +337,10 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     .summary-wrap{page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;break-before:auto;}
     .summary{page-break-inside:avoid;break-inside:avoid;}
     .stat{page-break-inside:avoid;break-inside:avoid;}
-    .signatures-wrap{page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;}
-    .signatures{page-break-inside:avoid;break-inside:avoid;}
-    .sig-block{page-break-inside:avoid;break-inside:avoid;}
+    .signatures-keeper{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
+    .signatures-wrap{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;page-break-before:auto;break-before:auto;page-break-after:avoid;}
+    .signatures{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;display:flex !important;flex-wrap:nowrap !important;}
+    .sig-block{page-break-inside:avoid !important;break-inside:avoid-page !important;-webkit-column-break-inside:avoid !important;}
   }
 </style>
 </head><body>
@@ -405,6 +407,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
   </div>
   </div>
+  <div class="signatures-keeper">
   <div class="signatures-wrap">
   <div class="signatures">
     ${sigList.map((s) => {
@@ -412,6 +415,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       const n = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
       return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${n || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
     }).join('')}
+  </div>
   </div>
   </div>
   <div class="footer">
