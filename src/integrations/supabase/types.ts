@@ -9880,6 +9880,10 @@ export type Database = {
       }
       get_request_ip: { Args: never; Returns: string }
       get_request_ua: { Args: never; Returns: string }
+      get_resolved_print_footer: {
+        Args: { p_class_id?: string; p_exam_id?: string }
+        Returns: Json
+      }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_menu_permission: {
         Args: { _action: string; _menu_path: string; _user_id: string }
