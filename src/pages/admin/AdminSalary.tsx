@@ -445,17 +445,14 @@ const AdminSalary = () => {
         const calc = calculateSalary(staffMember);
         const activeSavings = getActiveSavings(existing.staff_id);
         const savingsDed = activeSavings ? activeSavings.amount : 0;
-        const advanceDed = Number(existing.advance_deduction || 0);
-        const bonusVal = Number(existing.bonus || 0);
-        const otherAllowVal = Number(existing.other_allowance || 0);
-        // calc.net_salary ইতিমধ্যে savings_deduction বাদ দিয়েছে (calculateSalary-এ)।
-        // double-deduction এড়াতে: savings ফেরত যোগ করি, তারপর extras + manual deductions
-        // একবারই প্রয়োগ করি।
-        const baseNetWithoutSavings = Number(calc.net_salary || 0)
-          + Number(calc.savings_deduction || 0);
-        const netSalary = Math.max(0,
-          baseNetWithoutSavings + bonusVal + otherAllowVal - advanceDed - savingsDed
-        );
+        // Use shared helper — guarded by src/lib/__tests__/salaryNet.test.ts
+        // against the savings/advance double-deduction regression.
+        const netSalary = recomputeNetSalary(calc, {
+          bonus: existing.bonus,
+          other_allowance: existing.other_allowance,
+          advance_deduction: existing.advance_deduction,
+          savings_deduction: savingsDed,
+        });
         const { error } = await supabase.from('salary_records').update({
           ...calc,
           bonus: Number(existing.bonus || 0),
