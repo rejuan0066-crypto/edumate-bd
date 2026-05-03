@@ -303,6 +303,11 @@ const AdminResults = () => {
   const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
   useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
 
+  // Export options: PDF vs browser print + A4 portrait/landscape
+  const [exportOptions, setExportOptions] = useState<{ open: boolean; classId: string | null; mode: 'pdf' | 'print'; orientation: 'landscape' | 'portrait' }>(
+    { open: false, classId: null, mode: 'print', orientation: 'landscape' }
+  );
+
   const MAX_LEN = 100;
   const validateSignatories = (rows: ResultSignatory[]) => {
     const errs: typeof sigErrors = {};
@@ -353,6 +358,15 @@ const AdminResults = () => {
   });
 
   const handleClassExport = async (classId: string, type: 'csv' | 'pdf' | 'print') => {
+    if (type === 'pdf' || type === 'print') {
+      // Open chooser instead of running immediately
+      setExportOptions({ open: true, classId, mode: type, orientation: 'landscape' });
+      return;
+    }
+    await runClassExport(classId, 'csv', 'landscape');
+  };
+
+  const runClassExport = async (classId: string, mode: 'csv' | 'pdf' | 'print', orientation: 'landscape' | 'portrait') => {
     setExportingClassId(classId);
     try {
       const examSession = examSessions.find((es: any) => es.id === examSessionId);
@@ -361,15 +375,11 @@ const AdminResults = () => {
       const cls = examClasses.find((c: any) => c.id === classId);
       const classDivisionId = cls?.division_id;
 
-      // Get exam
       const examId = examSessionId;
-
-      // Load results
       const { data: results } = await supabase.from('results').select('*').eq('exam_id', examId);
       const exportMarksMap: Record<string, number> = {};
       results?.forEach((r: any) => { exportMarksMap[`${r.student_id}_${r.subject_id}`] = r.marks ?? 0; });
 
-      // Load students
       const { data: studentData } = await supabase
         .from('exam_session_students')
         .select('student_id, students(*)')
@@ -377,7 +387,6 @@ const AdminResults = () => {
         .eq('class_id', classId);
       const exportStudents = studentData?.map((es: any) => es.students).filter(Boolean).sort((a: any, b: any) => (a.roll_number || 0) - (b.roll_number || 0)) || [];
 
-      // Load subjects
       const { data: subjectData } = await supabase
         .from('exam_session_subjects')
         .select('subject_id, subjects(*)')
@@ -406,11 +415,12 @@ const AdminResults = () => {
         examName: bn ? examSession.name_bn : examSession.name,
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
+        orientation,
       };
 
-      if (type === 'csv') exportResultCSV(params);
-      else if (type === 'pdf') exportResultPDF(params);
-      else if (type === 'print') printResultSheet(params);
+      if (mode === 'csv') exportResultCSV(params);
+      else if (mode === 'pdf') exportResultPDF(params);
+      else if (mode === 'print') printResultSheet(params);
     } catch (e: any) {
       toast.error(e.message || 'Export failed');
     } finally {
@@ -526,6 +536,66 @@ const AdminResults = () => {
                 title={hasSigErrors ? (bn ? 'ত্রুটি সংশোধনের পর সংরক্ষণ করুন' : 'Fix errors before saving') : undefined}
               >
                 {saveSignatories.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ' : 'Save')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Export options dialog: PDF vs Browser Print + A4 orientation */}
+        <Dialog open={exportOptions.open} onOpenChange={(o) => setExportOptions(s => ({ ...s, open: o }))}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'এক্সপোর্ট অপশন' : 'Export Options'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-5 py-2">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'ফরম্যাট' : 'Format'}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['pdf', 'print'] as const).map(m => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setExportOptions(s => ({ ...s, mode: m }))}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${exportOptions.mode === m ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}
+                    >
+                      {m === 'pdf' ? (bn ? 'PDF ডাউনলোড' : 'Download PDF') : (bn ? 'ব্রাউজার প্রিন্ট' : 'Browser Print')}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'A4 ওরিয়েন্টেশন' : 'A4 Orientation'}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['landscape', 'portrait'] as const).map(o => (
+                    <button
+                      key={o}
+                      type="button"
+                      onClick={() => setExportOptions(s => ({ ...s, orientation: o }))}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${exportOptions.orientation === o ? 'border-primary bg-primary/10 text-primary' : 'border-border hover:border-primary/50'}`}
+                    >
+                      {o === 'landscape' ? (bn ? 'ল্যান্ডস্কেপ' : 'Landscape') : (bn ? 'পোর্ট্রেট' : 'Portrait')}
+                    </button>
+                  ))}
+                </div>
+                {exportOptions.orientation === 'portrait' && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    {bn ? 'অনেক বিষয় থাকলে পোর্ট্রেটে কলাম সংকুচিত হতে পারে।' : 'Columns may be narrower in portrait when many subjects are present.'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setExportOptions(s => ({ ...s, open: false }))}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button
+                onClick={() => {
+                  const { classId, mode, orientation } = exportOptions;
+                  setExportOptions(s => ({ ...s, open: false }));
+                  if (classId) runClassExport(classId, mode, orientation);
+                }}
+              >
+                {bn ? 'এক্সপোর্ট করুন' : 'Export'}
               </Button>
             </DialogFooter>
           </DialogContent>

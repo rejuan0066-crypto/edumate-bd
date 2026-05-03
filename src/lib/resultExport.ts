@@ -75,8 +75,8 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName }: ExportData) => {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 10;
 
@@ -154,7 +154,7 @@ export const exportResultPDF = ({ title, students, subjects, marksMap, getOveral
   doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories }: ExportData) => {
+export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
   // Build computed rows + ranking by total (desc)
   const computed = students.map((st: any, idx: number) => {
@@ -209,7 +209,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
-    size:A4 landscape;
+    size:A4 ${orientation};
     margin:10mm 10mm 14mm 10mm;
     @bottom-left{
       content:"${(institutionName || '').replace(/"/g, '\\"')}";
