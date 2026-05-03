@@ -117,7 +117,10 @@ const AdminAdministrative = () => {
 
   const handleCreateAccount = async () => {
     if (!accEmail.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
-    if (!accPassword || accPassword.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    if (!isPasswordStrongAgainst(accPassword, passwordPolicy)) {
+      toast.error(firstFailedRuleMessage(accPassword, passwordPolicy, bn) || (bn ? 'পাসওয়ার্ড নীতিমালা পূরণ করছে না' : 'Password policy not met'));
+      return;
+    }
     setAccCreating(true);
     try {
       const { data, error } = await supabase.functions.invoke('manage-users', {
