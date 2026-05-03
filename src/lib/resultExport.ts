@@ -301,7 +301,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   tbody tr:nth-child(even) td{background:#f8fafc;}
   tbody tr:hover td{background:#ecfdf5;}
   td.num{text-align:center;}
-  td.name{text-align:left;font-weight:600;color:#0f172a;}
+  td.name{text-align:left;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   td.bold{font-weight:700;}
   .fail-cell{color:#dc2626;font-weight:700;background:#fef2f2 !important;}
   .row-fail td{background:#fff7ed !important;}
