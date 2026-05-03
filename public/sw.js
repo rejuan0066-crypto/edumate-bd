@@ -1,20 +1,11 @@
 // Service Worker — PWA + Web Push
-// Strategy: network-first for HTML/API, stale-while-revalidate for static assets.
-const CACHE_NAME = 'subhania-v2';
-const STATIC_CACHE = 'subhania-static-v2';
+// Strategy: never cache the app shell/assets, so installed PWAs always boot the
+// newest deployment; keep this worker only for installability + Web Push.
+const CACHE_NAME = 'subhania-v3';
+const STATIC_CACHE = 'subhania-static-v3';
 
-// Install: precache app shell
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) =>
-      cache.addAll([
-        '/',
-        '/manifest.json',
-        '/app-icon.svg',
-      ]).catch(() => {})
-    )
-  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -48,41 +39,22 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname.includes('supabase.co')) return;
   if (url.hostname.includes('supabase.in')) return;
 
-  // For navigation requests → network first, fallback to cached "/"
+  // For navigation requests → network only. Cached HTML keeps installed PWAs
+  // stuck on old builds, especially on iOS Safari.
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((c) => c.put(request, copy));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match('/')))
-    );
+    event.respondWith(fetch(request));
     return;
   }
 
-  // Static assets → stale-while-revalidate
+  // Static build assets → network only. If a deploy changes asset hashes, a
+  // cached old chunk can make the reload look successful while still running old code.
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
     request.destination === 'image' ||
     request.destination === 'font'
   ) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request)
-          .then((res) => {
-            if (res && res.status === 200) {
-              const copy = res.clone();
-              caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
-            }
-            return res;
-          })
-          .catch(() => cached);
-        return cached || fetchPromise;
-      })
-    );
+    event.respondWith(fetch(request));
   }
 });
 
