@@ -326,6 +326,9 @@ Deno.serve(async (req) => {
 
   /* ===== Page Header (repeats on every printed page) ===== */
   .page-header { background: #fff; }
+  /* Header cell inside <thead> repeats on every printed page */
+  .header-cell { padding: 0 0 4mm !important; border: none !important; background: #fff !important; }
+  thead th.header-cell, thead .header-cell { background: #fff !important; }
   /* ===== Persistent footer cell inside <tfoot> (repeats every page) ===== */
   .footer-cell { padding: 0 !important; border: none !important; background: #fff !important; }
   .footer-inner { padding-top: 6mm; vertical-align: bottom; }
