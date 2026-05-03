@@ -718,8 +718,6 @@ Deno.serve(async (req) => {
     <label for="ps-size">${bn ? 'পেপার' : 'Paper'}:</label>
     <select id="ps-size">
       <option value="A4">A4</option>
-      <option value="Letter">Letter</option>
-      <option value="Legal">Legal</option>
       <option value="A3">A3</option>
     </select>
   </div>
@@ -780,7 +778,7 @@ Deno.serve(async (req) => {
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
       el.textContent =
         '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }' +
-        '@media print { @page { size: auto; margin: ' + m + 'mm; } }';
+        '@media print { @page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; } }';
       // expose for autoFit
       settings._pageW = w; settings._pageH = h;
     }
@@ -789,12 +787,13 @@ Deno.serve(async (req) => {
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
       var pp = PAPER[settings.paper] || PAPER.A4;
-      var shortSide = Math.min(pp.w, pp.h) - settings.marginMm * 2;
-      var longSide  = Math.max(pp.w, pp.h) - settings.marginMm * 2;
-      var maxW = shortSide * MM_TO_PX;
-      var maxH = longSide * MM_TO_PX;
+      var pageWmm = settings.orientation === 'landscape' ? pp.h : pp.w;
+      var pageHmm = settings.orientation === 'landscape' ? pp.w : pp.h;
+      var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
+      var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
       pages.forEach(function(p){
         p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
+        p.style.maxWidth = maxW + 'px';
         var h = p.scrollHeight, w = p.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
         scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
