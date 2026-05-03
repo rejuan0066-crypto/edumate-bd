@@ -112,7 +112,7 @@ export default function AdminAdministrativeDebug() {
     const filterDesc =
       `status=${statusFilter} • deleted=${deletedFilter}`;
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_filtered',
       bn ? `প্রশাসনিক টেবিল (${filterDesc})` : `administrative_officers table (${filterDesc})`,
       'table: administrative_officers',
@@ -123,7 +123,7 @@ export default function AdminAdministrativeDebug() {
       ),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_all',
       bn ? 'প্রশাসনিক টেবিল (কোনো ফিল্টার ছাড়া)' : 'administrative_officers table (no filters)',
       'table: administrative_officers',
@@ -132,7 +132,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at'),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_active_only',
       bn ? "শুধু status='active' (deleted ignore)" : "Only status='active' (deleted ignored)",
       'table: administrative_officers',
@@ -141,7 +141,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at').eq('status', 'active'),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'admin_officers_deleted_only',
       bn ? 'শুধু soft-deleted রেকর্ড' : 'Only soft-deleted records',
       'table: administrative_officers',
@@ -150,7 +150,7 @@ export default function AdminAdministrativeDebug() {
         .select('id,name_bn,status,deleted_at').not('deleted_at', 'is', null),
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'directory_admin',
       bn ? `staff_directory ভিউ (administrative, ${filterDesc})` : `staff_directory view (administrative, ${filterDesc})`,
       'view: staff_directory',
@@ -162,7 +162,7 @@ export default function AdminAdministrativeDebug() {
       },
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'directory_all',
       bn ? `staff_directory ভিউ (সব sources, ${filterDesc})` : `staff_directory view (all sources, ${filterDesc})`,
       'view: staff_directory',
@@ -174,7 +174,7 @@ export default function AdminAdministrativeDebug() {
       },
     ));
 
-    out.push(await runProbe(
+    out.push(await probe(
       'rpc_list_directory',
       bn ? 'RPC list_staff_directory' : 'RPC list_staff_directory',
       'rpc: list_staff_directory',
@@ -183,7 +183,7 @@ export default function AdminAdministrativeDebug() {
     ));
 
     // Role-based access probes — check the *current logged-in user*'s effective role
-    out.push(await runProbe(
+    out.push(await probe(
       'has_role_check',
       bn ? `has_role(auth.uid(), '${roleProbe}')` : `has_role(auth.uid(), '${roleProbe}')`,
       `rpc: has_role`,
@@ -192,7 +192,7 @@ export default function AdminAdministrativeDebug() {
     ));
 
     // Probe the resolved role: how many rows can THIS user see vs an unfiltered count
-    out.push(await runProbe(
+    out.push(await probe(
       'visibility_compare',
       bn ? 'দৃশ্যমানতা তুলনা (current user vs no filter)' : 'Visibility compare (current user vs unfiltered)',
       'table: administrative_officers',
