@@ -1763,6 +1763,17 @@ const AdminSalary = () => {
       (bn ? webSettings?.principal_name : (webSettings?.principal_name_en || webSettings?.principal_name)) ||
       (bn ? 'প্রিন্সিপাল' : 'Principal');
 
+    // Dynamic signatories from salary workflow settings (with fallbacks)
+    const _prep = pickSig('treasurer');
+    const _ver = pickSig('verifier');
+    const _apr = pickSig('approver');
+    const accountantName = (sigVerifiedBy?.trim() || _ver?.display_name || instRow?.accountant_name || (bn ? '' : '')).toString();
+    const accountantRole = (sigVerifiedRole?.trim() || _ver?.designation || (bn ? 'হিসাবরক্ষক' : 'Accountant')).toString();
+    const approverName = (sigApprovedBy?.trim() || _apr?.display_name || principalName).toString();
+    const approverRole = (sigApprovedRole?.trim() || _apr?.designation || (bn ? 'অনুমোদনকারী (প্রিন্সিপাল)' : 'Approved by (Principal)')).toString();
+    const recipientName = staffMember.name_bn || '';
+    const recipientRole = bn ? 'প্রাপকের স্বাক্ষর' : "Recipient's Signature";
+
     const slipId = `SL-${selectedYear}${selectedMonth}-${String(record.id).slice(0, 6).toUpperCase()}`;
     const issueDate = new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB');
 
