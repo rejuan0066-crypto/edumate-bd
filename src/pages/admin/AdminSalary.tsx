@@ -706,14 +706,14 @@ const AdminSalary = () => {
     const otherAllowance = 0;
     const advanceDeduction = 0;
 
-    // Display-only deductions (নেট হিসাবে আবার বিয়োগ করা হয় না — কারণ additive মডেলে absent দিনে আয়ই ০)
-    // ইউজার টেবিলে দেখতে পাবেন কত টাকা অনুপস্থিতি/দেরির জন্য কাটা গেছে।
+    // Subtractive model: পূর্ণ মাসিক বেতন থেকে অনুপস্থিতি/দেরি/হাফ-ডে কাটা হয়।
+    // এতে সাপ্তাহিক ছুটি/সরকারি ছুটি (যেদিন কোনো রেকর্ড নেই) স্বয়ংক্রিয়ভাবে বেতনসহ ছুটি হিসেবে গণ্য হয়।
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
 
-    // মোট অর্জিত আয় (উপস্থিত দিনগুলোর per-day rate, ইতিমধ্যে দেরি/early-exit বাদ)
-    let earnedFromAttendance = Math.round(attStats.totalDailyEarnings);
+    // পূর্ণ বেতন ভিত্তি — ছুটির দিনও এর মধ্যে অন্তর্ভুক্ত
+    let earnedFromAttendance = Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
