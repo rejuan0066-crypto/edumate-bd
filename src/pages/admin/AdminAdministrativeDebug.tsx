@@ -35,6 +35,11 @@ export default function AdminAdministrativeDebug() {
   const [nextInSec, setNextInSec] = useState<number>(0);
   const runAllRef = useRef<(() => Promise<void>) | null>(null);
 
+  // Filters that change which probes run + what they query
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'pending' | 'any'>('active');
+  const [deletedFilter, setDeletedFilter] = useState<'not_deleted' | 'deleted_only' | 'any'>('not_deleted');
+  const [roleProbe, setRoleProbe] = useState<'admin' | 'super_admin' | 'staff' | 'teacher'>('admin');
+
   const runProbe = async (
     key: string,
     label: string,
