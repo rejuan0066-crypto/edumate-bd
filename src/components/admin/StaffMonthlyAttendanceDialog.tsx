@@ -189,8 +189,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             </Button>
           </div>
 
-          {/* Stat tiles - premium */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {/* Stat tiles - compact */}
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
             {Object.keys(STATUS_META).map(k => {
               const m = STATUS_META[k];
               const Icon = m.icon;
@@ -199,19 +199,16 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
               return (
                 <div
                   key={k}
-                  className={`group relative overflow-hidden rounded-2xl ${m.bg} p-3 border border-border/30 transition-all hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/5 cursor-default`}
+                  className={`group relative overflow-hidden rounded-xl ${m.bg} p-2 border border-border/30 transition-all hover:-translate-y-[2px] hover:shadow-md cursor-default`}
                 >
-                  <div className="flex items-start justify-between mb-1.5">
-                    <div className={`h-8 w-8 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm`}>
-                      <Icon className="h-4 w-4 text-white" />
+                  <div className="flex items-center justify-between mb-0.5">
+                    <div className={`h-6 w-6 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm`}>
+                      <Icon className="h-3 w-3 text-white" />
                     </div>
-                    <span className="text-[10px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
+                    <span className="text-[9px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
                   </div>
-                  <div className="text-[11px] text-muted-foreground font-medium truncate">{bn ? m.bnLabel : m.enLabel}</div>
-                  <div className={`text-2xl font-extrabold ${m.color} tabular-nums leading-tight`}>{value}</div>
-                  <div className="mt-1.5 h-1 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                    <div className={`h-full ${m.solid} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
-                  </div>
+                  <div className="text-[10px] text-muted-foreground font-medium truncate">{bn ? m.bnLabel : m.enLabel}</div>
+                  <div className={`text-base font-extrabold ${m.color} tabular-nums leading-tight`}>{value}</div>
                 </div>
               );
             })}
