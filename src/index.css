@@ -883,6 +883,84 @@
   }
   html, body {
     background: #ffffff !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    zoom: 1 !important;
   }
+
+  /* ===== MOBILE PRINT FIX =====
+     On mobile, app uses transforms, fixed positioning, viewport-locked
+     containers, and horizontal scroll wrappers that break the printed
+     layout (cut-off content, blank pages, shifted sections). Neutralize
+     them globally during printing. */
+  .print-section,
+  .print-section * {
+    transform: none !important;
+    -webkit-transform: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    animation: none !important;
+    transition: none !important;
+    position: static !important;
+    inset: auto !important;
+    top: auto !important; left: auto !important;
+    right: auto !important; bottom: auto !important;
+    float: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+
+  /* Containers that lock width to viewport on mobile — release them */
+  .print-section,
+  .print-section .container,
+  .print-section [class*="max-w-"],
+  .print-section [class*="w-screen"],
+  .print-section [class*="min-w-["],
+  .print-section [class*="overflow-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Re-stack mobile flex/grid layouts that wrap awkwardly on paper */
+  .print-section .grid { display: block !important; }
+  .print-section .grid > * { width: 100% !important; }
+
+  /* Tables: keep them as tables, allow horizontal compression instead of scroll */
+  .print-section .table-scroll,
+  .print-section .overflow-x-auto,
+  .print-section .overflow-auto {
+    overflow: visible !important;
+    width: 100% !important;
+  }
+  .print-section table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: auto !important;
+    font-size: 10pt;
+  }
+
+  /* Hide app chrome that mobile users sometimes leave on screen */
+  body > nav,
+  body > header,
+  body > aside,
+  [data-sidebar],
+  [data-radix-popper-content-wrapper],
+  .sonner-toast, [data-sonner-toaster],
+  .pwa-install-prompt,
+  .install-banner,
+  .update-banner {
+    display: none !important;
+  }
+
+  /* Force any sticky/fixed bar to flow */
+  .sticky, .fixed { position: static !important; }
 }
 
