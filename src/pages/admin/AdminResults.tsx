@@ -476,6 +476,20 @@ const AdminResults = () => {
       const exportTitle = `${bn ? examSession.name_bn : examSession.name} — ${bn ? cls?.name_bn : cls?.name} — ${bn ? (year?.name_bn || year?.name) : year?.name}`;
       const instName = bn ? institution?.name : (institution?.name_en || institution?.name);
 
+      // Server-authoritative footer resolution (prevents client-side tampering)
+      let serverFooter: { show_page_numbers: boolean; show_footer_institution: boolean; margins: { top: number; right: number; bottom: number; left: number } } | null = null;
+      if (mode === 'pdf' || mode === 'print') {
+        const { data: resolved, error: resolveErr } = await supabase.rpc('get_resolved_print_footer' as any, {
+          p_class_id: classId,
+          p_exam_id: examSessionId,
+        });
+        if (resolveErr) {
+          toast.error(resolveErr.message || 'Failed to resolve print footer settings');
+          return;
+        }
+        serverFooter = resolved as any;
+      }
+
       const params = {
         title: exportTitle,
         students: exportStudents,
@@ -492,9 +506,9 @@ const AdminResults = () => {
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
         orientation,
-        showPageNumbers: resolveFooterFor(classId, examSessionId).show_page_numbers,
-        showFooterInstitution: resolveFooterFor(classId, examSessionId).show_footer_institution,
-        margins: footerOptions.margins || DEFAULT_PRINT_MARGINS,
+        showPageNumbers: serverFooter ? serverFooter.show_page_numbers : true,
+        showFooterInstitution: serverFooter ? serverFooter.show_footer_institution : true,
+        margins: serverFooter ? sanitizeMargins(serverFooter.margins) : (footerOptions.margins || DEFAULT_PRINT_MARGINS),
       };
 
       if (mode === 'csv') exportResultCSV(params);
