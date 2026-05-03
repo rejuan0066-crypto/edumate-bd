@@ -1449,20 +1449,37 @@ const AdminSalary = () => {
   const pickSig = (role: 'treasurer' | 'verifier' | 'approver') =>
     (workflowSignatories as any[]).find((r) => r.role === role) || null;
 
+  // Current logged-in user (used as preparer fallback)
+  const { data: currentUserName = '' } = useQuery({
+    queryKey: ['current-user-name-salary'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) return '';
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+      return prof?.full_name || user.email || '';
+    },
+  });
+
   // Auto-fill signatory dialog from settings whenever it opens or data changes
   useEffect(() => {
     if (!sigDialogOpen) return;
     const prep = pickSig('treasurer');
     const ver = pickSig('verifier');
     const apr = pickSig('approver');
-    if (!sigPreparedBy && prep?.display_name) setSigPreparedBy(prep.display_name);
-    if (!sigPreparedRole && prep?.designation) setSigPreparedRole(prep.designation);
+    const prepName = prep?.display_name || currentUserName;
+    const prepRole = prep?.designation || (bn ? 'প্রস্তুতকারী' : 'Prepared by');
+    if (!sigPreparedBy && prepName) setSigPreparedBy(prepName);
+    if (!sigPreparedRole && prepRole) setSigPreparedRole(prepRole);
     if (!sigVerifiedBy && ver?.display_name) setSigVerifiedBy(ver.display_name);
     if (!sigVerifiedRole && ver?.designation) setSigVerifiedRole(ver.designation);
     if (!sigApprovedBy && apr?.display_name) setSigApprovedBy(apr.display_name);
     if (!sigApprovedRole && apr?.designation) setSigApprovedRole(apr.designation);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sigDialogOpen, workflowSignatories]);
+  }, [sigDialogOpen, workflowSignatories, currentUserName]);
   const exportPDF = async (sigOverride?: {
     prepared_by?: string; prepared_by_role?: string;
     verified_by?: string; verified_by_role?: string;
@@ -1477,8 +1494,8 @@ const AdminSalary = () => {
         const ver = pickSig('verifier');
         const apr = pickSig('approver');
         return {
-          prepared_by: sigPreparedBy.trim() || prep?.display_name || undefined,
-          prepared_by_role: sigPreparedRole.trim() || prep?.designation || undefined,
+          prepared_by: sigPreparedBy.trim() || prep?.display_name || currentUserName || undefined,
+          prepared_by_role: sigPreparedRole.trim() || prep?.designation || (bn ? 'প্রস্তুতকারী' : 'Prepared by') || undefined,
           verified_by: sigVerifiedBy.trim() || ver?.display_name || undefined,
           verified_by_role: sigVerifiedRole.trim() || ver?.designation || undefined,
           approved_by: sigApprovedBy.trim() || apr?.display_name || undefined,
