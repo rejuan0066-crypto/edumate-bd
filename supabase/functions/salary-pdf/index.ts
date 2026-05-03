@@ -430,17 +430,20 @@ Deno.serve(async (req) => {
   /* ===== Table ===== */
   table {
     width: 100%;
+    max-width: 100%;
     border-collapse: collapse;
     font-size: 8pt;
     color: #000;
     table-layout: fixed;
     height: 100%;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   thead th {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 3pt 3pt;
+    padding: 3pt 2pt;
     text-align: left;
     border: 0.5pt solid #000;
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
@@ -448,33 +451,43 @@ Deno.serve(async (req) => {
     font-size: 8pt;
     line-height: 1.15;
     word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    -webkit-hyphens: auto;
   }
   thead th.center { text-align: center; }
   thead th.right { text-align: right; }
   tbody td {
-    padding: 2pt 2.5pt;
+    padding: 2pt 2pt;
     border: 0.4pt solid #000;
     vertical-align: middle;
     color: #000;
     line-height: 1.15;
-    word-break: normal;
+    word-break: break-word;
     overflow-wrap: anywhere;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    overflow: hidden;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
   .staff-row { height: 8.5mm; }
 
-  .c-num { text-align: center; font-variant-numeric: tabular-nums; }
-  .c-name .nm { font-weight: 700; font-size: 8pt; }
+  .c-num { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .c-name { word-break: break-word; overflow-wrap: anywhere; }
+  .c-name .nm { font-weight: 700; font-size: 8pt; word-break: break-word; overflow-wrap: anywhere; }
   .c-name .sid {
     font-size: 7pt;
     color: #333;
     margin-top: 0;
     font-family: 'Tinos', monospace;
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
   .c-amt {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .c-net { font-weight: 700; }
 
