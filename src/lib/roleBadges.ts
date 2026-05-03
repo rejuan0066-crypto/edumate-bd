@@ -4,11 +4,17 @@ export type RoleDesignationBadge = {
   kind: 'role' | 'designation';
 };
 
+// Static fallback labels — used only when DB-backed translations
+// (see `useRoleTranslations` / `role_translations` table) are unavailable.
+// Keep this in sync with the seeded rows in the `role_translations` table.
 const roleLabelMap: Record<string, { bn: string; en: string }> = {
-  super_admin: { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
-  admin: { bn: 'অ্যাডমিন', en: 'Admin' },
-  teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-  staff: { bn: 'স্টাফ', en: 'Staff' },
+  super_admin:    { bn: 'সুপার অ্যাডমিন', en: 'Super Admin' },
+  admin:          { bn: 'অ্যাডমিন',        en: 'Admin' },
+  teacher:        { bn: 'শিক্ষক',          en: 'Teacher' },
+  staff:          { bn: 'স্টাফ',            en: 'Staff' },
+  administrative: { bn: 'প্রশাসনিক',       en: 'Administrative' },
+  support:        { bn: 'সহায়ক কর্মী',     en: 'Support Staff' },
+  general:        { bn: 'সাধারণ',          en: 'General' },
 };
 
 // Aggressive normalization for fuzzy duplicate detection across visually-equivalent
