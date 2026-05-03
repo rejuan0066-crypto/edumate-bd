@@ -397,8 +397,8 @@ export default function SalaryWorkflowPanel({
   }
 
   // Role-based gating (hook moved to top of component to keep hook order stable)
-  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id);
-  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id);
+  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id, wf.verifier_settings_id);
+  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id, wf.approver_settings_id);
 
   // Action availability — combines stage + role gating
   const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
