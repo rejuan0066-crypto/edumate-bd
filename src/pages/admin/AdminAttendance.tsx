@@ -595,6 +595,52 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     return categoryShiftTimes[cat] || defaultCategoryTimes.general;
   };
 
+  // Auto-backfill: existing present/late/half_day staff records without check_in/out get scheduled shift times
+  const backfillRanRef = useRef<string>('');
+  useEffect(() => {
+    if (entityType !== 'staff' || !attendance?.length || !entities?.length) return;
+    const key = `${selectedDate}|${effectiveShift}|${attendance.length}`;
+    if (backfillRanRef.current === key) return;
+    backfillRanRef.current = key;
+    const entityMap = new Map(entities.map((e: any) => [e.id, e]));
+    const targets = (attendance as any[]).filter(a =>
+      ['present', 'late', 'half_day'].includes(a.status) &&
+      (!a.check_in_time || !a.check_out_time) &&
+      entityMap.has(a.entity_id)
+    );
+    if (!targets.length) return;
+    (async () => {
+      let updated = 0;
+      for (const a of targets) {
+        const ent = entityMap.get(a.entity_id) as any;
+        let start = a.check_in_time;
+        let end = a.check_out_time;
+        if (staffSubTab === 'duty') {
+          if (selectedShift === 'morning') {
+            start = start || dutyTimes.morning_start;
+            end = end || dutyTimes.morning_end;
+          } else if (selectedShift === 'evening') {
+            start = start || dutyTimes.evening_start;
+            end = end || dutyTimes.evening_end;
+          }
+        } else {
+          const t = getCategoryTime(ent);
+          start = start || t.start;
+          end = end || t.end;
+        }
+        if (start === a.check_in_time && end === a.check_out_time) continue;
+        const { error } = await supabase
+          .from('attendance_records')
+          .update({ check_in_time: start || null, check_out_time: end || null, updated_at: new Date().toISOString() })
+          .eq('id', a.id);
+        if (!error) updated++;
+      }
+      if (updated > 0) {
+        queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      }
+    })();
+  }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
+
   const statusOptions = useMemo(() => {
     return rules.filter((r: any) => r.entity_type === entityType && r.rule_type === 'status' && r.is_active);
   }, [rules, entityType]);
