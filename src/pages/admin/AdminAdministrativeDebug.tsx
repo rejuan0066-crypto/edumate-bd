@@ -370,6 +370,30 @@ export default function AdminAdministrativeDebug() {
           </CardContent>
         </Card>
 
+        {/* Batch correlation banner */}
+        {batchId && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 backdrop-blur-xl flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <Fingerprint className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold">{bn ? 'ব্যাচ করিলেশন আইডি' : 'Batch correlation ID'}:</span>
+              <code className="px-2 py-0.5 rounded-full bg-card/80 text-xs font-mono">{batchId}</code>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm" variant="outline" className="rounded-full h-7 text-xs"
+                onClick={() => { navigator.clipboard.writeText(batchId); toast.success(bn ? 'কপি হয়েছে' : 'Copied'); }}
+              >
+                <Copy className="w-3 h-3 mr-1" /> {bn ? 'কপি' : 'Copy'}
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                {bn
+                  ? 'প্রতিটি প্রোব <batch>::<probe-key> ফরম্যাটে admin_name_request_log টেবিলে লগ হয়।'
+                  : 'Each probe is logged to admin_name_request_log as <batch>::<probe-key>.'}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Results */}
         {results.length === 0 && !running && (
           <Card className="rounded-[32px] backdrop-blur-xl bg-card/60">
