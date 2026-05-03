@@ -176,37 +176,54 @@ const UpdatePrompt = () => {
     <>
       {showFloatingButton && (
         <button
-          onClick={() => {
-            if (!canUpdate) return;
-            setDismissed(false);
-            handleUpdate();
-          }}
-          disabled={!canUpdate}
+  // Floating update button: ALWAYS clickable in the installed PWA.
+  // - If we already know an update is available → install immediately.
+  // - Otherwise → run a fresh check, and install if found, else show "up to date".
+  const showFloatingButton = standalone && !updating && (!updateAvailable || dismissed);
+
+  const handleFloatingClick = async () => {
+    if (updateAvailable) {
+      setDismissed(false);
+      handleUpdate();
+      return;
+    }
+    const found = await checkForUpdate(true);
+    if (found) {
+      setDismissed(false);
+      handleUpdate();
+    } else {
+      setNoUpdateMsg(true);
+      setTimeout(() => setNoUpdateMsg(false), 2500);
+    }
+  };
+
+  return (
+    <>
+      {showFloatingButton && (
+        <button
+          onClick={handleFloatingClick}
+          disabled={checking}
           aria-label={bn
-            ? (canUpdate ? 'আপডেট ইনস্টল করুন' : 'কোনো নতুন আপডেট নেই')
-            : (canUpdate ? 'Install update' : 'No update available')}
+            ? (updateAvailable ? 'আপডেট ইনস্টল করুন' : 'আপডেট চেক করুন')
+            : (updateAvailable ? 'Install update' : 'Check for update')}
           title={bn
-            ? (canUpdate ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'সর্বশেষ ভার্সন চলছে')
-            : (canUpdate ? 'Update available — click to install' : 'Up to date')}
+            ? (updateAvailable ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'আপডেটের জন্য চেক করুন')
+            : (updateAvailable ? 'Update available — click to install' : 'Check for update')}
           className={`fixed right-3 z-[90] w-11 h-11 rounded-full border shadow-lg backdrop-blur-xl flex items-center justify-center transition-colors ${
-            canUpdate
+            updateAvailable
               ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 cursor-pointer animate-pulse'
-              : 'bg-card/60 border-border text-muted-foreground opacity-50 cursor-not-allowed'
+              : 'bg-card/90 text-primary border-border hover:bg-muted cursor-pointer'
           }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${checking ? 'animate-spin' : ''}`} />
+          {noUpdateMsg && (
+            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card border border-border text-foreground text-xs rounded-full px-3 py-1 shadow-md">
+              {bn ? 'সর্বশেষ ভার্সন চলছে' : 'Up to date'}
+            </span>
+          )}
         </button>
       )}
-
-      {updateAvailable && !dismissed && (
-        <div
-          className="fixed left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
-        >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
               </div>
               <div className="flex-1 min-w-0">
