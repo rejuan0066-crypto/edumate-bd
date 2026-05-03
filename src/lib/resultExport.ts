@@ -359,7 +359,28 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
     ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
   </div>
-  <table>
+  <table class="result-table">
+    ${(() => {
+      const n = subjects.length;
+      // Fixed % widths so every page on every printer aligns identically (table-layout:fixed)
+      const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
+      const used = Object.values(fixedW).reduce((a, b) => a + b, 0); // 56
+      const subjectPool = Math.max(20, 100 - used); // 44
+      const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
+      const cols = [
+        `<col style="width:${fixedW.idx}%">`,
+        `<col style="width:${fixedW.roll}%">`,
+        `<col style="width:${fixedW.name}%">`,
+        ...subjects.map(() => `<col style="width:${sw}%">`),
+        `<col style="width:${fixedW.total}%">`,
+        `<col style="width:${fixedW.avg}%">`,
+        `<col style="width:${fixedW.grade}%">`,
+        `<col style="width:${fixedW.gpa}%">`,
+        `<col style="width:${fixedW.rank}%">`,
+        `<col style="width:${fixedW.status}%">`,
+      ].join('');
+      return `<colgroup>${cols}</colgroup>`;
+    })()}
     <thead><tr>
       <th>#</th>
       <th>${bn ? 'রোল' : 'Roll'}</th>
