@@ -7256,6 +7256,7 @@ export type Database = {
           approved_by: string | null
           approved_by_name: string | null
           approved_by_role: string | null
+          approver_settings_id: string | null
           approver_staff_id: string | null
           base_salary: number
           base_salary_encrypted: string | null
@@ -7284,11 +7285,13 @@ export type Database = {
           savings_deduction: number
           staff_id: string
           status: string | null
+          treasurer_settings_id: string | null
           updated_at: string | null
           verified_at: string | null
           verified_by: string | null
           verified_by_name: string | null
           verified_by_role: string | null
+          verifier_settings_id: string | null
           verifier_staff_id: string | null
           workflow_notes: string | null
           workflow_stage: string
@@ -7302,6 +7305,7 @@ export type Database = {
           approved_by?: string | null
           approved_by_name?: string | null
           approved_by_role?: string | null
+          approver_settings_id?: string | null
           approver_staff_id?: string | null
           base_salary?: number
           base_salary_encrypted?: string | null
@@ -7330,11 +7334,13 @@ export type Database = {
           savings_deduction?: number
           staff_id: string
           status?: string | null
+          treasurer_settings_id?: string | null
           updated_at?: string | null
           verified_at?: string | null
           verified_by?: string | null
           verified_by_name?: string | null
           verified_by_role?: string | null
+          verifier_settings_id?: string | null
           verifier_staff_id?: string | null
           workflow_notes?: string | null
           workflow_stage?: string
@@ -7348,6 +7354,7 @@ export type Database = {
           approved_by?: string | null
           approved_by_name?: string | null
           approved_by_role?: string | null
+          approver_settings_id?: string | null
           approver_staff_id?: string | null
           base_salary?: number
           base_salary_encrypted?: string | null
@@ -7376,11 +7383,13 @@ export type Database = {
           savings_deduction?: number
           staff_id?: string
           status?: string | null
+          treasurer_settings_id?: string | null
           updated_at?: string | null
           verified_at?: string | null
           verified_by?: string | null
           verified_by_name?: string | null
           verified_by_role?: string | null
+          verifier_settings_id?: string | null
           verifier_staff_id?: string | null
           workflow_notes?: string | null
           workflow_stage?: string
@@ -7388,10 +7397,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "salary_records_approver_settings_id_fkey"
+            columns: ["approver_settings_id"]
+            isOneToOne: false
+            referencedRelation: "salary_workflow_settings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "salary_records_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_records_treasurer_settings_id_fkey"
+            columns: ["treasurer_settings_id"]
+            isOneToOne: false
+            referencedRelation: "salary_workflow_settings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_records_verifier_settings_id_fkey"
+            columns: ["verifier_settings_id"]
+            isOneToOne: false
+            referencedRelation: "salary_workflow_settings"
             referencedColumns: ["id"]
           },
         ]
@@ -7576,6 +7606,7 @@ export type Database = {
       }
       salary_workflow_settings: {
         Row: {
+          admin_officer_id: string | null
           created_at: string
           designation: string | null
           display_name: string | null
@@ -7590,6 +7621,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_officer_id?: string | null
           created_at?: string
           designation?: string | null
           display_name?: string | null
@@ -7604,6 +7636,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_officer_id?: string | null
           created_at?: string
           designation?: string | null
           display_name?: string | null
@@ -7617,7 +7650,22 @@ export type Database = {
           staff_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "salary_workflow_settings_admin_officer_id_fkey"
+            columns: ["admin_officer_id"]
+            isOneToOne: false
+            referencedRelation: "administrative_officers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_workflow_settings_admin_officer_id_fkey"
+            columns: ["admin_officer_id"]
+            isOneToOne: false
+            referencedRelation: "administrative_officers_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scholarship_awards: {
         Row: {
