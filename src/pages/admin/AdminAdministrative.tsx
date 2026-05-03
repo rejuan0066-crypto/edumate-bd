@@ -104,6 +104,7 @@ const AdminAdministrative = () => {
   const [accRole, setAccRole] = useState('administrative');
   const [accCreating, setAccCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const passwordPolicy = usePasswordPolicy();
 
   const openAccountDialog = (o: Officer) => {
     setSelectedOfficer(o);
