@@ -472,53 +472,99 @@ Deno.serve(async (req) => {
     background: #f1f1f1;
     color: #000;
     font-weight: 700;
-    padding: 3pt 2pt;
+    padding: 3pt 3pt;
     text-align: left;
     border: 0.5pt solid #000;
     font-family: 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
     font-size: 8pt;
-    line-height: 1.15;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    line-height: 1.2;
+    /* Long headers wrap softly across spaces, then fall back to anywhere */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
     hyphens: auto;
     -webkit-hyphens: auto;
   }
   thead th.center { text-align: center; }
-  thead th.right { text-align: right; }
+  thead th.right  { text-align: right; }
+  /* Numeric headers stay aligned with their columns and never wrap awkwardly */
+  thead th.right, thead th.center {
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: manual;
+  }
+
   tbody td {
-    padding: 2pt 2pt;
+    padding: 2pt 3pt;
     border: 0.4pt solid #000;
     vertical-align: middle;
     color: #000;
-    line-height: 1.15;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    line-height: 1.2;
+    overflow: hidden;
+    /* Default body cells: wrap softly */
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
     hyphens: auto;
     -webkit-hyphens: auto;
-    overflow: hidden;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
   .staff-row { height: 8.5mm; }
 
-  .c-num { text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .c-name { word-break: break-word; overflow-wrap: anywhere; }
-  .c-name .nm { font-weight: 700; font-size: 8pt; word-break: break-word; overflow-wrap: anywhere; }
-  .c-name .sid {
-    font-size: 7pt;
-    color: #333;
-    margin-top: 0;
-    font-family: 'Tinos', monospace;
-    word-break: break-all;
-    overflow-wrap: anywhere;
+  /* === Numeric / amount columns: keep on a single line, right-aligned, monospaced digits === */
+  .c-num {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: manual;
+    letter-spacing: 0;
   }
   .c-amt {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
     white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    hyphens: manual;
+    letter-spacing: 0;
   }
   .c-net { font-weight: 700; }
+
+  /* === Name + Staff ID column: aggressive wrapping for long names === */
+  .c-name {
+    text-align: left;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    line-height: 1.15;
+  }
+  .c-name .nm {
+    font-weight: 700;
+    font-size: 8pt;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    hyphens: auto;
+    display: block;
+  }
+  .c-name .sid {
+    font-size: 6.8pt;
+    color: #444;
+    margin-top: 1pt;
+    font-family: 'Tinos', monospace;
+    letter-spacing: 0.2pt;
+    /* IDs are alphanumeric — break anywhere if needed but never wrap mid-digit-run on big screens */
+    overflow-wrap: anywhere;
+    word-break: break-all;
+    white-space: normal;
+    display: block;
+  }
 
   .totals td {
     background: #e8e8e8 !important;
