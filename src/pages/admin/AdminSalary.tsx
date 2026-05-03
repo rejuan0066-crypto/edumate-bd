@@ -628,6 +628,14 @@ const AdminSalary = () => {
       };
 
       if (r.status === 'absent') {
+        // If this absent date is a paid holiday, treat as paid (no deduction)
+        if (paidHolidaySet.has(r.attendance_date)) {
+          entry.status = 'holiday';
+          entry.dailyEarning = Math.round(dailyRate);
+          totalDailyEarnings += entry.dailyEarning;
+          dailyBreakdown.push(entry);
+          return;
+        }
         entry.deduction = Math.round(dailyRate);
         entry.dailyEarning = 0;
         dailyBreakdown.push(entry);
