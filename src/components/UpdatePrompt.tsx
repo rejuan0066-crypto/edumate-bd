@@ -13,12 +13,15 @@ const extractBuildId = (html: string): string | null => {
 
 const UpdatePrompt = () => {
   const { language } = useLanguage();
+  const bn = language === 'bn';
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [statusText, setStatusText] = useState('');
   const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Skip on Lovable preview/iframe
     try {
       if (window.self !== window.top) return;
     } catch {
@@ -46,11 +49,9 @@ const UpdatePrompt = () => {
       }
     };
 
-    // Initial check after 5s, then every minute
     const initialTimer = window.setTimeout(checkForUpdate, 5000);
     intervalRef.current = window.setInterval(checkForUpdate, CHECK_INTERVAL);
 
-    // Check when tab regains focus
     const onVisibility = () => {
       if (document.visibilityState === 'visible') checkForUpdate();
     };
@@ -64,50 +65,83 @@ const UpdatePrompt = () => {
   }, []);
 
   const handleUpdate = async () => {
+    setUpdating(true);
+    setProgress(5);
+    setStatusText(bn ? 'ক্যাশ পরিষ্কার করা হচ্ছে…' : 'Clearing cache…');
     try {
-      // Clear caches
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
+        let done = 0;
+        for (const k of keys) {
+          await caches.delete(k);
+          done++;
+          setProgress(5 + Math.round((done / Math.max(keys.length, 1)) * 50));
+        }
+      } else {
+        setProgress(55);
       }
-      // Unregister and re-register service worker
+      setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.update()));
       }
+      setProgress(85);
+      setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     } catch {
       // ignore
     }
-    // Hard reload
-    window.location.reload();
+    setProgress(100);
+    setTimeout(() => window.location.reload(), 400);
   };
 
   if (!updateAvailable || dismissed) return null;
 
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md">
-      <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 flex items-center gap-3 backdrop-blur-xl">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <RefreshCw className="w-5 h-5 text-primary" />
+      <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-foreground">
+              {updating
+                ? (bn ? 'আপডেট হচ্ছে…' : 'Updating…')
+                : (bn ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available')}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {updating
+                ? statusText
+                : (bn ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready')}
+            </p>
+          </div>
+          {!updating ? (
+            <>
+              <Button size="sm" onClick={handleUpdate} className="rounded-full">
+                {bn ? 'আপডেট' : 'Update'}
+              </Button>
+              <button
+                onClick={() => setDismissed(true)}
+                className="p-1 rounded-full hover:bg-muted transition-colors"
+                aria-label="Dismiss"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </>
+          ) : (
+            <span className="text-xs font-semibold text-primary tabular-nums w-10 text-right">
+              {progress}%
+            </span>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-foreground">
-            {language === 'bn' ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {language === 'bn' ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready'}
-          </p>
-        </div>
-        <Button size="sm" onClick={handleUpdate} className="rounded-full">
-          {language === 'bn' ? 'আপডেট' : 'Update'}
-        </Button>
-        <button
-          onClick={() => setDismissed(true)}
-          className="p-1 rounded-full hover:bg-muted transition-colors"
-          aria-label="Dismiss"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
+        {updating && (
+          <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
