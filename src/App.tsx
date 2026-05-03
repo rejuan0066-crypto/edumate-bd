@@ -358,6 +358,7 @@ const App = () => (
                     <Route path="admission-letters" element={<AdminAdmissionLetters />} />
                     <Route path="student-certificates" element={<AdminCertificates />} />
                     <Route path="designations" element={<AdminDesignations />} />
+                    <Route path="translations" element={<AdminTranslations />} />
                     <Route path="form-builder" element={<AdminFormBuilder />} />
                     <Route path="custom/:slug" element={<AdminCustomFormPage />} />
                     <Route path="module-manager" element={<AdminModuleManager />} />
