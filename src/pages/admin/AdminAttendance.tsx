@@ -471,7 +471,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         actorName = (prof as any)?.full_name || user.email || null;
       }
 
-      const monthYear = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const monthYear = toMonthYearInTz(new Date(), appTz); // YYYY-MM in app tz
       let totalRecalc = 0;
       const auditEntries: any[] = [];
 
