@@ -239,9 +239,10 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .meta-k{color:#475569;font-weight:500;}
   .meta-v{color:#064e3b;font-weight:700;}
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;}
-  thead{display:table-header-group;}
+  thead{display:table-header-group !important;}
   tfoot{display:table-footer-group;}
-  thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;}
+  thead tr{page-break-inside:avoid;break-inside:avoid;}
+  thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
   .sub-th{padding:4px 3px;}
   .sub-name{display:block;line-height:1.1;}
   .sub-max{display:block;font-size:8.5px;font-weight:500;opacity:.85;margin-top:1px;}
