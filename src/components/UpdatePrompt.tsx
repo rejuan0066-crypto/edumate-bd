@@ -166,14 +166,6 @@ const UpdatePrompt = () => {
           }
         }));
       }
-      // Persist the new build id so post-reload we don't re-prompt.
-      try {
-        const pending = sessionStorage.getItem('app_build_id_pending');
-        if (pending) {
-          localStorage.setItem(BUILD_ID_KEY, pending);
-          sessionStorage.removeItem('app_build_id_pending');
-        }
-      } catch {}
       setProgress(85);
       setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     } catch {
