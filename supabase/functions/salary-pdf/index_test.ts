@@ -144,11 +144,12 @@ Deno.test("salary-pdf: totals row cell count equals COL_COUNT", async () => {
   const colCount = countCellsInColumnHeaderRow(html);
   const m = html.match(/<tr class="totals">([\s\S]*?)<\/tr>/);
   assert(m, "expected a <tr class=\"totals\"> row");
-  const tdMatches = [...m![1].matchAll(/<td[^>]*?(?:colspan="(\d+)")?[^>]*>/g)];
-  const effective = tdMatches.reduce(
-    (a, mm) => a + (mm[1] ? parseInt(mm[1], 10) : 1),
-    0,
-  );
+  const inner = m![1];
+  const tdTags = [...inner.matchAll(/<td\b[^>]*>/g)].map((mm) => mm[0]);
+  const effective = tdTags.reduce((a, tag) => {
+    const cs = tag.match(/colspan="(\d+)"/);
+    return a + (cs ? parseInt(cs[1], 10) : 1);
+  }, 0);
   assertEquals(
     effective,
     colCount,
