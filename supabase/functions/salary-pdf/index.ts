@@ -435,6 +435,10 @@ Deno.serve(async (req) => {
     break-after: page;
     page-break-after: always;
   }
+  .print-fit {
+    width: 100%;
+    transform-origin: top left;
+  }
   .salary-page:last-child {
     break-after: auto;
     page-break-after: auto;
@@ -727,11 +731,11 @@ Deno.serve(async (req) => {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
-      /* Don't force a fixed height — let content determine page; prevents extra blank page on mobile */
-      height: auto;
+      height: var(--print-page-height, auto);
+      max-height: var(--print-page-height, none);
       min-height: 0;
-      padding: 3mm 3mm 4mm;
-      overflow: hidden;
+      padding: 0;
+      overflow: visible;
       break-after: page;
       page-break-after: always;
       page-break-inside: avoid;
