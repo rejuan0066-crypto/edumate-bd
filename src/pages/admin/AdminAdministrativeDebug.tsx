@@ -392,11 +392,23 @@ export default function AdminAdministrativeDebug() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-xs">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="secondary" className="text-[10px]">{r.source}</Badge>
                   <Badge className={r.ok ? 'bg-emerald-500/15 text-emerald-700' : 'bg-red-500/15 text-red-700'} variant="outline">
                     {r.ok ? (bn ? `সফল • ${r.count} সারি` : `OK • ${r.count} rows`) : (bn ? 'ব্যর্থ' : 'FAILED')}
                   </Badge>
+                  {r.errorCode && (
+                    <Badge variant="outline" className="text-[10px] border-red-500/40 text-red-700">code: {r.errorCode}</Badge>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(r.correlationId); toast.success(bn ? 'করিলেশন আইডি কপি হয়েছে' : 'Correlation ID copied'); }}
+                    className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted/60 hover:bg-muted text-[10px] font-mono text-muted-foreground hover:text-foreground transition"
+                    title={bn ? 'করিলেশন আইডি কপি করুন' : 'Copy correlation ID'}
+                  >
+                    <Fingerprint className="w-3 h-3" /> {r.correlationId}
+                    <Copy className="w-3 h-3 opacity-60" />
+                  </button>
                 </div>
 
                 <div>
