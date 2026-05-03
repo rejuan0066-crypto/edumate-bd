@@ -307,6 +307,7 @@ const AdminResults = () => {
         return {
           show_page_numbers: v.show_page_numbers !== false,
           show_footer_institution: v.show_footer_institution !== false,
+          margins: sanitizeMargins(v.margins),
         };
       }
       return DEFAULT_PRINT_FOOTER_OPTIONS;
