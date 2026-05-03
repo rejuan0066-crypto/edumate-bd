@@ -586,6 +586,34 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
+    /* Print Settings Bar — visible on screen, hidden during print */
+    .print-settings-bar {
+      position: sticky; top: 0; z-index: 1000;
+      background: linear-gradient(180deg,#ecfdf5,#d1fae5);
+      border-bottom: 2px solid #10b981;
+      padding: 10px 14px;
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .print-settings-bar .grp { display: flex; align-items: center; gap: 6px; }
+    .print-settings-bar label { font-weight: 600; color: #065f46; }
+    .print-settings-bar select,
+    .print-settings-bar input[type="number"] {
+      border: 1px solid #10b981; background: #fff; padding: 4px 8px;
+      border-radius: 8px; font-size: 12px; min-width: 70px;
+    }
+    .print-settings-bar input[type="range"] { width: 110px; accent-color: #10b981; }
+    .print-settings-bar .val { font-variant-numeric: tabular-nums; min-width: 36px; color: #047857; font-weight: 700; }
+    .print-settings-bar button {
+      background: #059669; color: #fff; border: 0; padding: 7px 16px;
+      border-radius: 999px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(5,150,105,0.35);
+    }
+    .print-settings-bar button:hover { background: #047857; }
+    .print-settings-bar .hint { color: #047857; font-size: 11px; opacity: .85; }
+    @media print { .print-settings-bar { display: none !important; } }
     table { page-break-inside: avoid; break-inside: avoid; font-size: 7pt; }
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group !important; }
