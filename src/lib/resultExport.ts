@@ -11,6 +11,10 @@ interface ExportData {
   institutionLogo?: string;
   institutionAddress?: string;
   institutionPhone?: string;
+  className?: string;
+  examName?: string;
+  sessionName?: string;
+  passMark?: number;
 }
 
 export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
