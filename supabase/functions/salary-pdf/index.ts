@@ -154,13 +154,14 @@ Deno.serve(async (req) => {
 <title>${bn ? "বেতন বিবরণী" : "Salary Statement"} — ${monthLabel} ${year}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
+  @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
   *,*::before,*::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   html, body {
     background: #ffffff;
     color: #000000;
-    font-family: 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
-    font-size: 8.5pt;
-    line-height: 1.25;
+    font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
+    font-size: 10pt;
+    line-height: 1.3;
   }
   body { padding: 5mm 6mm; }
 
@@ -386,11 +387,11 @@ Deno.serve(async (req) => {
     .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 5mm; overflow: visible; }
     @page {
       size: A4 landscape;
-      margin: 6mm;
+      margin: 15mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
-        font-family: 'Noto Serif Bengali', 'Tinos', serif;
-        font-size: 8pt;
+        font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
+        font-size: 9pt;
         color: #000;
         padding-right: 4mm;
       }
