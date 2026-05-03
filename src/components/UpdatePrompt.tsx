@@ -6,18 +6,34 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const BUILD_ID_KEY = 'app_build_id';
 const CHECK_INTERVAL = 60_000; // 1 minute
 
-// Build a stable signature from ALL hashed asset filenames in index.html.
-// More reliable than picking the first JS chunk hash (which can stay the same
-// across some deploys when only CSS or other chunks change).
-const extractBuildId = (html: string): string | null => {
-  const matches = html.match(/assets\/[^"'?\s]+-[a-zA-Z0-9_]+\.(?:js|css)/g);
-  if (!matches || matches.length === 0) return null;
+const buildSignature = (assets: string[]): string | null => {
+  const matches = assets
+    .map((asset) => asset.replace(/^https?:\/\/[^/]+/i, '').replace(/[?#].*$/, ''))
+    .filter((asset) => /\/assets\/|^assets\//.test(asset) && /\.(js|css)$/.test(asset));
+  if (matches.length === 0) return null;
   // Sort + dedupe so order changes don't trigger false positives
   const sig = Array.from(new Set(matches)).sort().join('|');
   // Compact hash (djb2)
   let h = 5381;
   for (let i = 0; i < sig.length; i++) h = ((h << 5) + h + sig.charCodeAt(i)) | 0;
   return 'b' + (h >>> 0).toString(36);
+};
+
+// Build a stable signature from ALL current hashed JS/CSS assets.
+// The runtime signature is the source of truth, because localStorage may have
+// been advanced by a failed update attempt on an installed PWA.
+const extractBuildId = (html: string): string | null => {
+  const matches = html.match(/(?:\/)?assets\/[^"'?\s<>]+\.(?:js|css)/g);
+  return matches ? buildSignature(matches) : null;
+};
+
+const getRuntimeBuildId = (): string | null => {
+  const assets = Array.from(
+    document.querySelectorAll<HTMLScriptElement | HTMLLinkElement>('script[src*="/assets/"],link[href*="/assets/"]')
+  )
+    .map((node) => node instanceof HTMLScriptElement ? node.src : node.href)
+    .filter(Boolean);
+  return buildSignature(assets);
 };
 
 const isStandalonePWA = () => {
@@ -43,6 +59,7 @@ const UpdatePrompt = () => {
   const [checking, setChecking] = useState(false);
   const [noUpdateMsg, setNoUpdateMsg] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const runtimeBuildIdRef = useRef<string | null>(null);
 
   const checkForUpdate = async (manual = false): Promise<boolean> => {
     if (manual) {
@@ -58,15 +75,15 @@ const UpdatePrompt = () => {
       const html = await res.text();
       const newBuildId = extractBuildId(html);
       if (!newBuildId) return false;
-      const currentBuildId = localStorage.getItem(BUILD_ID_KEY);
+      const currentBuildId = runtimeBuildIdRef.current || getRuntimeBuildId() || localStorage.getItem(BUILD_ID_KEY);
+      if (currentBuildId) runtimeBuildIdRef.current = currentBuildId;
       // First-ever load: seed the build id so the next deploy is detectable.
       if (!currentBuildId) {
         localStorage.setItem(BUILD_ID_KEY, newBuildId);
+        runtimeBuildIdRef.current = newBuildId;
         return false;
       }
       if (newBuildId !== currentBuildId) {
-        // Stash the new id so handleUpdate can persist it after reload.
-        try { sessionStorage.setItem('app_build_id_pending', newBuildId); } catch {}
         setUpdateAvailable(true);
         setDismissed(false);
         return true;
@@ -80,6 +97,12 @@ const UpdatePrompt = () => {
   };
 
   useEffect(() => {
+    const runtimeBuildId = getRuntimeBuildId();
+    if (runtimeBuildId) {
+      runtimeBuildIdRef.current = runtimeBuildId;
+      try { localStorage.setItem(BUILD_ID_KEY, runtimeBuildId); } catch {}
+    }
+
     try {
       if (window.self !== window.top) return;
     } catch {
@@ -141,14 +164,6 @@ const UpdatePrompt = () => {
           }
         }));
       }
-      // Persist the new build id so post-reload we don't re-prompt.
-      try {
-        const pending = sessionStorage.getItem('app_build_id_pending');
-        if (pending) {
-          localStorage.setItem(BUILD_ID_KEY, pending);
-          sessionStorage.removeItem('app_build_id_pending');
-        }
-      } catch {}
       setProgress(85);
       setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     } catch {
