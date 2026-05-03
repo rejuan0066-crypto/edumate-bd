@@ -388,6 +388,7 @@ const App = () => (
                     <Route path="parent-link-audit" element={<AdminParentLinkAudit />} />
                     <Route path="signatory-audit" element={<AdminSignatoryAudit />} />
                     <Route path="footer-audit" element={<AdminFooterAudit />} />
+                    <Route path="administrative-debug" element={<AdminAdministrativeDebug />} />
                     <Route path="donors-role-audit" element={<AdminDonorsRoleAudit />} />
                     <Route path="audit-device-allowlist" element={<AdminAuditDeviceAllowlist />} />
                     <Route path="device-management" element={<AdminDeviceManagement />} />
