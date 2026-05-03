@@ -676,29 +676,24 @@ const AdminSalary = () => {
         entry.dailyEarning = Math.round(dailyRate);
       }
 
-      const staleAutoFilledFallback = dutyInfo.source === 'staff' &&
-        fallbackDutyTime &&
-        (fallbackDutyTime.start !== dutyTime.start || fallbackDutyTime.end !== dutyTime.end) &&
-        r.check_in_time === fallbackDutyTime.start &&
-        r.check_out_time === fallbackDutyTime.end;
+      // Map a clock time (minutes from midnight) onto the duty window timeline.
+      // Day shift  (e.g. 09:00–17:00): timeline = [dutyStart .. dutyEnd], same-day.
+      // Night shift (e.g. 17:00–05:00): timeline = [dutyStart .. dutyEnd+1440].
+      //   - Times >= dutyStart    → same-day evening segment (as-is)
+      //   - Times <= dutyEndClock → next-day morning segment (+1440)
+      //   - Otherwise (e.g. 08:00) → outside shift window; clamp to nearest edge.
+      const mapToTimeline = (clockMin: number): number => {
+        if (!isOvernight) return clockMin;
+        if (clockMin >= dutyStart) return clockMin;
+        if (clockMin <= dutyEndClock) return clockMin + 24 * 60;
+        // Outside the night-shift window — pick whichever edge is closer
+        const distToStart = dutyStart - clockMin;
+        const distToEnd = (clockMin + 24 * 60) - dutyEnd;
+        return distToStart <= distToEnd ? dutyStart : dutyEnd;
+      };
 
-      const effectiveCheckIn = staleAutoFilledFallback ? dutyTime.start : r.check_in_time;
-      const effectiveCheckOut = staleAutoFilledFallback ? dutyTime.end : r.check_out_time;
-      if (staleAutoFilledFallback) {
-        entry.checkIn = dutyTime.start;
-        entry.checkOut = dutyTime.end;
-      }
-
-      let checkIn = effectiveCheckIn ? timeToMinutes(effectiveCheckIn) : dutyStart;
-      let checkOut = effectiveCheckOut ? timeToMinutes(effectiveCheckOut) : dutyEnd;
-
-      if (isOvernight) {
-        // Only post-midnight times (00:00 → duty end) belong to the next day.
-        // Daytime fallback values from an old category shift must not become huge late/overtime.
-        if (effectiveCheckIn && checkIn <= dutyEndClock) checkIn += 24 * 60;
-        if (effectiveCheckOut && checkOut <= dutyEndClock) checkOut += 24 * 60;
-        else if (effectiveCheckOut && checkOut <= checkIn) checkOut += 24 * 60;
-      }
+      const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : dutyStart;
+      const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : dutyEnd;
 
       const lateMinutes = Math.max(0, checkIn - dutyStart);
       const earlyExitMinutes = Math.max(0, dutyEnd - checkOut);
