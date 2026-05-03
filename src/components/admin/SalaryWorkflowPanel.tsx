@@ -223,6 +223,7 @@ export default function SalaryWorkflowPanel({
       if (!target) throw new Error('Approver not found');
       await updateAllRecords({
         approver_staff_id: target.staff_id || null,
+        approver_settings_id: target.id,
         workflow_stage: 'pending_approval',
         workflow_notes: notes || null,
       });
