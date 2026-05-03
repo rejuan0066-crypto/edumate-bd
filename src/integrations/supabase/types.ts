@@ -7083,6 +7083,45 @@ export type Database = {
         }
         Relationships: []
       }
+      role_translations: {
+        Row: {
+          created_at: string
+          description_bn: string | null
+          description_en: string | null
+          id: string
+          is_system: boolean
+          name_bn: string
+          name_en: string
+          role_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_bn?: string | null
+          description_en?: string | null
+          id?: string
+          is_system?: boolean
+          name_bn: string
+          name_en: string
+          role_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_bn?: string | null
+          description_en?: string | null
+          id?: string
+          is_system?: boolean
+          name_bn?: string
+          name_en?: string
+          role_key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       routine_periods: {
         Row: {
           break_label: string | null
