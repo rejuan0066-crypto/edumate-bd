@@ -15,7 +15,22 @@ interface ExportData {
   examName?: string;
   sessionName?: string;
   passMark?: number;
+  signatories?: ResultSignatory[];
 }
+
+export interface ResultSignatory {
+  title_bn?: string;
+  title_en?: string;
+  name_bn?: string;
+  name_en?: string;
+}
+
+export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
+  { title_bn: 'শ্রেণি শিক্ষক', title_en: 'Class Teacher', name_bn: '', name_en: '' },
+  { title_bn: 'পরীক্ষা নিয়ন্ত্রক', title_en: 'Exam Controller', name_bn: '', name_en: '' },
+  { title_bn: 'শিক্ষা সচিব', title_en: 'Education Secretary', name_bn: '', name_en: '' },
+  { title_bn: 'মুহতামিম / অধ্যক্ষ', title_en: 'Principal', name_bn: '', name_en: '' },
+];
 
 export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
   const headers = [
