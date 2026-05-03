@@ -9,14 +9,18 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMont
 import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-const STATUS_META: Record<string, { bnLabel: string; enLabel: string; icon: any; color: string; bg: string; ring: string }> = {
-  present:  { bnLabel: 'উপস্থিত',        enLabel: 'Present',  icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-100 dark:bg-emerald-900/30', ring: 'ring-emerald-400/40' },
-  absent:   { bnLabel: 'অনুপস্থিত',      enLabel: 'Absent',   icon: XCircle,      color: 'text-rose-600',    bg: 'bg-rose-100 dark:bg-rose-900/30',       ring: 'ring-rose-400/40' },
-  late:     { bnLabel: 'বিলম্ব',          enLabel: 'Late',     icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-100 dark:bg-amber-900/30',     ring: 'ring-amber-400/40' },
-  half_day: { bnLabel: 'অর্ধদিন',         enLabel: 'Half Day', icon: AlertCircle,  color: 'text-orange-600',  bg: 'bg-orange-100 dark:bg-orange-900/30',   ring: 'ring-orange-400/40' },
-  leave:    { bnLabel: 'ছুটি',            enLabel: 'Leave',    icon: CalendarOff,  color: 'text-blue-600',    bg: 'bg-blue-100 dark:bg-blue-900/30',       ring: 'ring-blue-400/40' },
-  excused:  { bnLabel: 'অনুমতিপ্রাপ্ত',  enLabel: 'Excused',  icon: ShieldCheck,  color: 'text-indigo-600',  bg: 'bg-indigo-100 dark:bg-indigo-900/30',   ring: 'ring-indigo-400/40' },
-  medical:  { bnLabel: 'চিকিৎসাজনিত',    enLabel: 'Medical',  icon: Stethoscope,  color: 'text-purple-600',  bg: 'bg-purple-100 dark:bg-purple-900/30',   ring: 'ring-purple-400/40' },
+const STATUS_META: Record<string, {
+  bnLabel: string; enLabel: string; icon: any;
+  color: string; bg: string; ring: string;
+  gradient: string; dot: string; solid: string;
+}> = {
+  present:  { bnLabel: 'উপস্থিত',        enLabel: 'Present',  icon: CheckCircle2, color: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-gradient-to-br from-emerald-50 via-emerald-50/80 to-emerald-100/60 dark:from-emerald-950/40 dark:via-emerald-900/20 dark:to-emerald-900/30', ring: 'ring-emerald-400/40', gradient: 'from-emerald-500 to-teal-500',  dot: 'bg-emerald-500', solid: 'bg-emerald-500' },
+  absent:   { bnLabel: 'অনুপস্থিত',      enLabel: 'Absent',   icon: XCircle,      color: 'text-rose-700 dark:text-rose-300',       bg: 'bg-gradient-to-br from-rose-50 via-rose-50/80 to-rose-100/60 dark:from-rose-950/40 dark:via-rose-900/20 dark:to-rose-900/30',           ring: 'ring-rose-400/40',    gradient: 'from-rose-500 to-pink-500',     dot: 'bg-rose-500',    solid: 'bg-rose-500' },
+  late:     { bnLabel: 'বিলম্ব',          enLabel: 'Late',     icon: Clock,        color: 'text-amber-700 dark:text-amber-300',     bg: 'bg-gradient-to-br from-amber-50 via-amber-50/80 to-amber-100/60 dark:from-amber-950/40 dark:via-amber-900/20 dark:to-amber-900/30',       ring: 'ring-amber-400/40',   gradient: 'from-amber-500 to-yellow-500',  dot: 'bg-amber-500',   solid: 'bg-amber-500' },
+  half_day: { bnLabel: 'অর্ধদিন',         enLabel: 'Half Day', icon: AlertCircle,  color: 'text-orange-700 dark:text-orange-300',   bg: 'bg-gradient-to-br from-orange-50 via-orange-50/80 to-orange-100/60 dark:from-orange-950/40 dark:via-orange-900/20 dark:to-orange-900/30',   ring: 'ring-orange-400/40',  gradient: 'from-orange-500 to-amber-500',  dot: 'bg-orange-500',  solid: 'bg-orange-500' },
+  leave:    { bnLabel: 'ছুটি',            enLabel: 'Leave',    icon: CalendarOff,  color: 'text-blue-700 dark:text-blue-300',       bg: 'bg-gradient-to-br from-blue-50 via-blue-50/80 to-blue-100/60 dark:from-blue-950/40 dark:via-blue-900/20 dark:to-blue-900/30',           ring: 'ring-blue-400/40',    gradient: 'from-blue-500 to-cyan-500',     dot: 'bg-blue-500',    solid: 'bg-blue-500' },
+  excused:  { bnLabel: 'অনুমতিপ্রাপ্ত',  enLabel: 'Excused',  icon: ShieldCheck,  color: 'text-indigo-700 dark:text-indigo-300',   bg: 'bg-gradient-to-br from-indigo-50 via-indigo-50/80 to-indigo-100/60 dark:from-indigo-950/40 dark:via-indigo-900/20 dark:to-indigo-900/30',   ring: 'ring-indigo-400/40',  gradient: 'from-indigo-500 to-violet-500', dot: 'bg-indigo-500',  solid: 'bg-indigo-500' },
+  medical:  { bnLabel: 'চিকিৎসাজনিত',    enLabel: 'Medical',  icon: Stethoscope,  color: 'text-purple-700 dark:text-purple-300',   bg: 'bg-gradient-to-br from-purple-50 via-purple-50/80 to-purple-100/60 dark:from-purple-950/40 dark:via-purple-900/20 dark:to-purple-900/30',   ring: 'ring-purple-400/40',  gradient: 'from-purple-500 to-fuchsia-500',dot: 'bg-purple-500',  solid: 'bg-purple-500' },
 };
 
 interface Props {
