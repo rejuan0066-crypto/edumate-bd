@@ -554,21 +554,30 @@ Deno.serve(async (req) => {
   }
 
   @media print {
-    html, body { width: 100%; min-height: 100%; }
+    html, body { width: 100%; min-height: 0; height: auto; }
     body { padding: 0; background: #fff; }
     .salary-page {
       border: 1pt solid #000;
       max-width: 100%;
-      height: calc(210mm - 30mm);
-      padding: 4mm 5mm 5mm;
+      /* Don't force a fixed height — let content determine page; prevents extra blank page on mobile */
+      height: auto;
+      min-height: 0;
+      padding: 3mm 4mm 4mm;
       overflow: hidden;
       break-after: page;
       page-break-after: always;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
-    .salary-page:last-child { break-after: auto; page-break-after: auto; }
+    .salary-page:last-child {
+      break-after: auto;
+      page-break-after: auto;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
     @page {
       size: A4 landscape;
-      margin: 15mm;
+      margin: 8mm 10mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
         font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
@@ -577,7 +586,7 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
-    table { page-break-inside: avoid; break-inside: avoid; font-size: 7.2pt; height: 100%; }
+    table { page-break-inside: avoid; break-inside: avoid; font-size: 7pt; }
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group !important; }
     tbody { display: table-row-group !important; }
@@ -586,26 +595,29 @@ Deno.serve(async (req) => {
     .page-header {
       position: static;
       max-height: none; overflow: visible;
-      background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm;
+      background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 1.5mm; margin-bottom: 2mm;
     }
-    .footer-inner { padding-top: 4mm; min-height: 27mm; }
-    .letterhead { min-height: 42px; margin-bottom: 3pt; padding-bottom: 3pt; }
-    .logo-wrap { width: 42px; height: 42px; }
-    .inst-name { font-size: 13pt; }
-    .inst-address, .memo-row { font-size: 7.6pt; }
-    .inst-contact, .doc-period { font-size: 7.3pt; }
-    .doc-title { margin: 3pt 0; }
-    .doc-title h2 { font-size: 9.5pt; padding: 1.5pt 12pt; }
-    thead th { font-size: 7.1pt; padding: 2pt 2pt; line-height: 1.05; }
-    tbody td { font-size: 7pt; padding: 1.7pt 2pt; line-height: 1.08; }
-    .staff-row { height: 7.4mm; }
-    .c-name .nm { font-size: 7.1pt; line-height: 1.05; }
-    .c-name .sid { font-size: 6.2pt; line-height: 1.05; }
-    .note { font-size: 6.8pt; padding: 2pt 4pt; margin-top: 3pt; }
-    .signatures { margin: 6mm 3mm 2mm; gap: 6mm; }
-    .sig, .sig .role { font-size: 7.4pt; }
-    .sig .sig-name { font-size: 8pt; min-height: 9pt; }
-    .sig .role-meta, .footer, .footer .ref { font-size: 6.6pt; }
+    .header-cell { padding: 0 0 2.5mm !important; }
+    .footer-inner { padding-top: 3mm; min-height: 22mm; }
+    .letterhead { min-height: 38px; margin-bottom: 2pt; padding-bottom: 2pt; }
+    .logo-wrap { width: 38px; height: 38px; }
+    .inst-name { font-size: 12.5pt; }
+    .inst-address, .memo-row { font-size: 7.4pt; }
+    .inst-contact, .doc-period { font-size: 7pt; }
+    .doc-title { margin: 2pt 0; }
+    .doc-title h2 { font-size: 9pt; padding: 1pt 10pt; }
+    thead th { font-size: 6.9pt; padding: 1.5pt 2pt; line-height: 1.0; }
+    tbody td { font-size: 6.8pt; padding: 1.2pt 2pt; line-height: 1.05; }
+    .staff-row { height: 5.8mm; }
+    .c-name .nm { font-size: 6.9pt; line-height: 1.0; }
+    .c-name .sid { font-size: 6pt; line-height: 1.0; }
+    .totals td { padding: 2.5pt 2pt; }
+    .note-cell { font-size: 6.6pt; padding: 1.8pt 3pt; }
+    .signatures { margin: 4mm 3mm 1mm; gap: 5mm; }
+    .sig, .sig .role { font-size: 7.2pt; }
+    .sig .sig-name { font-size: 7.8pt; min-height: 8pt; }
+    .sig .role-meta, .footer, .footer .ref { font-size: 6.4pt; }
+    .footer { margin-top: 3pt; padding-top: 2pt; }
   }
 
 </style>
