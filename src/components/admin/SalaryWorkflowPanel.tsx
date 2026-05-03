@@ -170,6 +170,7 @@ export default function SalaryWorkflowPanel({
         prepared_by_role: bn ? 'প্রস্তুতকারী' : 'Prepared by',
         prepared_at: new Date().toISOString(),
         verifier_staff_id: target.staff_id || null,
+        verifier_settings_id: target.id,
         workflow_stage: 'pending_verification',
         workflow_notes: notes || null,
       });
