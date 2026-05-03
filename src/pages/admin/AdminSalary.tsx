@@ -742,8 +742,13 @@ const AdminSalary = () => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
+    // additive মডেলে per-minute overtime ইতিমধ্যে totalDailyEarnings-এ যোগ আছে — double-count এড়াতে বাদ দিই
+    const overtimeForNet = calcBasis === 'additive'
+      ? overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate)
+      : overtime;
+
     const netSalary = Math.max(0,
-      earnedFromAttendance + overtime + bonus + otherAllowance
+      earnedFromAttendance + overtimeForNet + bonus + otherAllowance
       - advanceDeduction - savingsDeduction
     );
 
