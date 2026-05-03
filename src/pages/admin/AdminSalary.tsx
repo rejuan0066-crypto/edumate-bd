@@ -22,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SegmentedTabs } from '@/components/ui/segmented-tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import XLSX from 'xlsx-js-style';
 import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
