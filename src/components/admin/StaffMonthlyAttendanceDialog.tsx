@@ -235,7 +235,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           </div>
 
           {/* Calendar grid - premium */}
-          <div className="rounded-3xl border border-border/40 bg-gradient-to-b from-background/90 to-muted/10 backdrop-blur-sm p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/40 bg-gradient-to-b from-background/90 to-muted/10 backdrop-blur-sm p-2.5 shadow-sm">
             <div className="grid grid-cols-7 gap-1.5 mb-2">
               {(bn
                 ? ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি']
