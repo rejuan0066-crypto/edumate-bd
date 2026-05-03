@@ -2614,6 +2614,25 @@ const AdminSalary = () => {
                     onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_attendance', value: { enabled: v } })}
                   />
                 </div>
+
+                <div className="p-3 border rounded-lg space-y-2">
+                  <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
+                  <Select
+                    value={getSetting('salary_calc_basis')?.mode || 'subtractive'}
+                    onValueChange={v => saveSettingMutation.mutate({ key: 'salary_calc_basis', value: { mode: v } })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="subtractive">{bn ? 'কর্তনভিত্তিক (পূর্ণ মাস − অনুপস্থিতি/দেরি; ছুটির দিন বেতনসহ)' : 'Subtractive (Full month − absences/late; holidays paid)'}</SelectItem>
+                      <SelectItem value="additive">{bn ? 'যোগভিত্তিক (শুধু উপস্থিত দিনের আয়; ছুটির দিন বেতনহীন)' : 'Additive (Only present days earned; holidays unpaid)'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground">
+                    {bn
+                      ? 'কর্তনভিত্তিক: শুক্রবার/সরকারি ছুটি স্বয়ংক্রিয়ভাবে বেতনসহ। যোগভিত্তিক: প্রতিদিন উপস্থিতি রেকর্ড থাকতে হবে নাহলে সেদিনের বেতন হবে না।'
+                      : 'Subtractive: weekend/holidays auto-paid. Additive: each day must have an attendance record to be paid.'}
+                  </p>
+                </div>
               </TabsContent>
 
               {/* Expense Link Settings */}
