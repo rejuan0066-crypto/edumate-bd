@@ -612,6 +612,29 @@ const AdminResults = () => {
                   </p>
                 )}
               </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'প্রিন্ট ফুটার (সংরক্ষিত হবে)' : 'Print Footer (saved)'}</p>
+                <div className="space-y-2 rounded-lg border p-3 bg-muted/30">
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm">{bn ? 'প্রতিটি পৃষ্ঠায় পৃষ্ঠা নম্বর দেখান' : 'Show page numbers (Page X of Y)'}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                      checked={footerOptions.show_page_numbers}
+                      onChange={(e) => saveFooterOptions({ ...footerOptions, show_page_numbers: e.target.checked })}
+                    />
+                  </label>
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <span className="text-sm">{bn ? 'ফুটারে প্রতিষ্ঠানের নাম দেখান' : 'Show institution name in footer'}</span>
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                      checked={footerOptions.show_footer_institution}
+                      onChange={(e) => saveFooterOptions({ ...footerOptions, show_footer_institution: e.target.checked })}
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setExportOptions(s => ({ ...s, open: false }))}>
