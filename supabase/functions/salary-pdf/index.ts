@@ -204,10 +204,15 @@ Deno.serve(async (req) => {
         <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
         <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
         <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
+        <th class="right">${bn ? "মোট কর্তন (৳)" : "Total Ded."}</th>
         <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
       </tr>`;
 
-    const renderStaffRows = (rows: any[], startIndex: number) => rows.map((s: any, i: number) => `
+    const renderStaffRows = (rows: any[], startIndex: number) => rows.map((s: any, i: number) => {
+      const ded = Number(s.deductions || 0);
+      const dep = Number(s.savings ?? s.advance ?? 0);
+      const totalDed = ded + dep;
+      return `
       <tr class="staff-row">
         <td class="c-num">${bn ? toBnDigits(startIndex + i + 1) : startIndex + i + 1}</td>
         <td class="c-name"><div class="nm">${escapeHtml(s.name)}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${escapeHtml(s.staff_id)}</div>` : ""}</td>
@@ -217,31 +222,38 @@ Deno.serve(async (req) => {
         <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
         <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
         <td class="c-num">${bn ? toBnDigits(s.leave || 0) : (s.leave || 0)}</td>
-        <td class="c-amt">${Number(s.deductions) > 0 ? fmtNum(Number(s.deductions)) : "—"}</td>
+        <td class="c-amt">${ded > 0 ? fmtNum(ded) : "—"}</td>
         <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
-        <td class="c-amt">${Number(s.savings ?? s.advance ?? 0) > 0 ? fmtNum(Number(s.savings ?? s.advance ?? 0)) : "—"}</td>
+        <td class="c-amt">${dep > 0 ? fmtNum(dep) : "—"}</td>
+        <td class="c-amt" style="font-weight:700;color:#b91c1c">${totalDed > 0 ? fmtNum(totalDed) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
-      </tr>
-    `).join("");
+      </tr>`;
+    }).join("");
 
-    const renderTotalsAndNote = () => `
+    const renderTotalsAndNote = () => {
+      const totDed = Number(totals?.deductions || 0);
+      const totDep = Number(totals?.savings || 0);
+      const totAll = totDed + totDep;
+      return `
       <tr class="totals">
         <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
         <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
         <td></td><td></td><td></td><td></td>
-        <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
+        <td class="c-amt">${fmtNum(totDed)}</td>
         <td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>
-        <td class="c-amt">${Number(totals?.savings || 0) > 0 ? fmtNum(Number(totals?.savings || 0)) : "—"}</td>
+        <td class="c-amt">${totDep > 0 ? fmtNum(totDep) : "—"}</td>
+        <td class="c-amt" style="font-weight:700;color:#b91c1c">${totAll > 0 ? fmtNum(totAll) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
       </tr>
       <tr class="note-row">
-        <td colspan="12" class="note-cell">
+        <td colspan="13" class="note-cell">
           <strong>${bn ? "নোটঃ" : "Note:"}</strong>
           ${bn
             ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধ্যক্ষ কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
             : "This statement is auto-generated. Verification by the Accountant and approval by the Principal is required before disbursement."}
         </td>
       </tr>`;
+    };
 
     const renderFooter = () => `
       <tfoot>
