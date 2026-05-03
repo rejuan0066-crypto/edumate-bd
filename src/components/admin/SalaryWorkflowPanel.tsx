@@ -280,6 +280,7 @@ export default function SalaryWorkflowPanel({
         paid_by: user?.id,
         paid_by_name: target.display_name,
         paid_by_role: target.designation || (bn ? 'কোষাধ্যক্ষ' : 'Treasurer'),
+        treasurer_settings_id: target.id,
         workflow_stage: 'paid',
         workflow_notes: notes || null,
       }).in('id', ids);
