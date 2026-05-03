@@ -50,7 +50,14 @@ const UpdatePrompt = () => {
       const newBuildId = extractBuildId(html);
       if (!newBuildId) return false;
       const currentBuildId = localStorage.getItem(BUILD_ID_KEY);
-      if (currentBuildId && newBuildId !== currentBuildId) {
+      // First-ever load: seed the build id so the next deploy is detectable.
+      if (!currentBuildId) {
+        localStorage.setItem(BUILD_ID_KEY, newBuildId);
+        return false;
+      }
+      if (newBuildId !== currentBuildId) {
+        // Stash the new id so handleUpdate can persist it after reload.
+        try { sessionStorage.setItem('app_build_id_pending', newBuildId); } catch {}
         setUpdateAvailable(true);
         setDismissed(false);
         return true;
