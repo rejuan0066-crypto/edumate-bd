@@ -125,8 +125,32 @@ export default function AdminAdministrativeDebug() {
 
     setResults(out);
     setRanAt(new Date());
+    setRunCount((n) => n + 1);
     setRunning(false);
   };
+
+  // Keep ref in sync so the auto-refresh interval always calls the latest runAll
+  runAllRef.current = runAll;
+
+  // Auto-refresh: re-run probes every intervalSec seconds
+  useEffect(() => {
+    if (!autoRefresh) {
+      setNextInSec(0);
+      return;
+    }
+    setNextInSec(intervalSec);
+    const tick = setInterval(() => {
+      setNextInSec((s) => {
+        if (s <= 1) {
+          // Fire next run (skip if a run is still in progress)
+          if (!running) runAllRef.current?.();
+          return intervalSec;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [autoRefresh, intervalSec, running]);
 
   const adminOnly = role === 'admin' || role === 'super_admin';
 
