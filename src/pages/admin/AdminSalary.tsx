@@ -589,11 +589,13 @@ const AdminSalary = () => {
       a.attendance_date.localeCompare(b.attendance_date)
     );
 
+    // Treat absent records on paid holidays as paid leave (no deduction)
     const present = records.filter((r: any) => r.status === 'present').length;
-    const absent = records.filter((r: any) => r.status === 'absent').length;
+    const absent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
     const leave = records.filter((r: any) => r.status === 'leave').length;
+    const holidayCovered = records.filter((r: any) => r.status === 'absent' && paidHolidaySet.has(r.attendance_date)).length;
 
     const dutyTime = getDutyTime(staffMember);
     const dutyStart = timeToMinutes(dutyTime.start);
