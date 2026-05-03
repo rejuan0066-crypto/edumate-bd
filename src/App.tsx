@@ -142,6 +142,7 @@ import AdminParentLinkAudit from "./pages/admin/AdminParentLinkAudit";
 import AdminSignatoryAudit from "./pages/admin/AdminSignatoryAudit";
 import AdminFooterAudit from "./pages/admin/AdminFooterAudit";
 import AdminAdministrativeDebug from "./pages/admin/AdminAdministrativeDebug";
+import AdminNamePermissionAudit from "./pages/admin/AdminNamePermissionAudit";
 import AdminDonorsRoleAudit from "./pages/admin/AdminDonorsRoleAudit";
 import AdminAuditDeviceAllowlist from "./pages/admin/AdminAuditDeviceAllowlist";
 import AdminBlockedDevices from "./pages/admin/AdminBlockedDevices";
