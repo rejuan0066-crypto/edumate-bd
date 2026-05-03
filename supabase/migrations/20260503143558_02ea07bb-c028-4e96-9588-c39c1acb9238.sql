@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Authenticated can insert name permission audit" ON public.name_permission_audit;
