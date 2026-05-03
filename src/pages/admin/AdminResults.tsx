@@ -315,6 +315,54 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Per-class / per-exam footer overrides (null = inherit global)
+  type FooterOverrideRow = { scope: 'class' | 'exam'; scope_id: string; show_page_numbers: boolean | null; show_footer_institution: boolean | null };
+  const { data: footerOverrides = [], refetch: refetchOverrides } = useQuery<FooterOverrideRow[]>({
+    queryKey: ['result-print-footer-overrides'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('result_print_footer_overrides' as any)
+        .select('scope, scope_id, show_page_numbers, show_footer_institution');
+      return ((data as any) || []) as FooterOverrideRow[];
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const resolveFooterFor = (classId: string | null, examId: string | null) => {
+    const cls = classId ? footerOverrides.find(o => o.scope === 'class' && o.scope_id === classId) : undefined;
+    const exm = examId ? footerOverrides.find(o => o.scope === 'exam' && o.scope_id === examId) : undefined;
+    const pages = cls?.show_page_numbers ?? exm?.show_page_numbers ?? footerOptions.show_page_numbers;
+    const inst = cls?.show_footer_institution ?? exm?.show_footer_institution ?? footerOptions.show_footer_institution;
+    const srcPages: 'class' | 'exam' | 'global' = cls?.show_page_numbers != null ? 'class' : exm?.show_page_numbers != null ? 'exam' : 'global';
+    const srcInst: 'class' | 'exam' | 'global' = cls?.show_footer_institution != null ? 'class' : exm?.show_footer_institution != null ? 'exam' : 'global';
+    return { show_page_numbers: !!pages, show_footer_institution: !!inst, source: { pages: srcPages, inst: srcInst } };
+  };
+
+  const upsertFooterOverride = async (
+    scope: 'class' | 'exam',
+    scopeId: string,
+    patch: { show_page_numbers?: boolean | null; show_footer_institution?: boolean | null },
+  ) => {
+    const existing = footerOverrides.find(o => o.scope === scope && o.scope_id === scopeId);
+    const merged = {
+      scope,
+      scope_id: scopeId,
+      show_page_numbers: patch.show_page_numbers !== undefined ? patch.show_page_numbers : (existing?.show_page_numbers ?? null),
+      show_footer_institution: patch.show_footer_institution !== undefined ? patch.show_footer_institution : (existing?.show_footer_institution ?? null),
+    };
+    if (merged.show_page_numbers === null && merged.show_footer_institution === null) {
+      const { error } = await supabase.from('result_print_footer_overrides' as any)
+        .delete().eq('scope', scope).eq('scope_id', scopeId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from('result_print_footer_overrides' as any)
+        .upsert(merged as any, { onConflict: 'scope,scope_id' });
+      if (error) { toast.error(error.message); return; }
+    }
+    toast.success(bn ? 'ওভাররাইড সংরক্ষিত' : 'Override saved');
+    refetchOverrides();
+  };
+
   const saveFooterOptions = async (next: ResultPrintFooterOptions) => {
     const { error } = await supabase
       .from('website_settings')
