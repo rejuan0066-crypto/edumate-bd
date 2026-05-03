@@ -362,7 +362,7 @@ export default function AdminAdministrativeDebug() {
 
           const findings: Finding[] = [];
           const r = (k: string) => results.find(x => x.key === k);
-          const tableActive = r('admin_officers_active');
+          const tableActive = r('admin_officers_filtered');
           const tableAll = r('admin_officers_all');
           const dirAdmin = r('directory_admin');
           const dirAll = r('directory_all');
