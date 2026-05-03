@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff, Settings2, Check, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, ShieldCheck, Building2, Phone, Mail, Power, PowerOff, Settings2, Check, X, UserPlus, Eye, EyeOff, Loader2 } from 'lucide-react';
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 import PhotoUpload from '@/components/PhotoUpload';
@@ -45,6 +46,7 @@ type Officer = {
   responsibilities: string | null;
   office_room: string | null;
   officer_id: string | null;
+  user_id: string | null;
   created_at: string;
 };
 
@@ -93,6 +95,52 @@ const AdminAdministrative = () => {
   const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string; code?: string } | null>(null);
   const [newRow, setNewRow] = useState<{ name_bn: string; name: string; code: string }>({ name_bn: '', name: '', code: '' });
 
+  // Account creation
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
+  const [accEmail, setAccEmail] = useState('');
+  const [accPassword, setAccPassword] = useState('');
+  const [accRole, setAccRole] = useState('administrative');
+  const [accCreating, setAccCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const openAccountDialog = (o: Officer) => {
+    setSelectedOfficer(o);
+    setAccEmail(o.email || '');
+    setAccPassword('');
+    setAccRole('administrative');
+    setShowPassword(false);
+    setAccountDialogOpen(true);
+  };
+
+  const handleCreateAccount = async () => {
+    if (!accEmail.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
+    if (!accPassword || accPassword.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    setAccCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email: accEmail.trim(),
+          password: accPassword,
+          role: accRole === 'none' ? undefined : accRole,
+          full_name: selectedOfficer?.name_bn || selectedOfficer?.name_en || '',
+          officer_id: selectedOfficer?.id,
+        },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || error?.message || (bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account'));
+        setAccCreating(false);
+        return;
+      }
+      toast.success(bn ? '✅ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' : '✅ Account created!');
+      setAccountDialogOpen(false);
+      qc.invalidateQueries({ queryKey: ['administrative-officers'] });
+    } catch {
+      toast.error(bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account');
+    }
+    setAccCreating(false);
+  };
   // Inline error state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>('');
@@ -582,6 +630,18 @@ const AdminAdministrative = () => {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${o.status === 'active' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' : 'bg-gray-500/10 text-gray-600'}`}>
                         {o.status === 'active' ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}
                       </span>
+                      {o.user_id ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 inline-flex items-center gap-1">
+                          <Check className="w-3 h-3" /> {bn ? 'আইডি আছে' : 'Account linked'}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => openAccountDialog(o)}
+                          className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 inline-flex items-center gap-1"
+                        >
+                          <UserPlus className="w-3 h-3" /> {bn ? 'অ্যাকাউন্ট তৈরি' : 'Create Account'}
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                       {o.designation && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" />{o.designation}</span>}
@@ -1161,6 +1221,49 @@ const AdminAdministrative = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setManageOpen(false)}>{bn ? 'বন্ধ করুন' : 'Close'}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Account Creation Dialog */}
+      <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-[32px]">
+          <DialogHeader>
+            <DialogTitle>{bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {bn ? `কর্মকর্তা: ${selectedOfficer?.name_bn || ''}` : `Officer: ${selectedOfficer?.name_en || selectedOfficer?.name_bn || ''}`}
+            </p>
+            <div className="space-y-2">
+              <Label>{bn ? 'ইমেইল' : 'Email'}</Label>
+              <Input type="email" value={accEmail} onChange={e => setAccEmail(e.target.value)} placeholder="email@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
+              <div className="relative">
+                <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{bn ? 'রোল' : 'Role'}</Label>
+              <Select value={accRole} onValueChange={setAccRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{bn ? 'রোল ছাড়া' : 'No Role'}</SelectItem>
+                  <SelectItem value="administrative">{bn ? 'প্রশাসনিক' : 'Administrative'}</SelectItem>
+                  <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                  <SelectItem value="admin">{bn ? 'অ্যাডমিন' : 'Admin'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleCreateAccount} disabled={accCreating} className="w-full">
+              {accCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
+              {bn ? 'অ্যাকাউন্ট তৈরি করুন' : 'Create Account'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </AdminLayout>

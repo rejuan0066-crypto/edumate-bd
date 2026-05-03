@@ -536,6 +536,21 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Link to existing administrative_officers record if officer_id explicitly provided.
+      if (body.officer_id) {
+        const { error: linkErr } = await supabaseAdmin
+          .from("administrative_officers")
+          .update({ user_id: newUserId })
+          .eq("id", body.officer_id);
+        if (linkErr) {
+          const rbStatus = await rollback('OFFICER_LINK_FAILED', { db_error: linkErr.message, officer_id: body.officer_id });
+          return new Response(JSON.stringify({
+            error: 'officer_link_failed', message: linkErr.message,
+            reason_code: 'OFFICER_LINK_FAILED', rollback_status: rbStatus,
+          }), { status: 500, headers: jsonHeaders });
+        }
+      }
+
       // Best-effort: send welcome email via SMTP (Mailtrap, etc.)
       let welcome_email_status: 'sent' | 'failed' | 'skipped' = 'skipped';
       try {
