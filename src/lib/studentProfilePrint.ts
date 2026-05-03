@@ -1,6 +1,7 @@
 // Printable student profile - opens a styled A4 print window with
 // institution header, photo, and grouped info sections.
 import type { InstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 
 const esc = (v: any): string => {
   if (v === null || v === undefined || v === '') return '—';
