@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, C
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const STATUS_META: Record<string, {
   bnLabel: string; enLabel: string; icon: any;
@@ -33,6 +34,7 @@ interface Props {
 export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift }: Props) {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const qc = useQueryClient();
   const [cursor, setCursor] = useState<Date>(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -123,6 +125,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
+      qc.invalidateQueries({ queryKey: ['attendance'] });
       setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
@@ -133,40 +136,37 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto rounded-[38px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
+      <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-[28px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
         {/* Hero header with gradient */}
-        <div className="relative overflow-hidden rounded-t-[38px] border-b border-border/30">
+        <div className="relative overflow-hidden rounded-t-[28px] border-b border-border/30">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15" />
-          <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full bg-emerald-400/20 blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl" />
-          <DialogHeader className="relative p-6 pb-5">
-            <DialogTitle className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl overflow-hidden ring-2 ring-white/60 dark:ring-white/20 shadow-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0">
+          <DialogHeader className="relative px-4 py-3">
+            <DialogTitle className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl overflow-hidden ring-2 ring-white/60 dark:ring-white/20 shadow bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0">
                 {staff?.photo_url
                   ? <img src={staff.photo_url} alt="" className="h-full w-full object-cover" />
-                  : <CalendarIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />}
+                  : <CalendarIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-lg font-bold tracking-tight truncate">
+                <div className="text-sm font-bold tracking-tight truncate">
                   {bn ? (staff?.name_bn || staff?.name_en) : (staff?.name_en || staff?.name_bn)}
                 </div>
-                <div className="text-xs text-muted-foreground truncate flex items-center gap-2 mt-0.5">
+                <div className="text-[10px] text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
                   {staff?.designation && <span>{staff.designation}</span>}
                   {shift && <><span className="opacity-40">•</span><span className="capitalize">{shift.replace('_', ' ')}</span></>}
                 </div>
               </div>
-              {/* Attendance rate ring */}
-              <div className="hidden sm:flex flex-col items-center px-3 py-2 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur border border-white/50 dark:border-white/10 shadow-sm">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'উপস্থিতি হার' : 'Attendance'}</div>
-                <div className={`text-2xl font-extrabold bg-gradient-to-br ${attendanceRate >= 90 ? 'from-emerald-600 to-teal-600' : attendanceRate >= 75 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-pink-500'} bg-clip-text text-transparent leading-tight`}>
-                  {attendanceRate}<span className="text-sm">%</span>
+              <div className="hidden sm:flex flex-col items-center px-2.5 py-1 rounded-xl bg-white/60 dark:bg-white/5 backdrop-blur border border-white/50 dark:border-white/10 shadow-sm">
+                <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'উপস্থিতি' : 'Attend'}</div>
+                <div className={`text-lg font-extrabold bg-gradient-to-br ${attendanceRate >= 90 ? 'from-emerald-600 to-teal-600' : attendanceRate >= 75 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-pink-500'} bg-clip-text text-transparent leading-tight`}>
+                  {attendanceRate}<span className="text-[11px]">%</span>
                 </div>
               </div>
             </DialogTitle>
           </DialogHeader>
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="px-4 py-3 space-y-3">
           {/* Month nav with chips */}
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur px-2 py-2 shadow-sm">
             <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => subMonths(c, 1))}>
@@ -189,8 +189,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             </Button>
           </div>
 
-          {/* Stat tiles - premium */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {/* Stat tiles - compact */}
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
             {Object.keys(STATUS_META).map(k => {
               const m = STATUS_META[k];
               const Icon = m.icon;
@@ -199,19 +199,16 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
               return (
                 <div
                   key={k}
-                  className={`group relative overflow-hidden rounded-2xl ${m.bg} p-3 border border-border/30 transition-all hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/5 cursor-default`}
+                  className={`group relative overflow-hidden rounded-xl ${m.bg} p-2 border border-border/30 transition-all hover:-translate-y-[2px] hover:shadow-md cursor-default`}
                 >
-                  <div className="flex items-start justify-between mb-1.5">
-                    <div className={`h-8 w-8 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm`}>
-                      <Icon className="h-4 w-4 text-white" />
+                  <div className="flex items-center justify-between mb-0.5">
+                    <div className={`h-6 w-6 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm`}>
+                      <Icon className="h-3 w-3 text-white" />
                     </div>
-                    <span className="text-[10px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
+                    <span className="text-[9px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
                   </div>
-                  <div className="text-[11px] text-muted-foreground font-medium truncate">{bn ? m.bnLabel : m.enLabel}</div>
-                  <div className={`text-2xl font-extrabold ${m.color} tabular-nums leading-tight`}>{value}</div>
-                  <div className="mt-1.5 h-1 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                    <div className={`h-full ${m.solid} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
-                  </div>
+                  <div className="text-[10px] text-muted-foreground font-medium truncate">{bn ? m.bnLabel : m.enLabel}</div>
+                  <div className={`text-base font-extrabold ${m.color} tabular-nums leading-tight`}>{value}</div>
                 </div>
               );
             })}
@@ -238,7 +235,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           </div>
 
           {/* Calendar grid - premium */}
-          <div className="rounded-3xl border border-border/40 bg-gradient-to-b from-background/90 to-muted/10 backdrop-blur-sm p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/40 bg-gradient-to-b from-background/90 to-muted/10 backdrop-blur-sm p-2.5 shadow-sm">
             <div className="grid grid-cols-7 gap-1.5 mb-2">
               {(bn
                 ? ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি']
