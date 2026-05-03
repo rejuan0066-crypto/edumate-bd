@@ -128,6 +128,65 @@ const AdminDesignations = () => {
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
+  // ─── Bulk CSV import ───────────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleCsvFile = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error(bn ? 'শুধু .csv ফাইল গ্রহণযোগ্য' : 'Only .csv files allowed');
+      return;
+    }
+    const text = await file.text();
+    const summary = validateDesignationCsv(text, {
+      existingNamesBn: (designations as any[]).map((d) => d.name_bn),
+      allowedCategoryKeys: (staffCategories as any[]).map((c) => c.key),
+    });
+    setImportSummary(summary);
+    setImportOpen(true);
+  };
+
+  const downloadCsvTemplate = () => {
+    const csv = 'name,name_bn,staff_category\nPrincipal,প্রিন্সিপাল,management\nTreasurer,কোষাধ্যক্ষ,management\n';
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'designations_template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const commitImport = async () => {
+    if (!importSummary) return;
+    const okRows = importSummary.rows.filter((r) => r.status === 'ok' && r.name && r.nameBn);
+    if (!okRows.length) {
+      toast.error(bn ? 'কোনো বৈধ রো নেই' : 'No valid rows to import');
+      return;
+    }
+    setImporting(true);
+    try {
+      const records = okRows.map((r) => ({
+        name: r.name!.trim(),
+        name_bn: r.nameBn!.trim(),
+        staff_category: r.staffCategory || (staffCategories[0] as any)?.key || null,
+        is_active: true,
+        sort_order: 0,
+      }));
+      const { error } = await supabase.from('designations').insert(records);
+      if (error) throw error;
+      toast.success(bn ? `${okRows.length}টি পদবি যোগ হয়েছে` : `${okRows.length} designations imported`);
+      queryClient.invalidateQueries({ queryKey: ['designations'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-all'] });
+      setImportOpen(false);
+      setImportSummary(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // ─── Category helpers ───
   const [catIdPrefix, setCatIdPrefix] = useState('');
   const [catIdStartRange, setCatIdStartRange] = useState(1001);
