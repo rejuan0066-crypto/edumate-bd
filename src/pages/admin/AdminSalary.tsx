@@ -1651,7 +1651,7 @@ const AdminSalary = () => {
         const apr = pickSig('approver');
         return {
           prepared_by: sigPreparedBy.trim() || prep?.display_name || currentUserName || undefined,
-          prepared_by_role: sigPreparedRole.trim() || prep?.designation || (bn ? 'প্রস্তুতকারী' : 'Prepared by') || undefined,
+          prepared_by_role: sigPreparedRole.trim() || prep?.designation || undefined,
           verified_by: sigVerifiedBy.trim() || ver?.display_name || undefined,
           verified_by_role: sigVerifiedRole.trim() || ver?.designation || undefined,
           approved_by: sigApprovedBy.trim() || apr?.display_name || undefined,
