@@ -284,12 +284,13 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .meta-item{display:flex;gap:4px;font-size:11px;}
   .meta-k{color:#475569;font-weight:500;}
   .meta-v{color:#064e3b;font-weight:700;}
-  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;table-layout:fixed;}
+  .result-table th,.result-table td{overflow:hidden;}
   thead{display:table-header-group !important;}
   tfoot{display:table-footer-group;}
   thead tr{page-break-inside:avoid;break-inside:avoid;}
   thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
-  .sub-th{padding:4px 3px;vertical-align:middle;height:38px;max-width:60px;}
+  .sub-th{padding:4px 3px;vertical-align:middle;height:38px;}
   .sub-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-overflow:ellipsis;line-height:1.15;word-break:break-word;overflow-wrap:anywhere;hyphens:auto;font-size:10.5px;}
   .sub-name.md{font-size:9.5px;}
   .sub-name.sm{font-size:8.5px;-webkit-line-clamp:3;line-clamp:3;line-height:1.1;}
@@ -300,7 +301,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   tbody tr:nth-child(even) td{background:#f8fafc;}
   tbody tr:hover td{background:#ecfdf5;}
   td.num{text-align:center;}
-  td.name{text-align:left;font-weight:600;color:#0f172a;}
+  td.name{text-align:left;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   td.bold{font-weight:700;}
   .fail-cell{color:#dc2626;font-weight:700;background:#fef2f2 !important;}
   .row-fail td{background:#fff7ed !important;}
@@ -359,7 +360,28 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
     ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
   </div>
-  <table>
+  <table class="result-table">
+    ${(() => {
+      const n = subjects.length;
+      // Fixed % widths so every page on every printer aligns identically (table-layout:fixed)
+      const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
+      const used = Object.values(fixedW).reduce((a, b) => a + b, 0); // 56
+      const subjectPool = Math.max(20, 100 - used); // 44
+      const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
+      const cols = [
+        `<col style="width:${fixedW.idx}%">`,
+        `<col style="width:${fixedW.roll}%">`,
+        `<col style="width:${fixedW.name}%">`,
+        ...subjects.map(() => `<col style="width:${sw}%">`),
+        `<col style="width:${fixedW.total}%">`,
+        `<col style="width:${fixedW.avg}%">`,
+        `<col style="width:${fixedW.grade}%">`,
+        `<col style="width:${fixedW.gpa}%">`,
+        `<col style="width:${fixedW.rank}%">`,
+        `<col style="width:${fixedW.status}%">`,
+      ].join('');
+      return `<colgroup>${cols}</colgroup>`;
+    })()}
     <thead><tr>
       <th>#</th>
       <th>${bn ? 'রোল' : 'Roll'}</th>
