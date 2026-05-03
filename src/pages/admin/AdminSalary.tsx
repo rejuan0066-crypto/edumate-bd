@@ -865,18 +865,31 @@ const AdminSalary = () => {
     mutationFn: async () => {
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       const skippedNames: string[] = [];
+      const errorList: { name: string; reasons: string[] }[] = [];
       const newRecords: any[] = [];
       const updateRecords: any[] = [];
 
       for (const s of staff) {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
+        const sName = s.name_bn || s.name_en || 'Unknown';
+
+        // Hard validation — skip on any error (don't generate corrupt data)
+        const v = getAttendanceValidation(s);
+        if (v.hasErrors) {
+          errorList.push({ name: sName, reasons: v.errors });
+          await logSalaryGeneration({
+            staff_id: s.id, staff_name: sName, action: 'bulk_generate', source: 'bulk',
+            success: false, reason: v.errors.join(' • '),
+          });
+          continue;
+        }
 
         if (requireAttendance) {
           const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
           if (!hasAttendance) {
-            skippedNames.push(s.name_bn || s.name_en || 'Unknown');
+            skippedNames.push(sName);
             await logSalaryGeneration({
-              staff_id: s.id, staff_name: s.name_bn || s.name_en, action: 'bulk_generate', source: 'bulk',
+              staff_id: s.id, staff_name: sName, action: 'bulk_generate', source: 'bulk',
               success: false, reason: bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records',
             });
             continue;
@@ -899,6 +912,19 @@ const AdminSalary = () => {
         } else {
           newRecords.push({ staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' });
         }
+      }
+
+      if (errorList.length > 0) {
+        toast.error(
+          bn
+            ? `${toBnDigits(errorList.length)} জনের ডেটা ভুল — বেতন তৈরি বন্ধ`
+            : `${errorList.length} staff have invalid attendance data — salary skipped`,
+          {
+            description: errorList.slice(0, 4).map(e => `• ${e.name}: ${e.reasons[0]}`).join('\n')
+              + (errorList.length > 4 ? (bn ? `\n…আরও ${toBnDigits(errorList.length - 4)} জন` : `\n…and ${errorList.length - 4} more`) : ''),
+            duration: 9000,
+          }
+        );
       }
 
       if (skippedNames.length > 0) {
