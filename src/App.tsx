@@ -80,6 +80,7 @@ import AdminResignLetters from "./pages/admin/AdminResignLetters";
 import AdminJoiningLetters from "./pages/admin/AdminJoiningLetters";
 import AdminAdmissionLetters from "./pages/admin/AdminAdmissionLetters";
 import AdminDesignations from "./pages/admin/AdminDesignations";
+import AdminTranslations from "./pages/admin/AdminTranslations";
 import AdminFormBuilder from "./pages/admin/AdminFormBuilder";
 import AdminCustomFormPage from "./pages/admin/AdminCustomFormPage";
 import AdminModuleManager from "./pages/admin/AdminModuleManager";
