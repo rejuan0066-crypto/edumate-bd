@@ -88,10 +88,12 @@ const AdminSalary = () => {
   const { timeFormat } = useTimeFormat();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const { settings: webSettings } = useWebsiteSettings();
+  const { tz: appTz } = useAppTimezone();
 
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()));
+  // Use app-timezone "now" so the default month/year don't drift before midnight in BD
+  const tzParts = getDatePartsInTz(new Date(), appTz);
+  const [selectedMonth, setSelectedMonth] = useState(String(tzParts.month + 1).padStart(2, '0'));
+  const [selectedYear, setSelectedYear] = useState(String(tzParts.year));
   const [searchQuery, setSearchQuery] = useState('');
   const [editDialog, setEditDialog] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
