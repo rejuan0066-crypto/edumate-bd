@@ -161,7 +161,7 @@ export default function SalaryWorkflowPanel({
 
   const sendToVerifierMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = verifiers.find((v) => v.staff_id === targetId);
+      const target = verifiers.find((v) => v.id === targetId);
       if (!target) throw new Error('Verifier not found');
       // First-time prepare: stamp prepared_by from current user
       await updateAllRecords({
@@ -169,7 +169,8 @@ export default function SalaryWorkflowPanel({
         prepared_by_name: currentUserName,
         prepared_by_role: bn ? 'প্রস্তুতকারী' : 'Prepared by',
         prepared_at: new Date().toISOString(),
-        verifier_staff_id: target.staff_id,
+        verifier_staff_id: target.staff_id || null,
+        verifier_setting_id: target.id,
         workflow_stage: 'pending_verification',
         workflow_notes: notes || null,
       });
