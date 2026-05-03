@@ -1676,6 +1676,7 @@ const AdminSalary = () => {
             present: rec?.present_days || 0,
             absent: rec?.absent_days || 0,
             late: rec?.late_days || 0,
+            leave: (() => { const st = getAttendanceStats(s); return st.leave || 0; })(),
             bonus: Number(rec?.bonus || 0),
             overtime: Number(rec?.overtime || 0),
             deductions: totalDed,
