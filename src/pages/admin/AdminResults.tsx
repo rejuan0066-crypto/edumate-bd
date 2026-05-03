@@ -392,11 +392,60 @@ const AdminResults = () => {
           <div className="p-2.5 rounded-xl bg-primary/10">
             <GraduationCap className="w-6 h-6 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'ফলাফল ব্যবস্থাপনা' : 'Result Management'}</h1>
             <p className="text-sm text-muted-foreground">{bn ? 'ক্লাস-ওয়াইজ বা ব্যক্তিগত ফলাফল অনুসন্ধান করুন' : 'Search class-wise or individual results'}</p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
+          </Button>
         </div>
+
+        <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'রেজাল্ট শীটের স্বাক্ষরকারী সম্পাদনা' : 'Edit Result Sheet Signatories'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {sigDraft.map((s, i) => (
+                <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="md:col-span-2 text-xs font-semibold text-muted-foreground">
+                    {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
+                    <Input value={s.title_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_bn: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'}</Label>
+                    <Input value={s.title_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_en: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
+                    <Input value={s.name_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_bn: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'}</Label>
+                    <Input value={s.name_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_en: e.target.value } : x))} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => setSigDraft(DEFAULT_RESULT_SIGNATORIES)}>
+                {bn ? 'ডিফল্টে রিসেট' : 'Reset to default'}
+              </Button>
+              <Button variant="outline" onClick={() => setSigDialogOpen(false)}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button onClick={() => saveSignatories.mutate(sigDraft)} disabled={saveSignatories.isPending}>
+                {saveSignatories.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ' : 'Save')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         <ResultSearchFilters
           searchMode={searchMode}
