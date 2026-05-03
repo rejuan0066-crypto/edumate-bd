@@ -492,8 +492,8 @@ const AdminResults = () => {
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
         orientation,
-        showPageNumbers: footerOptions.show_page_numbers,
-        showFooterInstitution: footerOptions.show_footer_institution,
+        showPageNumbers: resolveFooterFor(classId, examSessionId).show_page_numbers,
+        showFooterInstitution: resolveFooterFor(classId, examSessionId).show_footer_institution,
         margins: footerOptions.margins || DEFAULT_PRINT_MARGINS,
       };
 
