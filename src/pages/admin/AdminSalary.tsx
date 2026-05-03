@@ -1107,21 +1107,6 @@ const AdminSalary = () => {
     onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
   });
 
-  // Update duty time for a staff member
-  const updateDutyMutation = useMutation({
-    mutationFn: async ({ staffId, dutyStart, dutyEnd }: { staffId: string; dutyStart: string; dutyEnd: string }) => {
-      const { error } = await supabase.from('staff')
-        .update({ duty_start_time: dutyStart, duty_end_time: dutyEnd, updated_at: new Date().toISOString() })
-        .eq('id', staffId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['salary-staff'] });
-      setDutyDialog(null);
-      toast.success(bn ? 'ডিউটি সময় আপডেট হয়েছে' : 'Duty time updated');
-    },
-  });
-
   // Save settings
   const saveSettingMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
