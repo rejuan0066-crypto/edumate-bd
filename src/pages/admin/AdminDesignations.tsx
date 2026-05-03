@@ -371,7 +371,28 @@ const AdminDesignations = () => {
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div><Label>{bn ? 'কী (ইউনিক)' : 'Key (unique)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono" value={catKey} onChange={e => setCatKey(e.target.value)} placeholder="e.g. teacher" disabled={!!catEditItem} /></div>
-              <div><Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={catNameBn} onChange={e => setCatNameBn(e.target.value)} placeholder={bn ? 'যেমন: শিক্ষক' : 'e.g. শিক্ষক'} /></div>
+              <div>
+                <Label>{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-destructive">*</span></Label>
+                <Input
+                  className={`bg-background mt-1 ${catNameBnCheck.level === 'error' ? 'border-destructive focus-visible:ring-destructive' : catNameBnCheck.level === 'warn' ? 'border-amber-500 focus-visible:ring-amber-500' : ''}`}
+                  value={catNameBn}
+                  onChange={e => setCatNameBn(e.target.value)}
+                  placeholder={bn ? 'যেমন: শিক্ষক' : 'e.g. শিক্ষক'}
+                />
+                {catNameBn.trim() && catNameBnCheck.level !== 'ok' && (
+                  <div className={`mt-1.5 flex items-start gap-1.5 text-xs ${catNameBnCheck.level === 'error' ? 'text-destructive' : 'text-amber-600 dark:text-amber-500'}`}>
+                    <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <span>{catNameBnCheck.message}</span>
+                      {catNameBnCheck.suggestion && catNameBnCheck.suggestion !== catNameBn && (
+                        <button type="button" className="ml-2 underline font-semibold hover:opacity-80" onClick={() => setCatNameBn(catNameBnCheck.suggestion!)}>
+                          {bn ? 'প্রয়োগ করুন' : 'Apply'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div><Label>{bn ? 'নাম (ইংরেজি)' : 'Name (English)'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1" value={catName} onChange={e => setCatName(e.target.value)} placeholder="e.g. Teacher" /></div>
               <div><Label>{bn ? 'বিবরণ' : 'Description'}</Label><Input className="bg-background mt-1" value={catDescription} onChange={e => setCatDescription(e.target.value)} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} /></div>
               <div><Label>{bn ? 'রাউট পাথ' : 'Route Path'}</Label><Input className="bg-background mt-1 font-mono" value={catRoutePath} onChange={e => setCatRoutePath(e.target.value)} placeholder="/admin/teachers" /></div>
