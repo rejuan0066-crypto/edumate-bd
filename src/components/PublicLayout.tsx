@@ -119,23 +119,23 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
         }}
       >
         <div className={`${!hs?.header_bg_color ? 'bg-card' : ''}`}>
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <Link to="/" className="flex items-center gap-3 min-w-0 flex-1">
               {settings.logo_url ? (
-                <img src={settings.logo_url} alt="Logo" className={`${logoSize} ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
+                <img src={settings.logo_url} alt="Logo" className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
               ) : (
-                <div className={`${logoSize} ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
+                <div className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
                   <GraduationCap className="w-7 h-7 text-primary-foreground" />
                 </div>
               )}
-              <div>
+              <div className="min-w-0 flex-1">
                 {(hs?.show_institution_name !== false) && (
-                  <h1 className="text-lg sm:text-xl font-display font-bold leading-tight" style={{ color: hs?.header_text_color || undefined }}>
+                  <h1 className="text-lg sm:text-xl font-display font-bold leading-tight truncate" style={{ color: hs?.header_text_color || undefined, overflowWrap: 'normal', wordBreak: 'keep-all' }}>
                     {settings.institution_name}
                   </h1>
                 )}
                 {(hs?.show_institution_name_en !== false) && (
-                  <p className="text-xs text-muted-foreground">{settings.institution_name_en}</p>
+                  <p className="text-xs text-muted-foreground truncate" style={{ overflowWrap: 'normal', wordBreak: 'keep-all' }}>{settings.institution_name_en}</p>
                 )}
               </div>
             </Link>
