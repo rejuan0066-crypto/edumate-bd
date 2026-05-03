@@ -1926,7 +1926,37 @@ const AdminSalary = () => {
                                     <ChevronDown className="h-3.5 w-3.5" />
                                   </button>
                                 </div>
-                                <span className="text-xs">{bn ? toBnDigits(idx + 1) : idx + 1}</span>
+                                {editingSerialId === s.id ? (
+                                  <input
+                                    autoFocus
+                                    type="number"
+                                    min={1}
+                                    max={filtered.length}
+                                    value={serialDraft}
+                                    onChange={(e) => setSerialDraft(e.target.value)}
+                                    onBlur={() => {
+                                      const n = parseInt(serialDraft, 10);
+                                      if (!isNaN(n) && n >= 1 && n <= filtered.length && n !== idx + 1) {
+                                        reorderStaffMutation.mutate({ targetPosition: n, currentId: s.id });
+                                      }
+                                      setEditingSerialId(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                      if (e.key === 'Escape') setEditingSerialId(null);
+                                    }}
+                                    className="w-12 h-6 px-1 text-xs text-center border border-emerald-400 rounded outline-none focus:ring-2 focus:ring-emerald-200"
+                                  />
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => { setEditingSerialId(s.id); setSerialDraft(String(idx + 1)); }}
+                                    className="text-xs px-1.5 py-0.5 rounded hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                                    title={bn ? 'ক্লিক করে নতুন সিরিয়াল লিখুন' : 'Click to set new position'}
+                                  >
+                                    {bn ? toBnDigits(idx + 1) : idx + 1}
+                                  </button>
+                                )}
                               </div>
                             </td>
                             <td className="px-3 py-2">
