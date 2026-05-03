@@ -103,7 +103,7 @@ const AdminSalary = () => {
   const [savingsDialog, setSavingsDialog] = useState<any>(null);
   const [savingsLedgerOpen, setSavingsLedgerOpen] = useState(false);
   const [mainTab, setMainTab] = useState('salary');
-  const [bonusYear, setBonusYear] = useState(String(now.getFullYear()));
+  const [bonusYear, setBonusYear] = useState(String(tzParts.year));
   const [bonusPercent, setBonusPercent] = useState(100);
   const [unpaidConfirmId, setUnpaidConfirmId] = useState<string | null>(null);
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
