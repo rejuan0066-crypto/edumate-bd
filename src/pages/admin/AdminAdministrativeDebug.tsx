@@ -257,6 +257,64 @@ export default function AdminAdministrativeDebug() {
           </div>
         </div>
 
+        {/* Filters */}
+        <Card className="rounded-[32px] backdrop-blur-xl bg-card/60 border-border/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Database className="w-4 h-4 text-emerald-600" />
+              {bn ? 'প্রোব ফিল্টার' : 'Probe Filters'}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground">
+              {bn
+                ? 'এই ফিল্টারগুলো administrative_officers ও staff_directory প্রোবে প্রয়োগ হবে — UI কী দেখবে তা অনুকরণ করতে।'
+                : 'These filters are applied to administrative_officers + staff_directory probes to mirror what the UI should see.'}
+            </p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                {bn ? 'স্ট্যাটাস' : 'Status'}
+              </label>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">active</SelectItem>
+                  <SelectItem value="inactive">inactive</SelectItem>
+                  <SelectItem value="pending">pending</SelectItem>
+                  <SelectItem value="any">{bn ? 'যেকোনো' : 'any'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                deleted_at
+              </label>
+              <Select value={deletedFilter} onValueChange={(v) => setDeletedFilter(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_deleted">{bn ? 'মুছে ফেলা হয়নি (NULL)' : 'Not deleted (NULL)'}</SelectItem>
+                  <SelectItem value="deleted_only">{bn ? 'শুধু soft-deleted' : 'Soft-deleted only'}</SelectItem>
+                  <SelectItem value="any">{bn ? 'যেকোনো' : 'any'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
+                {bn ? 'role যাচাই' : 'Role to test'}
+              </label>
+              <Select value={roleProbe} onValueChange={(v) => setRoleProbe(v as any)}>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">admin</SelectItem>
+                  <SelectItem value="super_admin">super_admin</SelectItem>
+                  <SelectItem value="staff">staff</SelectItem>
+                  <SelectItem value="teacher">teacher</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Session info */}
         <Card className="rounded-[32px] backdrop-blur-xl bg-card/60">
           <CardHeader className="pb-2">
