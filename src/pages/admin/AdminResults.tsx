@@ -300,17 +300,50 @@ const AdminResults = () => {
 
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
-  useEffect(() => { setSigDraft(signatories); }, [signatories]);
+  const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
+  useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
+
+  const MAX_LEN = 100;
+  const validateSignatories = (rows: ResultSignatory[]) => {
+    const errs: typeof sigErrors = {};
+    rows.forEach((s, i) => {
+      const tBn = (s.title_bn || '').trim();
+      const tEn = (s.title_en || '').trim();
+      const nBn = (s.name_bn || '').trim();
+      const nEn = (s.name_en || '').trim();
+      const e: any = {};
+      if (!tBn && !tEn) e.title = bn ? 'অন্তত একটি ভাষায় পদবী দিন' : 'Title required in at least one language';
+      if (!nBn && !nEn) e.name = bn ? 'অন্তত একটি ভাষায় নাম দিন' : 'Name required in at least one language';
+      if (tBn.length > MAX_LEN) e.title_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (tEn.length > MAX_LEN) e.title_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (Object.keys(e).length) errs[i] = e;
+    });
+    return errs;
+  };
 
   const saveSignatories = useMutation({
     mutationFn: async (rows: ResultSignatory[]) => {
+      const errs = validateSignatories(rows);
+      if (Object.keys(errs).length) {
+        setSigErrors(errs);
+        throw new Error(bn ? 'কিছু ক্ষেত্র সঠিকভাবে পূরণ করা হয়নি' : 'Please fix the highlighted fields');
+      }
+      const cleaned = rows.map(r => ({
+        title_bn: (r.title_bn || '').trim(),
+        title_en: (r.title_en || '').trim(),
+        name_bn: (r.name_bn || '').trim(),
+        name_en: (r.name_en || '').trim(),
+      }));
       const { error } = await supabase
         .from('website_settings')
-        .upsert({ key: 'result_signatories', value: rows as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+        .upsert({ key: 'result_signatories', value: cleaned as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(bn ? 'স্বাক্ষরকারীর তথ্য সংরক্ষিত' : 'Signatories saved');
+      setSigErrors({});
       queryClient.invalidateQueries({ queryKey: ['result-signatories'] });
       setSigDialogOpen(false);
     },
