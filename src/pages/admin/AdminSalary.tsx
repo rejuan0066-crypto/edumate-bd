@@ -1472,14 +1472,19 @@ const AdminSalary = () => {
     setPdfLoading(true);
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
-      const sig = sigOverride || {
-        prepared_by: sigPreparedBy.trim() || undefined,
-        prepared_by_role: sigPreparedRole.trim() || undefined,
-        verified_by: sigVerifiedBy.trim() || undefined,
-        verified_by_role: sigVerifiedRole.trim() || undefined,
-        approved_by: sigApprovedBy.trim() || undefined,
-        approved_by_role: sigApprovedRole.trim() || undefined,
-      };
+      const sig = sigOverride || (() => {
+        const prep = pickSig('treasurer');
+        const ver = pickSig('verifier');
+        const apr = pickSig('approver');
+        return {
+          prepared_by: sigPreparedBy.trim() || prep?.display_name || undefined,
+          prepared_by_role: sigPreparedRole.trim() || prep?.designation || undefined,
+          verified_by: sigVerifiedBy.trim() || ver?.display_name || undefined,
+          verified_by_role: sigVerifiedRole.trim() || ver?.designation || undefined,
+          approved_by: sigApprovedBy.trim() || apr?.display_name || undefined,
+          approved_by_role: sigApprovedRole.trim() || apr?.designation || undefined,
+        };
+      })();
       const payload = {
         monthYear,
         monthLabel: bn ? monthName?.bn : monthName?.en,
