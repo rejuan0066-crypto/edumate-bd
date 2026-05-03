@@ -4852,6 +4852,48 @@ export type Database = {
           },
         ]
       }
+      name_permission_audit: {
+        Row: {
+          action: string
+          changed_by: string | null
+          changed_by_email: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          notes: string | null
+          old_value: Json | null
+          setting_key: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          setting_key: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          notes?: string | null
+          old_value?: Json | null
+          setting_key?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           attachment_url: string | null
