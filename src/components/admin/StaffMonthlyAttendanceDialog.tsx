@@ -133,68 +133,128 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[38px] p-0">
-        <DialogHeader className="p-6 pb-3">
-          <DialogTitle className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-emerald-400/40 bg-muted/50 flex items-center justify-center shrink-0">
-              {staff?.photo_url
-                ? <img src={staff.photo_url} alt="" className="h-full w-full object-cover" />
-                : <CalendarIcon className="h-5 w-5 text-muted-foreground" />}
-            </div>
-            <div className="min-w-0">
-              <div className="text-base font-semibold truncate">
-                {bn ? (staff?.name_bn || staff?.name_en) : (staff?.name_en || staff?.name_bn)}
+      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto rounded-[38px] p-0 border-border/40 bg-background/80 backdrop-blur-xl">
+        {/* Hero header with gradient */}
+        <div className="relative overflow-hidden rounded-t-[38px] border-b border-border/30">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 dark:from-emerald-500/15 dark:via-teal-500/10 dark:to-cyan-500/15" />
+          <div className="absolute -top-12 -right-12 h-56 w-56 rounded-full bg-emerald-400/20 blur-3xl" />
+          <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-cyan-400/20 blur-3xl" />
+          <DialogHeader className="relative p-6 pb-5">
+            <DialogTitle className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl overflow-hidden ring-2 ring-white/60 dark:ring-white/20 shadow-lg bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center shrink-0">
+                {staff?.photo_url
+                  ? <img src={staff.photo_url} alt="" className="h-full w-full object-cover" />
+                  : <CalendarIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />}
               </div>
-              <div className="text-xs text-muted-foreground truncate">{staff?.designation || ''}</div>
-            </div>
-          </DialogTitle>
-        </DialogHeader>
+              <div className="min-w-0 flex-1">
+                <div className="text-lg font-bold tracking-tight truncate">
+                  {bn ? (staff?.name_bn || staff?.name_en) : (staff?.name_en || staff?.name_bn)}
+                </div>
+                <div className="text-xs text-muted-foreground truncate flex items-center gap-2 mt-0.5">
+                  {staff?.designation && <span>{staff.designation}</span>}
+                  {shift && <><span className="opacity-40">•</span><span className="capitalize">{shift.replace('_', ' ')}</span></>}
+                </div>
+              </div>
+              {/* Attendance rate ring */}
+              <div className="hidden sm:flex flex-col items-center px-3 py-2 rounded-2xl bg-white/60 dark:bg-white/5 backdrop-blur border border-white/50 dark:border-white/10 shadow-sm">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{bn ? 'উপস্থিতি হার' : 'Attendance'}</div>
+                <div className={`text-2xl font-extrabold bg-gradient-to-br ${attendanceRate >= 90 ? 'from-emerald-600 to-teal-600' : attendanceRate >= 75 ? 'from-amber-500 to-orange-500' : 'from-rose-500 to-pink-500'} bg-clip-text text-transparent leading-tight`}>
+                  {attendanceRate}<span className="text-sm">%</span>
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="px-6 pb-6 space-y-5">
-          {/* Month nav */}
-          <div className="flex items-center justify-between rounded-2xl border border-border/30 bg-background/60 backdrop-blur px-3 py-2">
-            <Button variant="ghost" size="icon" onClick={() => setCursor(c => subMonths(c, 1))}>
+        <div className="px-6 py-5 space-y-5">
+          {/* Month nav with chips */}
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-gradient-to-r from-background/80 via-muted/20 to-background/80 backdrop-blur px-2 py-2 shadow-sm">
+            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => subMonths(c, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="text-sm font-semibold">{monthLabel}</div>
-            <Button variant="ghost" size="icon" onClick={() => setCursor(c => addMonths(c, 1))}>
+            <div className="flex items-center gap-2 min-w-0">
+              <CalendarIcon className="h-4 w-4 text-emerald-600 shrink-0" />
+              <div className="text-sm font-semibold tracking-tight truncate">{monthLabel}</div>
+              {!isCurrentMonth && (
+                <button
+                  onClick={() => setCursor(new Date())}
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 transition font-medium"
+                >
+                  {bn ? 'বর্তমান মাসে যান' : 'Today'}
+                </button>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-500/10 hover:text-emerald-600" onClick={() => setCursor(c => addMonths(c, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
-          {/* Stat tiles */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+          {/* Stat tiles - premium */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
             {Object.keys(STATUS_META).map(k => {
               const m = STATUS_META[k];
               const Icon = m.icon;
+              const value = counts[k];
+              const pct = marked > 0 ? Math.round((value / marked) * 100) : 0;
               return (
-                <div key={k} className={`rounded-2xl ${m.bg} p-3 flex flex-col items-start gap-1 border border-border/20`}>
-                  <Icon className={`h-4 w-4 ${m.color}`} />
-                  <div className="text-[11px] text-muted-foreground">{bn ? m.bnLabel : m.enLabel}</div>
-                  <div className={`text-lg font-bold ${m.color}`}>{counts[k]}</div>
+                <div
+                  key={k}
+                  className={`group relative overflow-hidden rounded-2xl ${m.bg} p-3 border border-border/30 transition-all hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/5 cursor-default`}
+                >
+                  <div className="flex items-start justify-between mb-1.5">
+                    <div className={`h-8 w-8 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm`}>
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground font-medium truncate">{bn ? m.bnLabel : m.enLabel}</div>
+                  <div className={`text-2xl font-extrabold ${m.color} tabular-nums leading-tight`}>{value}</div>
+                  <div className="mt-1.5 h-1 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                    <div className={`h-full ${m.solid} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground items-center">
-            <span>{bn ? 'মোট দিন' : 'Total days'}: <b className="text-foreground">{days.length}</b></span>
-            <span>{bn ? 'অচিহ্নিত' : 'Unmarked'}: <b className="text-foreground">{unmarked}</b></span>
-            <span>{bn ? 'মোট বিলম্ব' : 'Total late'}: <b className="text-foreground">{totalLateMins} {bn ? 'মিনিট' : 'min'}</b></span>
-            <span className="ml-auto text-[11px] italic">{bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}</span>
+          {/* Summary chips */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 border border-border/30">
+              <span className="text-muted-foreground">{bn ? 'মোট দিন' : 'Total'}</span>
+              <b className="text-foreground tabular-nums">{days.length}</b>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 border border-border/30">
+              <span className="text-muted-foreground">{bn ? 'অচিহ্নিত' : 'Unmarked'}</span>
+              <b className="text-foreground tabular-nums">{unmarked}</b>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+              <Clock className="h-3 w-3 text-amber-600" />
+              <span className="text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</span>
+              <b className="text-amber-700 dark:text-amber-400 tabular-nums">{totalLateMins} {bn ? 'মিনিট' : 'min'}</b>
+            </div>
+            <span className="ml-auto text-[11px] italic text-muted-foreground hidden sm:inline">
+              {bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}
+            </span>
           </div>
 
-          {/* Calendar grid */}
-          <div className="rounded-2xl border border-border/30 bg-background/60 backdrop-blur p-3">
-            <div className="grid grid-cols-7 gap-1 mb-2">
+          {/* Calendar grid - premium */}
+          <div className="rounded-3xl border border-border/40 bg-gradient-to-b from-background/90 to-muted/10 backdrop-blur-sm p-4 shadow-sm">
+            <div className="grid grid-cols-7 gap-1.5 mb-2">
               {(bn
                 ? ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহঃ', 'শুক্র', 'শনি']
                 : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-              ).map(d => (
-                <div key={d} className="text-[10px] sm:text-xs font-medium text-muted-foreground text-center py-1">{d}</div>
+              ).map((d, i) => (
+                <div
+                  key={d}
+                  className={`text-[10px] sm:text-xs font-bold uppercase tracking-wider text-center py-1.5 ${
+                    i === 5 ? 'text-emerald-600/80' : 'text-muted-foreground'
+                  }`}
+                >
+                  {d}
+                </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
               {Array.from({ length: leadingBlanks }).map((_, i) => <div key={`b${i}`} />)}
               {days.map(d => {
                 const key = format(d, 'yyyy-MM-dd');
@@ -203,32 +263,48 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                 const Icon = meta?.icon;
                 const isToday = isSameDay(d, new Date());
                 const isFuture = d > new Date();
+                const isFriday = getDay(d) === 5;
                 const isSaving = savingKey === key;
+                const dayNum = format(d, 'd');
                 return (
                   <Popover key={key} open={openKey === key} onOpenChange={(o) => setOpenKey(o ? key : null)}>
                     <PopoverTrigger asChild>
                       <button
                         type="button"
                         disabled={isFuture || isSaving}
-                        className={`aspect-square rounded-xl border p-1 flex flex-col items-center justify-center text-center transition-all hover:-translate-y-[2px] hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none ${
-                          meta ? `${meta.bg} border-transparent` : 'bg-muted/20 border-dashed border-border/30'
-                        } ${isToday ? 'ring-2 ring-primary/50' : ''} ${isSaving ? 'animate-pulse' : ''}`}
+                        className={`group relative aspect-square rounded-2xl border p-1.5 flex flex-col items-center justify-center text-center transition-all duration-200 hover:-translate-y-[3px] hover:shadow-lg hover:shadow-black/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:transform-none disabled:hover:shadow-none overflow-hidden ${
+                          meta
+                            ? `${meta.bg} border-transparent shadow-sm`
+                            : isFriday
+                              ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/40 dark:border-emerald-800/30 border-dashed'
+                              : 'bg-muted/20 border-dashed border-border/30 hover:bg-muted/40'
+                        } ${isToday ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''} ${isSaving ? 'animate-pulse' : ''}`}
                         title={meta ? (bn ? meta.bnLabel : meta.enLabel) : (bn ? 'অচিহ্নিত' : 'Unmarked')}
                       >
-                        <div className={`text-[11px] sm:text-xs font-semibold ${meta ? meta.color : 'text-muted-foreground'}`}>
-                          {format(d, 'd')}
+                        {/* Status dot indicator (top-right) */}
+                        {meta && (
+                          <span className={`absolute top-1 right-1 h-1.5 w-1.5 rounded-full ${meta.dot} shadow-sm`} />
+                        )}
+                        {isToday && !meta && (
+                          <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                        )}
+                        <div className={`text-[12px] sm:text-sm font-bold tabular-nums ${meta ? meta.color : isToday ? 'text-primary' : 'text-foreground/70'}`}>
+                          {dayNum}
                         </div>
-                        {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${meta!.color}`} />}
+                        {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mt-0.5 ${meta!.color}`} />}
                         {rec?.late_minutes ? (
-                          <div className="text-[9px] text-amber-600 font-medium leading-none">{rec.late_minutes}m</div>
+                          <div className="text-[9px] text-amber-700 dark:text-amber-400 font-bold leading-none mt-0.5 tabular-nums">
+                            +{rec.late_minutes}m
+                          </div>
                         ) : null}
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-56 p-2 rounded-2xl" align="center">
-                      <div className="text-[11px] text-muted-foreground px-2 pb-1">
-                        {format(d, 'dd/MM/yyyy')}
+                    <PopoverContent className="w-60 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
+                      <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-border/30">
+                        <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
+                        {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
                       </div>
-                      <div className="grid grid-cols-1 gap-1 max-h-72 overflow-y-auto">
+                      <div className="grid grid-cols-1 gap-0.5 max-h-72 overflow-y-auto">
                         {Object.entries(STATUS_META).map(([k, m]) => {
                           const I = m.icon;
                           const active = rec?.status === k;
@@ -237,13 +313,17 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                               key={k}
                               onClick={() => setStatus(key, k)}
                               disabled={isSaving}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-left transition ${
-                                active ? `${m.bg} ${m.color} font-semibold` : 'hover:bg-muted/60'
+                              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm text-left transition-all ${
+                                active
+                                  ? `${m.bg} ${m.color} font-semibold shadow-sm`
+                                  : 'hover:bg-muted/60 hover:translate-x-0.5'
                               }`}
                             >
-                              <I className={`h-4 w-4 ${m.color}`} />
+                              <div className={`h-7 w-7 rounded-lg bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-sm shrink-0`}>
+                                <I className="h-3.5 w-3.5 text-white" />
+                              </div>
                               <span className="flex-1">{bn ? m.bnLabel : m.enLabel}</span>
-                              {active && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                              {active && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
                             </button>
                           );
                         })}
@@ -251,7 +331,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                           <button
                             onClick={() => setStatus(key, null)}
                             disabled={isSaving}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t pt-2"
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2"
                           >
                             <Trash2 className="h-4 w-4" />
                             {bn ? 'মুছুন' : 'Clear'}
@@ -265,7 +345,12 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             </div>
           </div>
 
-          {loading && <div className="text-xs text-center text-muted-foreground">{bn ? 'লোড হচ্ছে...' : 'Loading...'}</div>}
+          {loading && (
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-2">
+              <div className="h-3 w-3 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+              <span>{bn ? 'লোড হচ্ছে...' : 'Loading...'}</span>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
