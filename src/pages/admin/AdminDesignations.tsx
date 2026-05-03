@@ -9,13 +9,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Search, Tag, FolderOpen, Upload, Download, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { checkBanglaDesignation } from '@/lib/banglaDesignationSpellCheck';
+import { validateDesignationCsv, type ImportSummary } from '@/lib/bulkDesignationImport';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const COLOR_OPTIONS = [
@@ -127,6 +128,65 @@ const AdminDesignations = () => {
     onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
   });
 
+  // ─── Bulk CSV import ───────────────────────────────────────────────
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleCsvFile = async (file: File) => {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      toast.error(bn ? 'শুধু .csv ফাইল গ্রহণযোগ্য' : 'Only .csv files allowed');
+      return;
+    }
+    const text = await file.text();
+    const summary = validateDesignationCsv(text, {
+      existingNamesBn: (designations as any[]).map((d) => d.name_bn),
+      allowedCategoryKeys: (staffCategories as any[]).map((c) => c.key),
+    });
+    setImportSummary(summary);
+    setImportOpen(true);
+  };
+
+  const downloadCsvTemplate = () => {
+    const csv = 'name,name_bn,staff_category\nPrincipal,প্রিন্সিপাল,management\nTreasurer,কোষাধ্যক্ষ,management\n';
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'designations_template.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const commitImport = async () => {
+    if (!importSummary) return;
+    const okRows = importSummary.rows.filter((r) => r.status === 'ok' && r.name && r.nameBn);
+    if (!okRows.length) {
+      toast.error(bn ? 'কোনো বৈধ রো নেই' : 'No valid rows to import');
+      return;
+    }
+    setImporting(true);
+    try {
+      const records = okRows.map((r) => ({
+        name: r.name!.trim(),
+        name_bn: r.nameBn!.trim(),
+        staff_category: r.staffCategory || (staffCategories[0] as any)?.key || null,
+        is_active: true,
+        sort_order: 0,
+      }));
+      const { error } = await supabase.from('designations').insert(records);
+      if (error) throw error;
+      toast.success(bn ? `${okRows.length}টি পদবি যোগ হয়েছে` : `${okRows.length} designations imported`);
+      queryClient.invalidateQueries({ queryKey: ['designations'] });
+      queryClient.invalidateQueries({ queryKey: ['designations-all'] });
+      setImportOpen(false);
+      setImportSummary(null);
+    } catch (e: any) {
+      toast.error(e.message || 'Error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // ─── Category helpers ───
   const [catIdPrefix, setCatIdPrefix] = useState('');
   const [catIdStartRange, setCatIdStartRange] = useState(1001);
@@ -193,11 +253,32 @@ const AdminDesignations = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input placeholder={bn ? 'পদবি খুঁজুন...' : 'Search designations...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              {canAddItem && (
-                <Button onClick={openAdd} className="btn-primary-gradient flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> {bn ? 'নতুন পদবি' : 'Add Designation'}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" onClick={downloadCsvTemplate} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" /> {bn ? 'টেমপ্লেট' : 'Template'}
                 </Button>
-              )}
+                {canAddItem && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleCsvFile(f);
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" /> {bn ? 'CSV ইম্পোর্ট' : 'Import CSV'}
+                    </Button>
+                    <Button onClick={openAdd} className="btn-primary-gradient flex items-center gap-2">
+                      <Plus className="w-4 h-4" /> {bn ? 'নতুন পদবি' : 'Add Designation'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="card-elevated overflow-hidden">
@@ -444,6 +525,72 @@ const AdminDesignations = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* ─── Bulk CSV Import Preview ─── */}
+        <Dialog open={importOpen} onOpenChange={(open) => { if (!importing) { setImportOpen(open); if (!open) setImportSummary(null); } }}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-[38px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-primary" />
+                {bn ? 'CSV ইম্পোর্ট পূর্বরূপ' : 'CSV Import Preview'}
+              </DialogTitle>
+            </DialogHeader>
+            {importSummary && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <Badge variant="outline" className="bg-success/10 text-success border-success/30">{bn ? 'সফল' : 'OK'}: {importSummary.okRows}</Badge>
+                  <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">{bn ? 'সতর্ক' : 'Warn'}: {importSummary.warnRows}</Badge>
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">{bn ? 'ত্রুটি' : 'Error'}: {importSummary.errorRows}</Badge>
+                  <Badge variant="outline">{bn ? 'মোট' : 'Total'}: {importSummary.totalRows}</Badge>
+                </div>
+                <div className="border rounded-2xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-secondary/50">
+                      <tr>
+                        <th className="text-left px-3 py-2">#</th>
+                        <th className="text-left px-3 py-2">name_bn</th>
+                        <th className="text-left px-3 py-2">name</th>
+                        <th className="text-left px-3 py-2">{bn ? 'অবস্থা' : 'Status'}</th>
+                        <th className="text-left px-3 py-2">{bn ? 'মন্তব্য' : 'Issues'}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {importSummary.rows.map((r, i) => (
+                        <tr key={i} className={r.status === 'error' ? 'bg-destructive/5' : r.status === 'warn' ? 'bg-warning/5' : ''}>
+                          <td className="px-3 py-2 text-muted-foreground">{r.line || '-'}</td>
+                          <td className="px-3 py-2">
+                            {r.nameBn || '-'}
+                            {r.suggestion && r.suggestion !== r.raw.name_bn && (
+                              <div className="text-xs text-warning">→ {r.suggestion}</div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">{r.name || '-'}</td>
+                          <td className="px-3 py-2">
+                            {r.status === 'ok' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                            {r.status === 'warn' && <AlertCircle className="w-4 h-4 text-warning" />}
+                            {r.status === 'error' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            {r.issues.map((m, j) => <div key={j}>• {m}</div>)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => { setImportOpen(false); setImportSummary(null); }} disabled={importing}>
+                    {bn ? 'বাতিল' : 'Cancel'}
+                  </Button>
+                  <Button onClick={commitImport} disabled={importing || importSummary.okRows === 0} className="btn-primary-gradient">
+                    {importing && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                    {bn ? `${importSummary.okRows}টি সফল রো ইম্পোর্ট করুন` : `Import ${importSummary.okRows} valid rows`}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
