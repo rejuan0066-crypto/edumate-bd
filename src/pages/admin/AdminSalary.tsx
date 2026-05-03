@@ -98,7 +98,6 @@ const AdminSalary = () => {
   const [editDialog, setEditDialog] = useState<any>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('general');
-  const [dutyDialog, setDutyDialog] = useState<any>(null);
   const [attendanceDetailDialog, setAttendanceDetailDialog] = useState<any>(null);
   const [savingsDialog, setSavingsDialog] = useState<any>(null);
   const [savingsLedgerOpen, setSavingsLedgerOpen] = useState(false);
