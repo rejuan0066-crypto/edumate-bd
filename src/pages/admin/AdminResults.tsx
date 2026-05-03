@@ -14,8 +14,13 @@ import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import { GraduationCap } from 'lucide-react';
-import { exportResultCSV, exportResultPDF, printResultSheet } from '@/lib/resultExport';
+import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, type ResultSignatory } from '@/lib/resultExport';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Settings2 } from 'lucide-react';
 
 const AdminResults = () => {
   const { language } = useLanguage();
