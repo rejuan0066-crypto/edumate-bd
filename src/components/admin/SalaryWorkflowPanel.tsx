@@ -526,14 +526,14 @@ export default function SalaryWorkflowPanel({
             {sheetStage !== 'paid' && !canSendToVerifier && !canVerify && !canSendToApprover && !canApprove && !canMarkPaid && !gating.loading && (
               <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-300 font-normal">
                 {sheetStage === 'pending_verification' && (bn
-                  ? `অপেক্ষমাণ: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'যাচাইকারী'} এর যাচাই`
-                  : `Waiting: ${verifiers.find(v => v.staff_id === wf.verifier_staff_id)?.display_name || 'verifier'} to verify`)}
+                  ? `অপেক্ষমাণ: ${assignedVerifier?.display_name || 'যাচাইকারী'} এর যাচাই`
+                  : `Waiting: ${assignedVerifier?.display_name || 'verifier'} to verify`)}
                 {sheetStage === 'verified' && (bn
-                  ? `অপেক্ষমাণ: যাচাইকারীর forward to অনুমোদনকারী`
-                  : `Waiting: verifier to forward to approver`)}
+                  ? `অপেক্ষমাণ: যাচাইকারী/অ্যাডমিন কর্তৃক অনুমোদনকারীর কাছে প্রেরণ`
+                  : `Waiting: verifier/admin to forward to approver`)}
                 {sheetStage === 'pending_approval' && (bn
-                  ? `অপেক্ষমাণ: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'অনুমোদনকারী'} এর অনুমোদন`
-                  : `Waiting: ${approvers.find(a => a.staff_id === wf.approver_staff_id)?.display_name || 'approver'} to approve`)}
+                  ? `অপেক্ষমাণ: ${assignedApprover?.display_name || 'অনুমোদনকারী'} এর অনুমোদন`
+                  : `Waiting: ${assignedApprover?.display_name || 'approver'} to approve`)}
                 {sheetStage === 'approved' && (bn
                   ? `অপেক্ষমাণ: কোষাধ্যক্ষ/হিসাবরক্ষক এর পরিশোধ`
                   : `Waiting: treasurer/accountant to mark paid`)}
