@@ -114,10 +114,11 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape', margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
   const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
-  const margin = 10;
+  const m = sanitizeMargins(margins);
+  const margin = Math.min(m.left, m.right);
 
   doc.setFontSize(14);
   doc.text(institutionName || '', pageW / 2, 12, { align: 'center' });
