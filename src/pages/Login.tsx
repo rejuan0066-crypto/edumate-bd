@@ -187,7 +187,13 @@ const Login = () => {
             )
           )}
           {showName && (
-            <h1 className="text-xl font-display font-bold text-foreground">
+            <h1
+              className="text-lg sm:text-xl font-display font-bold text-foreground truncate max-w-full px-2"
+              title={language === 'bn'
+                ? (settings.login_institution_name_bn || settings.institution_name)
+                : (settings.login_institution_name_en || settings.institution_name_en)}
+              style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+            >
               {language === 'bn'
                 ? (settings.login_institution_name_bn || settings.institution_name)
                 : (settings.login_institution_name_en || settings.institution_name_en)}

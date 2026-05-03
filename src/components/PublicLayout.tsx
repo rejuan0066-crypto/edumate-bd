@@ -128,14 +128,24 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                   <GraduationCap className="w-7 h-7 text-primary-foreground" />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 overflow-hidden">
                 {(hs?.show_institution_name !== false) && (
-                  <h1 className="text-lg sm:text-xl font-display font-bold leading-tight truncate" style={{ color: hs?.header_text_color || undefined, overflowWrap: 'normal', wordBreak: 'keep-all' }}>
+                  <h1
+                    className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight truncate block max-w-full"
+                    title={settings.institution_name}
+                    style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word', whiteSpace: 'nowrap' }}
+                  >
                     {settings.institution_name}
                   </h1>
                 )}
                 {(hs?.show_institution_name_en !== false) && (
-                  <p className="text-xs text-muted-foreground truncate" style={{ overflowWrap: 'normal', wordBreak: 'keep-all' }}>{settings.institution_name_en}</p>
+                  <p
+                    className="text-[11px] sm:text-xs text-muted-foreground truncate block max-w-full"
+                    title={settings.institution_name_en}
+                    style={{ overflowWrap: 'anywhere', wordBreak: 'break-word', whiteSpace: 'nowrap' }}
+                  >
+                    {settings.institution_name_en}
+                  </p>
                 )}
               </div>
             </Link>

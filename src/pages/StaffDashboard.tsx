@@ -215,20 +215,24 @@ const StaffDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-card shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             {institution?.logo_url ? (
-              <img src={institution.logo_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+              <img src={institution.logo_url} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
             ) : (
-              <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center">
+              <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center shrink-0">
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
             )}
-            <div>
-              <h1 className="text-sm font-bold text-foreground leading-tight">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <h1
+                className="text-sm font-bold text-foreground leading-tight truncate block max-w-full"
+                title={bn ? (institution?.name || 'প্রতিষ্ঠান') : (institution?.name_en || 'Institution')}
+                style={{ whiteSpace: 'nowrap', overflowWrap: 'anywhere' }}
+              >
                 {bn ? (institution?.name || 'প্রতিষ্ঠান') : (institution?.name_en || 'Institution')}
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {bn ? (role === 'teacher' ? 'শিক্ষক প্যানেল' : 'স্টাফ প্যানেল') : (role === 'teacher' ? 'Teacher Panel' : 'Staff Panel')}
               </p>
             </div>

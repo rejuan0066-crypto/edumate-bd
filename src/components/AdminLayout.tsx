@@ -402,10 +402,14 @@ const AdminLayout = ({ children }: { children: ReactNode }) => {
           </div>
           {(sidebarOpen || mobile) && (
             <div className="overflow-hidden flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-sidebar-foreground truncate leading-relaxed">
+              <h2
+                className="text-sm font-bold text-sidebar-foreground truncate leading-relaxed block max-w-full"
+                title={language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
+                style={{ whiteSpace: 'nowrap', overflowWrap: 'anywhere' }}
+              >
                 {language === 'bn' ? websiteSettings.institution_name : (websiteSettings.institution_name_en || websiteSettings.institution_name)}
               </h2>
-              <p className="text-[11px] text-sidebar-foreground/50 leading-relaxed">{language === 'bn' ? 'ম্যানেজমেন্ট সিস্টেম' : 'Management System'}</p>
+              <p className="text-[11px] text-sidebar-foreground/50 leading-relaxed truncate">{language === 'bn' ? 'ম্যানেজমেন্ট সিস্টেম' : 'Management System'}</p>
             </div>
           )}
           {mobile && (
