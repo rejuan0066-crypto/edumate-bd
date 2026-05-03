@@ -139,6 +139,51 @@ export type Database = {
           },
         ]
       }
+      admin_name_request_log: {
+        Row: {
+          caller_role: string | null
+          caller_user_id: string | null
+          correlation_id: string
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          filters: Json | null
+          id: string
+          result_count: number | null
+          source_path: string
+          sql_path: string | null
+        }
+        Insert: {
+          caller_role?: string | null
+          caller_user_id?: string | null
+          correlation_id: string
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          filters?: Json | null
+          id?: string
+          result_count?: number | null
+          source_path: string
+          sql_path?: string | null
+        }
+        Update: {
+          caller_role?: string | null
+          caller_user_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          filters?: Json | null
+          id?: string
+          result_count?: number | null
+          source_path?: string
+          sql_path?: string | null
+        }
+        Relationships: []
+      }
       administrative_departments: {
         Row: {
           code: string | null
@@ -10130,6 +10175,19 @@ export type Database = {
           photo_url: string
           staff_category: string
         }[]
+      }
+      log_admin_name_request: {
+        Args: {
+          _correlation_id: string
+          _duration_ms: number
+          _error_code: string
+          _error_message: string
+          _filters: Json
+          _result_count: number
+          _source_path: string
+          _sql_path: string
+        }
+        Returns: string
       }
       log_security_event: {
         Args: {
