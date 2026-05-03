@@ -764,9 +764,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   }, [entities, attendance]);
 
   const changeDate = (dir: number) => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + dir);
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(addDaysIsoInTz(selectedDate, dir, appTz));
   };
 
   // Current tab label
