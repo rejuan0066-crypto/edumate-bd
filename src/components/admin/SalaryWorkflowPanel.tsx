@@ -189,8 +189,8 @@ export default function SalaryWorkflowPanel({
 
   const verifyMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
-      // Verifier identity: from wf.verifier_staff_id snapshot (or current user override)
-      const verifier = verifiers.find((v) => v.staff_id === wf.verifier_staff_id);
+      // Verifier identity: from wf snapshot or fallback to current user
+      const verifier = verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id) || verifiers[0];
       const verifiedName = verifier?.display_name || currentUserName;
       const verifiedRole = verifier?.designation || (bn ? 'যাচাইকারী' : 'Verifier');
       await updateAllRecords({
@@ -216,10 +216,10 @@ export default function SalaryWorkflowPanel({
 
   const sendToApproverMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = approvers.find((a) => a.staff_id === targetId);
+      const target = approvers.find((a) => a.id === targetId);
       if (!target) throw new Error('Approver not found');
       await updateAllRecords({
-        approver_staff_id: target.staff_id,
+        approver_staff_id: target.staff_id || null,
         workflow_stage: 'pending_approval',
         workflow_notes: notes || null,
       });
