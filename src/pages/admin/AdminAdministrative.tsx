@@ -1246,11 +1246,12 @@ const AdminAdministrative = () => {
             <div className="space-y-2">
               <Label>{bn ? 'পাসওয়ার্ড' : 'Password'}</Label>
               <div className="relative">
-                <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(e.target.value)} placeholder={bn ? 'কমপক্ষে ৬ অক্ষর' : 'Min 6 characters'} />
+                <Input type={showPassword ? 'text' : 'password'} value={accPassword} onChange={e => setAccPassword(e.target.value)} placeholder={bn ? 'নতুন পাসওয়ার্ড' : 'New password'} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <PasswordStrengthMeter password={accPassword} bn={bn} />
             </div>
             <div className="space-y-2">
               <Label>{bn ? 'রোল' : 'Role'}</Label>
