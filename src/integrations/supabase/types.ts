@@ -6777,6 +6777,42 @@ export type Database = {
           },
         ]
       }
+      result_footer_audit: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          scope: string
+          scope_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          scope: string
+          scope_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          scope?: string
+          scope_id?: string | null
+        }
+        Relationships: []
+      }
       result_print_footer_overrides: {
         Row: {
           created_at: string
