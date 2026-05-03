@@ -325,13 +325,14 @@ Deno.serve(async (req) => {
 
   /* ===== Page Header (repeats on every printed page) ===== */
   .page-header { background: #fff; }
-  /* ===== Page Footer (repeats on every printed page) ===== */
-  .page-footer { background: #fff; break-inside: avoid; page-break-inside: avoid; }
+  /* ===== Persistent footer cell inside <tfoot> (repeats every page) ===== */
+  .footer-cell { padding: 0 !important; border: none !important; background: #fff !important; }
+  .footer-inner { padding-top: 6mm; vertical-align: bottom; }
   .signatures {
     display: grid;
     grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
     gap: 8mm;
-    margin: 8mm 4mm 2mm;
+    margin: 4mm 4mm 2mm;
   }
   .sig {
     text-align: center;
