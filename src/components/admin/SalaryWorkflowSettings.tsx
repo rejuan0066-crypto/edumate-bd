@@ -91,6 +91,7 @@ export default function SalaryWorkflowSettings() {
       const payload: any = {
         role,
         staff_id: p.source === 'staff' ? p.id : null,
+        admin_officer_id: p.source === 'administrative' ? p.id : null,
         display_name: p.name_bn || p.name_en || '',
         designation: p.designation || null,
         source: p.source,
