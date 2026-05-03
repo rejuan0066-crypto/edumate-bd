@@ -25,8 +25,9 @@ const DynamicFavicon = () => {
 
   const faviconSrc = settings.favicon_url || settings.logo_url;
   const appIconSrc = settings.logo_url || settings.favicon_url;
-  const appName = settings.institution_name_en || settings.institution_name || 'Madrasah';
-  const shortName = (settings.institution_name_en || settings.institution_name || 'App').slice(0, 12);
+  const rawName = settings.institution_name_en || settings.institution_name || 'Madrasah';
+  const appName = trimWordAware(rawName, 30);
+  const shortName = trimWordAware(rawName, 12);
   const themeColor = (settings as any).theme_color || '#0f766e';
 
   // Update when settings load from DB
