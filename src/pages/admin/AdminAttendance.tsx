@@ -563,9 +563,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         await supabase.from('shift_time_audit_log').insert(auditEntries);
       }
 
-      return { changedCount: auditEntries.length, totalRecalc };
+      return { changedCount: auditEntries.length, totalRecalc, overnightWarnings: ((times as any).__overnightWarnings as string[]) || [] };
     },
-    onSuccess: ({ changedCount, totalRecalc }) => {
+    onSuccess: ({ changedCount, totalRecalc, overnightWarnings }) => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
       queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
       queryClient.invalidateQueries({ queryKey: ['salary-records'] });
@@ -574,6 +574,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} ডিপার্টমেন্ট পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
         : `Saved${changedCount > 0 ? ` • ${changedCount} category changes • ${totalRecalc} salary records refreshed` : ''}`;
       toast.success(msg);
+      if (overnightWarnings.length) {
+        toast.info(
+          (bn ? 'ওভারনাইট শিফট সনাক্ত হয়েছে: ' : 'Overnight shift detected: ') + overnightWarnings.join(' • '),
+          { duration: 6000 }
+        );
+      }
     },
     onError: (e: any) => {
       toast.error(e?.message || (bn ? 'সেভ করা যায়নি' : 'Failed to save'));
