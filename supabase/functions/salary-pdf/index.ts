@@ -718,8 +718,6 @@ Deno.serve(async (req) => {
     <label for="ps-size">${bn ? 'পেপার' : 'Paper'}:</label>
     <select id="ps-size">
       <option value="A4">A4</option>
-      <option value="Letter">Letter</option>
-      <option value="Legal">Legal</option>
       <option value="A3">A3</option>
     </select>
   </div>
