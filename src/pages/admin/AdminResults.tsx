@@ -300,17 +300,50 @@ const AdminResults = () => {
 
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
-  useEffect(() => { setSigDraft(signatories); }, [signatories]);
+  const [sigErrors, setSigErrors] = useState<Record<number, { title?: string; name?: string; title_bn?: string; title_en?: string; name_bn?: string; name_en?: string }>>({});
+  useEffect(() => { setSigDraft(signatories); setSigErrors({}); }, [signatories]);
+
+  const MAX_LEN = 100;
+  const validateSignatories = (rows: ResultSignatory[]) => {
+    const errs: typeof sigErrors = {};
+    rows.forEach((s, i) => {
+      const tBn = (s.title_bn || '').trim();
+      const tEn = (s.title_en || '').trim();
+      const nBn = (s.name_bn || '').trim();
+      const nEn = (s.name_en || '').trim();
+      const e: any = {};
+      if (!tBn && !tEn) e.title = bn ? 'অন্তত একটি ভাষায় পদবী দিন' : 'Title required in at least one language';
+      if (!nBn && !nEn) e.name = bn ? 'অন্তত একটি ভাষায় নাম দিন' : 'Name required in at least one language';
+      if (tBn.length > MAX_LEN) e.title_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (tEn.length > MAX_LEN) e.title_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (nBn.length > MAX_LEN) e.name_bn = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (nEn.length > MAX_LEN) e.name_en = bn ? `সর্বোচ্চ ${MAX_LEN} অক্ষর` : `Max ${MAX_LEN} chars`;
+      if (Object.keys(e).length) errs[i] = e;
+    });
+    return errs;
+  };
 
   const saveSignatories = useMutation({
     mutationFn: async (rows: ResultSignatory[]) => {
+      const errs = validateSignatories(rows);
+      if (Object.keys(errs).length) {
+        setSigErrors(errs);
+        throw new Error(bn ? 'কিছু ক্ষেত্র সঠিকভাবে পূরণ করা হয়নি' : 'Please fix the highlighted fields');
+      }
+      const cleaned = rows.map(r => ({
+        title_bn: (r.title_bn || '').trim(),
+        title_en: (r.title_en || '').trim(),
+        name_bn: (r.name_bn || '').trim(),
+        name_en: (r.name_en || '').trim(),
+      }));
       const { error } = await supabase
         .from('website_settings')
-        .upsert({ key: 'result_signatories', value: rows as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+        .upsert({ key: 'result_signatories', value: cleaned as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success(bn ? 'স্বাক্ষরকারীর তথ্য সংরক্ষিত' : 'Signatories saved');
+      setSigErrors({});
       queryClient.invalidateQueries({ queryKey: ['result-signatories'] });
       setSigDialogOpen(false);
     },
@@ -408,29 +441,54 @@ const AdminResults = () => {
               <DialogTitle>{bn ? 'রেজাল্ট শীটের স্বাক্ষরকারী সম্পাদনা' : 'Edit Result Sheet Signatories'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {sigDraft.map((s, i) => (
-                <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
-                  <div className="md:col-span-2 text-xs font-semibold text-muted-foreground">
-                    {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+              {sigDraft.map((s, i) => {
+                const err = sigErrors[i] || {};
+                const setField = (field: keyof ResultSignatory, val: string) => {
+                  setSigDraft(d => d.map((x, j) => j === i ? { ...x, [field]: val } : x));
+                  setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                };
+                return (
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
+                    <div className="md:col-span-2 flex items-center justify-between">
+                      <div className="text-xs font-semibold text-muted-foreground">
+                        {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+                      </div>
+                      {(err.title || err.name) && (
+                        <div className="text-[11px] text-destructive font-medium">
+                          {err.title || err.name}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'} <span className="text-muted-foreground">*</span></Label>
+                      <Input maxLength={MAX_LEN} value={s.title_bn || ''} onChange={(e) => setField('title_bn', e.target.value)}
+                        className={(err.title || err.title_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                      {err.title_bn && <p className="text-[11px] text-destructive mt-1">{err.title_bn}</p>}
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'} <span className="text-muted-foreground">*</span></Label>
+                      <Input maxLength={MAX_LEN} value={s.title_en || ''} onChange={(e) => setField('title_en', e.target.value)}
+                        className={(err.title || err.title_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                      {err.title_en && <p className="text-[11px] text-destructive mt-1">{err.title_en}</p>}
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-muted-foreground">*</span></Label>
+                      <Input maxLength={MAX_LEN} value={s.name_bn || ''} onChange={(e) => setField('name_bn', e.target.value)}
+                        className={(err.name || err.name_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                      {err.name_bn && <p className="text-[11px] text-destructive mt-1">{err.name_bn}</p>}
+                    </div>
+                    <div>
+                      <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'} <span className="text-muted-foreground">*</span></Label>
+                      <Input maxLength={MAX_LEN} value={s.name_en || ''} onChange={(e) => setField('name_en', e.target.value)}
+                        className={(err.name || err.name_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
+                      {err.name_en && <p className="text-[11px] text-destructive mt-1">{err.name_en}</p>}
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
-                    <Input value={s.title_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_bn: e.target.value } : x))} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'}</Label>
-                    <Input value={s.title_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_en: e.target.value } : x))} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
-                    <Input value={s.name_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_bn: e.target.value } : x))} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'}</Label>
-                    <Input value={s.name_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_en: e.target.value } : x))} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              <p className="text-[11px] text-muted-foreground">
+                {bn ? 'প্রতিটি স্বাক্ষরকারীর জন্য পদবী ও নাম অন্তত একটি ভাষায় (বাংলা বা English) আবশ্যক।' : 'Title and name are required in at least one language (Bangla or English) for each signatory.'}
+              </p>
             </div>
             <DialogFooter className="gap-2">
               <Button variant="ghost" onClick={() => setSigDraft(DEFAULT_RESULT_SIGNATORIES)}>
