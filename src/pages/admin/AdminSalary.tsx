@@ -1863,9 +1863,39 @@ const AdminSalary = () => {
       .footer .gen{color:#94a3b8;font-size:9.5px;margin-top:3px}
       @media print{
         *,*::before,*::after{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important}
-        body{background:#fff;padding:0}
-        .slip{box-shadow:none;border-radius:0;max-width:100%}
-        @page{size:A4;margin:8mm}
+        html,body{background:#fff;padding:0;margin:0}
+        .slip{box-shadow:none;border-radius:0;max-width:100%;page-break-inside:avoid;break-inside:avoid}
+        .slip,.body,.header,.month-bar,.info-grid,.col,.net-box,.signatures,.footer{page-break-inside:avoid;break-inside:avoid}
+        @page{size:A4;margin:6mm}
+        /* Compact for single-page A4 */
+        .header{padding:10px 18px}
+        .logo-wrap{width:48px;height:48px;border-radius:10px}
+        .inst-name{font-size:17px}
+        .inst-meta{font-size:10px;line-height:1.35}
+        .slip-tag{right:18px;top:10px}
+        .slip-tag .badge{padding:3px 10px;font-size:9.5px}
+        .slip-tag .id{font-size:9px;margin-top:3px}
+        .month-bar{padding:6px 18px;font-size:11px}
+        .month-bar .month{font-size:12.5px}
+        .body{padding:10px 18px}
+        .info-grid{margin-bottom:8px;border-radius:8px}
+        .info-cell{padding:5px 10px;font-size:10.5px}
+        .columns,.single-col{margin-bottom:8px}
+        .col{border-radius:8px}
+        .col-head{padding:5px 10px;font-size:10.5px}
+        .ln{padding:4px 10px;font-size:10.5px}
+        .col-foot{padding:6px 10px;font-size:11.5px}
+        .net-box{padding:8px 14px;border-radius:10px;margin-top:4px}
+        .net-box .lbl{font-size:11px}
+        .net-box .amt{font-size:18px}
+        .words{margin-top:6px;padding:5px 10px;font-size:10.5px}
+        .signatures{margin-top:24px;gap:14px;padding:0 4px}
+        .sig{font-size:10px}
+        .sig .sig-name{font-size:10.5px;padding-top:3px;min-height:14px}
+        .sig .role{font-size:9.5px}
+        .footer{padding:6px 18px;margin-top:12px;font-size:9.5px}
+        .footer .gen{font-size:8.5px;margin-top:2px}
+        .watermark span{font-size:110px}
       }
     </style></head><body>
     <div class="slip">
