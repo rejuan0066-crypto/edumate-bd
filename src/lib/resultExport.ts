@@ -11,6 +11,10 @@ interface ExportData {
   institutionLogo?: string;
   institutionAddress?: string;
   institutionPhone?: string;
+  className?: string;
+  examName?: string;
+  sessionName?: string;
+  passMark?: number;
 }
 
 export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
@@ -135,86 +139,156 @@ export const exportResultPDF = ({ title, students, subjects, marksMap, getOveral
   doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone }: ExportData) => {
-  const subjectHeaders = subjects.map((s: any) => `<th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? s.name_bn : s.name}</th>`).join('');
-
-  const rows = students.map((st: any, idx: number) => {
+export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33 }: ExportData) => {
+  // Build computed rows + ranking by total (desc)
+  const computed = students.map((st: any, idx: number) => {
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
     const total = marks.reduce((a, b) => a + b, 0);
     const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks);
-    const marksCells = marks.map(m => `<td style="padding:4px;text-align:center;border:1px solid #ddd;font-size:11px;">${m}</td>`).join('');
-    return `<tr>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-size:11px;">${idx + 1}</td>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-size:11px;">${st.roll_number || '-'}</td>
-      <td style="padding:4px 6px;border:1px solid #ddd;font-size:11px;">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
+    const overall = getOverallGrade(marks);
+    const failed = marks.some(m => m < passMark) || overall.hasFail;
+    return { idx, st, marks, total, avg, overall, failed };
+  });
+  const sortedByTotal = [...computed].sort((a, b) => b.total - a.total);
+  const rankMap = new Map<number, number>();
+  sortedByTotal.forEach((r, i) => rankMap.set(r.idx, i + 1));
+
+  const passCount = computed.filter(c => !c.failed).length;
+  const failCount = computed.length - passCount;
+  const topper = sortedByTotal[0];
+  const classAvg = computed.length ? (computed.reduce((s, c) => s + c.total, 0) / computed.length).toFixed(2) : '0';
+
+  const subjectHeaders = subjects.map((s: any) =>
+    `<th class="sub-th"><span class="sub-name">${bn ? s.name_bn : s.name}</span><span class="sub-max">100</span></th>`
+  ).join('');
+
+  const rows = computed.map(({ idx, st, marks, total, avg, overall, failed }) => {
+    const rank = rankMap.get(idx);
+    const marksCells = marks.map(m =>
+      `<td class="num ${m < passMark ? 'fail-cell' : ''}">${m}</td>`
+    ).join('');
+    return `<tr class="${failed ? 'row-fail' : ''}">
+      <td class="num">${idx + 1}</td>
+      <td class="num bold">${st.roll_number || '-'}</td>
+      <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
       ${marksCells}
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-weight:bold;font-size:11px;">${total}</td>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-size:11px;">${avg.toFixed(1)}</td>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-weight:bold;font-size:11px;">${grade}</td>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-weight:bold;font-size:11px;">${gpa}</td>
-      <td style="padding:4px;text-align:center;border:1px solid #ddd;font-size:11px;">${bn ? title_bn : gradeTitle}</td>
+      <td class="num bold">${total}</td>
+      <td class="num">${avg.toFixed(1)}</td>
+      <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
+      <td class="num bold">${overall.gpa}</td>
+      <td class="num"><span class="rank-pill">${rank}</span></td>
+      <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
     </tr>`;
   }).join('');
+
+  const metaRow = (label: string, value: string) =>
+    value ? `<div class="meta-item"><span class="meta-k">${label}</span><span class="meta-v">${value}</span></div>` : '';
 
   const html = `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
 <title>${title}</title>
-<style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'SutonnyOMJ','Noto Sans Bengali',sans-serif; padding:15mm; }
-  @media print { body { padding:10mm; } }
-  .header { text-align:center; margin-bottom:16px; }
-  .header-logo { width:50px; height:50px; object-fit:contain; margin:0 auto 8px; display:block; }
-  .header h1 { font-size:18px; margin-bottom:2px; }
-  .header h2 { font-size:14px; color:#555; margin-bottom:2px; }
-  .header .info { font-size:11px; color:#777; }
-  table { width:100%; border-collapse:collapse; margin-top:12px; }
-  .signatures { display:flex; justify-content:space-between; margin-top:60px; padding:0 20px; }
-  .sig-block { text-align:center; min-width:150px; }
-  .sig-line { border-top:1px dashed #999; padding-top:6px; margin-top:40px; }
-  .sig-title { font-size:12px; font-weight:600; }
-  .sig-sub { font-size:10px; color:#888; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  @page{size:A4 landscape;margin:10mm;}
+  body{font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;color:#0f172a;background:#fff;padding:6mm 8mm;}
+  .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;}
+  .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
+  .header-logo{width:60px;height:60px;object-fit:contain;}
+  .header-text{text-align:center;}
+  .header-text h1{font-size:22px;font-weight:800;color:#064e3b;letter-spacing:.3px;margin-bottom:2px;}
+  .header-text .addr{font-size:11px;color:#475569;}
+  .header-text .phone{font-size:11px;color:#475569;margin-top:1px;}
+  .doc-band{margin-top:8px;display:flex;justify-content:center;}
+  .doc-band span{background:#064e3b;color:#fff;font-size:13px;font-weight:700;padding:4px 16px;border-radius:999px;letter-spacing:.4px;}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:center;margin-top:10px;padding:6px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;}
+  .meta-item{display:flex;gap:4px;font-size:11px;}
+  .meta-k{color:#475569;font-weight:500;}
+  .meta-v{color:#064e3b;font-weight:700;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;}
+  thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;}
+  .sub-th{padding:4px 3px;}
+  .sub-name{display:block;line-height:1.1;}
+  .sub-max{display:block;font-size:8.5px;font-weight:500;opacity:.85;margin-top:1px;}
+  tbody td{padding:4px 5px;border:1px solid #d1d5db;}
+  tbody tr:nth-child(even) td{background:#f8fafc;}
+  tbody tr:hover td{background:#ecfdf5;}
+  td.num{text-align:center;}
+  td.name{text-align:left;font-weight:600;color:#0f172a;}
+  td.bold{font-weight:700;}
+  .fail-cell{color:#dc2626;font-weight:700;background:#fef2f2 !important;}
+  .row-fail td{background:#fff7ed !important;}
+  .status-pass{color:#059669;font-weight:700;}
+  .status-fail{color:#dc2626;font-weight:700;}
+  .rank-pill{display:inline-block;min-width:22px;padding:1px 6px;border-radius:999px;background:#064e3b;color:#fff;font-size:10px;font-weight:700;}
+  .grade-A,.grade-AP{color:#059669;}
+  .grade-B{color:#0284c7;}
+  .grade-C{color:#d97706;}
+  .grade-D,.grade-F{color:#dc2626;}
+  .summary{margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;}
+  .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
+  .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
+  .signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:42px;padding:0 10px;}
+  .sig-block{text-align:center;}
+  .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
+  .sig-title{font-size:11.5px;font-weight:700;color:#0f172a;}
+  .sig-sub{font-size:9.5px;color:#64748b;}
+  .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
+  @media print{body{padding:0;} .sheet{border-color:#064e3b;}}
 </style>
 </head><body>
-<div class="header">
-  ${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}
-  <h1>${institutionName || ''}</h1>
-  ${institutionAddress ? `<p class="info">${institutionAddress}</p>` : ''}
-  ${institutionPhone ? `<p class="info">${bn ? 'ফোন' : 'Phone'}: ${institutionPhone}</p>` : ''}
-  <h2>${title}</h2>
-</div>
-<table>
-  <thead><tr>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">#</th>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'রোল' : 'Roll'}</th>
-    <th style="padding:4px 6px;text-align:left;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'নাম' : 'Name'}</th>
-    ${subjectHeaders}
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'মোট' : 'Total'}</th>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'গড়' : 'Avg'}</th>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'গ্রেড' : 'Grade'}</th>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">GPA</th>
-    <th style="padding:4px 6px;text-align:center;font-size:11px;border:1px solid #ccc;background:#f5f5f5;">${bn ? 'মর্যাদা' : 'Title'}</th>
-  </tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-<div class="signatures">
-  <div class="sig-block">
-    <div class="sig-line"></div>
-    <p class="sig-title">${bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller'}</p>
-    <p class="sig-sub">${bn ? 'স্বাক্ষর ও নাম' : 'Signature & Name'}</p>
+<div class="sheet">
+  <div class="header">
+    <div>${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}</div>
+    <div class="header-text">
+      <h1>${institutionName || ''}</h1>
+      ${institutionAddress ? `<p class="addr">${institutionAddress}</p>` : ''}
+      ${institutionPhone ? `<p class="phone">${bn ? 'ফোন' : 'Phone'}: ${institutionPhone}</p>` : ''}
+    </div>
+    <div></div>
   </div>
-  <div class="sig-block">
-    <div class="sig-line"></div>
-    <p class="sig-title">${bn ? 'শিক্ষা সচিব' : 'Education Secretary'}</p>
-    <p class="sig-sub">${bn ? 'স্বাক্ষর ও নাম' : 'Signature & Name'}</p>
+  <div class="doc-band"><span>${bn ? 'ফলাফল শীট' : 'RESULT SHEET'}</span></div>
+  <div class="meta">
+    ${metaRow(bn ? 'পরীক্ষা:' : 'Exam:', examName || title)}
+    ${metaRow(bn ? 'শ্রেণি:' : 'Class:', className || '')}
+    ${metaRow(bn ? 'শিক্ষাবর্ষ:' : 'Session:', sessionName || '')}
+    ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
+    ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
   </div>
-  <div class="sig-block">
-    <div class="sig-line"></div>
-    <p class="sig-title">${bn ? 'মুহতামিম' : 'Principal'}</p>
-    <p class="sig-sub">${bn ? 'স্বাক্ষর ও নাম' : 'Signature & Name'}</p>
+  <table>
+    <thead><tr>
+      <th>#</th>
+      <th>${bn ? 'রোল' : 'Roll'}</th>
+      <th style="text-align:left;padding-left:8px;">${bn ? 'শিক্ষার্থীর নাম' : 'Student Name'}</th>
+      ${subjectHeaders}
+      <th>${bn ? 'মোট' : 'Total'}</th>
+      <th>${bn ? 'গড়' : 'Avg'}</th>
+      <th>${bn ? 'গ্রেড' : 'Grade'}</th>
+      <th>GPA</th>
+      <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
+      <th>${bn ? 'অবস্থা' : 'Status'}</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div class="summary">
+    <div class="stat"><div class="stat-k">${bn ? 'মোট' : 'Total'}</div><div class="stat-v">${computed.length}</div></div>
+    <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'Pass'}</div><div class="stat-v" style="color:#059669;">${passCount}</div></div>
+    <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'Fail'}</div><div class="stat-v" style="color:#dc2626;">${failCount}</div></div>
+    <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'Class Avg'}</div><div class="stat-v">${classAvg}</div></div>
+    <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
+  </div>
+  <div class="signatures">
+    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শ্রেণি শিক্ষক' : 'Class Teacher'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শিক্ষা সচিব' : 'Education Secretary'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+  </div>
+  <div class="footer">
+    <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
+    <span>${institutionName || ''}</span>
   </div>
 </div>
 </body></html>`;
@@ -227,7 +301,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
       setTimeout(() => {
         printWindow.print();
         URL.revokeObjectURL(url);
-      }, 600);
+      }, 700);
     };
   } else {
     URL.revokeObjectURL(url);

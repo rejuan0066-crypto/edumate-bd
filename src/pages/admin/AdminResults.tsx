@@ -332,6 +332,9 @@ const AdminResults = () => {
         institutionLogo: institution?.logo_url || undefined,
         institutionAddress: institution?.address || undefined,
         institutionPhone: institution?.phone || undefined,
+        className: bn ? cls?.name_bn : cls?.name,
+        examName: bn ? examSession.name_bn : examSession.name,
+        sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
       };
 
       if (type === 'csv') exportResultCSV(params);
