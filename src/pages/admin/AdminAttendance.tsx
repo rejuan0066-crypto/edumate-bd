@@ -1715,9 +1715,36 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   .filter(catKey => !['director', 'committee_member'].includes(catKey))
                   .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
                   <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-                      <p className="text-xs font-semibold text-foreground">{cat.label}</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <p className="text-xs font-semibold text-foreground truncate">{cat.label}</p>
+                      </div>
+                      <button
+                        type="button"
+                        title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
+                            description: bn
+                              ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
+                              : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
+                            variant: 'warning',
+                          });
+                          if (!ok) return;
+                          const { error, count } = await supabase
+                            .from('staff')
+                            .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
+                            .eq('staff_category', cat.key);
+                          if (error) { toast.error(error.message); return; }
+                          toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
+                          queryClient.invalidateQueries({ queryKey: ['attendance'] });
+                          queryClient.invalidateQueries({ queryKey: ['staff'] });
+                        }}
+                      >
+                        {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
+                      </button>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
