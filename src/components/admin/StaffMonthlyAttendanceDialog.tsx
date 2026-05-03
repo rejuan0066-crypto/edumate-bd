@@ -370,3 +370,41 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     </Dialog>
   );
 }
+
+function LateTimeEditor({ bn, initialIn, initialOut, saving, onSave }: {
+  bn: boolean;
+  initialIn: string;
+  initialOut: string;
+  saving: boolean;
+  onSave: (checkIn: string, checkOut: string) => void;
+}) {
+  const [ci, setCi] = useState(initialIn || '');
+  const [co, setCo] = useState(initialOut || '');
+  useEffect(() => { setCi(initialIn || ''); setCo(initialOut || ''); }, [initialIn, initialOut]);
+  return (
+    <div className="mt-1 p-2.5 rounded-xl border border-amber-300/40 bg-amber-50/60 dark:bg-amber-950/20 space-y-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1">
+        <Clock className="h-3 w-3" /> {bn ? 'বিলম্ব উপস্থিতি — সময়' : 'Late attendance — time'}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'চেক-ইন' : 'Check-in'}</div>
+          <TimePicker value={ci} onChange={setCi} placeholder={bn ? 'সময়' : 'Time'} />
+        </div>
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'চেক-আউট' : 'Check-out'}</div>
+          <TimePicker value={co} onChange={setCo} placeholder={bn ? 'সময়' : 'Time'} />
+        </div>
+      </div>
+      <Button
+        size="sm"
+        disabled={saving || !ci}
+        onClick={() => onSave(ci, co)}
+        className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+      >
+        <Save className="h-3 w-3 mr-1" /> {bn ? 'সময় সেভ করুন' : 'Save time'}
+      </Button>
+    </div>
+  );
+}
+
