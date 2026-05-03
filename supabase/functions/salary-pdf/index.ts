@@ -275,12 +275,13 @@ Deno.serve(async (req) => {
   thead th.center { text-align: center; }
   thead th.right { text-align: right; }
   tbody td {
-    padding: 2.5pt 3pt;
+    padding: 2pt 2.5pt;
     border: 0.4pt solid #000;
     vertical-align: middle;
     color: #000;
-    line-height: 1.2;
-    word-break: break-word;
+    line-height: 1.15;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
 
@@ -323,23 +324,9 @@ Deno.serve(async (req) => {
   .note strong { font-weight: 700; }
 
   /* ===== Page Header (repeats on every printed page) ===== */
-  .page-header {
-    position: fixed;
-    top: 3mm;
-    left: 5mm;
-    right: 5mm;
-    background: #fff;
-    z-index: 10;
-  }
+  .page-header { background: #fff; }
   /* ===== Page Footer (repeats on every printed page) ===== */
-  .page-footer {
-    position: fixed;
-    left: 5mm;
-    right: 5mm;
-    bottom: 3mm;
-    background: #fff;
-    z-index: 10;
-  }
+  .page-footer { background: #fff; break-inside: avoid; page-break-inside: avoid; }
   .signatures {
     display: grid;
     grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
@@ -393,11 +380,12 @@ Deno.serve(async (req) => {
   }
 
   @media print {
+    html, body { width: 100%; min-height: 100%; }
     body { padding: 0; background: #fff; }
-    .sheet { border: 1pt solid #000; max-width: 100%; padding: 62mm 5mm 70mm; }
+    .sheet { border: 1pt solid #000; max-width: 100%; padding: 4mm 5mm 5mm; overflow: visible; }
     @page {
       size: A4 landscape;
-      margin: 5mm;
+      margin: 6mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
         font-family: 'Noto Serif Bengali', 'Tinos', serif;
@@ -406,20 +394,36 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
-    table { page-break-inside: auto; }
-    tr { page-break-inside: avoid; page-break-after: auto; }
+    table { page-break-inside: auto; break-inside: auto; font-size: 7.2pt; }
+    tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
     .page-header {
-      position: fixed; top: 3mm; left: 5mm; right: 5mm;
-      max-height: 56mm; overflow: hidden;
-      background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm;
+      position: static;
+      max-height: none; overflow: visible;
+      background: #fff; border-bottom: 0.6pt solid #000; padding-bottom: 2mm; margin-bottom: 3mm;
     }
     .page-footer {
-      position: fixed; bottom: 3mm; left: 5mm; right: 5mm;
-      max-height: 64mm; overflow: hidden;
-      background: #fff; border-top: 0.6pt solid #000; padding-top: 2mm;
+      position: static;
+      max-height: none; overflow: visible;
+      background: #fff; border-top: 0.6pt solid #000; padding-top: 2mm; margin-top: 5mm;
     }
+    .letterhead { min-height: 42px; margin-bottom: 3pt; padding-bottom: 3pt; }
+    .logo-wrap { width: 42px; height: 42px; }
+    .inst-name { font-size: 13pt; }
+    .inst-address, .memo-row { font-size: 7.6pt; }
+    .inst-contact, .doc-period { font-size: 7.3pt; }
+    .doc-title { margin: 3pt 0; }
+    .doc-title h2 { font-size: 9.5pt; padding: 1.5pt 12pt; }
+    thead th { font-size: 7.1pt; padding: 2pt 2pt; line-height: 1.05; }
+    tbody td { font-size: 7pt; padding: 1.7pt 2pt; line-height: 1.08; }
+    .c-name .nm { font-size: 7.1pt; line-height: 1.05; }
+    .c-name .sid { font-size: 6.2pt; line-height: 1.05; }
+    .note { font-size: 6.8pt; padding: 2pt 4pt; margin-top: 3pt; }
+    .signatures { margin: 6mm 3mm 2mm; gap: 6mm; }
+    .sig, .sig .role { font-size: 7.4pt; }
+    .sig .sig-name { font-size: 8pt; min-height: 9pt; }
+    .sig .role-meta, .footer, .footer .ref { font-size: 6.6pt; }
   }
 
 </style>
