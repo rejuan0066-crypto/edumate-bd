@@ -228,7 +228,8 @@ Deno.serve(async (req) => {
         <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
         <td></td><td></td><td></td>
         <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
-        <td></td><td></td>
+        <td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>
+        <td class="c-amt">${Number(totals?.savings || 0) > 0 ? fmtNum(Number(totals?.savings || 0)) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
       </tr>
       <tr class="note-row">
@@ -248,28 +249,28 @@ Deno.serve(async (req) => {
               <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
                 <div class="sig">
                   <div class="sig-line"></div>
-                  <div class="sig-name">${escapeHtml((prepared_by && String(prepared_by).trim()) || accountantName || "\u00A0")}</div>
+                  <div class="sig-name">${escapeHtml((prepared_by && String(prepared_by).trim()) || "\u00A0")}</div>
+                  <div class="role-meta">${escapeHtml((prepared_by_role && String(prepared_by_role).trim()) ? prepared_by_role : (bn ? "কোষাধ্যক্ষ" : "Treasurer"))}</div>
                   <div class="role">${bn ? "প্রস্তুতকারী" : "Prepared by"}</div>
-                  <div class="role-meta">${escapeHtml((prepared_by_role && String(prepared_by_role).trim()) ? `(${prepared_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Accountant)"))}</div>
                 </div>
                 <div class="sig">
                   <div class="sig-line"></div>
                   <div class="sig-name">${escapeHtml((verified_by && String(verified_by).trim()) || verifierName || "\u00A0")}</div>
+                  <div class="role-meta">${escapeHtml((verified_by_role && String(verified_by_role).trim()) ? verified_by_role : (bn ? "নিরীক্ষক" : "Auditor"))}</div>
                   <div class="role">${bn ? "যাচাইকারী" : "Verified by"}</div>
-                  <div class="role-meta">${escapeHtml((verified_by_role && String(verified_by_role).trim()) ? `(${verified_by_role})` : (bn ? "(নিরীক্ষক)" : "(Auditor)"))}</div>
                 </div>
                 <div class="sig">
                   <div class="sig-line"></div>
                   <div class="sig-name">${escapeHtml((approved_by && String(approved_by).trim()) || principalName || "\u00A0")}</div>
+                  <div class="role-meta">${escapeHtml((approved_by_role && String(approved_by_role).trim()) ? approved_by_role : (bn ? "প্রিন্সিপাল" : "Principal"))}</div>
                   <div class="role">${bn ? "অনুমোদনকারী" : "Approved by"}</div>
-                  <div class="role-meta">${escapeHtml((approved_by_role && String(approved_by_role).trim()) ? `(${approved_by_role})` : (bn ? "(প্রিন্সিপাল)" : "(Principal)"))}</div>
                 </div>
                 ${(paid_by && String(paid_by).trim()) ? `
                 <div class="sig">
                   <div class="sig-line"></div>
                   <div class="sig-name">${escapeHtml(paid_by)}</div>
+                  <div class="role-meta">${escapeHtml((paid_by_role && String(paid_by_role).trim()) ? paid_by_role : (bn ? "কোষাধ্যক্ষ" : "Treasurer"))}</div>
                   <div class="role">${bn ? "পরিশোধকারী" : "Paid by"}</div>
-                  <div class="role-meta">${escapeHtml((paid_by_role && String(paid_by_role).trim()) ? `(${paid_by_role})` : (bn ? "(কোষাধ্যক্ষ)" : "(Treasurer)"))}</div>
                 </div>` : ''}
               </div>
               <div class="footer">
