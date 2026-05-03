@@ -6777,6 +6777,39 @@ export type Database = {
           },
         ]
       }
+      result_signatories_audit: {
+        Row: {
+          action: string
+          actor_id: string | null
+          cleaned_value: Json | null
+          created_at: string
+          diff: Json | null
+          id: string
+          original_value: Json | null
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          cleaned_value?: Json | null
+          created_at?: string
+          diff?: Json | null
+          id?: string
+          original_value?: Json | null
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          cleaned_value?: Json | null
+          created_at?: string
+          diff?: Json | null
+          id?: string
+          original_value?: Json | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       results: {
         Row: {
           created_at: string | null
@@ -9683,6 +9716,10 @@ export type Database = {
           }
       decrypt_numeric: { Args: { p_cipher: string }; Returns: number }
       decrypt_value: { Args: { p_cipher: string }; Returns: string }
+      diff_result_signatories: {
+        Args: { cleaned: Json; orig: Json }
+        Returns: Json
+      }
       encrypt_numeric: { Args: { p_value: number }; Returns: string }
       encrypt_value: { Args: { p_plain: string }; Returns: string }
       enforce_approve_permission: {
