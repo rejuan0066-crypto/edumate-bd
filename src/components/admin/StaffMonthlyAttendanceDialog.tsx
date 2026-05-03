@@ -343,13 +343,14 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             </button>
                           );
                         })}
-                        {rec?.status === 'late' && (
+                        {(rec?.status === 'present' || rec?.status === 'late' || rec?.status === 'half_day') && (
                           <LateTimeEditor
                             bn={bn}
+                            status={rec.status}
                             initialIn={rec?.check_in_time || ''}
                             initialOut={rec?.check_out_time || ''}
                             saving={isSaving}
-                            onSave={(ci, co) => setStatus(key, 'late', { check_in_time: ci || null, check_out_time: co || null })}
+                            onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
                           />
                         )}
                         {rec && (
@@ -382,8 +383,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   );
 }
 
-function LateTimeEditor({ bn, initialIn, initialOut, saving, onSave }: {
+function LateTimeEditor({ bn, status, initialIn, initialOut, saving, onSave }: {
   bn: boolean;
+  status?: string;
   initialIn: string;
   initialOut: string;
   saving: boolean;
@@ -392,10 +394,12 @@ function LateTimeEditor({ bn, initialIn, initialOut, saving, onSave }: {
   const [ci, setCi] = useState(initialIn || '');
   const [co, setCo] = useState(initialOut || '');
   useEffect(() => { setCi(initialIn || ''); setCo(initialOut || ''); }, [initialIn, initialOut]);
+  const titleBn = status === 'present' ? 'উপস্থিতি — সময়' : status === 'half_day' ? 'অর্ধদিন — সময়' : 'বিলম্ব উপস্থিতি — সময়';
+  const titleEn = status === 'present' ? 'Attendance — time' : status === 'half_day' ? 'Half day — time' : 'Late attendance — time';
   return (
     <div className="mt-1 p-2.5 rounded-xl border border-amber-300/40 bg-amber-50/60 dark:bg-amber-950/20 space-y-2">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1">
-        <Clock className="h-3 w-3" /> {bn ? 'বিলম্ব উপস্থিতি — সময়' : 'Late attendance — time'}
+        <Clock className="h-3 w-3" /> {bn ? titleBn : titleEn}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
