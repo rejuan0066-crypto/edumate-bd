@@ -243,7 +243,9 @@ export default function SalaryWorkflowPanel({
 
   const approveMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
-      const approver = approvers.find((a) => a.staff_id && a.staff_id === wf.approver_staff_id) || approvers[0];
+      const approver = approvers.find((a) => a.id === wf.approver_settings_id)
+        || approvers.find((a) => a.staff_id && a.staff_id === wf.approver_staff_id)
+        || approvers[0];
       const approvedName = approver?.display_name || currentUserName;
       const approvedRole = approver?.designation || (bn ? 'অনুমোদনকারী' : 'Approver');
       await updateAllRecords({
