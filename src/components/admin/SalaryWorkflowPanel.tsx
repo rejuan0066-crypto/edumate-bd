@@ -342,6 +342,30 @@ export default function SalaryWorkflowPanel({
     const verDef = pickDefaultActor(wfSettings, 'verifier');
     const aprDef = pickDefaultActor(wfSettings, 'approver');
     const treDef = pickDefaultActor(wfSettings, 'treasurer');
+
+    // Track source for each signatory: 'workflow' (already set on this sheet) vs 'default' (settings fallback)
+    const sources = {
+      prepared: wf.prepared_by_name ? 'workflow' : (treDef?.display_name ? 'default' : 'current_user'),
+      verified: wf.verified_by_name ? 'workflow' : (verDef?.display_name ? 'default' : 'none'),
+      approved: wf.approved_by_name ? 'workflow' : (aprDef?.display_name ? 'default' : 'none'),
+    };
+
+    const lines: string[] = [];
+    const labelDefault = bn ? 'ডিফল্ট (সেটিংস)' : 'default (settings)';
+    const labelWorkflow = bn ? 'ওয়ার্কফ্লো থেকে' : 'from workflow';
+    const labelMissing = bn ? 'নির্ধারিত নয়' : 'not set';
+
+    const verName = wf.verified_by_name || verDef?.display_name;
+    const aprName = wf.approved_by_name || aprDef?.display_name;
+
+    lines.push(`${bn ? 'যাচাইকারী' : 'Verifier'}: ${verName || '—'} (${sources.verified === 'workflow' ? labelWorkflow : sources.verified === 'default' ? labelDefault : labelMissing})`);
+    lines.push(`${bn ? 'অনুমোদনকারী' : 'Approver'}: ${aprName || '—'} (${sources.approved === 'workflow' ? labelWorkflow : sources.approved === 'default' ? labelDefault : labelMissing})`);
+
+    toast.info(bn ? 'প্রিন্টে ব্যবহৃত স্বাক্ষরকারী' : 'Signatories used in print', {
+      description: lines.join(' • '),
+      duration: 5000,
+    });
+
     onPrintWithWorkflow({
       prepared_by: wf.prepared_by_name || treDef?.display_name || currentUserName || undefined,
       prepared_by_role: wf.prepared_by_role || treDef?.designation || (bn ? 'প্রস্তুতকারী' : 'Prepared by') || undefined,
@@ -353,6 +377,7 @@ export default function SalaryWorkflowPanel({
       paid_by_role: wf.paid_by_role || undefined,
     });
   };
+
 
   if (!records.length) {
     return (
