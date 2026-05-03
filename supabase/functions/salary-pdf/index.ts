@@ -482,6 +482,13 @@ Deno.serve(async (req) => {
     line-height: 1.3;
   }
   .note strong { font-weight: 700; }
+  .note-cell {
+    border: 0.4pt solid #000;
+    background: #fafafa;
+    padding: 3pt 5pt;
+    font-size: 7.5pt;
+    line-height: 1.3;
+  }
 
   /* ===== Page Header (repeats on every printed page) ===== */
   .page-header { background: #fff; }
