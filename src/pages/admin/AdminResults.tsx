@@ -1,6 +1,6 @@
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -323,6 +323,8 @@ const AdminResults = () => {
     return errs;
   };
 
+  const liveSigErrors = useMemo(() => validateSignatories(sigDraft), [sigDraft, bn]);
+  const hasSigErrors = Object.keys(liveSigErrors).length > 0;
   const saveSignatories = useMutation({
     mutationFn: async (rows: ResultSignatory[]) => {
       const errs = validateSignatories(rows);
@@ -490,14 +492,23 @@ const AdminResults = () => {
                 {bn ? 'প্রতিটি স্বাক্ষরকারীর জন্য পদবী ও নাম অন্তত একটি ভাষায় (বাংলা বা English) আবশ্যক।' : 'Title and name are required in at least one language (Bangla or English) for each signatory.'}
               </p>
             </div>
-            <DialogFooter className="gap-2">
+            <DialogFooter className="flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              {hasSigErrors && (
+                <div className="text-[12px] text-destructive font-medium sm:mr-auto px-3 py-2 rounded-md bg-destructive/10 border border-destructive/30">
+                  {bn ? `${Object.keys(liveSigErrors).length} টি স্বাক্ষরকারীর তথ্যে ত্রুটি রয়েছে — সংশোধন করুন।` : `${Object.keys(liveSigErrors).length} signatory row(s) have errors — please fix before saving.`}
+                </div>
+              )}
               <Button variant="ghost" onClick={() => setSigDraft(DEFAULT_RESULT_SIGNATORIES)}>
                 {bn ? 'ডিফল্টে রিসেট' : 'Reset to default'}
               </Button>
               <Button variant="outline" onClick={() => setSigDialogOpen(false)}>
                 {bn ? 'বাতিল' : 'Cancel'}
               </Button>
-              <Button onClick={() => saveSignatories.mutate(sigDraft)} disabled={saveSignatories.isPending}>
+              <Button
+                onClick={() => saveSignatories.mutate(sigDraft)}
+                disabled={saveSignatories.isPending || hasSigErrors}
+                title={hasSigErrors ? (bn ? 'ত্রুটি সংশোধনের পর সংরক্ষণ করুন' : 'Fix errors before saving') : undefined}
+              >
                 {saveSignatories.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ' : 'Save')}
               </Button>
             </DialogFooter>
