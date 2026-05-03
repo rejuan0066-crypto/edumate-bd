@@ -1957,13 +1957,21 @@ const AdminSalary = () => {
                         const rec = getRecord(s.id);
                         const attStats = getAttendanceStats(s);
                         const autoCalc = calculateSalary(s);
-                        const totalDed = rec
-                          ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                          : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
-                        const displayOvertime = rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
-                        const displayNet = rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0);
+                        // For pending records, show live recalculated values so duty-time / settings changes reflect immediately.
+                        // Paid records keep their stored snapshot.
+                        const usePending = rec && rec.status !== 'paid';
+                        const totalDed = usePending
+                          ? Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                            Number(rec.advance_deduction || 0) + Number(autoCalc.other_deduction || 0)
+                          : rec
+                            ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                              Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                            : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                              Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
+                        const displayOvertime = usePending ? Number(autoCalc.overtime || 0) : (rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0));
+                        const displayNet = usePending
+                          ? Math.max(0, Number(autoCalc.net_salary || 0) + Number(rec.bonus || 0) + Number(rec.other_allowance || 0) - Number(rec.advance_deduction || 0))
+                          : (rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0));
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
                         const eligibilityReason = !rec ? getEligibilityReason(s) : null;
