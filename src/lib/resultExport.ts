@@ -66,10 +66,10 @@ export interface ResultSignatory {
 }
 
 export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
-  { title_bn: 'শ্রেণি শিক্ষক', title_en: 'Class Teacher', name_bn: '', name_en: '' },
-  { title_bn: 'পরীক্ষা নিয়ন্ত্রক', title_en: 'Exam Controller', name_bn: '', name_en: '' },
-  { title_bn: 'শিক্ষা সচিব', title_en: 'Education Secretary', name_bn: '', name_en: '' },
-  { title_bn: 'মুহতামিম / অধ্যক্ষ', title_en: 'Principal', name_bn: '', name_en: '' },
+  { title_bn: L.classTeacher,        title_en: 'Class Teacher',     name_bn: '', name_en: '' },
+  { title_bn: L.examController,      title_en: 'Exam Controller',   name_bn: '', name_en: '' },
+  { title_bn: L.educationSecretary,  title_en: 'Education Secretary', name_bn: '', name_en: '' },
+  { title_bn: `${L.muhtamim} / ${L.headmaster}`, title_en: 'Principal', name_bn: '', name_en: '' },
 ];
 
 export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
