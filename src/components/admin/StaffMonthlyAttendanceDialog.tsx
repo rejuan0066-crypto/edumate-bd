@@ -88,6 +88,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
 
   const totalLateMins = useMemo(() => records.reduce((s, r) => s + (Number(r.late_minutes) || 0), 0), [records]);
   const unmarked = days.filter(d => !byDate[format(d, 'yyyy-MM-dd')]).length;
+  const marked = days.length - unmarked;
+  const attendanceRate = marked > 0 ? Math.round(((counts.present + counts.late * 0.5 + counts.half_day * 0.5) / marked) * 100) : 0;
+  const isCurrentMonth = isSameDay(startOfMonth(cursor), startOfMonth(new Date()));
 
   const monthLabel = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
   const leadingBlanks = getDay(monthStart);
