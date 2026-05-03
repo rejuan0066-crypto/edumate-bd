@@ -93,7 +93,14 @@ export default function AdminAdministrativeDebug() {
 
   const runAll = async () => {
     setRunning(true);
+    const batch = newCorrelationId('batch');
+    setBatchId(batch);
     const out: ProbeResult[] = [];
+    const probe = (
+      key: string, label: string, source: string, query: string,
+      fn: () => PromiseLike<{ data: any; error: any }>,
+    ) => runProbe(key, label, source, query, fn, batch);
+
 
     // Helper to apply current filters to a query builder
     const applyFilters = (q: any) => {
