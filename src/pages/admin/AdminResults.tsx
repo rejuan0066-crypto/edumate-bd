@@ -315,6 +315,54 @@ const AdminResults = () => {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Per-class / per-exam footer overrides (null = inherit global)
+  type FooterOverrideRow = { scope: 'class' | 'exam'; scope_id: string; show_page_numbers: boolean | null; show_footer_institution: boolean | null };
+  const { data: footerOverrides = [], refetch: refetchOverrides } = useQuery<FooterOverrideRow[]>({
+    queryKey: ['result-print-footer-overrides'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('result_print_footer_overrides' as any)
+        .select('scope, scope_id, show_page_numbers, show_footer_institution');
+      return ((data as any) || []) as FooterOverrideRow[];
+    },
+    staleTime: 60 * 1000,
+  });
+
+  const resolveFooterFor = (classId: string | null, examId: string | null) => {
+    const cls = classId ? footerOverrides.find(o => o.scope === 'class' && o.scope_id === classId) : undefined;
+    const exm = examId ? footerOverrides.find(o => o.scope === 'exam' && o.scope_id === examId) : undefined;
+    const pages = cls?.show_page_numbers ?? exm?.show_page_numbers ?? footerOptions.show_page_numbers;
+    const inst = cls?.show_footer_institution ?? exm?.show_footer_institution ?? footerOptions.show_footer_institution;
+    const srcPages: 'class' | 'exam' | 'global' = cls?.show_page_numbers != null ? 'class' : exm?.show_page_numbers != null ? 'exam' : 'global';
+    const srcInst: 'class' | 'exam' | 'global' = cls?.show_footer_institution != null ? 'class' : exm?.show_footer_institution != null ? 'exam' : 'global';
+    return { show_page_numbers: !!pages, show_footer_institution: !!inst, source: { pages: srcPages, inst: srcInst } };
+  };
+
+  const upsertFooterOverride = async (
+    scope: 'class' | 'exam',
+    scopeId: string,
+    patch: { show_page_numbers?: boolean | null; show_footer_institution?: boolean | null },
+  ) => {
+    const existing = footerOverrides.find(o => o.scope === scope && o.scope_id === scopeId);
+    const merged = {
+      scope,
+      scope_id: scopeId,
+      show_page_numbers: patch.show_page_numbers !== undefined ? patch.show_page_numbers : (existing?.show_page_numbers ?? null),
+      show_footer_institution: patch.show_footer_institution !== undefined ? patch.show_footer_institution : (existing?.show_footer_institution ?? null),
+    };
+    if (merged.show_page_numbers === null && merged.show_footer_institution === null) {
+      const { error } = await supabase.from('result_print_footer_overrides' as any)
+        .delete().eq('scope', scope).eq('scope_id', scopeId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from('result_print_footer_overrides' as any)
+        .upsert(merged as any, { onConflict: 'scope,scope_id' });
+      if (error) { toast.error(error.message); return; }
+    }
+    toast.success(bn ? 'ওভাররাইড সংরক্ষিত' : 'Override saved');
+    refetchOverrides();
+  };
+
   const saveFooterOptions = async (next: ResultPrintFooterOptions) => {
     const { error } = await supabase
       .from('website_settings')
@@ -444,8 +492,8 @@ const AdminResults = () => {
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
         orientation,
-        showPageNumbers: footerOptions.show_page_numbers,
-        showFooterInstitution: footerOptions.show_footer_institution,
+        showPageNumbers: resolveFooterFor(classId, examSessionId).show_page_numbers,
+        showFooterInstitution: resolveFooterFor(classId, examSessionId).show_footer_institution,
         margins: footerOptions.margins || DEFAULT_PRINT_MARGINS,
       };
 
@@ -696,33 +744,111 @@ const AdminResults = () => {
                   </label>
                 </div>
               </div>
-              {/* Live footer preview */}
+
+              {/* Per-class / per-exam overrides */}
+              {(() => {
+                const classId = exportOptions.classId;
+                const examId = examSessionId || null;
+                if (!classId && !examId) return null;
+                const resolved = resolveFooterFor(classId, examId);
+                const clsOv = classId ? footerOverrides.find(o => o.scope === 'class' && o.scope_id === classId) : undefined;
+                const exmOv = examId ? footerOverrides.find(o => o.scope === 'exam' && o.scope_id === examId) : undefined;
+                const clsName = examClasses.find((c: any) => c.id === classId);
+                const exmName = examSessions.find((es: any) => es.id === examId);
+                const tri = (val: boolean | null | undefined): 'inherit' | 'on' | 'off' =>
+                  val === true ? 'on' : val === false ? 'off' : 'inherit';
+                const triToVal = (t: 'inherit' | 'on' | 'off'): boolean | null => t === 'inherit' ? null : t === 'on';
+                const TriSelect: React.FC<{ value: 'inherit' | 'on' | 'off'; onChange: (v: 'inherit' | 'on' | 'off') => void }> = ({ value, onChange }) => (
+                  <div className="inline-flex rounded-md border overflow-hidden text-[11px]">
+                    {(['inherit', 'on', 'off'] as const).map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => onChange(opt)}
+                        className={`px-2 py-1 transition-colors ${value === opt ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}
+                      >
+                        {opt === 'inherit' ? (bn ? 'গ্লোবাল' : 'Inherit') : opt === 'on' ? (bn ? 'চালু' : 'On') : (bn ? 'বন্ধ' : 'Off')}
+                      </button>
+                    ))}
+                  </div>
+                );
+                const Row = (label: string, scope: 'class' | 'exam', scopeId: string, scopeLabel: string, ov: typeof clsOv) => (
+                  <div className="flex flex-col gap-1.5 py-2 border-b last:border-b-0">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span className="font-medium">{scopeLabel}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs">{bn ? 'পৃষ্ঠা নম্বর' : 'Page numbers'}</span>
+                      <TriSelect value={tri(ov?.show_page_numbers)} onChange={(v) => upsertFooterOverride(scope, scopeId, { show_page_numbers: triToVal(v) })} />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs">{bn ? 'প্রতিষ্ঠানের নাম' : 'Institution name'}</span>
+                      <TriSelect value={tri(ov?.show_footer_institution)} onChange={(v) => upsertFooterOverride(scope, scopeId, { show_footer_institution: triToVal(v) })} />
+                    </div>
+                  </div>
+                );
+                return (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                      {bn ? 'এই এক্সপোর্টের জন্য ওভাররাইড' : 'Overrides for this export'}
+                    </p>
+                    <div className="rounded-lg border p-3 bg-muted/30">
+                      {examId && exmName ? Row(
+                        'exam', 'exam', examId,
+                        `${bn ? 'পরীক্ষা' : 'Exam'}: ${bn ? (exmName.name_bn || exmName.name) : exmName.name}`,
+                        exmOv,
+                      ) : null}
+                      {classId && clsName ? Row(
+                        'class', 'class', classId,
+                        `${bn ? 'ক্লাস' : 'Class'}: ${bn ? (clsName.name_bn || clsName.name) : clsName.name}`,
+                        clsOv,
+                      ) : null}
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        {bn
+                          ? 'ক্লাস > পরীক্ষা > গ্লোবাল — যেটি সবার আগে নন-Inherit পাওয়া যায়, সেটি ব্যবহার হয়।'
+                          : 'Resolution order: Class → Exam → Global. First non-Inherit value wins.'}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Live footer preview (resolved) */}
               <div>
                 <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{bn ? 'ফুটার প্রিভিউ (লাইভ)' : 'Footer Preview (live)'}</p>
-                <div className="rounded-lg border bg-white text-black overflow-hidden">
-                  <div className="px-3 py-6 text-[11px] text-gray-400 italic text-center border-b border-dashed">
-                    {bn ? '— রেজাল্ট শীটের বিষয়বস্তু —' : '— result sheet content —'}
-                  </div>
-                  <div
-                    className="flex items-center justify-between gap-3 px-3 py-2 text-[10px] border-t"
-                    style={{ fontFamily: '"Times New Roman", serif' }}
-                  >
-                    <span className="truncate flex-1 text-left">
-                      {footerOptions.show_footer_institution
-                        ? ((bn ? institution?.name : (institution?.name_en || institution?.name)) || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name'))
-                        : '\u00A0'}
-                    </span>
-                    <span className="shrink-0 text-center text-gray-600">
-                      {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
-                    </span>
-                    <span className="shrink-0 text-right flex-1">
-                      {footerOptions.show_page_numbers ? (bn ? 'পৃষ্ঠা ১ / ৩' : 'Page 1 of 3') : '\u00A0'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-2">
-                  {bn ? 'উপরের টগল অনুযায়ী ফুটার রিয়েল-টাইম আপডেট হয়।' : 'Footer updates in real-time based on the toggles above.'}
-                </p>
+                {(() => {
+                  const r = resolveFooterFor(exportOptions.classId, examSessionId || null);
+                  return (
+                    <>
+                      <div className="rounded-lg border bg-white text-black overflow-hidden">
+                        <div className="px-3 py-6 text-[11px] text-gray-400 italic text-center border-b border-dashed">
+                          {bn ? '— রেজাল্ট শীটের বিষয়বস্তু —' : '— result sheet content —'}
+                        </div>
+                        <div
+                          className="flex items-center justify-between gap-3 px-3 py-2 text-[10px] border-t"
+                          style={{ fontFamily: '"Times New Roman", serif' }}
+                        >
+                          <span className="truncate flex-1 text-left">
+                            {r.show_footer_institution
+                              ? ((bn ? institution?.name : (institution?.name_en || institution?.name)) || (bn ? 'প্রতিষ্ঠানের নাম' : 'Institution Name'))
+                              : '\u00A0'}
+                          </span>
+                          <span className="shrink-0 text-center text-gray-600">
+                            {new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB')}
+                          </span>
+                          <span className="shrink-0 text-right flex-1">
+                            {r.show_page_numbers ? (bn ? 'পৃষ্ঠা ১ / ৩' : 'Page 1 of 3') : '\u00A0'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        {bn
+                          ? `উৎস — পৃষ্ঠা: ${r.source.pages === 'class' ? 'ক্লাস' : r.source.pages === 'exam' ? 'পরীক্ষা' : 'গ্লোবাল'}, প্রতিষ্ঠান: ${r.source.inst === 'class' ? 'ক্লাস' : r.source.inst === 'exam' ? 'পরীক্ষা' : 'গ্লোবাল'}`
+                          : `Source — pages: ${r.source.pages}, institution: ${r.source.inst}`}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
             <DialogFooter className="gap-2">

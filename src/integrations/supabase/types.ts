@@ -6777,6 +6777,36 @@ export type Database = {
           },
         ]
       }
+      result_print_footer_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          scope: string
+          scope_id: string
+          show_footer_institution: boolean | null
+          show_page_numbers: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scope: string
+          scope_id: string
+          show_footer_institution?: boolean | null
+          show_page_numbers?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scope?: string
+          scope_id?: string
+          show_footer_institution?: boolean | null
+          show_page_numbers?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       result_signatories_audit: {
         Row: {
           action: string
