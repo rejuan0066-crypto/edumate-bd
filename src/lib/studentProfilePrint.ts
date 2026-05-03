@@ -1,6 +1,7 @@
 // Printable student profile - opens a styled A4 print window with
 // institution header, photo, and grouped info sections.
 import type { InstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 
 const esc = (v: any): string => {
   if (v === null || v === undefined || v === '') return '—';
@@ -226,8 +227,8 @@ export const printStudentProfile = ({
 
     <footer class="sigs">
       <div class="sig"><div class="line"></div><small>${t("Guardian's Signature", 'অভিভাবকের স্বাক্ষর')}</small></div>
-      <div class="sig"><div class="line"></div><small>${t('Class Teacher', 'শ্রেণী শিক্ষক')}</small></div>
-      <div class="sig"><div class="line"></div><small>${esc(institution.principal_name || institution.principal_name_en) || t('Principal', 'অধ্যক্ষ')}</small></div>
+      <div class="sig"><div class="line"></div><small>${t('Class Teacher', L.classTeacher)}</small></div>
+      <div class="sig"><div class="line"></div><small>${esc(institution.principal_name || institution.principal_name_en) || t('Principal', L.headmaster)}</small></div>
     </footer>
 
     <div class="meta">
