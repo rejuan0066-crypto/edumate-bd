@@ -1685,7 +1685,7 @@ const AdminSalary = () => {
             status: rec?.status || 'not_generated',
           };
         }),
-        totals: { base: stats.totalBase, net: stats.totalNet, deductions: stats.totalDeduction },
+        totals: { base: stats.totalBase, net: stats.totalNet, deductions: stats.totalDeduction, savings: stats.totalSavings ?? 0, overtime: stats.totalOvertime ?? 0 },
         ...sig,
       };
 
