@@ -253,11 +253,32 @@ const AdminDesignations = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input placeholder={bn ? 'পদবি খুঁজুন...' : 'Search designations...'} className="pl-10 bg-background" value={search} onChange={(e) => setSearch(e.target.value)} />
               </div>
-              {canAddItem && (
-                <Button onClick={openAdd} className="btn-primary-gradient flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> {bn ? 'নতুন পদবি' : 'Add Designation'}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" onClick={downloadCsvTemplate} className="flex items-center gap-2">
+                  <Download className="w-4 h-4" /> {bn ? 'টেমপ্লেট' : 'Template'}
                 </Button>
-              )}
+                {canAddItem && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleCsvFile(f);
+                        e.target.value = '';
+                      }}
+                    />
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2">
+                      <Upload className="w-4 h-4" /> {bn ? 'CSV ইম্পোর্ট' : 'Import CSV'}
+                    </Button>
+                    <Button onClick={openAdd} className="btn-primary-gradient flex items-center gap-2">
+                      <Plus className="w-4 h-4" /> {bn ? 'নতুন পদবি' : 'Add Designation'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="card-elevated overflow-hidden">
