@@ -1896,20 +1896,7 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'নাম' : 'Name'}</span><span class="val">${staffMember.name_bn}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${(() => {
-            const d = (staffMember.department || '').toString().trim().toLowerCase();
-            const map: Record<string, { bn: string; en: string }> = {
-              teacher: { bn: 'শিক্ষক', en: 'Teacher' },
-              admin: { bn: 'প্রশাসন', en: 'Admin' },
-              accounts: { bn: 'হিসাব', en: 'Accounts' },
-              office: { bn: 'অফিস', en: 'Office' },
-              support: { bn: 'সহায়ক', en: 'Support' },
-              library: { bn: 'গ্রন্থাগার', en: 'Library' },
-              security: { bn: 'নিরাপত্তা', en: 'Security' },
-            };
-            const m = map[d];
-            return m ? (bn ? m.bn : m.en) : (staffMember.department || '-');
-          })()}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${getDepartmentLabel(staffMember.staff_category || staffMember.department)}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${(() => {
             const t = getDutyTimeWithSource(staffMember);
             return `${fmt(t.start)} – ${fmt(t.end)}`;
