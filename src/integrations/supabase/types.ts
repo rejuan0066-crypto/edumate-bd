@@ -8163,6 +8163,51 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_holidays: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          holiday_date: string
+          holiday_type: string
+          id: string
+          is_paid: boolean
+          name_bn: string | null
+          name_en: string | null
+          notes: string | null
+          updated_at: string
+          weekday: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          holiday_date: string
+          holiday_type?: string
+          id?: string
+          is_paid?: boolean
+          name_bn?: string | null
+          name_en?: string | null
+          notes?: string | null
+          updated_at?: string
+          weekday?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          holiday_date?: string
+          holiday_type?: string
+          id?: string
+          is_paid?: boolean
+          name_bn?: string | null
+          name_en?: string | null
+          notes?: string | null
+          updated_at?: string
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       staff_promotions: {
         Row: {
           created_at: string
