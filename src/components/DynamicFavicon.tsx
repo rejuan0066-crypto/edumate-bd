@@ -81,7 +81,7 @@ const DynamicFavicon = () => {
             theme_color: themeColor,
           });
           applyManifest(manifestUrl);
-        }
+          applyAppleWebAppTitle(shortName);
       })();
     }
   }, [isLoading, faviconSrc, appIconSrc, appName, shortName, themeColor]);
