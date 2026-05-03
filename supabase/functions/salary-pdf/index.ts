@@ -142,26 +142,76 @@ Deno.serve(async (req) => {
       ? `<img src="${escapeHtml(instLogo)}" alt="logo" class="logo-img"/>`
       : `<div class="logo-fallback">${escapeHtml((instName || 'A').charAt(0))}</div>`;
 
+    // ===== Dynamic column registry =====
+    // Add/remove/reorder entries here — widths, headers, cells, totals, and colspans
+    // all auto-recompute. `weight` is a relative width unit (normalized to 100%).
+    type ColDef = {
+      key: string;
+      header: string;
+      align?: "left" | "center" | "right";
+      weight: number; // relative width
+      cell: (s: any, idx: number) => string;
+      total?: () => string; // value rendered in totals row (else empty)
+      groupStart?: boolean; // if true, starts a new totals-row segment (Grand Total label spans all groupStart=false leading cols)
+    };
+
+    const COLUMNS: ColDef[] = [
+      { key: "sl", header: bn ? "ক্রঃ" : "SL", align: "center", weight: 3,
+        cell: (_s, i) => `<td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>` },
+      { key: "name", header: bn ? "কর্মীর নাম ও আইডি" : "Name & ID", weight: 15,
+        cell: (s) => `<td class="c-name"><div class="nm">${escapeHtml(s.name)}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${escapeHtml(s.staff_id)}</div>` : ""}</td>` },
+      { key: "designation", header: bn ? "পদবি" : "Designation", weight: 12,
+        cell: (s) => `<td>${escapeHtml(s.designation)}</td>` },
+      { key: "base", header: bn ? "মূল বেতন (৳)" : "Base (BDT)", align: "right", weight: 8,
+        cell: (s) => `<td class="c-amt">${fmtNum(Number(s.base_salary))}</td>`,
+        total: () => `<td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>` },
+      { key: "present", header: bn ? "উপ" : "P", align: "center", weight: 3,
+        cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>`,
+        total: () => `<td></td>` },
+      { key: "absent", header: bn ? "অনু" : "A", align: "center", weight: 3,
+        cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>`,
+        total: () => `<td></td>` },
+      { key: "late", header: bn ? "বি" : "L", align: "center", weight: 3,
+        cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>`,
+        total: () => `<td></td>` },
+      { key: "leave", header: bn ? "ছু" : "Lv", align: "center", weight: 3,
+        cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.leave || 0) : (s.leave || 0)}</td>`,
+        total: () => `<td></td>` },
+      { key: "deduction", header: bn ? "কর্তন (৳)" : "Deduction", align: "right", weight: 8,
+        cell: (s) => { const d = Number(s.deductions || 0); return `<td class="c-amt">${d > 0 ? fmtNum(d) : "—"}</td>`; },
+        total: () => `<td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>` },
+      { key: "overtime", header: bn ? "ওভারটাইম (৳)" : "Overtime", align: "right", weight: 7,
+        cell: (s) => `<td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>`,
+        total: () => `<td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>` },
+      { key: "deposit", header: bn ? "জমা (৳)" : "Deposit", align: "right", weight: 8,
+        cell: (s) => { const dep = Number(s.savings ?? s.advance ?? 0); return `<td class="c-amt">${dep > 0 ? fmtNum(dep) : "—"}</td>`; },
+        total: () => `<td class="c-amt">${Number(totals?.savings || 0) > 0 ? fmtNum(Number(totals?.savings || 0)) : "—"}</td>` },
+      { key: "totalDed", header: bn ? "মোট কর্তন (৳)" : "Total Ded.", align: "right", weight: 9,
+        cell: (s) => {
+          const d = Number(s.deductions || 0); const dep = Number(s.savings ?? s.advance ?? 0); const t = d + dep;
+          return `<td class="c-amt" style="font-weight:700;color:#b91c1c">${t > 0 ? fmtNum(t) : "—"}</td>`;
+        },
+        total: () => {
+          const t = Number(totals?.deductions || 0) + Number(totals?.savings || 0);
+          return `<td class="c-amt" style="font-weight:700;color:#b91c1c">${t > 0 ? fmtNum(t) : "—"}</td>`;
+        } },
+      { key: "net", header: bn ? "নিট প্রদেয় (৳)" : "Net Payable", align: "right", weight: 12,
+        cell: (s) => `<td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>`,
+        total: () => `<td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>` },
+    ];
+
+    const COL_COUNT = COLUMNS.length;
+    const totalWeight = COLUMNS.reduce((a, c) => a + c.weight, 0);
     const colGroup = `
       <colgroup>
-        <col style="width:3%"/>
-        <col style="width:15%"/>
-        <col style="width:12%"/>
-        <col style="width:8%"/>
-        <col style="width:3%"/>
-        <col style="width:3%"/>
-        <col style="width:3%"/>
-        <col style="width:3%"/>
-        <col style="width:8%"/>
-        <col style="width:7%"/>
-        <col style="width:8%"/>
-        <col style="width:9%"/>
-        <col style="width:18%"/>
+        ${COLUMNS.map((c) => `<col style="width:${((c.weight / totalWeight) * 100).toFixed(3)}%"/>`).join("")}
       </colgroup>`;
+
+    const alignClass = (a?: string) => a === "center" ? " center" : a === "right" ? " right" : "";
 
     const renderPageHeader = () => `
       <tr class="page-header-row">
-        <th colspan="13" class="header-cell">
+        <th colspan="${COL_COUNT}" class="header-cell">
           <div class="page-header">
             <div class="letterhead">
               <div class="logo-wrap">${logoBlock}</div>
@@ -195,60 +245,27 @@ Deno.serve(async (req) => {
 
     const renderColumnHeaders = () => `
       <tr class="column-header-row">
-        <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
-        <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
-        <th>${bn ? "পদবি" : "Designation"}</th>
-        <th class="right">${bn ? "মূল বেতন (৳)" : "Base (BDT)"}</th>
-        <th class="center">${bn ? "উপ" : "P"}</th>
-        <th class="center">${bn ? "অনু" : "A"}</th>
-        <th class="center">${bn ? "বি" : "L"}</th>
-        <th class="center">${bn ? "ছু" : "Lv"}</th>
-        <th class="right">${bn ? "কর্তন (৳)" : "Deduction"}</th>
-        <th class="right">${bn ? "ওভারটাইম (৳)" : "Overtime"}</th>
-        <th class="right">${bn ? "জমা (৳)" : "Deposit"}</th>
-        <th class="right">${bn ? "মোট কর্তন (৳)" : "Total Ded."}</th>
-        <th class="right">${bn ? "নিট প্রদেয় (৳)" : "Net Payable"}</th>
+        ${COLUMNS.map((c) => `<th class="${alignClass(c.align).trim()}">${c.header}</th>`).join("")}
       </tr>`;
 
-    const renderStaffRows = (rows: any[], startIndex: number) => rows.map((s: any, i: number) => {
-      const ded = Number(s.deductions || 0);
-      const dep = Number(s.savings ?? s.advance ?? 0);
-      const totalDed = ded + dep;
-      return `
+    const renderStaffRows = (rows: any[], startIndex: number) => rows.map((s: any, i: number) => `
       <tr class="staff-row">
-        <td class="c-num">${bn ? toBnDigits(startIndex + i + 1) : startIndex + i + 1}</td>
-        <td class="c-name"><div class="nm">${escapeHtml(s.name)}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${escapeHtml(s.staff_id)}</div>` : ""}</td>
-        <td>${escapeHtml(s.designation)}</td>
-        <td class="c-amt">${fmtNum(Number(s.base_salary))}</td>
-        <td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>
-        <td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>
-        <td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>
-        <td class="c-num">${bn ? toBnDigits(s.leave || 0) : (s.leave || 0)}</td>
-        <td class="c-amt">${ded > 0 ? fmtNum(ded) : "—"}</td>
-        <td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>
-        <td class="c-amt">${dep > 0 ? fmtNum(dep) : "—"}</td>
-        <td class="c-amt" style="font-weight:700;color:#b91c1c">${totalDed > 0 ? fmtNum(totalDed) : "—"}</td>
-        <td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>
-      </tr>`;
-    }).join("");
+        ${COLUMNS.map((c) => c.cell(s, startIndex + i)).join("")}
+      </tr>`).join("");
 
     const renderTotalsAndNote = () => {
-      const totDed = Number(totals?.deductions || 0);
-      const totDep = Number(totals?.savings || 0);
-      const totAll = totDed + totDep;
+      // First N columns without `total` get merged into the "Grand Total" label cell.
+      let labelSpan = 0;
+      while (labelSpan < COLUMNS.length && !COLUMNS[labelSpan].total) labelSpan++;
+      if (labelSpan === 0) labelSpan = 1;
+      const labelCell = `<td colspan="${labelSpan}">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>`;
+      const totalCells = COLUMNS.slice(labelSpan).map((c) => c.total ? c.total() : `<td></td>`).join("");
       return `
       <tr class="totals">
-        <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
-        <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
-        <td></td><td></td><td></td><td></td>
-        <td class="c-amt">${fmtNum(totDed)}</td>
-        <td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>
-        <td class="c-amt">${totDep > 0 ? fmtNum(totDep) : "—"}</td>
-        <td class="c-amt" style="font-weight:700;color:#b91c1c">${totAll > 0 ? fmtNum(totAll) : "—"}</td>
-        <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
+        ${labelCell}${totalCells}
       </tr>
       <tr class="note-row">
-        <td colspan="13" class="note-cell">
+        <td colspan="${COL_COUNT}" class="note-cell">
           <strong>${bn ? "নোটঃ" : "Note:"}</strong>
           ${bn
             ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধ্যক্ষ কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
