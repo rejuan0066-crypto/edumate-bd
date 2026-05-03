@@ -8,16 +8,13 @@ let capturedHtml = '';
 beforeEach(() => {
   capturedHtml = '';
   const OriginalBlob = globalThis.Blob;
-  // @ts-expect-error – stub Blob to capture HTML payload
-  globalThis.Blob = function (parts: any[], opts: any) {
+  (globalThis as any).Blob = function (parts: any[], opts: any) {
     capturedHtml = (parts || []).join('');
     return new OriginalBlob(parts, opts);
   } as any;
 
-  // @ts-expect-error – stub URL APIs used by printResultSheet
-  globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock');
-  // @ts-expect-error
-  globalThis.URL.revokeObjectURL = vi.fn();
+  (globalThis as any).URL.createObjectURL = vi.fn(() => 'blob:mock');
+  (globalThis as any).URL.revokeObjectURL = vi.fn();
 
   // Stub window.open so printResultSheet doesn't try to actually print.
   vi.spyOn(window, 'open').mockReturnValue({
