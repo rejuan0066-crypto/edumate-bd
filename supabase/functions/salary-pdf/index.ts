@@ -822,7 +822,7 @@ Deno.serve(async (req) => {
   }
   /* Auto-fit hooks */
   @media print {
-    .salary-page { transform-origin: top left; }
+    .print-fit { transform-origin: top left; }
     /* Strip trailing break on the last page — Safari mobile otherwise renders an empty 2nd page */
     .salary-page:last-child { break-after: avoid !important; page-break-after: avoid !important; }
     .sheet > *:last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }
