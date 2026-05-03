@@ -190,13 +190,34 @@ export const exportAttendanceExcel = ({
   XLSX.writeFile(wb, `${title}_${selectedDate}.xlsx`, { bookType: 'xlsx', cellStyles: true });
 };
 
-// Calculate late minutes
-export const calcLateMinutes = (checkInTime: string | null, shiftStart: string): number => {
+// Calculate late minutes (overnight-aware when shiftEnd is supplied).
+// For overnight shifts (e.g. 17:00 → 05:00), a check-in earlier than shiftStart
+// is treated as next-day and gets +24h. A check-in within the shift window
+// returns the diff from shiftStart; outside the window returns 0.
+export const calcLateMinutes = (
+  checkInTime: string | null,
+  shiftStart: string,
+  shiftEnd?: string,
+): number => {
   if (!checkInTime || !shiftStart) return 0;
   const [sh, sm] = shiftStart.split(':').map(Number);
   const [ch, cm] = checkInTime.split(':').map(Number);
-  const shiftMinutes = sh * 60 + sm;
-  const checkMinutes = ch * 60 + cm;
+  let shiftMinutes = sh * 60 + sm;
+  let checkMinutes = ch * 60 + cm;
+
+  if (shiftEnd) {
+    const [eh, em] = shiftEnd.split(':').map(Number);
+    let shiftEndMin = eh * 60 + em;
+    const overnight = shiftEndMin <= shiftMinutes;
+    if (overnight) {
+      shiftEndMin += 24 * 60;
+      // Check-in earlier than start clock time → next day arrival
+      if (checkMinutes < shiftMinutes) checkMinutes += 24 * 60;
+      // Beyond shift end window → not "late", treat as 0
+      if (checkMinutes > shiftEndMin) return 0;
+    }
+  }
+
   const diff = checkMinutes - shiftMinutes;
   return diff > 0 ? diff : 0;
 };

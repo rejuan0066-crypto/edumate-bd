@@ -943,7 +943,10 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         const shiftStart = staffSubTab === 'duty'
           ? (selectedShift === 'morning' ? dutyTimes.morning_start : dutyTimes.evening_start)
           : getCategoryTime(entity).start;
-        const lateMins = calcLateMinutes(att?.check_in_time || null, shiftStart);
+        const shiftEnd = staffSubTab === 'duty'
+          ? (selectedShift === 'morning' ? dutyTimes.morning_end : dutyTimes.evening_end)
+          : getCategoryTime(entity).end;
+        const lateMins = calcLateMinutes(att?.check_in_time || null, shiftStart, shiftEnd);
         totalLateMinutes += lateMins;
         row.late = lateMins > 0 ? `${lateMins} ${bn ? 'মিনিট' : 'Min'}` : '-';
       }
