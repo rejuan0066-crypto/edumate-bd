@@ -71,7 +71,7 @@ export default function SalaryWorkflowPanel({
   const confirm = useConfirm();
   const { language } = useLanguage();
   const bn = language === 'bn';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const queryClient = useQueryClient();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [actionDialog, setActionDialog] = useState<null | {
