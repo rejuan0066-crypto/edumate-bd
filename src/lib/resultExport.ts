@@ -215,9 +215,14 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   const topper = sortedByTotal[0];
   const classAvg = computed.length ? (computed.reduce((s, c) => s + c.total, 0) / computed.length).toFixed(2) : '0';
 
-  const subjectHeaders = subjects.map((s: any) =>
-    `<th class="sub-th"><span class="sub-name">${bn ? s.name_bn : s.name}</span><span class="sub-max">100</span></th>`
-  ).join('');
+  const subjectHeaders = subjects.map((s: any) => {
+    const fullName = (bn ? s.name_bn : s.name) || '';
+    const len = fullName.length;
+    // Tier classes drive font-size + line-clamp so all subject headers share the same visual height
+    const sizeClass = len > 22 ? 'sub-name xs' : len > 16 ? 'sub-name sm' : len > 10 ? 'sub-name md' : 'sub-name';
+    const safeTitle = fullName.replace(/"/g, '&quot;');
+    return `<th class="sub-th"><span class="${sizeClass}" title="${safeTitle}">${fullName}</span><span class="sub-max">100</span></th>`;
+  }).join('');
 
   const rows = computed.map(({ idx, st, marks, total, avg, overall, failed }) => {
     const rank = rankMap.get(idx);
