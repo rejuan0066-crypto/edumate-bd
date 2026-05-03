@@ -284,7 +284,8 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .meta-item{display:flex;gap:4px;font-size:11px;}
   .meta-k{color:#475569;font-weight:500;}
   .meta-v{color:#064e3b;font-weight:700;}
-  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;}
+  table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;table-layout:fixed;}
+  .result-table th,.result-table td{overflow:hidden;}
   thead{display:table-header-group !important;}
   tfoot{display:table-footer-group;}
   thead tr{page-break-inside:avoid;break-inside:avoid;}
