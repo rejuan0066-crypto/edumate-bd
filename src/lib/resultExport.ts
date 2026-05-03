@@ -209,7 +209,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
-    size:A4 landscape;
+    size:A4 ${orientation};
     margin:10mm 10mm 14mm 10mm;
     @bottom-left{
       content:"${(institutionName || '').replace(/"/g, '\\"')}";
