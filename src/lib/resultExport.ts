@@ -289,8 +289,11 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   tfoot{display:table-footer-group;}
   thead tr{page-break-inside:avoid;break-inside:avoid;}
   thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact;}
-  .sub-th{padding:4px 3px;}
-  .sub-name{display:block;line-height:1.1;}
+  .sub-th{padding:4px 3px;vertical-align:middle;height:38px;max-width:60px;}
+  .sub-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;text-overflow:ellipsis;line-height:1.15;word-break:break-word;overflow-wrap:anywhere;hyphens:auto;font-size:10.5px;}
+  .sub-name.md{font-size:9.5px;}
+  .sub-name.sm{font-size:8.5px;-webkit-line-clamp:3;line-clamp:3;line-height:1.1;}
+  .sub-name.xs{font-size:7.5px;-webkit-line-clamp:3;line-clamp:3;line-height:1.05;letter-spacing:-.2px;}
   .sub-max{display:block;font-size:8.5px;font-weight:500;opacity:.85;margin-top:1px;}
   tbody td{padding:4px 5px;border:1px solid #d1d5db;}
   tbody tr{page-break-inside:avoid;break-inside:avoid;}
