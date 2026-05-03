@@ -577,7 +577,9 @@ const AdminSalary = () => {
 
     const dutyTime = getDutyTime(staffMember);
     const dutyStart = timeToMinutes(dutyTime.start);
-    const dutyEnd = timeToMinutes(dutyTime.end);
+    let dutyEnd = timeToMinutes(dutyTime.end);
+    const isOvernight = dutyEnd <= dutyStart;
+    if (isOvernight) dutyEnd += 24 * 60; // shift end into next day
     const scheduledMinutesPerDay = dutyEnd - dutyStart;
 
     let totalLateArrivalMinutes = 0;
