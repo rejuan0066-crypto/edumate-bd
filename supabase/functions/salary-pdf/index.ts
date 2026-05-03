@@ -92,19 +92,21 @@ Deno.serve(async (req) => {
     };
     const fmtNum = (n: number) => bn ? toBnDigits(n.toLocaleString()) : n.toLocaleString();
 
-    // Fetch institution info + website_settings (full fallback for any missing field)
-    const [{ data: institution }, { data: wsRows }] = await Promise.all([
-      supabase.from("institutions").select("*").eq("is_default", true).maybeSingle(),
-      supabase.from("website_settings").select("key,value").in("key", [
-        "institution_name", "institution_name_en",
-        "address", "address_en",
-        "phone", "email", "logo_url",
-        "established_year", "registration_number",
-        "principal_name", "principal_name_en",
-        "accountant_name", "accountant_name_en",
-        "verifier_name", "verifier_name_en",
-      ]),
-    ]);
+    // Fetch institution info + website_settings (skipped in dryRun to avoid DB).
+    const [{ data: institution }, { data: wsRows }] = isDryRun
+      ? [{ data: null }, { data: [] }] as any
+      : await Promise.all([
+          supabase.from("institutions").select("*").eq("is_default", true).maybeSingle(),
+          supabase.from("website_settings").select("key,value").in("key", [
+            "institution_name", "institution_name_en",
+            "address", "address_en",
+            "phone", "email", "logo_url",
+            "established_year", "registration_number",
+            "principal_name", "principal_name_en",
+            "accountant_name", "accountant_name_en",
+            "verifier_name", "verifier_name_en",
+          ]),
+        ]);
     const ws: Record<string, string> = {};
     (wsRows || []).forEach((r: any) => {
       ws[r.key] = (typeof r.value === 'string' ? r.value : (r.value ?? '')) || '';
