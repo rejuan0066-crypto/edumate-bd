@@ -170,6 +170,7 @@ export default function SalaryWorkflowPanel({
         prepared_by_role: bn ? 'প্রস্তুতকারী' : 'Prepared by',
         prepared_at: new Date().toISOString(),
         verifier_staff_id: target.staff_id || null,
+        verifier_settings_id: target.id,
         workflow_stage: 'pending_verification',
         workflow_notes: notes || null,
       });
@@ -190,7 +191,9 @@ export default function SalaryWorkflowPanel({
   const verifyMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
       // Verifier identity: from wf snapshot or fallback to current user
-      const verifier = verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id) || verifiers[0];
+      const verifier = verifiers.find((v) => v.id === wf.verifier_settings_id)
+        || verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id)
+        || verifiers[0];
       const verifiedName = verifier?.display_name || currentUserName;
       const verifiedRole = verifier?.designation || (bn ? 'যাচাইকারী' : 'Verifier');
       await updateAllRecords({
@@ -220,6 +223,7 @@ export default function SalaryWorkflowPanel({
       if (!target) throw new Error('Approver not found');
       await updateAllRecords({
         approver_staff_id: target.staff_id || null,
+        approver_settings_id: target.id,
         workflow_stage: 'pending_approval',
         workflow_notes: notes || null,
       });
@@ -239,7 +243,9 @@ export default function SalaryWorkflowPanel({
 
   const approveMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
-      const approver = approvers.find((a) => a.staff_id && a.staff_id === wf.approver_staff_id) || approvers[0];
+      const approver = approvers.find((a) => a.id === wf.approver_settings_id)
+        || approvers.find((a) => a.staff_id && a.staff_id === wf.approver_staff_id)
+        || approvers[0];
       const approvedName = approver?.display_name || currentUserName;
       const approvedRole = approver?.designation || (bn ? 'অনুমোদনকারী' : 'Approver');
       await updateAllRecords({
@@ -274,6 +280,7 @@ export default function SalaryWorkflowPanel({
         paid_by: user?.id,
         paid_by_name: target.display_name,
         paid_by_role: target.designation || (bn ? 'কোষাধ্যক্ষ' : 'Treasurer'),
+        treasurer_settings_id: target.id,
         workflow_stage: 'paid',
         workflow_notes: notes || null,
       }).in('id', ids);
@@ -390,8 +397,8 @@ export default function SalaryWorkflowPanel({
   }
 
   // Role-based gating (hook moved to top of component to keep hook order stable)
-  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id);
-  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id);
+  const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id, wf.verifier_settings_id);
+  const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id, wf.approver_settings_id);
 
   // Action availability — combines stage + role gating
   const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
