@@ -125,6 +125,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
+      qc.invalidateQueries({ queryKey: ['attendance'] });
       setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
