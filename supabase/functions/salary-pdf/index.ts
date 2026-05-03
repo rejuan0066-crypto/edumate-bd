@@ -313,15 +313,21 @@ Deno.serve(async (req) => {
     font-size: 10pt;
     line-height: 1.3;
   }
-  body { padding: 5mm 6mm; }
+  body { padding: 0; }
 
-  .sheet {
+  .salary-page {
     width: 100%;
     margin: 0 auto;
     background: #fff;
     border: 1pt solid #000;
     padding: 5mm 6mm 5mm;
     position: relative;
+    break-after: page;
+    page-break-after: always;
+  }
+  .salary-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
 
   /* ===== Letterhead ===== */
@@ -409,6 +415,7 @@ Deno.serve(async (req) => {
     font-size: 8pt;
     color: #000;
     table-layout: fixed;
+    height: 100%;
   }
   thead th {
     background: #f1f1f1;
@@ -435,6 +442,8 @@ Deno.serve(async (req) => {
     overflow-wrap: anywhere;
   }
   tbody tr:nth-child(even) td { background: #fafafa; }
+
+  .staff-row { height: 8.5mm; }
 
   .c-num { text-align: center; font-variant-numeric: tabular-nums; }
   .c-name .nm { font-weight: 700; font-size: 8pt; }
@@ -481,7 +490,7 @@ Deno.serve(async (req) => {
   thead th.header-cell, thead .header-cell { background: #fff !important; }
   /* ===== Persistent footer cell inside <tfoot> (repeats every page) ===== */
   .footer-cell { padding: 0 !important; border: none !important; background: #fff !important; }
-  .footer-inner { padding-top: 6mm; vertical-align: bottom; }
+  .footer-inner { padding-top: 6mm; vertical-align: bottom; min-height: 28mm; }
   .signatures {
     display: grid;
     grid-template-columns: repeat(var(--sig-cols, 3), 1fr);
