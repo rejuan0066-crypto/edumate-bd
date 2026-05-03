@@ -1432,6 +1432,37 @@ const AdminSalary = () => {
   const [sigVerifiedRole, setSigVerifiedRole] = useState('');
   const [sigApprovedBy, setSigApprovedBy] = useState('');
   const [sigApprovedRole, setSigApprovedRole] = useState('');
+
+  // Load dynamic signatories (name + designation) from salary_workflow_settings
+  const { data: workflowSignatories = [] } = useQuery({
+    queryKey: ['salary-workflow-signatories'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('salary_workflow_settings')
+        .select('role, display_name, designation, is_active, sort_order, is_default')
+        .eq('is_active', true)
+        .order('is_default', { ascending: false })
+        .order('sort_order', { ascending: true });
+      return data || [];
+    },
+  });
+  const pickSig = (role: 'treasurer' | 'verifier' | 'approver') =>
+    (workflowSignatories as any[]).find((r) => r.role === role) || null;
+
+  // Auto-fill signatory dialog from settings whenever it opens or data changes
+  useEffect(() => {
+    if (!sigDialogOpen) return;
+    const prep = pickSig('treasurer');
+    const ver = pickSig('verifier');
+    const apr = pickSig('approver');
+    if (!sigPreparedBy && prep?.display_name) setSigPreparedBy(prep.display_name);
+    if (!sigPreparedRole && prep?.designation) setSigPreparedRole(prep.designation);
+    if (!sigVerifiedBy && ver?.display_name) setSigVerifiedBy(ver.display_name);
+    if (!sigVerifiedRole && ver?.designation) setSigVerifiedRole(ver.designation);
+    if (!sigApprovedBy && apr?.display_name) setSigApprovedBy(apr.display_name);
+    if (!sigApprovedRole && apr?.designation) setSigApprovedRole(apr.designation);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sigDialogOpen, workflowSignatories]);
   const exportPDF = async (sigOverride?: {
     prepared_by?: string; prepared_by_role?: string;
     verified_by?: string; verified_by_role?: string;
@@ -1441,14 +1472,19 @@ const AdminSalary = () => {
     setPdfLoading(true);
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
-      const sig = sigOverride || {
-        prepared_by: sigPreparedBy.trim() || undefined,
-        prepared_by_role: sigPreparedRole.trim() || undefined,
-        verified_by: sigVerifiedBy.trim() || undefined,
-        verified_by_role: sigVerifiedRole.trim() || undefined,
-        approved_by: sigApprovedBy.trim() || undefined,
-        approved_by_role: sigApprovedRole.trim() || undefined,
-      };
+      const sig = sigOverride || (() => {
+        const prep = pickSig('treasurer');
+        const ver = pickSig('verifier');
+        const apr = pickSig('approver');
+        return {
+          prepared_by: sigPreparedBy.trim() || prep?.display_name || undefined,
+          prepared_by_role: sigPreparedRole.trim() || prep?.designation || undefined,
+          verified_by: sigVerifiedBy.trim() || ver?.display_name || undefined,
+          verified_by_role: sigVerifiedRole.trim() || ver?.designation || undefined,
+          approved_by: sigApprovedBy.trim() || apr?.display_name || undefined,
+          approved_by_role: sigApprovedRole.trim() || apr?.designation || undefined,
+        };
+      })();
       const payload = {
         monthYear,
         monthLabel: bn ? monthName?.bn : monthName?.en,
