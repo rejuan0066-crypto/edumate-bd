@@ -459,6 +459,13 @@ const AdminSalary = () => {
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+      // Hard validation — block on any data error
+      const v = getAttendanceValidation(s);
+      if (v.hasErrors) {
+        const reason = v.errors.join(' • ');
+        await logSalaryGeneration({ staff_id: s.id, staff_name: sName, action: 'generate', source: 'manual', success: false, reason });
+        throw new Error(reason);
+      }
       if (requireAttendance) {
         const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
         if (!hasAttendance) {
@@ -858,18 +865,31 @@ const AdminSalary = () => {
     mutationFn: async () => {
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       const skippedNames: string[] = [];
+      const errorList: { name: string; reasons: string[] }[] = [];
       const newRecords: any[] = [];
       const updateRecords: any[] = [];
 
       for (const s of staff) {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
+        const sName = s.name_bn || s.name_en || 'Unknown';
+
+        // Hard validation — skip on any error (don't generate corrupt data)
+        const v = getAttendanceValidation(s);
+        if (v.hasErrors) {
+          errorList.push({ name: sName, reasons: v.errors });
+          await logSalaryGeneration({
+            staff_id: s.id, staff_name: sName, action: 'bulk_generate', source: 'bulk',
+            success: false, reason: v.errors.join(' • '),
+          });
+          continue;
+        }
 
         if (requireAttendance) {
           const hasAttendance = attendanceData.some((a: any) => a.entity_id === s.id);
           if (!hasAttendance) {
-            skippedNames.push(s.name_bn || s.name_en || 'Unknown');
+            skippedNames.push(sName);
             await logSalaryGeneration({
-              staff_id: s.id, staff_name: s.name_bn || s.name_en, action: 'bulk_generate', source: 'bulk',
+              staff_id: s.id, staff_name: sName, action: 'bulk_generate', source: 'bulk',
               success: false, reason: bn ? 'উপস্থিতি রেকর্ড নেই' : 'No attendance records',
             });
             continue;
@@ -892,6 +912,19 @@ const AdminSalary = () => {
         } else {
           newRecords.push({ staff_id: s.id, month_year: monthYear, ...calc, status: 'pending' });
         }
+      }
+
+      if (errorList.length > 0) {
+        toast.error(
+          bn
+            ? `${toBnDigits(errorList.length)} জনের ডেটা ভুল — বেতন তৈরি বন্ধ`
+            : `${errorList.length} staff have invalid attendance data — salary skipped`,
+          {
+            description: errorList.slice(0, 4).map(e => `• ${e.name}: ${e.reasons[0]}`).join('\n')
+              + (errorList.length > 4 ? (bn ? `\n…আরও ${toBnDigits(errorList.length - 4)} জন` : `\n…and ${errorList.length - 4} more`) : ''),
+            duration: 9000,
+          }
+        );
       }
 
       if (skippedNames.length > 0) {
@@ -1193,6 +1226,108 @@ const AdminSalary = () => {
       return bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) ব্যবহার হচ্ছে' : 'Duty time is using default (08:00–17:00)';
     }
     return null;
+  };
+
+  // Comprehensive attendance validation — detects missing/inconsistent data
+  // Returns { errors: string[], warnings: string[], hasErrors, hasWarnings }
+  // errors → block salary generation. warnings → allow but show alert.
+  const getAttendanceValidation = (s: any): { errors: string[]; warnings: string[]; hasErrors: boolean; hasWarnings: boolean } => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+
+    const records = attendanceData.filter((a: any) =>
+      a.entity_id === s.id && a.shift !== 'morning' && a.shift !== 'evening'
+    );
+
+    if (requireAttendance && records.length === 0) {
+      errors.push(bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
+    }
+
+    if (records.length > 0) {
+      const stats = getAttendanceStats(s);
+      const [yy, mm] = monthYear.split('-').map(Number);
+      const lastDay = new Date(yy, mm, 0).getDate();
+
+      // 1. Duplicate per-day records (same date)
+      const dateCount = new Map<string, number>();
+      for (const r of records) dateCount.set(r.attendance_date, (dateCount.get(r.attendance_date) || 0) + 1);
+      const dupDates = Array.from(dateCount.entries()).filter(([, c]) => c > 1).map(([d]) => d);
+      if (dupDates.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(dupDates.length)} দিনে একাধিক রেকর্ড (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`
+          : `${dupDates.length} day(s) have duplicate records (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`);
+      }
+
+      // 2. Untracked working days (potentially absent days never marked)
+      if (stats.untrackedAbsentDays > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো রেকর্ড নেই (ছুটি না হলে অনুপস্থিত হিসাবে গণ্য)`
+          : `${stats.untrackedAbsentDays} day(s) unmarked (counted as absent unless holiday)`);
+      }
+
+      // 3. Late/half_day/present without check-in time
+      const missingTime = records.filter((r: any) =>
+        ['present', 'late', 'half_day'].includes(r.status) && !r.check_in_time
+      );
+      if (missingTime.length > 0) {
+        errors.push(bn
+          ? `${toBnDigits(missingTime.length)} দিনে চেক-ইন সময় নেই — কর্তন সঠিক হবে না`
+          : `${missingTime.length} day(s) missing check-in time — deductions will be wrong`);
+      }
+
+      // 4. Check-out before check-in (corrupt timing)
+      const reversed = records.filter((r: any) => {
+        if (!r.check_in_time || !r.check_out_time) return false;
+        const ci = timeToMinutes(r.check_in_time);
+        const co = timeToMinutes(r.check_out_time);
+        return co < ci && co < 60; // negative window, not overnight tail
+      });
+      if (reversed.length > 0) {
+        errors.push(bn
+          ? `${toBnDigits(reversed.length)} দিনে চেক-আউট চেক-ইনের আগে`
+          : `${reversed.length} day(s) check-out before check-in`);
+      }
+
+      // 5. Future-dated records
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const future = records.filter((r: any) => r.attendance_date > todayStr);
+      if (future.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(future.length)} দিনের ভবিষ্যৎ তারিখের রেকর্ড আছে`
+          : `${future.length} record(s) dated in the future`);
+      }
+
+      // 6. Records outside the selected month
+      const outOfMonth = records.filter((r: any) => !r.attendance_date.startsWith(monthYear));
+      if (outOfMonth.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(outOfMonth.length)} রেকর্ড নির্বাচিত মাসের বাইরে`
+          : `${outOfMonth.length} record(s) outside selected month`);
+      }
+
+      // 7. Absent count > working days (impossible)
+      if (stats.absent > lastDay) {
+        errors.push(bn
+          ? 'অনুপস্থিতির সংখ্যা মাসের দিনের চেয়ে বেশি'
+          : 'Absent count exceeds days in month');
+      }
+
+      // 8. Salary missing
+      if (!s.salary || Number(s.salary) <= 0) {
+        errors.push(bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set');
+      }
+
+      // 9. Duty time using default
+      const dt = getDutyTimeWithSource(s);
+      if (dt.source === 'default') {
+        warnings.push(bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) ব্যবহার হচ্ছে' : 'Using default duty time (08:00–17:00)');
+      }
+    } else if (!s.salary || Number(s.salary) <= 0) {
+      errors.push(bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set');
+    }
+
+    return { errors, warnings, hasErrors: errors.length > 0, hasWarnings: warnings.length > 0 };
   };
 
   // Audit log query
@@ -2014,6 +2149,54 @@ const AdminSalary = () => {
           />
 
           <TabsContent value="salary">
+            {/* Attendance Validation Banner */}
+            {(() => {
+              const issues = filtered
+                .filter((s: any) => !getRecord(s.id))
+                .map((s: any) => ({ s, v: getAttendanceValidation(s) }))
+                .filter(x => x.v.hasErrors || x.v.hasWarnings);
+              if (issues.length === 0) return null;
+              const errCount = issues.filter(x => x.v.hasErrors).length;
+              const warnCount = issues.length - errCount;
+              return (
+                <div className={`mb-3 rounded-2xl border p-3 backdrop-blur-sm ${
+                  errCount > 0
+                    ? 'border-red-300/50 bg-red-50/70 dark:bg-red-950/20 dark:border-red-900/40'
+                    : 'border-amber-300/50 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-900/40'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className={`h-5 w-5 mt-0.5 shrink-0 ${errCount > 0 ? 'text-red-600' : 'text-amber-600'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-bold ${errCount > 0 ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                        {bn
+                          ? `উপস্থিতি ডেটা পরীক্ষা: ${errCount > 0 ? `${toBnDigits(errCount)} জনের ত্রুটি (বেতন বন্ধ)` : ''}${errCount > 0 && warnCount > 0 ? ' • ' : ''}${warnCount > 0 ? `${toBnDigits(warnCount)} জনের সতর্কতা` : ''}`
+                          : `Attendance check: ${errCount > 0 ? `${errCount} have errors (blocked)` : ''}${errCount > 0 && warnCount > 0 ? ' • ' : ''}${warnCount > 0 ? `${warnCount} warnings` : ''}`}
+                      </div>
+                      <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted-foreground max-h-28 overflow-y-auto">
+                        {issues.slice(0, 6).map(({ s, v }) => (
+                          <li key={s.id} className="truncate">
+                            <span className={`font-semibold ${v.hasErrors ? 'text-red-600' : 'text-amber-600'}`}>
+                              {bn ? (s.name_bn || s.name_en) : (s.name_en || s.name_bn)}:
+                            </span>{' '}
+                            {[...v.errors, ...v.warnings].slice(0, 2).join(' • ')}
+                          </li>
+                        ))}
+                        {issues.length > 6 && (
+                          <li className="italic opacity-70">
+                            {bn ? `…আরও ${toBnDigits(issues.length - 6)} জন` : `…and ${issues.length - 6} more`}
+                          </li>
+                        )}
+                      </ul>
+                      <div className="mt-1.5 text-[10px] text-muted-foreground italic">
+                        {bn
+                          ? 'ত্রুটি থাকা স্টাফদের বেতন স্বয়ংক্রিয়ভাবে স্কিপ হবে। আগে উপস্থিতি ঠিক করুন।'
+                          : 'Staff with errors will be skipped automatically. Fix attendance data first.'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             {/* Salary Table */}
             <Card>
               <CardContent className="p-0">
@@ -2058,13 +2241,11 @@ const AdminSalary = () => {
                           : (rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0));
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
-                        const eligibilityReason = !rec ? getEligibilityReason(s) : null;
-                        const isHardBlocked = !rec && eligibilityReason !== null && (
-                          eligibilityReason.includes('উপস্থিতি') ||
-                          eligibilityReason.toLowerCase().includes('attendance') ||
-                          eligibilityReason.includes('মূল বেতন') ||
-                          eligibilityReason.toLowerCase().includes('base salary')
-                        );
+                        const validation = !rec ? getAttendanceValidation(s) : null;
+                        const eligibilityReason = !rec
+                          ? (validation?.errors[0] || validation?.warnings[0] || getEligibilityReason(s))
+                          : null;
+                        const isHardBlocked = !rec && (validation?.hasErrors ?? false);
 
                         return (
                           <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
