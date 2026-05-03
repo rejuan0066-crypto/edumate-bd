@@ -5,6 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
 import { resolveSmtpProfile } from '../_shared/smtp-resolver.ts';
 import { sendViaSMTP } from '../_shared/smtp.ts';
+import { requireAuth } from '../_shared/auth-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -278,6 +279,10 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === 'notify_approved' || body.action === 'notify_rejected') {
+      // Admin-only: prevents unauthenticated callers from sending fake approval emails.
+      const guard = await requireAuth(req, { roles: ['admin', 'super_admin'] });
+      if (!guard.ok) return json({ error: guard.error }, guard.status);
+
       const { account_id } = body as NotifyApprovedBody | NotifyRejectedBody;
       const reason = body.action === 'notify_rejected' ? (body as NotifyRejectedBody).reason : undefined;
       if (!account_id) return json({ error: 'account_id required' }, 400);

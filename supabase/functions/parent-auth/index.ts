@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
 import { resolveSmtpProfile } from '../_shared/smtp-resolver.ts';
 import { sendViaSMTP } from '../_shared/smtp.ts';
+import { requireAuth } from '../_shared/auth-guard.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,6 +69,22 @@ Deno.serve(async (req) => {
       if ((!nid || !nid.trim()) && (!phone || !phone.trim())) {
         return json({ matches: [] });
       }
+      // Per-IP rate limit (anti-enumeration). Best-effort; ignore RPC errors.
+      try {
+        const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+        const { data: rl } = await supabase.rpc('check_rate_limit', {
+          _key: `ip:${ip}`,
+          _scope: 'parent-auth',
+          _action: 'preview_match',
+        });
+        if (rl && (rl as any).allowed === false) {
+          return json(
+            { error: 'অনেক অনুরোধ। কিছুক্ষণ পর আবার চেষ্টা করুন।' },
+            429,
+            { 'Retry-After': String((rl as any).retry_after_seconds || 60) }
+          );
+        }
+      } catch { /* ignore rate-limit failures */ }
       const { data, error } = await supabase.rpc('match_students_for_parent', {
         p_nid: nid?.trim() || null,
         p_phone: phone?.trim() || null,
@@ -272,6 +289,11 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === 'notify_approved' || body.action === 'notify_rejected') {
+      // Admin-only: prevents unauthenticated callers from sending fake approval emails
+      // or triggering refresh_parent_student_links on arbitrary accounts.
+      const guard = await requireAuth(req, { roles: ['admin', 'super_admin'] });
+      if (!guard.ok) return json({ error: guard.error }, guard.status);
+
       const { account_id } = body as NotifyApprovedBody | NotifyRejectedBody;
       const reason = body.action === 'notify_rejected' ? (body as NotifyRejectedBody).reason : undefined;
       if (!account_id) return json({ error: 'account_id required' }, 400);
@@ -355,10 +377,10 @@ Deno.serve(async (req) => {
   }
 });
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
   });
 }
 
