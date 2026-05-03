@@ -75,8 +75,8 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName }: ExportData) => {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape' }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 10;
 
