@@ -68,6 +68,7 @@ const DynamicFavicon = () => {
           });
           applyManifest(manifestUrl);
           localStorage.setItem(MANIFEST_CACHE_KEY, manifestUrl);
+          applyAppleWebAppTitle(shortName);
           // Use the high-quality 192 PNG for apple-touch-icon too
           applyAppleTouchIcon(icon192!);
         } catch (e) {
