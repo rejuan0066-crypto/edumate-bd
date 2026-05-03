@@ -915,19 +915,24 @@ Deno.serve(async (req) => {
       var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
       var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
       pages.forEach(function(p){
-        p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
+        var inner = p.querySelector('.print-fit') || p;
+        p.style.setProperty('--print-page-height', maxH + 'px');
+        p.style.width = maxW + 'px';
         p.style.maxWidth = maxW + 'px';
-        var h = p.scrollHeight, w = p.scrollWidth;
+        p.style.height = maxH + 'px';
+        inner.style.zoom = ''; inner.style.transform = ''; inner.style.width = ''; inner.style.height = '';
+        inner.style.maxWidth = maxW + 'px';
+        var h = inner.scrollHeight, w = inner.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
         scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
-          p.style.transform = 'scale(' + scale + ')';
-          p.style.transformOrigin = 'top left';
-          p.style.width = (100 / scale) + '%';
-          p.style.height = (h * scale) + 'px';
+          inner.style.transform = 'scale(' + scale + ')';
+          inner.style.transformOrigin = 'top left';
+          inner.style.width = (maxW / scale) + 'px';
+          inner.style.height = (h * scale) + 'px';
         } else {
-          p.style.zoom = String(scale);
+          inner.style.zoom = String(scale);
         }
       });
     }
