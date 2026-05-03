@@ -34,6 +34,7 @@ interface Props {
 export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff, shift }: Props) {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const qc = useQueryClient();
   const [cursor, setCursor] = useState<Date>(new Date());
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
