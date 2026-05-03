@@ -396,16 +396,23 @@ export default function SalaryWorkflowPanel({
     );
   }
 
-  // Role-based gating (hook moved to top of component to keep hook order stable)
+  // Helpers: resolve assigned settings rows (settings_id preferred, staff_id fallback)
+  const assignedVerifier = verifiers.find(v => v.id === wf.verifier_settings_id)
+    || verifiers.find(v => v.staff_id && v.staff_id === wf.verifier_staff_id);
+  const assignedApprover = approvers.find(a => a.id === wf.approver_settings_id)
+    || approvers.find(a => a.staff_id && a.staff_id === wf.approver_staff_id);
+
+  // Role-based gating
   const isAssignedVerifier = gating.isAssignedVerifier(wf.verifier_staff_id, wf.verifier_settings_id);
   const isAssignedApprover = gating.isAssignedApprover(wf.approver_staff_id, wf.approver_settings_id);
+  const isAdminOrSuper = gating.isSuperAdmin || role === 'admin';
 
-  // Action availability — combines stage + role gating
-  const canSendToVerifier = sheetStage === 'draft' && gating.isSuperAdmin;
+  // Action availability — combines stage + role gating + setup readiness
+  const canSendToVerifier = sheetStage === 'draft' && isAdminOrSuper && verifiers.length > 0;
   const canVerify = sheetStage === 'pending_verification' && isAssignedVerifier;
-  const canSendToApprover = sheetStage === 'verified' && isAssignedVerifier;
+  const canSendToApprover = sheetStage === 'verified' && (isAssignedVerifier || gating.isSuperAdmin) && approvers.length > 0;
   const canApprove = sheetStage === 'pending_approval' && isAssignedApprover;
-  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer;
+  const canMarkPaid = sheetStage === 'approved' && gating.isActiveTreasurer && treasurers.length > 0;
   const canReset = gating.isSuperAdmin;
   const canAutoAdvance = gating.isSuperAdmin;
 
