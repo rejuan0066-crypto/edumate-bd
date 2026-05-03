@@ -208,8 +208,23 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
-  @page{size:A4 landscape;margin:10mm;}
+  @page{
+    size:A4 landscape;
+    margin:10mm 10mm 14mm 10mm;
+    @bottom-left{
+      content:"${(institutionName || '').replace(/"/g, '\\"')}";
+      font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
+      font-size:9pt;color:#64748b;
+    }
+    @bottom-right{
+      content:"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page) " ${bn ? 'এর' : 'of'} " counter(pages);
+      font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
+      font-size:9pt;color:#64748b;
+    }
+  }
   body{font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;color:#0f172a;background:#fff;padding:6mm 8mm;}
+  .screen-pageinfo{display:none;}
+  @media screen{.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
   .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;}
   .header{display:grid;grid-template-columns:60px 1fr 60px;gap:12px;align-items:center;border-bottom:2px double #064e3b;padding-bottom:8px;}
   .header-logo{width:60px;height:60px;object-fit:contain;}
