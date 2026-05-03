@@ -251,7 +251,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   *{margin:0;padding:0;box-sizing:border-box;}
   @page{
     size:A4 ${orientation};
-    margin:10mm 10mm 14mm 10mm;
+    margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
     @bottom-left{
       content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
       font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
