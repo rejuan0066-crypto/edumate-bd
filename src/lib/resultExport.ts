@@ -18,16 +18,43 @@ interface ExportData {
   signatories?: ResultSignatory[];
   showPageNumbers?: boolean;
   showFooterInstitution?: boolean;
+  margins?: PrintMargins;
 }
+
+export interface PrintMargins {
+  top: number;    // mm
+  right: number;  // mm
+  bottom: number; // mm
+  left: number;   // mm
+}
+
+export const DEFAULT_PRINT_MARGINS: PrintMargins = { top: 10, right: 10, bottom: 14, left: 10 };
+
+export const PRINT_MARGIN_PRESETS: Record<string, PrintMargins> = {
+  narrow:   { top: 6,  right: 6,  bottom: 10, left: 6  },
+  normal:   { top: 10, right: 10, bottom: 14, left: 10 },
+  moderate: { top: 13, right: 13, bottom: 16, left: 13 },
+  wide:     { top: 18, right: 18, bottom: 20, left: 18 },
+};
+
+const clampMargin = (v: number) => Math.max(3, Math.min(25, Number.isFinite(v) ? v : 10));
+export const sanitizeMargins = (m?: Partial<PrintMargins>): PrintMargins => ({
+  top:    clampMargin(m?.top    ?? DEFAULT_PRINT_MARGINS.top),
+  right:  clampMargin(m?.right  ?? DEFAULT_PRINT_MARGINS.right),
+  bottom: clampMargin(Math.max(10, m?.bottom ?? DEFAULT_PRINT_MARGINS.bottom)), // ensure footer space
+  left:   clampMargin(m?.left   ?? DEFAULT_PRINT_MARGINS.left),
+});
 
 export interface ResultPrintFooterOptions {
   show_page_numbers: boolean;
   show_footer_institution: boolean;
+  margins?: PrintMargins;
 }
 
 export const DEFAULT_PRINT_FOOTER_OPTIONS: ResultPrintFooterOptions = {
   show_page_numbers: true,
   show_footer_institution: true,
+  margins: DEFAULT_PRINT_MARGINS,
 };
 
 export interface ResultSignatory {
