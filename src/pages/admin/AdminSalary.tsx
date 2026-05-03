@@ -1725,6 +1725,8 @@ const AdminSalary = () => {
   const printSlip = async (staffMember: any, record: any) => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsAmt = activeSavings ? activeSavings.amount : 0;
+    const slipStats = getAttendanceStats(staffMember);
+    const leaveDays = slipStats.leave || 0;
 
     // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
     const attendanceDeductions = Number(record.absence_deduction || 0)
