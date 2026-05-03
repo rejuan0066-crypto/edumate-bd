@@ -1161,7 +1161,7 @@ const AdminSalary = () => {
     const dt = getDutyTimeWithSource(s);
     if (dt.source === 'default') {
       // Not strictly blocking, but flag it as a warning reason for users
-      return bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) — সেট করুন' : 'Duty time using default — please set';
+      return bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) ব্যবহার হচ্ছে' : 'Duty time is using default (08:00–17:00)';
     }
     return null;
   };
