@@ -106,6 +106,7 @@ import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications
 import AdminWhatsAppQueue from "./pages/admin/AdminWhatsAppQueue";
 import AdminSalary from "./pages/admin/AdminSalary";
 import AdminSalaryPdfColumns from "./pages/admin/AdminSalaryPdfColumns";
+import AdminSalaryMemoSearch from "./pages/admin/AdminSalaryMemoSearch";
 import AdminShiftAuditLog from "./pages/admin/AdminShiftAuditLog";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
@@ -382,6 +383,7 @@ const App = () => (
                     <Route path="whatsapp-queue" element={<AdminWhatsAppQueue />} />
                     <Route path="salary" element={<ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard>} />
                     <Route path="salary-pdf-columns" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryPdfColumns /></ModuleGuard>} />
+                    <Route path="salary-memo-search" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryMemoSearch /></ModuleGuard>} />
                     <Route path="shift-audit-log" element={<AdminShiftAuditLog />} />
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />

@@ -41,6 +41,7 @@ const PAGE_MAP: Record<string, React.LazyExoticComponent<React.ComponentType<any
   '/admin/backup': lazy(() => import('@/pages/admin/AdminBackup')),
   '/admin/guardian-notify': lazy(() => import('@/pages/admin/AdminGuardianNotifications')),
   '/admin/salary': lazy(() => import('@/pages/admin/AdminSalary')),
+  '/admin/salary-memo-search': lazy(() => import('@/pages/admin/AdminSalaryMemoSearch')),
   '/admin/posts': lazy(() => import('@/pages/admin/AdminPosts')),
   '/admin/prayer-calendar': lazy(() => import('@/pages/admin/AdminPrayerCalendar')),
   '/admin/academic-sessions': lazy(() => import('@/pages/admin/AdminAcademicSessions')),
