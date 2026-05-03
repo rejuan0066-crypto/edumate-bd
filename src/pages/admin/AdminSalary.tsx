@@ -284,6 +284,27 @@ const AdminSalary = () => {
     },
   });
 
+  // Dynamic staff categories (for department label translation)
+  const { data: staffCategoriesList = [] } = useQuery({
+    queryKey: ['staff-categories-salary'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff_categories')
+        .select('key, name, name_bn')
+        .eq('is_active', true);
+      return data || [];
+    },
+  });
+  const getDepartmentLabel = (dept: any): string => {
+    const d = (dept || '').toString().trim();
+    if (!d) return '-';
+    const found = (staffCategoriesList as any[]).find(
+      (c) => c.key?.toLowerCase() === d.toLowerCase()
+    );
+    if (found) return (bn ? (found.name_bn || found.name) : (found.name || found.name_bn)) || d;
+    return d;
+  };
+
   // Helper: resolve duty time for a staff member — prefers staff-specific time, falls back to category shift, then default
   const getDutyTime = (staffMember: any): { start: string; end: string } => {
     return getDutyTimeWithSource(staffMember);
