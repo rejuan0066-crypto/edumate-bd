@@ -191,7 +191,9 @@ export default function SalaryWorkflowPanel({
   const verifyMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
       // Verifier identity: from wf snapshot or fallback to current user
-      const verifier = verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id) || verifiers[0];
+      const verifier = verifiers.find((v) => v.id === wf.verifier_settings_id)
+        || verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id)
+        || verifiers[0];
       const verifiedName = verifier?.display_name || currentUserName;
       const verifiedRole = verifier?.designation || (bn ? 'যাচাইকারী' : 'Verifier');
       await updateAllRecords({
