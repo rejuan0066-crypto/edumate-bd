@@ -267,7 +267,8 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;page-break-inside:avoid;break-inside:avoid;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;page-break-inside:avoid;break-inside:avoid;}
+  .signatures-wrap{margin-top:42px;page-break-inside:avoid;break-inside:avoid;-webkit-column-break-inside:avoid;}
+  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;padding:0 10px;page-break-inside:avoid;break-inside:avoid;}
   .sig-block{text-align:center;page-break-inside:avoid;break-inside:avoid;}
   .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
   .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
