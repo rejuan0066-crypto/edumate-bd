@@ -574,7 +574,7 @@ const AdminResults = () => {
 
         {/* Export options dialog: PDF vs Browser Print + A4 orientation */}
         <Dialog open={exportOptions.open} onOpenChange={(o) => setExportOptions(s => ({ ...s, open: o }))}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{bn ? 'এক্সপোর্ট অপশন' : 'Export Options'}</DialogTitle>
             </DialogHeader>
