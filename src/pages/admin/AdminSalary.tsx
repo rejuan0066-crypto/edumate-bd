@@ -712,8 +712,12 @@ const AdminSalary = () => {
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
 
-    // পূর্ণ বেতন ভিত্তি — ছুটির দিনও এর মধ্যে অন্তর্ভুক্ত
-    let earnedFromAttendance = Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
+    // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
+    // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
+    const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
+    let earnedFromAttendance = calcBasis === 'additive'
+      ? Math.round(attStats.totalDailyEarnings)
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
