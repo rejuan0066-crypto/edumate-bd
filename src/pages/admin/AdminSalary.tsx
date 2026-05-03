@@ -2035,13 +2035,10 @@ const AdminSalary = () => {
                                     : (bn ? 'উৎস: ডিফল্ট (০৮:০০–১৭:০০)' : 'Source: Default (08:00–17:00)');
                                 const dot = t.source === 'category' ? 'text-emerald-600' : t.source === 'staff' ? 'text-blue-600' : 'text-muted-foreground';
                                 return (
-                                  <button onClick={() => setDutyDialog({ id: s.id, name: s.name_bn, duty_start_time: t.start, duty_end_time: t.end })}
-                                    className="text-[10px] text-primary hover:underline"
-                                    title={sourceLabel}>
-                                    <Timer className="h-3 w-3 inline mr-0.5" />
+                                  <span className="text-[10px] text-primary" title={sourceLabel}>
                                     {bn ? toBnDigits(`${fmt(t.start)}-${fmt(t.end)}`) : `${fmt(t.start)}-${fmt(t.end)}`}
                                     <span className={`ml-1 text-[8px] ${dot}`}>●</span>
-                                  </button>
+                                  </span>
                                 );
                               })()}
                             </td>
