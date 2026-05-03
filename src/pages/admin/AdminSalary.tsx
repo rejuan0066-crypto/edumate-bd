@@ -2203,13 +2203,13 @@ const AdminSalary = () => {
                     {salaryRecords.length > 0 && (
                       <tfoot>
                         <tr className="bg-muted/50 font-bold">
-                          <td colSpan={4} className="px-3 py-2">{bn ? 'মোট' : 'Total'}</td>
-                          <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</td>
+                          <td colSpan={5} className="px-3 py-2">{bn ? 'মোট' : 'Total'}</td>
+                          <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalBase.toLocaleString()) : stats.totalBase.toLocaleString()}</td>
                           <td className="px-3 py-2"></td>
-                          <td className="px-3 py-2 text-right text-red-500">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right text-red-500 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalDeduction.toLocaleString()) : stats.totalDeduction.toLocaleString()}</td>
                           <td className="px-3 py-2"></td>
-                          <td className="px-3 py-2 text-right text-blue-600">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</td>
-                          <td className="px-3 py-2 text-right text-emerald-700 dark:text-emerald-400">৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right text-blue-600 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalSavings.toLocaleString()) : stats.totalSavings.toLocaleString()}</td>
+                          <td className="px-3 py-2 text-right text-emerald-700 dark:text-emerald-400 whitespace-nowrap tabular-nums">৳{bn ? toBnDigits(stats.totalNet.toLocaleString()) : stats.totalNet.toLocaleString()}</td>
                           <td colSpan={2}></td>
                         </tr>
                       </tfoot>
