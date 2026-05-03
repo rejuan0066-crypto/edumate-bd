@@ -7247,6 +7247,45 @@ export type Database = {
           },
         ]
       }
+      salary_pdf_columns: {
+        Row: {
+          align: string
+          col_key: string
+          created_at: string
+          id: string
+          label_bn: string
+          label_en: string
+          sort_order: number
+          updated_at: string
+          visible: boolean
+          weight: number
+        }
+        Insert: {
+          align?: string
+          col_key: string
+          created_at?: string
+          id?: string
+          label_bn: string
+          label_en: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+          weight?: number
+        }
+        Update: {
+          align?: string
+          col_key?: string
+          created_at?: string
+          id?: string
+          label_bn?: string
+          label_en?: string
+          sort_order?: number
+          updated_at?: string
+          visible?: boolean
+          weight?: number
+        }
+        Relationships: []
+      }
       salary_records: {
         Row: {
           absence_deduction: number | null
