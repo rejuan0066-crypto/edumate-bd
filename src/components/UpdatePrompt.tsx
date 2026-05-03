@@ -6,9 +6,18 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const BUILD_ID_KEY = 'app_build_id';
 const CHECK_INTERVAL = 60_000; // 1 minute
 
+// Build a stable signature from ALL hashed asset filenames in index.html.
+// More reliable than picking the first JS chunk hash (which can stay the same
+// across some deploys when only CSS or other chunks change).
 const extractBuildId = (html: string): string | null => {
-  const match = html.match(/assets\/[^"']+-([a-zA-Z0-9_]+)\.js/);
-  return match ? match[1] : null;
+  const matches = html.match(/assets\/[^"'?\s]+-[a-zA-Z0-9_]+\.(?:js|css)/g);
+  if (!matches || matches.length === 0) return null;
+  // Sort + dedupe so order changes don't trigger false positives
+  const sig = Array.from(new Set(matches)).sort().join('|');
+  // Compact hash (djb2)
+  let h = 5381;
+  for (let i = 0; i < sig.length; i++) h = ((h << 5) + h + sig.charCodeAt(i)) | 0;
+  return 'b' + (h >>> 0).toString(36);
 };
 
 const isStandalonePWA = () => {
