@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb, Timer, Activity } from 'lucide-react';
+import { Loader2, RefreshCw, CheckCircle2, XCircle, Database, Eye, Code2, ShieldAlert, AlertTriangle, Lightbulb, Timer, Activity, Fingerprint, Copy } from 'lucide-react';
+import { newCorrelationId, logAdminNameRequest } from '@/lib/adminNameRequestLog';
+import { toast } from 'sonner';
 
 type ProbeResult = {
   key: string;
@@ -17,9 +19,11 @@ type ProbeResult = {
   ok: boolean;
   count: number | null;
   error?: string | null;
+  errorCode?: string | null;
   durationMs: number;
   sample: any[];
   query: string;
+  correlationId: string;
 };
 
 export default function AdminAdministrativeDebug() {
