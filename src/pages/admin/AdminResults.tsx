@@ -446,6 +446,7 @@ const AdminResults = () => {
         orientation,
         showPageNumbers: footerOptions.show_page_numbers,
         showFooterInstitution: footerOptions.show_footer_institution,
+        margins: footerOptions.margins || DEFAULT_PRINT_MARGINS,
       };
 
       if (mode === 'csv') exportResultCSV(params);
