@@ -6,6 +6,7 @@ import { hashSync, compareSync } from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts'
 import { resolveSmtpProfile } from '../_shared/smtp-resolver.ts';
 import { sendViaSMTP } from '../_shared/smtp.ts';
 import { requireAuth } from '../_shared/auth-guard.ts';
+import { enforcePasswordPolicy, logSecurityEvent } from '../_shared/password.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,7 +85,13 @@ Deno.serve(async (req) => {
         return json({ error: 'Missing required fields' }, 400);
       }
       if (!['email', 'phone'].includes(contact_type)) return json({ error: 'Invalid contact type' }, 400);
-      if (password.length < 6) return json({ error: 'Password must be at least 6 characters' }, 400);
+      {
+        const pwCheck = await enforcePasswordPolicy(supabase, password);
+        if (!pwCheck.ok) {
+          await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email: contact_type === 'email' ? contact : null, reason: 'student_signup', details: pwCheck.body, req });
+          return json(pwCheck.body, pwCheck.status);
+        }
+      }
 
       const c = normContact(contact, contact_type);
 
@@ -232,8 +239,12 @@ Deno.serve(async (req) => {
       if (!contact || !code || !new_password) {
         return json({ error: 'Contact, code and new password required' }, 400);
       }
-      if (new_password.length < 6) {
-        return json({ error: 'Password must be at least 6 characters' }, 400);
+      {
+        const pwCheck = await enforcePasswordPolicy(supabase, new_password);
+        if (!pwCheck.ok) {
+          await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email: contact, reason: 'student_password_reset', details: pwCheck.body, req });
+          return json(pwCheck.body, pwCheck.status);
+        }
       }
       const c = contact.trim().toLowerCase();
 
