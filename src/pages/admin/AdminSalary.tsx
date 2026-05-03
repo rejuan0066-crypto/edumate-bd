@@ -1961,7 +1961,7 @@ const AdminSalary = () => {
                         <th className="px-3 py-2 text-left text-xs font-medium">{bn ? 'পদবি' : 'Designation'}</th>
                         <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'ডিউটি' : 'Duty'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'মূল বেতন' : 'Base'}</th>
-                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি' : 'P/A/L'}</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium">{bn ? 'উপ/অনু/বি/ছু' : 'P/A/L/Lv'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'কর্তন' : 'Ded.'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium">{bn ? 'ওভারটাইম' : 'OT'}</th>
                         <th className="px-3 py-2 text-right text-xs font-medium text-blue-600">{bn ? 'জমা' : 'Savings'}</th>
@@ -2088,7 +2088,8 @@ const AdminSalary = () => {
                               >
                                 <span className="text-emerald-600">{bn ? toBnDigits(attStats.present) : attStats.present}</span>/
                                 <span className="text-red-500">{bn ? toBnDigits(attStats.absent) : attStats.absent}</span>/
-                                <span className="text-yellow-600">{bn ? toBnDigits(attStats.late) : attStats.late}</span>
+                                <span className="text-yellow-600">{bn ? toBnDigits(attStats.late) : attStats.late}</span>/
+                                <span className="text-blue-600">{bn ? toBnDigits(attStats.leave || 0) : (attStats.leave || 0)}</span>
                                 {attStats.totalLateArrivalMinutes > 0 && (
                                   <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
                                 )}
