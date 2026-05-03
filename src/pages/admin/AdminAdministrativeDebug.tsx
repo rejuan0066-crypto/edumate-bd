@@ -44,35 +44,51 @@ export default function AdminAdministrativeDebug() {
   const [deletedFilter, setDeletedFilter] = useState<'not_deleted' | 'deleted_only' | 'any'>('not_deleted');
   const [roleProbe, setRoleProbe] = useState<'admin' | 'super_admin' | 'staff' | 'teacher'>('admin');
 
+  // Parent batch correlation prefix; each probe gets its own child correlation ID
+  const [batchId, setBatchId] = useState<string | null>(null);
+
   const runProbe = async (
     key: string,
     label: string,
     source: string,
     query: string,
     fn: () => PromiseLike<{ data: any; error: any }>,
+    parentBatch?: string,
   ): Promise<ProbeResult> => {
+    const correlationId = `${parentBatch ?? 'anr'}::${key}`;
     const t0 = performance.now();
+    let data: any = null;
+    let error: any = null;
     try {
-      const { data, error } = await fn();
-      const ms = Math.round(performance.now() - t0);
-      const arr = Array.isArray(data) ? data : data ? [data] : [];
-      return {
-        key, label, source, query,
-        ok: !error,
-        count: arr.length,
-        error: error?.message || null,
-        durationMs: ms,
-        sample: arr.slice(0, 3),
-      };
+      const r = await fn();
+      data = r.data;
+      error = r.error;
     } catch (e: any) {
-      return {
-        key, label, source, query,
-        ok: false, count: null,
-        error: e?.message || String(e),
-        durationMs: Math.round(performance.now() - t0),
-        sample: [],
-      };
+      error = e;
     }
+    const ms = Math.round(performance.now() - t0);
+    const arr = Array.isArray(data) ? data : data ? [data] : [];
+    // Persist diagnostic log row (best-effort, never blocks UI)
+    logAdminNameRequest({
+      correlationId,
+      sourcePath: `AdminAdministrativeDebug:${key}`,
+      sqlPath: source,
+      filters: { query, statusFilter, deletedFilter, roleProbe },
+      resultCount: arr.length,
+      errorCode: error?.code ?? (error ? 'unknown' : null),
+      errorMessage: error?.message ?? null,
+      durationMs: ms,
+    });
+    return {
+      key, label, source, query,
+      ok: !error,
+      count: error ? null : arr.length,
+      error: error?.message || null,
+      errorCode: error?.code || null,
+      durationMs: ms,
+      sample: arr.slice(0, 3),
+      correlationId,
+    };
   };
 
   const runAll = async () => {
