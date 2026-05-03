@@ -1913,7 +1913,7 @@ const AdminSalary = () => {
 
         <div class="single-col">
           <div class="col earn">
-            <div class="col-head">${bn ? '＋ বেতন গণনার সম্পূর্ণ ব্রেকডাউন' : '＋ Full Salary Breakdown'}</div>
+            <div class="col-head">${bn ? 'বেতন বিবরণ' : 'Salary Details'}</div>
             <div class="col-body">
               <!-- ১. মূল বেতন -->
               <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary || 0))}</span></div>
