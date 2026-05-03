@@ -29,6 +29,11 @@ export default function AdminAdministrativeDebug() {
   const [running, setRunning] = useState(false);
   const [results, setResults] = useState<ProbeResult[]>([]);
   const [ranAt, setRanAt] = useState<Date | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [intervalSec, setIntervalSec] = useState<number>(15);
+  const [runCount, setRunCount] = useState(0);
+  const [nextInSec, setNextInSec] = useState<number>(0);
+  const runAllRef = useRef<(() => Promise<void>) | null>(null);
 
   const runProbe = async (
     key: string,
