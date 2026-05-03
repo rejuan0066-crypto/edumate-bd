@@ -778,9 +778,6 @@ Deno.serve(async (req) => {
       var styleId = 'dynamic-page-rule';
       var el = document.getElementById(styleId);
       if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
-      // Use 'size: auto' so the OS print dialog choice (paper/orientation) always wins —
-      // critical on iOS Safari which ignores explicit @page size. We still hint with the
-      // chosen orientation as a fallback for desktop browsers.
       el.textContent =
         '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }' +
         '@media print { @page { size: auto; margin: ' + m + 'mm; } }';
@@ -791,12 +788,9 @@ Deno.serve(async (req) => {
     function autoFit(){
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
-      // Fit to the SMALLER of the two orientations so the page also fits when the user
-      // picks the opposite orientation in the OS print dialog (common on iOS).
-      var p = PAPER[settings.paper] || PAPER.A4;
-      var shortSide = Math.min(p.w, p.h) - settings.marginMm * 2;
-      var longSide  = Math.max(p.w, p.h) - settings.marginMm * 2;
-      // Width budget = short side (portrait width); Height budget = long side.
+      var pp = PAPER[settings.paper] || PAPER.A4;
+      var shortSide = Math.min(pp.w, pp.h) - settings.marginMm * 2;
+      var longSide  = Math.max(pp.w, pp.h) - settings.marginMm * 2;
       var maxW = shortSide * MM_TO_PX;
       var maxH = longSide * MM_TO_PX;
       pages.forEach(function(p){
