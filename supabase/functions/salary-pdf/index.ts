@@ -153,51 +153,60 @@ Deno.serve(async (req) => {
       ? `<img src="${escapeHtml(instLogo)}" alt="logo" class="logo-img"/>`
       : `<div class="logo-fallback">${escapeHtml((instName || 'A').charAt(0))}</div>`;
 
-    // ===== Dynamic column registry =====
-    // Add/remove/reorder entries here — widths, headers, cells, totals, and colspans
-    // all auto-recompute. `weight` is a relative width unit (normalized to 100%).
+    // ===== Column renderers (keyed by col_key) =====
+    // The set of available columns is fixed in code (each needs a cell renderer),
+    // but their visibility, order, label, alignment, and width come from the
+    // `salary_pdf_columns` table managed at /admin/salary-pdf-columns.
     type ColDef = {
       key: string;
       header: string;
       align?: "left" | "center" | "right";
-      weight: number; // relative width
+      weight: number;
       cell: (s: any, idx: number) => string;
-      total?: () => string; // value rendered in totals row (else empty)
-      groupStart?: boolean; // if true, starts a new totals-row segment (Grand Total label spans all groupStart=false leading cols)
+      total?: () => string;
     };
 
-    const COLUMNS: ColDef[] = [
-      { key: "sl", header: bn ? "ক্রঃ" : "SL", align: "center", weight: 3,
+    type ColRenderer = {
+      defaultHeaderBn: string;
+      defaultHeaderEn: string;
+      defaultAlign: "left" | "center" | "right";
+      defaultWeight: number;
+      cell: (s: any, idx: number) => string;
+      total?: () => string;
+    };
+
+    const RENDERERS: Record<string, ColRenderer> = {
+      sl: { defaultHeaderBn: "ক্রঃ", defaultHeaderEn: "SL", defaultAlign: "center", defaultWeight: 3,
         cell: (_s, i) => `<td class="c-num">${bn ? toBnDigits(i + 1) : i + 1}</td>` },
-      { key: "name", header: bn ? "কর্মীর নাম ও আইডি" : "Name & ID", weight: 15,
+      name: { defaultHeaderBn: "কর্মীর নাম ও আইডি", defaultHeaderEn: "Name & ID", defaultAlign: "left", defaultWeight: 15,
         cell: (s) => `<td class="c-name"><div class="nm">${escapeHtml(s.name)}</div>${s.staff_id && s.staff_id !== '-' ? `<div class="sid">${escapeHtml(s.staff_id)}</div>` : ""}</td>` },
-      { key: "designation", header: bn ? "পদবি" : "Designation", weight: 12,
+      designation: { defaultHeaderBn: "পদবি", defaultHeaderEn: "Designation", defaultAlign: "left", defaultWeight: 12,
         cell: (s) => `<td>${escapeHtml(s.designation)}</td>` },
-      { key: "base", header: bn ? "মূল বেতন (৳)" : "Base (BDT)", align: "right", weight: 8,
+      base: { defaultHeaderBn: "মূল বেতন (৳)", defaultHeaderEn: "Base (BDT)", defaultAlign: "right", defaultWeight: 8,
         cell: (s) => `<td class="c-amt">${fmtNum(Number(s.base_salary))}</td>`,
         total: () => `<td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>` },
-      { key: "present", header: bn ? "উপ" : "P", align: "center", weight: 3,
+      present: { defaultHeaderBn: "উপ", defaultHeaderEn: "P", defaultAlign: "center", defaultWeight: 3,
         cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.present) : s.present}</td>`,
         total: () => `<td></td>` },
-      { key: "absent", header: bn ? "অনু" : "A", align: "center", weight: 3,
+      absent: { defaultHeaderBn: "অনু", defaultHeaderEn: "A", defaultAlign: "center", defaultWeight: 3,
         cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.absent) : s.absent}</td>`,
         total: () => `<td></td>` },
-      { key: "late", header: bn ? "বি" : "L", align: "center", weight: 3,
+      late: { defaultHeaderBn: "বি", defaultHeaderEn: "L", defaultAlign: "center", defaultWeight: 3,
         cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.late) : s.late}</td>`,
         total: () => `<td></td>` },
-      { key: "leave", header: bn ? "ছু" : "Lv", align: "center", weight: 3,
+      leave: { defaultHeaderBn: "ছু", defaultHeaderEn: "Lv", defaultAlign: "center", defaultWeight: 3,
         cell: (s) => `<td class="c-num">${bn ? toBnDigits(s.leave || 0) : (s.leave || 0)}</td>`,
         total: () => `<td></td>` },
-      { key: "deduction", header: bn ? "কর্তন (৳)" : "Deduction", align: "right", weight: 8,
+      deduction: { defaultHeaderBn: "কর্তন (৳)", defaultHeaderEn: "Deduction", defaultAlign: "right", defaultWeight: 8,
         cell: (s) => { const d = Number(s.deductions || 0); return `<td class="c-amt">${d > 0 ? fmtNum(d) : "—"}</td>`; },
         total: () => `<td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>` },
-      { key: "overtime", header: bn ? "ওভারটাইম (৳)" : "Overtime", align: "right", weight: 7,
+      overtime: { defaultHeaderBn: "ওভারটাইম (৳)", defaultHeaderEn: "Overtime", defaultAlign: "right", defaultWeight: 7,
         cell: (s) => `<td class="c-amt">${Number(s.overtime || 0) > 0 ? fmtNum(Number(s.overtime)) : "—"}</td>`,
         total: () => `<td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>` },
-      { key: "deposit", header: bn ? "জমা (৳)" : "Deposit", align: "right", weight: 8,
+      deposit: { defaultHeaderBn: "জমা (৳)", defaultHeaderEn: "Deposit", defaultAlign: "right", defaultWeight: 8,
         cell: (s) => { const dep = Number(s.savings ?? s.advance ?? 0); return `<td class="c-amt">${dep > 0 ? fmtNum(dep) : "—"}</td>`; },
         total: () => `<td class="c-amt">${Number(totals?.savings || 0) > 0 ? fmtNum(Number(totals?.savings || 0)) : "—"}</td>` },
-      { key: "totalDed", header: bn ? "মোট কর্তন (৳)" : "Total Ded.", align: "right", weight: 9,
+      totalDed: { defaultHeaderBn: "মোট কর্তন (৳)", defaultHeaderEn: "Total Ded.", defaultAlign: "right", defaultWeight: 9,
         cell: (s) => {
           const d = Number(s.deductions || 0); const dep = Number(s.savings ?? s.advance ?? 0); const t = d + dep;
           return `<td class="c-amt" style="font-weight:700;color:#b91c1c">${t > 0 ? fmtNum(t) : "—"}</td>`;
@@ -206,10 +215,61 @@ Deno.serve(async (req) => {
           const t = Number(totals?.deductions || 0) + Number(totals?.savings || 0);
           return `<td class="c-amt" style="font-weight:700;color:#b91c1c">${t > 0 ? fmtNum(t) : "—"}</td>`;
         } },
-      { key: "net", header: bn ? "নিট প্রদেয় (৳)" : "Net Payable", align: "right", weight: 12,
+      net: { defaultHeaderBn: "নিট প্রদেয় (৳)", defaultHeaderEn: "Net Payable", defaultAlign: "right", defaultWeight: 12,
         cell: (s) => `<td class="c-amt c-net">${fmtNum(Number(s.net_salary))}</td>`,
         total: () => `<td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>` },
-    ];
+    };
+
+    const DEFAULT_ORDER = ["sl","name","designation","base","present","absent","late","leave","deduction","overtime","deposit","totalDed","net"];
+
+    // Load admin config (visible columns + order + labels). Falls back to defaults
+    // if the table is empty, the read fails, or we're in dryRun.
+    let configRows: any[] | null = null;
+    if (!isDryRun) {
+      try {
+        const { data } = await supabase
+          .from("salary_pdf_columns")
+          .select("col_key,label_bn,label_en,align,weight,visible,sort_order")
+          .eq("visible", true)
+          .order("sort_order", { ascending: true });
+        if (data && data.length > 0) configRows = data;
+      } catch (e) {
+        console.warn("salary-pdf: could not load column config, using defaults", e);
+      }
+    }
+
+    const buildFromConfig = (rows: any[]): ColDef[] =>
+      rows
+        .filter((r) => RENDERERS[r.col_key])
+        .map((r) => {
+          const rd = RENDERERS[r.col_key];
+          const align = (r.align as "left" | "center" | "right") || rd.defaultAlign;
+          const w = Number(r.weight) > 0 ? Number(r.weight) : rd.defaultWeight;
+          return {
+            key: r.col_key,
+            header: bn ? (r.label_bn || rd.defaultHeaderBn) : (r.label_en || rd.defaultHeaderEn),
+            align,
+            weight: w,
+            cell: rd.cell,
+            total: rd.total,
+          };
+        });
+
+    const buildDefault = (): ColDef[] =>
+      DEFAULT_ORDER.map((k) => {
+        const rd = RENDERERS[k];
+        return {
+          key: k,
+          header: bn ? rd.defaultHeaderBn : rd.defaultHeaderEn,
+          align: rd.defaultAlign,
+          weight: rd.defaultWeight,
+          cell: rd.cell,
+          total: rd.total,
+        };
+      });
+
+    const COLUMNS: ColDef[] = configRows ? buildFromConfig(configRows) : buildDefault();
+    if (COLUMNS.length === 0) COLUMNS.push(...buildDefault()); // safety net
 
     const COL_COUNT = COLUMNS.length;
     const totalWeight = COLUMNS.reduce((a, c) => a + c.weight, 0);
