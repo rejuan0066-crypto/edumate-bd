@@ -577,7 +577,7 @@ export default function SalaryWorkflowPanel({
                   <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
                     {approvers.map((v) => (
-                      <SelectItem key={v.staff_id} value={v.staff_id}>
+                      <SelectItem key={v.id} value={v.id}>
                         {v.display_name} {v.designation ? `· ${v.designation}` : ''}
                       </SelectItem>
                     ))}
