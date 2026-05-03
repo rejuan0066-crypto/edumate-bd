@@ -265,7 +265,7 @@ export default function SalaryWorkflowPanel({
 
   const markAllPaidMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = treasurers.find((t) => t.staff_id === targetId);
+      const target = treasurers.find((t) => t.id === targetId);
       if (!target) throw new Error('Treasurer not found');
       const ids = records.filter((r: any) => r.status !== 'paid').map((r: any) => r.id);
       const { error } = await supabase.from('salary_records').update({
