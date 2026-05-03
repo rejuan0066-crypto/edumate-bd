@@ -16,12 +16,14 @@ const CANONICAL_LABELS = CANONICAL_BANGLA_LABELS;
 
 describe('Bangla canonical labels — spelling guardrails', () => {
   it('exposes the exact canonical Bangla strings (snapshot lock)', () => {
-    // If anyone edits a canonical string, this snapshot will fail loudly.
     expect(CANONICAL_LABELS).toMatchInlineSnapshot(`
       {
         "accountant": "হিসাবরক্ষক",
         "assistantTeacher": "সহকারী শিক্ষক",
+        "classTeacher": "শ্রেণি শিক্ষক",
         "cleaner": "পরিচ্ছন্নতা কর্মী",
+        "educationSecretary": "শিক্ষা সচিব",
+        "examController": "পরীক্ষা নিয়ন্ত্রক",
         "founder": "প্রতিষ্ঠাতা",
         "headmaster": "অধ্যক্ষ",
         "muezzin": "মুয়াজ্জিন",
@@ -43,6 +45,18 @@ describe('Bangla canonical labels — spelling guardrails', () => {
       expect(r.level).toBe('ok');
     }
   );
+});
+
+describe('Result sheet signatories use canonical labels', () => {
+  it('default signatories pull from the canonical map (no hardcoded typos)', () => {
+    const titles = DEFAULT_RESULT_SIGNATORIES.map((s) => s.title_bn);
+    expect(titles).toContain(CANONICAL_LABELS.classTeacher);
+    expect(titles).toContain(CANONICAL_LABELS.examController);
+    expect(titles).toContain(CANONICAL_LABELS.educationSecretary);
+    const principalSlot = titles.find((t) => t?.includes(CANONICAL_LABELS.muhtamim));
+    expect(principalSlot).toBeDefined();
+    expect(principalSlot).toContain(CANONICAL_LABELS.headmaster);
+  });
 });
 
 describe('Known misspellings are flagged', () => {
