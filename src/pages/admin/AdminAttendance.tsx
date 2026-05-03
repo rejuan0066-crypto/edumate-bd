@@ -70,6 +70,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const queryClient = useQueryClient();
   const { canAddItem, canEditItem, canDeleteItem } = usePagePermissions('/admin/attendance');
   const { timeFormat, setTimeFormat } = useTimeFormat();
+  const { tz: appTz } = useAppTimezone();
   const fmt = (t: string) => formatTimeDisplay(t, timeFormat);
   const [searchParams] = useSearchParams();
 
