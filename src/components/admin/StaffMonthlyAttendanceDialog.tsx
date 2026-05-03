@@ -304,7 +304,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         ) : null}
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
+                    <PopoverContent
+                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl"
+                      align="center"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
+                      onInteractOutside={(e) => {
+                        const t = e.target as HTMLElement | null;
+                        // Keep open when interaction is from a nested popover/select (e.g. TimePicker)
+                        if (t && t.closest('[data-radix-popper-content-wrapper]')) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
                       <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-border/30">
                         <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
                         {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
