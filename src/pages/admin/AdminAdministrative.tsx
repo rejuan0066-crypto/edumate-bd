@@ -95,6 +95,52 @@ const AdminAdministrative = () => {
   const [editRow, setEditRow] = useState<{ id: string; name_bn: string; name: string; code?: string } | null>(null);
   const [newRow, setNewRow] = useState<{ name_bn: string; name: string; code: string }>({ name_bn: '', name: '', code: '' });
 
+  // Account creation
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [selectedOfficer, setSelectedOfficer] = useState<Officer | null>(null);
+  const [accEmail, setAccEmail] = useState('');
+  const [accPassword, setAccPassword] = useState('');
+  const [accRole, setAccRole] = useState('administrative');
+  const [accCreating, setAccCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const openAccountDialog = (o: Officer) => {
+    setSelectedOfficer(o);
+    setAccEmail(o.email || '');
+    setAccPassword('');
+    setAccRole('administrative');
+    setShowPassword(false);
+    setAccountDialogOpen(true);
+  };
+
+  const handleCreateAccount = async () => {
+    if (!accEmail.trim()) { toast.error(bn ? 'ইমেইল দিন' : 'Enter email'); return; }
+    if (!accPassword || accPassword.length < 6) { toast.error(bn ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষর' : 'Password min 6 chars'); return; }
+    setAccCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create',
+          email: accEmail.trim(),
+          password: accPassword,
+          role: accRole === 'none' ? undefined : accRole,
+          full_name: selectedOfficer?.name_bn || selectedOfficer?.name_en || '',
+          officer_id: selectedOfficer?.id,
+        },
+      });
+      if (error || !data?.success) {
+        toast.error(data?.error || error?.message || (bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account'));
+        setAccCreating(false);
+        return;
+      }
+      toast.success(bn ? '✅ অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!' : '✅ Account created!');
+      setAccountDialogOpen(false);
+      qc.invalidateQueries({ queryKey: ['administrative-officers'] });
+    } catch {
+      toast.error(bn ? 'অ্যাকাউন্ট তৈরি ব্যর্থ' : 'Failed to create account');
+    }
+    setAccCreating(false);
+  };
   // Inline error state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string>('');
