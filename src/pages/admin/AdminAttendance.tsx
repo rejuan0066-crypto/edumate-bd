@@ -368,8 +368,44 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     }
   }, [savedDutyTimes]);
 
+  // Shared time validation: returns { ok, minutes, overnight, error }
+  // Supports overnight shifts (end <= start ⇒ +24h next day).
+  const validateShiftWindow = (start: string, end: string): { ok: boolean; minutes: number; overnight: boolean; error?: string } => {
+    const tToMin = (t: string) => {
+      if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return NaN;
+      const [h, m] = t.split(':').map(Number);
+      if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
+      return h * 60 + m;
+    };
+    if (!start || !end) return { ok: false, minutes: 0, overnight: false, error: bn ? 'শুরু/শেষ সময় ফাঁকা' : 'start/end empty' };
+    const s = tToMin(start), e = tToMin(end);
+    if (isNaN(s) || isNaN(e)) return { ok: false, minutes: 0, overnight: false, error: bn ? 'অবৈধ সময় ফরম্যাট (HH:MM)' : 'invalid time format (HH:MM)' };
+    if (s === e) return { ok: false, minutes: 0, overnight: false, error: bn ? 'শুরু ও শেষ সময় একই হতে পারবে না' : 'start and end cannot be identical' };
+    const overnight = e < s;
+    const minutes = overnight ? (24 * 60 - s) + e : e - s;
+    if (minutes < 30) return { ok: false, minutes, overnight, error: bn ? 'কমপক্ষে ৩০ মিনিট হতে হবে' : 'minimum 30 minutes required' };
+    if (minutes > 18 * 60) return { ok: false, minutes, overnight, error: bn ? '১৮ ঘন্টার বেশি ডিউটি অনুমোদিত নয়' : 'duty cannot exceed 18 hours' };
+    return { ok: true, minutes, overnight };
+  };
+
   const saveDutyTimesMutation = useMutation({
     mutationFn: async (times: typeof dutyTimes) => {
+      // ===== Validate morning + evening shift windows (overnight-aware) =====
+      const overnightWarnings: string[] = [];
+      const checks: Array<[string, string, string]> = [
+        [bn ? 'সকাল ডিউটি' : 'Morning duty', times.morning_start, times.morning_end],
+        [bn ? 'সন্ধ্যা ডিউটি' : 'Evening duty', times.evening_start, times.evening_end],
+      ];
+      for (const [label, s, e] of checks) {
+        const res = validateShiftWindow(s, e);
+        if (!res.ok) {
+          throw new Error(`${label}: ${res.error}`);
+        }
+        if (res.overnight) {
+          overnightWarnings.push(`${label} (${s} → ${e}, ${Math.floor(res.minutes / 60)}h ${res.minutes % 60}m)`);
+        }
+      }
+
       // Validation: extra_duty_rate must be ≥ 0 and ≤ 10,000,000 if enabled
       if (times.extra_duty_enabled) {
         const rate = Number(times.extra_duty_rate);
@@ -394,11 +430,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         { onConflict: 'key' }
       );
       if (error) throw error;
+      return { overnightWarnings };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['residential-duty-times'] });
       queryClient.invalidateQueries({ queryKey: ['residential-duty-times-salary'] });
       toast.success(bn ? 'ডিউটি টাইম সেভ হয়েছে' : 'Duty times saved');
+      if (res?.overnightWarnings?.length) {
+        toast.info(
+          (bn ? 'ওভারনাইট শিফট সনাক্ত হয়েছে: ' : 'Overnight shift detected: ') + res.overnightWarnings.join(' • '),
+          { duration: 6000 }
+        );
+      }
     },
     onError: (e: any) => {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা হয়েছে' : 'Failed to save'));
@@ -421,44 +464,37 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   const saveCategoryTimesMutation = useMutation({
     mutationFn: async (times: Record<string, { start: string; end: string }>) => {
-      // ===== Validation =====
-      const tToMin = (t: string) => {
-        if (!t || !/^\d{1,2}:\d{2}$/.test(t)) return NaN;
-        const [h, m] = t.split(':').map(Number);
-        if (h < 0 || h > 23 || m < 0 || m > 59) return NaN;
-        return h * 60 + m;
-      };
+      // ===== Validation (overnight-aware via shared validateShiftWindow) =====
       const errors: string[] = [];
+      const overnightWarnings: string[] = [];
       for (const [k, v] of Object.entries(times)) {
         const label = getCategoryLabel(k) || k;
-        if (!v?.start || !v?.end) {
-          errors.push(`${label}: ${bn ? 'শুরু/শেষ সময় ফাঁকা' : 'start/end empty'}`);
+        const res = validateShiftWindow(v?.start, v?.end);
+        if (!res.ok) {
+          errors.push(`${label}: ${res.error}`);
           continue;
         }
-        const s = tToMin(v.start);
-        const e = tToMin(v.end);
-        if (isNaN(s) || isNaN(e)) {
-          errors.push(`${label}: ${bn ? 'অবৈধ সময় ফরম্যাট' : 'invalid time format'}`);
-          continue;
-        }
-        if (e <= s) {
-          errors.push(`${label}: ${bn ? 'শেষ সময় শুরুর পরে হতে হবে' : 'end must be after start'}`);
-          continue;
-        }
-        if (e - s < 30) {
-          errors.push(`${label}: ${bn ? 'কমপক্ষে ৩০ মিনিট হতে হবে' : 'minimum 30 minutes required'}`);
+        if (res.overnight) {
+          overnightWarnings.push(`${label} (${v.start} → ${v.end})`);
         }
       }
       if (errors.length) {
         throw new Error(errors.join(' • '));
       }
+      // Stash warnings for onSuccess
+      (times as any).__overnightWarnings = overnightWarnings;
 
       // ===== Capture old values for audit =====
       const oldTimes = (savedCategoryTimes as Record<string, { start: string; end: string }>) || {};
 
-      // ===== Save settings =====
+      // ===== Save settings (strip transient warnings field) =====
+      const cleanTimes: Record<string, { start: string; end: string }> = {};
+      for (const [k, v] of Object.entries(times)) {
+        if (k === '__overnightWarnings') continue;
+        cleanTimes[k] = { start: (v as any).start, end: (v as any).end };
+      }
       const { error } = await supabase.from('website_settings').upsert(
-        { key: 'category_shift_times', value: times, updated_at: new Date().toISOString() },
+        { key: 'category_shift_times', value: cleanTimes, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       );
       if (error) throw error;
@@ -527,9 +563,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         await supabase.from('shift_time_audit_log').insert(auditEntries);
       }
 
-      return { changedCount: auditEntries.length, totalRecalc };
+      return { changedCount: auditEntries.length, totalRecalc, overnightWarnings: ((times as any).__overnightWarnings as string[]) || [] };
     },
-    onSuccess: ({ changedCount, totalRecalc }) => {
+    onSuccess: ({ changedCount, totalRecalc, overnightWarnings }) => {
       queryClient.invalidateQueries({ queryKey: ['category-shift-times'] });
       queryClient.invalidateQueries({ queryKey: ['category-shift-times-salary'] });
       queryClient.invalidateQueries({ queryKey: ['salary-records'] });
@@ -538,6 +574,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         ? `সেভ হয়েছে${changedCount > 0 ? ` • ${changedCount} ডিপার্টমেন্ট পরিবর্তিত • ${totalRecalc} বেতন রেকর্ড আপডেট` : ''}`
         : `Saved${changedCount > 0 ? ` • ${changedCount} category changes • ${totalRecalc} salary records refreshed` : ''}`;
       toast.success(msg);
+      if (overnightWarnings.length) {
+        toast.info(
+          (bn ? 'ওভারনাইট শিফট সনাক্ত হয়েছে: ' : 'Overnight shift detected: ') + overnightWarnings.join(' • '),
+          { duration: 6000 }
+        );
+      }
     },
     onError: (e: any) => {
       toast.error(e?.message || (bn ? 'সেভ করা যায়নি' : 'Failed to save'));
