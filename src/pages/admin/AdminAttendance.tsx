@@ -1535,8 +1535,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                               return `${bn ? 'রেজি' : 'Reg'}: ${entity.student_id || '-'} | ${className}${divName ? ` (${divName})` : ''} | ${bn ? 'রোল' : 'Roll'}: ${entity.roll_number || '-'}`;
                             })()
                           : staffSubTab === 'duty'
-                            ? `${entity.designation || '-'} | ${selectedShift === 'morning' ? `${fmt(dutyTimes.morning_start)} - ${fmt(dutyTimes.morning_end)}` : `${fmt(dutyTimes.evening_start)} - ${fmt(dutyTimes.evening_end)}`}`
-                            : `${entity.designation || '-'} | ${fmt(getCategoryTime(entity).start)} - ${fmt(getCategoryTime(entity).end)}`}
+                            ? `${entity.designation || '-'} | ${bn ? 'নির্ধারিত' : 'Scheduled'}: ${selectedShift === 'morning' ? `${fmt(dutyTimes.morning_start)} - ${fmt(dutyTimes.morning_end)}` : `${fmt(dutyTimes.evening_start)} - ${fmt(dutyTimes.evening_end)}`}`
+                            : `${entity.designation || '-'} | ${bn ? 'নির্ধারিত' : 'Scheduled'}: ${fmt(getCategoryTime(entity).start)} - ${fmt(getCategoryTime(entity).end)}`}
                       </p>
                     </div>
                   </div>
