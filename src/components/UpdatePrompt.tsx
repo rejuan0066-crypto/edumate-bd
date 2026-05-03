@@ -167,15 +167,6 @@ const UpdatePrompt = () => {
     }, 400);
   };
 
-  // Floating update button: only ENABLED when a new build is actually detected.
-  // Otherwise it stays visible but disabled, so user can see status without triggering anything.
-  const showFloatingButton = standalone && !updating && (!updateAvailable || dismissed);
-  const canUpdate = updateAvailable;
-
-  return (
-    <>
-      {showFloatingButton && (
-        <button
   // Floating update button: ALWAYS clickable in the installed PWA.
   // - If we already know an update is available → install immediately.
   // - Otherwise → run a fresh check, and install if found, else show "up to date".
@@ -224,6 +215,17 @@ const UpdatePrompt = () => {
           )}
         </button>
       )}
+
+      {updateAvailable && !dismissed && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+        >
+          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
+              </div>
                 <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
               </div>
               <div className="flex-1 min-w-0">
