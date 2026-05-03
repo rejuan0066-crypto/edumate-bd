@@ -98,7 +98,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const monthLabel = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
   const leadingBlanks = getDay(monthStart);
 
-  const setStatus = async (dateKey: string, newStatus: string | null) => {
+  const setStatus = async (
+    dateKey: string,
+    newStatus: string | null,
+    extra?: { check_in_time?: string | null; check_out_time?: string | null }
+  ) => {
     if (!staff?.id) return;
     setSavingKey(dateKey);
     try {
@@ -109,9 +113,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         if (error) throw error;
         toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Cleared');
       } else if (existing) {
-        const { error } = await supabase.from('attendance_records').update({
-          status: newStatus, updated_at: new Date().toISOString(),
-        }).eq('id', existing.id);
+        const payload: any = { status: newStatus, updated_at: new Date().toISOString() };
+        if (extra && 'check_in_time' in extra) payload.check_in_time = extra.check_in_time;
+        if (extra && 'check_out_time' in extra) payload.check_out_time = extra.check_out_time;
+        const { error } = await supabase.from('attendance_records').update(payload).eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
       } else {
@@ -121,13 +126,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           entity_id: staff.id,
           shift: shift || 'full_day',
           status: newStatus,
+          check_in_time: extra?.check_in_time ?? null,
+          check_out_time: extra?.check_out_time ?? null,
         });
         if (error) throw error;
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      setOpenKey(null);
+      if (newStatus !== 'late') setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
     } finally {
