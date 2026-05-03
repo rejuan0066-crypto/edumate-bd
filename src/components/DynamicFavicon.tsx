@@ -213,4 +213,24 @@ function buildManifest(opts: {
   return 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(json);
 }
 
+function applyAppleWebAppTitle(title: string) {
+  let meta = document.querySelector('meta[name="apple-mobile-web-app-title"]') as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = 'apple-mobile-web-app-title';
+    document.head.appendChild(meta);
+  }
+  meta.content = title;
+}
+
+function trimWordAware(input: string, max: number): string {
+  const s = (input || '').trim().replace(/\s+/g, ' ');
+  if (s.length <= max) return s;
+  const slice = s.slice(0, max);
+  const lastSpace = slice.lastIndexOf(' ');
+  // If we have a reasonable word boundary, cut there; else hard slice with ellipsis
+  if (lastSpace >= Math.floor(max * 0.6)) return slice.slice(0, lastSpace).trim();
+  return slice.trim().replace(/[\s\-_,.;:]+$/, '') + '…';
+}
+
 export default DynamicFavicon;
