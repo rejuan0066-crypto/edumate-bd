@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
 
     const renderPageHeader = () => `
       <tr class="page-header-row">
-        <th colspan="11" class="header-cell">
+        <th colspan="12" class="header-cell">
           <div class="page-header">
             <div class="letterhead">
               <div class="logo-wrap">${logoBlock}</div>
@@ -228,14 +228,14 @@ Deno.serve(async (req) => {
       <tr class="totals">
         <td colspan="3">${bn ? "সর্বমোট" : "Grand Total"} (${bn ? toBnDigits(staff.length) : staff.length} ${bn ? "জন" : "staff"})</td>
         <td class="c-amt">${fmtNum(Number(totals?.base || 0))}</td>
-        <td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td>
         <td class="c-amt">${fmtNum(Number(totals?.deductions || 0))}</td>
         <td class="c-amt">${Number(totals?.overtime || 0) > 0 ? fmtNum(Number(totals?.overtime || 0)) : "—"}</td>
         <td class="c-amt">${Number(totals?.savings || 0) > 0 ? fmtNum(Number(totals?.savings || 0)) : "—"}</td>
         <td class="c-amt c-net">${fmtNum(Number(totals?.net || 0))}</td>
       </tr>
       <tr class="note-row">
-        <td colspan="11" class="note-cell">
+        <td colspan="12" class="note-cell">
           <strong>${bn ? "নোটঃ" : "Note:"}</strong>
           ${bn
             ? "এই বিবরণীটি সিস্টেম দ্বারা স্বয়ংক্রিয়ভাবে প্রস্তুতকৃত। কোষাধ্যক্ষ কর্তৃক যাচাইপূর্বক প্রিন্সিপাল মহোদয়ের অনুমোদন গ্রহণ করিতে হইবে।"
@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
     const renderFooter = () => `
       <tfoot>
         <tr>
-          <td colspan="11" class="footer-cell">
+          <td colspan="12" class="footer-cell">
             <div class="footer-inner">
               <div class="signatures" style="--sig-cols: ${(paid_by && String(paid_by).trim()) ? 4 : 3};">
                 <div class="sig">
