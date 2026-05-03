@@ -1725,6 +1725,8 @@ const AdminSalary = () => {
   const printSlip = async (staffMember: any, record: any) => {
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsAmt = activeSavings ? activeSavings.amount : 0;
+    const slipStats = getAttendanceStats(staffMember);
+    const leaveDays = slipStats.leave || 0;
 
     // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
     const attendanceDeductions = Number(record.absence_deduction || 0)
@@ -1905,12 +1907,13 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'উপস্থিত' : 'Present'}</span><span class="val" style="color:#059669">${bn ? toBnDigits(record.present_days) : record.present_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'অনুপস্থিত' : 'Absent'}</span><span class="val" style="color:#dc2626">${bn ? toBnDigits(record.absent_days) : record.absent_days}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'বিলম্ব দিন' : 'Late Days'}</span><span class="val" style="color:#d97706">${bn ? toBnDigits(record.late_days || 0) : (record.late_days || 0)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
+          <div class="info-cell"><span class="lbl">${bn ? 'ছুটি' : 'Leave'}</span><span class="val" style="color:#2563eb">${bn ? toBnDigits(leaveDays) : leaveDays}</span></div>
+          <div class="info-cell" style="grid-column:1 / -1;border-right:none"><span class="lbl">${bn ? 'স্ট্যাটাস' : 'Status'}</span><span class="val" style="color:${record.status === 'paid' ? '#059669' : '#d97706'}">${record.status === 'paid' ? (bn ? '✓ পরিশোধিত' : '✓ PAID') : (bn ? '⏱ বকেয়া' : '⏱ PENDING')}</span></div>
         </div>
 
         <div class="single-col">
           <div class="col earn">
-            <div class="col-head">${bn ? '＋ বেতন গণনার সম্পূর্ণ ব্রেকডাউন' : '＋ Full Salary Breakdown'}</div>
+            <div class="col-head">${bn ? 'বেতন বিবরণ' : 'Salary Details'}</div>
             <div class="col-body">
               <!-- ১. মূল বেতন -->
               <div class="ln" style="background:#f8fafc;font-weight:700"><span class="l">${bn ? '১। মূল বেতন' : '1. Base Salary'}</span><span class="v">৳${slipNum(Number(record.base_salary || 0))}</span></div>
@@ -1936,12 +1939,10 @@ const AdminSalary = () => {
               ` : ''}
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
-              <!-- যাচাই: সম্পূর্ণ যোগফল -->
-              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-size:11px;font-style:italic">
-                <span class="l">${bn
-                  ? `যাচাই: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`
-                  : `Check: ${slipNum(earnedFromAttendance)} − ${slipNum(Number(record.advance_deduction || 0))} − ${slipNum(savingsAmt)} ＋ ${slipNum(Number(record.bonus || 0))} ＋ ${slipNum(Number(record.overtime || 0))} ＋ ${slipNum(Number(record.other_allowance || 0))}`}</span>
-                <span class="v">= ৳${slipNum(netSalary)}</span>
+              <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
+              <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
+                <span class="l">${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span>
+                <span class="v">৳${slipNum(netSalary)}</span>
               </div>
             </div>
             <div class="col-foot"><span>${bn ? 'মোট বেতন (নিট প্রদেয়)' : 'Total (Net Payable)'}</span><span>৳${slipNum(netSalary)}</span></div>
