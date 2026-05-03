@@ -6,9 +6,18 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const BUILD_ID_KEY = 'app_build_id';
 const CHECK_INTERVAL = 60_000; // 1 minute
 
+// Build a stable signature from ALL hashed asset filenames in index.html.
+// More reliable than picking the first JS chunk hash (which can stay the same
+// across some deploys when only CSS or other chunks change).
 const extractBuildId = (html: string): string | null => {
-  const match = html.match(/assets\/[^"']+-([a-zA-Z0-9_]+)\.js/);
-  return match ? match[1] : null;
+  const matches = html.match(/assets\/[^"'?\s]+-[a-zA-Z0-9_]+\.(?:js|css)/g);
+  if (!matches || matches.length === 0) return null;
+  // Sort + dedupe so order changes don't trigger false positives
+  const sig = Array.from(new Set(matches)).sort().join('|');
+  // Compact hash (djb2)
+  let h = 5381;
+  for (let i = 0; i < sig.length; i++) h = ((h << 5) + h + sig.charCodeAt(i)) | 0;
+  return 'b' + (h >>> 0).toString(36);
 };
 
 const isStandalonePWA = () => {
@@ -158,35 +167,52 @@ const UpdatePrompt = () => {
     }, 400);
   };
 
-  // Floating update button: only ENABLED when a new build is actually detected.
-  // Otherwise it stays visible but disabled, so user can see status without triggering anything.
+  // Floating update button: ALWAYS clickable in the installed PWA.
+  // - If we already know an update is available → install immediately.
+  // - Otherwise → run a fresh check, and install if found, else show "up to date".
   const showFloatingButton = standalone && !updating && (!updateAvailable || dismissed);
-  const canUpdate = updateAvailable;
+
+  const handleFloatingClick = async () => {
+    if (updateAvailable) {
+      setDismissed(false);
+      handleUpdate();
+      return;
+    }
+    const found = await checkForUpdate(true);
+    if (found) {
+      setDismissed(false);
+      handleUpdate();
+    } else {
+      setNoUpdateMsg(true);
+      setTimeout(() => setNoUpdateMsg(false), 2500);
+    }
+  };
 
   return (
     <>
       {showFloatingButton && (
         <button
-          onClick={() => {
-            if (!canUpdate) return;
-            setDismissed(false);
-            handleUpdate();
-          }}
-          disabled={!canUpdate}
+          onClick={handleFloatingClick}
+          disabled={checking}
           aria-label={bn
-            ? (canUpdate ? 'আপডেট ইনস্টল করুন' : 'কোনো নতুন আপডেট নেই')
-            : (canUpdate ? 'Install update' : 'No update available')}
+            ? (updateAvailable ? 'আপডেট ইনস্টল করুন' : 'আপডেট চেক করুন')
+            : (updateAvailable ? 'Install update' : 'Check for update')}
           title={bn
-            ? (canUpdate ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'সর্বশেষ ভার্সন চলছে')
-            : (canUpdate ? 'Update available — click to install' : 'Up to date')}
+            ? (updateAvailable ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'আপডেটের জন্য চেক করুন')
+            : (updateAvailable ? 'Update available — click to install' : 'Check for update')}
           className={`fixed right-3 z-[90] w-11 h-11 rounded-full border shadow-lg backdrop-blur-xl flex items-center justify-center transition-colors ${
-            canUpdate
+            updateAvailable
               ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 cursor-pointer animate-pulse'
-              : 'bg-card/60 border-border text-muted-foreground opacity-50 cursor-not-allowed'
+              : 'bg-card/90 text-primary border-border hover:bg-muted cursor-pointer'
           }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${checking ? 'animate-spin' : ''}`} />
+          {noUpdateMsg && (
+            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card border border-border text-foreground text-xs rounded-full px-3 py-1 shadow-md">
+              {bn ? 'সর্বশেষ ভার্সন চলছে' : 'Up to date'}
+            </span>
+          )}
         </button>
       )}
 
