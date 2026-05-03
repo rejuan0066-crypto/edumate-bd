@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Clock, AlertCircle, CalendarOff, Stethoscope, ShieldCheck, Calendar as CalendarIcon, Trash2, Save } from 'lucide-react';
+import { TimePicker } from '@/components/ui/time-picker';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, isSameDay, getDay } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -97,7 +98,11 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   const monthLabel = bn ? format(cursor, 'MMMM yyyy', { locale: bnLocale }) : format(cursor, 'MMMM yyyy');
   const leadingBlanks = getDay(monthStart);
 
-  const setStatus = async (dateKey: string, newStatus: string | null) => {
+  const setStatus = async (
+    dateKey: string,
+    newStatus: string | null,
+    extra?: { check_in_time?: string | null; check_out_time?: string | null }
+  ) => {
     if (!staff?.id) return;
     setSavingKey(dateKey);
     try {
@@ -108,9 +113,10 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
         if (error) throw error;
         toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Cleared');
       } else if (existing) {
-        const { error } = await supabase.from('attendance_records').update({
-          status: newStatus, updated_at: new Date().toISOString(),
-        }).eq('id', existing.id);
+        const payload: any = { status: newStatus, updated_at: new Date().toISOString() };
+        if (extra && 'check_in_time' in extra) payload.check_in_time = extra.check_in_time;
+        if (extra && 'check_out_time' in extra) payload.check_out_time = extra.check_out_time;
+        const { error } = await supabase.from('attendance_records').update(payload).eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
       } else {
@@ -120,13 +126,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           entity_id: staff.id,
           shift: shift || 'full_day',
           status: newStatus,
+          check_in_time: extra?.check_in_time ?? null,
+          check_out_time: extra?.check_out_time ?? null,
         });
         if (error) throw error;
         toast.success(bn ? 'সেভ হয়েছে' : 'Saved');
       }
       await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      setOpenKey(null);
+      if (newStatus !== 'late') setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
     } finally {
@@ -296,7 +304,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         ) : null}
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-60 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
+                    <PopoverContent className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl" align="center">
                       <div className="flex items-center justify-between px-2 pb-2 mb-1 border-b border-border/30">
                         <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
                         {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
@@ -324,6 +332,15 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             </button>
                           );
                         })}
+                        {rec?.status === 'late' && (
+                          <LateTimeEditor
+                            bn={bn}
+                            initialIn={rec?.check_in_time || ''}
+                            initialOut={rec?.check_out_time || ''}
+                            saving={isSaving}
+                            onSave={(ci, co) => setStatus(key, 'late', { check_in_time: ci || null, check_out_time: co || null })}
+                          />
+                        )}
                         {rec && (
                           <button
                             onClick={() => setStatus(key, null)}
@@ -353,3 +370,41 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
     </Dialog>
   );
 }
+
+function LateTimeEditor({ bn, initialIn, initialOut, saving, onSave }: {
+  bn: boolean;
+  initialIn: string;
+  initialOut: string;
+  saving: boolean;
+  onSave: (checkIn: string, checkOut: string) => void;
+}) {
+  const [ci, setCi] = useState(initialIn || '');
+  const [co, setCo] = useState(initialOut || '');
+  useEffect(() => { setCi(initialIn || ''); setCo(initialOut || ''); }, [initialIn, initialOut]);
+  return (
+    <div className="mt-1 p-2.5 rounded-xl border border-amber-300/40 bg-amber-50/60 dark:bg-amber-950/20 space-y-2">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1">
+        <Clock className="h-3 w-3" /> {bn ? 'বিলম্ব উপস্থিতি — সময়' : 'Late attendance — time'}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'চেক-ইন' : 'Check-in'}</div>
+          <TimePicker value={ci} onChange={setCi} placeholder={bn ? 'সময়' : 'Time'} />
+        </div>
+        <div>
+          <div className="text-[10px] text-muted-foreground mb-1">{bn ? 'চেক-আউট' : 'Check-out'}</div>
+          <TimePicker value={co} onChange={setCo} placeholder={bn ? 'সময়' : 'Time'} />
+        </div>
+      </div>
+      <Button
+        size="sm"
+        disabled={saving || !ci}
+        onClick={() => onSave(ci, co)}
+        className="w-full h-8 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+      >
+        <Save className="h-3 w-3 mr-1" /> {bn ? 'সময় সেভ করুন' : 'Save time'}
+      </Button>
+    </div>
+  );
+}
+
