@@ -69,6 +69,22 @@ Deno.serve(async (req) => {
       if ((!nid || !nid.trim()) && (!phone || !phone.trim())) {
         return json({ matches: [] });
       }
+      // Per-IP rate limit (anti-enumeration). Best-effort; ignore RPC errors.
+      try {
+        const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+        const { data: rl } = await supabase.rpc('check_rate_limit', {
+          _key: `ip:${ip}`,
+          _scope: 'parent-auth',
+          _action: 'preview_match',
+        });
+        if (rl && (rl as any).allowed === false) {
+          return json(
+            { error: 'অনেক অনুরোধ। কিছুক্ষণ পর আবার চেষ্টা করুন।' },
+            429,
+            { 'Retry-After': String((rl as any).retry_after_seconds || 60) }
+          );
+        }
+      } catch { /* ignore rate-limit failures */ }
       const { data, error } = await supabase.rpc('match_students_for_parent', {
         p_nid: nid?.trim() || null,
         p_phone: phone?.trim() || null,
