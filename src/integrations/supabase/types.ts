@@ -7584,6 +7584,30 @@ export type Database = {
         }
         Relationships: []
       }
+      salary_sheet_memos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          memo_no: string
+          month_year: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          memo_no: string
+          month_year: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          memo_no?: string
+          month_year?: string
+        }
+        Relationships: []
+      }
       salary_workflow_history: {
         Row: {
           action: string
@@ -10105,6 +10129,10 @@ export type Database = {
       get_next_receipt_serial: { Args: never; Returns: string }
       get_or_create_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
+        Returns: string
+      }
+      get_or_create_salary_memo: {
+        Args: { p_month_year: string }
         Returns: string
       }
       get_parent_fee_payments: {
