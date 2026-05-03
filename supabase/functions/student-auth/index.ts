@@ -85,7 +85,13 @@ Deno.serve(async (req) => {
         return json({ error: 'Missing required fields' }, 400);
       }
       if (!['email', 'phone'].includes(contact_type)) return json({ error: 'Invalid contact type' }, 400);
-      if (password.length < 6) return json({ error: 'Password must be at least 6 characters' }, 400);
+      {
+        const pwCheck = await enforcePasswordPolicy(supabase, password);
+        if (!pwCheck.ok) {
+          await logSecurityEvent(supabase, { event_type: 'weak_password_rejected', severity: 'warning', email: contact_type === 'email' ? contact : null, reason: 'student_signup', details: pwCheck.body, req });
+          return json(pwCheck.body, pwCheck.status);
+        }
+      }
 
       const c = normContact(contact, contact_type);
 
