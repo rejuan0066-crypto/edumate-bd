@@ -19,6 +19,7 @@ import PhotoUpload from '@/components/PhotoUpload';
 import { format } from 'date-fns';
 import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { useConfirm } from "@/contexts/ConfirmContext";
+import PasswordStrengthMeter, { isPasswordStrongAgainst, firstFailedRuleMessage, usePasswordPolicy } from '@/components/PasswordStrengthMeter';
 
 type Officer = {
   id: string;
