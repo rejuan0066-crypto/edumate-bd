@@ -446,8 +446,20 @@ const AdminResults = () => {
               {sigDraft.map((s, i) => {
                 const err = sigErrors[i] || {};
                 const setField = (field: keyof ResultSignatory, val: string) => {
-                  setSigDraft(d => d.map((x, j) => j === i ? { ...x, [field]: val } : x));
+                  // Collapse internal whitespace runs and strip leading spaces while typing.
+                  // Trailing space is preserved during typing so users can type multi-word values,
+                  // but is trimmed on blur (see trimField below).
+                  const cleaned = val.replace(/^\s+/, '').replace(/\s{2,}/g, ' ');
+                  setSigDraft(d => d.map((x, j) => j === i ? { ...x, [field]: cleaned } : x));
                   setSigErrors(prev => { const n = { ...prev }; delete n[i]; return n; });
+                };
+                const trimField = (field: keyof ResultSignatory) => {
+                  setSigDraft(d => d.map((x, j) => {
+                    if (j !== i) return x;
+                    const cur = (x[field] as string | undefined) || '';
+                    const trimmed = cur.trim().replace(/\s{2,}/g, ' ');
+                    return trimmed === cur ? x : { ...x, [field]: trimmed };
+                  }));
                 };
                 return (
                   <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
@@ -464,24 +476,28 @@ const AdminResults = () => {
                     <div>
                       <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'} <span className="text-muted-foreground">*</span></Label>
                       <Input maxLength={MAX_LEN} value={s.title_bn || ''} onChange={(e) => setField('title_bn', e.target.value)}
+                        onBlur={() => trimField('title_bn')}
                         className={(err.title || err.title_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.title_bn && <p className="text-[11px] text-destructive mt-1">{err.title_bn}</p>}
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'} <span className="text-muted-foreground">*</span></Label>
                       <Input maxLength={MAX_LEN} value={s.title_en || ''} onChange={(e) => setField('title_en', e.target.value)}
+                        onBlur={() => trimField('title_en')}
                         className={(err.title || err.title_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.title_en && <p className="text-[11px] text-destructive mt-1">{err.title_en}</p>}
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'} <span className="text-muted-foreground">*</span></Label>
                       <Input maxLength={MAX_LEN} value={s.name_bn || ''} onChange={(e) => setField('name_bn', e.target.value)}
+                        onBlur={() => trimField('name_bn')}
                         className={(err.name || err.name_bn) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.name_bn && <p className="text-[11px] text-destructive mt-1">{err.name_bn}</p>}
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'} <span className="text-muted-foreground">*</span></Label>
                       <Input maxLength={MAX_LEN} value={s.name_en || ''} onChange={(e) => setField('name_en', e.target.value)}
+                        onBlur={() => trimField('name_en')}
                         className={(err.name || err.name_en) ? 'border-destructive focus-visible:ring-destructive' : ''} />
                       {err.name_en && <p className="text-[11px] text-destructive mt-1">{err.name_en}</p>}
                     </div>
