@@ -326,6 +326,9 @@ Deno.serve(async (req) => {
 
   /* ===== Page Header (repeats on every printed page) ===== */
   .page-header { background: #fff; }
+  /* Header cell inside <thead> repeats on every printed page */
+  .header-cell { padding: 0 0 4mm !important; border: none !important; background: #fff !important; }
+  thead th.header-cell, thead .header-cell { background: #fff !important; }
   /* ===== Persistent footer cell inside <tfoot> (repeats every page) ===== */
   .footer-cell { padding: 0 !important; border: none !important; background: #fff !important; }
   .footer-inner { padding-top: 6mm; vertical-align: bottom; }
@@ -429,35 +432,6 @@ Deno.serve(async (req) => {
 </head><body>
 <div class="sheet">
 
-  <div class="page-header">
-    <div class="letterhead">
-      <div class="logo-wrap">${logoBlock}</div>
-      <div class="inst-name">${instName}</div>
-      ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ""}
-      <div class="inst-contact">
-        ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
-        ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
-        ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
-      </div>
-      ${(instEstablished || instRegNo) ? `
-      <div class="inst-contact">
-        ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${bn ? toBnDigits(instEstablished) : instEstablished}</span>` : ""}
-        ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
-        ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${bn ? toBnDigits(instRegNo) : instRegNo}</span>` : ""}
-      </div>` : ""}
-    </div>
-
-    <div class="doc-title">
-      <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
-      <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</div>
-    </div>
-
-    <div class="memo-row">
-      <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${sheetId}</span>
-      <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${issueDate}</span>
-    </div>
-  </div>
-
   <table>
     <colgroup>
       <col style="width:4%"/>
@@ -473,6 +447,38 @@ Deno.serve(async (req) => {
       <col style="width:16%"/>
     </colgroup>
     <thead>
+      <tr class="page-header-row">
+        <td colspan="11" class="header-cell">
+          <div class="page-header">
+            <div class="letterhead">
+              <div class="logo-wrap">${logoBlock}</div>
+              <div class="inst-name">${instName}</div>
+              ${instAddress ? `<div class="inst-address">${instAddress}</div>` : ""}
+              <div class="inst-contact">
+                ${instPhone ? `<span>${bn ? "ফোন" : "Phone"}: ${bn ? toBnDigits(instPhone) : instPhone}</span>` : ""}
+                ${instPhone && instEmail ? `<span class="sep">|</span>` : ""}
+                ${instEmail ? `<span>${bn ? "ইমেইল" : "E-mail"}: ${instEmail}</span>` : ""}
+              </div>
+              ${(instEstablished || instRegNo) ? `
+              <div class="inst-contact">
+                ${instEstablished ? `<span>${bn ? "স্থাপিত" : "Established"}: ${bn ? toBnDigits(instEstablished) : instEstablished}</span>` : ""}
+                ${instEstablished && instRegNo ? `<span class="sep">|</span>` : ""}
+                ${instRegNo ? `<span>${bn ? "রেজিঃ নং" : "Reg. No"}: ${bn ? toBnDigits(instRegNo) : instRegNo}</span>` : ""}
+              </div>` : ""}
+            </div>
+
+            <div class="doc-title">
+              <h2>${bn ? "বেতন বিবরণী" : "Salary Statement"}</h2>
+              <div class="doc-period"><strong>${bn ? "মাস:" : "For the month of:"}</strong> ${monthLabel} ${bn ? toBnDigits(year) : year}</div>
+            </div>
+
+            <div class="memo-row">
+              <span><strong>${bn ? "স্মারক নং:" : "Memo No:"}</strong> ${sheetId}</span>
+              <span><strong>${bn ? "তারিখ:" : "Date:"}</strong> ${issueDate}</span>
+            </div>
+          </div>
+        </td>
+      </tr>
       <tr>
         <th class="center">${bn ? "ক্রঃ" : "SL"}</th>
         <th>${bn ? "কর্মীর নাম ও আইডি" : "Name & ID"}</th>
