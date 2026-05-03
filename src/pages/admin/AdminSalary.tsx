@@ -731,17 +731,15 @@ const AdminSalary = () => {
       overtime += Math.round(dutyOvertime);
     }
 
-    // overtime আয়ও earned-এর সাথে যোগ হয় (overtime মিনিট ইতিমধ্যে dailyEarning-এ যোগ আছে কিনা চেক)
-    // getAttendanceStats এ entry.dailyEarning += entry.addition হয়েছে, তাই overtime ইতিমধ্যে totalDailyEarnings-এ অন্তর্ভুক্ত।
-    // শুধু extra_duty (যদি এনাবল) আলাদা যোগ হবে।
-    const extraDutyEarning = overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
+    // Subtractive মডেলে overtime আলাদাভাবে যোগ হয় (earnedFromAttendance এ অন্তর্ভুক্ত নয়)।
+    // overtime = per-minute overtime + extra_duty earning (যদি এনাবল থাকে)।
 
     // Get savings deduction for this month
     const activeSavings = getActiveSavings(staffMember.id);
     const savingsDeduction = activeSavings ? activeSavings.amount : 0;
 
     const netSalary = Math.max(0,
-      earnedFromAttendance + extraDutyEarning + bonus + otherAllowance
+      earnedFromAttendance + overtime + bonus + otherAllowance
       - advanceDeduction - savingsDeduction
     );
 
