@@ -169,10 +169,37 @@ export default function AdminAdministrativeDebug() {
                 : 'Probes each data source to confirm administrative names load correctly and surface any errors / RLS blocks.'}
             </p>
           </div>
-          <Button onClick={runAll} disabled={running} className="rounded-full">
-            {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-            {bn ? 'সব প্রোব চালান' : 'Run All Probes'}
-          </Button>
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Auto-refresh toggle */}
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-2xl border backdrop-blur transition-colors ${autoRefresh ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border/40 bg-card/60'}`}>
+              <Activity className={`w-4 h-4 ${autoRefresh ? 'text-emerald-600 animate-pulse' : 'text-muted-foreground'}`} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-xs font-semibold">{bn ? 'অটো-রিফ্রেশ' : 'Auto-refresh'}</span>
+                {autoRefresh && (
+                  <span className="text-[10px] text-emerald-700 dark:text-emerald-400 tabular-nums">
+                    {bn ? `পরবর্তী রান: ${nextInSec}সে` : `Next run in ${nextInSec}s`}
+                    {runCount > 0 && <span className="ml-1.5 opacity-70">• {bn ? `রান: ${runCount}` : `runs: ${runCount}`}</span>}
+                  </span>
+                )}
+              </div>
+              <Switch checked={autoRefresh} onCheckedChange={setAutoRefresh} />
+              <Select value={String(intervalSec)} onValueChange={(v) => setIntervalSec(Number(v))}>
+                <SelectTrigger className="h-8 w-[88px] text-xs rounded-xl">
+                  <Timer className="w-3 h-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 15, 30, 60, 120].map((s) => (
+                    <SelectItem key={s} value={String(s)} className="text-xs">{s}s</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={runAll} disabled={running} className="rounded-full">
+              {running ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              {bn ? 'সব প্রোব চালান' : 'Run All Probes'}
+            </Button>
+          </div>
         </div>
 
         {/* Session info */}
