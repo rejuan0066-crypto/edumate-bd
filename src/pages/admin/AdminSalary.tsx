@@ -692,8 +692,19 @@ const AdminSalary = () => {
 
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
+    // For additive mode: add paid holidays that have NO attendance record
+    // (so weekend/public holidays still count as paid days)
+    const recordedDates = new Set(records.map((r: any) => r.attendance_date));
+    let untouchedHolidayDays = 0;
+    paidHolidaySet.forEach((d: any) => {
+      if (!recordedDates.has(d)) untouchedHolidayDays += 1;
+    });
+    const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
+    totalDailyEarnings += holidayPaidEarnings;
+
     return {
-      present, absent, late, halfDay, leave, total: records.length,
+      present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
+      total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
     };
