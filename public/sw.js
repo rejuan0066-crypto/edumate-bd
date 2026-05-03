@@ -29,6 +29,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Allow the page to force an immediate activation of a waiting worker.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Fetch: network-first with cache fallback
 self.addEventListener('fetch', (event) => {
   const { request } = event;

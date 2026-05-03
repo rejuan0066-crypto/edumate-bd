@@ -50,7 +50,14 @@ const UpdatePrompt = () => {
       const newBuildId = extractBuildId(html);
       if (!newBuildId) return false;
       const currentBuildId = localStorage.getItem(BUILD_ID_KEY);
-      if (currentBuildId && newBuildId !== currentBuildId) {
+      // First-ever load: seed the build id so the next deploy is detectable.
+      if (!currentBuildId) {
+        localStorage.setItem(BUILD_ID_KEY, newBuildId);
+        return false;
+      }
+      if (newBuildId !== currentBuildId) {
+        // Stash the new id so handleUpdate can persist it after reload.
+        try { sessionStorage.setItem('app_build_id_pending', newBuildId); } catch {}
         setUpdateAvailable(true);
         setDismissed(false);
         return true;
@@ -116,15 +123,39 @@ const UpdatePrompt = () => {
       setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.update()));
+        await Promise.all(regs.map(async (r) => {
+          try { await r.update(); } catch {}
+          // If a new worker is waiting, tell it to take over immediately.
+          const waiting = r.waiting;
+          if (waiting) {
+            try { waiting.postMessage({ type: 'SKIP_WAITING' }); } catch {}
+          }
+        }));
       }
+      // Persist the new build id so post-reload we don't re-prompt.
+      try {
+        const pending = sessionStorage.getItem('app_build_id_pending');
+        if (pending) {
+          localStorage.setItem(BUILD_ID_KEY, pending);
+          sessionStorage.removeItem('app_build_id_pending');
+        }
+      } catch {}
       setProgress(85);
       setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     } catch {
       // ignore
     }
     setProgress(100);
-    setTimeout(() => window.location.reload(), 400);
+    // Cache-busted hard reload to bypass any HTTP cache layer.
+    setTimeout(() => {
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.set('_v', Date.now().toString());
+        window.location.replace(u.toString());
+      } catch {
+        window.location.reload();
+      }
+    }, 400);
   };
 
   // Floating manual-update button: only visible in installed PWA when no update banner is showing
