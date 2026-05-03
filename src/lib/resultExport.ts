@@ -15,7 +15,22 @@ interface ExportData {
   examName?: string;
   sessionName?: string;
   passMark?: number;
+  signatories?: ResultSignatory[];
 }
+
+export interface ResultSignatory {
+  title_bn?: string;
+  title_en?: string;
+  name_bn?: string;
+  name_en?: string;
+}
+
+export const DEFAULT_RESULT_SIGNATORIES: ResultSignatory[] = [
+  { title_bn: 'শ্রেণি শিক্ষক', title_en: 'Class Teacher', name_bn: '', name_en: '' },
+  { title_bn: 'পরীক্ষা নিয়ন্ত্রক', title_en: 'Exam Controller', name_bn: '', name_en: '' },
+  { title_bn: 'শিক্ষা সচিব', title_en: 'Education Secretary', name_bn: '', name_en: '' },
+  { title_bn: 'মুহতামিম / অধ্যক্ষ', title_en: 'Principal', name_bn: '', name_en: '' },
+];
 
 export const exportResultCSV = ({ title, students, subjects, marksMap, getOverallGrade, bn }: ExportData) => {
   const headers = [
@@ -139,7 +154,8 @@ export const exportResultPDF = ({ title, students, subjects, marksMap, getOveral
   doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
 };
 
-export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33 }: ExportData) => {
+export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories }: ExportData) => {
+  const sigList = (signatories && signatories.length ? signatories : DEFAULT_RESULT_SIGNATORIES).slice(0, 6);
   // Build computed rows + ranking by total (desc)
   const computed = students.map((st: any, idx: number) => {
     const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
@@ -231,10 +247,11 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:42px;padding:0 10px;}
+  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;}
   .sig-block{text-align:center;}
   .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
-  .sig-title{font-size:11.5px;font-weight:700;color:#0f172a;}
+  .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
+  .sig-title{font-size:11.5px;font-weight:700;color:#064e3b;margin-top:1px;}
   .sig-sub{font-size:9.5px;color:#64748b;}
   .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
   @media print{body{padding:0;} .sheet{border-color:#064e3b;}}
@@ -281,10 +298,11 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
   </div>
   <div class="signatures">
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শ্রেণি শিক্ষক' : 'Class Teacher'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'পরীক্ষা নিয়ন্ত্রক' : 'Exam Controller'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'শিক্ষা সচিব' : 'Education Secretary'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
-    <div class="sig-block"><div class="sig-line"></div><p class="sig-title">${bn ? 'মুহতামিম / অধ্যক্ষ' : 'Principal'}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>
+    ${sigList.map((s) => {
+      const t = (bn ? s.title_bn : s.title_en) || (bn ? s.title_en : s.title_bn) || '';
+      const n = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
+      return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${n || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
+    }).join('')}
   </div>
   <div class="footer">
     <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>

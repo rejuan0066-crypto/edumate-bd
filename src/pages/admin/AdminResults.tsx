@@ -14,8 +14,13 @@ import { useGradingSystem } from '@/hooks/useGradingSystem';
 import IndividualMarksheet from '@/components/results/IndividualMarksheet';
 import GradingChart from '@/components/results/GradingChart';
 import { GraduationCap } from 'lucide-react';
-import { exportResultCSV, exportResultPDF, printResultSheet } from '@/lib/resultExport';
+import { exportResultCSV, exportResultPDF, printResultSheet, DEFAULT_RESULT_SIGNATORIES, type ResultSignatory } from '@/lib/resultExport';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Settings2 } from 'lucide-react';
 
 const AdminResults = () => {
   const { language } = useLanguage();
@@ -282,6 +287,36 @@ const AdminResults = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: signatories = DEFAULT_RESULT_SIGNATORIES } = useQuery<ResultSignatory[]>({
+    queryKey: ['result-signatories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('website_settings').select('value').eq('key', 'result_signatories').maybeSingle();
+      const v = (data?.value as any);
+      if (Array.isArray(v) && v.length) return v as ResultSignatory[];
+      return DEFAULT_RESULT_SIGNATORIES;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const [sigDialogOpen, setSigDialogOpen] = useState(false);
+  const [sigDraft, setSigDraft] = useState<ResultSignatory[]>(DEFAULT_RESULT_SIGNATORIES);
+  useEffect(() => { setSigDraft(signatories); }, [signatories]);
+
+  const saveSignatories = useMutation({
+    mutationFn: async (rows: ResultSignatory[]) => {
+      const { error } = await supabase
+        .from('website_settings')
+        .upsert({ key: 'result_signatories', value: rows as any, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(bn ? 'স্বাক্ষরকারীর তথ্য সংরক্ষিত' : 'Signatories saved');
+      queryClient.invalidateQueries({ queryKey: ['result-signatories'] });
+      setSigDialogOpen(false);
+    },
+    onError: (e: any) => toast.error(e.message || 'Save failed'),
+  });
+
   const handleClassExport = async (classId: string, type: 'csv' | 'pdf' | 'print') => {
     setExportingClassId(classId);
     try {
@@ -335,6 +370,7 @@ const AdminResults = () => {
         className: bn ? cls?.name_bn : cls?.name,
         examName: bn ? examSession.name_bn : examSession.name,
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
+        signatories,
       };
 
       if (type === 'csv') exportResultCSV(params);
@@ -356,11 +392,60 @@ const AdminResults = () => {
           <div className="p-2.5 rounded-xl bg-primary/10">
             <GraduationCap className="w-6 h-6 text-primary" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-display font-bold text-foreground">{bn ? 'ফলাফল ব্যবস্থাপনা' : 'Result Management'}</h1>
             <p className="text-sm text-muted-foreground">{bn ? 'ক্লাস-ওয়াইজ বা ব্যক্তিগত ফলাফল অনুসন্ধান করুন' : 'Search class-wise or individual results'}</p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => setSigDialogOpen(true)} className="gap-2">
+            <Settings2 className="w-4 h-4" />
+            {bn ? 'স্বাক্ষরকারী' : 'Signatories'}
+          </Button>
         </div>
+
+        <Dialog open={sigDialogOpen} onOpenChange={setSigDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{bn ? 'রেজাল্ট শীটের স্বাক্ষরকারী সম্পাদনা' : 'Edit Result Sheet Signatories'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {sigDraft.map((s, i) => (
+                <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="md:col-span-2 text-xs font-semibold text-muted-foreground">
+                    {bn ? `স্বাক্ষরকারী ${i + 1}` : `Signatory ${i + 1}`}
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
+                    <Input value={s.title_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_bn: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'পদবী (English)' : 'Title (English)'}</Label>
+                    <Input value={s.title_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, title_en: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
+                    <Input value={s.name_bn || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_bn: e.target.value } : x))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (English)' : 'Name (English)'}</Label>
+                    <Input value={s.name_en || ''} onChange={(e) => setSigDraft(d => d.map((x, j) => j === i ? { ...x, name_en: e.target.value } : x))} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="ghost" onClick={() => setSigDraft(DEFAULT_RESULT_SIGNATORIES)}>
+                {bn ? 'ডিফল্টে রিসেট' : 'Reset to default'}
+              </Button>
+              <Button variant="outline" onClick={() => setSigDialogOpen(false)}>
+                {bn ? 'বাতিল' : 'Cancel'}
+              </Button>
+              <Button onClick={() => saveSignatories.mutate(sigDraft)} disabled={saveSignatories.isPending}>
+                {saveSignatories.isPending ? (bn ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (bn ? 'সংরক্ষণ' : 'Save')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         <ResultSearchFilters
           searchMode={searchMode}
