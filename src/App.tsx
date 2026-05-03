@@ -107,6 +107,7 @@ import AdminSalary from "./pages/admin/AdminSalary";
 import AdminShiftAuditLog from "./pages/admin/AdminShiftAuditLog";
 import AdminPosts from "./pages/admin/AdminPosts";
 import AdminPrayerCalendar from "./pages/admin/AdminPrayerCalendar";
+import AdminStaffHolidays from "./pages/admin/AdminStaffHolidays";
 import AdminAcademicSessions from "./pages/admin/AdminAcademicSessions";
 import AdminAddressManager from "./pages/admin/AdminAddressManager";
 import AdminApiVerification from "./pages/admin/AdminApiVerification";
