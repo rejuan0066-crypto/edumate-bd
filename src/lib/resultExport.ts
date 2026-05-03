@@ -247,10 +247,11 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:42px;padding:0 10px;}
+  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;}
   .sig-block{text-align:center;}
   .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
-  .sig-title{font-size:11.5px;font-weight:700;color:#0f172a;}
+  .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
+  .sig-title{font-size:11.5px;font-weight:700;color:#064e3b;margin-top:1px;}
   .sig-sub{font-size:9.5px;color:#64748b;}
   .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
   @media print{body{padding:0;} .sheet{border-color:#064e3b;}}
