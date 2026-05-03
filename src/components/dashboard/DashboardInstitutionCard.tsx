@@ -394,74 +394,88 @@ const DashboardInstitutionCard = () => {
     : (language === 'bn' ? 'প্রতিষ্ঠানের তথ্য এখনো সেট করা হয়নি' : 'Institution info not configured yet');
 
   return (
-    <div className="card-elevated p-3 sm:p-5 lg:p-8 flex flex-row items-start gap-3 sm:gap-5 lg:gap-6">
-      <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
-        {institution?.logo_url ? (
-          <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
-        ) : (
-          <div className="w-full h-full rounded-xl bg-primary flex items-center justify-center">
-            <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0 w-full flex flex-col items-center">
-        {hasName ? (
-          <>
-            {(institution as any)?.name_ar && (
-              <p
-                dir="rtl"
-                lang="ar"
-                className="text-2xl lg:text-4xl font-semibold text-center text-primary/90 leading-tight mb-1"
-                style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
-              >
-                {(institution as any).name_ar}
-              </p>
-            )}
-            <h1 className="text-3xl font-display font-bold truncate text-center text-primary lg:text-3xl">{displayName}</h1>
-            {institution?.name_en && institution?.name && (
-              <p className="text-lg font-display font-semibold text-center text-primary/70 lg:text-2xl">{language === 'bn' ? institution.name_en : institution.name}</p>
-            )}
-          </>
-        ) : (
-          <h1 className="text-2xl lg:text-3xl font-display font-semibold text-center text-muted-foreground/80">
-            {language === 'bn' ? 'প্রতিষ্ঠানের নাম যোগ করা হয়নি' : 'Institution name not set'}
-          </h1>
-        )}
-        <div className="text-sm lg:text-base text-muted-foreground space-y-0.5 lg:space-y-1 w-full">
-          {institution?.address && <p className="truncate text-center text-lg lg:text-xl">{institution.address}</p>}
-          {institution?.phone && <p className="truncate text-center lg:text-lg">{institution.phone}</p>}
-          {institution?.email && <p className="truncate text-center text-base lg:text-lg font-serif">{institution.email}</p>}
-          {(() => {
-            const inst: any = institution || {};
-            const est = language === 'bn' ? (inst.established_year || inst.established_year_en) : (inst.established_year_en || inst.established_year);
-            const reg = language === 'bn' ? (inst.registration_number || inst.registration_number_en) : (inst.registration_number_en || inst.registration_number);
-            if (!est && !reg) return null;
-            return (
-              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-1 text-xs lg:text-sm">
-                {est && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
-                    <span className="opacity-70">{language === 'bn' ? 'স্থাপিত:' : 'Est.'}</span>
-                    <span>{est}</span>
-                  </span>
-                )}
-                {reg && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/8 text-primary/90 font-medium">
-                    <span className="opacity-70">{language === 'bn' ? 'রেজি/EIIN:' : 'Reg/EIIN:'}</span>
-                    <span>{reg}</span>
-                  </span>
-                )}
-              </div>
-            );
-          })()}
-          {!hasAnyContact && (
-            <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
+    <div className="card-elevated p-3 sm:p-5 lg:p-8 relative">
+      {isAdmin && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setEditing(true)}
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 h-8 px-2 sm:h-9 sm:px-3"
+        >
+          <Edit2 className="w-4 h-4 sm:mr-1" />
+          <span className="hidden sm:inline">{language === 'bn' ? 'সম্পাদনা' : 'Edit'}</span>
+        </Button>
+      )}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-5 lg:gap-6 pr-10 sm:pr-24">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+          {institution?.logo_url ? (
+            <img src={institution.logo_url} alt="Logo" className="w-full h-full object-contain" />
+          ) : (
+            <div className="w-full h-full rounded-xl bg-primary flex items-center justify-center">
+              <GraduationCap className="w-9 h-9 lg:w-12 lg:h-12 text-primary-foreground" />
+            </div>
           )}
         </div>
-        {institution?.other_info && <p className="text-xs text-muted-foreground mt-0.5 break-words">{institution.other_info}</p>}
+        <div className="flex-1 min-w-0 w-full flex flex-col items-center text-center">
+          {hasName ? (
+            <>
+              {(institution as any)?.name_ar && (
+                <p
+                  dir="rtl"
+                  lang="ar"
+                  className="text-xl sm:text-2xl lg:text-4xl font-semibold text-center text-primary/90 leading-tight mb-1 break-words max-w-full"
+                  style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}
+                >
+                  {(institution as any).name_ar}
+                </p>
+              )}
+              <h1 className="text-base sm:text-2xl lg:text-3xl font-display font-bold text-center text-primary leading-snug break-words max-w-full">
+                {displayName}
+              </h1>
+              {institution?.name_en && institution?.name && (
+                <p className="text-xs sm:text-base lg:text-2xl font-display font-semibold text-center text-primary/70 leading-snug break-words max-w-full mt-0.5">
+                  {language === 'bn' ? institution.name_en : institution.name}
+                </p>
+              )}
+            </>
+          ) : (
+            <h1 className="text-lg sm:text-2xl lg:text-3xl font-display font-semibold text-center text-muted-foreground/80 break-words max-w-full">
+              {language === 'bn' ? 'প্রতিষ্ঠানের নাম যোগ করা হয়নি' : 'Institution name not set'}
+            </h1>
+          )}
+          <div className="text-xs sm:text-sm lg:text-base text-muted-foreground space-y-0.5 lg:space-y-1 w-full mt-1">
+            {institution?.address && <p className="text-center text-sm sm:text-lg lg:text-xl break-words">{institution.address}</p>}
+            {institution?.phone && <p className="text-center text-xs sm:text-base lg:text-lg break-words">{institution.phone}</p>}
+            {institution?.email && <p className="text-center text-xs sm:text-base lg:text-lg font-serif break-all">{institution.email}</p>}
+            {(() => {
+              const inst: any = institution || {};
+              const est = language === 'bn' ? (inst.established_year || inst.established_year_en) : (inst.established_year_en || inst.established_year);
+              const reg = language === 'bn' ? (inst.registration_number || inst.registration_number_en) : (inst.registration_number_en || inst.registration_number);
+              if (!est && !reg) return null;
+              return (
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pt-1 text-[11px] sm:text-xs lg:text-sm">
+                  {est && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/8 text-primary/90 font-medium">
+                      <span className="opacity-70">{language === 'bn' ? 'স্থাপিত:' : 'Est.'}</span>
+                      <span>{est}</span>
+                    </span>
+                  )}
+                  {reg && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/8 text-primary/90 font-medium">
+                      <span className="opacity-70">{language === 'bn' ? 'রেজি/EIIN:' : 'Reg/EIIN:'}</span>
+                      <span>{reg}</span>
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+            {!hasAnyContact && (
+              <p className="text-center text-xs lg:text-sm italic text-muted-foreground/70 mt-1">{setupHint}</p>
+            )}
+          </div>
+          {institution?.other_info && <p className="text-xs text-muted-foreground mt-0.5 break-words max-w-full">{institution.other_info}</p>}
+        </div>
       </div>
-      {isAdmin && (
-        <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="w-full sm:w-auto"><Edit2 className="w-4 h-4 mr-1" />{language === 'bn' ? 'সম্পাদনা' : 'Edit'}</Button>
-      )}
     </div>
   );
 };
