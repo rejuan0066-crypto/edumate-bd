@@ -525,6 +525,72 @@ const AdminDesignations = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* ─── Bulk CSV Import Preview ─── */}
+        <Dialog open={importOpen} onOpenChange={(open) => { if (!importing) { setImportOpen(open); if (!open) setImportSummary(null); } }}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-[38px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-primary" />
+                {bn ? 'CSV ইম্পোর্ট পূর্বরূপ' : 'CSV Import Preview'}
+              </DialogTitle>
+            </DialogHeader>
+            {importSummary && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2 text-sm">
+                  <Badge variant="outline" className="bg-success/10 text-success border-success/30">{bn ? 'সফল' : 'OK'}: {importSummary.okRows}</Badge>
+                  <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">{bn ? 'সতর্ক' : 'Warn'}: {importSummary.warnRows}</Badge>
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">{bn ? 'ত্রুটি' : 'Error'}: {importSummary.errorRows}</Badge>
+                  <Badge variant="outline">{bn ? 'মোট' : 'Total'}: {importSummary.totalRows}</Badge>
+                </div>
+                <div className="border rounded-2xl overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-secondary/50">
+                      <tr>
+                        <th className="text-left px-3 py-2">#</th>
+                        <th className="text-left px-3 py-2">name_bn</th>
+                        <th className="text-left px-3 py-2">name</th>
+                        <th className="text-left px-3 py-2">{bn ? 'অবস্থা' : 'Status'}</th>
+                        <th className="text-left px-3 py-2">{bn ? 'মন্তব্য' : 'Issues'}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {importSummary.rows.map((r, i) => (
+                        <tr key={i} className={r.status === 'error' ? 'bg-destructive/5' : r.status === 'warn' ? 'bg-warning/5' : ''}>
+                          <td className="px-3 py-2 text-muted-foreground">{r.line || '-'}</td>
+                          <td className="px-3 py-2">
+                            {r.nameBn || '-'}
+                            {r.suggestion && r.suggestion !== r.raw.name_bn && (
+                              <div className="text-xs text-warning">→ {r.suggestion}</div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2">{r.name || '-'}</td>
+                          <td className="px-3 py-2">
+                            {r.status === 'ok' && <CheckCircle2 className="w-4 h-4 text-success" />}
+                            {r.status === 'warn' && <AlertCircle className="w-4 h-4 text-warning" />}
+                            {r.status === 'error' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                          </td>
+                          <td className="px-3 py-2 text-xs">
+                            {r.issues.map((m, j) => <div key={j}>• {m}</div>)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" onClick={() => { setImportOpen(false); setImportSummary(null); }} disabled={importing}>
+                    {bn ? 'বাতিল' : 'Cancel'}
+                  </Button>
+                  <Button onClick={commitImport} disabled={importing || importSummary.okRows === 0} className="btn-primary-gradient">
+                    {importing && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                    {bn ? `${importSummary.okRows}টি সফল রো ইম্পোর্ট করুন` : `Import ${importSummary.okRows} valid rows`}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
