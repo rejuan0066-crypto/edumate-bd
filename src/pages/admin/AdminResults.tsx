@@ -323,6 +323,8 @@ const AdminResults = () => {
     return errs;
   };
 
+  const liveSigErrors = useMemo(() => validateSignatories(sigDraft), [sigDraft, bn]);
+  const hasSigErrors = Object.keys(liveSigErrors).length > 0;
   const saveSignatories = useMutation({
     mutationFn: async (rows: ResultSignatory[]) => {
       const errs = validateSignatories(rows);
