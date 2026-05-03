@@ -224,11 +224,14 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .meta-k{color:#475569;font-weight:500;}
   .meta-v{color:#064e3b;font-weight:700;}
   table{width:100%;border-collapse:collapse;margin-top:10px;font-size:10.5px;}
+  thead{display:table-header-group;}
+  tfoot{display:table-footer-group;}
   thead th{background:#064e3b;color:#fff;font-weight:700;padding:6px 4px;border:1px solid #064e3b;text-align:center;font-size:10.5px;}
   .sub-th{padding:4px 3px;}
   .sub-name{display:block;line-height:1.1;}
   .sub-max{display:block;font-size:8.5px;font-weight:500;opacity:.85;margin-top:1px;}
   tbody td{padding:4px 5px;border:1px solid #d1d5db;}
+  tbody tr{page-break-inside:avoid;break-inside:avoid;}
   tbody tr:nth-child(even) td{background:#f8fafc;}
   tbody tr:hover td{background:#ecfdf5;}
   td.num{text-align:center;}
@@ -243,18 +246,28 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   .grade-B{color:#0284c7;}
   .grade-C{color:#d97706;}
   .grade-D,.grade-F{color:#dc2626;}
-  .summary{margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+  .summary{margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;page-break-inside:avoid;break-inside:avoid;}
   .stat{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;background:#f8fafc;}
   .stat-k{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;}
   .stat-v{font-size:15px;font-weight:800;color:#064e3b;margin-top:2px;}
-  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;}
-  .sig-block{text-align:center;}
+  .signatures{display:grid;grid-template-columns:repeat(${sigList.length},1fr);gap:24px;margin-top:42px;padding:0 10px;page-break-inside:avoid;break-inside:avoid;}
+  .sig-block{text-align:center;page-break-inside:avoid;break-inside:avoid;}
   .sig-line{border-top:1.5px solid #334155;padding-top:4px;margin-top:30px;}
   .sig-name{font-size:11px;font-weight:700;color:#0f172a;min-height:14px;}
   .sig-title{font-size:11.5px;font-weight:700;color:#064e3b;margin-top:1px;}
   .sig-sub{font-size:9.5px;color:#64748b;}
   .footer{margin-top:14px;display:flex;justify-content:space-between;font-size:9.5px;color:#64748b;border-top:1px dashed #cbd5e1;padding-top:6px;}
-  @media print{body{padding:0;} .sheet{border-color:#064e3b;}}
+  @media print{
+    body{padding:0;}
+    .sheet{border-color:#064e3b;}
+    .header,.doc-band,.meta{page-break-inside:avoid;break-inside:avoid;}
+    table{page-break-inside:auto;}
+    tr{page-break-inside:avoid;break-inside:avoid;page-break-after:auto;}
+    thead{display:table-header-group;}
+    tfoot{display:table-footer-group;}
+    .summary{page-break-before:auto;}
+    .signatures{page-break-inside:avoid;break-inside:avoid;}
+  }
 </style>
 </head><body>
 <div class="sheet">
