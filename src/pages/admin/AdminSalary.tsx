@@ -1195,6 +1195,108 @@ const AdminSalary = () => {
     return null;
   };
 
+  // Comprehensive attendance validation — detects missing/inconsistent data
+  // Returns { errors: string[], warnings: string[], hasErrors, hasWarnings }
+  // errors → block salary generation. warnings → allow but show alert.
+  const getAttendanceValidation = (s: any): { errors: string[]; warnings: string[]; hasErrors: boolean; hasWarnings: boolean } => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    const requireAttendance = getSetting('require_attendance')?.enabled !== false;
+
+    const records = attendanceData.filter((a: any) =>
+      a.entity_id === s.id && a.shift !== 'morning' && a.shift !== 'evening'
+    );
+
+    if (requireAttendance && records.length === 0) {
+      errors.push(bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
+    }
+
+    if (records.length > 0) {
+      const stats = getAttendanceStats(s);
+      const [yy, mm] = monthYear.split('-').map(Number);
+      const lastDay = new Date(yy, mm, 0).getDate();
+
+      // 1. Duplicate per-day records (same date)
+      const dateCount = new Map<string, number>();
+      for (const r of records) dateCount.set(r.attendance_date, (dateCount.get(r.attendance_date) || 0) + 1);
+      const dupDates = Array.from(dateCount.entries()).filter(([, c]) => c > 1).map(([d]) => d);
+      if (dupDates.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(dupDates.length)} দিনে একাধিক রেকর্ড (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`
+          : `${dupDates.length} day(s) have duplicate records (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`);
+      }
+
+      // 2. Untracked working days (potentially absent days never marked)
+      if (stats.untrackedAbsentDays > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো রেকর্ড নেই (ছুটি না হলে অনুপস্থিত হিসাবে গণ্য)`
+          : `${stats.untrackedAbsentDays} day(s) unmarked (counted as absent unless holiday)`);
+      }
+
+      // 3. Late/half_day/present without check-in time
+      const missingTime = records.filter((r: any) =>
+        ['present', 'late', 'half_day'].includes(r.status) && !r.check_in_time
+      );
+      if (missingTime.length > 0) {
+        errors.push(bn
+          ? `${toBnDigits(missingTime.length)} দিনে চেক-ইন সময় নেই — কর্তন সঠিক হবে না`
+          : `${missingTime.length} day(s) missing check-in time — deductions will be wrong`);
+      }
+
+      // 4. Check-out before check-in (corrupt timing)
+      const reversed = records.filter((r: any) => {
+        if (!r.check_in_time || !r.check_out_time) return false;
+        const ci = timeToMinutes(r.check_in_time);
+        const co = timeToMinutes(r.check_out_time);
+        return co < ci && co < 60; // negative window, not overnight tail
+      });
+      if (reversed.length > 0) {
+        errors.push(bn
+          ? `${toBnDigits(reversed.length)} দিনে চেক-আউট চেক-ইনের আগে`
+          : `${reversed.length} day(s) check-out before check-in`);
+      }
+
+      // 5. Future-dated records
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const future = records.filter((r: any) => r.attendance_date > todayStr);
+      if (future.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(future.length)} দিনের ভবিষ্যৎ তারিখের রেকর্ড আছে`
+          : `${future.length} record(s) dated in the future`);
+      }
+
+      // 6. Records outside the selected month
+      const outOfMonth = records.filter((r: any) => !r.attendance_date.startsWith(monthYear));
+      if (outOfMonth.length > 0) {
+        warnings.push(bn
+          ? `${toBnDigits(outOfMonth.length)} রেকর্ড নির্বাচিত মাসের বাইরে`
+          : `${outOfMonth.length} record(s) outside selected month`);
+      }
+
+      // 7. Absent count > working days (impossible)
+      if (stats.absent > lastDay) {
+        errors.push(bn
+          ? 'অনুপস্থিতির সংখ্যা মাসের দিনের চেয়ে বেশি'
+          : 'Absent count exceeds days in month');
+      }
+
+      // 8. Salary missing
+      if (!s.salary || Number(s.salary) <= 0) {
+        errors.push(bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set');
+      }
+
+      // 9. Duty time using default
+      const dt = getDutyTimeWithSource(s);
+      if (dt.source === 'default') {
+        warnings.push(bn ? 'ডিউটি সময় ডিফল্ট (০৮:০০–১৭:০০) ব্যবহার হচ্ছে' : 'Using default duty time (08:00–17:00)');
+      }
+    } else if (!s.salary || Number(s.salary) <= 0) {
+      errors.push(bn ? 'মূল বেতন নির্ধারিত নেই' : 'Base salary not set');
+    }
+
+    return { errors, warnings, hasErrors: errors.length > 0, hasWarnings: warnings.length > 0 };
+  };
+
   // Audit log query
   const { data: auditLogs = [] } = useQuery({
     queryKey: ['salary-generation-log', monthYear],
