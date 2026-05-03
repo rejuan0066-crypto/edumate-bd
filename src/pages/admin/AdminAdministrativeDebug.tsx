@@ -33,7 +33,7 @@ export default function AdminAdministrativeDebug() {
     label: string,
     source: string,
     query: string,
-    fn: () => Promise<{ data: any; error: any }>,
+    fn: () => PromiseLike<{ data: any; error: any }>,
   ): Promise<ProbeResult> => {
     const t0 = performance.now();
     try {
