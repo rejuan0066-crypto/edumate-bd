@@ -358,6 +358,15 @@ const AdminResults = () => {
   });
 
   const handleClassExport = async (classId: string, type: 'csv' | 'pdf' | 'print') => {
+    if (type === 'pdf' || type === 'print') {
+      // Open chooser instead of running immediately
+      setExportOptions({ open: true, classId, mode: type, orientation: 'landscape' });
+      return;
+    }
+    await runClassExport(classId, 'csv', 'landscape');
+  };
+
+  const runClassExport = async (classId: string, mode: 'csv' | 'pdf' | 'print', orientation: 'landscape' | 'portrait') => {
     setExportingClassId(classId);
     try {
       const examSession = examSessions.find((es: any) => es.id === examSessionId);
@@ -366,15 +375,11 @@ const AdminResults = () => {
       const cls = examClasses.find((c: any) => c.id === classId);
       const classDivisionId = cls?.division_id;
 
-      // Get exam
       const examId = examSessionId;
-
-      // Load results
       const { data: results } = await supabase.from('results').select('*').eq('exam_id', examId);
       const exportMarksMap: Record<string, number> = {};
       results?.forEach((r: any) => { exportMarksMap[`${r.student_id}_${r.subject_id}`] = r.marks ?? 0; });
 
-      // Load students
       const { data: studentData } = await supabase
         .from('exam_session_students')
         .select('student_id, students(*)')
@@ -382,7 +387,6 @@ const AdminResults = () => {
         .eq('class_id', classId);
       const exportStudents = studentData?.map((es: any) => es.students).filter(Boolean).sort((a: any, b: any) => (a.roll_number || 0) - (b.roll_number || 0)) || [];
 
-      // Load subjects
       const { data: subjectData } = await supabase
         .from('exam_session_subjects')
         .select('subject_id, subjects(*)')
@@ -411,11 +415,12 @@ const AdminResults = () => {
         examName: bn ? examSession.name_bn : examSession.name,
         sessionName: bn ? (year?.name_bn || year?.name) : year?.name,
         signatories,
+        orientation,
       };
 
-      if (type === 'csv') exportResultCSV(params);
-      else if (type === 'pdf') exportResultPDF(params);
-      else if (type === 'print') printResultSheet(params);
+      if (mode === 'csv') exportResultCSV(params);
+      else if (mode === 'pdf') exportResultPDF(params);
+      else if (mode === 'print') printResultSheet(params);
     } catch (e: any) {
       toast.error(e.message || 'Export failed');
     } finally {
