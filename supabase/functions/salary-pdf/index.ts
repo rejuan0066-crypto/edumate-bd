@@ -282,7 +282,9 @@ Deno.serve(async (req) => {
         </tr>
       </tfoot>`;
 
-    const rowsPerPage = 12;
+    // Dynamic rows-per-page: fit small lists on a single A4 landscape page.
+    // Up to ~22 staff comfortably fit with compact row height; beyond that, paginate by 20.
+    const rowsPerPage = staff.length <= 22 ? Math.max(staff.length, 1) : 20;
     const staffPages: any[][] = [];
     for (let i = 0; i < staff.length; i += rowsPerPage) staffPages.push(staff.slice(i, i + rowsPerPage));
     if (staffPages.length === 0) staffPages.push([]);
