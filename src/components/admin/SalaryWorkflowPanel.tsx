@@ -161,7 +161,7 @@ export default function SalaryWorkflowPanel({
 
   const sendToVerifierMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = verifiers.find((v) => v.staff_id === targetId);
+      const target = verifiers.find((v) => v.id === targetId);
       if (!target) throw new Error('Verifier not found');
       // First-time prepare: stamp prepared_by from current user
       await updateAllRecords({
@@ -169,7 +169,7 @@ export default function SalaryWorkflowPanel({
         prepared_by_name: currentUserName,
         prepared_by_role: bn ? 'প্রস্তুতকারী' : 'Prepared by',
         prepared_at: new Date().toISOString(),
-        verifier_staff_id: target.staff_id,
+        verifier_staff_id: target.staff_id || null,
         workflow_stage: 'pending_verification',
         workflow_notes: notes || null,
       });
@@ -189,8 +189,8 @@ export default function SalaryWorkflowPanel({
 
   const verifyMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
-      // Verifier identity: from wf.verifier_staff_id snapshot (or current user override)
-      const verifier = verifiers.find((v) => v.staff_id === wf.verifier_staff_id);
+      // Verifier identity: from wf snapshot or fallback to current user
+      const verifier = verifiers.find((v) => v.staff_id && v.staff_id === wf.verifier_staff_id) || verifiers[0];
       const verifiedName = verifier?.display_name || currentUserName;
       const verifiedRole = verifier?.designation || (bn ? 'যাচাইকারী' : 'Verifier');
       await updateAllRecords({
@@ -216,10 +216,10 @@ export default function SalaryWorkflowPanel({
 
   const sendToApproverMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = approvers.find((a) => a.staff_id === targetId);
+      const target = approvers.find((a) => a.id === targetId);
       if (!target) throw new Error('Approver not found');
       await updateAllRecords({
-        approver_staff_id: target.staff_id,
+        approver_staff_id: target.staff_id || null,
         workflow_stage: 'pending_approval',
         workflow_notes: notes || null,
       });
@@ -239,7 +239,7 @@ export default function SalaryWorkflowPanel({
 
   const approveMutation = useMutation({
     mutationFn: async ({ notes }: { notes: string }) => {
-      const approver = approvers.find((a) => a.staff_id === wf.approver_staff_id);
+      const approver = approvers.find((a) => a.staff_id && a.staff_id === wf.approver_staff_id) || approvers[0];
       const approvedName = approver?.display_name || currentUserName;
       const approvedRole = approver?.designation || (bn ? 'অনুমোদনকারী' : 'Approver');
       await updateAllRecords({
@@ -265,7 +265,7 @@ export default function SalaryWorkflowPanel({
 
   const markAllPaidMutation = useMutation({
     mutationFn: async ({ targetId, notes }: { targetId: string; notes: string }) => {
-      const target = treasurers.find((t) => t.staff_id === targetId);
+      const target = treasurers.find((t) => t.id === targetId);
       if (!target) throw new Error('Treasurer not found');
       const ids = records.filter((r: any) => r.status !== 'paid').map((r: any) => r.id);
       const { error } = await supabase.from('salary_records').update({
@@ -562,7 +562,7 @@ export default function SalaryWorkflowPanel({
                   <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
                     {verifiers.map((v) => (
-                      <SelectItem key={v.staff_id} value={v.staff_id}>
+                      <SelectItem key={v.id} value={v.id}>
                         {v.display_name} {v.designation ? `· ${v.designation}` : ''}
                       </SelectItem>
                     ))}
@@ -577,7 +577,7 @@ export default function SalaryWorkflowPanel({
                   <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
                     {approvers.map((v) => (
-                      <SelectItem key={v.staff_id} value={v.staff_id}>
+                      <SelectItem key={v.id} value={v.id}>
                         {v.display_name} {v.designation ? `· ${v.designation}` : ''}
                       </SelectItem>
                     ))}
@@ -592,7 +592,7 @@ export default function SalaryWorkflowPanel({
                   <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
                   <SelectContent>
                     {treasurers.map((v) => (
-                      <SelectItem key={v.staff_id} value={v.staff_id}>
+                      <SelectItem key={v.id} value={v.id}>
                         {v.display_name} {v.designation ? `· ${v.designation}` : ''}
                       </SelectItem>
                     ))}
