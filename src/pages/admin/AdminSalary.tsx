@@ -1718,7 +1718,8 @@ const AdminSalary = () => {
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
-        setTimeout(() => printWindow.print(), 1500);
+        // No auto-print — the new window shows a Print Settings bar (orientation/paper/min-max scale/margin)
+        // and a "Print" button so the user can review and trigger print themselves.
       }
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {

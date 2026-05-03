@@ -586,6 +586,34 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
+    /* Print Settings Bar — visible on screen, hidden during print */
+    .print-settings-bar {
+      position: sticky; top: 0; z-index: 1000;
+      background: linear-gradient(180deg,#ecfdf5,#d1fae5);
+      border-bottom: 2px solid #10b981;
+      padding: 10px 14px;
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 12.5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .print-settings-bar .grp { display: flex; align-items: center; gap: 6px; }
+    .print-settings-bar label { font-weight: 600; color: #065f46; }
+    .print-settings-bar select,
+    .print-settings-bar input[type="number"] {
+      border: 1px solid #10b981; background: #fff; padding: 4px 8px;
+      border-radius: 8px; font-size: 12px; min-width: 70px;
+    }
+    .print-settings-bar input[type="range"] { width: 110px; accent-color: #10b981; }
+    .print-settings-bar .val { font-variant-numeric: tabular-nums; min-width: 36px; color: #047857; font-weight: 700; }
+    .print-settings-bar button {
+      background: #059669; color: #fff; border: 0; padding: 7px 16px;
+      border-radius: 999px; font-weight: 700; font-size: 12.5px; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(5,150,105,0.35);
+    }
+    .print-settings-bar button:hover { background: #047857; }
+    .print-settings-bar .hint { color: #047857; font-size: 11px; opacity: .85; }
+    @media print { .print-settings-bar { display: none !important; } }
     table { page-break-inside: avoid; break-inside: avoid; font-size: 7pt; }
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group !important; }
@@ -628,6 +656,42 @@ Deno.serve(async (req) => {
   }
 </style>
 </head><body>
+<div class="print-settings-bar" id="printSettingsBar">
+  <div class="grp">
+    <label for="ps-orient">${bn ? 'অরিয়েন্টেশন' : 'Orientation'}:</label>
+    <select id="ps-orient">
+      <option value="landscape">${bn ? 'ল্যান্ডস্কেপ' : 'Landscape'}</option>
+      <option value="portrait">${bn ? 'পোর্ট্রেট' : 'Portrait'}</option>
+    </select>
+  </div>
+  <div class="grp">
+    <label for="ps-size">${bn ? 'পেপার' : 'Paper'}:</label>
+    <select id="ps-size">
+      <option value="A4">A4</option>
+      <option value="Letter">Letter</option>
+      <option value="Legal">Legal</option>
+      <option value="A3">A3</option>
+    </select>
+  </div>
+  <div class="grp">
+    <label for="ps-min">${bn ? 'সর্বনিম্ন স্কেল' : 'Min scale'}:</label>
+    <input id="ps-min" type="range" min="0.4" max="1" step="0.05" value="0.55"/>
+    <span class="val" id="ps-min-v">55%</span>
+  </div>
+  <div class="grp">
+    <label for="ps-max">${bn ? 'সর্বোচ্চ স্কেল' : 'Max scale'}:</label>
+    <input id="ps-max" type="range" min="0.5" max="1.2" step="0.05" value="1"/>
+    <span class="val" id="ps-max-v">100%</span>
+  </div>
+  <div class="grp">
+    <label for="ps-margin">${bn ? 'মার্জিন (mm)' : 'Margin (mm)'}:</label>
+    <input id="ps-margin" type="number" min="0" max="25" step="1" value="8"/>
+  </div>
+  <div class="grp" style="margin-left:auto">
+    <button id="ps-print" type="button">🖨️ ${bn ? 'প্রিন্ট করুন' : 'Print'}</button>
+  </div>
+  <div class="hint">${bn ? 'ব্রাউজার ডায়ালগে অরিয়েন্টেশন/সাইজ মিলিয়ে দিন।' : 'Match the browser dialog to these settings.'}</div>
+</div>
 <div class="sheet">
 
   ${pagesHtml}
@@ -639,50 +703,144 @@ Deno.serve(async (req) => {
     var ua = navigator.userAgent;
     var isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
 
-    // A4 landscape printable area in CSS pixels at 96dpi: 297mm x 210mm minus @page margins (8mm top/bottom, 10mm sides)
+    // Print settings (live, user-controlled)
+    var settings = {
+      orientation: 'landscape',
+      paper: 'A4',
+      minScale: 0.55,
+      maxScale: 1,
+      marginMm: 8,
+    };
+
+    // Paper sizes in mm (portrait W x H)
+    var PAPER = {
+      A4:     { w: 210, h: 297 },
+      Letter: { w: 216, h: 279 },
+      Legal:  { w: 216, h: 356 },
+      A3:     { w: 297, h: 420 },
+    };
+
+    function injectPageRule(){
+      var p = PAPER[settings.paper] || PAPER.A4;
+      var w = settings.orientation === 'landscape' ? p.h : p.w;
+      var h = settings.orientation === 'landscape' ? p.w : p.h;
+      var m = settings.marginMm;
+      var styleId = 'dynamic-page-rule';
+      var el = document.getElementById(styleId);
+      if (!el) { el = document.createElement('style'); el.id = styleId; document.head.appendChild(el); }
+      el.textContent = '@page { size: ' + settings.paper + ' ' + settings.orientation + '; margin: ' + m + 'mm; }';
+      // expose for autoFit
+      settings._pageW = w; settings._pageH = h;
+    }
+
     function autoFit(){
       var pages = document.querySelectorAll('.salary-page');
       var MM_TO_PX = 96 / 25.4;
-      var maxH = (210 - 16) * MM_TO_PX; // page height - top/bottom margin
-      var maxW = (297 - 20) * MM_TO_PX; // page width - left/right margin
+      var pageH = settings._pageH || 210;
+      var pageW = settings._pageW || 297;
+      var maxH = (pageH - settings.marginMm * 2) * MM_TO_PX;
+      var maxW = (pageW - settings.marginMm * 2) * MM_TO_PX;
       pages.forEach(function(p){
-        // reset
-        p.style.zoom = '';
-        p.style.transform = '';
-        p.style.width = '';
-        p.style.height = '';
-        // Force reflow then measure
-        var h = p.scrollHeight;
-        var w = p.scrollWidth;
-        if (h <= maxH && w <= maxW) return;
+        p.style.zoom = ''; p.style.transform = ''; p.style.width = ''; p.style.height = '';
+        var h = p.scrollHeight, w = p.scrollWidth;
         var scale = Math.min(maxH / h, maxW / w);
-        scale = Math.max(0.55, Math.min(1, scale * 0.985));
-
+        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.985));
+        if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
-          // Safari: use transform scale + compensate width/height so layout doesn't push to next page
           p.style.transform = 'scale(' + scale + ')';
           p.style.transformOrigin = 'top left';
           p.style.width = (100 / scale) + '%';
-          // Critical: shrink the box height so the unused space below scaled content is removed,
-          // otherwise Safari treats the original (pre-scale) height as the page footprint → blank 2nd page.
           p.style.height = (h * scale) + 'px';
         } else {
-          // Chromium / Firefox: zoom is the cleanest path
           p.style.zoom = String(scale);
         }
       });
     }
-    // Run on load, before print, and after font load.
-    window.addEventListener('load', function(){ setTimeout(autoFit, 50); });
-    window.addEventListener('beforeprint', autoFit);
+
+    function applyAll(){
+      injectPageRule();
+      autoFit();
+    }
+
+    // Wire up the settings UI
+    function bindUI(){
+      var bar = document.getElementById('printSettingsBar');
+      if (!bar) return;
+      var $o = document.getElementById('ps-orient');
+      var $s = document.getElementById('ps-size');
+      var $min = document.getElementById('ps-min');
+      var $max = document.getElementById('ps-max');
+      var $minV = document.getElementById('ps-min-v');
+      var $maxV = document.getElementById('ps-max-v');
+      var $margin = document.getElementById('ps-margin');
+      var $print = document.getElementById('ps-print');
+
+      // Restore from localStorage
+      try {
+        var saved = JSON.parse(localStorage.getItem('salary_print_settings') || '{}');
+        if (saved.orientation) settings.orientation = saved.orientation;
+        if (saved.paper) settings.paper = saved.paper;
+        if (typeof saved.minScale === 'number') settings.minScale = saved.minScale;
+        if (typeof saved.maxScale === 'number') settings.maxScale = saved.maxScale;
+        if (typeof saved.marginMm === 'number') settings.marginMm = saved.marginMm;
+      } catch(e){}
+
+      $o.value = settings.orientation;
+      $s.value = settings.paper;
+      $min.value = settings.minScale;
+      $max.value = settings.maxScale;
+      $margin.value = settings.marginMm;
+      $minV.textContent = Math.round(settings.minScale * 100) + '%';
+      $maxV.textContent = Math.round(settings.maxScale * 100) + '%';
+
+      function persist(){
+        try { localStorage.setItem('salary_print_settings', JSON.stringify(settings)); } catch(e){}
+      }
+      function refresh(){ applyAll(); persist(); }
+
+      $o.addEventListener('change', function(){ settings.orientation = $o.value; refresh(); });
+      $s.addEventListener('change', function(){ settings.paper = $s.value; refresh(); });
+      $min.addEventListener('input', function(){
+        settings.minScale = parseFloat($min.value);
+        $minV.textContent = Math.round(settings.minScale * 100) + '%';
+        if (settings.minScale > settings.maxScale) {
+          settings.maxScale = settings.minScale;
+          $max.value = settings.maxScale;
+          $maxV.textContent = Math.round(settings.maxScale * 100) + '%';
+        }
+        refresh();
+      });
+      $max.addEventListener('input', function(){
+        settings.maxScale = parseFloat($max.value);
+        $maxV.textContent = Math.round(settings.maxScale * 100) + '%';
+        if (settings.maxScale < settings.minScale) {
+          settings.minScale = settings.maxScale;
+          $min.value = settings.minScale;
+          $minV.textContent = Math.round(settings.minScale * 100) + '%';
+        }
+        refresh();
+      });
+      $margin.addEventListener('change', function(){
+        var v = parseFloat($margin.value); if (isNaN(v)) v = 8;
+        settings.marginMm = Math.max(0, Math.min(25, v));
+        $margin.value = settings.marginMm;
+        refresh();
+      });
+      $print.addEventListener('click', function(){
+        applyAll();
+        setTimeout(function(){ window.print(); }, 80);
+      });
+    }
+
+    window.addEventListener('load', function(){ bindUI(); setTimeout(applyAll, 50); });
+    window.addEventListener('beforeprint', applyAll);
     window.addEventListener('afterprint', function(){
-      // Reset so on-screen view stays clean
       document.querySelectorAll('.salary-page').forEach(function(p){
         p.style.zoom=''; p.style.transform=''; p.style.width=''; p.style.height='';
       });
     });
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function(){ setTimeout(autoFit, 30); });
+      document.fonts.ready.then(function(){ setTimeout(applyAll, 30); });
     }
   })();
 </script>
