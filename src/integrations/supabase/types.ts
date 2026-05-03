@@ -9792,6 +9792,7 @@ export type Database = {
         Args: { _menu_path: string }
         Returns: undefined
       }
+      ensure_result_print_footer_defaults: { Args: never; Returns: undefined }
       generate_administrative_officer_id: {
         Args: { p_year?: number }
         Returns: string
