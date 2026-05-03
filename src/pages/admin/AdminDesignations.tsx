@@ -87,9 +87,25 @@ const AdminDesignations = () => {
   const openAdd = () => { resetForm(); setStaffCategory(staffCategories[0]?.key || ''); setDialogOpen(true); };
   const openEdit = (item: any) => { setEditItem(item); setName(item.name || ''); setNameBn(item.name_bn || ''); setDescription(item.description || ''); setSortOrder(item.sort_order || 0); setIsActive(item.is_active ?? true); setStaffCategory(item.staff_category || ''); setDialogOpen(true); };
 
+  // Spelling check (excluding the row being edited)
+  const nameBnCheck = useMemo(() => {
+    const others = (designations as any[])
+      .filter((d) => !editItem || d.id !== editItem.id)
+      .map((d) => d.name_bn);
+    return checkBanglaDesignation(nameBn, others);
+  }, [nameBn, designations, editItem]);
+
+  const catNameBnCheck = useMemo(() => {
+    const others = (staffCategories as any[])
+      .filter((c) => !catEditItem || c.id !== catEditItem.id)
+      .map((c) => c.name_bn);
+    return checkBanglaDesignation(catNameBn, others);
+  }, [catNameBn, staffCategories, catEditItem]);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!name.trim() || !nameBn.trim()) throw new Error(bn ? 'নাম আবশ্যক' : 'Name is required');
+      if (nameBnCheck.level === 'error') throw new Error(nameBnCheck.message || (bn ? 'বানান যাচাই করুন' : 'Check spelling'));
       const record = { name: name.trim(), name_bn: nameBn.trim(), description: description.trim() || null, sort_order: sortOrder, is_active: isActive, staff_category: staffCategory };
       if (editItem) { const { error } = await supabase.from('designations').update(record).eq('id', editItem.id); if (error) throw error; }
       else { const { error } = await supabase.from('designations').insert(record); if (error) throw error; }
