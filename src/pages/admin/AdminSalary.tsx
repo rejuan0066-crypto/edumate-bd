@@ -3017,6 +3017,94 @@ const AdminSalary = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Disburse Savings Dialog */}
+        <Dialog open={!!disburseDialog} onOpenChange={() => setDisburseDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+                {bn ? 'মোট জমা পরিশোধ' : 'Disburse Total Savings'}
+              </DialogTitle>
+            </DialogHeader>
+            {disburseDialog && (
+              <div className="space-y-4">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{disburseDialog.staff_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bn ? 'পরিশোধের পর জমা সেটআপ নিষ্ক্রিয় হবে এবং খরচ তালিকায় অটো এন্ট্রি যাবে।' : 'After payment, savings setup will be deactivated and an expense entry will be auto-created.'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'পরিশোধের পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                  <Input
+                    type="number"
+                    value={disburseDialog.amount || ''}
+                    onChange={e => setDisburseDialog({ ...disburseDialog, amount: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'প্রতিষ্ঠান (Project)' : 'Institution (Project)'}</Label>
+                  <Select
+                    value={disburseDialog.institutionId || ''}
+                    onValueChange={v => setDisburseDialog({ ...disburseDialog, institutionId: v, categoryId: '' })}
+                  >
+                    <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {(expenseInstitutions as any[]).map((i: any) => (
+                        <SelectItem key={i.id} value={i.id}>{bn ? (i.name_bn || i.name) : i.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'খরচ ক্যাটাগরি' : 'Expense Category'}</Label>
+                  <Select
+                    value={disburseDialog.categoryId || ''}
+                    onValueChange={v => setDisburseDialog({ ...disburseDialog, categoryId: v })}
+                    disabled={!disburseDialog.institutionId}
+                  >
+                    <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {(expenseCategories as any[])
+                        .filter((c: any) => !disburseDialog.institutionId || c.institution_id === disburseDialog.institutionId)
+                        .map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'নোট (ঐচ্ছিক)' : 'Note (optional)'}</Label>
+                  <Input
+                    value={disburseDialog.note || ''}
+                    onChange={e => setDisburseDialog({ ...disburseDialog, note: e.target.value })}
+                    placeholder={bn ? 'যেমন: চেক নং / তারিখ' : 'e.g. Check no / date'}
+                  />
+                </div>
+                <Button
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  disabled={
+                    disburseSavingsMutation.isPending ||
+                    !disburseDialog.amount ||
+                    !disburseDialog.categoryId ||
+                    !disburseDialog.institutionId
+                  }
+                  onClick={() => disburseSavingsMutation.mutate({
+                    config: disburseDialog.config,
+                    amount: Number(disburseDialog.amount),
+                    categoryId: disburseDialog.categoryId,
+                    institutionId: disburseDialog.institutionId,
+                    note: disburseDialog.note,
+                  })}
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  {bn ? 'পরিশোধ ও খরচে যোগ করুন' : 'Disburse & Add to Expenses'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Salary Dialog */}
         <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
           <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
