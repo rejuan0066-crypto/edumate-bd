@@ -1,6 +1,12 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { installPwaPrintAdapter } from "./lib/pwaPrintAdapter";
+
+// Patch window.open / blob downloads so receipts, salary slips, certificates,
+// reports etc. work inside installed PWAs (Android Chrome standalone + iOS A2HS)
+// where popups and printing are otherwise blocked.
+installPwaPrintAdapter();
 
 createRoot(document.getElementById("root")!).render(<App />);
 
