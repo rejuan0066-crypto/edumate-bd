@@ -64,31 +64,63 @@ function buildPrintFrame(): {
   bar.style.cssText = [
     'flex:0 0 auto',
     'display:flex',
-    'gap:8px',
+    'gap:10px',
     'align-items:center',
-    'justify-content:flex-end',
-    'padding:8px 12px',
+    'justify-content:space-between',
+    'padding:10px 14px',
     'background:#0f172a',
     'color:#fff',
     'font:600 14px system-ui,-apple-system,Segoe UI,Roboto',
-    'padding-top:max(8px,env(safe-area-inset-top))',
+    'padding-top:max(10px,env(safe-area-inset-top))',
   ].join(';');
+
+  const title = document.createElement('div');
+  title.textContent = 'প্রিন্ট প্রিভিউ';
+  title.style.cssText = 'flex:1;min-width:0;color:#fff;font:600 14px system-ui;opacity:.9';
+
+  const btnGroup = document.createElement('div');
+  btnGroup.style.cssText = 'display:flex;gap:8px;align-items:center;flex-shrink:0';
 
   const printBtn = document.createElement('button');
   printBtn.type = 'button';
-  printBtn.textContent = '🖨 প্রিন্ট / Print';
+  printBtn.textContent = '🖨 প্রিন্ট';
   printBtn.style.cssText =
-    'background:#10b981;color:#fff;border:none;border-radius:8px;padding:8px 14px;font:600 14px system-ui;cursor:pointer';
+    'background:#10b981;color:#fff;border:none;border-radius:10px;padding:10px 14px;font:600 14px system-ui;cursor:pointer;min-height:44px';
 
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
-  closeBtn.textContent = '✕ বন্ধ / Close';
+  closeBtn.setAttribute('aria-label', 'বন্ধ');
+  closeBtn.textContent = '✕';
   closeBtn.style.cssText =
-    'background:#ef4444;color:#fff;border:none;border-radius:8px;padding:8px 14px;font:600 14px system-ui;cursor:pointer';
+    'background:#ef4444;color:#fff;border:none;border-radius:10px;padding:10px 16px;font:700 18px system-ui;cursor:pointer;min-width:48px;min-height:44px;line-height:1';
 
-  bar.appendChild(printBtn);
-  bar.appendChild(closeBtn);
+  btnGroup.appendChild(printBtn);
+  btnGroup.appendChild(closeBtn);
+  bar.appendChild(title);
+  bar.appendChild(btnGroup);
   overlay.appendChild(bar);
+
+  // Floating close button (fallback) — bottom-right circle, always visible
+  const floatingClose = document.createElement('button');
+  floatingClose.type = 'button';
+  floatingClose.setAttribute('aria-label', 'বন্ধ');
+  floatingClose.textContent = '✕';
+  floatingClose.style.cssText = [
+    'position:absolute',
+    'bottom:max(16px,env(safe-area-inset-bottom))',
+    'right:16px',
+    'z-index:1',
+    'width:56px',
+    'height:56px',
+    'border-radius:50%',
+    'background:#ef4444',
+    'color:#fff',
+    'border:none',
+    'font:700 22px system-ui',
+    'box-shadow:0 6px 18px rgba(0,0,0,0.4)',
+    'cursor:pointer',
+  ].join(';');
+  overlay.appendChild(floatingClose);
 
   const iframe = document.createElement('iframe');
   iframe.setAttribute('data-pwa-print-frame', 'true');
@@ -97,13 +129,37 @@ function buildPrintFrame(): {
 
   document.body.appendChild(overlay);
 
+  // Push history state so Android back button closes the overlay
+  let historyPushed = false;
+  try {
+    history.pushState({ pwaPrintOverlay: true }, '');
+    historyPushed = true;
+  } catch {}
+
+  let cleaned = false;
   const cleanup = () => {
-    try {
-      overlay.remove();
-    } catch {
+    if (cleaned) return;
+    cleaned = true;
+    try { overlay.remove(); } catch {}
+    try { document.removeEventListener('keydown', escHandler); } catch {}
+    try { window.removeEventListener('popstate', popHandler); } catch {}
+    if (historyPushed) {
+      try {
+        if (history.state && (history.state as any).pwaPrintOverlay) {
+          history.back();
+        }
+      } catch {}
     }
   };
+  const escHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') cleanup();
+  };
+  const popHandler = () => { historyPushed = false; cleanup(); };
+  document.addEventListener('keydown', escHandler);
+  window.addEventListener('popstate', popHandler);
+
   closeBtn.onclick = cleanup;
+  floatingClose.onclick = cleanup;
 
   const ifrWin = iframe.contentWindow!;
   const ifrDoc = iframe.contentDocument || ifrWin.document;
