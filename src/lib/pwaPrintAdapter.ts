@@ -129,10 +129,12 @@ function buildPrintFrame(): {
 
   document.body.appendChild(overlay);
 
-  // Push history state so Android back button closes the overlay
+  // Push history state so Android back button closes the overlay.
+  // Use a unique marker so we only react to OUR popstate (not unrelated ones).
+  const overlayId = `pwa-print-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   let historyPushed = false;
   try {
-    history.pushState({ pwaPrintOverlay: true }, '');
+    history.pushState({ pwaPrintOverlay: true, overlayId }, '');
     historyPushed = true;
   } catch {}
 
@@ -143,9 +145,12 @@ function buildPrintFrame(): {
     try { overlay.remove(); } catch {}
     try { document.removeEventListener('keydown', escHandler); } catch {}
     try { window.removeEventListener('popstate', popHandler); } catch {}
+    try { window.removeEventListener('pagehide', pageHideHandler); } catch {}
+    // If our history entry is still on the stack, pop it so the URL stays clean.
     if (historyPushed) {
       try {
-        if (history.state && (history.state as any).pwaPrintOverlay) {
+        const st: any = history.state;
+        if (st && st.pwaPrintOverlay && st.overlayId === overlayId) {
           history.back();
         }
       } catch {}
@@ -154,9 +159,21 @@ function buildPrintFrame(): {
   const escHandler = (e: KeyboardEvent) => {
     if (e.key === 'Escape') cleanup();
   };
-  const popHandler = () => { historyPushed = false; cleanup(); };
+  // Only close when OUR pushed state is popped (Android back button).
+  // Ignore unrelated popstates (e.g. from print dialog or other code).
+  const popHandler = (e: PopStateEvent) => {
+    const st: any = e.state;
+    // After popping our entry, current state will NOT have our overlayId.
+    if (!st || !st.pwaPrintOverlay || st.overlayId !== overlayId) {
+      historyPushed = false; // already consumed by browser
+      cleanup();
+    }
+  };
+  // Safety net: if user closes the PWA / app, remove overlay so no orphan UI persists.
+  const pageHideHandler = () => cleanup();
   document.addEventListener('keydown', escHandler);
   window.addEventListener('popstate', popHandler);
+  window.addEventListener('pagehide', pageHideHandler);
 
   closeBtn.onclick = cleanup;
   floatingClose.onclick = cleanup;
