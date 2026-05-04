@@ -324,7 +324,7 @@ const DashboardInner = () => {
           </div>
         ) : null;
       case 'session_wise':
-        return canViewStats && sessionYears.length > 0 ? (
+        return canViewStats && sessionWiseYears.length > 0 ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
               <SectionIcon className="w-5 h-5 text-accent" />
@@ -333,7 +333,7 @@ const DashboardInner = () => {
             <div className="grid" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
               <style>{`@media (min-width: 640px) { .sec-grid-session_wise { grid-template-columns: repeat(4, 1fr) !important; } } @media (min-width: 1024px) { .sec-grid-session_wise { grid-template-columns: repeat(${sec.style?.columns || 6}, 1fr) !important; } }`}</style>
               <div className="grid sec-grid-session_wise" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
-                {sessionYears.map(year => (
+                {sessionWiseYears.map(year => (
                   <div key={year} onClick={() => openList(`${bn ? 'সেশন' : 'Session'} ${year}`, 'students')} className="stat-card flex items-center gap-3 cursor-pointer">
                     <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0"><GraduationCap className="w-5 h-5 text-accent" /></div>
                     <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">{sessionWiseMap[Number(year)]}</p><p className="text-[11px] text-muted-foreground leading-tight">{year}</p></div>
