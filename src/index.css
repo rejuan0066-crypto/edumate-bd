@@ -948,9 +948,21 @@
   .py-safe { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 }
 
-/* Standalone PWA — slightly tighter top padding for native feel */
+/* Standalone PWA — apply safe-area padding so content isn't clipped by notch / home indicator */
 @media (display-mode: standalone) {
-  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  /* Fixed/sticky bars must respect notch */
+  .fixed.top-0, .sticky.top-0, header.fixed, header.sticky {
+    padding-top: env(safe-area-inset-top);
+  }
+  .fixed.bottom-0, .sticky.bottom-0, nav.fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   /* Hide elements that don't make sense in installed mode */
   .pwa-hide { display: none !important; }
 }
