@@ -2863,7 +2863,11 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-center text-xs">{getMonthLabel(cfg.start_month)}</td>
                             <td className="px-3 py-2 text-right font-bold text-blue-700">
-                              ৳{bn ? toBnDigits(Number(cfg.total_saved || 0).toLocaleString()) : Number(cfg.total_saved || 0).toLocaleString()}
+                              ৳{(() => {
+                                const ledgerSum = ledgerEntries.reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
+                                const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
+                                return bn ? toBnDigits(total.toLocaleString()) : total.toLocaleString();
+                              })()}
                             </td>
                             <td className="px-3 py-2 text-center">
                               {isComplete ? (
