@@ -6,6 +6,7 @@ import { CreditCard, ChevronDown, ChevronUp, Printer, Download, FileText } from 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { useDashboardSession } from '@/contexts/DashboardSessionContext';
 
 type FeeCategory = 'monthly' | 'exam' | 'admission';
 
