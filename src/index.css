@@ -789,12 +789,65 @@
    Mobile-First Responsiveness (≤ 640px)
    ───────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  /* Prevent any horizontal overflow that triggers iOS Safari auto-zoom */
-  html, body { max-width: 100vw; overflow-x: hidden; }
-  /* Tables: tighter padding + ensure horizontal scroll */
-  table thead th { padding: 0.6rem 0.7rem; font-size: 10px; }
+  /* ===== HARD GUARD: prevent any horizontal overflow that triggers iOS Safari auto-zoom =====
+     The browser auto-zooms-out when the document's content box is wider than the viewport.
+     We enforce viewport-width on the root containers and let inner wide content scroll
+     locally instead of pushing the page wider. */
+  html, body, #root { max-width: 100vw; overflow-x: hidden; }
+  #root > * { max-width: 100vw; }
+
+  /* Common admin/page wrapper classes — never wider than the viewport */
+  main, .admin-page-card, .glass-card, .card-elevated, .container,
+  [class*="max-w-"][class*="mx-auto"] {
+    max-width: 100% !important;
+  }
+
+  /* ===== TABLES: any bare <table> that isn't already inside a scroll wrapper
+     becomes a horizontally scrollable block locally. */
+  table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* If the table is explicitly wrapped in a known scroll container, restore it
+     to a real table so layout (colspan, alignment) works. */
+  .table-scroll > table,
+  .overflow-x-auto > table,
+  [class*="overflow-x-"] > table {
+    display: table;
+    overflow: visible;
+  }
+  table thead th { padding: 0.6rem 0.7rem; font-size: 10px; white-space: nowrap; }
   table tbody td { padding: 0.6rem 0.7rem; font-size: 12px; }
   table { border-spacing: 0 6px; }
+
+  /* ===== FIXED-WIDTH CHILDREN inside common page containers: cap to viewport
+     so a stray min-w-[720px] doesn't push the page horizontally. */
+  .admin-page-card *, .glass-card *, .card-elevated * {
+    max-width: 100%;
+  }
+  /* …but tables/wrappers explicitly meant to scroll keep their inner width */
+  .table-scroll, .table-scroll *,
+  .overflow-x-auto, .overflow-x-auto *,
+  [class*="overflow-x-"], [class*="overflow-x-"] * {
+    max-width: none;
+  }
+
+  /* ===== CHARTS (recharts/ApexCharts/echarts) ===== */
+  .recharts-responsive-container,
+  .recharts-wrapper,
+  .apexcharts-canvas,
+  canvas, svg.recharts-surface {
+    max-width: 100% !important;
+  }
+
+  /* ===== IMAGES & MEDIA ===== */
+  img, video, iframe, embed, object {
+    max-width: 100% !important;
+    height: auto;
+  }
 
   /* Cards: lighter rounding & padding so they fit small screens */
   .glass-card,
@@ -808,6 +861,14 @@
 
   /* Floating segmented tab pills should never overflow viewport */
   .seg-container { max-width: 100%; }
+
+  /* TabsList / scrollable horizontal nav: scroll instead of overflowing */
+  [role="tablist"] {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
 
   /* Buttons: tap-friendly minimum height */
   button, .btn-action, .btn-primary-gradient, .btn-gold-gradient {
@@ -830,12 +891,27 @@
     min-width: 0 !important;
   }
 
-  /* Wrap long plain text but keep table cells on one line — scroll the table horizontally instead */
-  p, li, a, span:not([class*="badge"]) { overflow-wrap: anywhere; }
+  /* Long single-word text / URLs / IDs — break instead of stretching */
+  p, li, a, span:not([class*="badge"]), code, pre, h1, h2, h3, h4 {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
 
-  /* Ensure any fixed-pixel-width SelectTrigger never overflows */
+  /* Ensure any fixed-pixel-width SelectTrigger / Combobox never overflows */
   [class*="SelectTrigger"][class*="w-["],
-  button[role="combobox"][class*="w-["] { max-width: 100% !important; }
+  button[role="combobox"][class*="w-["],
+  [data-radix-popper-content-wrapper] {
+    max-width: 100vw !important;
+  }
+
+  /* Toolbars / action button groups should wrap, not overflow */
+  .flex.justify-end:not(.flex-nowrap),
+  .flex.justify-between:not(.flex-nowrap),
+  .flex.gap-2:not(.flex-nowrap),
+  .flex.gap-3:not(.flex-nowrap),
+  .flex.gap-4:not(.flex-nowrap) {
+    flex-wrap: wrap;
+  }
 }
 
 /* Auto-scroll wrapper utility — apply to any data-table container */
