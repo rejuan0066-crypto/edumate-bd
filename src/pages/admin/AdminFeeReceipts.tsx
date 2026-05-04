@@ -187,13 +187,13 @@ const AdminFeeReceipts = () => {
 
             <div class="signature-section">
               <div class="signature-block">
-                ${receipt.collected_by ? `<div class="collector-name">${receipt.collected_by}</div>` : ''}
+                <div class="collector-name">${receipt.collected_by || (institution as any)?.collector_name || (institution as any)?.principal_name || '-'}</div>
                 <div class="signature-line"></div>
                 <div class="signature-title">আদায়কারী</div>
                 <div class="signature-sub">Collector</div>
               </div>
               ${!isStudentCopy ? `<div class="signature-block">
-                ${receipt.approved_by ? `<div class="collector-name">${receipt.approved_by}</div>` : ''}
+                <div class="collector-name">${receipt.approved_by || (institution as any)?.principal_name || receipt.collected_by || '-'}</div>
                 <div class="signature-line"></div>
                 <div class="signature-title">গ্রহণকারী</div>
                 <div class="signature-sub">Receiver</div>
