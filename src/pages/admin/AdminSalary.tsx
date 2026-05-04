@@ -2898,15 +2898,43 @@ const AdminSalary = () => {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <div className="flex gap-1 justify-center">
+                              <div className="flex gap-1 justify-center items-center flex-wrap">
+                                {!cfg.disbursed_at && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-[10px] border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                    onClick={() => {
+                                      const ledgerSum = (savingsLedger as any[]).filter((l: any) => l.savings_id === cfg.id)
+                                        .reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
+                                      const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
+                                      setDisburseDialog({
+                                        config: cfg,
+                                        staff_name: staffMember?.name_bn || '-',
+                                        amount: total,
+                                        categoryId: '',
+                                        institutionId: '',
+                                        note: '',
+                                      });
+                                    }}
+                                    title={bn ? 'মোট পরিশোধ' : 'Disburse Total'}
+                                  >
+                                    <DollarSign className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ' : 'Pay'}
+                                  </Button>
+                                )}
+                                {cfg.disbursed_at && (
+                                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px]" title={new Date(cfg.disbursed_at).toLocaleString()}>
+                                    {bn ? 'পরিশোধিত' : 'Paid'}
+                                  </Badge>
+                                )}
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSavingsDialog({
                                   ...cfg, staff_name: staffMember?.name_bn || '-',
                                 })}>
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                             </td>
                           </tr>
