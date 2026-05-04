@@ -789,6 +789,8 @@
    Mobile-First Responsiveness (≤ 640px)
    ───────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
+  /* Prevent any horizontal overflow that triggers iOS Safari auto-zoom */
+  html, body { max-width: 100vw; overflow-x: hidden; }
   /* Tables: tighter padding + ensure horizontal scroll */
   table thead th { padding: 0.6rem 0.7rem; font-size: 10px; }
   table tbody td { padding: 0.6rem 0.7rem; font-size: 12px; }
