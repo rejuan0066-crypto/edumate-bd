@@ -603,6 +603,63 @@ const AdminSalary = () => {
     },
   });
 
+  // Disburse savings -> create expense entry
+  const disburseSavingsMutation = useMutation({
+    mutationFn: async (payload: { config: any; amount: number; categoryId: string; institutionId: string; note?: string }) => {
+      const { config, amount, categoryId, institutionId, note } = payload;
+      const staffMember = staff.find((x: any) => x.id === config.staff_id);
+      const sName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+      const todayParts = getDatePartsInTz(new Date(), appTz);
+      const monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const expenseMonthYear = `${monthNamesEn[todayParts.month]}-${todayParts.year}`;
+      const description = `${bn ? 'জমা পরিশোধ' : 'Savings disbursement'}: ${sName}${note ? ' — ' + note : ''}`;
+
+      const { data: expData, error: expErr } = await supabase.from('expenses').insert({
+        institution_id: institutionId,
+        category_id: categoryId,
+        month_year: expenseMonthYear,
+        expense_date: toIsoDateInTz(new Date(), appTz),
+        amount,
+        description,
+      }).select('id').single();
+      if (expErr) throw expErr;
+
+      const { error: updErr } = await supabase.from('salary_savings').update({
+        is_active: false,
+        disbursed_at: new Date().toISOString(),
+        disbursed_amount: amount,
+        expense_id: expData?.id,
+        expense_category_id: categoryId,
+        expense_institution_id: institutionId,
+        updated_at: new Date().toISOString(),
+      }).eq('id', config.id);
+      if (updErr) throw updErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      setDisburseDialog(null);
+      toast.success(bn ? 'পরিশোধ সম্পন্ন এবং খরচে যোগ হয়েছে' : 'Disbursed & added to expenses');
+    },
+    onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
+  });
+
+  // Load expense categories & institutions for disburse dialog
+  const { data: expenseCategories = [] } = useQuery({
+    queryKey: ['expense-categories-active'],
+    queryFn: async () => {
+      const { data } = await supabase.from('expense_categories').select('id, name, name_bn, institution_id').eq('is_active', true);
+      return data || [];
+    },
+  });
+  const { data: expenseInstitutions = [] } = useQuery({
+    queryKey: ['expense-institutions-active'],
+    queryFn: async () => {
+      const { data } = await supabase.from('expense_institutions').select('id, name, name_bn').eq('is_active', true);
+      return data || [];
+    },
+  });
+
   // Get setting value helper
   const getSetting = (key: string) => {
     const s = settings.find((st: any) => st.setting_key === key);
