@@ -20,14 +20,26 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Allow the page to force an immediate activation of a waiting worker.
+// Allow the page to force an immediate activation of a waiting worker,
+// or to fully purge caches before reload (mobile update path).
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  const data = event.data || {};
+  if (data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (data.type === 'CLEAR_CACHES') {
+    event.waitUntil(
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => {
+          if (event.ports && event.ports[0]) event.ports[0].postMessage({ ok: true });
+        })
+    );
   }
 });
 
-// Fetch: network-first with cache fallback
+// Fetch: network-only for HTML + hashed assets, with explicit cache bypass so
+// mobile browser HTTP cache cannot serve a stale index.html or old JS chunk
+// after a deploy (this is the #1 reason installed Android/iOS PWAs got stuck).
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -39,22 +51,25 @@ self.addEventListener('fetch', (event) => {
   if (url.hostname.includes('supabase.co')) return;
   if (url.hostname.includes('supabase.in')) return;
 
-  // For navigation requests → network only. Cached HTML keeps installed PWAs
-  // stuck on old builds, especially on iOS Safari.
+  // For navigation requests → bypass HTTP cache entirely.
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(() => fetch(request))
+    );
     return;
   }
 
-  // Static build assets → network only. If a deploy changes asset hashes, a
-  // cached old chunk can make the reload look successful while still running old code.
+  // Static build assets → network with cache bypass to guarantee fresh chunks
+  // after a deploy (cached old chunks can break a partially-updated app).
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
     request.destination === 'image' ||
     request.destination === 'font'
   ) {
-    event.respondWith(fetch(request));
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(() => fetch(request))
+    );
   }
 });
 
