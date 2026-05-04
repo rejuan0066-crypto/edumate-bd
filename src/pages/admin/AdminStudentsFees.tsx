@@ -413,6 +413,9 @@ const AdminStudentsFees = () => {
         paid_at: isCash ? new Date().toISOString() : null,
         month: paymentMonth || new Date().toLocaleString('default', { month: 'long' }),
         year: paymentYear,
+        collected_by: collectorName || '',
+        // Cash পেমেন্ট হলে আদায়কারী নিজেই গ্রহণকারী; অনলাইনে approval এ আসবে
+        approved_by: isCash ? (collectorName || '') : '',
       };
       await supabase.from('fee_payments').insert(feePaymentPayload);
 
