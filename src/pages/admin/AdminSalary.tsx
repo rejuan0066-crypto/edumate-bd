@@ -110,6 +110,7 @@ const AdminSalary = () => {
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
   const [ungenerateConfirmId, setUngenerateConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
+  const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
 
