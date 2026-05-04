@@ -75,6 +75,7 @@ import AdminDonors from "./pages/admin/AdminDonors";
 import AdminVerifiedPayments from "./pages/admin/AdminVerifiedPayments";
 import AdminProfile from "./pages/admin/AdminProfile";
 import AdminFeeReceipts from "./pages/admin/AdminFeeReceipts";
+import AdminFeePaymentsFix from "./pages/admin/AdminFeePaymentsFix";
 import AdminReceiptStatusAudit from "./pages/admin/AdminReceiptStatusAudit";
 import AdminResignLetters from "./pages/admin/AdminResignLetters";
 import AdminJoiningLetters from "./pages/admin/AdminJoiningLetters";
