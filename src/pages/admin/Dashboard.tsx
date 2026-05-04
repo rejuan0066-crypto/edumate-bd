@@ -21,6 +21,8 @@ import DashboardProfilesCard from '@/components/dashboard/DashboardProfilesCard'
 import { DashboardLayoutDialog } from '@/components/dashboard/DashboardLayoutBuilder';
 import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
 import { Button } from '@/components/ui/button';
+import { DashboardSessionProvider, useDashboardSession } from '@/contexts/DashboardSessionContext';
+import DashboardSessionSelector from '@/components/dashboard/DashboardSessionSelector';
 
 interface StatCard {
   key: string;
@@ -33,6 +35,14 @@ interface StatCard {
 }
 
 const Dashboard = () => {
+  return (
+    <DashboardSessionProvider>
+      <DashboardInner />
+    </DashboardSessionProvider>
+  );
+};
+
+const DashboardInner = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { role } = useAuth();
@@ -42,15 +52,18 @@ const Dashboard = () => {
   const canViewFinance = isAdmin || role === 'accountant' || hasPermission('/admin/expenses', 'view') || hasPermission('/admin/students-fees', 'view');
   const [builderOpen, setBuilderOpen] = useState(false);
   const { sections } = useDashboardLayout();
+  const { selectedSessionId, selectedSession } = useDashboardSession();
   const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff' | 'donors' | 'divisions' | 'subjects' | 'exam_sessions' | 'results'; filters: Record<string, any> }>({
     open: false, title: '', table: 'students', filters: {},
   });
 
-  // Data queries
+  // Data queries (scoped to selected academic session where applicable)
   const { data: students = [] } = useQuery({
-    queryKey: ['dashboard-students'],
+    queryKey: ['dashboard-students', selectedSessionId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free');
+      let q = supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free, session_id');
+      if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -80,16 +93,34 @@ const Dashboard = () => {
     queryFn: async () => { const { data } = await supabase.from('results').select('id'); return data || []; },
   });
   const { data: exams = [] } = useQuery({
-    queryKey: ['dashboard-exam-sessions'],
-    queryFn: async () => { const { data } = await supabase.from('exam_sessions').select('id'); return data || []; },
+    queryKey: ['dashboard-exam-sessions', selectedSessionId],
+    queryFn: async () => {
+      let q = supabase.from('exam_sessions').select('id, academic_session_id');
+      if (selectedSessionId) q = q.eq('academic_session_id', selectedSessionId);
+      const { data } = await q; return data || [];
+    },
   });
   const { data: donors = [] } = useQuery({
     queryKey: ['dashboard-donors'],
     queryFn: async () => { const { data } = await supabase.from('donors').select('id, name_bn, donation_amount, status'); return data || []; },
   });
+  // Compute year range from selected session for fee_payments filtering
+  const sessionYears = (() => {
+    if (!selectedSession?.start_date || !selectedSession?.end_date) return null;
+    const sy = new Date(selectedSession.start_date).getFullYear();
+    const ey = new Date(selectedSession.end_date).getFullYear();
+    const arr: number[] = [];
+    for (let y = sy; y <= ey; y++) arr.push(y);
+    return arr;
+  })();
+
   const { data: feePayments = [] } = useQuery({
-    queryKey: ['dashboard-fee-payments-summary'],
-    queryFn: async () => { const { data } = await supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id'); return data || []; },
+    queryKey: ['dashboard-fee-payments-summary', selectedSessionId],
+    queryFn: async () => {
+      let q = supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id, year');
+      if (sessionYears && sessionYears.length > 0) q = q.in('year', sessionYears);
+      const { data } = await q; return data || [];
+    },
   });
 
   // Computed stats
@@ -109,7 +140,7 @@ const Dashboard = () => {
   const nonResidentStudents = students.filter(s => (s as any).residence_type === 'non-resident' || !(s as any).residence_type);
   const sessionWiseMap: Record<number, number> = {};
   students.forEach(s => { const year = s.admission_date ? new Date(s.admission_date).getFullYear() : 0; if (year) sessionWiseMap[year] = (sessionWiseMap[year] || 0) + 1; });
-  const sessionYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
+  const sessionWiseYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
   const teachers = staff.filter(s => s.department === 'teaching' || s.designation?.includes('শিক্ষক') || s.designation?.includes('teacher') || s.designation?.toLowerCase()?.includes('teacher'));
   const nonTeachingStaff = staff.filter(s => !teachers.includes(s));
   const activeStaff = nonTeachingStaff.filter(s => s.status === 'active');
@@ -293,7 +324,7 @@ const Dashboard = () => {
           </div>
         ) : null;
       case 'session_wise':
-        return canViewStats && sessionYears.length > 0 ? (
+        return canViewStats && sessionWiseYears.length > 0 ? (
           <div key={id} className="card-elevated p-4">
             <h3 className="font-display font-bold text-foreground mb-3 flex items-center gap-2">
               <SectionIcon className="w-5 h-5 text-accent" />
@@ -302,7 +333,7 @@ const Dashboard = () => {
             <div className="grid" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
               <style>{`@media (min-width: 640px) { .sec-grid-session_wise { grid-template-columns: repeat(4, 1fr) !important; } } @media (min-width: 1024px) { .sec-grid-session_wise { grid-template-columns: repeat(${sec.style?.columns || 6}, 1fr) !important; } }`}</style>
               <div className="grid sec-grid-session_wise" style={{ gridTemplateColumns: `repeat(${sec.style?.columnsMobile || 3}, 1fr)`, gap: `${sec.style?.gap || 12}px` }}>
-                {sessionYears.map(year => (
+                {sessionWiseYears.map(year => (
                   <div key={year} onClick={() => openList(`${bn ? 'সেশন' : 'Session'} ${year}`, 'students')} className="stat-card flex items-center gap-3 cursor-pointer">
                     <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0"><GraduationCap className="w-5 h-5 text-accent" /></div>
                     <div className="min-w-0"><p className="text-lg font-bold text-foreground leading-tight">{sessionWiseMap[Number(year)]}</p><p className="text-[11px] text-muted-foreground leading-tight">{year}</p></div>
@@ -368,20 +399,23 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-5">
-      {isAdmin && (
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
-            <LayoutDashboard className="w-4 h-4" />
-            <span className="truncate">{bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}</span>
-          </Button>
-          <Button variant="default" size="sm" asChild className="gap-2">
-            <a href="/admin/analytics">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <DashboardSessionSelector />
+        {isAdmin && (
+          <div className="flex flex-wrap justify-end gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
               <LayoutDashboard className="w-4 h-4" />
-              <span className="truncate">{bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}</span>
-            </a>
-          </Button>
-        </div>
-      )}
+              <span className="truncate">{bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}</span>
+            </Button>
+            <Button variant="default" size="sm" asChild className="gap-2">
+              <a href="/admin/analytics">
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="truncate">{bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}</span>
+              </a>
+            </Button>
+          </div>
+        )}
+      </div>
 
       {visibleSections.map(s => renderSection(s.id))}
 
