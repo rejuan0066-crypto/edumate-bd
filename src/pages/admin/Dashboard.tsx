@@ -140,7 +140,7 @@ const DashboardInner = () => {
   const nonResidentStudents = students.filter(s => (s as any).residence_type === 'non-resident' || !(s as any).residence_type);
   const sessionWiseMap: Record<number, number> = {};
   students.forEach(s => { const year = s.admission_date ? new Date(s.admission_date).getFullYear() : 0; if (year) sessionWiseMap[year] = (sessionWiseMap[year] || 0) + 1; });
-  const sessionYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
+  const sessionWiseYears = Object.keys(sessionWiseMap).sort((a, b) => Number(b) - Number(a));
   const teachers = staff.filter(s => s.department === 'teaching' || s.designation?.includes('শিক্ষক') || s.designation?.includes('teacher') || s.designation?.toLowerCase()?.includes('teacher'));
   const nonTeachingStaff = staff.filter(s => !teachers.includes(s));
   const activeStaff = nonTeachingStaff.filter(s => s.status === 'active');
