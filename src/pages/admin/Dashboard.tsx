@@ -35,6 +35,14 @@ interface StatCard {
 }
 
 const Dashboard = () => {
+  return (
+    <DashboardSessionProvider>
+      <DashboardInner />
+    </DashboardSessionProvider>
+  );
+};
+
+const DashboardInner = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const { role } = useAuth();
@@ -44,6 +52,7 @@ const Dashboard = () => {
   const canViewFinance = isAdmin || role === 'accountant' || hasPermission('/admin/expenses', 'view') || hasPermission('/admin/students-fees', 'view');
   const [builderOpen, setBuilderOpen] = useState(false);
   const { sections } = useDashboardLayout();
+  const { selectedSessionId, selectedSession } = useDashboardSession();
   const [listDialog, setListDialog] = useState<{ open: boolean; title: string; table: 'students' | 'staff' | 'donors' | 'divisions' | 'subjects' | 'exam_sessions' | 'results'; filters: Record<string, any> }>({
     open: false, title: '', table: 'students', filters: {},
   });
