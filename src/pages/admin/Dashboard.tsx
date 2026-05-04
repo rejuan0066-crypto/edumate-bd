@@ -21,6 +21,8 @@ import DashboardProfilesCard from '@/components/dashboard/DashboardProfilesCard'
 import { DashboardLayoutDialog } from '@/components/dashboard/DashboardLayoutBuilder';
 import { useDashboardLayout, DashboardSection } from '@/hooks/useDashboardLayout';
 import { Button } from '@/components/ui/button';
+import { DashboardSessionProvider, useDashboardSession } from '@/contexts/DashboardSessionContext';
+import DashboardSessionSelector from '@/components/dashboard/DashboardSessionSelector';
 
 interface StatCard {
   key: string;
