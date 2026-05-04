@@ -369,15 +369,15 @@ const Dashboard = () => {
   return (
     <div className="space-y-5">
       {isAdmin && (
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
             <LayoutDashboard className="w-4 h-4" />
-            {bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}
+            <span className="truncate">{bn ? 'ড্যাশবোর্ড বিল্ডার' : 'Dashboard Builder'}</span>
           </Button>
           <Button variant="default" size="sm" asChild className="gap-2">
             <a href="/admin/analytics">
               <LayoutDashboard className="w-4 h-4" />
-              {bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}
+              <span className="truncate">{bn ? 'বিস্তারিত অ্যানালিটিক্স' : 'Detailed Analytics'}</span>
             </a>
           </Button>
         </div>
