@@ -355,6 +355,7 @@ const App = () => (
                     <Route path="verified-payments" element={<ModuleGuard menuPath="/admin/donors"><AdminVerifiedPayments /></ModuleGuard>} />
                     <Route path="profile" element={<AdminProfile />} />
                     <Route path="fee-receipts" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeeReceipts /></ModuleGuard>} />
+                    <Route path="fee-payments-fix" element={<ModuleGuard menuPath="/admin/fee-receipts"><AdminFeePaymentsFix /></ModuleGuard>} />
                     <Route path="receipt-audit" element={<AdminReceiptStatusAudit />} />
                     <Route path="resign-letters" element={<AdminResignLetters />} />
                     <Route path="joining-letters" element={<AdminJoiningLetters />} />
