@@ -7468,7 +7468,12 @@ export type Database = {
       salary_savings: {
         Row: {
           created_at: string
+          disbursed_amount: number | null
+          disbursed_at: string | null
           duration_months: number
+          expense_category_id: string | null
+          expense_id: string | null
+          expense_institution_id: string | null
           id: string
           is_active: boolean
           monthly_amount: number
@@ -7479,7 +7484,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          disbursed_amount?: number | null
+          disbursed_at?: string | null
           duration_months?: number
+          expense_category_id?: string | null
+          expense_id?: string | null
+          expense_institution_id?: string | null
           id?: string
           is_active?: boolean
           monthly_amount?: number
@@ -7490,7 +7500,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          disbursed_amount?: number | null
+          disbursed_at?: string | null
           duration_months?: number
+          expense_category_id?: string | null
+          expense_id?: string | null
+          expense_institution_id?: string | null
           id?: string
           is_active?: boolean
           monthly_amount?: number
@@ -7500,6 +7515,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "salary_savings_expense_category_id_fkey"
+            columns: ["expense_category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salary_savings_expense_institution_id_fkey"
+            columns: ["expense_institution_id"]
+            isOneToOne: false
+            referencedRelation: "expense_institutions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "salary_savings_staff_id_fkey"
             columns: ["staff_id"]
