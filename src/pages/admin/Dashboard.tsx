@@ -57,11 +57,13 @@ const DashboardInner = () => {
     open: false, title: '', table: 'students', filters: {},
   });
 
-  // Data queries
+  // Data queries (scoped to selected academic session where applicable)
   const { data: students = [] } = useQuery({
-    queryKey: ['dashboard-students'],
+    queryKey: ['dashboard-students', selectedSessionId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free');
+      let q = supabase.from('students').select('id, status, gender, admission_date, student_category, residence_type, division_id, is_free, session_id');
+      if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
@@ -91,16 +93,34 @@ const DashboardInner = () => {
     queryFn: async () => { const { data } = await supabase.from('results').select('id'); return data || []; },
   });
   const { data: exams = [] } = useQuery({
-    queryKey: ['dashboard-exam-sessions'],
-    queryFn: async () => { const { data } = await supabase.from('exam_sessions').select('id'); return data || []; },
+    queryKey: ['dashboard-exam-sessions', selectedSessionId],
+    queryFn: async () => {
+      let q = supabase.from('exam_sessions').select('id, academic_session_id');
+      if (selectedSessionId) q = q.eq('academic_session_id', selectedSessionId);
+      const { data } = await q; return data || [];
+    },
   });
   const { data: donors = [] } = useQuery({
     queryKey: ['dashboard-donors'],
     queryFn: async () => { const { data } = await supabase.from('donors').select('id, name_bn, donation_amount, status'); return data || []; },
   });
+  // Compute year range from selected session for fee_payments filtering
+  const sessionYears = (() => {
+    if (!selectedSession?.start_date || !selectedSession?.end_date) return null;
+    const sy = new Date(selectedSession.start_date).getFullYear();
+    const ey = new Date(selectedSession.end_date).getFullYear();
+    const arr: number[] = [];
+    for (let y = sy; y <= ey; y++) arr.push(y);
+    return arr;
+  })();
+
   const { data: feePayments = [] } = useQuery({
-    queryKey: ['dashboard-fee-payments-summary'],
-    queryFn: async () => { const { data } = await supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id'); return data || []; },
+    queryKey: ['dashboard-fee-payments-summary', selectedSessionId],
+    queryFn: async () => {
+      let q = supabase.from('fee_payments').select('id, amount, paid_amount, status, student_id, year');
+      if (sessionYears && sessionYears.length > 0) q = q.in('year', sessionYears);
+      const { data } = await q; return data || [];
+    },
   });
 
   // Computed stats
