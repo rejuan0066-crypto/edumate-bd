@@ -51,6 +51,7 @@ const compareAcademicOrder = (
 const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionProps) => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { selectedSessionId, selectedSession } = useDashboardSession();
   const [expanded, setExpanded] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any>(null);
   const [listType, setListType] = useState<'paid' | 'unpaid'>('paid');
@@ -63,29 +64,50 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
     September: 'সেপ্টেম্বর', October: 'অক্টোবর', November: 'নভেম্বর', December: 'ডিসেম্বর',
   };
 
+  // Years that fall within selected session range
+  const sessionYearList = useMemo(() => {
+    if (!selectedSession?.start_date || !selectedSession?.end_date) return null;
+    const sy = new Date(selectedSession.start_date).getFullYear();
+    const ey = new Date(selectedSession.end_date).getFullYear();
+    const arr: number[] = [];
+    for (let y = sy; y <= ey; y++) arr.push(y);
+    return arr;
+  }, [selectedSession]);
+
   const { data: payments = [] } = useQuery({
-    queryKey: ['dashboard-fee-payments', category],
+    queryKey: ['dashboard-fee-payments', category, selectedSessionId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('fee_payments')
-        .select('*, students(id, name_bn, roll_number, division_id, class_id, divisions(name_bn), classes(name_bn, sort_order)), fee_types(name_bn, fee_category, name, amount)')
+        .select('*, students(id, name_bn, roll_number, division_id, class_id, session_id, divisions(name_bn), classes(name_bn, sort_order)), fee_types(name_bn, fee_category, name, amount, session_id)')
         .eq('fee_types.fee_category', category)
         .order('created_at', { ascending: false });
+      if (sessionYearList && sessionYearList.length > 0) q = q.in('year', sessionYearList);
+      const { data, error } = await q;
       if (error) throw error;
-      return (data || []).filter((p: any) => p.fee_types?.fee_category === category);
+      let rows = (data || []).filter((p: any) => p.fee_types?.fee_category === category);
+      if (selectedSessionId) {
+        rows = rows.filter((p: any) =>
+          (p.fee_types?.session_id ? p.fee_types.session_id === selectedSessionId : true) &&
+          (p.students?.session_id ? p.students.session_id === selectedSessionId : true)
+        );
+      }
+      return rows;
     },
     refetchOnWindowFocus: true, staleTime: 0,
   });
 
   const { data: feeTypes = [] } = useQuery({
-    queryKey: ['dashboard-fee-types', category],
+    queryKey: ['dashboard-fee-types', category, selectedSessionId],
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from('fee_types')
         .select('id, name_bn, name, fee_category, amount, division_id, class_id, session_id, payment_frequency, applicable_months, academic_sessions:session_id(name, name_bn, start_date, end_date)')
         .eq('fee_category', category)
         .eq('is_active', true)
         .is('deleted_at', null);
+      if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
+      const { data } = await q;
       return data || [];
     },
     refetchOnWindowFocus: true, staleTime: 0,
@@ -102,12 +124,14 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
   }, [feeTypes, bn]);
 
   const { data: students = [] } = useQuery({
-    queryKey: ['dashboard-students-for-fees'],
+    queryKey: ['dashboard-students-for-fees', selectedSessionId],
     queryFn: async () => {
-      const { data } = await supabase
+      let q = supabase
         .from('students')
         .select('id, name_bn, roll_number, division_id, class_id, session_id, is_free, divisions(name_bn), classes(name_bn, sort_order)')
         .eq('status', 'active');
+      if (selectedSessionId) q = q.eq('session_id', selectedSessionId);
+      const { data } = await q;
       return data || [];
     },
     refetchOnWindowFocus: true, staleTime: 0,
