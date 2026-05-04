@@ -140,6 +140,8 @@ const UpdatePrompt = () => {
     setUpdating(true);
     setProgress(5);
     setStatusText(bn ? 'ক্যাশ পরিষ্কার করা হচ্ছে…' : 'Clearing cache…');
+
+    // 1) Clear window-side Cache Storage
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
@@ -147,31 +149,65 @@ const UpdatePrompt = () => {
         for (const k of keys) {
           await caches.delete(k);
           done++;
-          setProgress(5 + Math.round((done / Math.max(keys.length, 1)) * 50));
+          setProgress(5 + Math.round((done / Math.max(keys.length, 1)) * 35));
         }
-      } else {
-        setProgress(55);
       }
-      setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
+    } catch {}
+
+    setProgress(45);
+    setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
+
+    // 2) Tell SW to clear its caches too (covers mobile where window+SW caches differ)
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          const ch = new MessageChannel();
+          const t = setTimeout(() => resolve(), 1500);
+          ch.port1.onmessage = () => { clearTimeout(t); resolve(); };
+          navigator.serviceWorker.controller!.postMessage({ type: 'CLEAR_CACHES' }, [ch.port2]);
+        });
+      }
+    } catch {}
+
+    setProgress(65);
+
+    // 3) Force SW update + activate any waiting worker
+    let didReloadViaController = false;
+    try {
       if ('serviceWorker' in navigator) {
+        // One-shot reload when the new SW takes control (mobile-safe path)
+        const onControllerChange = () => {
+          if (didReloadViaController) return;
+          didReloadViaController = true;
+          try {
+            const u = new URL(window.location.href);
+            u.searchParams.set('_v', Date.now().toString());
+            window.location.replace(u.toString());
+          } catch {
+            window.location.reload();
+          }
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
+
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map(async (r) => {
           try { await r.update(); } catch {}
-          // If a new worker is waiting, tell it to take over immediately.
-          const waiting = r.waiting;
+          const waiting = r.waiting || r.installing;
           if (waiting) {
             try { waiting.postMessage({ type: 'SKIP_WAITING' }); } catch {}
           }
         }));
       }
-      setProgress(85);
-      setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
-    } catch {
-      // ignore
-    }
+    } catch {}
+
+    setProgress(90);
+    setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     setProgress(100);
-    // Cache-busted hard reload to bypass any HTTP cache layer.
+
+    // 4) Fallback hard reload if controllerchange didn't fire (e.g. no SW yet,
+    //    or no waiting worker because the build is identical at SW level).
     setTimeout(() => {
+      if (didReloadViaController) return;
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('_v', Date.now().toString());
@@ -179,7 +215,7 @@ const UpdatePrompt = () => {
       } catch {
         window.location.reload();
       }
-    }, 400);
+    }, 1200);
   };
 
   // Floating update button: ALWAYS clickable in the installed PWA.
