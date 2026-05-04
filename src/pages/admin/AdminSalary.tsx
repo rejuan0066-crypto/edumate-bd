@@ -110,6 +110,7 @@ const AdminSalary = () => {
   const [paidConfirmId, setPaidConfirmId] = useState<string | null>(null);
   const [ungenerateConfirmId, setUngenerateConfirmId] = useState<string | null>(null);
   const [deleteSavingsId, setDeleteSavingsId] = useState<string | null>(null);
+  const [disburseDialog, setDisburseDialog] = useState<any>(null);
   const [eligibilityFilter, setEligibilityFilter] = useState<'all' | 'eligible' | 'not_generated' | 'pending' | 'paid'>('all');
   const [auditLogOpen, setAuditLogOpen] = useState(false);
 
@@ -601,6 +602,49 @@ const AdminSalary = () => {
       toast.success(bn ? 'মুছে ফেলা হয়েছে' : 'Deleted');
     },
   });
+
+  // Disburse savings -> create expense entry
+  const disburseSavingsMutation = useMutation({
+    mutationFn: async (payload: { config: any; amount: number; categoryId: string; institutionId: string; note?: string }) => {
+      const { config, amount, categoryId, institutionId, note } = payload;
+      const staffMember = staff.find((x: any) => x.id === config.staff_id);
+      const sName = staffMember?.name_bn || staffMember?.name_en || 'Staff';
+      const todayParts = getDatePartsInTz(new Date(), appTz);
+      const monthNamesEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const expenseMonthYear = `${monthNamesEn[todayParts.month]}-${todayParts.year}`;
+      const description = `${bn ? 'জমা পরিশোধ' : 'Savings disbursement'}: ${sName}${note ? ' — ' + note : ''}`;
+
+      const { data: expData, error: expErr } = await supabase.from('expenses').insert({
+        institution_id: institutionId,
+        category_id: categoryId,
+        month_year: expenseMonthYear,
+        expense_date: toIsoDateInTz(new Date(), appTz),
+        amount,
+        description,
+      }).select('id').single();
+      if (expErr) throw expErr;
+
+      const { error: updErr } = await supabase.from('salary_savings').update({
+        is_active: false,
+        disbursed_at: new Date().toISOString(),
+        disbursed_amount: amount,
+        expense_id: expData?.id,
+        expense_category_id: categoryId,
+        expense_institution_id: institutionId,
+        updated_at: new Date().toISOString(),
+      }).eq('id', config.id);
+      if (updErr) throw updErr;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      setDisburseDialog(null);
+      toast.success(bn ? 'পরিশোধ সম্পন্ন এবং খরচে যোগ হয়েছে' : 'Disbursed & added to expenses');
+    },
+    onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
+  });
+
+  // (expense categories/institutions queries are declared earlier in this file)
 
   // Get setting value helper
   const getSetting = (key: string) => {
@@ -2819,7 +2863,11 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-center text-xs">{getMonthLabel(cfg.start_month)}</td>
                             <td className="px-3 py-2 text-right font-bold text-blue-700">
-                              ৳{bn ? toBnDigits(Number(cfg.total_saved || 0).toLocaleString()) : Number(cfg.total_saved || 0).toLocaleString()}
+                              ৳{(() => {
+                                const ledgerSum = ledgerEntries.reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
+                                const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
+                                return bn ? toBnDigits(total.toLocaleString()) : total.toLocaleString();
+                              })()}
                             </td>
                             <td className="px-3 py-2 text-center">
                               {isComplete ? (
@@ -2850,15 +2898,43 @@ const AdminSalary = () => {
                               </div>
                             </td>
                             <td className="px-3 py-2 text-center">
-                              <div className="flex gap-1 justify-center">
+                              <div className="flex gap-1 justify-center items-center flex-wrap">
+                                {!cfg.disbursed_at && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-[10px] border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                    onClick={() => {
+                                      const ledgerSum = (savingsLedger as any[]).filter((l: any) => l.savings_id === cfg.id)
+                                        .reduce((s: number, l: any) => s + Number(l.amount || 0), 0);
+                                      const total = Math.max(ledgerSum, Number(cfg.total_saved || 0));
+                                      setDisburseDialog({
+                                        config: cfg,
+                                        staff_name: staffMember?.name_bn || '-',
+                                        amount: total,
+                                        categoryId: '',
+                                        institutionId: '',
+                                        note: '',
+                                      });
+                                    }}
+                                    title={bn ? 'মোট পরিশোধ' : 'Disburse Total'}
+                                  >
+                                    <DollarSign className="h-3 w-3 mr-1" /> {bn ? 'পরিশোধ' : 'Pay'}
+                                  </Button>
+                                )}
+                                {cfg.disbursed_at && (
+                                  <Badge className="bg-emerald-100 text-emerald-700 text-[10px]" title={new Date(cfg.disbursed_at).toLocaleString()}>
+                                    {bn ? 'পরিশোধিত' : 'Paid'}
+                                  </Badge>
+                                )}
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setSavingsDialog({
                                   ...cfg, staff_name: staffMember?.name_bn || '-',
                                 })}>
                                   <Edit2 className="h-3 w-3" />
                                 </Button>
-                                  <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-red-500" onClick={() => setDeleteSavingsId(cfg.id)}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -2935,6 +3011,94 @@ const AdminSalary = () => {
                 <Button className="w-full" onClick={() => saveSavingsMutation.mutate(savingsDialog)}
                   disabled={saveSavingsMutation.isPending || !savingsDialog.monthly_amount || !savingsDialog.duration_months}>
                   <Save className="h-4 w-4 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Disburse Savings Dialog */}
+        <Dialog open={!!disburseDialog} onOpenChange={() => setDisburseDialog(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+                {bn ? 'মোট জমা পরিশোধ' : 'Disburse Total Savings'}
+              </DialogTitle>
+            </DialogHeader>
+            {disburseDialog && (
+              <div className="space-y-4">
+                <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">{disburseDialog.staff_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bn ? 'পরিশোধের পর জমা সেটআপ নিষ্ক্রিয় হবে এবং খরচ তালিকায় অটো এন্ট্রি যাবে।' : 'After payment, savings setup will be deactivated and an expense entry will be auto-created.'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'পরিশোধের পরিমাণ (৳)' : 'Amount (৳)'}</Label>
+                  <Input
+                    type="number"
+                    value={disburseDialog.amount || ''}
+                    onChange={e => setDisburseDialog({ ...disburseDialog, amount: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'প্রতিষ্ঠান (Project)' : 'Institution (Project)'}</Label>
+                  <Select
+                    value={disburseDialog.institutionId || ''}
+                    onValueChange={v => setDisburseDialog({ ...disburseDialog, institutionId: v, categoryId: '' })}
+                  >
+                    <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {(expenseInstitutions as any[]).map((i: any) => (
+                        <SelectItem key={i.id} value={i.id}>{bn ? (i.name_bn || i.name) : i.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'খরচ ক্যাটাগরি' : 'Expense Category'}</Label>
+                  <Select
+                    value={disburseDialog.categoryId || ''}
+                    onValueChange={v => setDisburseDialog({ ...disburseDialog, categoryId: v })}
+                    disabled={!disburseDialog.institutionId}
+                  >
+                    <SelectTrigger><SelectValue placeholder={bn ? 'নির্বাচন করুন' : 'Select'} /></SelectTrigger>
+                    <SelectContent>
+                      {(expenseCategories as any[])
+                        .filter((c: any) => !disburseDialog.institutionId || c.institution_id === disburseDialog.institutionId)
+                        .map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>{bn ? (c.name_bn || c.name) : c.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'নোট (ঐচ্ছিক)' : 'Note (optional)'}</Label>
+                  <Input
+                    value={disburseDialog.note || ''}
+                    onChange={e => setDisburseDialog({ ...disburseDialog, note: e.target.value })}
+                    placeholder={bn ? 'যেমন: চেক নং / তারিখ' : 'e.g. Check no / date'}
+                  />
+                </div>
+                <Button
+                  className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  disabled={
+                    disburseSavingsMutation.isPending ||
+                    !disburseDialog.amount ||
+                    !disburseDialog.categoryId ||
+                    !disburseDialog.institutionId
+                  }
+                  onClick={() => disburseSavingsMutation.mutate({
+                    config: disburseDialog.config,
+                    amount: Number(disburseDialog.amount),
+                    categoryId: disburseDialog.categoryId,
+                    institutionId: disburseDialog.institutionId,
+                    note: disburseDialog.note,
+                  })}
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  {bn ? 'পরিশোধ ও খরচে যোগ করুন' : 'Disburse & Add to Expenses'}
                 </Button>
               </div>
             )}
