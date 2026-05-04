@@ -644,21 +644,7 @@ const AdminSalary = () => {
     onError: (e: any) => toast.error(bn ? `সমস্যা: ${e.message}` : `Error: ${e.message}`),
   });
 
-  // Load expense categories & institutions for disburse dialog
-  const { data: expenseCategories = [] } = useQuery({
-    queryKey: ['expense-categories-active'],
-    queryFn: async () => {
-      const { data } = await supabase.from('expense_categories').select('id, name, name_bn, institution_id').eq('is_active', true);
-      return data || [];
-    },
-  });
-  const { data: expenseInstitutions = [] } = useQuery({
-    queryKey: ['expense-institutions-active'],
-    queryFn: async () => {
-      const { data } = await supabase.from('expense_institutions').select('id, name, name_bn').eq('is_active', true);
-      return data || [];
-    },
-  });
+  // (expense categories/institutions queries are declared earlier in this file)
 
   // Get setting value helper
   const getSetting = (key: string) => {
