@@ -1,4 +1,3 @@
-import jsPDF from 'jspdf';
 import { CANONICAL_BANGLA_LABELS as L } from './banglaCanonicalLabels';
 
 interface ExportData {
@@ -115,84 +114,11 @@ export const exportResultCSV = ({ title, students, subjects, marksMap, getOveral
   setTimeout(() => URL.revokeObjectURL(url), 100);
 };
 
-export const exportResultPDF = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, orientation = 'landscape', margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
-  const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const m = sanitizeMargins(margins);
-  const margin = Math.min(m.left, m.right);
-
-  doc.setFontSize(14);
-  doc.text(institutionName || '', pageW / 2, 12, { align: 'center' });
-  doc.setFontSize(11);
-  doc.text(title, pageW / 2, 19, { align: 'center' });
-
-  const colHeaders = [
-    '#', bn ? 'Roll' : 'Roll', bn ? 'Name' : 'Name',
-    ...subjects.map((s: any) => (bn ? s.name_bn : s.name).substring(0, 8)),
-    'Total', 'Avg', 'Grade', 'GPA', 'Title',
-  ];
-
-  const fixedCols = 3;
-  const endCols = 5;
-  const subjectCols = subjects.length;
-  const totalCols = fixedCols + subjectCols + endCols;
-  const availW = pageW - margin * 2;
-  const colW = Math.min(availW / totalCols, 22);
-  const startX = margin;
-  let y = 26;
-  const rowH = 6;
-  const headerH = 7;
-
-  doc.setFontSize(6);
-  doc.setTextColor(100);
-  colHeaders.forEach((h, i) => {
-    doc.text(h, startX + i * colW + colW / 2, y + headerH / 2 + 1, { align: 'center', maxWidth: colW - 1 });
-  });
-  y += headerH;
-  doc.setDrawColor(200);
-  doc.line(startX, y, startX + totalCols * colW, y);
-
-  doc.setTextColor(30);
-  doc.setFontSize(6);
-
-  students.forEach((st: any, idx: number) => {
-    if (y + rowH > doc.internal.pageSize.getHeight() - 15) {
-      doc.addPage();
-      y = 15;
-    }
-
-    const marks = subjects.map((sub: any) => marksMap[`${st.id}_${sub.id}`] ?? 0);
-    const total = marks.reduce((a, b) => a + b, 0);
-    const avg = subjects.length > 0 ? total / subjects.length : 0;
-    const { grade, gpa, title: gradeTitle, title_bn } = getOverallGrade(marks);
-
-    const rowData = [
-      String(idx + 1),
-      String(st.roll_number || '-'),
-      (bn ? st.name_bn : (st.name_en || st.name_bn) || '').substring(0, 14),
-      ...marks.map(String),
-      String(total),
-      avg.toFixed(1),
-      grade,
-      gpa,
-      ((bn ? title_bn : gradeTitle) || '').substring(0, 10),
-    ];
-
-    rowData.forEach((val, i) => {
-      doc.text(val, startX + i * colW + colW / 2, y + rowH / 2 + 1, { align: 'center', maxWidth: colW - 1 });
-    });
-
-    y += rowH;
-    doc.setDrawColor(230);
-    doc.line(startX, y, startX + totalCols * colW, y);
-  });
-
-  const footerY = doc.internal.pageSize.getHeight() - 10;
-  doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, margin, footerY);
-
-  doc.save(`${title.replace(/[^a-zA-Z0-9\s]/g, '_')}.pdf`);
+export const exportResultPDF = (params: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
+  // Browser-rendered HTML preserves Unicode Bangla shaping and live institution
+  // branding. The old jsPDF text renderer encoded Bangla with a Latin font,
+  // which produced mojibake like “† ²- …” in downloaded result PDFs.
+  printResultSheet(params);
 };
 
 export const printResultSheet = ({ title, students, subjects, marksMap, getOverallGrade, bn, institutionName, institutionLogo, institutionAddress, institutionPhone, className, examName, sessionName, passMark = 33, signatories, orientation = 'landscape', showPageNumbers = true, showFooterInstitution = true, margins }: ExportData & { orientation?: 'landscape' | 'portrait' }) => {
@@ -251,7 +177,7 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
 <html><head>
 <meta charset="utf-8">
 <title>${title}</title>
-<style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
+<style>@font-face{font-family:"Kalpurush";src:url("/fonts/Kalpurush.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -260,16 +186,16 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
     margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm;
     @bottom-left{
       content:${showFooterInstitution ? `"${(institutionName || '').replace(/"/g, '\\"')}"` : `""`};
-      font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
+      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
     @bottom-right{
       content:${showPageNumbers ? `"${bn ? 'পৃষ্ঠা' : 'Page'} " counter(page${bn ? ', bengali' : ''}) " ${bn ? 'এর' : 'of'} " counter(pages${bn ? ', bengali' : ''})` : `""`};
-      font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;
+      font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;
       font-size:9pt;color:#64748b;
     }
   }
-  body{font-family:'SutonnyOMJ','Noto Sans Bengali','Inter',sans-serif;color:#0f172a;background:#fff;padding:6mm 8mm;}
+  body{font-family:'Kalpurush','Noto Sans Bengali','SutonnyOMJ','Inter',sans-serif;color:#0f172a;background:#fff;padding:6mm 8mm;}
   .screen-pageinfo{display:none;}
   @media screen{.screen-pageinfo{display:flex;justify-content:flex-end;font-size:10px;color:#94a3b8;margin-top:6px;}}
   .sheet{border:2px solid #064e3b;border-radius:6px;padding:10px 14px 14px;}
