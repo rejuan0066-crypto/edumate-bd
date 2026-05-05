@@ -1708,12 +1708,7 @@ const AdminSalary = () => {
           approved_by_role: sigApprovedRole.trim() || apr?.designation || undefined,
         };
       })();
-      const payload = {
-        monthYear,
-        monthLabel: bn ? monthName?.bn : monthName?.en,
-        year: selectedYear,
-        language: bn ? 'bn' : 'en',
-        staff: filtered.map((s: any) => {
+       const staffRows = filtered.map((s: any) => {
           const rec = getRecord(s.id);
           const savings = Number(rec?.savings_deduction || 0);
           // কর্তন কলামে শুধু attendance/অগ্রিম/অন্যান্য — জমা (savings) আলাদা কলামে দেখানো হবে,
@@ -1737,16 +1732,22 @@ const AdminSalary = () => {
             net_salary: Number(rec?.net_salary || 0),
             status: rec?.status || 'not_generated',
           };
-        }),
-        totals: {
-          base: stats.totalBase,
-          net: stats.totalNet,
-          deductions: stats.totalDeduction,
-          savings: filtered.reduce((sum: number, s: any) => sum + Number(getRecord(s.id)?.savings_deduction || 0), 0),
-          overtime: filtered.reduce((sum: number, s: any) => sum + Number(getRecord(s.id)?.overtime || 0), 0),
-        },
-        ...sig,
-      };
+        });
+       const payload = {
+         monthYear,
+         monthLabel: bn ? monthName?.bn : monthName?.en,
+         year: selectedYear,
+         language: bn ? 'bn' : 'en',
+         staff: staffRows,
+         totals: {
+           base: staffRows.reduce((s: number, r: any) => s + Number(r.base_salary || 0), 0),
+           net: staffRows.reduce((s: number, r: any) => s + Number(r.net_salary || 0), 0),
+           deductions: staffRows.reduce((s: number, r: any) => s + Number(r.deductions || 0), 0),
+           savings: staffRows.reduce((s: number, r: any) => s + Number(r.savings || 0), 0),
+           overtime: staffRows.reduce((s: number, r: any) => s + Number(r.overtime || 0), 0),
+         },
+         ...sig,
+       };
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const { data: { session } } = await supabase.auth.getSession();
