@@ -398,9 +398,11 @@ Deno.serve(async (req) => {
         </tr>
       </tfoot>`;
 
-    // Dynamic rows-per-page: fit small lists on a single A4 landscape page.
-    // Up to ~22 staff comfortably fit with compact row height; beyond that, paginate by 20.
-    const rowsPerPage = staff.length <= 22 ? Math.max(staff.length, 1) : 20;
+    // Dynamic rows-per-page: keep each section strictly within ONE printed A4 landscape page
+    // so header (thead) + signatures (tfoot) reliably appear on every page.
+    // Reduced from 20 -> 14 to leave room for letterhead, doc-title, memo row, totals & 4-signature footer
+    // even when Bengali text wraps to 2 lines per cell.
+    const rowsPerPage = staff.length <= 14 ? Math.max(staff.length, 1) : 14;
     const staffPages: any[][] = [];
     for (let i = 0; i < staff.length; i += rowsPerPage) staffPages.push(staff.slice(i, i + rowsPerPage));
     if (staffPages.length === 0) staffPages.push([]);
