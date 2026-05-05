@@ -151,7 +151,18 @@ const DashboardInner = () => {
   const activeDonors = donors.filter(d => d.status === 'active');
 
   const openList = (title: string, table: 'students' | 'staff' | 'donors' | 'divisions' | 'subjects' | 'exam_sessions' | 'results', filters: Record<string, any> = {}) => {
-    setListDialog({ open: true, title, table, filters });
+    // Auto-inject the selected academic session for session-scoped tables
+    const merged: Record<string, any> = { ...filters };
+    if (selectedSessionId) {
+      if (table === 'students' && merged.session_id === undefined) merged.session_id = selectedSessionId;
+      if (table === 'exam_sessions' && merged.academic_session_id === undefined) merged.academic_session_id = selectedSessionId;
+    }
+    const sessionLabel = selectedSession ? (bn ? (selectedSession.name_bn || selectedSession.name) : selectedSession.name) : '';
+    const finalTitle = sessionLabel && (table === 'students' || table === 'exam_sessions')
+      ? `${title} — ${bn ? 'সেশন' : 'Session'} ${sessionLabel}`
+      : title;
+    setListDialog({ open: true, title: finalTitle, table, filters: merged });
+  };
   };
 
   // Stat card arrays with keys for filtering
