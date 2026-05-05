@@ -761,7 +761,7 @@ Deno.serve(async (req) => {
     }
     @page {
       size: A4 landscape;
-      margin: 6mm 5mm;
+      margin: 10mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
         font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
@@ -770,6 +770,13 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
+    /* Force table to use full A4 landscape width — no manual scaling */
+    .salary-page, .print-fit, .sheet, table {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .print-fit { transform: none !important; zoom: 1 !important; }
+    table { table-layout: auto !important; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     /* Print Settings Bar — visible on screen, hidden during print */
     .print-settings-bar {
