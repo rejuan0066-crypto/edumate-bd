@@ -761,7 +761,7 @@ Deno.serve(async (req) => {
     }
     @page {
       size: A4 landscape;
-      margin: 6mm 5mm;
+      margin: 10mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
         font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
@@ -770,6 +770,13 @@ Deno.serve(async (req) => {
         padding-right: 4mm;
       }
     }
+    /* Force table to use full A4 landscape width — no manual scaling */
+    .salary-page, .print-fit, .sheet, table {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+    .print-fit { transform: none !important; zoom: 1 !important; }
+    table { table-layout: auto !important; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     /* Print Settings Bar — visible on screen, hidden during print */
     .print-settings-bar {
@@ -858,8 +865,8 @@ Deno.serve(async (req) => {
   </div>
   <div class="grp">
     <label for="ps-min">${bn ? 'সর্বনিম্ন স্কেল' : 'Min scale'}:</label>
-    <input id="ps-min" type="range" min="0.4" max="1" step="0.05" value="0.55"/>
-    <span class="val" id="ps-min-v">55%</span>
+    <input id="ps-min" type="range" min="0.4" max="1" step="0.05" value="1"/>
+    <span class="val" id="ps-min-v">100%</span>
   </div>
   <div class="grp">
     <label for="ps-max">${bn ? 'সর্বোচ্চ স্কেল' : 'Max scale'}:</label>
@@ -868,7 +875,7 @@ Deno.serve(async (req) => {
   </div>
   <div class="grp">
     <label for="ps-margin">${bn ? 'মার্জিন (mm)' : 'Margin (mm)'}:</label>
-    <input id="ps-margin" type="number" min="0" max="25" step="1" value="8"/>
+    <input id="ps-margin" type="number" min="0" max="25" step="1" value="10"/>
   </div>
   <div class="grp" style="margin-left:auto">
     <button id="ps-print" type="button">🖨️ ${bn ? 'প্রিন্ট করুন' : 'Print'}</button>
@@ -890,9 +897,9 @@ Deno.serve(async (req) => {
     var settings = {
       orientation: 'landscape',
       paper: 'A4',
-      minScale: 0.55,
+      minScale: 1,
       maxScale: 1,
-      marginMm: 8,
+      marginMm: 10,
     };
 
     // Paper sizes in mm (portrait W x H)
