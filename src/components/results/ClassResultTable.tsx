@@ -119,7 +119,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
           <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-1.5">
             <FileDown className="w-4 h-4" /> PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => handleExport('pdf')} className="gap-1.5">
             <Printer className="w-4 h-4" /> {bn ? 'প্রিন্ট' : 'Print'}
           </Button>
           <Button size="sm" className="btn-primary-gradient gap-1.5" onClick={onSave} disabled={isSaving}>
