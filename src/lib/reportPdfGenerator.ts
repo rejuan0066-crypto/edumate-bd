@@ -154,7 +154,7 @@ export const generateBilingualReport = (
       margin: 14mm 10mm 14mm 10mm;
     }
     body {
-      font-family: 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
+      font-family: 'Kalpurush', 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
       font-size: 11px;
       color: #1e293b;
       background: #fff;

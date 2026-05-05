@@ -189,7 +189,7 @@ function getCSS(style: ReceiptStyleConfig = DEFAULT_STYLE): string {
   return `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
+    font-family: 'Kalpurush', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', system-ui, sans-serif;
     background: #f0f2f5;
     color: #111827;
     -webkit-print-color-adjust: exact !important;
@@ -296,7 +296,7 @@ function wrapInHtml(title: string, body: string, style?: ReceiptStyleConfig): st
 <html><head>
 <meta charset="UTF-8">
 <title>${title}</title>
-<style>@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>@font-face{font-family: 'Kalpurush', "SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>${getCSS(style)}</style>
 </head><body>
 ${body}
