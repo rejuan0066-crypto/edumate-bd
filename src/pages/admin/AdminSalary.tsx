@@ -1708,12 +1708,7 @@ const AdminSalary = () => {
           approved_by_role: sigApprovedRole.trim() || apr?.designation || undefined,
         };
       })();
-      const payload = {
-        monthYear,
-        monthLabel: bn ? monthName?.bn : monthName?.en,
-        year: selectedYear,
-        language: bn ? 'bn' : 'en',
-        staff: filtered.map((s: any) => {
+       const staffRows = filtered.map((s: any) => {
           const rec = getRecord(s.id);
           const savings = Number(rec?.savings_deduction || 0);
           // কর্তন কলামে শুধু attendance/অগ্রিম/অন্যান্য — জমা (savings) আলাদা কলামে দেখানো হবে,
