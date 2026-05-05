@@ -1010,12 +1010,17 @@ const AdminSalary = () => {
         const { id, ...updateData } = rec;
         const activeSavings = getActiveSavings(updateData.staff_id);
         const savingsDed = activeSavings ? activeSavings.amount : 0;
-        // calculateSalary already returns the correct additive net_salary.
-        // Add manual extras (bonus / other_allowance) and subtract advance + savings on top.
-        const baseNet = Number(updateData.net_salary || 0);
-        const extras = Number(updateData.bonus || 0) + Number(updateData.other_allowance || 0);
-        const manualDeds = Number(updateData.advance_deduction || 0) + savingsDed;
-        const netSalary = Math.max(0, baseNet + extras - manualDeds);
+        // Use shared helper — guarded by src/lib/__tests__/salaryNet.test.ts
+        // against the savings/advance double-deduction regression.
+        const netSalary = recomputeNetSalary(
+          { net_salary: updateData.net_salary, savings_deduction: updateData.savings_deduction },
+          {
+            bonus: updateData.bonus,
+            other_allowance: updateData.other_allowance,
+            advance_deduction: updateData.advance_deduction,
+            savings_deduction: savingsDed,
+          },
+        );
         updateData.net_salary = netSalary;
         updateData.savings_deduction = savingsDed;
         updateData.updated_at = new Date().toISOString();
