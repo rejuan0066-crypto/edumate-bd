@@ -111,11 +111,14 @@ export const printStudentProfile = ({
 <title>${t('Student Profile', 'ছাত্র প্রোফাইল')} - ${esc(student.name || student.name_en || '')}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
+  @font-face { font-family: 'Kalpurush'; src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype'); font-display: block; }
   @page { size: A4; margin: 14mm 12mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   *, *::before, *::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   html, body {
-    font-family: ${bn ? "'Hind Siliguri', 'Noto Sans Bengali'," : ''} 'Inter', system-ui, sans-serif;
+    font-family: ${bn ? "'Kalpurush', 'Hind Siliguri', 'Noto Sans Bengali'," : "'Kalpurush',"} 'Inter', system-ui, sans-serif;
+    font-size: 11px; color: #1f2937; background: #fff;
+  }
     font-size: 11px; color: #1f2937; background: #fff;
   }
   .page { max-width: 186mm; margin: 0 auto; }

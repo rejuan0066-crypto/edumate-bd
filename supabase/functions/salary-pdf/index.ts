@@ -427,11 +427,12 @@ Deno.serve(async (req) => {
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;500;600;700&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
   @import url('https://fonts.maateen.me/solaiman-lipi/font.css');
+  @font-face { font-family: 'Kalpurush'; src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype'); font-display: block; }
   *,*::before,*::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   html, body {
     background: #ffffff;
     color: #000000;
-    font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', 'Times New Roman', serif;
     font-size: 10pt;
     line-height: 1.3;
   }
@@ -478,10 +479,10 @@ Deno.serve(async (req) => {
   .logo-fallback {
     font-size: 24px; font-weight: 700;
     color: #000;
-    font-family: 'Noto Serif Bengali', serif;
+    font-family: 'Kalpurush', 'Noto Serif Bengali', serif;
   }
   .inst-name {
-    font-family: 'Noto Serif Bengali', 'Tinos', serif;
+    font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     font-size: 15pt;
     font-weight: 700;
     line-height: 1.1;
@@ -507,7 +508,7 @@ Deno.serve(async (req) => {
     margin: 4pt 0 4pt;
   }
   .doc-title h2 {
-    font-family: 'Noto Serif Bengali', 'Tinos', serif;
+    font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     font-size: 11pt;
     font-weight: 700;
     color: #000;
@@ -553,7 +554,7 @@ Deno.serve(async (req) => {
     padding: 3pt 3pt;
     text-align: left;
     border: 0.5pt solid #000;
-    font-family: 'Noto Serif Bengali', 'Tinos', serif;
+    font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     vertical-align: middle;
     font-size: 8pt;
     line-height: 1.2;
@@ -635,7 +636,7 @@ Deno.serve(async (req) => {
     font-size: 6.8pt;
     color: #444;
     margin-top: 1pt;
-    font-family: 'Tinos', monospace;
+    font-family: 'Kalpurush', 'Tinos', monospace;
     letter-spacing: 0.2pt;
     /* IDs are alphanumeric — break anywhere if needed but never wrap mid-digit-run on big screens */
     overflow-wrap: anywhere;
@@ -700,7 +701,7 @@ Deno.serve(async (req) => {
     height: 0;
   }
   .sig .sig-name {
-    font-family: 'Noto Serif Bengali', 'Tinos', serif;
+    font-family: 'Kalpurush', 'Noto Serif Bengali', 'Tinos', serif;
     font-size: 9pt;
     font-weight: 700;
     min-height: 11pt;
@@ -730,7 +731,7 @@ Deno.serve(async (req) => {
   }
   .footer .ref {
     margin-top: 1pt;
-    font-family: 'Tinos', monospace;
+    font-family: 'Kalpurush', 'Tinos', monospace;
     font-size: 7pt;
     color: #333;
   }
@@ -764,7 +765,7 @@ Deno.serve(async (req) => {
       margin: 10mm;
       @bottom-right {
         content: "${bn ? "পৃষ্ঠা " : "Page "}" counter(page) "${bn ? " / " : " of "}" counter(pages);
-        font-family: 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
+        font-family: 'Kalpurush', 'SolaimanLipi', 'Noto Serif Bengali', 'Tinos', serif;
         font-size: 9pt;
         color: #000;
         padding-right: 4mm;
