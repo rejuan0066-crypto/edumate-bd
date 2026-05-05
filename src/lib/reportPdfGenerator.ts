@@ -148,6 +148,7 @@ export const generateBilingualReport = (
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    @font-face { font-family: 'Kalpurush'; src: url('https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf') format('truetype'); font-display: block; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     @page {
       size: A4;
