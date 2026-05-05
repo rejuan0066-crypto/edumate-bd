@@ -1070,3 +1070,68 @@
   .sticky, .fixed { position: static !important; }
 }
 
+/* ============================================================
+ * Mobile tap-target & overlap safety (WCAG 2.5.5 — min 44x44px)
+ * Scoped to touch / small screens so dense desktop admin tables
+ * are unaffected.
+ * ============================================================ */
+@media (hover: none) and (pointer: coarse), (max-width: 640px) {
+  button:not([data-no-min-tap]),
+  a[href]:not([data-no-min-tap]),
+  [role="button"]:not([data-no-min-tap]),
+  [role="link"]:not([data-no-min-tap]),
+  [role="tab"]:not([data-no-min-tap]),
+  [role="menuitem"]:not([data-no-min-tap]),
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  label[for] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 16px font on inputs prevents iOS auto-zoom on focus */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="range"]):not([type="color"]),
+  select,
+  textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  textarea { min-height: 88px; }
+
+  /* Dense table / toolbar icon buttons keep visual size,
+   * extend hit area via padding instead. */
+  table button,
+  table a[href],
+  table [role="button"],
+  [data-dense] button,
+  [data-dense] a[href] {
+    min-height: 36px;
+    min-width: 36px;
+    padding: 6px;
+  }
+
+  /* Adjacent action spacing so taps never overlap */
+  nav a + a,
+  nav button + button {
+    margin-inline-start: 4px;
+  }
+
+  /* Prevent sideways overflow that visually overlaps content */
+  html, body { overflow-x: hidden; }
+  main, section, article { max-width: 100%; }
+
+  /* Wide tables scroll inside wrapper, not the page */
+  .overflow-x-auto, [data-table-scroll] {
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  /* Bottom-anchored bars respect iOS home indicator */
+  .fixed.bottom-0, .sticky.bottom-0 {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
