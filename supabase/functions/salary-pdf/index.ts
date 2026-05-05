@@ -897,9 +897,9 @@ Deno.serve(async (req) => {
     var settings = {
       orientation: 'landscape',
       paper: 'A4',
-      minScale: 0.55,
+      minScale: 1,
       maxScale: 1,
-      marginMm: 8,
+      marginMm: 10,
     };
 
     // Paper sizes in mm (portrait W x H)
