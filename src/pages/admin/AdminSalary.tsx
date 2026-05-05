@@ -1732,16 +1732,22 @@ const AdminSalary = () => {
             net_salary: Number(rec?.net_salary || 0),
             status: rec?.status || 'not_generated',
           };
-        }),
-        totals: {
-          base: stats.totalBase,
-          net: stats.totalNet,
-          deductions: stats.totalDeduction,
-          savings: filtered.reduce((sum: number, s: any) => sum + Number(getRecord(s.id)?.savings_deduction || 0), 0),
-          overtime: filtered.reduce((sum: number, s: any) => sum + Number(getRecord(s.id)?.overtime || 0), 0),
-        },
-        ...sig,
-      };
+        });
+       const payload = {
+         monthYear,
+         monthLabel: bn ? monthName?.bn : monthName?.en,
+         year: selectedYear,
+         language: bn ? 'bn' : 'en',
+         staff: staffRows,
+         totals: {
+           base: staffRows.reduce((s: number, r: any) => s + Number(r.base_salary || 0), 0),
+           net: staffRows.reduce((s: number, r: any) => s + Number(r.net_salary || 0), 0),
+           deductions: staffRows.reduce((s: number, r: any) => s + Number(r.deductions || 0), 0),
+           savings: staffRows.reduce((s: number, r: any) => s + Number(r.savings || 0), 0),
+           overtime: staffRows.reduce((s: number, r: any) => s + Number(r.overtime || 0), 0),
+         },
+         ...sig,
+       };
 
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const { data: { session } } = await supabase.auth.getSession();
