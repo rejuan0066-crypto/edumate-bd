@@ -46,7 +46,18 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
   });
 
   const handleExport = (type: 'csv' | 'pdf') => {
-    const params = { title, students, subjects, marksMap, getOverallGrade, bn, institutionName: bn ? institution?.name : (institution?.name_en || institution?.name) };
+    const params = {
+      title,
+      students,
+      subjects,
+      marksMap,
+      getOverallGrade,
+      bn,
+      institutionName: bn ? institution?.name : (institution?.name_en || institution?.name),
+      institutionLogo: institution?.logo_url || undefined,
+      institutionAddress: institution?.address || undefined,
+      institutionPhone: institution?.phone || undefined,
+    };
     type === 'csv' ? exportResultCSV(params) : exportResultPDF(params);
   };
 
