@@ -296,7 +296,12 @@ const DashboardInner = () => {
 
     switch (id) {
       case 'institution':
-        return <DashboardInstitutionCard key={id} />;
+        return (
+          <div key={id} className="space-y-4">
+            <DashboardInstitutionCard />
+            <DashboardSessionSelector />
+          </div>
+        );
       case 'profiles':
         return <DashboardProfilesCard key={id} />;
       case 'search':
@@ -400,7 +405,6 @@ const DashboardInner = () => {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <DashboardSessionSelector />
         {isAdmin && (
           <div className="flex flex-wrap justify-end gap-2 ml-auto">
             <Button variant="outline" size="sm" onClick={() => setBuilderOpen(true)} className="gap-2">
