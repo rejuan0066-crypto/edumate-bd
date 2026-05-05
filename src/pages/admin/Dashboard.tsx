@@ -163,7 +163,6 @@ const DashboardInner = () => {
       : title;
     setListDialog({ open: true, title: finalTitle, table, filters: merged });
   };
-  };
 
   // Stat card arrays with keys for filtering
   const statCards: StatCard[] = [
