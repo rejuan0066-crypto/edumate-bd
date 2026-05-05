@@ -407,8 +407,9 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
       th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:13px}
       th{background:#f5f5f5}
       h2{margin:0}
+      .session-tag{display:inline-block;background:#059669;color:#fff;padding:3px 10px;border-radius:999px;font-size:12px;margin-left:8px;font-family:Arial,sans-serif}
     </style></head><body>
-      <h2>${bn ? titleBn : titleEn} - ${selectedGroup.label}</h2>
+      <h2>${bn ? titleBn : titleEn} - ${selectedGroup.label} ${selectedSession ? `<span class="session-tag">${bn ? 'সেশন: ' : 'Session: '}${bn ? (selectedSession.name_bn || selectedSession.name) : selectedSession.name}</span>` : ''}</h2>
       <p>${listType === 'paid' ? (bn ? 'পরিশোধিত তালিকা' : 'Paid List') : (bn ? 'অপরিশোধিত তালিকা' : 'Unpaid List')}</p>
       <table><thead><tr>
         <th>#</th><th>${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'রোল' : 'Roll'}</th>
@@ -628,7 +629,14 @@ const DashboardFeeSection = ({ category, titleBn, titleEn, icon }: FeeSectionPro
       <Dialog open={!!selectedGroup} onOpenChange={() => setSelectedGroup(null)}>
         <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">{bn ? titleBn : titleEn} - {selectedGroup?.label}</DialogTitle>
+            <DialogTitle className="text-xl flex items-center gap-2 flex-wrap">
+              <span>{bn ? titleBn : titleEn} - {selectedGroup?.label}</span>
+              {selectedSession && (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-600 text-white font-semibold">
+                  {bn ? 'সেশন: ' : 'Session: '}{bn ? (selectedSession.name_bn || selectedSession.name) : selectedSession.name}
+                </span>
+              )}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex items-center gap-3 mb-5">
             <button onClick={() => setListType('paid')}
