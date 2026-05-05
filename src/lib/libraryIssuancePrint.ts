@@ -34,7 +34,7 @@ export const printIssuanceReceipt = (data: IssuancePrintData, institution: Insti
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
 <title>বই বিতরণ রসিদ</title>
-<style>@font-face{font-family: 'Kalpurush', "SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family: 'Kalpurush', 'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px;color:#1a1a1a;font-size:14px}
@@ -104,7 +104,7 @@ export const downloadIssuanceReceipt = async (data: IssuancePrintData, instituti
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
 <title>বই বিতরণ রসিদ</title>
-<style>@font-face{font-family: 'Kalpurush', "SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family: 'Kalpurush', 'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px;color:#1a1a1a;font-size:14px}
@@ -190,7 +190,7 @@ export const printYearlyIssuanceList = (
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
 <title>বাৎসরিক বই বিতরণ তালিকা - ${year}</title>
-<style>@font-face{font-family: 'Kalpurush', "SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family: 'Kalpurush', 'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px;color:#1a1a1a;font-size:12px}
@@ -296,7 +296,7 @@ export const downloadYearlyIssuanceList = async (
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
 <title>বাৎসরিক বই বিতরণ তালিকা - ${year}</title>
-<style>@font-face{font-family: 'Kalpurush', "SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family: 'Kalpurush', 'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px;color:#1a1a1a;font-size:12px}
