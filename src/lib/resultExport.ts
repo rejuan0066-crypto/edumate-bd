@@ -271,86 +271,117 @@ export const printResultSheet = ({ title, students, subjects, marksMap, getOvera
   }
 </style>
 </head><body>
-<div class="sheet">
-  <div class="header">
-    <div>${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}</div>
-    <div class="header-text">
-      <h1>${institutionName || ''}</h1>
-      ${institutionAddress ? `<p class="addr">${institutionAddress}</p>` : ''}
-      ${institutionPhone ? `<p class="phone">${bn ? 'ফোন' : 'Phone'}: ${institutionPhone}</p>` : ''}
-    </div>
-    <div></div>
-  </div>
-  <div class="doc-band"><span>${bn ? 'ফলাফল শীট' : 'RESULT SHEET'}</span></div>
-  <div class="meta">
-    ${metaRow(bn ? 'পরীক্ষা:' : 'Exam:', examName || title)}
-    ${metaRow(bn ? 'শ্রেণি:' : 'Class:', className || '')}
-    ${metaRow(bn ? 'শিক্ষাবর্ষ:' : 'Session:', sessionName || '')}
-    ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
-    ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
-  </div>
-  <table class="result-table">
-    ${(() => {
-      const n = subjects.length;
-      // Fixed % widths so every page on every printer aligns identically (table-layout:fixed)
-      const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
-      const used = Object.values(fixedW).reduce((a, b) => a + b, 0); // 56
-      const subjectPool = Math.max(20, 100 - used); // 44
-      const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
-      const cols = [
-        `<col style="width:${fixedW.idx}%">`,
-        `<col style="width:${fixedW.roll}%">`,
-        `<col style="width:${fixedW.name}%">`,
-        ...subjects.map(() => `<col style="width:${sw}%">`),
-        `<col style="width:${fixedW.total}%">`,
-        `<col style="width:${fixedW.avg}%">`,
-        `<col style="width:${fixedW.grade}%">`,
-        `<col style="width:${fixedW.gpa}%">`,
-        `<col style="width:${fixedW.rank}%">`,
-        `<col style="width:${fixedW.status}%">`,
-      ].join('');
-      return `<colgroup>${cols}</colgroup>`;
-    })()}
-    <thead><tr>
-      <th>#</th>
-      <th>${bn ? 'রোল' : 'Roll'}</th>
-      <th style="text-align:left;padding-left:8px;">${bn ? 'শিক্ষার্থীর নাম' : 'Student Name'}</th>
-      ${subjectHeaders}
-      <th>${bn ? 'মোট' : 'Total'}</th>
-      <th>${bn ? 'গড়' : 'Avg'}</th>
-      <th>${bn ? 'গ্রেড' : 'Grade'}</th>
-      <th>GPA</th>
-      <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
-      <th>${bn ? 'অবস্থা' : 'Status'}</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <div class="summary-wrap">
-  <div class="summary">
-    <div class="stat"><div class="stat-k">${bn ? 'মোট' : 'Total'}</div><div class="stat-v">${computed.length}</div></div>
-    <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'Pass'}</div><div class="stat-v" style="color:#059669;">${passCount}</div></div>
-    <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'Fail'}</div><div class="stat-v" style="color:#dc2626;">${failCount}</div></div>
-    <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'Class Avg'}</div><div class="stat-v">${classAvg}</div></div>
-    <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
-  </div>
-  </div>
-  <div class="signatures-keeper">
-  <div class="signatures-wrap">
-  <div class="signatures">
-    ${sigList.map((s) => {
-      const t = (bn ? s.title_bn : s.title_en) || (bn ? s.title_en : s.title_bn) || '';
-      const n = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
-      return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${n || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
-    }).join('')}
-  </div>
-  </div>
-  </div>
-  <div class="footer">
-    <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
-    <span>${institutionName || ''}</span>
-  </div>
-  <div class="screen-pageinfo">${bn ? 'প্রিন্টে প্রতিটি পৃষ্ঠার নিচে পৃষ্ঠা সংখ্যা দেখাবে (যেমন: পৃষ্ঠা ১ এর ৩)' : 'Page numbers (e.g., Page 1 of 3) will appear at the bottom of every printed page'}</div>
-</div>
+${(() => {
+  const ROWS_PER_PAGE = orientation === 'landscape' ? 14 : 18;
+  const chunks: typeof computed[] = [];
+  if (computed.length === 0) chunks.push([]);
+  for (let i = 0; i < computed.length; i += ROWS_PER_PAGE) {
+    chunks.push(computed.slice(i, i + ROWS_PER_PAGE));
+  }
+  const totalPages = chunks.length;
+
+  const colgroupHtml = (() => {
+    const n = subjects.length;
+    const fixedW = { idx: 3, roll: 5, name: 18, total: 5, avg: 4, grade: 5, gpa: 4, rank: 5, status: 7 };
+    const used = Object.values(fixedW).reduce((a, b) => a + b, 0);
+    const subjectPool = Math.max(20, 100 - used);
+    const sw = n > 0 ? +(subjectPool / n).toFixed(3) : 0;
+    const cols = [
+      `<col style="width:${fixedW.idx}%">`,
+      `<col style="width:${fixedW.roll}%">`,
+      `<col style="width:${fixedW.name}%">`,
+      ...subjects.map(() => `<col style="width:${sw}%">`),
+      `<col style="width:${fixedW.total}%">`,
+      `<col style="width:${fixedW.avg}%">`,
+      `<col style="width:${fixedW.grade}%">`,
+      `<col style="width:${fixedW.gpa}%">`,
+      `<col style="width:${fixedW.rank}%">`,
+      `<col style="width:${fixedW.status}%">`,
+    ].join('');
+    return `<colgroup>${cols}</colgroup>`;
+  })();
+
+  const renderRow = ({ idx, st, marks, total, avg, overall, failed }: any) => {
+    const rank = rankMap.get(idx);
+    const marksCells = marks.map((mk: number) =>
+      `<td class="num ${mk < passMark ? 'fail-cell' : ''}">${mk}</td>`
+    ).join('');
+    return `<tr class="${failed ? 'row-fail' : ''}">
+      <td class="num">${idx + 1}</td>
+      <td class="num bold">${st.roll_number || '-'}</td>
+      <td class="name">${bn ? st.name_bn : (st.name_en || st.name_bn)}</td>
+      ${marksCells}
+      <td class="num bold">${total}</td>
+      <td class="num">${avg.toFixed(1)}</td>
+      <td class="num bold grade-${overall.grade?.replace(/[^A-Z]/g, '') || 'N'}">${overall.grade}</td>
+      <td class="num bold">${overall.gpa}</td>
+      <td class="num"><span class="rank-pill">${rank}</span></td>
+      <td class="num ${failed ? 'status-fail' : 'status-pass'}">${failed ? (bn ? 'অকৃতকার্য' : 'Fail') : (bn ? 'কৃতকার্য' : 'Pass')}</td>
+    </tr>`;
+  };
+
+  return chunks.map((chunk, pageIdx) => {
+    const isLast = pageIdx === totalPages - 1;
+    return `<div class="sheet result-page">
+      <div class="header">
+        <div>${institutionLogo ? `<img src="${institutionLogo}" class="header-logo" crossorigin="anonymous" />` : ''}</div>
+        <div class="header-text">
+          <h1>${institutionName || ''}</h1>
+          ${institutionAddress ? `<p class="addr">${institutionAddress}</p>` : ''}
+          ${institutionPhone ? `<p class="phone">${bn ? 'ফোন' : 'Phone'}: ${institutionPhone}</p>` : ''}
+        </div>
+        <div></div>
+      </div>
+      <div class="doc-band"><span>${bn ? 'ফলাফল শীট' : 'RESULT SHEET'}</span></div>
+      <div class="meta">
+        ${metaRow(bn ? 'পরীক্ষা:' : 'Exam:', examName || title)}
+        ${metaRow(bn ? 'শ্রেণি:' : 'Class:', className || '')}
+        ${metaRow(bn ? 'শিক্ষাবর্ষ:' : 'Session:', sessionName || '')}
+        ${metaRow(bn ? 'মোট ছাত্র:' : 'Total Students:', String(computed.length))}
+        ${metaRow(bn ? 'প্রকাশের তারিখ:' : 'Issue Date:', new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'))}
+      </div>
+      <table class="result-table">
+        ${colgroupHtml}
+        <thead><tr>
+          <th>#</th>
+          <th>${bn ? 'রোল' : 'Roll'}</th>
+          <th style="text-align:left;padding-left:8px;">${bn ? 'শিক্ষার্থীর নাম' : 'Student Name'}</th>
+          ${subjectHeaders}
+          <th>${bn ? 'মোট' : 'Total'}</th>
+          <th>${bn ? 'গড়' : 'Avg'}</th>
+          <th>${bn ? 'গ্রেড' : 'Grade'}</th>
+          <th>GPA</th>
+          <th>${bn ? 'মেধাক্রম' : 'Rank'}</th>
+          <th>${bn ? 'অবস্থা' : 'Status'}</th>
+        </tr></thead>
+        <tbody>${chunk.map(renderRow).join('')}</tbody>
+      </table>
+      ${isLast ? `<div class="summary-wrap">
+        <div class="summary">
+          <div class="stat"><div class="stat-k">${bn ? 'মোট' : 'Total'}</div><div class="stat-v">${computed.length}</div></div>
+          <div class="stat"><div class="stat-k">${bn ? 'কৃতকার্য' : 'Pass'}</div><div class="stat-v" style="color:#059669;">${passCount}</div></div>
+          <div class="stat"><div class="stat-k">${bn ? 'অকৃতকার্য' : 'Fail'}</div><div class="stat-v" style="color:#dc2626;">${failCount}</div></div>
+          <div class="stat"><div class="stat-k">${bn ? 'গড় নম্বর' : 'Class Avg'}</div><div class="stat-v">${classAvg}</div></div>
+          <div class="stat"><div class="stat-k">${bn ? 'প্রথম স্থান' : 'Topper'}</div><div class="stat-v" style="font-size:12px;">${topper ? `${(bn ? topper.st.name_bn : (topper.st.name_en || topper.st.name_bn)) || '-'} (${topper.total})` : '-'}</div></div>
+        </div>
+      </div>` : ''}
+      <div class="signatures-wrap">
+        <div class="signatures">
+          ${sigList.map((s) => {
+            const t = (bn ? s.title_bn : s.title_en) || (bn ? s.title_en : s.title_bn) || '';
+            const nm = (bn ? s.name_bn : s.name_en) || (bn ? s.name_en : s.name_bn) || '';
+            return `<div class="sig-block"><div class="sig-line"></div><p class="sig-name">${nm || '&nbsp;'}</p><p class="sig-title">${t}</p><p class="sig-sub">${bn ? 'স্বাক্ষর ও তারিখ' : 'Signature & Date'}</p></div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="footer">
+        <span>${bn ? 'প্রিন্ট:' : 'Printed:'} ${new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB')}</span>
+        <span>${institutionName || ''}</span>
+      </div>
+    </div>`;
+  }).join('');
+})()}
+<style>.result-page{break-after:page;page-break-after:always;}.result-page:last-child{break-after:auto;page-break-after:auto;}.signatures-wrap{margin-top:24px;}</style>
 </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
