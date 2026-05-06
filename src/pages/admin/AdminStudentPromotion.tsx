@@ -103,13 +103,26 @@ const AdminStudentPromotion = () => {
 
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return students;
-    const s = searchTerm.toLowerCase();
-    return students.filter((st: any) =>
-      (st.name_bn || '').toLowerCase().includes(s) ||
-      (st.name_en || '').toLowerCase().includes(s) ||
-      (st.student_id || '').toLowerCase().includes(s) ||
-      (st.roll_number || '').includes(s)
-    );
+    // Convert Bengali digits to English for numeric matching
+    const bnToEn = (str: string) =>
+      str.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const raw = searchTerm.trim();
+    const s = bnToEn(raw).toLowerCase();
+    const isNumeric = /^\d+$/.test(s);
+    return students.filter((st: any) => {
+      const roll = String(st.roll_number || '');
+      const sid = String(st.student_id || '').toLowerCase();
+      if (isNumeric) {
+        // Exact match on roll number or student ID for numeric searches
+        return roll === s || sid === s;
+      }
+      return (
+        (st.name_bn || '').toLowerCase().includes(s) ||
+        (st.name_en || '').toLowerCase().includes(s) ||
+        sid.includes(s) ||
+        roll.toLowerCase().includes(s)
+      );
+    });
   }, [students, searchTerm]);
 
   const toggleStudent = (id: string) => {
