@@ -707,6 +707,15 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Detach the deleted auth user from any linked staff / administrative officer rows
+      // so admins can create a fresh account for the same person again.
+      try {
+        await supabaseAdmin.from('staff').update({ user_id: null }).eq('user_id', user_id);
+        await supabaseAdmin.from('administrative_officers').update({ user_id: null }).eq('user_id', user_id);
+      } catch (cleanupErr) {
+        console.error('post-delete cleanup error', cleanupErr);
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
