@@ -8,7 +8,7 @@ interface Props {
   t: (key: string) => string;
 }
 
-const n = ({ settings: rawSettings, language, t }: Props) => {
+const HomePrincipalCard = ({ settings: rawSettings, language, t }: Props) => {
   const bn = language === 'bn';
   const { data: principal } = usePrincipalOfficer();
   const settings = principal
