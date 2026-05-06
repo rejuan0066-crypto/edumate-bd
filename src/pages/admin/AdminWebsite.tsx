@@ -46,6 +46,8 @@ const INFO_LINK_ICONS = [
 const AdminWebsite = () => {
   const { language } = useLanguage();
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
+  const { data: linkedPrincipal } = usePrincipalOfficer();
+  const principalLinked = !!linkedPrincipal;
   const { canEditItem } = usePagePermissions('/admin/website');
   const { menuConfig, saveMenuConfig } = useMenuSettings();
   const { role } = useAuth();
