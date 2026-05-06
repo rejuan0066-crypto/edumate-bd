@@ -243,32 +243,53 @@ const DashboardInstitutionCard = () => {
 
         {/* Principal fields */}
         <div className="space-y-3 pt-4 border-t border-border">
-          <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'অধ্যক্ষের তথ্য' : 'Principal Info'}</h4>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h4 className="text-sm font-semibold text-primary">{language === 'bn' ? 'অধ্যক্ষের তথ্য' : 'Principal Info'}</h4>
+            {principalLinked && (
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                <Link2 className="w-3 h-3" />
+                {language === 'bn'
+                  ? `স্বয়ংক্রিয় লিংক: ${linkedPrincipal?.principal_name} (${linkedPrincipal?.principal_title_bn})`
+                  : `Auto-linked: ${linkedPrincipal?.principal_name_en || linkedPrincipal?.principal_name} (${linkedPrincipal?.principal_title_bn})`}
+              </span>
+            )}
+          </div>
+          {principalLinked && (
+            <p className="text-[11px] text-muted-foreground">
+              {language === 'bn'
+                ? 'নাম, পদবি ও ছবি প্রশাসনিক কর্মকর্তার প্রোফাইল থেকে স্বয়ংক্রিয়ভাবে নেওয়া হচ্ছে। পরিবর্তন করতে /admin/administrative থেকে এডিট করুন।'
+                : 'Name, designation & photo are auto-pulled from the Administrative Officer profile. Edit at /admin/administrative to change.'}
+            </p>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের নাম (বাংলা)' : 'Principal Name (Bangla)'}</label>
-              <Input value={principalForm.principal_name} onChange={e => setPrincipalForm(f => ({ ...f, principal_name: e.target.value }))} className="mt-1" />
+              <Input disabled={principalLinked} value={principalLinked ? (linkedPrincipal?.principal_name || '') : principalForm.principal_name} onChange={e => setPrincipalForm(f => ({ ...f, principal_name: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের নাম (ইংরেজি)' : 'Principal Name (English)'}</label>
-              <Input value={principalForm.principal_name_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_name_en: e.target.value }))} className="mt-1" />
+              <Input disabled={principalLinked} value={principalLinked ? (linkedPrincipal?.principal_name_en || '') : principalForm.principal_name_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_name_en: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'পদবি (বাংলা)' : 'Designation (Bangla)'}</label>
-              <Input value={principalForm.principal_title_bn} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_bn: e.target.value }))} className="mt-1" />
+              <Input disabled={principalLinked} value={principalLinked ? (linkedPrincipal?.principal_title_bn || '') : principalForm.principal_title_bn} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_bn: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'পদবি (ইংরেজি)' : 'Designation (English)'}</label>
-              <Input value={principalForm.principal_title_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_en: e.target.value }))} className="mt-1" />
+              <Input disabled={principalLinked} value={principalLinked ? (linkedPrincipal?.principal_title_en || '') : principalForm.principal_title_en} onChange={e => setPrincipalForm(f => ({ ...f, principal_title_en: e.target.value }))} className="mt-1" />
             </div>
             <div className="sm:col-span-2 lg:col-span-1">
               <label className="text-xs font-medium text-muted-foreground">{language === 'bn' ? 'অধ্যক্ষের ছবি' : 'Principal Photo'}</label>
               <div className="flex items-center gap-2 mt-1">
-                {principalForm.principal_photo_url && <img src={principalForm.principal_photo_url} alt="Principal" className="w-10 h-10 rounded-full object-cover" />}
-                <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
-                  <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePrincipalPhotoUpload} />
-                </label>
+                {(principalLinked ? linkedPrincipal?.principal_photo_url : principalForm.principal_photo_url) && (
+                  <img src={(principalLinked ? linkedPrincipal?.principal_photo_url : principalForm.principal_photo_url) as string} alt="Principal" className="w-10 h-10 rounded-full object-cover" />
+                )}
+                {!principalLinked && (
+                  <label className="cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm hover:bg-secondary flex items-center gap-1">
+                    <Upload className="w-4 h-4" /> {language === 'bn' ? 'আপলোড' : 'Upload'}
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePrincipalPhotoUpload} />
+                  </label>
+                )}
               </div>
             </div>
             <div className="sm:col-span-2 lg:col-span-3">
