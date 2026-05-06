@@ -20,7 +20,7 @@ import { usePagePermissions } from '@/hooks/usePagePermissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
 import { useAuth } from '@/hooks/useAuth';
-import { Lock, Link2 } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 
 const AVAILABLE_PAGES = [
