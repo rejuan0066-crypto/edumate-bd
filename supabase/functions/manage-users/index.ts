@@ -402,8 +402,11 @@ Deno.serve(async (req) => {
       }
 
       // ── STEP 2: Atomic duplicate check across profiles + staff + administrative_officers ──
+      // When linking to an existing staff/officer record, skip name-based dup check
+      // (the existing person legitimately shares the name).
+      const isLinkingExisting = !!(body.staff_id || body.officer_id);
       const { data: dupCheck, error: dupErr } = await supabaseAdmin.rpc('check_user_duplicates', {
-        _email: trimmedEmail, _phone: trimmedPhone, _full_name: trimmedName,
+        _email: trimmedEmail, _phone: trimmedPhone, _full_name: isLinkingExisting ? '' : trimmedName,
       });
       if (dupErr) {
         await logFail('DUPLICATE_CHECK_FAILED', 'critical', { db_error: dupErr.message });
