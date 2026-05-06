@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 
 interface Props {
   settings: any;
@@ -7,8 +8,22 @@ interface Props {
   t: (key: string) => string;
 }
 
-const HomePrincipalCard = ({ settings, language, t }: Props) => {
+const n = ({ settings: rawSettings, language, t }: Props) => {
   const bn = language === 'bn';
+  const { data: principal } = usePrincipalOfficer();
+  const settings = principal
+    ? {
+        ...rawSettings,
+        principal_name: bn
+          ? (principal.principal_name || rawSettings.principal_name)
+          : (principal.principal_name_en || principal.principal_name || rawSettings.principal_name),
+        principal_title_bn: principal.principal_title_bn || rawSettings.principal_title_bn,
+        principal_title_en: principal.principal_title_en || rawSettings.principal_title_en,
+        principal_photo_url: principal.principal_photo_url || rawSettings.principal_photo_url,
+        phone: principal.phone || rawSettings.phone,
+        email: principal.email || rawSettings.email,
+      }
+    : rawSettings;
 
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
