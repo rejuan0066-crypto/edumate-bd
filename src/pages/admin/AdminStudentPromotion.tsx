@@ -103,18 +103,18 @@ const AdminStudentPromotion = () => {
 
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return students;
-    // Convert Bengali digits to English for numeric matching
     const bnToEn = (str: string) =>
       str.replace(/[০-৯]/g, (d) => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+    const stripZero = (str: string) => str.replace(/^0+/, '') || '0';
     const raw = searchTerm.trim();
     const s = bnToEn(raw).toLowerCase();
     const isNumeric = /^\d+$/.test(s);
+    const sNorm = isNumeric ? stripZero(s) : s;
     return students.filter((st: any) => {
       const roll = String(st.roll_number || '');
       const sid = String(st.student_id || '').toLowerCase();
       if (isNumeric) {
-        // Exact match on roll number or student ID for numeric searches
-        return roll === s || sid === s;
+        return stripZero(roll) === sNorm || stripZero(sid) === sNorm || sid === s;
       }
       return (
         (st.name_bn || '').toLowerCase().includes(s) ||
