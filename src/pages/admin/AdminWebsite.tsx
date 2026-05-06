@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ImageUpload from '@/components/ImageUpload';
 import { useAuth } from '@/hooks/useAuth';
 import { Lock } from 'lucide-react';
+import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 
 const AVAILABLE_PAGES = [
   { path: '/', label_bn: 'হোম', label_en: 'Home' },
@@ -45,6 +46,8 @@ const INFO_LINK_ICONS = [
 const AdminWebsite = () => {
   const { language } = useLanguage();
   const { settings, isLoading, updateMultiple } = useWebsiteSettings();
+  const { data: linkedPrincipal } = usePrincipalOfficer();
+  const principalLinked = !!linkedPrincipal;
   const { canEditItem } = usePagePermissions('/admin/website');
   const { menuConfig, saveMenuConfig } = useMenuSettings();
   const { role } = useAuth();
@@ -1056,35 +1059,61 @@ const AdminWebsite = () => {
             <div className="space-y-6">
               {/* Principal */}
               <div className="card-elevated p-5 space-y-4">
-                <h3 className="font-display font-bold text-foreground">
-                  {language === 'bn' ? 'অধ্যক্ষের বাণী' : "Principal's Message"}
-                </h3>
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <h3 className="font-display font-bold text-foreground">
+                    {language === 'bn' ? 'অধ্যক্ষের বাণী' : "Principal's Message"}
+                  </h3>
+                  {principalLinked && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1">
+                      <Link2 className="w-3 h-3" />
+                      {language === 'bn'
+                        ? `স্বয়ংক্রিয় লিংক: ${linkedPrincipal?.principal_name} (${linkedPrincipal?.principal_title_bn})`
+                        : `Auto-linked: ${linkedPrincipal?.principal_name_en || linkedPrincipal?.principal_name} (${linkedPrincipal?.principal_title_bn})`}
+                    </span>
+                  )}
+                </div>
+                {principalLinked && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {language === 'bn'
+                      ? 'নাম, পদবি ও ছবি প্রশাসনিক কর্মকর্তার প্রোফাইল থেকে নেওয়া হচ্ছে। পরিবর্তন করতে /admin/administrative -এ গিয়ে এডিট করুন। শুধু বাণী এডিট করা যাবে।'
+                      : 'Name, designation & photo are pulled from the Administrative Officer profile. Edit at /admin/administrative. Only the message text is editable here.'}
+                  </p>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label>{language === 'bn' ? 'নাম (বাংলা)' : 'Name (Bangla)'}</Label>
-                    <Input className="bg-background mt-1" value={form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
+                    <Input disabled={principalLinked} className="bg-background mt-1" value={principalLinked ? (linkedPrincipal?.principal_name || '') : form.principal_name} onChange={e => updateField('principal_name', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'নাম (ইংরেজি)' : 'Name (English)'}</Label>
-                    <Input className="bg-background mt-1" value={form.principal_name_en || ''} onChange={e => updateField('principal_name_en', e.target.value)} />
+                    <Input disabled={principalLinked} className="bg-background mt-1" value={principalLinked ? (linkedPrincipal?.principal_name_en || '') : (form.principal_name_en || '')} onChange={e => updateField('principal_name_en', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'পদবী (বাংলা)' : 'Title (Bangla)'}</Label>
-                    <Input className="bg-background mt-1" value={form.principal_title_bn} onChange={e => updateField('principal_title_bn', e.target.value)} />
+                    <Input disabled={principalLinked} className="bg-background mt-1" value={principalLinked ? (linkedPrincipal?.principal_title_bn || '') : form.principal_title_bn} onChange={e => updateField('principal_title_bn', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'পদবী (ইংরেজি)' : 'Title (English)'}</Label>
-                    <Input className="bg-background mt-1" value={form.principal_title_en} onChange={e => updateField('principal_title_en', e.target.value)} />
+                    <Input disabled={principalLinked} className="bg-background mt-1" value={principalLinked ? (linkedPrincipal?.principal_title_en || '') : form.principal_title_en} onChange={e => updateField('principal_title_en', e.target.value)} />
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'অধ্যক্ষের ছবি' : "Principal's Photo"}</Label>
-                    <ImageUpload
-                      value={form.principal_photo_url}
-                      onChange={(url) => updateField('principal_photo_url', url)}
-                      folder="principal"
-                      className="mt-1"
-                      aspectRatio="aspect-square w-32"
-                    />
+                    {principalLinked ? (
+                      <div className="mt-1 flex items-center gap-2">
+                        {linkedPrincipal?.principal_photo_url
+                          ? <img src={linkedPrincipal.principal_photo_url} alt="Principal" className="w-16 h-16 rounded-full object-cover border" />
+                          : <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-2xl text-muted-foreground/40">👤</div>}
+                        <span className="text-[11px] text-muted-foreground">{language === 'bn' ? 'অফিসার প্রোফাইল থেকে' : 'From officer profile'}</span>
+                      </div>
+                    ) : (
+                      <ImageUpload
+                        value={form.principal_photo_url}
+                        onChange={(url) => updateField('principal_photo_url', url)}
+                        folder="principal"
+                        className="mt-1"
+                        aspectRatio="aspect-square w-32"
+                      />
+                    )}
                   </div>
                 </div>
                 <div>

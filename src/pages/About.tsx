@@ -1,12 +1,26 @@
 import PublicLayout from '@/components/PublicLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
+import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
 import { motion } from 'framer-motion';
 import { Target, Eye, BookOpen } from 'lucide-react';
 
 const About = () => {
   const { language } = useLanguage();
-  const { settings } = useWebsiteSettings();
+  const { settings: rawSettings } = useWebsiteSettings();
+  const { data: principal } = usePrincipalOfficer();
+  const bn = language === 'bn';
+  const settings: any = principal
+    ? {
+        ...rawSettings,
+        principal_name: bn
+          ? (principal.principal_name || rawSettings.principal_name)
+          : (principal.principal_name_en || principal.principal_name || rawSettings.principal_name),
+        principal_title_bn: principal.principal_title_bn || rawSettings.principal_title_bn,
+        principal_title_en: principal.principal_title_en || rawSettings.principal_title_en,
+        principal_photo_url: principal.principal_photo_url || rawSettings.principal_photo_url,
+      }
+    : rawSettings;
 
   return (
     <PublicLayout>
