@@ -189,7 +189,15 @@ const FloatingWhatsAppButton = () => {
 
       {/* Floating Button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          logWhatsAppEvent({
+            event_type: next ? 'button_open' : 'button_close',
+            phone_number: cleanPhone,
+            success: true,
+          });
+        }}
         className={`fixed bottom-4 sm:bottom-6 ${positionClass} z-50 group`}
         aria-label={config.button_label || 'WhatsApp Chat'}
       >
