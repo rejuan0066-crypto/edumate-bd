@@ -625,6 +625,11 @@ const AdminSettings = () => {
             <TabsTrigger value="receipt_qr" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
             </TabsTrigger>
+            <TabsTrigger value="id_format" className="gap-1.5" asChild>
+              <a href="/admin/settings/id-format">
+                <Hash className="w-4 h-4" /> {bn ? 'আইডি ফরম্যাট' : 'ID Format'}
+              </a>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="email" className="mt-6">
