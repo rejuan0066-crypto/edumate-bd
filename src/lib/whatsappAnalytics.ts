@@ -37,7 +37,7 @@ export async function logWhatsAppEvent(params: LogParams): Promise<void> {
     page_url: typeof window !== 'undefined' ? window.location.href : null,
     user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
     is_pwa: isPwa(),
-    meta: params.meta ?? {},
+    meta: (params.meta ?? {}) as any,
   };
 
   // Console echo for in-browser debugging
