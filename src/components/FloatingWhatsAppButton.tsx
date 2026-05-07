@@ -20,6 +20,23 @@ const FloatingWhatsAppButton = () => {
 
   const messageToSend = customMsg.trim() || config.welcome_message || '';
   const waUrl = buildWhatsAppUrl(config.phone_number, messageToSend);
+  const cleanPhone = config.phone_number.replace(/\D/g, '');
+  const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
+
+  const handleSend = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Try native app first, fallback to wa.me web
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || (window.navigator as any).standalone === true;
+    if (isStandalone) {
+      // In PWA, open in system browser
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      window.location.href = waUrl;
+    }
+    setOpen(false);
+    setCustomMsg('');
+  };
 
   return (
     <>
