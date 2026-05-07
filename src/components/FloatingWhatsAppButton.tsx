@@ -161,8 +161,8 @@ const FloatingWhatsAppButton = () => {
                 </a>
               </div>
 
-              {/* Test link button + result */}
-              <div className="mt-2 flex items-center justify-between gap-2">
+              {/* Test link + Test send buttons + result */}
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handleTest}
@@ -170,9 +170,60 @@ const FloatingWhatsAppButton = () => {
                   className="text-[11px] px-2.5 py-1 rounded-md border border-border bg-secondary/50 hover:bg-secondary text-foreground flex items-center gap-1.5 disabled:opacity-60"
                 >
                   {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-                  {bn ? 'লিংক টেস্ট করুন' : 'Test link'}
+                  {bn ? 'লিংক টেস্ট' : 'Test link'}
                 </button>
-                <p className="text-[10px] text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!cleanPhone || cleanPhone.length < 10) {
+                      toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
+                      logWhatsAppEvent({
+                        event_type: 'invalid_phone',
+                        phone_number: config.phone_number,
+                        success: false,
+                        error_reason: 'Test send aborted: invalid phone',
+                      });
+                      return;
+                    }
+                    const testMsg = bn
+                      ? `✅ এটি একটি পরীক্ষামূলক বার্তা — ${window.location.origin}`
+                      : `✅ This is a test message — ${window.location.origin}`;
+                    const url = buildWhatsAppUrl(config.phone_number, testMsg);
+                    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || (window.navigator as any).standalone === true;
+                    let opened = false;
+                    let errorReason: string | null = null;
+                    try {
+                      if (isStandalone) {
+                        const w = window.open(url, '_blank', 'noopener,noreferrer');
+                        opened = !!w;
+                        if (!w) errorReason = 'Popup blocked';
+                      } else {
+                        window.location.href = url;
+                        opened = true;
+                      }
+                    } catch (err: any) {
+                      errorReason = err?.message || 'Unknown error';
+                    }
+                    logWhatsAppEvent({
+                      event_type: 'send_click',
+                      phone_number: cleanPhone,
+                      success: opened,
+                      error_reason: errorReason,
+                      meta: { test_send: true, url },
+                    });
+                    if (opened) {
+                      toast.success(bn ? 'WhatsApp খোলা হলো — পরীক্ষা বার্তা পাঠান' : 'WhatsApp opened — send the test message');
+                    } else {
+                      toast.error(errorReason || (bn ? 'খুলতে ব্যর্থ' : 'Failed to open'));
+                    }
+                  }}
+                  className="text-[11px] px-2.5 py-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#128C3F] dark:text-[#25D366] flex items-center gap-1.5"
+                >
+                  <Send className="w-3 h-3" />
+                  {bn ? 'পরীক্ষা বার্তা পাঠান' : 'Send test message'}
+                </button>
+                <p className="text-[10px] text-muted-foreground ml-auto">
                   {bn ? 'WhatsApp এ চালিয়ে যান' : 'Continues in WhatsApp'}
                 </p>
               </div>
