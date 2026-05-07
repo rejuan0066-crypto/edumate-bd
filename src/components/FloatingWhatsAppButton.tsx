@@ -84,10 +84,12 @@ const FloatingWhatsAppButton = () => {
       const okMsg = bn ? `সফল! লিংক প্রস্তুত: wa.me/${cleanPhone}` : `Success! Link ready: wa.me/${cleanPhone}`;
       setTestResult({ ok: true, msg: okMsg });
       toast.success(okMsg);
+      logWhatsAppEvent({ event_type: 'test_link', phone_number: cleanPhone, success: true });
     } catch (err: any) {
       const failMsg = err?.message || (bn ? 'ব্যর্থ! WhatsApp লিংকে পৌঁছানো যায়নি' : 'Failed! Could not reach WhatsApp link');
       setTestResult({ ok: false, msg: failMsg });
       toast.error(failMsg);
+      logWhatsAppEvent({ event_type: 'test_link', phone_number: cleanPhone, success: false, error_reason: failMsg });
     } finally {
       setTesting(false);
     }
