@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'luci
 import { useWhatsAppConfig, buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
 
 const FloatingWhatsAppButton = () => {
   const { data: config } = useWhatsAppConfig();
@@ -28,15 +29,44 @@ const FloatingWhatsAppButton = () => {
 
   const handleSend = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Try native app first, fallback to wa.me web
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       || (window.navigator as any).standalone === true;
-    if (isStandalone) {
-      // In PWA, open in system browser
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      window.location.href = waUrl;
+
+    // Validate before opening
+    if (!cleanPhone || cleanPhone.length < 10) {
+      logWhatsAppEvent({
+        event_type: 'invalid_phone',
+        phone_number: config.phone_number,
+        success: false,
+        error_reason: 'Phone number too short or empty',
+      });
+      toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
+      return;
     }
+
+    let opened = false;
+    let errorReason: string | null = null;
+    try {
+      if (isStandalone) {
+        const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        opened = !!w;
+        if (!w) errorReason = 'window.open returned null (popup blocked?)';
+      } else {
+        window.location.href = waUrl;
+        opened = true;
+      }
+    } catch (err: any) {
+      errorReason = err?.message || 'Unknown error';
+    }
+
+    logWhatsAppEvent({
+      event_type: isStandalone ? 'send_open_browser' : 'send_open_native',
+      phone_number: cleanPhone,
+      success: opened,
+      error_reason: errorReason,
+      meta: { url: waUrl, has_message: !!messageToSend },
+    });
+
     setOpen(false);
     setCustomMsg('');
   };
@@ -54,10 +84,12 @@ const FloatingWhatsAppButton = () => {
       const okMsg = bn ? `সফল! লিংক প্রস্তুত: wa.me/${cleanPhone}` : `Success! Link ready: wa.me/${cleanPhone}`;
       setTestResult({ ok: true, msg: okMsg });
       toast.success(okMsg);
+      logWhatsAppEvent({ event_type: 'test_link', phone_number: cleanPhone, success: true });
     } catch (err: any) {
       const failMsg = err?.message || (bn ? 'ব্যর্থ! WhatsApp লিংকে পৌঁছানো যায়নি' : 'Failed! Could not reach WhatsApp link');
       setTestResult({ ok: false, msg: failMsg });
       toast.error(failMsg);
+      logWhatsAppEvent({ event_type: 'test_link', phone_number: cleanPhone, success: false, error_reason: failMsg });
     } finally {
       setTesting(false);
     }
@@ -157,7 +189,15 @@ const FloatingWhatsAppButton = () => {
 
       {/* Floating Button */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          logWhatsAppEvent({
+            event_type: next ? 'button_open' : 'button_close',
+            phone_number: cleanPhone,
+            success: true,
+          });
+        }}
         className={`fixed bottom-4 sm:bottom-6 ${positionClass} z-50 group`}
         aria-label={config.button_label || 'WhatsApp Chat'}
       >

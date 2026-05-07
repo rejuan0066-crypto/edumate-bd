@@ -9521,6 +9521,48 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_click_events: {
+        Row: {
+          created_at: string
+          error_reason: string | null
+          event_type: string
+          id: string
+          is_pwa: boolean | null
+          meta: Json | null
+          page_url: string | null
+          phone_number: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_reason?: string | null
+          event_type: string
+          id?: string
+          is_pwa?: boolean | null
+          meta?: Json | null
+          page_url?: string | null
+          phone_number?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_reason?: string | null
+          event_type?: string
+          id?: string
+          is_pwa?: boolean | null
+          meta?: Json | null
+          page_url?: string | null
+          phone_number?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_config: {
         Row: {
           away_message: string | null
