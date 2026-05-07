@@ -68,6 +68,7 @@ import AdminFeeCategories from "./pages/admin/AdminFeeCategories";
 import AdminStudentCategories from "./pages/admin/AdminStudentCategories";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminIdFormatSettings from "./pages/admin/AdminIdFormatSettings";
 import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminOtpRecovery from "./pages/admin/AdminOtpRecovery";
 import AdminExpenses from "./pages/admin/AdminExpenses";
