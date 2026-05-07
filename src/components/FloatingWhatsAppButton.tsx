@@ -24,7 +24,7 @@ const FloatingWhatsAppButton = () => {
 
   const messageToSend = customMsg.trim() || config.welcome_message || '';
   const waUrl = buildWhatsAppUrl(config.phone_number, messageToSend);
-  const cleanPhone = config.phone_number.replace(/\D/g, '');
+  const cleanPhone = normalizeWhatsAppPhone(config.phone_number);
   const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
 
   const handleSend = (e: React.MouseEvent) => {
