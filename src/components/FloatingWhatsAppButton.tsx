@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useWhatsAppConfig, buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 
 const FloatingWhatsAppButton = () => {
   const { data: config } = useWhatsAppConfig();
