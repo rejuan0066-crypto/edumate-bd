@@ -37,11 +37,28 @@ export const useWhatsAppConfig = () => {
 };
 
 /**
+ * Normalize a phone number to WhatsApp's required international format (digits only, no '+').
+ * - Strips all non-digit characters
+ * - If 11-digit BD local format starting with '01', converts to '8801XXXXXXXXX'
+ * - Otherwise returns the digit string as-is (assumes already international)
+ */
+export const normalizeWhatsAppPhone = (phone: string): string => {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('01')) {
+    return '88' + digits;
+  }
+  // Some users save with leading 0 + country code accidentally
+  if (digits.startsWith('0') && digits.length > 11) {
+    return digits.replace(/^0+/, '');
+  }
+  return digits;
+};
+
+/**
  * Generate a wa.me click-to-chat URL.
- * Strips non-digit characters from the phone number (e.g., "+880 1XX..." → "8801XX...")
  */
 export const buildWhatsAppUrl = (phone: string, message?: string): string => {
-  const cleanPhone = phone.replace(/\D/g, '');
+  const cleanPhone = normalizeWhatsAppPhone(phone);
   const base = `https://wa.me/${cleanPhone}`;
   if (message?.trim()) {
     return `${base}?text=${encodeURIComponent(message.trim())}`;
