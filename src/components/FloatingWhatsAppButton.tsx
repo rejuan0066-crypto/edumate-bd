@@ -10,6 +10,8 @@ const FloatingWhatsAppButton = () => {
   const bn = language === 'bn';
   const [open, setOpen] = useState(false);
   const [customMsg, setCustomMsg] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<null | { ok: boolean; msg: string }>(null);
 
   if (!config?.show_floating_button || !config?.phone_number?.trim()) {
     return null;
