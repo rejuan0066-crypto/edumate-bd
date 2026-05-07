@@ -45,7 +45,7 @@ export async function logWhatsAppEvent(params: LogParams): Promise<void> {
   console.log('[WhatsApp]', params.event_type, payload);
 
   try {
-    const { error } = await supabase.from('whatsapp_click_events').insert(payload);
+    const { error } = await supabase.from('whatsapp_click_events').insert([payload]);
     if (error) console.warn('[WhatsApp] log insert failed:', error.message);
   } catch (e) {
     // Swallow — analytics must never break UX
