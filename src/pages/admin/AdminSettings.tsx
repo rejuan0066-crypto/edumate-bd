@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState, useEffect } from 'react';
-import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet, Clock } from 'lucide-react';
+import { Save, Shield, Bell, Palette, Mail, Loader2, Eye, EyeOff, Globe, ArrowRight, CheckCircle2, AlertCircle, Send, CreditCard, MessageSquare, Wallet, Clock, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { otpService } from '@/hooks/useOtpService';
@@ -624,6 +624,11 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="receipt_qr" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
+            </TabsTrigger>
+            <TabsTrigger value="id_format" className="gap-1.5" asChild>
+              <a href="/admin/settings/id-format">
+                <Hash className="w-4 h-4" /> {bn ? 'আইডি ফরম্যাট' : 'ID Format'}
+              </a>
             </TabsTrigger>
           </TabsList>
 

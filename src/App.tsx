@@ -68,6 +68,7 @@ import AdminFeeCategories from "./pages/admin/AdminFeeCategories";
 import AdminStudentCategories from "./pages/admin/AdminStudentCategories";
 import AdminWebsite from "./pages/admin/AdminWebsite";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminIdFormatSettings from "./pages/admin/AdminIdFormatSettings";
 import AdminEmailTemplates from "./pages/admin/AdminEmailTemplates";
 import AdminOtpRecovery from "./pages/admin/AdminOtpRecovery";
 import AdminExpenses from "./pages/admin/AdminExpenses";
@@ -432,6 +433,7 @@ const App = () => (
                     <Route path="complaints/fields" element={<AdminComplaintFields />} />
                     <Route path="parent-signup-fields" element={<AdminParentSignupFields />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="settings/id-format" element={<AdminIdFormatSettings />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
                     <Route path="otp-recovery" element={<AdminOtpRecovery />} />
                   </Route>

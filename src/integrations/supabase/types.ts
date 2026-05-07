@@ -3781,6 +3781,45 @@ export type Database = {
         }
         Relationships: []
       }
+      id_format_config: {
+        Row: {
+          created_at: string
+          entity_key: string
+          include_year: boolean
+          label: string
+          prefix: string
+          reset_mode: string
+          separator: string
+          serial_padding: number
+          start_serial: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_key: string
+          include_year?: boolean
+          label: string
+          prefix: string
+          reset_mode?: string
+          separator?: string
+          serial_padding?: number
+          start_serial?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_key?: string
+          include_year?: boolean
+          label?: string
+          prefix?: string
+          reset_mode?: string
+          separator?: string
+          serial_padding?: number
+          start_serial?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       institutions: {
         Row: {
           accountant_name: string | null
@@ -10087,6 +10126,17 @@ export type Database = {
           seeded_config: boolean
           updated_count: number
         }[]
+      }
+      build_formatted_id: {
+        Args: {
+          p_include_year: boolean
+          p_padding: number
+          p_prefix: string
+          p_separator: string
+          p_serial: number
+          p_year: number
+        }
+        Returns: string
       }
       can_access_storage_object: {
         Args: { _bucket: string; _object_path: string; _user_id: string }
