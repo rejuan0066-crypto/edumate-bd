@@ -433,6 +433,7 @@ const App = () => (
                     <Route path="complaints/fields" element={<AdminComplaintFields />} />
                     <Route path="parent-signup-fields" element={<AdminParentSignupFields />} />
                     <Route path="settings" element={<AdminSettings />} />
+                    <Route path="settings/id-format" element={<AdminIdFormatSettings />} />
                     <Route path="email-templates" element={<AdminEmailTemplates />} />
                     <Route path="otp-recovery" element={<AdminOtpRecovery />} />
                   </Route>
