@@ -113,6 +113,7 @@ const UpdatePrompt = () => {
 
     const host = window.location.hostname;
     if (host.includes('id-preview--') || host.includes('lovableproject.com') || host === 'localhost') return;
+    setEnabled(true);
 
     const initialTimer = window.setTimeout(() => checkForUpdate(), 5000);
     intervalRef.current = window.setInterval(() => checkForUpdate(), CHECK_INTERVAL);
