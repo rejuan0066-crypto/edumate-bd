@@ -106,6 +106,7 @@ import AdminEmailDeliveryLog from "./pages/admin/AdminEmailDeliveryLog";
 import AdminInventory from "./pages/admin/AdminInventory";
 import AdminGuardianNotifications from "./pages/admin/AdminGuardianNotifications";
 import AdminWhatsAppQueue from "./pages/admin/AdminWhatsAppQueue";
+import AdminWhatsAppLogs from "./pages/admin/AdminWhatsAppLogs";
 import AdminSalary from "./pages/admin/AdminSalary";
 import AdminSalaryPdfColumns from "./pages/admin/AdminSalaryPdfColumns";
 import AdminSalaryMemoSearch from "./pages/admin/AdminSalaryMemoSearch";
