@@ -41,6 +41,28 @@ const FloatingWhatsAppButton = () => {
     setCustomMsg('');
   };
 
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      // Validate phone number format (country code + at least 9 digits)
+      if (!cleanPhone || cleanPhone.length < 10) {
+        throw new Error(bn ? 'ফোন নাম্বার সঠিক নয় (কান্ট্রি কোডসহ দিন)' : 'Invalid phone number (include country code)');
+      }
+      // Connectivity check to wa.me (no-cors so we just confirm reachability)
+      await fetch(`https://wa.me/${cleanPhone}`, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+      const okMsg = bn ? `সফল! লিংক প্রস্তুত: wa.me/${cleanPhone}` : `Success! Link ready: wa.me/${cleanPhone}`;
+      setTestResult({ ok: true, msg: okMsg });
+      toast.success(okMsg);
+    } catch (err: any) {
+      const failMsg = err?.message || (bn ? 'ব্যর্থ! WhatsApp লিংকে পৌঁছানো যায়নি' : 'Failed! Could not reach WhatsApp link');
+      setTestResult({ ok: false, msg: failMsg });
+      toast.error(failMsg);
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <>
       {/* Chat Preview Card */}
