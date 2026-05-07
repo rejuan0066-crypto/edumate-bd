@@ -188,10 +188,15 @@ const WhatsAppSettings = () => {
                 value={form.phone_number}
                 onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
                 placeholder="+8801XXXXXXXXX"
+                className={phoneError && form.phone_number ? 'border-destructive focus-visible:ring-destructive' : ''}
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                {bn ? 'কান্ট্রি কোডসহ (যেমন: +880)' : 'Include country code (e.g., +880)'}
-              </p>
+              {phoneError && form.phone_number ? (
+                <p className="text-xs text-destructive mt-1">{phoneError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {bn ? 'কান্ট্রি কোডসহ (যেমন: +8801XXXXXXXXX) অথবা লোকাল ১১-ডিজিট (01XXXXXXXXX)' : 'With country code (e.g., +8801XXXXXXXXX) or local 11-digit (01XXXXXXXXX)'}
+                </p>
+              )}
             </div>
             <div>
               <Label>{bn ? 'বাটনের অবস্থান' : 'Button position'}</Label>
