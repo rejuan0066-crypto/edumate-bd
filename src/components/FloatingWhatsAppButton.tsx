@@ -94,6 +94,7 @@ const FloatingWhatsAppButton = () => {
                 />
                 <a
                   href={waUrl}
+                  onClick={handleSend}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="shrink-0 w-10 h-10 rounded-full bg-[#25D366] hover:bg-[#1ebe57] text-white flex items-center justify-center transition-colors shadow-md"
