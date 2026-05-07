@@ -56,6 +56,7 @@ const UpdatePrompt = () => {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [standalone, setStandalone] = useState(false);
+  const [enabled, setEnabled] = useState(false);
   const [checking, setChecking] = useState(false);
   const [noUpdateMsg, setNoUpdateMsg] = useState(false);
   const intervalRef = useRef<number | null>(null);
