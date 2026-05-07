@@ -29,15 +29,44 @@ const FloatingWhatsAppButton = () => {
 
   const handleSend = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Try native app first, fallback to wa.me web
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
       || (window.navigator as any).standalone === true;
-    if (isStandalone) {
-      // In PWA, open in system browser
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      window.location.href = waUrl;
+
+    // Validate before opening
+    if (!cleanPhone || cleanPhone.length < 10) {
+      logWhatsAppEvent({
+        event_type: 'invalid_phone',
+        phone_number: config.phone_number,
+        success: false,
+        error_reason: 'Phone number too short or empty',
+      });
+      toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
+      return;
     }
+
+    let opened = false;
+    let errorReason: string | null = null;
+    try {
+      if (isStandalone) {
+        const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        opened = !!w;
+        if (!w) errorReason = 'window.open returned null (popup blocked?)';
+      } else {
+        window.location.href = waUrl;
+        opened = true;
+      }
+    } catch (err: any) {
+      errorReason = err?.message || 'Unknown error';
+    }
+
+    logWhatsAppEvent({
+      event_type: isStandalone ? 'send_open_browser' : 'send_open_native',
+      phone_number: cleanPhone,
+      success: opened,
+      error_reason: errorReason,
+      meta: { url: waUrl, has_message: !!messageToSend },
+    });
+
     setOpen(false);
     setCustomMsg('');
   };
