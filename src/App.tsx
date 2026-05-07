@@ -385,6 +385,7 @@ const App = () => (
                     <Route path="inventory" element={<AdminInventory />} />
                     <Route path="guardian-notify" element={<AdminGuardianNotifications />} />
                     <Route path="whatsapp-queue" element={<AdminWhatsAppQueue />} />
+                    <Route path="whatsapp-logs" element={<AdminWhatsAppLogs />} />
                     <Route path="salary" element={<ModuleGuard menuPath="/admin/salary"><AdminSalary /></ModuleGuard>} />
                     <Route path="salary-pdf-columns" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryPdfColumns /></ModuleGuard>} />
                     <Route path="salary-memo-search" element={<ModuleGuard menuPath="/admin/salary"><AdminSalaryMemoSearch /></ModuleGuard>} />
