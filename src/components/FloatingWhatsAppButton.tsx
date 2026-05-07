@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'luci
 import { useWhatsAppConfig, buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
+import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
 
 const FloatingWhatsAppButton = () => {
   const { data: config } = useWhatsAppConfig();
