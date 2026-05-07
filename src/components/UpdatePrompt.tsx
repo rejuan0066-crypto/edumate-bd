@@ -56,6 +56,7 @@ const UpdatePrompt = () => {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [standalone, setStandalone] = useState(false);
+  const [enabled, setEnabled] = useState(false);
   const [checking, setChecking] = useState(false);
   const [noUpdateMsg, setNoUpdateMsg] = useState(false);
   const intervalRef = useRef<number | null>(null);
@@ -112,6 +113,7 @@ const UpdatePrompt = () => {
 
     const host = window.location.hostname;
     if (host.includes('id-preview--') || host.includes('lovableproject.com') || host === 'localhost') return;
+    setEnabled(true);
 
     const initialTimer = window.setTimeout(() => checkForUpdate(), 5000);
     intervalRef.current = window.setInterval(() => checkForUpdate(), CHECK_INTERVAL);
@@ -221,7 +223,7 @@ const UpdatePrompt = () => {
   // Floating update button: ALWAYS clickable in the installed PWA.
   // - If we already know an update is available → install immediately.
   // - Otherwise → run a fresh check, and install if found, else show "up to date".
-  const showFloatingButton = standalone && !updating && (!updateAvailable || dismissed);
+  const showFloatingButton = enabled && !updating && (!updateAvailable || dismissed);
 
   const handleFloatingClick = async () => {
     if (updateAvailable) {
