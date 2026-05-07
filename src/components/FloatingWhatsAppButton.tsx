@@ -128,9 +128,28 @@ const FloatingWhatsAppButton = () => {
                   <Send className="w-4 h-4" />
                 </a>
               </div>
-              <p className="text-[10px] text-muted-foreground text-center mt-2">
-                {bn ? 'WhatsApp এ চালিয়ে যান' : 'Continues in WhatsApp'}
-              </p>
+
+              {/* Test link button + result */}
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handleTest}
+                  disabled={testing}
+                  className="text-[11px] px-2.5 py-1 rounded-md border border-border bg-secondary/50 hover:bg-secondary text-foreground flex items-center gap-1.5 disabled:opacity-60"
+                >
+                  {testing ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  {bn ? 'লিংক টেস্ট করুন' : 'Test link'}
+                </button>
+                <p className="text-[10px] text-muted-foreground">
+                  {bn ? 'WhatsApp এ চালিয়ে যান' : 'Continues in WhatsApp'}
+                </p>
+              </div>
+              {testResult && (
+                <div className={`mt-2 flex items-start gap-1.5 text-[11px] p-2 rounded-md ${testResult.ok ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-destructive/10 text-destructive'}`}>
+                  {testResult.ok ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
+                  <span className="break-all">{testResult.msg}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
