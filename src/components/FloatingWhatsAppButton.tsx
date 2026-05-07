@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useWhatsAppConfig, buildWhatsAppUrl } from '@/hooks/useWhatsAppConfig';
+import { useWhatsAppConfig, buildWhatsAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
