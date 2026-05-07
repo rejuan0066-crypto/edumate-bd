@@ -102,7 +102,36 @@ const WhatsAppSettings = () => {
     }
   }, [config]);
 
+  // Phone validation: accept either local BD 11-digit (01XXXXXXXXX) or international E.164 (+ then 10-15 digits)
+  const validatePhone = (raw: string): string | null => {
+    const v = (raw || '').trim();
+    if (!v) return bn ? 'ফোন নম্বর দিন' : 'Phone number is required';
+    if (/[^\d+\s\-()]/.test(v)) return bn ? 'শুধু ডিজিট, +, স্পেস, -, () ব্যবহার করুন' : 'Only digits, +, space, -, () allowed';
+    const digits = v.replace(/\D/g, '');
+    const hasPlus = v.trim().startsWith('+');
+    if (hasPlus) {
+      if (digits.length < 10 || digits.length > 15) {
+        return bn ? 'ইন্টারন্যাশনাল ফরম্যাট ভুল (১০–১৫ ডিজিট হতে হবে)' : 'Invalid international format (must be 10–15 digits)';
+      }
+    } else {
+      // Local: must be exactly 11 digits and start with 01 (BD mobile)
+      if (digits.length !== 11 || !digits.startsWith('01')) {
+        return bn
+          ? 'লোকাল নম্বর ১১ ডিজিটের হতে হবে এবং ০১ দিয়ে শুরু (অথবা +কান্ট্রি কোডসহ দিন)'
+          : 'Local number must be 11 digits starting with 01 (or use + with country code)';
+      }
+    }
+    return null;
+  };
+
+  const phoneError = validatePhone(form.phone_number);
+
   const handleSave = async () => {
+    const err = validatePhone(form.phone_number);
+    if (err) {
+      toast({ title: bn ? 'ফোন নম্বর ভুল' : 'Invalid phone number', description: err, variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     try {
       if (config?.id) {
