@@ -66,9 +66,10 @@ const FloatingWhatsAppButton = () => {
       if (!cleanPhone || cleanPhone.length < 10) {
         throw new Error(bn ? 'ফোন নাম্বার সঠিক নয় (কান্ট্রি কোডসহ দিন)' : 'Invalid phone number (include country code)');
       }
-      // Connectivity check to wa.me (no-cors so we just confirm reachability)
-      await fetch(`https://wa.me/${cleanPhone}`, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
-      const okMsg = bn ? `সফল! লিংক প্রস্তুত: wa.me/${cleanPhone}` : `Success! Link ready: wa.me/${cleanPhone}`;
+      // Connectivity check to web.whatsapp.com (no-cors). We avoid wa.me because it
+      // 302-redirects to api.whatsapp.com, which is blocked on some networks/ISPs.
+      await fetch(`https://web.whatsapp.com/send?phone=${cleanPhone}`, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+      const okMsg = bn ? `সফল! লিংক প্রস্তুত (web.whatsapp.com)` : `Success! Link ready (web.whatsapp.com)`;
       setTestResult({ ok: true, msg: okMsg });
       toast.success(okMsg);
       logWhatsAppEvent({ event_type: 'test_link', phone_number: cleanPhone, success: true });
