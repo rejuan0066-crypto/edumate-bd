@@ -38,10 +38,9 @@ const FloatingWhatsAppButton = () => {
   const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
 
   const handleSend = async (e: React.MouseEvent) => {
-    // Always take control — we want diagnostics, not silent native nav.
     e.preventDefault();
+    const startedAt = performance.now();
 
-    // 1. Validate
     if (!cleanPhone || cleanPhone.length < 10) {
       logWhatsAppEvent({
         event_type: 'invalid_phone',
@@ -50,15 +49,18 @@ const FloatingWhatsAppButton = () => {
         error_reason: 'Phone number too short or empty',
         meta: { attempted_url: waUrl },
       });
+      setSendDiag({
+        ok: false, at: new Date().toISOString(), url: waUrl,
+        in_iframe: false, probe_ok: false,
+        probe_error: 'invalid_phone', open_error: null, duration_ms: 0,
+      });
       toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
       return;
     }
 
-    // 2. Iframe context (Lovable preview, embeds) — must use top window
     let inIframe = false;
     try { inIframe = window.self !== window.top; } catch { inIframe = true; }
 
-    // 3. Reachability probe (only for https URLs). Quick, no-cors fetch with 3s timeout.
     let probeOk = true;
     let probeError: string | null = null;
     if (waUrl.startsWith('https://')) {
@@ -73,7 +75,6 @@ const FloatingWhatsAppButton = () => {
       }
     }
 
-    // 4. Try to open. Prefer top window when inside an iframe.
     let opened = false;
     let openError: string | null = null;
     try {
@@ -90,48 +91,41 @@ const FloatingWhatsAppButton = () => {
       openError = err?.message || 'open_failed';
     }
 
-    // 5. Diagnostic toast + log
+    const duration = Math.round(performance.now() - startedAt);
     const diagMeta = {
-      url: waUrl,
-      has_message: !!messageToSend,
-      in_iframe: inIframe,
-      probe_ok: probeOk,
-      probe_error: probeError,
-      open_error: openError,
+      url: waUrl, has_message: !!messageToSend, in_iframe: inIframe,
+      probe_ok: probeOk, probe_error: probeError, open_error: openError,
+      duration_ms: duration,
     };
+
+    setSendDiag({
+      ok: opened && probeOk, at: new Date().toISOString(), url: waUrl,
+      in_iframe: inIframe, probe_ok: probeOk,
+      probe_error: probeError, open_error: openError, duration_ms: duration,
+    });
 
     if (!opened || !probeOk) {
       const reason = openError === 'popup_blocked'
         ? (bn ? 'পপআপ ব্লক করা হয়েছে — ব্রাউজার সেটিংস থেকে অনুমতি দিন' : 'Popup blocked — allow popups in browser settings')
         : probeError === 'timeout'
-          ? (bn ? `সংযোগে সময়সীমা শেষ — নেটওয়ার্ক/ISP হয়তো ব্লক করছে (${waUrl})` : `Connection timed out — network/ISP may be blocking (${waUrl})`)
+          ? (bn ? 'সংযোগে সময়সীমা শেষ — নেটওয়ার্ক/ISP হয়তো ব্লক করছে' : 'Connection timed out — network/ISP may be blocking')
           : !probeOk
-            ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError} — URL: ${waUrl}` : `Network blocked/redirected: ${probeError} — URL: ${waUrl}`)
-            : (bn ? `খুলতে ব্যর্থ: ${openError} — URL: ${waUrl}` : `Failed to open: ${openError} — URL: ${waUrl}`);
-
-      toast.error(reason, { duration: 8000 });
+            ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError}` : `Network blocked/redirected: ${probeError}`)
+            : (bn ? `খুলতে ব্যর্থ: ${openError}` : `Failed to open: ${openError}`);
+      toast.error(reason, { duration: 6000 });
       logWhatsAppEvent({
-        event_type: 'send_open_browser',
-        phone_number: cleanPhone,
-        success: false,
-        error_reason: openError || probeError || 'unknown',
-        meta: diagMeta,
+        event_type: 'send_open_browser', phone_number: cleanPhone,
+        success: false, error_reason: openError || probeError || 'unknown', meta: diagMeta,
       });
       return;
     }
 
     logWhatsAppEvent({
-      event_type: 'send_open_browser',
-      phone_number: cleanPhone,
-      success: true,
-      error_reason: null,
-      meta: diagMeta,
+      event_type: 'send_open_browser', phone_number: cleanPhone,
+      success: true, error_reason: null, meta: diagMeta,
     });
 
-    setTimeout(() => {
-      setOpen(false);
-      setCustomMsg('');
-    }, 100);
+    setTimeout(() => { setOpen(false); setCustomMsg(''); }, 100);
   };
 
   const handleTest = async () => {
