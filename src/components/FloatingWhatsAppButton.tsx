@@ -13,6 +13,16 @@ const FloatingWhatsAppButton = () => {
   const [customMsg, setCustomMsg] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<null | { ok: boolean; msg: string }>(null);
+  const [sendDiag, setSendDiag] = useState<null | {
+    ok: boolean;
+    at: string;
+    url: string;
+    in_iframe: boolean;
+    probe_ok: boolean;
+    probe_error: string | null;
+    open_error: string | null;
+    duration_ms: number;
+  }>(null);
 
   if (!config?.show_floating_button || !config?.phone_number?.trim()) {
     return null;
@@ -28,10 +38,9 @@ const FloatingWhatsAppButton = () => {
   const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
 
   const handleSend = async (e: React.MouseEvent) => {
-    // Always take control — we want diagnostics, not silent native nav.
     e.preventDefault();
+    const startedAt = performance.now();
 
-    // 1. Validate
     if (!cleanPhone || cleanPhone.length < 10) {
       logWhatsAppEvent({
         event_type: 'invalid_phone',
@@ -40,15 +49,18 @@ const FloatingWhatsAppButton = () => {
         error_reason: 'Phone number too short or empty',
         meta: { attempted_url: waUrl },
       });
+      setSendDiag({
+        ok: false, at: new Date().toISOString(), url: waUrl,
+        in_iframe: false, probe_ok: false,
+        probe_error: 'invalid_phone', open_error: null, duration_ms: 0,
+      });
       toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
       return;
     }
 
-    // 2. Iframe context (Lovable preview, embeds) — must use top window
     let inIframe = false;
     try { inIframe = window.self !== window.top; } catch { inIframe = true; }
 
-    // 3. Reachability probe (only for https URLs). Quick, no-cors fetch with 3s timeout.
     let probeOk = true;
     let probeError: string | null = null;
     if (waUrl.startsWith('https://')) {
@@ -63,7 +75,6 @@ const FloatingWhatsAppButton = () => {
       }
     }
 
-    // 4. Try to open. Prefer top window when inside an iframe.
     let opened = false;
     let openError: string | null = null;
     try {
@@ -80,48 +91,41 @@ const FloatingWhatsAppButton = () => {
       openError = err?.message || 'open_failed';
     }
 
-    // 5. Diagnostic toast + log
+    const duration = Math.round(performance.now() - startedAt);
     const diagMeta = {
-      url: waUrl,
-      has_message: !!messageToSend,
-      in_iframe: inIframe,
-      probe_ok: probeOk,
-      probe_error: probeError,
-      open_error: openError,
+      url: waUrl, has_message: !!messageToSend, in_iframe: inIframe,
+      probe_ok: probeOk, probe_error: probeError, open_error: openError,
+      duration_ms: duration,
     };
+
+    setSendDiag({
+      ok: opened && probeOk, at: new Date().toISOString(), url: waUrl,
+      in_iframe: inIframe, probe_ok: probeOk,
+      probe_error: probeError, open_error: openError, duration_ms: duration,
+    });
 
     if (!opened || !probeOk) {
       const reason = openError === 'popup_blocked'
         ? (bn ? 'পপআপ ব্লক করা হয়েছে — ব্রাউজার সেটিংস থেকে অনুমতি দিন' : 'Popup blocked — allow popups in browser settings')
         : probeError === 'timeout'
-          ? (bn ? `সংযোগে সময়সীমা শেষ — নেটওয়ার্ক/ISP হয়তো ব্লক করছে (${waUrl})` : `Connection timed out — network/ISP may be blocking (${waUrl})`)
+          ? (bn ? 'সংযোগে সময়সীমা শেষ — নেটওয়ার্ক/ISP হয়তো ব্লক করছে' : 'Connection timed out — network/ISP may be blocking')
           : !probeOk
-            ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError} — URL: ${waUrl}` : `Network blocked/redirected: ${probeError} — URL: ${waUrl}`)
-            : (bn ? `খুলতে ব্যর্থ: ${openError} — URL: ${waUrl}` : `Failed to open: ${openError} — URL: ${waUrl}`);
-
-      toast.error(reason, { duration: 8000 });
+            ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError}` : `Network blocked/redirected: ${probeError}`)
+            : (bn ? `খুলতে ব্যর্থ: ${openError}` : `Failed to open: ${openError}`);
+      toast.error(reason, { duration: 6000 });
       logWhatsAppEvent({
-        event_type: 'send_open_browser',
-        phone_number: cleanPhone,
-        success: false,
-        error_reason: openError || probeError || 'unknown',
-        meta: diagMeta,
+        event_type: 'send_open_browser', phone_number: cleanPhone,
+        success: false, error_reason: openError || probeError || 'unknown', meta: diagMeta,
       });
       return;
     }
 
     logWhatsAppEvent({
-      event_type: 'send_open_browser',
-      phone_number: cleanPhone,
-      success: true,
-      error_reason: null,
-      meta: diagMeta,
+      event_type: 'send_open_browser', phone_number: cleanPhone,
+      success: true, error_reason: null, meta: diagMeta,
     });
 
-    setTimeout(() => {
-      setOpen(false);
-      setCustomMsg('');
-    }, 100);
+    setTimeout(() => { setOpen(false); setCustomMsg(''); }, 100);
   };
 
   const handleTest = async () => {
@@ -285,6 +289,35 @@ const FloatingWhatsAppButton = () => {
                 <div className={`mt-2 flex items-start gap-1.5 text-[11px] p-2 rounded-md ${testResult.ok ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-destructive/10 text-destructive'}`}>
                   {testResult.ok ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
                   <span className="break-all">{testResult.msg}</span>
+                </div>
+              )}
+              {sendDiag && (
+                <div className={`mt-2 text-[11px] p-2 rounded-md border ${sendDiag.ok ? 'bg-green-500/5 border-green-500/30' : 'bg-destructive/5 border-destructive/30'}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      {sendDiag.ok
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                        : <AlertCircle className="w-3.5 h-3.5 text-destructive" />}
+                      {bn ? 'ক্লিক ডায়াগনস্টিক' : 'Click diagnostic'}
+                    </span>
+                    <button type="button" onClick={() => setSendDiag(null)} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[10.5px]">
+                    <dt className="text-muted-foreground">{bn ? 'ফলাফল' : 'Result'}</dt>
+                    <dd>{sendDiag.ok ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'প্রোব' : 'Probe'}</dt>
+                    <dd>{sendDiag.probe_ok ? 'ok' : (sendDiag.probe_error || 'failed')}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'ওপেন' : 'Open'}</dt>
+                    <dd>{sendDiag.open_error || 'ok'}</dd>
+                    <dt className="text-muted-foreground">iframe</dt>
+                    <dd>{sendDiag.in_iframe ? 'yes' : 'no'}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'সময়' : 'Time'}</dt>
+                    <dd>{sendDiag.duration_ms} ms</dd>
+                    <dt className="text-muted-foreground">URL</dt>
+                    <dd className="break-all"><a href={sendDiag.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">{sendDiag.url}</a></dd>
+                  </dl>
                 </div>
               )}
             </div>
