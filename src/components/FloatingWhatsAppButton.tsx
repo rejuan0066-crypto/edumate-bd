@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useWhatsAppConfig, buildWhatsAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
+import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
@@ -318,6 +318,43 @@ const FloatingWhatsAppButton = () => {
                     <dt className="text-muted-foreground">URL</dt>
                     <dd className="break-all"><a href={sendDiag.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">{sendDiag.url}</a></dd>
                   </dl>
+                  {!sendDiag.ok && (
+                    <div className="mt-2 pt-2 border-t border-border/50">
+                      <p className="text-[10px] text-muted-foreground mb-1.5">
+                        {bn ? 'বিকল্প উপায়:' : 'Try alternatives:'}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <a
+                          href={buildWhatsAppWebUrl(config.phone_number, messageToSend)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] px-2 py-1 rounded border border-border bg-background hover:bg-muted"
+                        >
+                          web.whatsapp.com
+                        </a>
+                        <a
+                          href={buildWhatsAppAppUrl(config.phone_number, messageToSend)}
+                          className="text-[10px] px-2 py-1 rounded border border-border bg-background hover:bg-muted"
+                        >
+                          {bn ? 'WhatsApp অ্যাপ' : 'WhatsApp app'}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(sendDiag.url);
+                              toast.success(bn ? 'লিংক কপি হয়েছে' : 'Link copied');
+                            } catch {
+                              toast.error(bn ? 'কপি ব্যর্থ' : 'Copy failed');
+                            }
+                          }}
+                          className="text-[10px] px-2 py-1 rounded border border-border bg-background hover:bg-muted"
+                        >
+                          {bn ? 'লিংক কপি' : 'Copy link'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
