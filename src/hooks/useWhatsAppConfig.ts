@@ -55,13 +55,33 @@ export const normalizeWhatsAppPhone = (phone: string): string => {
 };
 
 /**
- * Generate a wa.me click-to-chat URL.
+ * Detect if the current device is mobile (so we can prefer the whatsapp:// scheme).
+ */
+const isMobileDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+};
+
+/**
+ * Generate a click-to-chat URL.
+ * - Mobile: uses the whatsapp:// app scheme (most reliable, no domain block).
+ * - Desktop: uses https://web.whatsapp.com/send (avoids api.whatsapp.com which is
+ *   blocked on some ISPs / corporate networks).
  */
 export const buildWhatsAppUrl = (phone: string, message?: string): string => {
   const cleanPhone = normalizeWhatsAppPhone(phone);
-  const base = `https://wa.me/${cleanPhone}`;
-  if (message?.trim()) {
-    return `${base}?text=${encodeURIComponent(message.trim())}`;
+  const text = message?.trim() ? `&text=${encodeURIComponent(message.trim())}` : '';
+  if (isMobileDevice()) {
+    return `whatsapp://send?phone=${cleanPhone}${text}`;
   }
-  return base;
+  return `https://web.whatsapp.com/send?phone=${cleanPhone}${text.replace(/^&/, '&')}`;
+};
+
+/**
+ * Always-web URL for "Test link" connectivity check (must be HTTP for fetch()).
+ */
+export const buildWhatsAppWebUrl = (phone: string, message?: string): string => {
+  const cleanPhone = normalizeWhatsAppPhone(phone);
+  const text = message?.trim() ? `&text=${encodeURIComponent(message.trim())}` : '';
+  return `https://web.whatsapp.com/send?phone=${cleanPhone}${text}`;
 };
