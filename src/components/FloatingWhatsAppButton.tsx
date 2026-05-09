@@ -27,31 +27,97 @@ const FloatingWhatsAppButton = () => {
   const cleanPhone = normalizeWhatsAppPhone(config.phone_number);
   const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
 
-  const handleSend = (e: React.MouseEvent) => {
-    // Validate first; if invalid, block navigation
+  const handleSend = async (e: React.MouseEvent) => {
+    // Always take control — we want diagnostics, not silent native nav.
+    e.preventDefault();
+
+    // 1. Validate
     if (!cleanPhone || cleanPhone.length < 10) {
-      e.preventDefault();
       logWhatsAppEvent({
         event_type: 'invalid_phone',
         phone_number: config.phone_number,
         success: false,
         error_reason: 'Phone number too short or empty',
+        meta: { attempted_url: waUrl },
       });
       toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
       return;
     }
 
-    // Let the anchor's native target="_blank" behavior handle opening WhatsApp.
-    // This is the most reliable way across desktop, mobile, in-app browsers, and iframes.
+    // 2. Iframe context (Lovable preview, embeds) — must use top window
+    let inIframe = false;
+    try { inIframe = window.self !== window.top; } catch { inIframe = true; }
+
+    // 3. Reachability probe (only for https URLs). Quick, no-cors fetch with 3s timeout.
+    let probeOk = true;
+    let probeError: string | null = null;
+    if (waUrl.startsWith('https://')) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 3000);
+        await fetch(waUrl, { method: 'GET', mode: 'no-cors', cache: 'no-store', signal: ctrl.signal });
+        clearTimeout(t);
+      } catch (err: any) {
+        probeOk = false;
+        probeError = err?.name === 'AbortError' ? 'timeout' : (err?.message || 'network blocked');
+      }
+    }
+
+    // 4. Try to open. Prefer top window when inside an iframe.
+    let opened = false;
+    let openError: string | null = null;
+    try {
+      if (inIframe && window.top) {
+        try { (window.top as Window).location.href = waUrl; opened = true; }
+        catch { /* cross-origin top — fall through */ }
+      }
+      if (!opened) {
+        const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
+        if (w) opened = true;
+        else openError = 'popup_blocked';
+      }
+    } catch (err: any) {
+      openError = err?.message || 'open_failed';
+    }
+
+    // 5. Diagnostic toast + log
+    const diagMeta = {
+      url: waUrl,
+      has_message: !!messageToSend,
+      in_iframe: inIframe,
+      probe_ok: probeOk,
+      probe_error: probeError,
+      open_error: openError,
+    };
+
+    if (!opened || !probeOk) {
+      const reason = openError === 'popup_blocked'
+        ? (bn ? 'পপআপ ব্লক করা হয়েছে — ব্রাউজার সেটিংস থেকে অনুমতি দিন' : 'Popup blocked — allow popups in browser settings')
+        : probeError === 'timeout'
+          ? (bn ? `সংযোগে সময়সীমা শেষ — নেটওয়ার্ক/ISP হয়তো ব্লক করছে (${waUrl})` : `Connection timed out — network/ISP may be blocking (${waUrl})`)
+          : !probeOk
+            ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError} — URL: ${waUrl}` : `Network blocked/redirected: ${probeError} — URL: ${waUrl}`)
+            : (bn ? `খুলতে ব্যর্থ: ${openError} — URL: ${waUrl}` : `Failed to open: ${openError} — URL: ${waUrl}`);
+
+      toast.error(reason, { duration: 8000 });
+      logWhatsAppEvent({
+        event_type: 'send_open_browser',
+        phone_number: cleanPhone,
+        success: false,
+        error_reason: openError || probeError || 'unknown',
+        meta: diagMeta,
+      });
+      return;
+    }
+
     logWhatsAppEvent({
       event_type: 'send_open_browser',
       phone_number: cleanPhone,
       success: true,
       error_reason: null,
-      meta: { url: waUrl, has_message: !!messageToSend },
+      meta: diagMeta,
     });
 
-    // Close the popup after a short delay so the click registers fully
     setTimeout(() => {
       setOpen(false);
       setCustomMsg('');
