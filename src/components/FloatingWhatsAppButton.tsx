@@ -28,12 +28,9 @@ const FloatingWhatsAppButton = () => {
   const waAppUrl = `whatsapp://send?phone=${cleanPhone}${messageToSend ? `&text=${encodeURIComponent(messageToSend)}` : ''}`;
 
   const handleSend = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
-      || (window.navigator as any).standalone === true;
-
-    // Validate before opening
+    // Validate first; if invalid, block navigation
     if (!cleanPhone || cleanPhone.length < 10) {
+      e.preventDefault();
       logWhatsAppEvent({
         event_type: 'invalid_phone',
         phone_number: config.phone_number,
@@ -44,31 +41,21 @@ const FloatingWhatsAppButton = () => {
       return;
     }
 
-    let opened = false;
-    let errorReason: string | null = null;
-    try {
-      if (isStandalone) {
-        const w = window.open(waUrl, '_blank', 'noopener,noreferrer');
-        opened = !!w;
-        if (!w) errorReason = 'window.open returned null (popup blocked?)';
-      } else {
-        window.location.href = waUrl;
-        opened = true;
-      }
-    } catch (err: any) {
-      errorReason = err?.message || 'Unknown error';
-    }
-
+    // Let the anchor's native target="_blank" behavior handle opening WhatsApp.
+    // This is the most reliable way across desktop, mobile, in-app browsers, and iframes.
     logWhatsAppEvent({
-      event_type: isStandalone ? 'send_open_browser' : 'send_open_native',
+      event_type: 'send_open_browser',
       phone_number: cleanPhone,
-      success: opened,
-      error_reason: errorReason,
+      success: true,
+      error_reason: null,
       meta: { url: waUrl, has_message: !!messageToSend },
     });
 
-    setOpen(false);
-    setCustomMsg('');
+    // Close the popup after a short delay so the click registers fully
+    setTimeout(() => {
+      setOpen(false);
+      setCustomMsg('');
+    }, 100);
   };
 
   const handleTest = async () => {
