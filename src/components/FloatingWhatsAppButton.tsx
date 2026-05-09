@@ -291,6 +291,35 @@ const FloatingWhatsAppButton = () => {
                   <span className="break-all">{testResult.msg}</span>
                 </div>
               )}
+              {sendDiag && (
+                <div className={`mt-2 text-[11px] p-2 rounded-md border ${sendDiag.ok ? 'bg-green-500/5 border-green-500/30' : 'bg-destructive/5 border-destructive/30'}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      {sendDiag.ok
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                        : <AlertCircle className="w-3.5 h-3.5 text-destructive" />}
+                      {bn ? 'ক্লিক ডায়াগনস্টিক' : 'Click diagnostic'}
+                    </span>
+                    <button type="button" onClick={() => setSendDiag(null)} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-[10.5px]">
+                    <dt className="text-muted-foreground">{bn ? 'ফলাফল' : 'Result'}</dt>
+                    <dd>{sendDiag.ok ? (bn ? 'সফল' : 'Success') : (bn ? 'ব্যর্থ' : 'Failed')}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'প্রোব' : 'Probe'}</dt>
+                    <dd>{sendDiag.probe_ok ? 'ok' : (sendDiag.probe_error || 'failed')}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'ওপেন' : 'Open'}</dt>
+                    <dd>{sendDiag.open_error || 'ok'}</dd>
+                    <dt className="text-muted-foreground">iframe</dt>
+                    <dd>{sendDiag.in_iframe ? 'yes' : 'no'}</dd>
+                    <dt className="text-muted-foreground">{bn ? 'সময়' : 'Time'}</dt>
+                    <dd>{sendDiag.duration_ms} ms</dd>
+                    <dt className="text-muted-foreground">URL</dt>
+                    <dd className="break-all"><a href={sendDiag.url} target="_blank" rel="noopener noreferrer" className="underline decoration-dotted">{sendDiag.url}</a></dd>
+                  </dl>
+                </div>
+              )}
             </div>
           </div>
         </div>
