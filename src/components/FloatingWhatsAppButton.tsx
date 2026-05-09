@@ -13,6 +13,16 @@ const FloatingWhatsAppButton = () => {
   const [customMsg, setCustomMsg] = useState('');
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<null | { ok: boolean; msg: string }>(null);
+  const [sendDiag, setSendDiag] = useState<null | {
+    ok: boolean;
+    at: string;
+    url: string;
+    in_iframe: boolean;
+    probe_ok: boolean;
+    probe_error: string | null;
+    open_error: string | null;
+    duration_ms: number;
+  }>(null);
 
   if (!config?.show_floating_button || !config?.phone_number?.trim()) {
     return null;
