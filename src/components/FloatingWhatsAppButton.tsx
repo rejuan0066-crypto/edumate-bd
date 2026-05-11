@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
 
 const FloatingWhatsAppButton = () => {
   const { data: config } = useWhatsAppConfig();
   const { language } = useLanguage();
+  const { role } = useAuth();
   const bn = language === 'bn';
+  const isAdmin = role === 'admin' || role === 'super_admin';
   const [open, setOpen] = useState(false);
   const [customMsg, setCustomMsg] = useState('');
   const [testing, setTesting] = useState(false);
