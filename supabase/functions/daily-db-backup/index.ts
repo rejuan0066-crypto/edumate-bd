@@ -79,6 +79,13 @@ Deno.serve(async (req) => {
     const dump: Record<string, unknown[]> = {};
     let totalRows = 0;
 
+    // Strip credential/session fields so backup snapshots never contain
+    // bcrypt password hashes or live session tokens.
+    const REDACT_FIELDS: Record<string, string[]> = {
+      parent_accounts: ["password_hash", "session_token", "session_expires_at"],
+      student_accounts: ["password_hash"],
+    };
+
     for (const tbl of tableList) {
       const rows: unknown[] = [];
       let from = 0;
@@ -88,7 +95,15 @@ Deno.serve(async (req) => {
         const { data, error } = await admin.from(tbl).select("*").range(from, from + PAGE - 1);
         if (error) { console.warn(`skip ${tbl}: ${error.message}`); break; }
         if (!data || data.length === 0) break;
-        rows.push(...data);
+        const redact = REDACT_FIELDS[tbl];
+        const cleaned = redact
+          ? data.map((row: any) => {
+              const r = { ...row };
+              redact.forEach((f) => { delete r[f]; });
+              return r;
+            })
+          : data;
+        rows.push(...cleaned);
         if (data.length < PAGE) break;
         from += PAGE;
       }
