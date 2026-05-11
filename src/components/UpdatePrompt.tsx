@@ -206,18 +206,25 @@ const UpdatePrompt = () => {
     setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     setProgress(100);
 
-    // 4) Fallback hard reload if controllerchange didn't fire (e.g. no SW yet,
-    //    or no waiting worker because the build is identical at SW level).
-    setTimeout(() => {
+    // 4) Fallback hard reload — shorter timeout so it always fires reliably,
+    //    even when controllerchange never triggers (no waiting SW, identical SW build,
+    //    iOS PWA quirks, etc.). The cache-busted URL forces a fresh shell fetch.
+    const doReload = () => {
       if (didReloadViaController) return;
+      didReloadViaController = true;
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('_v', Date.now().toString());
+        // Clear stored build id so the new shell re-seeds it
+        try { localStorage.removeItem(BUILD_ID_KEY); } catch {}
         window.location.replace(u.toString());
       } catch {
         window.location.reload();
       }
-    }, 1200);
+    };
+    setTimeout(doReload, 600);
+    // Safety net in case the first reload was suppressed by the browser
+    setTimeout(() => { try { window.location.reload(); } catch {} }, 2500);
   };
 
   // Floating update button: ALWAYS clickable in the installed PWA.
@@ -271,10 +278,10 @@ const UpdatePrompt = () => {
 
       {updateAvailable && !dismissed && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+          className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-md z-[100] animate-fade-in"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', maxWidth: 'calc(100vw - 24px)' }}
         >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl overflow-hidden">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
