@@ -5,6 +5,34 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const BUILD_ID_KEY = 'app_build_id';
 const CHECK_INTERVAL = 60_000; // 1 minute
+const LOG_KEY = 'pwa_update_logs';
+const LOG_MAX = 200;
+
+type LogLevel = 'info' | 'warn' | 'error';
+const pwaLog = (level: LogLevel, event: string, data?: Record<string, unknown>) => {
+  try {
+    const entry = {
+      t: new Date().toISOString(),
+      lvl: level,
+      ev: event,
+      ...(data || {}),
+    };
+    const raw = localStorage.getItem(LOG_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    arr.push(entry);
+    if (arr.length > LOG_MAX) arr.splice(0, arr.length - LOG_MAX);
+    localStorage.setItem(LOG_KEY, JSON.stringify(arr));
+    // eslint-disable-next-line no-console
+    console.log('[pwa-update]', event, data || '');
+  } catch {}
+};
+
+const describeReg = (r: ServiceWorkerRegistration) => ({
+  scope: r.scope,
+  installing: r.installing?.state ?? null,
+  waiting: r.waiting?.state ?? null,
+  active: r.active?.state ?? null,
+});
 
 const buildSignature = (assets: string[]): string | null => {
   const matches = assets
