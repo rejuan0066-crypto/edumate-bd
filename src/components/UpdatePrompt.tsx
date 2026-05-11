@@ -170,19 +170,29 @@ const UpdatePrompt = () => {
     setUpdating(true);
     setProgress(5);
     setStatusText(bn ? 'ক্যাশ পরিষ্কার করা হচ্ছে…' : 'Clearing cache…');
+    pwaLog('info', 'update_start', {
+      url: window.location.href,
+      standalone: isStandalonePWA(),
+      build_id: runtimeBuildIdRef.current || localStorage.getItem(BUILD_ID_KEY),
+      ua: navigator.userAgent,
+    });
 
     // 1) Clear window-side Cache Storage
     try {
       if ('caches' in window) {
         const keys = await caches.keys();
+        pwaLog('info', 'cache_clear_start', { count: keys.length, keys });
         let done = 0;
         for (const k of keys) {
           await caches.delete(k);
           done++;
           setProgress(5 + Math.round((done / Math.max(keys.length, 1)) * 35));
         }
+        pwaLog('info', 'cache_clear_done', { cleared: done });
       }
-    } catch {}
+    } catch (e) {
+      pwaLog('error', 'cache_clear_fail', { err: String(e) });
+    }
 
     setProgress(45);
     setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
@@ -190,14 +200,28 @@ const UpdatePrompt = () => {
     // 2) Tell SW to clear its caches too (covers mobile where window+SW caches differ)
     try {
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        pwaLog('info', 'sw_postmessage_clear', {
+          controller_state: navigator.serviceWorker.controller.state,
+        });
         await new Promise<void>((resolve) => {
           const ch = new MessageChannel();
-          const t = setTimeout(() => resolve(), 1500);
-          ch.port1.onmessage = () => { clearTimeout(t); resolve(); };
+          const t = setTimeout(() => {
+            pwaLog('warn', 'sw_clear_timeout');
+            resolve();
+          }, 1500);
+          ch.port1.onmessage = (ev) => {
+            clearTimeout(t);
+            pwaLog('info', 'sw_clear_reply', { data: ev.data });
+            resolve();
+          };
           navigator.serviceWorker.controller!.postMessage({ type: 'CLEAR_CACHES' }, [ch.port2]);
         });
+      } else {
+        pwaLog('info', 'sw_no_controller');
       }
-    } catch {}
+    } catch (e) {
+      pwaLog('error', 'sw_clear_fail', { err: String(e) });
+    }
 
     setProgress(65);
 
@@ -209,6 +233,7 @@ const UpdatePrompt = () => {
         const onControllerChange = () => {
           if (didReloadViaController) return;
           didReloadViaController = true;
+          pwaLog('info', 'controllerchange_reload');
           try {
             const u = new URL(window.location.href);
             u.searchParams.set('_v', Date.now().toString());
@@ -220,15 +245,35 @@ const UpdatePrompt = () => {
         navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
 
         const regs = await navigator.serviceWorker.getRegistrations();
+        pwaLog('info', 'sw_registrations', {
+          count: regs.length,
+          regs: regs.map(describeReg),
+        });
         await Promise.all(regs.map(async (r) => {
-          try { await r.update(); } catch {}
+          try {
+            await r.update();
+            pwaLog('info', 'sw_update_done', describeReg(r));
+          } catch (e) {
+            pwaLog('warn', 'sw_update_fail', { err: String(e) });
+          }
           const waiting = r.waiting || r.installing;
           if (waiting) {
-            try { waiting.postMessage({ type: 'SKIP_WAITING' }); } catch {}
+            try {
+              waiting.postMessage({ type: 'SKIP_WAITING' });
+              pwaLog('info', 'skip_waiting_sent', { state: waiting.state });
+            } catch (e) {
+              pwaLog('warn', 'skip_waiting_fail', { err: String(e) });
+            }
+          } else {
+            pwaLog('info', 'no_waiting_worker');
           }
         }));
+      } else {
+        pwaLog('info', 'sw_unsupported');
       }
-    } catch {}
+    } catch (e) {
+      pwaLog('error', 'sw_phase_fail', { err: String(e) });
+    }
 
     setProgress(90);
     setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
@@ -240,10 +285,10 @@ const UpdatePrompt = () => {
     const doReload = () => {
       if (didReloadViaController) return;
       didReloadViaController = true;
+      pwaLog('info', 'fallback_reload_600ms');
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('_v', Date.now().toString());
-        // Clear stored build id so the new shell re-seeds it
         try { localStorage.removeItem(BUILD_ID_KEY); } catch {}
         window.location.replace(u.toString());
       } catch {
@@ -252,7 +297,10 @@ const UpdatePrompt = () => {
     };
     setTimeout(doReload, 600);
     // Safety net in case the first reload was suppressed by the browser
-    setTimeout(() => { try { window.location.reload(); } catch {} }, 2500);
+    setTimeout(() => {
+      pwaLog('warn', 'safety_net_reload_2500ms');
+      try { window.location.reload(); } catch {}
+    }, 2500);
   };
 
   // Floating update button: ALWAYS clickable in the installed PWA.
