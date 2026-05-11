@@ -230,7 +230,9 @@ const UpdatePrompt = () => {
   // Floating update button: ALWAYS clickable in the installed PWA.
   // - If we already know an update is available → install immediately.
   // - Otherwise → run a fresh check, and install if found, else show "up to date".
-  const showFloatingButton = enabled && !updating && (!updateAvailable || dismissed);
+  // Only show the floating refresh button when an update is actually available
+  // AND the user has dismissed the main banner. Otherwise keep the UI clean.
+  const showFloatingButton = enabled && !updating && updateAvailable && dismissed;
 
   const handleFloatingClick = async () => {
     if (updateAvailable) {
