@@ -45,18 +45,20 @@ const FloatingWhatsAppButton = () => {
     const startedAt = performance.now();
 
     if (!cleanPhone || cleanPhone.length < 10) {
-      logWhatsAppEvent({
-        event_type: 'invalid_phone',
-        phone_number: config.phone_number,
-        success: false,
-        error_reason: 'Phone number too short or empty',
-        meta: { attempted_url: waUrl },
-      });
-      setSendDiag({
-        ok: false, at: new Date().toISOString(), url: waUrl,
-        in_iframe: false, probe_ok: false,
-        probe_error: 'invalid_phone', open_error: null, duration_ms: 0,
-      });
+      if (isAdmin) {
+        logWhatsAppEvent({
+          event_type: 'invalid_phone',
+          phone_number: config.phone_number,
+          success: false,
+          error_reason: 'Phone number too short or empty',
+          meta: { attempted_url: waUrl },
+        });
+        setSendDiag({
+          ok: false, at: new Date().toISOString(), url: waUrl,
+          in_iframe: false, probe_ok: false,
+          probe_error: 'invalid_phone', open_error: null, duration_ms: 0,
+        });
+      }
       toast.error(bn ? 'WhatsApp নাম্বার সঠিক নয়' : 'Invalid WhatsApp number');
       return;
     }
@@ -64,9 +66,10 @@ const FloatingWhatsAppButton = () => {
     let inIframe = false;
     try { inIframe = window.self !== window.top; } catch { inIframe = true; }
 
+    // Probe is purely a diagnostic — only run for admins to avoid public backend/network noise.
     let probeOk = true;
     let probeError: string | null = null;
-    if (waUrl.startsWith('https://')) {
+    if (isAdmin && waUrl.startsWith('https://')) {
       try {
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), 3000);
@@ -101,13 +104,15 @@ const FloatingWhatsAppButton = () => {
       duration_ms: duration,
     };
 
-    setSendDiag({
-      ok: opened && probeOk, at: new Date().toISOString(), url: waUrl,
-      in_iframe: inIframe, probe_ok: probeOk,
-      probe_error: probeError, open_error: openError, duration_ms: duration,
-    });
+    if (isAdmin) {
+      setSendDiag({
+        ok: opened && probeOk, at: new Date().toISOString(), url: waUrl,
+        in_iframe: inIframe, probe_ok: probeOk,
+        probe_error: probeError, open_error: openError, duration_ms: duration,
+      });
+    }
 
-    if (!opened || !probeOk) {
+    if (!opened || (isAdmin && !probeOk)) {
       const reason = openError === 'popup_blocked'
         ? (bn ? 'পপআপ ব্লক করা হয়েছে — ব্রাউজার সেটিংস থেকে অনুমতি দিন' : 'Popup blocked — allow popups in browser settings')
         : probeError === 'timeout'
@@ -116,17 +121,21 @@ const FloatingWhatsAppButton = () => {
             ? (bn ? `নেটওয়ার্ক ব্লক/রিডাইরেক্ট: ${probeError}` : `Network blocked/redirected: ${probeError}`)
             : (bn ? `খুলতে ব্যর্থ: ${openError}` : `Failed to open: ${openError}`);
       toast.error(reason, { duration: 6000 });
-      logWhatsAppEvent({
-        event_type: 'send_open_browser', phone_number: cleanPhone,
-        success: false, error_reason: openError || probeError || 'unknown', meta: diagMeta,
-      });
+      if (isAdmin) {
+        logWhatsAppEvent({
+          event_type: 'send_open_browser', phone_number: cleanPhone,
+          success: false, error_reason: openError || probeError || 'unknown', meta: diagMeta,
+        });
+      }
       return;
     }
 
-    logWhatsAppEvent({
-      event_type: 'send_open_browser', phone_number: cleanPhone,
-      success: true, error_reason: null, meta: diagMeta,
-    });
+    if (isAdmin) {
+      logWhatsAppEvent({
+        event_type: 'send_open_browser', phone_number: cleanPhone,
+        success: true, error_reason: null, meta: diagMeta,
+      });
+    }
 
     setTimeout(() => { setOpen(false); setCustomMsg(''); }, 100);
   };
