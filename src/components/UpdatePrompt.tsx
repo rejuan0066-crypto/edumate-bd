@@ -206,18 +206,25 @@ const UpdatePrompt = () => {
     setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     setProgress(100);
 
-    // 4) Fallback hard reload if controllerchange didn't fire (e.g. no SW yet,
-    //    or no waiting worker because the build is identical at SW level).
-    setTimeout(() => {
+    // 4) Fallback hard reload — shorter timeout so it always fires reliably,
+    //    even when controllerchange never triggers (no waiting SW, identical SW build,
+    //    iOS PWA quirks, etc.). The cache-busted URL forces a fresh shell fetch.
+    const doReload = () => {
       if (didReloadViaController) return;
+      didReloadViaController = true;
       try {
         const u = new URL(window.location.href);
         u.searchParams.set('_v', Date.now().toString());
+        // Clear stored build id so the new shell re-seeds it
+        try { localStorage.removeItem(BUILD_ID_KEY); } catch {}
         window.location.replace(u.toString());
       } catch {
         window.location.reload();
       }
-    }, 1200);
+    };
+    setTimeout(doReload, 600);
+    // Safety net in case the first reload was suppressed by the browser
+    setTimeout(() => { try { window.location.reload(); } catch {} }, 2500);
   };
 
   // Floating update button: ALWAYS clickable in the installed PWA.
