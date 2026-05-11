@@ -28,7 +28,10 @@ const AdminStudentApprovals = () => {
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['student-accounts', tab],
     queryFn: async () => {
-      let query = supabase.from('student_accounts').select('*').order('created_at', { ascending: false });
+      let query = supabase
+        .from('student_accounts')
+        .select('id, contact, contact_type, full_name, student_id, linked_student_uuid, status, contact_verified, rejection_reason, approved_at, last_login_at, created_at')
+        .order('created_at', { ascending: false });
       if (tab !== 'all') query = query.eq('status', tab);
       const { data, error } = await query;
       if (error) throw error;
