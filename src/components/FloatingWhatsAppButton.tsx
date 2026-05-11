@@ -289,7 +289,9 @@ const FloatingWhatsAppButton = () => {
                   {bn ? 'WhatsApp এ চালিয়ে যান' : 'Continues in WhatsApp'}
                 </p>
               </div>
-              {testResult && (
+              </div>
+              )}
+              {isAdmin && testResult && (
                 <div className={`mt-2 flex items-start gap-1.5 text-[11px] p-2 rounded-md ${testResult.ok ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-destructive/10 text-destructive'}`}>
                   {testResult.ok ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
                   <span className="break-all">{testResult.msg}</span>
