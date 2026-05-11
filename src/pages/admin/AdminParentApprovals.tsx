@@ -29,7 +29,10 @@ const AdminParentApprovals = () => {
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['parent-accounts', tab],
     queryFn: async () => {
-      let query = supabase.from('parent_accounts').select('*').order('created_at', { ascending: false });
+      let query = supabase
+        .from('parent_accounts')
+        .select('id, email, full_name, phone, nid, student_id, linked_student_uuids, status, rejection_reason, approved_at, last_login_at, created_at')
+        .order('created_at', { ascending: false });
       if (tab !== 'all') query = query.eq('status', tab);
       const { data, error } = await query;
       if (error) throw error;

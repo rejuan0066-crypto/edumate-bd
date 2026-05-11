@@ -72,12 +72,28 @@ Deno.serve(async (req) => {
       },
     };
 
+    // Strip credential/session fields from backup exports so downloaded files
+    // never contain bcrypt hashes or live session tokens.
+    const REDACT_FIELDS: Record<string, string[]> = {
+      parent_accounts: ['password_hash', 'session_token', 'session_expires_at'],
+      student_accounts: ['password_hash'],
+    };
+
     for (const table of tablesToExport) {
       const { data, error } = await supabase.from(table).select('*');
       if (error) {
         backup[table] = { error: error.message, count: 0 };
       } else {
-        backup[table] = { data: data || [], count: (data || []).length };
+        let rows = data || [];
+        const redact = REDACT_FIELDS[table];
+        if (redact && rows.length > 0) {
+          rows = rows.map((row: any) => {
+            const r = { ...row };
+            redact.forEach((f) => { delete r[f]; });
+            return r;
+          });
+        }
+        backup[table] = { data: rows, count: rows.length };
       }
     }
 
