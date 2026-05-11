@@ -271,10 +271,10 @@ const UpdatePrompt = () => {
 
       {updateAvailable && !dismissed && (
         <div
-          className="fixed left-1/2 -translate-x-1/2 z-[100] animate-fade-in px-4 w-full max-w-md"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+          className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-md z-[100] animate-fade-in"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', maxWidth: 'calc(100vw - 24px)' }}
         >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl">
+          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl overflow-hidden">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
