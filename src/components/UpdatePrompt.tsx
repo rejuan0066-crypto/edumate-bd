@@ -143,6 +143,14 @@ const UpdatePrompt = () => {
     if (host.includes('id-preview--') || host.includes('lovableproject.com') || host === 'localhost') return;
     setEnabled(true);
 
+    // Log page load — useful to confirm a previous update reload succeeded
+    pwaLog('info', 'page_loaded', {
+      url: window.location.href,
+      build_id: runtimeBuildId,
+      standalone: isStandalonePWA(),
+      had_v_param: new URL(window.location.href).searchParams.has('_v'),
+    });
+
     const initialTimer = window.setTimeout(() => checkForUpdate(), 5000);
     intervalRef.current = window.setInterval(() => checkForUpdate(), CHECK_INTERVAL);
 
