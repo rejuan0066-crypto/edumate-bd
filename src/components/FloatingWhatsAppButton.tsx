@@ -222,7 +222,8 @@ const FloatingWhatsAppButton = () => {
                 </a>
               </div>
 
-              {/* Test link + Test send buttons + result */}
+              {/* Test link + Test send buttons + result — admin only */}
+              {isAdmin && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
