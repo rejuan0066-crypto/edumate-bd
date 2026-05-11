@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
 
 const FloatingWhatsAppButton = () => {
   const { data: config } = useWhatsAppConfig();
   const { language } = useLanguage();
+  const { role } = useAuth();
   const bn = language === 'bn';
+  const isAdmin = role === 'admin' || role === 'super_admin';
   const [open, setOpen] = useState(false);
   const [customMsg, setCustomMsg] = useState('');
   const [testing, setTesting] = useState(false);
@@ -219,7 +222,8 @@ const FloatingWhatsAppButton = () => {
                 </a>
               </div>
 
-              {/* Test link + Test send buttons + result */}
+              {/* Test link + Test send buttons + result — admin only */}
+              {isAdmin && (
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -285,13 +289,14 @@ const FloatingWhatsAppButton = () => {
                   {bn ? 'WhatsApp এ চালিয়ে যান' : 'Continues in WhatsApp'}
                 </p>
               </div>
-              {testResult && (
+              )}
+              {isAdmin && testResult && (
                 <div className={`mt-2 flex items-start gap-1.5 text-[11px] p-2 rounded-md ${testResult.ok ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-destructive/10 text-destructive'}`}>
                   {testResult.ok ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />}
                   <span className="break-all">{testResult.msg}</span>
                 </div>
               )}
-              {sendDiag && (
+              {isAdmin && sendDiag && (
                 <div className={`mt-2 text-[11px] p-2 rounded-md border ${sendDiag.ok ? 'bg-green-500/5 border-green-500/30' : 'bg-destructive/5 border-destructive/30'}`}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="flex items-center gap-1.5 font-medium">
