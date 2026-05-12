@@ -106,16 +106,34 @@ const AdminStudents = () => {
   });
 
   const studentTypeMutation = useMutation({
-    mutationFn: async ({ id, type }: { id: string; type: 'new' | 'old' }) => {
-      if (await checkApproval('edit', { id, student_type: type }, id, `ছাত্রের ধরন: ${type}`)) return;
-      const { error } = await supabase.from('students').update({ student_type: type } as any).eq('id', id);
+    mutationFn: async ({ id, type, reason }: { id: string; type: 'new' | 'old'; reason: string }) => {
+      if (await checkApproval('edit', { id, student_type: type, reason }, id, `ছাত্রের ধরন: ${type} (${reason})`)) return;
+      const { error } = await supabase.rpc('change_student_type', {
+        p_student_id: id,
+        p_new_type: type,
+        p_reason: reason,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-type-history'] });
       toast.success(bn ? 'ছাত্রের ধরন আপডেট হয়েছে' : 'Student type updated');
+      setTypeChangeFor(null);
+      setTypeChangeReason('');
     },
-    onError: () => toast.error('Error'),
+    onError: (e: any) => toast.error(e?.message || 'Error'),
+  });
+
+  const { data: typeHistory = [], isLoading: historyLoading } = useQuery({
+    queryKey: ['student-type-history', typeHistoryFor?.id],
+    queryFn: async () => {
+      if (!typeHistoryFor?.id) return [];
+      const { data, error } = await supabase.rpc('get_student_type_history', { p_student_id: typeHistoryFor.id });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: !!typeHistoryFor?.id,
   });
 
   const toggleActiveMutation = useMutation({
