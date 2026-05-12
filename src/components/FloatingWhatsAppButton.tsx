@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
+import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone, isWhatsAppRouteAllowed } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -29,20 +29,17 @@ const FloatingWhatsAppButton = () => {
     duration_ms: number;
   }>(null);
 
-  const path = location.pathname;
-  const isHiddenRoute =
-    path.startsWith('/admin') ||
-    path.startsWith('/student-portal') ||
-    path.startsWith('/student-info') ||
-    path.startsWith('/parent-portal') ||
-    path.startsWith('/auth') ||
-    path.startsWith('/login');
-
-  if (isHiddenRoute) return null;
-
   if (!config?.show_floating_button || !config?.phone_number?.trim()) {
     return null;
   }
+
+  // Admin-configurable allow/deny list (fallback to safe defaults if not set)
+  const fallbackDeny = ['/admin', '/student-portal', '/student-info', '/parent-portal', '/auth', '/login'];
+  const mode = (config.route_mode as 'allow' | 'deny' | undefined) || 'deny';
+  const patterns = config.route_patterns && config.route_patterns.length > 0
+    ? config.route_patterns
+    : fallbackDeny;
+  if (!isWhatsAppRouteAllowed(location.pathname, mode, patterns)) return null;
 
   const positionClass = config.button_position === 'bottom-left'
     ? 'left-4 sm:left-6'

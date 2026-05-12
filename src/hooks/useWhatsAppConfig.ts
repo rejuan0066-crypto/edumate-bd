@@ -14,7 +14,26 @@ export interface WhatsAppConfig {
   default_language: string | null;
   business_hours: string | null;
   away_message: string | null;
+  route_mode: 'allow' | 'deny';
+  route_patterns: string[];
 }
+
+/**
+ * Decide whether the floating WhatsApp button should be visible on a given pathname,
+ * based on admin-configured allow/deny patterns. Patterns are treated as path prefixes.
+ *  - mode='deny'  → hide if path matches any pattern (default).
+ *  - mode='allow' → show ONLY if path matches at least one pattern.
+ */
+export const isWhatsAppRouteAllowed = (
+  pathname: string,
+  mode: 'allow' | 'deny' | null | undefined,
+  patterns: string[] | null | undefined,
+): boolean => {
+  const list = (patterns || []).map((p) => (p || '').trim()).filter(Boolean);
+  const matches = list.some((p) => pathname === p || pathname.startsWith(p));
+  if ((mode || 'deny') === 'allow') return matches;
+  return !matches;
+};
 
 export const useWhatsAppConfig = () => {
   return useQuery({

@@ -38,7 +38,10 @@ const WhatsAppSettings = () => {
     phone_number_id: '',
     business_account_id: '',
     default_language: 'bn',
+    route_mode: 'deny' as 'deny' | 'allow',
+    route_patterns: [] as string[],
   });
+  const [routePatternsText, setRoutePatternsText] = useState('');
   const [saving, setSaving] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState(
@@ -86,6 +89,8 @@ const WhatsAppSettings = () => {
 
   useEffect(() => {
     if (config) {
+      const cfg: any = config;
+      const patterns: string[] = Array.isArray(cfg.route_patterns) ? cfg.route_patterns : [];
       setForm({
         phone_number: config.phone_number || '',
         welcome_message: config.welcome_message || '',
@@ -98,7 +103,10 @@ const WhatsAppSettings = () => {
         phone_number_id: config.phone_number_id || '',
         business_account_id: config.business_account_id || '',
         default_language: config.default_language || 'bn',
+        route_mode: (cfg.route_mode === 'allow' ? 'allow' : 'deny'),
+        route_patterns: patterns,
       });
+      setRoutePatternsText(patterns.join('\n'));
     }
   }, [config]);
 
@@ -134,11 +142,16 @@ const WhatsAppSettings = () => {
     }
     setSaving(true);
     try {
+      const parsedPatterns = routePatternsText
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0 && s.startsWith('/'));
+      const payload: any = { ...form, route_patterns: parsedPatterns };
       if (config?.id) {
-        const { error } = await supabase.from('whatsapp_config').update(form).eq('id', config.id);
+        const { error } = await supabase.from('whatsapp_config').update(payload).eq('id', config.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('whatsapp_config').insert(form);
+        const { error } = await supabase.from('whatsapp_config').insert(payload);
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
@@ -240,6 +253,50 @@ const WhatsAppSettings = () => {
                 placeholder={bn ? 'সকাল ৯টা - সন্ধ্যা ৬টা' : '9 AM - 6 PM'}
               />
             </div>
+          </div>
+
+          {/* Route allow/deny list */}
+          <div className="rounded-xl border border-border/60 p-3 space-y-3 bg-muted/30">
+            <div>
+              <Label className="text-sm font-semibold">
+                {bn ? 'রুট ফিল্টার (কোন পেজে দেখাবে)' : 'Route filter (which pages show the button)'}
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {bn
+                  ? 'প্রতি লাইনে একটি রুট-প্রিফিক্স লিখুন (যেমন /admin, /parent-portal)। প্রিফিক্স ম্যাচ করে।'
+                  : 'One route prefix per line (e.g. /admin, /parent-portal). Matched as path prefix.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">{bn ? 'মোড' : 'Mode'}</Label>
+                <Select
+                  value={form.route_mode}
+                  onValueChange={(v: any) => setForm({ ...form, route_mode: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deny">{bn ? 'Deny — তালিকার পেজে লুকান' : 'Deny — hide on listed pages'}</SelectItem>
+                    <SelectItem value="allow">{bn ? 'Allow — শুধু তালিকার পেজে দেখান' : 'Allow — show only on listed pages'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">{bn ? 'রুট প্যাটার্ন (প্রতি লাইনে একটি)' : 'Route patterns (one per line)'}</Label>
+                <Textarea
+                  value={routePatternsText}
+                  onChange={(e) => setRoutePatternsText(e.target.value)}
+                  rows={5}
+                  placeholder={'/admin\n/student-portal\n/parent-portal\n/auth'}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {bn
+                ? 'খালি রাখলে ডিফল্ট: /admin, /student-portal, /student-info, /parent-portal, /auth, /login লুকানো থাকবে।'
+                : 'If empty, defaults to hiding: /admin, /student-portal, /student-info, /parent-portal, /auth, /login.'}
+            </p>
           </div>
 
           {previewUrl && (
