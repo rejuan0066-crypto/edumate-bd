@@ -221,9 +221,12 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
       toast.success(language === 'bn' ? (is_active ? 'শ্রেণী সক্রিয় করা হয়েছে' : 'শ্রেণী নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Class activated' : 'Class deactivated'));
     },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
   const selected = divisions.find(d => d.id === selectedDiv);
+
+  const startEditDiv = (d: any) => {
     setEditingDivId(d.id);
     setEditDivName(d.name_bn);
     setEditDivNameEn(d.name);
