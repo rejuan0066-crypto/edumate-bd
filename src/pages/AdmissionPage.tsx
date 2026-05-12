@@ -171,17 +171,11 @@ const AdmissionPage = () => {
     setForm(prev => ({ ...prev, registration_no: `${year}${rollNumber}` }));
   }, []);
 
-  useEffect(() => {
-    if (form.admission_class && form.admission_session) {
-      generateRollNumber(form.admission_class, form.admission_session);
-    }
-  }, [form.admission_class, form.admission_session, generateRollNumber]);
-
-  useEffect(() => {
-    if (form.session_year && form.roll_number) {
-      updateRegistrationFromRoll(form.session_year, form.roll_number);
-    }
-  }, [form.session_year, form.roll_number, updateRegistrationFromRoll]);
+  // NOTE: Public admission no longer auto-generates roll/registration.
+  // These are assigned automatically by a DB trigger when an admin approves
+  // the application from /admin/students. Kept the helpers above for reuse
+  // by admin flows (e.g. inline edit) but disabled the public auto-fill.
+  // void generateRollNumber; void updateRegistrationFromRoll;
 
   // Auto-prefill from URL: ?class=<classId> → admission_class + division + running session/year
   const [searchParams] = useSearchParams();
