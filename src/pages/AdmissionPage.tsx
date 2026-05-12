@@ -239,7 +239,7 @@ const AdmissionPage = () => {
   };
 
   const checkDuplicateBirthReg = async (regNo: string) => {
-    const { data } = await supabase.from('students').select('roll_number, registration_no, admission_session, student_id').eq('birth_reg_no', regNo).limit(1);
+    const { data } = await supabase.rpc('check_duplicate_birth_reg', { p_birth_reg: regNo });
     if (data && data.length > 0) {
       const s = data[0];
       toast.info(
