@@ -416,7 +416,7 @@ const AdminStudents = () => {
                     </tr>
                   ))}
                   {sortedFiltered.length === 0 && (
-                    <tr><td colSpan={10} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
+                    <tr><td colSpan={11} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
                   )}
                 </tbody>
               </table>
