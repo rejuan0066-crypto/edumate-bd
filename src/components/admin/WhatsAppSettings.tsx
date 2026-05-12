@@ -38,7 +38,10 @@ const WhatsAppSettings = () => {
     phone_number_id: '',
     business_account_id: '',
     default_language: 'bn',
+    route_mode: 'deny' as 'deny' | 'allow',
+    route_patterns: [] as string[],
   });
+  const [routePatternsText, setRoutePatternsText] = useState('');
   const [saving, setSaving] = useState(false);
   const [testPhone, setTestPhone] = useState('');
   const [testMessage, setTestMessage] = useState(
