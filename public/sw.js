@@ -21,6 +21,7 @@ const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
 // Files we want available offline / instantly on first PWA launch
 const PRECACHE_URLS = [
   '/',
+  '/offline.html',
   '/manifest.json',
   '/app-icon.png',
   '/app-icon-192.png',
