@@ -660,7 +660,7 @@ const AdminAdministrative = () => {
                         variant="ghost"
                         size="icon"
                         className="rounded-full"
-                        onClick={() => toggleStatus.mutate(o)}
+                        onClick={async () => { const cur = (o.status || 'active'); const next = cur === 'active' ? 'inactive' : 'active'; const ok = await confirm({ title: bn ? (next === 'active' ? 'অফিসার সক্রিয় করবেন?' : 'অফিসার নিষ্ক্রিয় করবেন?') : (next === 'active' ? 'Activate officer?' : 'Deactivate officer?'), description: bn ? `"${o.name_bn || o.name_en}" কে ${next === 'active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'} করতে চান?` : `Are you sure you want to ${next === 'active' ? 'activate' : 'deactivate'} "${o.name_en || o.name_bn}"?`, confirmText: bn ? 'হ্যাঁ' : 'Yes', cancelText: bn ? 'বাতিল' : 'Cancel', variant: next === 'active' ? 'default' : 'warning' }); if (!ok) return; toggleStatus.mutate(o); }}
                         disabled={toggleStatus.isPending}
                         title={(o.status || 'active') === 'active' ? (bn ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (bn ? 'সক্রিয় করুন' : 'Activate')}
                       >
