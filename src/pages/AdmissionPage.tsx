@@ -154,27 +154,14 @@ const AdmissionPage = () => {
 
   const generateRollNumber = useCallback(async (classId: string, sessionId: string) => {
     if (!classId || !sessionId) return;
-    const rollStart = getRollStartForClass(classId);
-    const rollPrefix = Math.floor(rollStart / 1000);
-    const { data } = await supabase
-      .from('students')
-      .select('roll_number')
-      .eq('class_id', classId)
-      .eq('session_id', sessionId)
-      .not('roll_number', 'is', null)
-      .order('roll_number', { ascending: false })
-      .limit(50);
-    let maxRoll = rollStart - 1;
-    if (data && data.length > 0) {
-      for (const s of data) {
-        const num = parseInt(s.roll_number || '0', 10);
-        if (!isNaN(num) && num >= rollStart && num < (rollPrefix + 1) * 1000) {
-          maxRoll = Math.max(maxRoll, num);
-        }
-      }
+    const { data, error } = await supabase.rpc('get_next_admission_roll', {
+      p_class_id: classId,
+      p_session_id: sessionId,
+    });
+    if (!error && data) {
+      setForm(prev => ({ ...prev, roll_number: String(data) }));
     }
-    setForm(prev => ({ ...prev, roll_number: String(maxRoll + 1) }));
-  }, [getRollStartForClass]);
+  }, []);
 
   const bnToEn = (str: string) => str.replace(/[০-৯]/g, d => String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
 
@@ -252,7 +239,7 @@ const AdmissionPage = () => {
   };
 
   const checkDuplicateBirthReg = async (regNo: string) => {
-    const { data } = await supabase.from('students').select('roll_number, registration_no, admission_session, student_id').eq('birth_reg_no', regNo).limit(1);
+    const { data } = await supabase.rpc('check_duplicate_birth_reg', { p_birth_reg: regNo });
     if (data && data.length > 0) {
       const s = data[0];
       toast.info(
