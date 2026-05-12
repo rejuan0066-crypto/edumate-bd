@@ -9627,6 +9627,8 @@ export type Database = {
           id: string
           phone_number: string | null
           phone_number_id: string | null
+          route_mode: string
+          route_patterns: string[]
           show_floating_button: boolean
           updated_at: string
           welcome_message: string | null
@@ -9643,6 +9645,8 @@ export type Database = {
           id?: string
           phone_number?: string | null
           phone_number_id?: string | null
+          route_mode?: string
+          route_patterns?: string[]
           show_floating_button?: boolean
           updated_at?: string
           welcome_message?: string | null
@@ -9659,6 +9663,8 @@ export type Database = {
           id?: string
           phone_number?: string | null
           phone_number_id?: string | null
+          route_mode?: string
+          route_patterns?: string[]
           show_floating_button?: boolean
           updated_at?: string
           welcome_message?: string | null
