@@ -44,6 +44,14 @@ const FloatingWhatsAppButton = () => {
     return null;
   }
 
+  // Admin-configurable allow/deny list (fallback to safe defaults if not set)
+  const fallbackDeny = ['/admin', '/student-portal', '/student-info', '/parent-portal', '/auth', '/login'];
+  const mode = (config.route_mode as 'allow' | 'deny' | undefined) || 'deny';
+  const patterns = config.route_patterns && config.route_patterns.length > 0
+    ? config.route_patterns
+    : fallbackDeny;
+  if (!isWhatsAppRouteAllowed(location.pathname, mode, patterns)) return null;
+
   const positionClass = config.button_position === 'bottom-left'
     ? 'left-4 sm:left-6'
     : 'right-4 sm:right-6';
