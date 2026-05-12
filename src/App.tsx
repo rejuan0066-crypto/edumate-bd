@@ -300,7 +300,7 @@ const App = () => (
                   <Route path="/admission-test/:id/merit" element={<AdmissionTestMerit />} />
                   <Route path="/staff-application" element={<StaffApplicationPage />} />
                   <Route path="/donation" element={<DonationPage />} />
-                  <Route path="/fee-payment" element={<ProtectedRoute><FeePaymentPage /></ProtectedRoute>} />
+                  <Route path="/fee-payment" element={<FeePaymentPage />} />
                   <Route path="/posts" element={<PostsPage />} />
                   <Route path="/photo-tools" element={<PhotoToolsPage />} />
                   <Route path="/exams" element={<OnlineExams />} />
