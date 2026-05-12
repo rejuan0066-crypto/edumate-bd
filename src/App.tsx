@@ -283,6 +283,7 @@ const App = () => (
                 <InstallPrompt />
                 <NetworkStatusIndicator />
                 <FloatingWhatsAppButton />
+                <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
