@@ -415,6 +415,7 @@ const AdminDivisions = () => {
                                   <button onClick={() => { if (idx > 0) reorderClassMutation.mutate({ id: c.id, direction: 'up' }); }} disabled={idx === 0 || reorderClassMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => { if (idx < classes.length - 1) reorderClassMutation.mutate({ id: c.id, direction: 'down' }); }} disabled={idx === classes.length - 1 || reorderClassMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => startEditClass(c)} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>
+                                  <button onClick={() => toggleClassActiveMutation.mutate({ id: c.id, is_active: !c.is_active })} title={c.is_active ? (language === 'bn' ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (language === 'bn' ? 'সক্রিয় করুন' : 'Activate')} className={`p-1.5 rounded hover:bg-primary/10 ${c.is_active ? 'text-success' : 'text-muted-foreground'}`}><Power className="w-4 h-4" /></button>
                                 </>
                               )}
                               {canDeleteItem && (
