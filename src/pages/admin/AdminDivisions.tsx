@@ -14,6 +14,7 @@ import { useConfirm } from '@/contexts/ConfirmContext';
 const AdminDivisions = () => {
   const { language } = useLanguage();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const { checkApproval: checkDivApproval } = useApprovalCheck('/admin/divisions', 'divisions');
   const { canAddItem, canDeleteItem, canEditItem } = usePagePermissions('/admin/divisions');
   const { checkApproval: checkClassApproval } = useApprovalCheck('/admin/divisions', 'classes');
