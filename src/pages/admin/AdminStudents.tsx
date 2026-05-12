@@ -315,6 +315,7 @@ const AdminStudents = () => {
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
+                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                     <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
                   </tr>
