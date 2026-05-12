@@ -8742,6 +8742,57 @@ export type Database = {
           },
         ]
       }
+      student_type_audit: {
+        Row: {
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          created_at: string
+          id: string
+          new_type: string
+          old_type: string | null
+          reason: string | null
+          student_id: string
+        }
+        Insert: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          id?: string
+          new_type: string
+          old_type?: string | null
+          reason?: string | null
+          student_id: string
+        }
+        Update: {
+          changed_by?: string | null
+          changed_by_email?: string | null
+          changed_by_name?: string | null
+          created_at?: string
+          id?: string
+          new_type?: string
+          old_type?: string | null
+          reason?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_type_audit_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_type_audit_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           address: string | null
@@ -10188,6 +10239,26 @@ export type Database = {
         Args: { _menu_path: string }
         Returns: string[]
       }
+      change_student_type: {
+        Args: { p_new_type: string; p_reason?: string; p_student_id: string }
+        Returns: {
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          created_at: string
+          id: string
+          new_type: string
+          old_type: string | null
+          reason: string | null
+          student_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "student_type_audit"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       check_duplicate_birth_reg: {
         Args: { p_birth_reg: string }
         Returns: {
@@ -10322,6 +10393,26 @@ export type Database = {
       get_resolved_print_footer: {
         Args: { p_class_id?: string; p_exam_id?: string }
         Returns: Json
+      }
+      get_student_type_history: {
+        Args: { p_student_id: string }
+        Returns: {
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          created_at: string
+          id: string
+          new_type: string
+          old_type: string | null
+          reason: string | null
+          student_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "student_type_audit"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_user_role: { Args: { _user_id: string }; Returns: string }
       has_menu_permission: {
