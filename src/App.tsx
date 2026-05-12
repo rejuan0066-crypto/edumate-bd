@@ -1,7 +1,9 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import ModuleGuard from "@/components/ModuleGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/components/AdminLayout";
+import PageLoader from "@/components/PageLoader";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
