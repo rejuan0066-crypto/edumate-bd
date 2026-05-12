@@ -377,24 +377,29 @@ const AdminStudents = () => {
                           const cls = isOld
                             ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
                             : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
-                          if (canEditItem) {
-                            return (
-                              <button
-                                onClick={() => studentTypeMutation.mutate({ id: s.id, type: isOld ? 'new' : 'old' })}
-                                disabled={studentTypeMutation.isPending}
-                                title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to toggle'}
-                                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all hover:scale-105 ${cls}`}
-                              >
-                                <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
-                                {label}
-                              </button>
-                            );
-                          }
-                          return (
+                          const badge = (
                             <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
                               {label}
                             </span>
+                          );
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              {canEditItem ? (
+                                <button
+                                  onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
+                                  title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
+                                  className="hover:scale-105 transition-transform"
+                                >{badge}</button>
+                              ) : badge}
+                              <button
+                                onClick={() => setTypeHistoryFor(s)}
+                                title={bn ? 'হিস্টোরি' : 'History'}
+                                className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+                              >
+                                <History className="w-3 h-3" strokeWidth={2} />
+                              </button>
+                            </div>
                           );
                         })()}
                       </td>
