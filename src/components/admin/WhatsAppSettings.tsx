@@ -255,6 +255,50 @@ const WhatsAppSettings = () => {
             </div>
           </div>
 
+          {/* Route allow/deny list */}
+          <div className="rounded-xl border border-border/60 p-3 space-y-3 bg-muted/30">
+            <div>
+              <Label className="text-sm font-semibold">
+                {bn ? 'রুট ফিল্টার (কোন পেজে দেখাবে)' : 'Route filter (which pages show the button)'}
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {bn
+                  ? 'প্রতি লাইনে একটি রুট-প্রিফিক্স লিখুন (যেমন /admin, /parent-portal)। প্রিফিক্স ম্যাচ করে।'
+                  : 'One route prefix per line (e.g. /admin, /parent-portal). Matched as path prefix.'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs">{bn ? 'মোড' : 'Mode'}</Label>
+                <Select
+                  value={form.route_mode}
+                  onValueChange={(v: any) => setForm({ ...form, route_mode: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deny">{bn ? 'Deny — তালিকার পেজে লুকান' : 'Deny — hide on listed pages'}</SelectItem>
+                    <SelectItem value="allow">{bn ? 'Allow — শুধু তালিকার পেজে দেখান' : 'Allow — show only on listed pages'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="text-xs">{bn ? 'রুট প্যাটার্ন (প্রতি লাইনে একটি)' : 'Route patterns (one per line)'}</Label>
+                <Textarea
+                  value={routePatternsText}
+                  onChange={(e) => setRoutePatternsText(e.target.value)}
+                  rows={5}
+                  placeholder={'/admin\n/student-portal\n/parent-portal\n/auth'}
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {bn
+                ? 'খালি রাখলে ডিফল্ট: /admin, /student-portal, /student-info, /parent-portal, /auth, /login লুকানো থাকবে।'
+                : 'If empty, defaults to hiding: /admin, /student-portal, /student-info, /parent-portal, /auth, /login.'}
+            </p>
+          </div>
+
           {previewUrl && (
             <div className="p-3 rounded-xl bg-[#25D366]/10 border border-[#25D366]/20 flex items-center justify-between">
               <div className="text-xs">
