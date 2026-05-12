@@ -490,19 +490,8 @@ const AdmissionPage = () => {
         );
 
       case 'student_type':
-        return (
-          <div>
-            <Label>{label} {reqStar}</Label>
-            <div className="flex gap-3 mt-1">
-              {(['new', 'old'] as const).map(type => (
-                <button key={type} type="button" onClick={() => setForm(prev => ({ ...prev, student_type: type }))}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${form.student_type === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-muted-foreground hover:border-primary'}`}>
-                  {type === 'new' ? (bn ? 'নতুন ছাত্র' : 'New Student') : (bn ? 'পুরাতন ছাত্র' : 'Old Student')}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
+        // Hidden on the public admission page — admin sets this after approval.
+        return null;
 
       case 'residence_type':
         return (
