@@ -1,32 +1,71 @@
-// Service Worker — PWA + Web Push
-// Strategy: never cache the app shell/assets, so installed PWAs always boot the
-// newest deployment; keep this worker only for installability + Web Push.
-const CACHE_NAME = 'subhania-v3';
-const STATIC_CACHE = 'subhania-static-v3';
+// Service Worker — PWA install + Web Push + smart pre-cache
+//
+// Strategy:
+//  - Pre-cache app shell ("/", manifest, icons) on install so the very first
+//    PWA launch paints instantly from cache.
+//  - Navigations: stale-while-revalidate. We serve the cached "/" immediately
+//    (instant Home), then refresh it in the background. New deploys land on
+//    the next launch — old hashed chunks are cleaned via cache versioning.
+//  - Hashed build assets (/assets/*-[hash].js|css): cache-first, immutable.
+//  - Images/fonts: stale-while-revalidate.
+//  - Supabase / cross-origin API: never touched.
+//
+// Bump CACHE_VERSION whenever you change the SW logic.
+
+const CACHE_VERSION = 'v4';
+const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
+const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
+const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
+
+// Files we want available offline / instantly on first PWA launch
+const PRECACHE_URLS = [
+  '/',
+  '/manifest.json',
+  '/app-icon.png',
+  '/app-icon-192.png',
+  '/app-icon.svg',
+  '/placeholder.svg',
+];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(SHELL_CACHE);
+      // addAll fails if any single request fails — use Promise.allSettled equivalent
+      await Promise.all(
+        PRECACHE_URLS.map(async (url) => {
+          try {
+            const res = await fetch(url, { cache: 'reload' });
+            if (res && res.ok) await cache.put(url, res.clone());
+          } catch (_) {
+            /* skip — non-fatal */
+          }
+        })
+      );
+      await self.skipWaiting();
+    })()
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      // delete old caches
-      caches.keys().then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== STATIC_CACHE).map((k) => caches.delete(k)))
-      ),
-      self.clients.claim(),
-    ])
+    (async () => {
+      const keys = await caches.keys();
+      const valid = new Set([SHELL_CACHE, ASSET_CACHE, IMAGE_CACHE]);
+      await Promise.all(keys.filter((k) => !valid.has(k)).map((k) => caches.delete(k)));
+      // Speed up navigation revalidations on supported browsers
+      if (self.registration.navigationPreload) {
+        try { await self.registration.navigationPreload.enable(); } catch (_) {}
+      }
+      await self.clients.claim();
+    })()
   );
 });
 
-// Allow the page to force an immediate activation of a waiting worker,
-// or to fully purge caches before reload (mobile update path).
+// Allow the page to force activation / clear caches on demand.
 self.addEventListener('message', (event) => {
   const data = event.data || {};
-  if (data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
+  if (data.type === 'SKIP_WAITING') self.skipWaiting();
   if (data.type === 'CLEAR_CACHES') {
     event.waitUntil(
       caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
@@ -37,39 +76,116 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Fetch: network-only for HTML + hashed assets, with explicit cache bypass so
-// mobile browser HTTP cache cannot serve a stale index.html or old JS chunk
-// after a deploy (this is the #1 reason installed Android/iOS PWAs got stuck).
+// ───────── Helpers ─────────
+
+const isHashedAsset = (url) => /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.(?:js|css|woff2?|ttf|otf)(?:\?|$)/.test(url.pathname);
+
+const isImage = (req, url) =>
+  req.destination === 'image' ||
+  /\.(?:png|jpe?g|gif|svg|webp|ico|avif)$/i.test(url.pathname);
+
+// stale-while-revalidate: return cache instantly, refresh in background
+async function staleWhileRevalidate(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  const fetchPromise = fetch(req)
+    .then((res) => {
+      if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+      return res;
+    })
+    .catch(() => cached);
+  return cached || fetchPromise;
+}
+
+// cache-first for immutable hashed assets
+async function cacheFirst(req, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(req);
+  if (cached) return cached;
+  try {
+    const res = await fetch(req);
+    if (res && res.ok) cache.put(req, res.clone()).catch(() => {});
+    return res;
+  } catch (e) {
+    if (cached) return cached;
+    throw e;
+  }
+}
+
+// Navigation handler: try preload/network fast (3s), fall back to cached "/"
+async function handleNavigation(event) {
+  const cache = await caches.open(SHELL_CACHE);
+  const cachedShell = await cache.match('/');
+
+  // Race: network (with preload if any) vs. 1.2s timeout. If network wins,
+  // refresh the shell cache. Otherwise serve cached shell instantly.
+  const networkPromise = (async () => {
+    try {
+      const preload = event.preloadResponse ? await event.preloadResponse : null;
+      const res = preload || (await fetch(event.request));
+      if (res && res.ok && (event.request.mode === 'navigate')) {
+        // Update the "/" shell so the next launch is also fresh
+        try { await cache.put('/', res.clone()); } catch (_) {}
+      }
+      return res;
+    } catch (_) {
+      return null;
+    }
+  })();
+
+  if (!cachedShell) {
+    // First-ever visit, no cache yet — must wait for network
+    const res = await networkPromise;
+    if (res) return res;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
+  }
+
+  // Have cached shell → serve fast, but give network a brief head start
+  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
+  const winner = await Promise.race([networkPromise, timeoutPromise]);
+  return winner || cachedShell;
+}
+
+// ───────── Fetch ─────────
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-
-  // Skip non-http(s) and Supabase API (always live)
   if (!url.protocol.startsWith('http')) return;
-  if (url.hostname.includes('supabase.co')) return;
-  if (url.hostname.includes('supabase.in')) return;
 
-  // For navigation requests → bypass HTTP cache entirely.
+  // Never touch Supabase / cross-origin APIs
+  if (url.origin !== self.location.origin) return;
+  if (url.hostname.includes('supabase.co') || url.hostname.includes('supabase.in')) return;
+
+  // Navigation requests → cached shell with background refresh
   if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request, { cache: 'no-store' }).catch(() => fetch(request))
-    );
+    event.respondWith(handleNavigation(event));
     return;
   }
 
-  // Static build assets → network with cache bypass to guarantee fresh chunks
-  // after a deploy (cached old chunks can break a partially-updated app).
-  if (
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    request.destination === 'image' ||
-    request.destination === 'font'
-  ) {
-    event.respondWith(
-      fetch(request, { cache: 'no-store' }).catch(() => fetch(request))
-    );
+  // Hashed build assets are immutable → cache-first
+  if (isHashedAsset(url)) {
+    event.respondWith(cacheFirst(request, ASSET_CACHE));
+    return;
+  }
+
+  // Images / fonts (icons, logos, placeholders) → stale-while-revalidate
+  if (isImage(request, url) || request.destination === 'font') {
+    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
+    return;
+  }
+
+  // Manifest → stale-while-revalidate so install card is instant
+  if (url.pathname === '/manifest.json' || url.pathname.endsWith('.webmanifest')) {
+    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
+    return;
+  }
+
+  // Everything else (e.g. CSS without hash, scripts not in /assets) → SWR
+  if (request.destination === 'style' || request.destination === 'script') {
+    event.respondWith(staleWhileRevalidate(request, ASSET_CACHE));
   }
 });
 
