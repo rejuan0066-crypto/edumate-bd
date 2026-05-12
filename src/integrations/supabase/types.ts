@@ -10188,6 +10188,15 @@ export type Database = {
         Args: { _menu_path: string }
         Returns: string[]
       }
+      check_duplicate_birth_reg: {
+        Args: { p_birth_reg: string }
+        Returns: {
+          admission_session: string
+          registration_no: string
+          roll_number: string
+          student_id: string
+        }[]
+      }
       check_rate_limit: {
         Args: { _action: string; _key: string; _scope: string }
         Returns: Json
@@ -10247,6 +10256,10 @@ export type Database = {
         }[]
       }
       get_encryption_key: { Args: never; Returns: string }
+      get_next_admission_roll: {
+        Args: { p_class_id: string; p_session_id: string }
+        Returns: string
+      }
       get_next_receipt_serial: { Args: never; Returns: string }
       get_or_create_receipt_token: {
         Args: { _receipt_id: string; _receipt_type: string }
