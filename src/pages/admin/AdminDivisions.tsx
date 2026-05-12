@@ -209,7 +209,7 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['divisions'] });
       toast.success(language === 'bn' ? (is_active ? 'বিভাগ সক্রিয় করা হয়েছে' : 'বিভাগ নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Division activated' : 'Division deactivated'));
     },
-    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+    onError: (err: any) => toast.error(language === 'bn' ? 'বিভাগ টগল ব্যর্থ হয়েছে' : 'Failed to toggle division', { description: err?.message || (language === 'bn' ? 'অজানা সমস্যা' : 'Unknown error') }),
   });
 
   const toggleClassActiveMutation = useMutation({
@@ -223,7 +223,7 @@ const AdminDivisions = () => {
       queryClient.invalidateQueries({ queryKey: ['all-classes'] });
       toast.success(language === 'bn' ? (is_active ? 'শ্রেণী সক্রিয় করা হয়েছে' : 'শ্রেণী নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Class activated' : 'Class deactivated'));
     },
-    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+    onError: (err: any) => toast.error(language === 'bn' ? 'শ্রেণী টগল ব্যর্থ হয়েছে' : 'Failed to toggle class', { description: err?.message || (language === 'bn' ? 'অজানা সমস্যা' : 'Unknown error') }),
   });
 
   const selected = divisions.find(d => d.id === selectedDiv);
