@@ -196,6 +196,28 @@ const AdmissionPage = () => {
     }
   }, [form.session_year, form.roll_number, updateRegistrationFromRoll]);
 
+  // Auto-prefill from URL: ?class=<classId> → admission_class + division + running session/year
+  const [searchParams] = useSearchParams();
+  const urlClassId = searchParams.get('class');
+  useEffect(() => {
+    if (!urlClassId) return;
+    if (classes.length === 0) return;
+    const cls = classes.find((c: any) => c.id === urlClassId);
+    if (!cls) return;
+    setForm(prev => {
+      const next: Record<string, any> = { ...prev };
+      if (!prev.admission_class) next.admission_class = urlClassId;
+      // Auto-pick the first active session (sorted desc by name = current/running)
+      if (!prev.admission_session && academicSessions.length > 0) {
+        const running = academicSessions[0] as any;
+        next.admission_session = running.id;
+        next.session_year = running.name || prev.session_year;
+      }
+      return next;
+    });
+  }, [urlClassId, classes, academicSessions]);
+
+
   const calculateAge = useCallback((dateStr: string) => {
     if (!dateStr) return '';
     const birth = new Date(dateStr);
