@@ -221,7 +221,7 @@ const Home = () => {
                   </motion.div>
                 </div>
               )}
-              {isVisible('admissionButtons') && settings.divisions.length > 0 && (
+              {isVisible('admissionButtons') && (
                 <div className="lg:col-span-3">
                   <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.2 }} className="h-full">
                     <HomeAdmissionButtons divisions={settings.divisions} language={language} t={t} />
