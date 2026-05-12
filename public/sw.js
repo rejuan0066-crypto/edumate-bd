@@ -12,7 +12,8 @@
 //
 // Bump CACHE_VERSION whenever you change the SW logic.
 
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
+const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
@@ -20,6 +21,7 @@ const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
 // Files we want available offline / instantly on first PWA launch
 const PRECACHE_URLS = [
   '/',
+  '/offline.html',
   '/manifest.json',
   '/app-icon.png',
   '/app-icon-192.png',
@@ -137,13 +139,21 @@ async function handleNavigation(event) {
     // First-ever visit, no cache yet — must wait for network
     const res = await networkPromise;
     if (res) return res;
-    return new Response('Offline', { status: 503, statusText: 'Offline' });
+    const offline = await cache.match(OFFLINE_URL);
+    return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
   }
 
   // Have cached shell → serve fast, but give network a brief head start
   const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
   const winner = await Promise.race([networkPromise, timeoutPromise]);
-  return winner || cachedShell;
+  if (winner) return winner;
+  // If we're offline (no network response and navigator says offline), prefer the
+  // dedicated offline page when the cached shell would just spin forever.
+  if (!self.navigator.onLine) {
+    const offline = await cache.match(OFFLINE_URL);
+    if (offline) return offline;
+  }
+  return cachedShell;
 }
 
 // ───────── Fetch ─────────
