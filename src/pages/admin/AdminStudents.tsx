@@ -369,7 +369,7 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session)}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
                       <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
-                      <td className="px-5 py-4">
+                      {canApproveItem && <td className="px-5 py-4">
                         {(() => {
                           const t = (s.student_type === 'old') ? 'old' : 'new';
                           const isOld = t === 'old';
@@ -377,6 +377,7 @@ const AdminStudents = () => {
                           const cls = isOld
                             ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
                             : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
+                          const isApproved = s.approval_status === 'approved';
                           const badge = (
                             <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
                               <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
@@ -385,13 +386,15 @@ const AdminStudents = () => {
                           );
                           return (
                             <div className="flex items-center gap-1.5">
-                              {canEditItem ? (
+                              {isApproved ? (
                                 <button
                                   onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
                                   title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
                                   className="hover:scale-105 transition-transform"
                                 >{badge}</button>
-                              ) : badge}
+                              ) : (
+                                <span title={bn ? 'অনুমোদনের পরই পরিবর্তন করা যাবে' : 'Editable only after approval'} className="opacity-70">{badge}</span>
+                              )}
                               <button
                                 onClick={() => setTypeHistoryFor(s)}
                                 title={bn ? 'হিস্টোরি' : 'History'}
@@ -402,7 +405,7 @@ const AdminStudents = () => {
                             </div>
                           );
                         })()}
-                      </td>
+                      </td>}
                       <td className="px-5 py-4">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
