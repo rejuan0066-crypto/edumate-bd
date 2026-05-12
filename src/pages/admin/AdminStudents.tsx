@@ -102,6 +102,19 @@ const AdminStudents = () => {
     onError: () => toast.error('Error'),
   });
 
+  const studentTypeMutation = useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: 'new' | 'old' }) => {
+      if (await checkApproval('edit', { id, student_type: type }, id, `ছাত্রের ধরন: ${type}`)) return;
+      const { error } = await supabase.from('students').update({ student_type: type } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success(bn ? 'ছাত্রের ধরন আপডেট হয়েছে' : 'Student type updated');
+    },
+    onError: () => toast.error('Error'),
+  });
+
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
