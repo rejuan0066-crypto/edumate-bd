@@ -115,14 +115,29 @@ const AdminStudents = () => {
       });
       if (error) throw error;
     },
+    onMutate: async ({ id, type }) => {
+      await queryClient.cancelQueries({ queryKey: ['students'] });
+      const snapshots = queryClient.getQueriesData({ queryKey: ['students'] });
+      snapshots.forEach(([key, data]: any) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(key, data.map((s: any) => s.id === id ? { ...s, student_type: type } : s));
+        }
+      });
+      return { snapshots };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      queryClient.invalidateQueries({ queryKey: ['student-type-history'] });
       toast.success(bn ? 'ছাত্রের ধরন আপডেট হয়েছে' : 'Student type updated');
       setTypeChangeFor(null);
       setTypeChangeReason('');
     },
-    onError: (e: any) => toast.error(e?.message || 'Error'),
+    onError: (e: any, _vars, ctx: any) => {
+      ctx?.snapshots?.forEach(([key, data]: any) => queryClient.setQueryData(key, data));
+      toast.error(e?.message || 'Error');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['student-type-history'] });
+    },
   });
 
   const { data: typeHistory = [], isLoading: historyLoading } = useQuery({
