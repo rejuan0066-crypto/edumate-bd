@@ -102,6 +102,19 @@ const AdminStudents = () => {
     onError: () => toast.error('Error'),
   });
 
+  const studentTypeMutation = useMutation({
+    mutationFn: async ({ id, type }: { id: string; type: 'new' | 'old' }) => {
+      if (await checkApproval('edit', { id, student_type: type }, id, `ছাত্রের ধরন: ${type}`)) return;
+      const { error } = await supabase.from('students').update({ student_type: type } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success(bn ? 'ছাত্রের ধরন আপডেট হয়েছে' : 'Student type updated');
+    },
+    onError: () => toast.error('Error'),
+  });
+
   const toggleActiveMutation = useMutation({
     mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: string }) => {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -302,6 +315,7 @@ const AdminStudents = () => {
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'সেশন' : 'Session'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'শ্রেণী' : 'Class'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অনুমোদন' : 'Approval'}</th>
+                    <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'ধরন' : 'Type'}</th>
                     <th className="text-left px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'স্ট্যাটাস' : 'Status'}</th>
                     <th className="text-right px-5 py-4 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">{bn ? 'অ্যাকশন' : 'Action'}</th>
                   </tr>
@@ -334,6 +348,35 @@ const AdminStudents = () => {
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getSessionName(s.session_id, s.admission_session)}</td>
                       <td className="px-5 py-4 text-sm text-muted-foreground">{getClassName(s.class_id)}</td>
                       <td className="px-5 py-4">{getApprovalBadge(s.approval_status || 'pending')}</td>
+                      <td className="px-5 py-4">
+                        {(() => {
+                          const t = (s.student_type === 'old') ? 'old' : 'new';
+                          const isOld = t === 'old';
+                          const label = isOld ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
+                          const cls = isOld
+                            ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
+                            : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
+                          if (canEditItem) {
+                            return (
+                              <button
+                                onClick={() => studentTypeMutation.mutate({ id: s.id, type: isOld ? 'new' : 'old' })}
+                                disabled={studentTypeMutation.isPending}
+                                title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to toggle'}
+                                className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all hover:scale-105 ${cls}`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                                {label}
+                              </button>
+                            );
+                          }
+                          return (
+                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                              {label}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-5 py-4">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-destructive/10 text-destructive'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${(s.status || 'active') === 'active' ? 'bg-emerald-500' : 'bg-destructive'}`} />
@@ -373,7 +416,7 @@ const AdminStudents = () => {
                     </tr>
                   ))}
                   {sortedFiltered.length === 0 && (
-                    <tr><td colSpan={10} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
+                    <tr><td colSpan={11} className="text-center py-16 text-sm text-muted-foreground/60">{bn ? 'কোনো ছাত্র পাওয়া যায়নি' : 'No students found'}</td></tr>
                   )}
                 </tbody>
               </table>
