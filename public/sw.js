@@ -12,7 +12,7 @@
 //
 // Bump CACHE_VERSION whenever you change the SW logic.
 
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
@@ -76,7 +76,56 @@ self.addEventListener('message', (event) => {
         })
     );
   }
+  if (data.type === 'REFRESH_SHELL') {
+    event.waitUntil(refreshShellAndAssets());
+  }
 });
+
+// ───────── Background refresh of shell + warm assets ─────────
+//
+// Re-fetches "/" and the precache list, plus revalidates any hashed assets
+// already present in the asset cache. Runs on:
+//  - Background Sync (one-shot, when connectivity returns)
+//  - Periodic Background Sync (~ every few hours, Chrome/Android only)
+//  - Manual REFRESH_SHELL message from the page
+async function refreshShellAndAssets() {
+  try {
+    const shell = await caches.open(SHELL_CACHE);
+    await Promise.all(
+      PRECACHE_URLS.map(async (url) => {
+        try {
+          const res = await fetch(url, { cache: 'reload' });
+          if (res && res.ok) await shell.put(url, res.clone());
+        } catch (_) {}
+      })
+    );
+
+    // Revalidate hashed assets we already have (keeps icons/fonts/css fresh).
+    const assetCache = await caches.open(ASSET_CACHE);
+    const reqs = await assetCache.keys();
+    await Promise.all(
+      reqs.slice(0, 40).map(async (req) => {
+        try {
+          const res = await fetch(req, { cache: 'no-cache' });
+          if (res && res.ok) await assetCache.put(req, res.clone());
+        } catch (_) {}
+      })
+    );
+  } catch (_) {}
+}
+
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'refresh-shell') {
+    event.waitUntil(refreshShellAndAssets());
+  }
+});
+
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === 'refresh-shell') {
+    event.waitUntil(refreshShellAndAssets());
+  }
+});
+
 
 // ───────── Helpers ─────────
 

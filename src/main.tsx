@@ -33,8 +33,40 @@ createRoot(document.getElementById("root")!).render(<App />);
   }
 
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Silent fail — PWA install just won't be available
-    });
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then(async (reg) => {
+        // Register one-shot Background Sync for next online opportunity
+        try {
+          // @ts-ignore — sync is not in lib.dom.d.ts
+          await reg.sync?.register('refresh-shell');
+        } catch {}
+
+        // Register Periodic Background Sync (Chrome/Android, requires permission)
+        try {
+          // @ts-ignore — periodicSync is experimental
+          const periodic = reg.periodicSync;
+          if (periodic && 'permissions' in navigator) {
+            const status = await navigator.permissions.query({
+              // @ts-ignore — periodic-background-sync is experimental
+              name: 'periodic-background-sync',
+            });
+            if (status.state === 'granted') {
+              await periodic.register('refresh-shell', {
+                minInterval: 6 * 60 * 60 * 1000, // 6 hours
+              });
+            }
+          }
+        } catch {}
+
+        // Foreground fallback: nudge SW to refresh shell after each load
+        try {
+          const ctrl = navigator.serviceWorker.controller;
+          if (ctrl) ctrl.postMessage({ type: 'REFRESH_SHELL' });
+        } catch {}
+      })
+      .catch(() => {
+        // Silent fail — PWA install just won't be available
+      });
   });
 })();
