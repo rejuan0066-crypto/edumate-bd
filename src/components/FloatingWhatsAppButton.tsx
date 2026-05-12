@@ -29,17 +29,6 @@ const FloatingWhatsAppButton = () => {
     duration_ms: number;
   }>(null);
 
-  const path = location.pathname;
-  const isHiddenRoute =
-    path.startsWith('/admin') ||
-    path.startsWith('/student-portal') ||
-    path.startsWith('/student-info') ||
-    path.startsWith('/parent-portal') ||
-    path.startsWith('/auth') ||
-    path.startsWith('/login');
-
-  if (isHiddenRoute) return null;
-
   if (!config?.show_floating_button || !config?.phone_number?.trim()) {
     return null;
   }
