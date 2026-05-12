@@ -196,7 +196,33 @@ const AdminDivisions = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
-  const selected = divisions.find(d => d.id === selectedDiv);
+  const toggleDivActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const div = divisions.find(d => d.id === id);
+      if (await checkDivApproval('edit', { id, is_active }, id, `বিভাগ ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${div?.name_bn}`)) return;
+      const { error } = await supabase.from('divisions').update({ is_active } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['divisions'] });
+      toast.success(language === 'bn' ? (is_active ? 'বিভাগ সক্রিয় করা হয়েছে' : 'বিভাগ নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Division activated' : 'Division deactivated'));
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
+  const toggleClassActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const cls = allClasses.find((c: any) => c.id === id);
+      if (await checkClassApproval('edit', { id, is_active }, id, `শ্রেণী ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${cls?.name_bn}`)) return;
+      const { error } = await supabase.from('classes').update({ is_active } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['all-classes'] });
+      toast.success(language === 'bn' ? (is_active ? 'শ্রেণী সক্রিয় করা হয়েছে' : 'শ্রেণী নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Class activated' : 'Class deactivated'));
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
 
   const startEditDiv = (d: any) => {
     setEditingDivId(d.id);
