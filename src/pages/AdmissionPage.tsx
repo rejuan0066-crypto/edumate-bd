@@ -509,28 +509,12 @@ const AdmissionPage = () => {
         );
 
       case 'roll_number':
-        if (!showRollNo) return null;
-        return (
-          <div data-field={fieldKey}>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Input className={`bg-muted mt-1 ${errorBorder}`} value={form.roll_number || ''} readOnly
-              placeholder={bn ? 'অটো জেনারেট' : 'Auto-generated'} />
-            <FieldError field={fieldKey} />
-          </div>
-        );
+        // Hidden on public admission — assigned automatically on admin approval.
+        return null;
 
       case 'registration_no':
-        if (!isFormFieldVisible('registration_no')) return null;
-        return (
-          <div data-field={fieldKey}>
-            <Label className={errorLabel}>{label} {reqStar}</Label>
-            <Input className={`bg-muted mt-1 ${errorBorder}`}
-              value={form.registration_no || ''}
-              readOnly
-              placeholder={bn ? 'অটো জেনারেট' : 'Auto-generated'} />
-            <FieldError field={fieldKey} />
-          </div>
-        );
+        // Hidden on public admission — assigned automatically on admin approval.
+        return null;
 
       case 'admission_session':
         if (!showSession) return null;
