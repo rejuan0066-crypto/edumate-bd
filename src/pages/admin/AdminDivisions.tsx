@@ -305,9 +305,10 @@ const AdminDivisions = () => {
                           <span className="text-xs font-bold text-muted-foreground w-5 text-center">{idx + 1}</span>
                           <Layers className="w-5 h-5 text-primary" />
                           <div>
-                            <p className="text-sm font-medium text-foreground">
-                              {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded mr-2">{(d as any).prefix}</span> : null}
-                              {language === 'bn' ? d.name_bn : d.name}
+                            <p className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
+                              {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded">{(d as any).prefix}</span> : null}
+                              <span className={!(d as any).is_active ? 'opacity-60 line-through' : ''}>{language === 'bn' ? d.name_bn : d.name}</span>
+                              {!(d as any).is_active && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">{language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive'}</span>}
                             </p>
                             {(d as any).name_ar && (
                               <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(d as any).name_ar}</p>
