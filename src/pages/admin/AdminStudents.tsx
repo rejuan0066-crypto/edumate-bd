@@ -37,6 +37,9 @@ const AdminStudents = () => {
   const [filterApproval, setFilterApproval] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [typeChangeFor, setTypeChangeFor] = useState<any>(null);
+  const [typeChangeReason, setTypeChangeReason] = useState('');
+  const [typeHistoryFor, setTypeHistoryFor] = useState<any>(null);
   // Realtime subscription for auto-refresh
   useEffect(() => {
     const channel = supabase
