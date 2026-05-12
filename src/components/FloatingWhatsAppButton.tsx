@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useWhatsAppConfig, buildWhatsAppUrl, buildWhatsAppWebUrl, buildWhatsAppAppUrl, normalizeWhatsAppPhone } from '@/hooks/useWhatsAppConfig';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import { logWhatsAppEvent } from '@/lib/whatsappAnalytics';
 
 const FloatingWhatsAppButton = () => {
+  const location = useLocation();
   const { data: config } = useWhatsAppConfig();
   const { language } = useLanguage();
   const { role } = useAuth();
