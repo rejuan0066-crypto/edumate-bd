@@ -502,6 +502,109 @@ const AdminStudents = () => {
       onConfirm={() => { if (deleteId) { deleteMutation.mutate(deleteId); setDeleteId(null); } }}
       isPending={deleteMutation.isPending}
     />
+
+    {/* Student Type Change Dialog */}
+    <Dialog open={!!typeChangeFor} onOpenChange={(o) => { if (!o) { setTypeChangeFor(null); setTypeChangeReason(''); } }}>
+      <DialogContent className="sm:max-w-md rounded-[28px]">
+        <DialogHeader>
+          <DialogTitle>{bn ? 'ছাত্রের ধরন পরিবর্তন' : 'Change Student Type'}</DialogTitle>
+        </DialogHeader>
+        {typeChangeFor && (() => {
+          const current = (typeChangeFor.student_type === 'old') ? 'old' : 'new';
+          const next: 'new' | 'old' = current === 'old' ? 'new' : 'old';
+          const currentLabel = current === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
+          const nextLabel = next === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New');
+          return (
+            <div className="space-y-4">
+              <div className="text-sm">
+                <div className="font-semibold">{typeChangeFor.name_bn}</div>
+                <div className="text-xs text-muted-foreground">{typeChangeFor.student_id}</div>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Badge variant="outline">{currentLabel}</Badge>
+                <span className="text-muted-foreground">→</span>
+                <Badge>{nextLabel}</Badge>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                  {bn ? 'কারণ (আবশ্যক)' : 'Reason (required)'}
+                </label>
+                <Textarea
+                  value={typeChangeReason}
+                  onChange={e => setTypeChangeReason(e.target.value)}
+                  placeholder={bn ? 'কেন পরিবর্তন করছেন...' : 'Why are you changing...'}
+                  rows={3}
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => { setTypeChangeFor(null); setTypeChangeReason(''); }}>
+                  {bn ? 'বাতিল' : 'Cancel'}
+                </Button>
+                <Button
+                  disabled={!typeChangeReason.trim() || studentTypeMutation.isPending}
+                  onClick={() => studentTypeMutation.mutate({ id: typeChangeFor.id, type: next, reason: typeChangeReason.trim() })}
+                >
+                  {studentTypeMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  {bn ? 'নিশ্চিত করুন' : 'Confirm'}
+                </Button>
+              </DialogFooter>
+            </div>
+          );
+        })()}
+      </DialogContent>
+    </Dialog>
+
+    {/* Student Type History Dialog */}
+    <Dialog open={!!typeHistoryFor} onOpenChange={(o) => { if (!o) setTypeHistoryFor(null); }}>
+      <DialogContent className="sm:max-w-lg rounded-[28px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="w-5 h-5 text-primary" />
+            {bn ? 'ধরন পরিবর্তনের ইতিহাস' : 'Type Change History'}
+          </DialogTitle>
+        </DialogHeader>
+        {typeHistoryFor && (
+          <div className="space-y-3">
+            <div className="text-sm">
+              <div className="font-semibold">{typeHistoryFor.name_bn}</div>
+              <div className="text-xs text-muted-foreground">{typeHistoryFor.student_id}</div>
+            </div>
+            {historyLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : typeHistory.length === 0 ? (
+              <div className="text-center py-8 text-sm text-muted-foreground">
+                {bn ? 'কোনো পরিবর্তনের রেকর্ড নেই' : 'No change records'}
+              </div>
+            ) : (
+              <ol className="relative border-l border-border/40 pl-5 space-y-4">
+                {typeHistory.map((h: any) => (
+                  <li key={h.id} className="relative">
+                    <span className="absolute -left-[27px] top-1.5 w-3 h-3 rounded-full bg-primary ring-4 ring-background" />
+                    <div className="flex items-center gap-2 text-sm">
+                      <Badge variant="outline">
+                        {h.old_type === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
+                      </Badge>
+                      <span className="text-muted-foreground">→</span>
+                      <Badge>
+                        {h.new_type === 'old' ? (bn ? 'পুরাতন' : 'Old') : (bn ? 'নতুন' : 'New')}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {h.changed_by_name || h.changed_by_email || '—'} · {new Date(h.created_at).toLocaleString(bn ? 'bn-BD' : 'en-US')}
+                    </div>
+                    {h.reason && (
+                      <div className="mt-1.5 text-sm bg-muted/50 rounded-lg px-3 py-2 whitespace-pre-wrap">
+                        {h.reason}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
     </>
   );
 };
