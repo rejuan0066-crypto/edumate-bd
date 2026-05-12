@@ -26,6 +26,7 @@ const AdminStudents = () => {
   const queryClient = useQueryClient();
   const { checkApproval } = useApprovalCheck('/admin/students', 'students');
   const { canAddItem, canEditItem, canDeleteItem, canApproveItem } = usePagePermissions('/admin/students');
+  const confirm = useConfirm();
   const bn = language === 'bn';
   const { data: institution } = useInstitutionInfo();
   const [search, setSearch] = useState('');
