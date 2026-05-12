@@ -184,6 +184,7 @@ const AdminCommitteeAuditLog = lazy(() => import("@/pages/admin/AdminCommitteeAu
 import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
 import RouteLoader from "./components/RouteLoader";
+import RoutePrefetcher from "./components/RoutePrefetcher";
 import InstallPrompt from "./components/InstallPrompt";
 import NetworkStatusIndicator from "./components/NetworkStatusIndicator";
 import FloatingWhatsAppButton from "./components/FloatingWhatsAppButton";
@@ -278,6 +279,7 @@ const App = () => (
               <UpdatePrompt />
               <BrowserRouter>
                 <RouteLoader />
+                <RoutePrefetcher />
                 <ScrollToTop />
                 <ScrollNavigation />
                 <InstallPrompt />
