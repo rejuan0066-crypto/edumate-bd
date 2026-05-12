@@ -393,27 +393,34 @@ const AdminStudents = () => {
                             ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
                             : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
                           const isApproved = s.approval_status === 'approved';
+                          const isRowPending = studentTypeMutation.isPending && studentTypeMutation.variables?.id === s.id;
                           const badge = (
-                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${cls} ${isRowPending ? 'animate-pulse' : ''}`}>
+                              {isRowPending ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOld ? 'bg-violet-500' : 'bg-sky-500'}`} />
+                              )}
                               {label}
                             </span>
                           );
                           return (
-                            <div className="flex items-center gap-1.5">
+                            <div className={`flex items-center gap-1.5 ${isRowPending ? 'opacity-70 pointer-events-none' : ''}`}>
                               {isApproved ? (
                                 <button
+                                  disabled={isRowPending}
                                   onClick={() => { setTypeChangeFor(s); setTypeChangeReason(''); }}
                                   title={bn ? 'ক্লিক করে পরিবর্তন করুন' : 'Click to change'}
-                                  className="hover:scale-105 transition-transform"
+                                  className="hover:scale-105 transition-transform disabled:cursor-not-allowed"
                                 >{badge}</button>
                               ) : (
                                 <span title={bn ? 'অনুমোদনের পরই পরিবর্তন করা যাবে' : 'Editable only after approval'} className="opacity-70">{badge}</span>
                               )}
                               <button
+                                disabled={isRowPending}
                                 onClick={() => setTypeHistoryFor(s)}
                                 title={bn ? 'হিস্টোরি' : 'History'}
-                                className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors"
+                                className="w-6 h-6 rounded-full bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors disabled:opacity-50"
                               >
                                 <History className="w-3 h-3" strokeWidth={2} />
                               </button>
