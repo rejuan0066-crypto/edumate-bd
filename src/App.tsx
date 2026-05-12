@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@ta
 import ModuleGuard from "@/components/ModuleGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/components/AdminLayout";
-import PageLoader from "@/components/PageLoader";
+import RouteShimmer from "@/components/RouteShimmer";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -283,7 +283,7 @@ const App = () => (
                 <InstallPrompt />
                 <NetworkStatusIndicator />
                 <FloatingWhatsAppButton />
-                <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<RouteShimmer />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/about" element={<About />} />
