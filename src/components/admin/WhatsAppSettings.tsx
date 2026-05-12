@@ -89,6 +89,8 @@ const WhatsAppSettings = () => {
 
   useEffect(() => {
     if (config) {
+      const cfg: any = config;
+      const patterns: string[] = Array.isArray(cfg.route_patterns) ? cfg.route_patterns : [];
       setForm({
         phone_number: config.phone_number || '',
         welcome_message: config.welcome_message || '',
@@ -101,7 +103,10 @@ const WhatsAppSettings = () => {
         phone_number_id: config.phone_number_id || '',
         business_account_id: config.business_account_id || '',
         default_language: config.default_language || 'bn',
+        route_mode: (cfg.route_mode === 'allow' ? 'allow' : 'deny'),
+        route_patterns: patterns,
       });
+      setRoutePatternsText(patterns.join('\n'));
     }
   }, [config]);
 
