@@ -3,7 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
-import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, ChevronRight, Layers, Loader2, BookOpen, GraduationCap, Edit2, Check, X, ArrowUp, ArrowDown, Power } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -196,6 +196,34 @@ const AdminDivisions = () => {
     onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
   });
 
+  const toggleDivActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const div = divisions.find(d => d.id === id);
+      if (await checkDivApproval('edit', { id, is_active }, id, `বিভাগ ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${div?.name_bn}`)) return;
+      const { error } = await supabase.from('divisions').update({ is_active } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['divisions'] });
+      toast.success(language === 'bn' ? (is_active ? 'বিভাগ সক্রিয় করা হয়েছে' : 'বিভাগ নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Division activated' : 'Division deactivated'));
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
+  const toggleClassActiveMutation = useMutation({
+    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+      const cls = allClasses.find((c: any) => c.id === id);
+      if (await checkClassApproval('edit', { id, is_active }, id, `শ্রেণী ${is_active ? 'সক্রিয়' : 'নিষ্ক্রিয়'}: ${cls?.name_bn}`)) return;
+      const { error } = await supabase.from('classes').update({ is_active } as any).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { is_active }) => {
+      queryClient.invalidateQueries({ queryKey: ['all-classes'] });
+      toast.success(language === 'bn' ? (is_active ? 'শ্রেণী সক্রিয় করা হয়েছে' : 'শ্রেণী নিষ্ক্রিয় করা হয়েছে') : (is_active ? 'Class activated' : 'Class deactivated'));
+    },
+    onError: () => toast.error(language === 'bn' ? 'সমস্যা হয়েছে' : 'Error occurred'),
+  });
+
   const selected = divisions.find(d => d.id === selectedDiv);
 
   const startEditDiv = (d: any) => {
@@ -277,9 +305,10 @@ const AdminDivisions = () => {
                           <span className="text-xs font-bold text-muted-foreground w-5 text-center">{idx + 1}</span>
                           <Layers className="w-5 h-5 text-primary" />
                           <div>
-                            <p className="text-sm font-medium text-foreground">
-                              {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded mr-2">{(d as any).prefix}</span> : null}
-                              {language === 'bn' ? d.name_bn : d.name}
+                            <p className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
+                              {(d as any).prefix ? <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded">{(d as any).prefix}</span> : null}
+                              <span className={!(d as any).is_active ? 'opacity-60 line-through' : ''}>{language === 'bn' ? d.name_bn : d.name}</span>
+                              {!(d as any).is_active && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">{language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive'}</span>}
                             </p>
                             {(d as any).name_ar && (
                               <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{(d as any).name_ar}</p>
@@ -293,6 +322,7 @@ const AdminDivisions = () => {
                               <button onClick={(e) => { e.stopPropagation(); if (idx > 0) reorderDivMutation.mutate({ id: d.id, direction: 'up' }); }} disabled={idx === 0 || reorderDivMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
                               <button onClick={(e) => { e.stopPropagation(); if (idx < divisions.length - 1) reorderDivMutation.mutate({ id: d.id, direction: 'down' }); }} disabled={idx === divisions.length - 1 || reorderDivMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
                               <button onClick={(e) => { e.stopPropagation(); startEditDiv(d); }} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>
+                              <button onClick={(e) => { e.stopPropagation(); toggleDivActiveMutation.mutate({ id: d.id, is_active: !(d as any).is_active }); }} title={(d as any).is_active ? (language === 'bn' ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (language === 'bn' ? 'সক্রিয় করুন' : 'Activate')} className={`p-1.5 rounded hover:bg-primary/10 ${(d as any).is_active ? 'text-success' : 'text-muted-foreground'}`}><Power className="w-4 h-4" /></button>
                             </>
                           )}
                           {canDeleteItem && <button onClick={(e) => { e.stopPropagation(); deleteDivMutation.mutate(d.id); }} className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"><Trash2 className="w-4 h-4" /></button>}
@@ -372,7 +402,10 @@ const AdminDivisions = () => {
                               <span className="text-xs font-bold text-muted-foreground w-5 text-center">{globalClassOffset + idx + 1}</span>
                               <BookOpen className="w-4 h-4 text-primary" />
                               <div>
-                                <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
+                                <p className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
+                                  <span className={!c.is_active ? 'opacity-60 line-through' : ''}>{language === 'bn' ? c.name_bn : c.name}</span>
+                                  {!c.is_active && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">{language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive'}</span>}
+                                </p>
                                 <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
                                 {c.name_ar && (
                                   <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{c.name_ar}</p>
@@ -385,6 +418,7 @@ const AdminDivisions = () => {
                                   <button onClick={() => { if (idx > 0) reorderClassMutation.mutate({ id: c.id, direction: 'up' }); }} disabled={idx === 0 || reorderClassMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowUp className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => { if (idx < classes.length - 1) reorderClassMutation.mutate({ id: c.id, direction: 'down' }); }} disabled={idx === classes.length - 1 || reorderClassMutation.isPending} className="p-1 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
                                   <button onClick={() => startEditClass(c)} className="p-1.5 rounded hover:bg-primary/10 text-muted-foreground hover:text-primary"><Edit2 className="w-4 h-4" /></button>
+                                  <button onClick={() => toggleClassActiveMutation.mutate({ id: c.id, is_active: !c.is_active })} title={c.is_active ? (language === 'bn' ? 'নিষ্ক্রিয় করুন' : 'Deactivate') : (language === 'bn' ? 'সক্রিয় করুন' : 'Activate')} className={`p-1.5 rounded hover:bg-primary/10 ${c.is_active ? 'text-success' : 'text-muted-foreground'}`}><Power className="w-4 h-4" /></button>
                                 </>
                               )}
                               {canDeleteItem && (
