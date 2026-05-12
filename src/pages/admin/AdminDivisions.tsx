@@ -402,7 +402,10 @@ const AdminDivisions = () => {
                               <span className="text-xs font-bold text-muted-foreground w-5 text-center">{globalClassOffset + idx + 1}</span>
                               <BookOpen className="w-4 h-4 text-primary" />
                               <div>
-                                <p className="text-sm font-medium text-foreground">{language === 'bn' ? c.name_bn : c.name}</p>
+                                <p className="text-sm font-medium text-foreground flex items-center gap-2 flex-wrap">
+                                  <span className={!c.is_active ? 'opacity-60 line-through' : ''}>{language === 'bn' ? c.name_bn : c.name}</span>
+                                  {!c.is_active && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive">{language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive'}</span>}
+                                </p>
                                 <p className="text-xs text-muted-foreground">{language === 'bn' ? c.name : c.name_bn}</p>
                                 {c.name_ar && (
                                   <p dir="rtl" lang="ar" className="text-sm text-primary/80 leading-tight" style={{ fontFamily: '"Traditional Arabic", "Amiri", "Noto Naskh Arabic", serif' }}>{c.name_ar}</p>
