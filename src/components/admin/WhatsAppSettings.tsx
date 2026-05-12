@@ -142,11 +142,16 @@ const WhatsAppSettings = () => {
     }
     setSaving(true);
     try {
+      const parsedPatterns = routePatternsText
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0 && s.startsWith('/'));
+      const payload: any = { ...form, route_patterns: parsedPatterns };
       if (config?.id) {
-        const { error } = await supabase.from('whatsapp_config').update(form).eq('id', config.id);
+        const { error } = await supabase.from('whatsapp_config').update(payload).eq('id', config.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('whatsapp_config').insert(form);
+        const { error } = await supabase.from('whatsapp_config').insert(payload);
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ['whatsapp-config'] });
