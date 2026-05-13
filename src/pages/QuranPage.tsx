@@ -613,89 +613,122 @@ const QuranPage = () => {
                           <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 rounded-br-lg" style={{ borderColor: '#8b6f3a' }} />
 
                           {(() => {
-                            const surahsOnPage = Array.from(new Set(pageVerses.map((v) => Number(v.verse_key.split(':')[0]))));
-                            return surahsOnPage.map((sid) => {
-                              const ch = chapters.find((c) => c.id === sid);
-                              const startsHere = pageVerses.find((v) => v.verse_key === `${sid}:1`);
-                              if (!ch || !startsHere) return null;
+                            type Segment = { sid: number; verses: typeof pageVerses };
+                            const segments: Segment[] = [];
+                            for (const v of pageVerses) {
+                              const sid = Number(v.verse_key.split(':')[0]);
+                              const last = segments[segments.length - 1];
+                              if (last && last.sid === sid) last.verses.push(v);
+                              else segments.push({ sid, verses: [v] });
+                            }
+                            const arabicFont =
+                              settings.script === 'indopak'
+                                ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
+                                : '"Amiri Quran", "Scheherazade New", "Amiri", serif';
+                            return segments.map((seg, segIdx) => {
+                              const ch = chapters.find((c) => c.id === seg.sid);
+                              const startsHere = seg.verses[0]?.verse_key === `${seg.sid}:1`;
+                              const isContinuation = segIdx === 0 && !startsHere;
                               return (
-                                <div key={sid} className="text-center mb-3">
-                                  <div
-                                    className="inline-block px-6 py-2 rounded-lg border-2"
-                                    style={{ borderColor: '#8b6f3a', background: 'rgba(139,111,58,0.08)' }}
-                                  >
-                                    <p className="text-2xl font-bold" style={{ fontFamily: 'Amiri Quran, Amiri, serif', color: '#5a4520' }}>
-                                      سورة {ch.name_arabic}
-                                    </p>
-                                  </div>
-                                  {sid !== 1 && sid !== 9 && (
-                                    <p
-                                      dir="rtl"
-                                      className="mt-3 text-2xl"
-                                      style={{ fontFamily: 'Amiri Quran, Amiri, serif', color: '#3d2f15' }}
-                                    >
-                                      بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
-                                    </p>
+                                <div key={`${seg.sid}-${segIdx}`} className={segIdx > 0 ? 'mt-6' : ''}>
+                                  {startsHere && ch && (
+                                    <div className="text-center mb-3">
+                                      <div
+                                        className="inline-flex items-center gap-3 px-6 py-2 rounded-lg border-2"
+                                        style={{ borderColor: '#8b6f3a', background: 'rgba(139,111,58,0.08)' }}
+                                      >
+                                        <span className="text-xs font-bold tabular-nums" style={{ color: '#5a4520' }}>
+                                          {seg.sid}
+                                        </span>
+                                        <p className="text-2xl font-bold" style={{ fontFamily: arabicFont, color: '#5a4520' }}>
+                                          سورة {ch.name_arabic}
+                                        </p>
+                                        <span className="text-xs" style={{ color: '#5a4520' }}>
+                                          {ch.verses_count} {bn ? 'আয়াত' : 'verses'}
+                                        </span>
+                                      </div>
+                                      {seg.sid !== 1 && seg.sid !== 9 && (
+                                        <p
+                                          dir="rtl"
+                                          className="mt-3 text-2xl"
+                                          style={{ fontFamily: arabicFont, color: '#3d2f15' }}
+                                        >
+                                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                                        </p>
+                                      )}
+                                    </div>
                                   )}
+                                  {isContinuation && ch && (
+                                    <div className="text-center mb-3">
+                                      <span
+                                        className="inline-block px-4 py-1 rounded-full text-xs"
+                                        style={{
+                                          borderWidth: 1,
+                                          borderColor: '#8b6f3a',
+                                          background: 'rgba(139,111,58,0.06)',
+                                          color: '#5a4520',
+                                          fontFamily: arabicFont,
+                                        }}
+                                      >
+                                        {bn ? 'চলমান:' : 'Continued:'} سورة {ch.name_arabic}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <p
+                                    dir="rtl"
+                                    lang="ar"
+                                    className="text-justify"
+                                    style={{
+                                      fontSize: `${settings.arabicSize}px`,
+                                      lineHeight: 2.4,
+                                      fontFamily: arabicFont,
+                                      color: '#1f1810',
+                                      textAlignLast: 'center',
+                                    }}
+                                  >
+                                    {seg.verses.map((v) => {
+                                      const arabicText = settings.script === 'indopak' && v.text_indopak ? v.text_indopak : v.text_uthmani;
+                                      const num = v.verse_key.split(':')[1];
+                                      const isCurrent = playingKey === v.verse_key;
+                                      return (
+                                        <span key={v.id} id={`v-${v.verse_key}`}>
+                                          <span
+                                            onClick={() => playVerse(v)}
+                                            className="cursor-pointer transition-colors"
+                                            style={{
+                                              background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
+                                              borderRadius: 6,
+                                              padding: isCurrent ? '0 4px' : undefined,
+                                            }}
+                                          >
+                                            {arabicText}
+                                          </span>
+                                          <span
+                                            className="inline-flex items-center justify-center mx-1 text-base font-bold align-middle cursor-pointer"
+                                            onClick={() => toggleBookmark(v.verse_key)}
+                                            title={v.verse_key}
+                                            style={{
+                                              width: '1.6em',
+                                              height: '1.6em',
+                                              background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
+                                              color: '#fdf6e3',
+                                              borderRadius: '50%',
+                                              fontSize: '0.55em',
+                                              boxShadow: bookmarks.includes(v.verse_key)
+                                                ? '0 0 0 2px hsl(var(--primary))'
+                                                : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
+                                            }}
+                                          >
+                                            {Number(num).toLocaleString('ar-EG')}
+                                          </span>{' '}
+                                        </span>
+                                      );
+                                    })}
+                                  </p>
                                 </div>
                               );
                             });
                           })()}
-
-                          <p
-                            dir="rtl"
-                            lang="ar"
-                            className="text-justify"
-                            style={{
-                              fontSize: `${settings.arabicSize}px`,
-                              lineHeight: 2.4,
-                              fontFamily:
-                                settings.script === 'indopak'
-                                  ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
-                                  : '"Amiri Quran", "Scheherazade New", "Amiri", serif',
-                              color: '#1f1810',
-                              textAlignLast: 'center',
-                            }}
-                          >
-                            {pageVerses.map((v) => {
-                              const arabicText = settings.script === 'indopak' && v.text_indopak ? v.text_indopak : v.text_uthmani;
-                              const num = v.verse_key.split(':')[1];
-                              const isCurrent = playingKey === v.verse_key;
-                              return (
-                                <span key={v.id} id={`v-${v.verse_key}`}>
-                                  <span
-                                    onClick={() => playVerse(v)}
-                                    className="cursor-pointer transition-colors"
-                                    style={{
-                                      background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
-                                      borderRadius: 6,
-                                      padding: isCurrent ? '0 4px' : undefined,
-                                    }}
-                                  >
-                                    {arabicText}
-                                  </span>
-                                  <span
-                                    className="inline-flex items-center justify-center mx-1 text-base font-bold align-middle cursor-pointer"
-                                    onClick={() => toggleBookmark(v.verse_key)}
-                                    title={v.verse_key}
-                                    style={{
-                                      width: '1.6em',
-                                      height: '1.6em',
-                                      background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
-                                      color: '#fdf6e3',
-                                      borderRadius: '50%',
-                                      fontSize: '0.55em',
-                                      boxShadow: bookmarks.includes(v.verse_key)
-                                        ? '0 0 0 2px hsl(var(--primary))'
-                                        : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
-                                    }}
-                                  >
-                                    {Number(num).toLocaleString('ar-EG')}
-                                  </span>{' '}
-                                </span>
-                              );
-                            })}
-                          </p>
 
                           <div className="mt-6 pt-4 border-t border-dashed text-center text-sm" style={{ borderColor: '#8b6f3a', color: '#5a4520' }}>
                             {bn ? `পৃষ্ঠা ${page.toLocaleString('bn-BD')}` : `Page ${page}`}
