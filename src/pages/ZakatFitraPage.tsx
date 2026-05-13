@@ -42,15 +42,34 @@ const ZakatFitraPage = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['zakat-fitra-settings-public'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const currentYear = new Date().getFullYear();
+      // 1) Try current calendar year first (auto year switch)
+      const { data: currentRow, error: currentErr } = await supabase
+        .from('zakat_fitra_settings')
+        .select('*')
+        .eq('year', currentYear)
+        .maybeSingle();
+      if (currentErr) throw currentErr;
+      if (currentRow) return currentRow as unknown as ZakatSettings;
+      // 2) Fallback: active row (latest)
+      const { data: activeRow, error: activeErr } = await supabase
         .from('zakat_fitra_settings')
         .select('*')
         .eq('is_active', true)
         .order('year', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (error) throw error;
-      return data as unknown as ZakatSettings | null;
+      if (activeErr) throw activeErr;
+      if (activeRow) return activeRow as unknown as ZakatSettings;
+      // 3) Final fallback: latest year overall
+      const { data: latestRow, error: latestErr } = await supabase
+        .from('zakat_fitra_settings')
+        .select('*')
+        .order('year', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestErr) throw latestErr;
+      return (latestRow as unknown as ZakatSettings) || null;
     },
   });
 
