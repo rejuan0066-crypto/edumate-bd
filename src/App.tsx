@@ -59,6 +59,7 @@ const ComplaintPage = lazy(() => import("./pages/ComplaintPage"));
 const ComplaintTrackPage = lazy(() => import("./pages/ComplaintTrackPage"));
 const ZakatFitraPage = lazy(() => import("./pages/ZakatFitraPage"));
 const AdminZakatFitra = lazy(() => import("./pages/admin/AdminZakatFitra"));
+const AdminZakatLogs = lazy(() => import("./pages/admin/AdminZakatLogs"));
 
 // Lazy-loaded admin pages (huge bundle — never loaded on public PWA boot)
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
