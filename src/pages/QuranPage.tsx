@@ -439,16 +439,28 @@ const QuranPage = () => {
     });
   };
 
-  // Scroll to verse
+  // Scroll to verse (works for both standard and mushaf renderers)
   useEffect(() => {
-    if (!scrollKey || versesLoading) return;
-    const el = document.getElementById(`v-${scrollKey}`);
-    if (el) {
+    if (!scrollKey) return;
+    if (!isMushaf && versesLoading) return;
+    if (isMushaf && mushafPages.length === 0) return;
+    // Defer to next paint so newly mounted verse spans are in DOM
+    const tryScroll = () => {
+      const el = document.getElementById(`v-${scrollKey}`);
+      if (!el) return false;
+      suppressScrollSyncRef.current = true;
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add('ring-2', 'ring-primary');
       setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 1800);
+      setTimeout(() => { suppressScrollSyncRef.current = false; }, 1200);
+      return true;
+    };
+    if (!tryScroll()) {
+      const t = setTimeout(tryScroll, 250);
+      return () => clearTimeout(t);
     }
-  }, [scrollKey, versesLoading, verses]);
+  }, [scrollKey, versesLoading, verses, isMushaf, mushafPages]);
+
 
   // Filtered chapters for sidebar search
   const filteredChapters = useMemo(() => {
