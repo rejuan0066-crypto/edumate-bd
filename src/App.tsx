@@ -324,6 +324,7 @@ const App = () => (
                   <Route path="/complaints" element={<ComplaintPage />} />
                   <Route path="/complaints/track" element={<ComplaintTrackPage />} />
                   <Route path="/zakat-fitra" element={<ZakatFitraPage />} />
+                  <Route path="/quran" element={<QuranPage />} />
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
