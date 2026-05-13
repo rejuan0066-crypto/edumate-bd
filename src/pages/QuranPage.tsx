@@ -98,6 +98,8 @@ interface Settings {
   arabicSize: number;
   reciterId: number;
   mushafView: boolean;
+  showSurahHeader: boolean;
+  showContinuationBadge: boolean;
 }
 const defaultSettings: Settings = {
   script: 'uthmani',
@@ -106,6 +108,8 @@ const defaultSettings: Settings = {
   arabicSize: 32,
   reciterId: 7,
   mushafView: false,
+  showSurahHeader: true,
+  showContinuationBadge: true,
 };
 
 // ========== Page ==========
@@ -697,7 +701,7 @@ const QuranPage = () => {
                               const isContinuation = !startsHere;
                               return (
                                 <div key={`${seg.sid}-${segIdx}`} className={segIdx > 0 ? 'mt-6' : ''}>
-                                  {startsHere && ch && (
+                                  {startsHere && ch && settings.showSurahHeader && (
                                     <div className="text-center mb-3">
                                       <div
                                         className="inline-flex items-center gap-3 px-6 py-2 rounded-lg border-2"
@@ -724,7 +728,7 @@ const QuranPage = () => {
                                       )}
                                     </div>
                                   )}
-                                  {isContinuation && ch && (
+                                  {isContinuation && ch && settings.showContinuationBadge && (
                                     <div className="text-center mb-3">
                                       <span
                                         className="inline-block px-4 py-1 rounded-full text-xs"
@@ -1303,7 +1307,23 @@ const SettingsSheet = ({
           <div>
             <p className="text-sm font-medium">{bn ? 'মুসহাফ পৃষ্ঠা ভিউ' : 'Mushaf page view'}</p>
             <p className="text-xs text-muted-foreground">{bn ? 'কুরআন শরীফের ছাপার মতো পৃষ্ঠা আকারে দেখুন (পৃষ্ঠা মোডে)' : 'Traditional Mushaf-style page (in Page mode)'}</p>
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">{bn ? 'সূরা হেডার দেখান' : 'Show surah header'}</p>
+            <p className="text-xs text-muted-foreground">{bn ? 'মুসহাফ পৃষ্ঠায় সূরার নাম, নম্বর ও বিসমিল্লাহ দেখান' : 'Show surah name, number & Bismillah on Mushaf page'}</p>
           </div>
+          <Switch checked={settings.showSurahHeader} onCheckedChange={(b) => setSettings({ ...settings, showSurahHeader: b })} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">{bn ? "'চলমান' ব্যাজ দেখান" : "Show 'Continued' badge"}</p>
+            <p className="text-xs text-muted-foreground">{bn ? 'আগের পৃষ্ঠা থেকে চলমান সূরার জন্য ব্যাজ দেখান' : 'Show badge for surahs continuing from previous page'}</p>
+          </div>
+          <Switch checked={settings.showContinuationBadge} onCheckedChange={(b) => setSettings({ ...settings, showContinuationBadge: b })} />
+        </div>
           <Switch checked={settings.mushafView} onCheckedChange={(b) => setSettings({ ...settings, mushafView: b })} />
         </div>
       </div>
