@@ -171,6 +171,8 @@ const AdminZakatFitra = () => {
     toast.success(bn ? `${r.year} এখন অ্যাক্টিভ ইয়ার` : `${r.year} is now the active year`);
     load();
   };
+
+  return (
     <AdminLayout>
       <div className="max-w-[1200px] mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
