@@ -339,6 +339,35 @@ const QuranPage = () => {
     return () => io.disconnect();
   }, [isMushaf, mushafPages, activeId]);
 
+  // Track most-visible verse inside Mushaf and persist as resume point
+  const [currentMushafVerse, setCurrentMushafVerse] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isMushaf || mushafPages.length === 0) return;
+    const verseEls = Array.from(document.querySelectorAll<HTMLElement>('[id^="v-"]'));
+    if (verseEls.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (suppressScrollSyncRef.current) return;
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const key = (visible.target as HTMLElement).id.replace(/^v-/, '');
+        if (/^\d+:\d+$/.test(key)) setCurrentMushafVerse(key);
+      },
+      { threshold: [0.4, 0.7], rootMargin: '-30% 0px -50% 0px' },
+    );
+    verseEls.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [isMushaf, mushafPages]);
+
+  // Persist resume verse (debounced via state setter cycle)
+  useEffect(() => {
+    if (!restored || !isMushaf || !currentMushafVerse) return;
+    localStorage.setItem(lastMushafVerseKey(userId), currentMushafVerse);
+  }, [currentMushafVerse, isMushaf, restored, userId]);
+
+
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingKey, setPlayingKey] = useState<string | null>(null); // verse key or 'surah'
