@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calculator, Coins, Wheat, Save, Loader2 } from 'lucide-react';
+import { Calculator, Coins, Wheat, Save, Loader2, Gauge, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FitraOption {
@@ -175,54 +176,77 @@ const ZakatFitraPage = () => {
           </Card>
         ) : (
           <>
-            {/* Rates info */}
-            <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">{bn ? 'স্বর্ণের নিসাব' : 'Gold Nisab'}</p>
-                  <p className="font-semibold">{fmt(settings.nisab_gold_grams, bn)} {bn ? 'গ্রাম' : 'g'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">{bn ? 'রূপার নিসাব' : 'Silver Nisab'}</p>
-                  <p className="font-semibold">{fmt(settings.nisab_silver_grams, bn)} {bn ? 'গ্রাম' : 'g'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">{bn ? 'স্বর্ণ/গ্রাম' : 'Gold/g'}</p>
-                  <p className="font-semibold">৳ {fmt(settings.gold_price_per_gram, bn)}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">{bn ? 'রূপা/গ্রাম' : 'Silver/g'}</p>
-                  <p className="font-semibold">৳ {fmt(settings.silver_price_per_gram, bn)}</p>
-                </div>
-              </div>
-            </Card>
+          <Tabs defaultValue="rates" className="space-y-6">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-2 h-auto bg-card/60 backdrop-blur-xl border border-border/60 p-2 rounded-2xl">
+              <TabsTrigger value="rates" className="rounded-xl flex items-center gap-2 py-2.5">
+                <Gauge className="w-4 h-4" /> {bn ? 'রেট' : 'Rates'}
+              </TabsTrigger>
+              <TabsTrigger value="zakat" className="rounded-xl flex items-center gap-2 py-2.5">
+                <Coins className="w-4 h-4" /> {bn ? 'যাকাত' : 'Zakat'}
+              </TabsTrigger>
+              <TabsTrigger value="fitra" className="rounded-xl flex items-center gap-2 py-2.5">
+                <Wheat className="w-4 h-4" /> {bn ? 'ফিতরা' : 'Fitra'}
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="rounded-xl flex items-center gap-2 py-2.5" disabled={!settings.notes_bn && !settings.notes_en}>
+                <Info className="w-4 h-4" /> {bn ? 'নোট' : 'Notes'}
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Optional contact for audit log */}
-            <Card className="p-5 rounded-[32px] bg-card/60 backdrop-blur-xl border border-border/40">
-              <p className="text-xs text-muted-foreground mb-3">
-                {bn ? 'ঐচ্ছিক — সংরক্ষিত হিসাবের সাথে আপনার নাম/ফোন সংযুক্ত করতে পারেন।' : 'Optional — attach your name/phone to saved calculations.'}
-              </p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">{bn ? 'নাম (ঐচ্ছিক)' : 'Name (optional)'}</Label>
-                  <Input value={contactName} onChange={(e) => setContactName(e.target.value.slice(0, 100))} maxLength={100} className="rounded-xl" />
+            {/* Rates widget */}
+            <TabsContent value="rates" className="mt-0">
+              <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">{bn ? 'স্বর্ণের নিসাব' : 'Gold Nisab'}</p>
+                    <p className="font-semibold">{fmt(settings.nisab_gold_grams, bn)} {bn ? 'গ্রাম' : 'g'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">{bn ? 'রূপার নিসাব' : 'Silver Nisab'}</p>
+                    <p className="font-semibold">{fmt(settings.nisab_silver_grams, bn)} {bn ? 'গ্রাম' : 'g'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">{bn ? 'স্বর্ণ/গ্রাম' : 'Gold/g'}</p>
+                    <p className="font-semibold">৳ {fmt(settings.gold_price_per_gram, bn)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">{bn ? 'রূপা/গ্রাম' : 'Silver/g'}</p>
+                    <p className="font-semibold">৳ {fmt(settings.silver_price_per_gram, bn)}</p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
-                  <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value.slice(0, 30))} maxLength={30} className="rounded-xl" />
+                <div className="mt-5 pt-5 border-t text-xs text-muted-foreground space-y-1">
+                  <p className="font-medium text-foreground">{bn ? 'ফিতরা রেট তালিকা' : 'Fitra rate list'}</p>
+                  {settings.fitra_options.map((o, i) => (
+                    <p key={i}>• {bn ? o.name_bn : o.name_en}: {fmt(o.amount_kg, bn)}{bn ? ' কেজি' : ' kg'} × ৳{fmt(o.price_per_kg, bn)} = <span className="text-foreground font-semibold">৳ {fmt(o.amount_kg * o.price_per_kg, bn)}</span></p>
+                  ))}
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </TabsContent>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              {/* Zakat */}
+            {/* Zakat widget */}
+            <TabsContent value="zakat" className="mt-0 space-y-6">
+              <Card className="p-5 rounded-[32px] bg-card/60 backdrop-blur-xl border border-border/40">
+                <p className="text-xs text-muted-foreground mb-3">
+                  {bn ? 'ঐচ্ছিক — সংরক্ষিত হিসাবের সাথে আপনার নাম/ফোন সংযুক্ত করতে পারেন।' : 'Optional — attach your name/phone to saved calculations.'}
+                </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (ঐচ্ছিক)' : 'Name (optional)'}</Label>
+                    <Input value={contactName} onChange={(e) => setContactName(e.target.value.slice(0, 100))} maxLength={100} className="rounded-xl" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
+                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value.slice(0, 30))} maxLength={30} className="rounded-xl" />
+                  </div>
+                </div>
+              </Card>
+
               <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60 space-y-4">
                 <div className="flex items-center gap-2">
                   <Coins className="w-5 h-5 text-primary" />
                   <h2 className="text-xl font-bold">{bn ? 'যাকাত হিসাব' : 'Zakat Calculation'}</h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     [bn ? 'নগদ অর্থ (৳)' : 'Cash (৳)', cash, setCash],
                     [bn ? 'ব্যাংক ব্যালেন্স (৳)' : 'Bank balance (৳)', bank, setBank],
@@ -274,8 +298,26 @@ const ZakatFitraPage = () => {
                   </div>
                 )}
               </Card>
+            </TabsContent>
 
-              {/* Fitra */}
+            {/* Fitra widget */}
+            <TabsContent value="fitra" className="mt-0 space-y-6">
+              <Card className="p-5 rounded-[32px] bg-card/60 backdrop-blur-xl border border-border/40">
+                <p className="text-xs text-muted-foreground mb-3">
+                  {bn ? 'ঐচ্ছিক — সংরক্ষিত হিসাবের সাথে আপনার নাম/ফোন সংযুক্ত করতে পারেন।' : 'Optional — attach your name/phone to saved calculations.'}
+                </p>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (ঐচ্ছিক)' : 'Name (optional)'}</Label>
+                    <Input value={contactName} onChange={(e) => setContactName(e.target.value.slice(0, 100))} maxLength={100} className="rounded-xl" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
+                    <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value.slice(0, 30))} maxLength={30} className="rounded-xl" />
+                  </div>
+                </div>
+              </Card>
+
               <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60 space-y-4">
                 <div className="flex items-center gap-2">
                   <Wheat className="w-5 h-5 text-primary" />
@@ -314,21 +356,18 @@ const ZakatFitraPage = () => {
                     </Button>
                   </div>
                 )}
-
-                <div className="text-xs text-muted-foreground space-y-1 pt-2">
-                  <p>{bn ? 'রেট তালিকা:' : 'Rate list:'}</p>
-                  {settings.fitra_options.map((o, i) => (
-                    <p key={i}>• {bn ? o.name_bn : o.name_en}: ৳ {fmt(o.amount_kg * o.price_per_kg, bn)}</p>
-                  ))}
-                </div>
               </Card>
-            </div>
+            </TabsContent>
 
+            {/* Notes widget */}
             {(settings.notes_bn || settings.notes_en) && (
-              <Card className="p-6 rounded-[32px] bg-muted/30">
-                <p className="text-sm whitespace-pre-line">{bn ? settings.notes_bn : settings.notes_en}</p>
-              </Card>
+              <TabsContent value="notes" className="mt-0">
+                <Card className="p-6 rounded-[32px] bg-muted/30">
+                  <p className="text-sm whitespace-pre-line">{bn ? settings.notes_bn : settings.notes_en}</p>
+                </Card>
+              </TabsContent>
             )}
+          </Tabs>
           </>
         )}
       </div>
