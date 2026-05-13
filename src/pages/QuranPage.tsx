@@ -1083,6 +1083,14 @@ const SettingsSheet = ({
           </div>
           <Switch checked={continuous} onCheckedChange={setContinuous} />
         </div>
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">{bn ? 'মুসহাফ পৃষ্ঠা ভিউ' : 'Mushaf page view'}</p>
+            <p className="text-xs text-muted-foreground">{bn ? 'কুরআন শরীফের ছাপার মতো পৃষ্ঠা আকারে দেখুন (পৃষ্ঠা মোডে)' : 'Traditional Mushaf-style page (in Page mode)'}</p>
+          </div>
+          <Switch checked={settings.mushafView} onCheckedChange={(b) => setSettings({ ...settings, mushafView: b })} />
+        </div>
       </div>
     </SheetContent>
   );
