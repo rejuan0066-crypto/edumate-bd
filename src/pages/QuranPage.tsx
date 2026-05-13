@@ -728,7 +728,7 @@ const QuranPage = () => {
                                       )}
                                     </div>
                                   )}
-                                  {isContinuation && ch && (
+                                  {isContinuation && ch && settings.showContinuationBadge && (
                                     <div className="text-center mb-3">
                                       <span
                                         className="inline-block px-4 py-1 rounded-full text-xs"
