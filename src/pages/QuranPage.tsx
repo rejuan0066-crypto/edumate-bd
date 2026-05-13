@@ -728,6 +728,8 @@ const QuranPage = () => {
                   {bn ? 'কোন আয়াত পাওয়া যায়নি' : 'No verses found'}
                 </Card>
               )}
+              </>
+              )}
             </div>
           )}
         </main>
