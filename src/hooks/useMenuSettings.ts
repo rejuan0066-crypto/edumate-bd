@@ -186,6 +186,8 @@ const DEFAULT_PUBLIC: MenuItemConfig[] = [
   { id: 'live-classes-public', path: '/live-classes', label_bn: 'লাইভ ক্লাস', label_en: 'Live Classes', icon: '', visible: true, sort_order: 8.5 },
   { id: 'contact', path: '/contact', label_bn: 'যোগাযোগ', label_en: 'Contact', icon: '', visible: true, sort_order: 9 },
   { id: 'complaints-public', path: '/complaints', label_bn: 'অভিযোগ বক্স', label_en: 'Complaint Box', icon: '', visible: true, sort_order: 9.5 },
+  { id: 'quran-public', path: '/quran', label_bn: 'কুরআন', label_en: 'Quran', icon: '', visible: true, sort_order: 9.7 },
+  { id: 'zakat-fitra-public', path: '/zakat-fitra', label_bn: 'যাকাত ও ফিতরা', label_en: 'Zakat & Fitra', icon: '', visible: true, sort_order: 9.8 },
 ];
 
 export const DEFAULT_MENU_CONFIG: MenuConfig = {
