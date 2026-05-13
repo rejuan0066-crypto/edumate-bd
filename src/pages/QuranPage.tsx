@@ -139,25 +139,55 @@ const QuranPage = () => {
   // Restore last read on mount
   useEffect(() => {
     document.title = bn ? 'কুরআন পাঠ' : 'Quran Reading';
+  // Per-user scope (Supabase auth uid when available, else anon)
+  const [userId, setUserId] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setUserId(data.user?.id || null);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUserId(session?.user?.id || null);
+    });
+    return () => { mounted = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  // Restore last read on mount / when user scope resolves
+  useEffect(() => {
+    document.title = bn ? 'কুরআন পাঠ' : 'Quran Reading';
+    if (restored) return;
     try {
-      const last = JSON.parse(localStorage.getItem(LS_LAST_READ) || 'null') as
+      const last = JSON.parse(localStorage.getItem(lastReadKey(userId)) || 'null') as
         | { mode: 'chapter' | 'page' | 'juz'; id: number; verseKey?: string }
         | null;
-      if (last) {
+      const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
+      // If Mushaf view is on and we have a saved Mushaf page, prefer it
+      if (settings.mushafView && lastMushaf >= 1 && lastMushaf <= 604) {
+        setMode('page');
+        setActiveId(lastMushaf);
+        toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
+      } else if (last) {
         setMode(last.mode);
         setActiveId(last.id);
         if (last.verseKey) setScrollKey(last.verseKey);
       }
     } catch {/* ignore */}
-  }, [bn]);
+    setRestored(true);
+  }, [bn, userId, restored, settings.mushafView]);
 
   // Persist last read
   useEffect(() => {
+    if (!restored) return;
     localStorage.setItem(
-      LS_LAST_READ,
+      lastReadKey(userId),
       JSON.stringify({ mode, id: activeId, verseKey: scrollKey }),
     );
-  }, [mode, activeId, scrollKey]);
+    if (mode === 'page') {
+      localStorage.setItem(lastMushafKey(userId), String(activeId));
+    }
+  }, [mode, activeId, scrollKey, userId, restored]);
+
 
   // Chapters list
   const { data: chapters = [] } = useQuery<Chapter[]>({
