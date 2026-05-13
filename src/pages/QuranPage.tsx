@@ -895,4 +895,151 @@ const SettingsSheet = ({
   );
 };
 
+
+// ========== Ayah Search Dialog ==========
+const AyahSearchDialog = ({
+  bn,
+  onGo,
+}: {
+  bn: boolean;
+  onGo: (m: 'chapter' | 'page' | 'juz', id: number, vk?: string) => void;
+}) => {
+  const [q, setQ] = useState('');
+  const [debounced, setDebounced] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<
+    { verse_key: string; text: string; translation?: string }[]
+  >([]);
+  const [error, setError] = useState<string | null>(null);
+
+  // verse_key direct match (e.g. "2:255")
+  const verseKeyMatch = q.trim().match(/^(\d{1,3})\s*[:.\-/]\s*(\d{1,3})$/);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 350);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  useEffect(() => {
+    if (!debounced || verseKeyMatch || debounced.length < 2) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    const url = new URL(`${QURAN_API}/search`);
+    url.searchParams.set('q', debounced);
+    url.searchParams.set('size', '25');
+    url.searchParams.set('page', '0');
+    url.searchParams.set('language', bn ? 'bn' : 'en');
+    fetch(url.toString())
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        const list = (json.search?.results || []).map((r: { verse_key: string; text: string; translations?: { text: string }[] }) => ({
+          verse_key: r.verse_key,
+          text: r.text,
+          translation: r.translations?.[0]?.text,
+        }));
+        setResults(list);
+      })
+      .catch(() => !cancelled && setError(bn ? 'খোঁজ ব্যর্থ হয়েছে' : 'Search failed'))
+      .finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
+  }, [debounced, bn, verseKeyMatch]);
+
+  const goVerseKey = (vk: string) => {
+    const [s] = vk.split(':');
+    onGo('chapter', Number(s), vk);
+  };
+
+  return (
+    <DialogContent className="rounded-[28px] max-w-2xl">
+      <DialogHeader>
+        <DialogTitle>{bn ? 'আয়াত খুঁজুন' : 'Search Ayah'}</DialogTitle>
+      </DialogHeader>
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={bn ? 'যেমন: 2:255, আল্লাহ, mercy...' : 'e.g. 2:255, Allah, mercy...'}
+            className="pl-9 rounded-xl"
+          />
+        </div>
+
+        {verseKeyMatch && (
+          <button
+            onClick={() => goVerseKey(`${Number(verseKeyMatch[1])}:${Number(verseKeyMatch[2])}`)}
+            className="w-full text-left p-4 rounded-2xl bg-primary/10 hover:bg-primary/20 transition-colors"
+          >
+            <p className="text-xs text-muted-foreground">{bn ? 'সরাসরি যান' : 'Jump directly'}</p>
+            <p className="font-mono font-bold text-primary">
+              {Number(verseKeyMatch[1])}:{Number(verseKeyMatch[2])}
+            </p>
+          </button>
+        )}
+
+        {loading && (
+          <div className="flex justify-center py-6">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          </div>
+        )}
+
+        {error && <p className="text-sm text-destructive text-center py-3">{error}</p>}
+
+        {!verseKeyMatch && !loading && results.length > 0 && (
+          <ScrollArea className="max-h-[55vh]">
+            <div className="space-y-2 pr-2">
+              {results.map((r) => (
+                <button
+                  key={r.verse_key}
+                  onClick={() => goVerseKey(r.verse_key)}
+                  className="w-full text-left p-3 rounded-2xl border border-border/50 hover:bg-muted/60 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <Badge variant="secondary" className="rounded-full font-mono text-xs">{r.verse_key}</Badge>
+                  </div>
+                  <p
+                    dir="rtl"
+                    lang="ar"
+                    className="text-right text-lg leading-loose"
+                    style={{ fontFamily: '"Amiri Quran", "Scheherazade New", serif' }}
+                    dangerouslySetInnerHTML={{ __html: r.text }}
+                  />
+                  {r.translation && (
+                    <p
+                      className="text-xs text-muted-foreground mt-1.5 line-clamp-2"
+                      dangerouslySetInnerHTML={{ __html: r.translation }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+
+        {!verseKeyMatch && !loading && debounced.length >= 2 && results.length === 0 && !error && (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            {bn ? 'কোন মিল পাওয়া যায়নি' : 'No matches found'}
+          </p>
+        )}
+
+        {!debounced && (
+          <p className="text-xs text-muted-foreground text-center py-3">
+            {bn
+              ? 'verse_key (যেমন 2:255) অথবা আরবি/অনুবাদের শব্দ লিখুন'
+              : 'Type a verse_key (e.g. 2:255) or any Arabic/translation word'}
+          </p>
+        )}
+      </div>
+    </DialogContent>
+  );
+};
+
 export default QuranPage;
+
