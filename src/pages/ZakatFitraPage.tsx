@@ -231,6 +231,10 @@ const ZakatFitraPage = () => {
                       <p className="text-sm">{calc.meetsNisab ? (bn ? 'প্রদেয় যাকাত (২.৫%)' : 'Zakat due (2.5%)') : (bn ? 'নিসাব পূর্ণ হয়নি' : 'Nisab not met')}</p>
                       <p className="text-2xl font-bold">৳ {fmt(calc.zakatDue, bn)}</p>
                     </div>
+                    <Button onClick={() => saveLog('zakat')} disabled={savingZakat} variant="outline" className="w-full rounded-2xl mt-2">
+                      {savingZakat ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      {bn ? 'হিসাব সংরক্ষণ করুন' : 'Save calculation'}
+                    </Button>
                   </div>
                 )}
               </Card>
