@@ -510,6 +510,31 @@ const QuranPage = () => {
     });
   };
 
+  // In Mushaf mode: if the saved/target verse is not in any currently-loaded
+  // page, look up its page number from the Quran.com API and switch activeId
+  // to that page. The existing loader effect (line ~289) will then fetch that
+  // page; afterwards the scroll-to-verse effect below will run and find the el.
+  useEffect(() => {
+    if (!isMushaf) return;
+    if (!scrollKey || !/^\d+:\d+$/.test(scrollKey)) return;
+    if (mushafPages.length === 0) return; // initial page still loading
+    // If verse already on screen (any loaded page), nothing to do — scroll effect handles it.
+    if (document.getElementById(`v-${scrollKey}`)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${QURAN_API}/verses/by_key/${scrollKey}?fields=page_number`);
+        const json = await res.json();
+        const targetPage = Number(json?.verse?.page_number);
+        if (cancelled || !targetPage || targetPage < 1 || targetPage > 604) return;
+        if (mushafPages.some((p) => p.page === targetPage)) return; // already loaded
+        // Switch active page → loader effect will fetch & render it
+        setActiveId(targetPage);
+      } catch {/* ignore — scroll effect will retry */}
+    })();
+    return () => { cancelled = true; };
+  }, [isMushaf, scrollKey, mushafPages]);
+
   // Scroll to verse (works for both standard and mushaf renderers)
   useEffect(() => {
     if (!scrollKey) return;
@@ -527,8 +552,13 @@ const QuranPage = () => {
       return true;
     };
     if (!tryScroll()) {
-      const t = setTimeout(tryScroll, 250);
-      return () => clearTimeout(t);
+      // Retry several times — the target page may still be fetching/rendering
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts += 1;
+        if (tryScroll() || attempts >= 20) clearInterval(interval);
+      }, 250);
+      return () => clearInterval(interval);
     }
   }, [scrollKey, versesLoading, verses, isMushaf, mushafPages]);
 
