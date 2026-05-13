@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Plus, Save, Trash2, Calculator } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2, Calculator, Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfirm } from '@/contexts/ConfirmContext';
 
