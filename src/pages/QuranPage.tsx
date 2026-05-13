@@ -83,8 +83,11 @@ const RECITERS = [
 ];
 
 const LS_BOOKMARKS = 'quran:bookmarks';
-const LS_LAST_READ = 'quran:lastRead';
+const LS_LAST_READ = 'quran:lastRead'; // suffixed with user scope
+const LS_LAST_MUSHAF = 'quran:lastMushafPage'; // suffixed with user scope
 const LS_SETTINGS = 'quran:settings';
+const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
+const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 
 interface Settings {
   script: 'uthmani' | 'indopak';
