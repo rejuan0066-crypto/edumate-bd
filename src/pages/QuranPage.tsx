@@ -166,10 +166,12 @@ const QuranPage = () => {
     },
   });
 
-  // Verses
+  const isMushaf = mode === 'page' && settings.mushafView;
+
+  // Verses (single block — used for chapter / juz / non-mushaf page view)
   const { data: verses = [], isLoading: versesLoading } = useQuery<Verse[]>({
     queryKey: ['quran-verses', mode, activeId, settings.reciterId],
-    enabled: !!activeId,
+    enabled: !!activeId && !isMushaf,
     staleTime: 1000 * 60 * 30,
     queryFn: async () => {
       const url = new URL(
