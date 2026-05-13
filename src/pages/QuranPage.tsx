@@ -100,6 +100,7 @@ interface Settings {
   mushafView: boolean;
   showSurahHeader: boolean;
   showContinuationBadge: boolean;
+  autoSaveLastRead: boolean;
 }
 const defaultSettings: Settings = {
   script: 'uthmani',
@@ -110,6 +111,7 @@ const defaultSettings: Settings = {
   mushafView: false,
   showSurahHeader: true,
   showContinuationBadge: true,
+  autoSaveLastRead: true,
 };
 
 // ========== Page ==========
