@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Loader2, Plus, Save, Trash2, Calculator } from 'lucide-react';
+import { Loader2, Plus, Save, Trash2, Calculator, Star } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useConfirm } from '@/contexts/ConfirmContext';
 
@@ -146,6 +146,32 @@ const AdminZakatFitra = () => {
     load();
   };
 
+  const setAsActiveYear = async (r: Row) => {
+    const ok = await confirm({
+      title: bn ? 'অ্যাক্টিভ ইয়ার সেট করবেন?' : 'Set as active year?',
+      description: bn
+        ? `${r.year} সালকে অ্যাক্টিভ ইয়ার হিসেবে সেট করা হবে এবং অন্য সব বছর নিষ্ক্রিয় হয়ে যাবে। পাবলিক পেজ এই বছরের রেট ব্যবহার করবে।`
+        : `${r.year} will be set as the active year and all other years will be deactivated. Public page will use this year's rates.`,
+      confirmText: bn ? 'হ্যাঁ, সেট করুন' : 'Yes, set active',
+      cancelText: bn ? 'বাতিল' : 'Cancel',
+      variant: 'default',
+    });
+    if (!ok) return;
+    // Deactivate all others, then activate this one
+    const { error: e1 } = await supabase
+      .from('zakat_fitra_settings')
+      .update({ is_active: false })
+      .neq('id', r.id);
+    if (e1) return toast.error(bn ? 'আপডেট ব্যর্থ' : 'Update failed', { description: e1.message });
+    const { error: e2 } = await supabase
+      .from('zakat_fitra_settings')
+      .update({ is_active: true })
+      .eq('id', r.id);
+    if (e2) return toast.error(bn ? 'আপডেট ব্যর্থ' : 'Update failed', { description: e2.message });
+    toast.success(bn ? `${r.year} এখন অ্যাক্টিভ ইয়ার` : `${r.year} is now the active year`);
+    load();
+  };
+
   return (
     <AdminLayout>
       <div className="max-w-[1200px] mx-auto p-4 sm:p-6 space-y-6">
@@ -177,17 +203,32 @@ const AdminZakatFitra = () => {
           </Card>
         ) : (
           <div className="space-y-5">
-            {rows.map((r) => (
-              <Card key={r.id} className="rounded-[32px] p-5 sm:p-6 bg-card/80 backdrop-blur-xl border border-border/60">
+            {rows.map((r) => {
+              const activeRow = rows.find((x) => x.is_active);
+              const isActiveYear = activeRow?.id === r.id;
+              return (
+              <Card key={r.id} className={`rounded-[32px] p-5 sm:p-6 bg-card/80 backdrop-blur-xl border shadow-sm ${isActiveYear ? 'border-primary/60 ring-2 ring-primary/30' : 'border-border/60'}`}>
                 <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <h3 className="font-bold text-xl">{r.year}</h3>
+                    {isActiveYear && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold">
+                        <Star className="w-3 h-3 fill-current" />
+                        {bn ? 'অ্যাক্টিভ ইয়ার' : 'Active Year'}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2">
                       <Switch checked={r.is_active} onCheckedChange={() => toggleActive(r)} />
                       <Label className="text-xs">{r.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}</Label>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {!isActiveYear && (
+                      <Button variant="outline" size="sm" onClick={() => setAsActiveYear(r)} className="rounded-xl">
+                        <Star className="w-4 h-4 mr-1" />
+                        {bn ? 'অ্যাক্টিভ ইয়ার করুন' : 'Set as active year'}
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => remove(r)} className="rounded-xl text-destructive">
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -258,7 +299,8 @@ const AdminZakatFitra = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
