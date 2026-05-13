@@ -342,6 +342,16 @@ const QuranPage = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+                  <Search className="w-4 h-4" />
+                  <span className="hidden sm:inline">{bn ? 'খুঁজুন' : 'Search'}</span>
+                </Button>
+              </DialogTrigger>
+              <AyahSearchDialog bn={bn} onGo={goto} />
+            </Dialog>
+
             <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
