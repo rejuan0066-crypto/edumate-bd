@@ -170,6 +170,8 @@ export const ALL_SECTION_CONFIGS: HomeSectionConfig[] = [
   { key: 'classInfo', visible: false, label_bn: 'শ্রেণী তথ্য', label_en: 'Class Info', icon: '📚' },
   { key: 'teachersList', visible: false, label_bn: 'শিক্ষক তালিকা', label_en: 'Teachers List', icon: '👨‍🏫' },
   { key: 'studentInfo', visible: false, label_bn: 'ছাত্র তথ্য', label_en: 'Student Info', icon: '🧑‍🎓' },
+  { key: 'quran', visible: true, label_bn: 'কুরআন তিলাওয়াত', label_en: 'Quran Reading', icon: '📖' },
+  { key: 'zakatFitra', visible: true, label_bn: 'যাকাত ও ফিতরা', label_en: 'Zakat & Fitra', icon: '🕋' },
 ];
 
 export interface WebsiteSettings {
