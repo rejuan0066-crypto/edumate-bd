@@ -435,6 +435,178 @@ const QuranPage = () => {
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
+              {/* ===== Mushaf Page View ===== */}
+              {mode === 'page' && settings.mushafView ? (
+                <div>
+                  {/* Page nav top */}
+                  <div className="flex items-center justify-between mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl gap-1.5"
+                      disabled={activeId <= 1}
+                      onClick={() => goto('page', Math.max(1, activeId - 1))}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                      {bn ? 'পূর্ববর্তী' : 'Prev'}
+                    </Button>
+                    <div className="text-sm font-semibold">
+                      {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl gap-1.5"
+                      disabled={activeId >= 604}
+                      onClick={() => goto('page', Math.min(604, activeId + 1))}
+                    >
+                      {bn ? 'পরবর্তী' : 'Next'}
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Mushaf parchment page */}
+                  <div
+                    className="relative rounded-[32px] border-[6px] shadow-2xl mx-auto px-6 sm:px-12 py-10 sm:py-14"
+                    style={{
+                      background:
+                        'radial-gradient(ellipse at center, #fdf6e3 0%, #f5ead1 75%, #ecdcb0 100%)',
+                      borderColor: '#8b6f3a',
+                      borderStyle: 'double',
+                      maxWidth: '780px',
+                    }}
+                  >
+                    {/* Decorative corners */}
+                    <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 rounded-tl-lg" style={{ borderColor: '#8b6f3a' }} />
+                    <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 rounded-tr-lg" style={{ borderColor: '#8b6f3a' }} />
+                    <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 rounded-bl-lg" style={{ borderColor: '#8b6f3a' }} />
+                    <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 rounded-br-lg" style={{ borderColor: '#8b6f3a' }} />
+
+                    {/* Surah header inside page (if first verse starts new surah) */}
+                    {(() => {
+                      const surahsOnPage = Array.from(new Set(verses.map((v) => Number(v.verse_key.split(':')[0]))));
+                      return surahsOnPage.map((sid) => {
+                        const ch = chapters.find((c) => c.id === sid);
+                        const startsHere = verses.find((v) => v.verse_key === `${sid}:1`);
+                        if (!ch || !startsHere) return null;
+                        return (
+                          <div key={sid} className="text-center mb-3">
+                            <div
+                              className="inline-block px-6 py-2 rounded-lg border-2"
+                              style={{ borderColor: '#8b6f3a', background: 'rgba(139,111,58,0.08)' }}
+                            >
+                              <p className="text-2xl font-bold" style={{ fontFamily: 'Amiri Quran, Amiri, serif', color: '#5a4520' }}>
+                                سورة {ch.name_arabic}
+                              </p>
+                            </div>
+                            {sid !== 1 && sid !== 9 && (
+                              <p
+                                dir="rtl"
+                                className="mt-3 text-2xl"
+                                style={{ fontFamily: 'Amiri Quran, Amiri, serif', color: '#3d2f15' }}
+                              >
+                                بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                              </p>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+
+                    {/* Continuous Arabic text */}
+                    <p
+                      dir="rtl"
+                      lang="ar"
+                      className="text-justify"
+                      style={{
+                        fontSize: `${settings.arabicSize}px`,
+                        lineHeight: 2.4,
+                        fontFamily:
+                          settings.script === 'indopak'
+                            ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
+                            : '"Amiri Quran", "Scheherazade New", "Amiri", serif',
+                        color: '#1f1810',
+                        textAlignLast: 'center',
+                      }}
+                    >
+                      {verses.map((v) => {
+                        const arabicText = settings.script === 'indopak' && v.text_indopak ? v.text_indopak : v.text_uthmani;
+                        const num = v.verse_key.split(':')[1];
+                        const isCurrent = playingKey === v.verse_key;
+                        return (
+                          <span key={v.id} id={`v-${v.verse_key}`}>
+                            <span
+                              onClick={() => playVerse(v)}
+                              className="cursor-pointer transition-colors"
+                              style={{
+                                background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
+                                borderRadius: 6,
+                                padding: isCurrent ? '0 4px' : undefined,
+                              }}
+                            >
+                              {arabicText}
+                            </span>
+                            <span
+                              className="inline-flex items-center justify-center mx-1 text-base font-bold align-middle cursor-pointer"
+                              onClick={() => toggleBookmark(v.verse_key)}
+                              title={v.verse_key}
+                              style={{
+                                width: '1.6em',
+                                height: '1.6em',
+                                background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
+                                color: '#fdf6e3',
+                                borderRadius: '50%',
+                                fontSize: '0.55em',
+                                boxShadow: bookmarks.includes(v.verse_key)
+                                  ? '0 0 0 2px hsl(var(--primary))'
+                                  : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
+                              }}
+                            >
+                              {Number(num).toLocaleString('ar-EG')}
+                            </span>{' '}
+                          </span>
+                        );
+                      })}
+                    </p>
+
+                    {/* Footer page no */}
+                    <div className="mt-6 pt-4 border-t border-dashed text-center text-sm" style={{ borderColor: '#8b6f3a', color: '#5a4520' }}>
+                      {bn ? `পৃষ্ঠা ${activeId.toLocaleString('bn-BD')}` : `Page ${activeId}`}
+                    </div>
+                  </div>
+
+                  {/* Page nav bottom */}
+                  <div className="flex items-center justify-between mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl gap-1.5"
+                      disabled={activeId <= 1}
+                      onClick={() => goto('page', Math.max(1, activeId - 1))}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                      {bn ? 'পূর্ববর্তী' : 'Prev'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl gap-1.5"
+                      disabled={activeId >= 604}
+                      onClick={() => goto('page', Math.min(604, activeId + 1))}
+                    >
+                      {bn ? 'পরবর্তী' : 'Next'}
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {!versesLoading && verses.length === 0 && (
+                    <Card className="p-10 text-center text-muted-foreground rounded-[32px] mt-4">
+                      {bn ? 'কোন আয়াত পাওয়া যায়নি' : 'No verses found'}
+                    </Card>
+                  )}
+                </div>
+              ) : (
+              <>
               {mode === 'chapter' && currentChapter && (
                 <Card className="p-6 rounded-[32px] text-center bg-card/80 backdrop-blur-xl border border-border/60">
                   <p className="text-3xl font-bold mb-1" style={{ fontFamily: 'Amiri, "Scheherazade New", serif' }}>
