@@ -161,11 +161,17 @@ const QuranPage = () => {
         | { mode: 'chapter' | 'page' | 'juz'; id: number; verseKey?: string }
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
+      const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
       // If Mushaf view is on and we have a saved Mushaf page, prefer it
       if (settings.mushafView && lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
-        toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
+        if (lastMushafVerse && /^\d+:\d+$/.test(lastMushafVerse)) {
+          setScrollKey(lastMushafVerse);
+          toast.success(bn ? `আয়াত ${lastMushafVerse} থেকে পুনরায় শুরু` : `Resumed at verse ${lastMushafVerse}`);
+        } else {
+          toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
+        }
       } else if (last) {
         setMode(last.mode);
         setActiveId(last.id);
