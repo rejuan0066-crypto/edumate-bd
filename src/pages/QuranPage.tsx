@@ -662,22 +662,39 @@ const QuranPage = () => {
                           <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 rounded-br-lg" style={{ borderColor: '#8b6f3a' }} />
 
                           {(() => {
-                            type Segment = { sid: number; verses: typeof pageVerses };
-                            const segments: Segment[] = [];
-                            for (const v of pageVerses) {
-                              const sid = Number(v.verse_key.split(':')[0]);
-                              const last = segments[segments.length - 1];
-                              if (last && last.sid === sid) last.verses.push(v);
-                              else segments.push({ sid, verses: [v] });
+                            type Segment = { sid: number; verses: typeof pageVerses; startsAtAyah1: boolean };
+                            // Parse verse_key safely
+                            const parseKey = (k: string): [number, number] => {
+                              const [s, a] = k.split(':');
+                              return [Number(s) || 0, Number(a) || 0];
+                            };
+                            // Sort verses by (sid, ayah) so out-of-order data still segments correctly
+                            const sorted = [...pageVerses].sort((a, b) => {
+                              const [as, av] = parseKey(a.verse_key);
+                              const [bs, bv] = parseKey(b.verse_key);
+                              return as - bs || av - bv;
+                            });
+                            // Group by sid using a Map → guarantees ONE segment (and thus one header) per surah on this page
+                            const bySid = new Map<number, typeof pageVerses>();
+                            for (const v of sorted) {
+                              const [sid] = parseKey(v.verse_key);
+                              if (!sid) continue;
+                              const arr = bySid.get(sid);
+                              if (arr) arr.push(v);
+                              else bySid.set(sid, [v]);
                             }
+                            const segments: Segment[] = Array.from(bySid.entries()).map(([sid, verses]) => {
+                              const [, firstAyah] = parseKey(verses[0].verse_key);
+                              return { sid, verses, startsAtAyah1: firstAyah === 1 };
+                            });
                             const arabicFont =
                               settings.script === 'indopak'
                                 ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
                                 : '"Amiri Quran", "Scheherazade New", "Amiri", serif';
                             return segments.map((seg, segIdx) => {
                               const ch = chapters.find((c) => c.id === seg.sid);
-                              const startsHere = seg.verses[0]?.verse_key === `${seg.sid}:1`;
-                              const isContinuation = segIdx === 0 && !startsHere;
+                              const startsHere = seg.startsAtAyah1;
+                              const isContinuation = !startsHere;
                               return (
                                 <div key={`${seg.sid}-${segIdx}`} className={segIdx > 0 ? 'mt-6' : ''}>
                                   {startsHere && ch && (
