@@ -161,6 +161,86 @@ const Home = () => {
             </div>
           </section>
         );
+      case 'quran':
+        return (
+          <section key={key} className="py-10">
+            <div className="container mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                className="relative overflow-hidden rounded-[45px] p-8 sm:p-10 text-white shadow-xl"
+                style={{ background: 'linear-gradient(135deg, hsl(160 84% 25%), hsl(160 84% 18%))' }}
+              >
+                <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-10 -bottom-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
+                <div className="relative grid md:grid-cols-[auto_1fr_auto] items-center gap-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0">
+                    <BookOpenText className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">
+                      {bn ? 'পবিত্র কুরআন তিলাওয়াত' : 'Holy Quran Reading'}
+                    </h2>
+                    <p className="text-white/85 text-sm sm:text-base max-w-xl">
+                      {bn
+                        ? 'উসমানি ও ইন্দো-পাক স্ক্রিপ্ট, বাংলা-ইংরেজি অনুবাদ, একাধিক ক্বারীর তিলাওয়াত, বুকমার্ক ও সর্বশেষ পঠিত আয়াত স্বয়ংক্রিয় সংরক্ষণ।'
+                        : 'Uthmani & Indo-Pak scripts, Bangla-English translation, multiple Qaris, bookmarks and last-read auto-save.'}
+                    </p>
+                  </div>
+                  <Link
+                    to="/quran"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-emerald-800 font-semibold hover:bg-white/90 transition shadow-lg shrink-0"
+                  >
+                    {bn ? 'এখনই পড়ুন' : 'Read Now'}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        );
+      case 'zakatFitra':
+        return (
+          <section key={key} className="py-10">
+            <div className="container mx-auto px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                className="relative overflow-hidden rounded-[45px] p-8 sm:p-10 text-white shadow-xl"
+                style={{ background: 'linear-gradient(135deg, hsl(38 92% 45%), hsl(24 92% 38%))' }}
+              >
+                <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -left-10 -bottom-10 w-56 h-56 rounded-full bg-white/5 blur-3xl" />
+                <div className="relative grid md:grid-cols-[auto_1fr_auto] items-center gap-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center shrink-0">
+                    <Calculator className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl sm:text-3xl font-bold font-display mb-2">
+                      {bn ? 'যাকাত ও ফিতরা ক্যালকুলেটর' : 'Zakat & Fitra Calculator'}
+                    </h2>
+                    <p className="text-white/90 text-sm sm:text-base max-w-xl">
+                      {bn
+                        ? 'নিসাব অনুযায়ী যাকাতের পরিমাণ ও ফিতরা হিসাব করুন—বর্তমান বছরের সরকারি/স্থানীয় হার অনুযায়ী।'
+                        : 'Calculate Zakat amount based on Nisab and Fitra rates—per current official/local rates.'}
+                    </p>
+                  </div>
+                  <Link
+                    to="/zakat-fitra"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-amber-700 font-semibold hover:bg-white/90 transition shadow-lg shrink-0"
+                  >
+                    {bn ? 'হিসাব করুন' : 'Calculate'}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+        );
       default:
         return null;
     }
