@@ -210,7 +210,97 @@ const QuranPage = () => {
     },
   });
 
-  // Audio player state
+  // ===== Mushaf infinite scroll: keep many pages stacked =====
+  const [mushafPages, setMushafPages] = useState<{ page: number; verses: Verse[] }[]>([]);
+  const [mushafLoading, setMushafLoading] = useState(false);
+  const loadingMoreRef = useRef(false);
+  const pageRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
+  const suppressScrollSyncRef = useRef(false);
+
+  const fetchPageVerses = useCallback(async (page: number): Promise<Verse[]> => {
+    const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
+    url.searchParams.set('language', bn ? 'bn' : 'en');
+    url.searchParams.set('words', 'false');
+    url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
+    url.searchParams.set(
+      'fields',
+      'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
+    );
+    url.searchParams.set('audio', String(settings.reciterId));
+    url.searchParams.set('per_page', '300');
+    const res = await fetch(url.toString());
+    const json = await res.json();
+    return json.verses || [];
+  }, [bn, settings.reciterId]);
+
+  useEffect(() => {
+    if (!isMushaf) setMushafPages([]);
+  }, [isMushaf]);
+  useEffect(() => {
+    if (isMushaf) setMushafPages([]);
+  }, [settings.reciterId, settings.script, isMushaf]);
+
+  useEffect(() => {
+    if (!isMushaf) return;
+    if (mushafPages.some((p) => p.page === activeId)) return;
+    setMushafLoading(true);
+    fetchPageVerses(activeId)
+      .then((vs) => {
+        suppressScrollSyncRef.current = true;
+        setMushafPages([{ page: activeId, verses: vs }]);
+        setTimeout(() => { suppressScrollSyncRef.current = false; }, 800);
+      })
+      .finally(() => setMushafLoading(false));
+  }, [isMushaf, activeId, mushafPages, fetchPageVerses]);
+
+  const loadNextMushafPage = useCallback(async () => {
+    if (loadingMoreRef.current) return;
+    const last = mushafPages[mushafPages.length - 1];
+    if (!last || last.page >= 604) return;
+    loadingMoreRef.current = true;
+    try {
+      const next = last.page + 1;
+      const vs = await fetchPageVerses(next);
+      setMushafPages((prev) =>
+        prev.some((p) => p.page === next) ? prev : [...prev, { page: next, verses: vs }],
+      );
+    } finally {
+      loadingMoreRef.current = false;
+    }
+  }, [mushafPages, fetchPageVerses]);
+
+  const bottomSentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isMushaf) return;
+    const el = bottomSentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadNextMushafPage(); },
+      { rootMargin: '800px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isMushaf, loadNextMushafPage, mushafPages.length]);
+
+  useEffect(() => {
+    if (!isMushaf || mushafPages.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (suppressScrollSyncRef.current) return;
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const p = Number((visible.target as HTMLElement).dataset.page);
+        if (p && p !== activeId) setActiveId(p);
+      },
+      { threshold: [0.25, 0.5, 0.75], rootMargin: '-20% 0px -40% 0px' },
+    );
+    pageRefsMap.current.forEach((el) => { if (el) io.observe(el); });
+    return () => io.disconnect();
+  }, [isMushaf, mushafPages, activeId]);
+
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingKey, setPlayingKey] = useState<string | null>(null); // verse key or 'surah'
   const [isPlaying, setIsPlaying] = useState(false);
