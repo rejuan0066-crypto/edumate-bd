@@ -1,7 +1,7 @@
 import { useLanguage } from '@/contexts/LanguageContext';
 import PublicLayout from '@/components/PublicLayout';
 import { motion } from 'framer-motion';
-import { Users, BookOpen, Award, UserPlus } from 'lucide-react';
+import { Users, BookOpen, Award, UserPlus, BookOpenText, Calculator, ArrowRight } from 'lucide-react';
 import { useWebsiteSettings, HomeSectionKey, SectionStyleConfig, DEFAULT_SECTION_STYLE } from '@/hooks/useWebsiteSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useQuery } from '@tanstack/react-query';
