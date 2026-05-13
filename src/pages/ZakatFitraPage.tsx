@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calculator, Coins, Wheat, Save, Loader2 } from 'lucide-react';
+import { Calculator, Coins, Wheat, Save, Loader2, Gauge, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface FitraOption {
