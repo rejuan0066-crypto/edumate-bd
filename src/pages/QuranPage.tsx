@@ -343,26 +343,89 @@ const QuranPage = () => {
     return () => io.disconnect();
   }, [isMushaf, mushafPages, activeId]);
 
-  // Track most-visible verse inside Mushaf and persist as resume point
+  // Track most readable / centered verse inside Mushaf and persist as resume point.
+  // Uses (1) IntersectionObserver to maintain a live set of on-screen verses, and
+  // (2) a rAF-throttled scroll/resize sampler that picks the verse whose vertical
+  // midpoint is closest to the viewport center. This stays accurate during fast
+  // scrolling and re-stabilises after late-loading content (images/fonts) shifts layout.
   const [currentMushafVerse, setCurrentMushafVerse] = useState<string | null>(null);
   useEffect(() => {
     if (!isMushaf || mushafPages.length === 0) return;
-    const verseEls = Array.from(document.querySelectorAll<HTMLElement>('[id^="v-"]'));
-    if (verseEls.length === 0) return;
+
+    // Live set of currently-intersecting verse elements (kept fresh by IO)
+    const visibleEls = new Set<HTMLElement>();
+    let rafId: number | null = null;
+
+    const pickCentered = () => {
+      rafId = null;
+      if (suppressScrollSyncRef.current) return;
+      if (visibleEls.size === 0) return;
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const viewportCenter = vh / 2;
+      let bestKey: string | null = null;
+      let bestScore = Infinity;
+      visibleEls.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.height === 0) return;
+        // distance of verse midpoint from viewport center, normalised by verse height
+        // so very tall verses (which dominate the viewport) win when truly centered
+        const mid = r.top + r.height / 2;
+        const dist = Math.abs(mid - viewportCenter);
+        const score = dist - Math.min(r.height, vh) * 0.15;
+        if (score < bestScore) {
+          bestScore = score;
+          bestKey = el.id.replace(/^v-/, '');
+        }
+      });
+      if (bestKey && /^\d+:\d+$/.test(bestKey)) {
+        setCurrentMushafVerse((prev) => (prev === bestKey ? prev : bestKey));
+      }
+    };
+
+    const schedule = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(pickCentered);
+    };
+
     const io = new IntersectionObserver(
       (entries) => {
-        if (suppressScrollSyncRef.current) return;
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const key = (visible.target as HTMLElement).id.replace(/^v-/, '');
-        if (/^\d+:\d+$/.test(key)) setCurrentMushafVerse(key);
+        for (const e of entries) {
+          const el = e.target as HTMLElement;
+          if (e.isIntersecting) visibleEls.add(el);
+          else visibleEls.delete(el);
+        }
+        schedule();
       },
-      { threshold: [0.4, 0.7], rootMargin: '-30% 0px -50% 0px' },
+      // Multiple thresholds + symmetric centre band → smoother updates while scrolling
+      { threshold: [0, 0.25, 0.5, 0.75, 1], rootMargin: '-35% 0px -35% 0px' },
     );
+
+    const verseEls = Array.from(document.querySelectorAll<HTMLElement>('[id^="v-"]'));
     verseEls.forEach((el) => io.observe(el));
-    return () => io.disconnect();
+
+    // rAF-throttled scroll sampler: keeps tracking accurate during fast scrolling
+    // when IO callback batches lag behind.
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+
+    // Re-sample after late-loading reflows (images/fonts/Arabic shaping)
+    const onLoad = () => schedule();
+    window.addEventListener('load', onLoad);
+    if ('fonts' in document) {
+      (document as any).fonts?.ready?.then?.(schedule).catch?.(() => {});
+    }
+
+    // Initial pick once layout settles
+    schedule();
+
+    return () => {
+      io.disconnect();
+      visibleEls.clear();
+      if (rafId != null) cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      window.removeEventListener('load', onLoad);
+    };
   }, [isMushaf, mushafPages]);
 
   // Persist resume verse (debounced via state setter cycle)
