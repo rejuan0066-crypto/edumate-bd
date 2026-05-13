@@ -9788,6 +9788,54 @@ export type Database = {
         }
         Relationships: []
       }
+      zakat_fitra_settings: {
+        Row: {
+          created_at: string
+          fitra_options: Json
+          gold_price_per_gram: number
+          id: string
+          is_active: boolean
+          nisab_gold_grams: number
+          nisab_silver_grams: number
+          notes_bn: string | null
+          notes_en: string | null
+          silver_price_per_gram: number
+          updated_at: string
+          year: number
+          zakat_rate: number
+        }
+        Insert: {
+          created_at?: string
+          fitra_options?: Json
+          gold_price_per_gram?: number
+          id?: string
+          is_active?: boolean
+          nisab_gold_grams?: number
+          nisab_silver_grams?: number
+          notes_bn?: string | null
+          notes_en?: string | null
+          silver_price_per_gram?: number
+          updated_at?: string
+          year: number
+          zakat_rate?: number
+        }
+        Update: {
+          created_at?: string
+          fitra_options?: Json
+          gold_price_per_gram?: number
+          id?: string
+          is_active?: boolean
+          nisab_gold_grams?: number
+          nisab_silver_grams?: number
+          notes_bn?: string | null
+          notes_en?: string | null
+          silver_price_per_gram?: number
+          updated_at?: string
+          year?: number
+          zakat_rate?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       administrative_officers_public: {
