@@ -347,6 +347,20 @@ const QuranPage = () => {
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant={mode === 'page' && settings.mushafView ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-xl gap-1.5"
+              onClick={() => {
+                setSettings({ ...settings, mushafView: !(mode === 'page' && settings.mushafView) });
+                if (mode !== 'page') goto('page', mode === 'chapter' && currentChapter ? (verses[0]?.page_number || 1) : 1);
+              }}
+              title={bn ? 'মুসহাফ পৃষ্ঠা ভিউ' : 'Mushaf page view'}
+            >
+              <BookOpenText className="w-4 h-4" />
+              <span className="hidden sm:inline">{bn ? 'মুসহাফ' : 'Mushaf'}</span>
+            </Button>
+
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
