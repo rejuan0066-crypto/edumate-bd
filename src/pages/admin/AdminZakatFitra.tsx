@@ -203,17 +203,32 @@ const AdminZakatFitra = () => {
           </Card>
         ) : (
           <div className="space-y-5">
-            {rows.map((r) => (
-              <Card key={r.id} className="rounded-[32px] p-5 sm:p-6 bg-card/80 backdrop-blur-xl border border-border/60">
+            {rows.map((r) => {
+              const activeRow = rows.find((x) => x.is_active);
+              const isActiveYear = activeRow?.id === r.id;
+              return (
+              <Card key={r.id} className={`rounded-[32px] p-5 sm:p-6 bg-card/80 backdrop-blur-xl border shadow-sm ${isActiveYear ? 'border-primary/60 ring-2 ring-primary/30' : 'border-border/60'}`}>
                 <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <h3 className="font-bold text-xl">{r.year}</h3>
+                    {isActiveYear && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/15 text-primary text-xs font-semibold">
+                        <Star className="w-3 h-3 fill-current" />
+                        {bn ? 'অ্যাক্টিভ ইয়ার' : 'Active Year'}
+                      </span>
+                    )}
                     <div className="flex items-center gap-2">
                       <Switch checked={r.is_active} onCheckedChange={() => toggleActive(r)} />
                       <Label className="text-xs">{r.is_active ? (bn ? 'সক্রিয়' : 'Active') : (bn ? 'নিষ্ক্রিয়' : 'Inactive')}</Label>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {!isActiveYear && (
+                      <Button variant="outline" size="sm" onClick={() => setAsActiveYear(r)} className="rounded-xl">
+                        <Star className="w-4 h-4 mr-1" />
+                        {bn ? 'অ্যাক্টিভ ইয়ার করুন' : 'Set as active year'}
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => remove(r)} className="rounded-xl text-destructive">
                       <Trash2 className="w-4 h-4" />
                     </Button>
