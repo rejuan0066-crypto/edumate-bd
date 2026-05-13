@@ -40,6 +40,9 @@ import {
   History,
   Menu,
   X,
+  ChevronLeft,
+  ChevronRight,
+  BookOpenText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
