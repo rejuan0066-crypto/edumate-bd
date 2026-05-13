@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { groupVersesBySurah } from '@/lib/quranSegments';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -763,31 +764,10 @@ const QuranPage = () => {
                           <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 rounded-br-lg" style={{ borderColor: '#8b6f3a' }} />
 
                           {(() => {
-                            type Segment = { sid: number; verses: typeof pageVerses; startsAtAyah1: boolean };
-                            // Parse verse_key safely
-                            const parseKey = (k: string): [number, number] => {
-                              const [s, a] = k.split(':');
-                              return [Number(s) || 0, Number(a) || 0];
-                            };
-                            // Sort verses by (sid, ayah) so out-of-order data still segments correctly
-                            const sorted = [...pageVerses].sort((a, b) => {
-                              const [as, av] = parseKey(a.verse_key);
-                              const [bs, bv] = parseKey(b.verse_key);
-                              return as - bs || av - bv;
-                            });
-                            // Group by sid using a Map → guarantees ONE segment (and thus one header) per surah on this page
-                            const bySid = new Map<number, typeof pageVerses>();
-                            for (const v of sorted) {
-                              const [sid] = parseKey(v.verse_key);
-                              if (!sid) continue;
-                              const arr = bySid.get(sid);
-                              if (arr) arr.push(v);
-                              else bySid.set(sid, [v]);
-                            }
-                            const segments: Segment[] = Array.from(bySid.entries()).map(([sid, verses]) => {
-                              const [, firstAyah] = parseKey(verses[0].verse_key);
-                              return { sid, verses, startsAtAyah1: firstAyah === 1 };
-                            });
+                            // Shared, unit-tested helper — guarantees ONE segment
+                            // (and thus one header) per surah on this page, even
+                            // when verses arrive out of order.
+                            const segments = groupVersesBySurah(pageVerses);
                             const arabicFont =
                               settings.script === 'indopak'
                                 ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
