@@ -701,7 +701,7 @@ const QuranPage = () => {
                               const isContinuation = !startsHere;
                               return (
                                 <div key={`${seg.sid}-${segIdx}`} className={segIdx > 0 ? 'mt-6' : ''}>
-                                  {startsHere && ch && (
+                                  {startsHere && ch && settings.showSurahHeader && (
                                     <div className="text-center mb-3">
                                       <div
                                         className="inline-flex items-center gap-3 px-6 py-2 rounded-lg border-2"
