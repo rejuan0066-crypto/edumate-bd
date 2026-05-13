@@ -406,6 +406,7 @@ const App = () => (
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />
                     <Route path="zakat-fitra" element={<AdminZakatFitra />} />
+                    <Route path="zakat-logs" element={<AdminZakatLogs />} />
                     <Route path="staff-holidays" element={<AdminStaffHolidays />} />
                     <Route path="academic-sessions" element={<AdminAcademicSessions />} />
                     <Route path="address-manager" element={<AdminAddressManager />} />
