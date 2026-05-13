@@ -108,7 +108,7 @@ const Home = () => {
   // Group row2: infoLinks, latestNotice, admissionButtons
   const row2Keys: HomeSectionKey[] = ['infoLinks', 'latestNotice', 'admissionButtons'];
   // Standalone sections
-  const standaloneKeys: HomeSectionKey[] = ['latestPosts', 'gallery', 'prayerCalendar', 'stats', 'donation', 'feePayment', 'classInfo', 'teachersList', 'studentInfo'];
+  const standaloneKeys: HomeSectionKey[] = ['latestPosts', 'gallery', 'prayerCalendar', 'stats', 'donation', 'feePayment', 'classInfo', 'teachersList', 'studentInfo', 'quran', 'zakatFitra'];
 
   const isVisible = (key: HomeSectionKey) => {
     const found = visibleSections.find(s => s.key === key);
