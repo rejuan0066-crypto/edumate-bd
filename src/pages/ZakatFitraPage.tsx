@@ -4,9 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calculator, Coins, Wheat } from 'lucide-react';
+import { Calculator, Coins, Wheat, Save, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface FitraOption {
   name_bn: string;
@@ -66,6 +68,36 @@ const ZakatFitraPage = () => {
   // Fitra inputs
   const [fitraType, setFitraType] = useState<string>('0');
   const [persons, setPersons] = useState('1');
+
+  // Save / audit log
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [savingZakat, setSavingZakat] = useState(false);
+  const [savingFitra, setSavingFitra] = useState(false);
+
+  const saveLog = async (type: 'zakat' | 'fitra') => {
+    if (!settings) return;
+    const setSaving = type === 'zakat' ? setSavingZakat : setSavingFitra;
+    setSaving(true);
+    const inputs = type === 'zakat'
+      ? { cash: num(cash), bank: num(bank), gold_grams: num(goldGrams), silver_grams: num(silverGrams), business: num(business), investments: num(investments), loans_owed: num(loansOwed), debts: num(debts), nisab_basis: nisabBasis }
+      : { fitra_type_index: Number(fitraType), fitra_food: settings.fitra_options[Number(fitraType)]?.name_en, persons: num(persons) };
+    const results = type === 'zakat' ? calc : fitra;
+    const cleanName = contactName.trim().slice(0, 100);
+    const cleanPhone = contactPhone.trim().slice(0, 30);
+    const { error } = await supabase.from('zakat_calculation_logs').insert({
+      settings_year: settings.year,
+      calc_type: type,
+      inputs: inputs as never,
+      results: (results || {}) as never,
+      contact_name: cleanName || null,
+      contact_phone: cleanPhone || null,
+      user_agent: navigator.userAgent.slice(0, 300),
+    } as never);
+    setSaving(false);
+    if (error) return toast.error(bn ? 'সংরক্ষণ ব্যর্থ' : 'Save failed', { description: error.message });
+    toast.success(bn ? 'হিসাব সংরক্ষিত হয়েছে' : 'Calculation saved');
+  };
 
   useEffect(() => {
     document.title = bn ? 'যাকাত ও ফিতরা ক্যালকুলেটর' : 'Zakat & Fitra Calculator';
@@ -146,6 +178,23 @@ const ZakatFitraPage = () => {
               </div>
             </Card>
 
+            {/* Optional contact for audit log */}
+            <Card className="p-5 rounded-[32px] bg-card/60 backdrop-blur-xl border border-border/40">
+              <p className="text-xs text-muted-foreground mb-3">
+                {bn ? 'ঐচ্ছিক — সংরক্ষিত হিসাবের সাথে আপনার নাম/ফোন সংযুক্ত করতে পারেন।' : 'Optional — attach your name/phone to saved calculations.'}
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">{bn ? 'নাম (ঐচ্ছিক)' : 'Name (optional)'}</Label>
+                  <Input value={contactName} onChange={(e) => setContactName(e.target.value.slice(0, 100))} maxLength={100} className="rounded-xl" />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
+                  <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value.slice(0, 30))} maxLength={30} className="rounded-xl" />
+                </div>
+              </div>
+            </Card>
+
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Zakat */}
               <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60 space-y-4">
@@ -199,6 +248,10 @@ const ZakatFitraPage = () => {
                       <p className="text-sm">{calc.meetsNisab ? (bn ? 'প্রদেয় যাকাত (২.৫%)' : 'Zakat due (2.5%)') : (bn ? 'নিসাব পূর্ণ হয়নি' : 'Nisab not met')}</p>
                       <p className="text-2xl font-bold">৳ {fmt(calc.zakatDue, bn)}</p>
                     </div>
+                    <Button onClick={() => saveLog('zakat')} disabled={savingZakat} variant="outline" className="w-full rounded-2xl mt-2">
+                      {savingZakat ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      {bn ? 'হিসাব সংরক্ষণ করুন' : 'Save calculation'}
+                    </Button>
                   </div>
                 )}
               </Card>
@@ -236,6 +289,10 @@ const ZakatFitraPage = () => {
                       <p className="text-sm">{bn ? 'মোট ফিতরা' : 'Total fitra'}</p>
                       <p className="text-2xl font-bold">৳ {fmt(fitra.total, bn)}</p>
                     </div>
+                    <Button onClick={() => saveLog('fitra')} disabled={savingFitra} variant="outline" className="w-full rounded-2xl mt-2">
+                      {savingFitra ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                      {bn ? 'হিসাব সংরক্ষণ করুন' : 'Save calculation'}
+                    </Button>
                   </div>
                 )}
 

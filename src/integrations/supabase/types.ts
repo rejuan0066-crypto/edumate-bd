@@ -9788,6 +9788,45 @@ export type Database = {
         }
         Relationships: []
       }
+      zakat_calculation_logs: {
+        Row: {
+          calc_type: string
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          inputs: Json
+          ip_address: string | null
+          results: Json
+          settings_year: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          calc_type: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          inputs?: Json
+          ip_address?: string | null
+          results?: Json
+          settings_year?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          calc_type?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          inputs?: Json
+          ip_address?: string | null
+          results?: Json
+          settings_year?: number | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       zakat_fitra_settings: {
         Row: {
           created_at: string

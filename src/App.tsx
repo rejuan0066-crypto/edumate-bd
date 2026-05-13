@@ -59,6 +59,7 @@ const ComplaintPage = lazy(() => import("./pages/ComplaintPage"));
 const ComplaintTrackPage = lazy(() => import("./pages/ComplaintTrackPage"));
 const ZakatFitraPage = lazy(() => import("./pages/ZakatFitraPage"));
 const AdminZakatFitra = lazy(() => import("./pages/admin/AdminZakatFitra"));
+const AdminZakatLogs = lazy(() => import("./pages/admin/AdminZakatLogs"));
 
 // Lazy-loaded admin pages (huge bundle — never loaded on public PWA boot)
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
@@ -405,6 +406,7 @@ const App = () => (
                     <Route path="posts" element={<AdminPosts />} />
                     <Route path="prayer-calendar" element={<AdminPrayerCalendar />} />
                     <Route path="zakat-fitra" element={<AdminZakatFitra />} />
+                    <Route path="zakat-logs" element={<AdminZakatLogs />} />
                     <Route path="staff-holidays" element={<AdminStaffHolidays />} />
                     <Route path="academic-sessions" element={<AdminAcademicSessions />} />
                     <Route path="address-manager" element={<AdminAddressManager />} />
