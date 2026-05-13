@@ -91,6 +91,7 @@ interface Settings {
   showBn: boolean;
   arabicSize: number;
   reciterId: number;
+  mushafView: boolean;
 }
 const defaultSettings: Settings = {
   script: 'uthmani',
@@ -98,6 +99,7 @@ const defaultSettings: Settings = {
   showBn: true,
   arabicSize: 32,
   reciterId: 7,
+  mushafView: false,
 };
 
 // ========== Page ==========
