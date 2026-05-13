@@ -187,9 +187,10 @@ const QuranPage = () => {
     setRestored(true);
   }, [bn, userId, restored, settings.mushafView]);
 
-  // Persist last read
+  // Persist last read (skipped while auto-save is paused)
   useEffect(() => {
     if (!restored) return;
+    if (!settings.autoSaveLastRead) return;
     localStorage.setItem(
       lastReadKey(userId),
       JSON.stringify({ mode, id: activeId, verseKey: scrollKey }),
@@ -197,7 +198,7 @@ const QuranPage = () => {
     if (mode === 'page') {
       localStorage.setItem(lastMushafKey(userId), String(activeId));
     }
-  }, [mode, activeId, scrollKey, userId, restored]);
+  }, [mode, activeId, scrollKey, userId, restored, settings.autoSaveLastRead]);
 
 
   // Chapters list
