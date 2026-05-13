@@ -146,7 +146,31 @@ const AdminZakatFitra = () => {
     load();
   };
 
-  return (
+  const setAsActiveYear = async (r: Row) => {
+    const ok = await confirm({
+      title: bn ? 'অ্যাক্টিভ ইয়ার সেট করবেন?' : 'Set as active year?',
+      description: bn
+        ? `${r.year} সালকে অ্যাক্টিভ ইয়ার হিসেবে সেট করা হবে এবং অন্য সব বছর নিষ্ক্রিয় হয়ে যাবে। পাবলিক পেজ এই বছরের রেট ব্যবহার করবে।`
+        : `${r.year} will be set as the active year and all other years will be deactivated. Public page will use this year's rates.`,
+      confirmText: bn ? 'হ্যাঁ, সেট করুন' : 'Yes, set active',
+      cancelText: bn ? 'বাতিল' : 'Cancel',
+      variant: 'default',
+    });
+    if (!ok) return;
+    // Deactivate all others, then activate this one
+    const { error: e1 } = await supabase
+      .from('zakat_fitra_settings')
+      .update({ is_active: false })
+      .neq('id', r.id);
+    if (e1) return toast.error(bn ? 'আপডেট ব্যর্থ' : 'Update failed', { description: e1.message });
+    const { error: e2 } = await supabase
+      .from('zakat_fitra_settings')
+      .update({ is_active: true })
+      .eq('id', r.id);
+    if (e2) return toast.error(bn ? 'আপডেট ব্যর্থ' : 'Update failed', { description: e2.message });
+    toast.success(bn ? `${r.year} এখন অ্যাক্টিভ ইয়ার` : `${r.year} is now the active year`);
+    load();
+  };
     <AdminLayout>
       <div className="max-w-[1200px] mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
