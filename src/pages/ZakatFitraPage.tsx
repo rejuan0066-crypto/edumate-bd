@@ -69,6 +69,36 @@ const ZakatFitraPage = () => {
   const [fitraType, setFitraType] = useState<string>('0');
   const [persons, setPersons] = useState('1');
 
+  // Save / audit log
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [savingZakat, setSavingZakat] = useState(false);
+  const [savingFitra, setSavingFitra] = useState(false);
+
+  const saveLog = async (type: 'zakat' | 'fitra') => {
+    if (!settings) return;
+    const setSaving = type === 'zakat' ? setSavingZakat : setSavingFitra;
+    setSaving(true);
+    const inputs = type === 'zakat'
+      ? { cash: num(cash), bank: num(bank), gold_grams: num(goldGrams), silver_grams: num(silverGrams), business: num(business), investments: num(investments), loans_owed: num(loansOwed), debts: num(debts), nisab_basis: nisabBasis }
+      : { fitra_type_index: Number(fitraType), fitra_food: settings.fitra_options[Number(fitraType)]?.name_en, persons: num(persons) };
+    const results = type === 'zakat' ? calc : fitra;
+    const cleanName = contactName.trim().slice(0, 100);
+    const cleanPhone = contactPhone.trim().slice(0, 30);
+    const { error } = await supabase.from('zakat_calculation_logs').insert({
+      settings_year: settings.year,
+      calc_type: type,
+      inputs: inputs as never,
+      results: (results || {}) as never,
+      contact_name: cleanName || null,
+      contact_phone: cleanPhone || null,
+      user_agent: navigator.userAgent.slice(0, 300),
+    } as never);
+    setSaving(false);
+    if (error) return toast.error(bn ? 'সংরক্ষণ ব্যর্থ' : 'Save failed', { description: error.message });
+    toast.success(bn ? 'হিসাব সংরক্ষিত হয়েছে' : 'Calculation saved');
+  };
+
   useEffect(() => {
     document.title = bn ? 'যাকাত ও ফিতরা ক্যালকুলেটর' : 'Zakat & Fitra Calculator';
   }, [bn]);
