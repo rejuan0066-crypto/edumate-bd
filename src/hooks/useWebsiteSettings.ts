@@ -83,7 +83,9 @@ export type HomeSectionKey =
   | 'feePayment'
   | 'classInfo'
   | 'teachersList'
-  | 'studentInfo';
+  | 'studentInfo'
+  | 'quran'
+  | 'zakatFitra';
 
 export interface SectionStyleConfig {
   columns: number;
