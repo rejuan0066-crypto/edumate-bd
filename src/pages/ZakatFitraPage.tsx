@@ -178,6 +178,23 @@ const ZakatFitraPage = () => {
               </div>
             </Card>
 
+            {/* Optional contact for audit log */}
+            <Card className="p-5 rounded-[32px] bg-card/60 backdrop-blur-xl border border-border/40">
+              <p className="text-xs text-muted-foreground mb-3">
+                {bn ? 'ঐচ্ছিক — সংরক্ষিত হিসাবের সাথে আপনার নাম/ফোন সংযুক্ত করতে পারেন।' : 'Optional — attach your name/phone to saved calculations.'}
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">{bn ? 'নাম (ঐচ্ছিক)' : 'Name (optional)'}</Label>
+                  <Input value={contactName} onChange={(e) => setContactName(e.target.value.slice(0, 100))} maxLength={100} className="rounded-xl" />
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'ফোন (ঐচ্ছিক)' : 'Phone (optional)'}</Label>
+                  <Input value={contactPhone} onChange={(e) => setContactPhone(e.target.value.slice(0, 30))} maxLength={30} className="rounded-xl" />
+                </div>
+              </div>
+            </Card>
+
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Zakat */}
               <Card className="p-6 rounded-[32px] bg-card/80 backdrop-blur-xl border border-border/60 space-y-4">
