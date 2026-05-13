@@ -1307,7 +1307,23 @@ const SettingsSheet = ({
           <div>
             <p className="text-sm font-medium">{bn ? 'মুসহাফ পৃষ্ঠা ভিউ' : 'Mushaf page view'}</p>
             <p className="text-xs text-muted-foreground">{bn ? 'কুরআন শরীফের ছাপার মতো পৃষ্ঠা আকারে দেখুন (পৃষ্ঠা মোডে)' : 'Traditional Mushaf-style page (in Page mode)'}</p>
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">{bn ? 'সূরা হেডার দেখান' : 'Show surah header'}</p>
+            <p className="text-xs text-muted-foreground">{bn ? 'মুসহাফ পৃষ্ঠায় সূরার নাম, নম্বর ও বিসমিল্লাহ দেখান' : 'Show surah name, number & Bismillah on Mushaf page'}</p>
           </div>
+          <Switch checked={settings.showSurahHeader} onCheckedChange={(b) => setSettings({ ...settings, showSurahHeader: b })} />
+        </div>
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">{bn ? "'চলমান' ব্যাজ দেখান" : "Show 'Continued' badge"}</p>
+            <p className="text-xs text-muted-foreground">{bn ? 'আগের পৃষ্ঠা থেকে চলমান সূরার জন্য ব্যাজ দেখান' : 'Show badge for surahs continuing from previous page'}</p>
+          </div>
+          <Switch checked={settings.showContinuationBadge} onCheckedChange={(b) => setSettings({ ...settings, showContinuationBadge: b })} />
+        </div>
           <Switch checked={settings.mushafView} onCheckedChange={(b) => setSettings({ ...settings, mushafView: b })} />
         </div>
       </div>
