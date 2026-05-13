@@ -85,9 +85,11 @@ const RECITERS = [
 const LS_BOOKMARKS = 'quran:bookmarks';
 const LS_LAST_READ = 'quran:lastRead'; // suffixed with user scope
 const LS_LAST_MUSHAF = 'quran:lastMushafPage'; // suffixed with user scope
+const LS_LAST_MUSHAF_VERSE = 'quran:lastMushafVerse'; // suffixed with user scope
 const LS_SETTINGS = 'quran:settings';
 const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
+const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
 
 interface Settings {
   script: 'uthmani' | 'indopak';
@@ -159,11 +161,17 @@ const QuranPage = () => {
         | { mode: 'chapter' | 'page' | 'juz'; id: number; verseKey?: string }
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
+      const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
       // If Mushaf view is on and we have a saved Mushaf page, prefer it
       if (settings.mushafView && lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
-        toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
+        if (lastMushafVerse && /^\d+:\d+$/.test(lastMushafVerse)) {
+          setScrollKey(lastMushafVerse);
+          toast.success(bn ? `আয়াত ${lastMushafVerse} থেকে পুনরায় শুরু` : `Resumed at verse ${lastMushafVerse}`);
+        } else {
+          toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
+        }
       } else if (last) {
         setMode(last.mode);
         setActiveId(last.id);
@@ -331,6 +339,35 @@ const QuranPage = () => {
     return () => io.disconnect();
   }, [isMushaf, mushafPages, activeId]);
 
+  // Track most-visible verse inside Mushaf and persist as resume point
+  const [currentMushafVerse, setCurrentMushafVerse] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isMushaf || mushafPages.length === 0) return;
+    const verseEls = Array.from(document.querySelectorAll<HTMLElement>('[id^="v-"]'));
+    if (verseEls.length === 0) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (suppressScrollSyncRef.current) return;
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        const key = (visible.target as HTMLElement).id.replace(/^v-/, '');
+        if (/^\d+:\d+$/.test(key)) setCurrentMushafVerse(key);
+      },
+      { threshold: [0.4, 0.7], rootMargin: '-30% 0px -50% 0px' },
+    );
+    verseEls.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [isMushaf, mushafPages]);
+
+  // Persist resume verse (debounced via state setter cycle)
+  useEffect(() => {
+    if (!restored || !isMushaf || !currentMushafVerse) return;
+    localStorage.setItem(lastMushafVerseKey(userId), currentMushafVerse);
+  }, [currentMushafVerse, isMushaf, restored, userId]);
+
+
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingKey, setPlayingKey] = useState<string | null>(null); // verse key or 'surah'
@@ -402,16 +439,28 @@ const QuranPage = () => {
     });
   };
 
-  // Scroll to verse
+  // Scroll to verse (works for both standard and mushaf renderers)
   useEffect(() => {
-    if (!scrollKey || versesLoading) return;
-    const el = document.getElementById(`v-${scrollKey}`);
-    if (el) {
+    if (!scrollKey) return;
+    if (!isMushaf && versesLoading) return;
+    if (isMushaf && mushafPages.length === 0) return;
+    // Defer to next paint so newly mounted verse spans are in DOM
+    const tryScroll = () => {
+      const el = document.getElementById(`v-${scrollKey}`);
+      if (!el) return false;
+      suppressScrollSyncRef.current = true;
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add('ring-2', 'ring-primary');
       setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 1800);
+      setTimeout(() => { suppressScrollSyncRef.current = false; }, 1200);
+      return true;
+    };
+    if (!tryScroll()) {
+      const t = setTimeout(tryScroll, 250);
+      return () => clearTimeout(t);
     }
-  }, [scrollKey, versesLoading, verses]);
+  }, [scrollKey, versesLoading, verses, isMushaf, mushafPages]);
+
 
   // Filtered chapters for sidebar search
   const filteredChapters = useMemo(() => {
