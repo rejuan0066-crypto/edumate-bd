@@ -2,10 +2,7 @@
 // Extracted from QuranPage.tsx so it can be unit-tested in isolation.
 
 export interface VerseLike {
-  id?: number | string;
   verse_key: string; // "<sid>:<ayah>"
-  // ...other Quran.com fields are intentionally permitted
-  [k: string]: unknown;
 }
 
 export interface Segment<V extends VerseLike = VerseLike> {
