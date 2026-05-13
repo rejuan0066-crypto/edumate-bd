@@ -299,7 +299,8 @@ const AdminZakatFitra = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
