@@ -321,6 +321,7 @@ const App = () => (
                   <Route path="/student-portal" element={<StudentPortal />} />
                   <Route path="/complaints" element={<ComplaintPage />} />
                   <Route path="/complaints/track" element={<ComplaintTrackPage />} />
+                  <Route path="/zakat-fitra" element={<ZakatFitraPage />} />
 
                   <Route path="/admin" element={<AdminShell />}>
                     <Route index element={<Dashboard />} />
