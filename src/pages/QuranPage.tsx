@@ -1374,6 +1374,8 @@ const SettingsSheet = ({
           <div>
             <p className="text-sm font-medium">{bn ? 'মুসহাফ পৃষ্ঠা ভিউ' : 'Mushaf page view'}</p>
             <p className="text-xs text-muted-foreground">{bn ? 'কুরআন শরীফের ছাপার মতো পৃষ্ঠা আকারে দেখুন (পৃষ্ঠা মোডে)' : 'Traditional Mushaf-style page (in Page mode)'}</p>
+          </div>
+          <Switch checked={settings.mushafView} onCheckedChange={(b) => setSettings({ ...settings, mushafView: b })} />
         </div>
 
         <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
@@ -1391,7 +1393,24 @@ const SettingsSheet = ({
           </div>
           <Switch checked={settings.showContinuationBadge} onCheckedChange={(b) => setSettings({ ...settings, showContinuationBadge: b })} />
         </div>
-          <Switch checked={settings.mushafView} onCheckedChange={(b) => setSettings({ ...settings, mushafView: b })} />
+
+        <div className="flex items-center justify-between rounded-2xl bg-muted/40 p-3">
+          <div>
+            <p className="text-sm font-medium">
+              {bn
+                ? settings.autoSaveLastRead ? 'শেষ পঠিত আয়াত স্বয়ংক্রিয়ভাবে সংরক্ষণ' : 'স্বয়ংক্রিয় সংরক্ষণ স্থগিত'
+                : settings.autoSaveLastRead ? 'Auto-save last read verse' : 'Auto-save paused'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {bn
+                ? 'বন্ধ থাকলে আপনার বর্তমান অগ্রগতি সংরক্ষিত হবে না (পরে আবার চালু করতে পারেন)'
+                : "When off, your current position won't be saved (you can resume anytime)"}
+            </p>
+          </div>
+          <Switch
+            checked={settings.autoSaveLastRead}
+            onCheckedChange={(b) => setSettings({ ...settings, autoSaveLastRead: b })}
+          />
         </div>
       </div>
     </SheetContent>
