@@ -98,6 +98,8 @@ interface Settings {
   arabicSize: number;
   reciterId: number;
   mushafView: boolean;
+  showSurahHeader: boolean;
+  showContinuationBadge: boolean;
 }
 const defaultSettings: Settings = {
   script: 'uthmani',
@@ -106,6 +108,8 @@ const defaultSettings: Settings = {
   arabicSize: 32,
   reciterId: 7,
   mushafView: false,
+  showSurahHeader: true,
+  showContinuationBadge: true,
 };
 
 // ========== Page ==========
