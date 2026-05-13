@@ -136,9 +136,6 @@ const QuranPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [gotoOpen, setGotoOpen] = useState(false);
 
-  // Restore last read on mount
-  useEffect(() => {
-    document.title = bn ? 'কুরআন পাঠ' : 'Quran Reading';
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
