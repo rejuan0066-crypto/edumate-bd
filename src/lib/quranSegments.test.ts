@@ -62,10 +62,9 @@ describe('groupVersesBySurah — regression: header dedup & out-of-order groupin
   it('drops malformed verse keys without throwing', () => {
     const segs = groupVersesBySurah([
       v('2:1'),
-      { id: 'bad', verse_key: 'not-a-key' },
+      { verse_key: 'not-a-key' },
       v('2:2'),
-      // @ts-expect-error runtime safety
-      { id: 'no-key' },
+      { verse_key: '' },
     ]);
     expect(segs).toHaveLength(1);
     expect(segs[0].sid).toBe(2);
