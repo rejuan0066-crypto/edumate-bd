@@ -10,8 +10,7 @@ describe('parseVerseKey', () => {
   it('returns [0,0] for malformed input', () => {
     expect(parseVerseKey('')).toEqual([0, 0]);
     expect(parseVerseKey('abc')).toEqual([0, 0]);
-    // @ts-expect-error testing runtime safety
-    expect(parseVerseKey(undefined)).toEqual([0, 0]);
+    expect(parseVerseKey(undefined as unknown as string)).toEqual([0, 0]);
   });
 });
 
