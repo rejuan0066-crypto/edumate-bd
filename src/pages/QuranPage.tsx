@@ -434,8 +434,9 @@ const QuranPage = () => {
   // Persist resume verse (debounced via state setter cycle)
   useEffect(() => {
     if (!restored || !isMushaf || !currentMushafVerse) return;
+    if (!settings.autoSaveLastRead) return;
     localStorage.setItem(lastMushafVerseKey(userId), currentMushafVerse);
-  }, [currentMushafVerse, isMushaf, restored, userId]);
+  }, [currentMushafVerse, isMushaf, restored, userId, settings.autoSaveLastRead]);
 
 
 
