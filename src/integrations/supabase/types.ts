@@ -10196,6 +10196,48 @@ export type Database = {
           },
         ]
       }
+      whatsapp_public_config: {
+        Row: {
+          away_message: string | null
+          business_hours: string | null
+          button_label: string | null
+          button_position: string | null
+          default_language: string | null
+          id: string | null
+          phone_number: string | null
+          route_mode: string | null
+          route_patterns: string[] | null
+          show_floating_button: boolean | null
+          welcome_message: string | null
+        }
+        Insert: {
+          away_message?: string | null
+          business_hours?: string | null
+          button_label?: string | null
+          button_position?: string | null
+          default_language?: string | null
+          id?: string | null
+          phone_number?: string | null
+          route_mode?: string | null
+          route_patterns?: string[] | null
+          show_floating_button?: boolean | null
+          welcome_message?: string | null
+        }
+        Update: {
+          away_message?: string | null
+          business_hours?: string | null
+          button_label?: string | null
+          button_position?: string | null
+          default_language?: string | null
+          id?: string | null
+          phone_number?: string | null
+          route_mode?: string | null
+          route_patterns?: string[] | null
+          show_floating_button?: boolean | null
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       acquire_user_create_lock:
