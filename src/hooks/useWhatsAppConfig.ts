@@ -39,8 +39,10 @@ export const useWhatsAppConfig = () => {
   return useQuery({
     queryKey: ['whatsapp-config'],
     queryFn: async (): Promise<WhatsAppConfig | null> => {
+      // Public-safe view that excludes sensitive Meta business IDs
+      // (business_account_id, phone_number_id, cloud_api_enabled).
       const { data, error } = await supabase
-        .from('whatsapp_config')
+        .from('whatsapp_public_config' as any)
         .select('*')
         .limit(1)
         .maybeSingle();
@@ -48,7 +50,7 @@ export const useWhatsAppConfig = () => {
         console.warn('WhatsApp config fetch failed:', error.message);
         return null;
       }
-      return data as WhatsAppConfig | null;
+      return (data as unknown) as WhatsAppConfig | null;
     },
     staleTime: 60_000,
     retry: 1,
