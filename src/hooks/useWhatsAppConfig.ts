@@ -50,7 +50,7 @@ export const useWhatsAppConfig = () => {
         console.warn('WhatsApp config fetch failed:', error.message);
         return null;
       }
-      return data as WhatsAppConfig | null;
+      return (data as unknown) as WhatsAppConfig | null;
     },
     staleTime: 60_000,
     retry: 1,
