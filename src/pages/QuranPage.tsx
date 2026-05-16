@@ -1466,8 +1466,8 @@ const QuranPage = () => {
 
       {/* ===== Floating bottom toolbar (Quran-Majeed style) ===== */}
       <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
-        <div className="max-w-[1440px] mx-auto px-3 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
-          <div className="mx-auto flex items-center justify-around gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-2 py-2">
+        <div className="max-w-[1440px] mx-auto px-2 sm:px-3 pt-2 sm:pt-3 pb-[max(env(safe-area-inset-bottom),10px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
+          <div className="mx-auto flex items-center justify-around gap-0.5 sm:gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-1.5 sm:px-2 py-1.5 sm:py-2">
             {[
               {
                 key: 'play',
