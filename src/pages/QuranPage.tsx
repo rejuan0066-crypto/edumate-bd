@@ -1364,12 +1364,12 @@ const QuranPage = () => {
         </main>
       </div>
 
-      {/* ===== Audio player bar ===== */}
+      {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
-        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
-          <div className="max-w-[1440px] mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="fixed bottom-[84px] inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
+          <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-center gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">
@@ -1388,7 +1388,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1401,7 +1401,7 @@ const QuranPage = () => {
               <Button
                 variant="default"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={togglePlay}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -1409,7 +1409,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1422,7 +1422,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
@@ -1435,6 +1435,83 @@ const QuranPage = () => {
           </div>
         </div>
       )}
+
+      {/* ===== Floating bottom toolbar (Quran-Majeed style) ===== */}
+      <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+        <div className="max-w-[1440px] mx-auto px-3 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
+          <div className="mx-auto flex items-center justify-around gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-2 py-2">
+            {[
+              {
+                key: 'play',
+                label: bn ? 'প্লে' : 'Play',
+                icon: isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />,
+                active: isPlaying,
+                onClick: () => {
+                  if (isPlaying) {
+                    audioRef.current?.pause();
+                    setIsPlaying(false);
+                  } else if (playingKey && audioRef.current?.src) {
+                    audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+                  } else {
+                    playMushafPage(activeId);
+                  }
+                },
+              },
+              {
+                key: 'bm',
+                label: bn ? 'বুকমার্ক' : 'Bookmarks',
+                icon: <Bookmark className="w-5 h-5" />,
+                active: false,
+                onClick: () => { setGotoTab('bm'); setGotoOpen(true); },
+              },
+              {
+                key: 'auto',
+                label: bn ? 'অটো স্ক্রল' : 'Auto Scroll',
+                icon: <ChevronsDown className="w-5 h-5" />,
+                active: autoScroll,
+                onClick: () => setAutoScroll((v) => !v),
+              },
+              {
+                key: 'share',
+                label: bn ? 'শেয়ার' : 'Share',
+                icon: <Share2 className="w-5 h-5" />,
+                active: false,
+                onClick: shareCurrent,
+              },
+              {
+                key: 'tr',
+                label: bn ? 'অনুবাদ' : 'Translation',
+                icon: <Languages className="w-5 h-5" />,
+                active: settings.showBn || settings.showEn,
+                onClick: () => setSettings({ ...settings, showBn: !(settings.showBn || settings.showEn), showEn: false }),
+              },
+              {
+                key: 'more',
+                label: bn ? 'আরও' : 'More',
+                icon: <MoreHorizontal className="w-5 h-5" />,
+                active: false,
+                onClick: () => setSettingsOpen(true),
+              },
+            ].map((b) => (
+              <button
+                key={b.key}
+                type="button"
+                onClick={b.onClick}
+                className={`flex flex-col items-center justify-center flex-1 min-w-0 h-12 rounded-full transition-colors ${
+                  b.active ? 'text-primary' : 'text-foreground/80 hover:text-foreground'
+                }`}
+                aria-label={b.label}
+                title={b.label}
+              >
+                <span className={`flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
+                  {b.icon}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
