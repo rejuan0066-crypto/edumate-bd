@@ -1395,6 +1395,10 @@ const AdminSettings = () => {
           <TabsContent value="receipt_qr" className="mt-6">
             <ReceiptQrSettings />
           </TabsContent>
+
+          <TabsContent value="quran" className="mt-6">
+            <QuranDefaultsSettings />
+          </TabsContent>
         </Tabs>
       </div>
 
