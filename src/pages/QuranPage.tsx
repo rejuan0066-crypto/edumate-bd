@@ -202,8 +202,9 @@ const QuranPage = () => {
           if (!vk) vk = undefined;
         } else if (last.mode === 'chapter') {
           // Need chapters list to resolve chapter → first page.
-          if (chapters.length === 0) return; // wait until chapters arrive
-          const ch = chapters.find((c) => c.id === last.id);
+          const chs = chaptersRef.current;
+          if (chs.length === 0) return; // wait until chapters arrive
+          const ch = chs.find((c) => c.id === last.id);
           targetPage = ch?.pages?.[0] || 1;
           if (!vk) vk = `${last.id}:1`;
         }
