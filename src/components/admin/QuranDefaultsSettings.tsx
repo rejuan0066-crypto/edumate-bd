@@ -34,7 +34,7 @@ const QuranDefaultsSettings = () => {
     const { error } = await supabase
       .from('app_settings')
       .upsert(
-        [{ key: SETTING_KEY, value: value as unknown as object, description: 'Default translation state for Quran page: off | bn | en | both' }],
+        [{ key: SETTING_KEY, value: value as string, description: 'Default translation state for Quran page: off | bn | en | both' }],
         { onConflict: 'key' },
       );
     setSaving(false);
