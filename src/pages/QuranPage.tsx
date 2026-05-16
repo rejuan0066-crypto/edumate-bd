@@ -192,19 +192,51 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const AS_KEY = 'quran:autoScroll';
+  const AS_TS_KEY = 'quran:autoScroll:updatedAt';
   const [autoScroll, setAutoScroll] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('quran:autoScroll') === '1';
+      return localStorage.getItem(AS_KEY) === '1';
     } catch {
       return false;
     }
   });
   const autoScrollHydratedRef = useRef(false);
+  // Track the most recent local-change timestamp so we can resolve conflicts
+  // against the DB's updated_at on login.
+  const autoScrollLocalTsRef = useRef<string>(
+    (() => {
+      try { return localStorage.getItem(AS_TS_KEY) || ''; } catch { return ''; }
+    })()
+  );
+  // Persist autoScroll + timestamp locally on every change. The timestamp is
+  // only bumped for user-driven changes (after hydration) — DB-applied values
+  // keep the DB's timestamp so we don't trigger a redundant push back.
   useEffect(() => {
     try {
-      localStorage.setItem('quran:autoScroll', autoScroll ? '1' : '0');
+      localStorage.setItem(AS_KEY, autoScroll ? '1' : '0');
+      if (autoScrollHydratedRef.current) {
+        const ts = new Date().toISOString();
+        autoScrollLocalTsRef.current = ts;
+        localStorage.setItem(AS_TS_KEY, ts);
+      }
     } catch {}
   }, [autoScroll]);
+
+  // Cross-tab sync: react to localStorage changes from other tabs.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === AS_KEY && e.newValue != null) {
+        const next = e.newValue === '1';
+        setAutoScroll((prev) => (prev === next ? prev : next));
+      }
+      if (e.key === AS_TS_KEY && e.newValue) {
+        autoScrollLocalTsRef.current = e.newValue;
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
