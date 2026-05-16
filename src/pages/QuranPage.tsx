@@ -1627,7 +1627,7 @@ const GotoDialog = ({
       <DialogHeader>
         <DialogTitle>{bn ? 'নেভিগেশন' : 'Go to'}</DialogTitle>
       </DialogHeader>
-      <Tabs defaultValue="surah">
+      <Tabs defaultValue={initialTab} key={initialTab}>
         <TabsList className="grid grid-cols-4 rounded-xl">
           <TabsTrigger value="surah" className="rounded-lg">{bn ? 'সূরা' : 'Surah'}</TabsTrigger>
           <TabsTrigger value="page" className="rounded-lg">{bn ? 'পৃষ্ঠা' : 'Page'}</TabsTrigger>
