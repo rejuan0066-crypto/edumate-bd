@@ -1030,7 +1030,14 @@ const QuranPage = () => {
         </Sheet>
 
         {/* ===== Main reading area ===== */}
-        <main className="flex-1 min-w-0 px-4 py-6 pb-44">
+        <main
+          className="flex-1 min-w-0 px-4 py-6"
+          style={{
+            paddingBottom: playingKey
+              ? 'calc(168px + env(safe-area-inset-bottom))'
+              : 'calc(104px + env(safe-area-inset-bottom))',
+          }}
+        >
           {versesLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
