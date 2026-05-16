@@ -544,15 +544,29 @@ const QuranPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [continuous, setContinuous] = useState(true);
 
+  // Fallback handler — invoked when an audio src fails to load OR errors out.
+  // Forward-declared via ref so playUrl can call into the latest version.
+  const advanceOnFailureRef = useRef<(failedKey: string) => void>(() => {});
+
   const playUrl = useCallback((url: string, key: string) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
+    // Detach any previous handlers from earlier src.
+    a.onerror = null;
     a.src = url;
+    a.onerror = () => {
+      // Network / 404 / decoding error → skip to next available verse.
+      console.warn('[Quran] Audio failed to load, skipping:', key, url);
+      advanceOnFailureRef.current(key);
+    };
     a.play().then(() => {
       setPlayingKey(key);
       setIsPlaying(true);
-    }).catch(() => toast.error(bn ? 'অডিও চালানো যায়নি' : 'Could not play audio'));
-  }, [bn]);
+    }).catch(() => {
+      // play() rejection (autoplay block, decode error, etc.) → try next.
+      advanceOnFailureRef.current(key);
+    });
+  }, []);
 
   const togglePlay = () => {
     const a = audioRef.current;
@@ -577,17 +591,30 @@ const QuranPage = () => {
     [mushafPages],
   );
 
-  // Play the first audio-bearing verse of a given Mushaf page (continuous mode
-  // then chains through the rest of the page and subsequent loaded pages).
-  const playMushafPage = useCallback((pageNum: number) => {
-    const page = mushafPages.find((p) => p.page === pageNum);
-    const first = page?.verses.find((v) => v.audio?.url);
-    if (!first) {
-      return toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
+  // Play the first audio-bearing verse of a given Mushaf page. If the page has
+  // no playable verses, transparently load and skip to the next page.
+  const playMushafPage = useCallback(async (pageNum: number) => {
+    let target = pageNum;
+    let guard = 0;
+    while (guard < 10 && target <= 604) {
+      const page = mushafPages.find((p) => p.page === target);
+      if (!page) {
+        await loadNextMushafPage();
+        await new Promise((r) => setTimeout(r, 120));
+        guard++;
+        continue;
+      }
+      const first = page.verses.find((v) => v.audio?.url);
+      if (first) {
+        setScrollKey(first.verse_key);
+        playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
+        return;
+      }
+      target++;
+      guard++;
     }
-    setScrollKey(first.verse_key);
-    playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
-  }, [mushafPages, playUrl, bn]);
+    toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
+  }, [mushafPages, loadNextMushafPage, playUrl, bn]);
 
   // Audio prefetch cache — warms HTTP cache so next verse starts instantly.
   const prefetchedUrlsRef = useRef<Set<string>>(new Set());
@@ -625,56 +652,79 @@ const QuranPage = () => {
     }
   }, [continuous, playingKey, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, prefetchAudio]);
 
-  // Continuous play next ayah (works for both chapter & Mushaf modes)
+  // Shared "advance to next playable verse" — scans forward skipping any verses
+  // whose audio URL is missing, and (in Mushaf) loads more pages as needed.
+  // `maxSkip` and `maxPagesLoaded` cap the search so we never loop forever.
+  const advanceFrom = useCallback(async (startIdx: number, currentKey: string) => {
+    if (!continuous) return;
+    const baseSource = isMushaf ? mushafVersesFlat : verses;
+    let source = baseSource;
+    let i = startIdx + 1;
+    let extraPagesLoaded = 0;
+    let skipped = 0;
+    const MAX_SKIP = 20;
+    const MAX_EXTRA_PAGES = 5;
+    while (skipped < MAX_SKIP) {
+      // Need to extend Mushaf source if we've run out.
+      if (i >= source.length) {
+        if (!isMushaf) return; // chapter/juz: end reached
+        const last = mushafPages[mushafPages.length - 1];
+        if (!last || last.page >= 604) return;
+        if (extraPagesLoaded >= MAX_EXTRA_PAGES) return;
+        extraPagesLoaded++;
+        await loadNextMushafPage();
+        // Wait for state commit, then re-read latest pages from a fresh closure.
+        await new Promise((r) => setTimeout(r, 120));
+        // Re-resolve from the freshest mushafPages snapshot via flatMap.
+        // (mushafPages here is stale — but we appended one page, so just retry the loop.)
+        // Force source refresh by recomputing from the ref-like flat array we have.
+        // The next iteration's `source` is re-read below.
+        source = (isMushaf ? mushafVersesFlat : verses);
+        // If state has not yet updated the closure, bail; the next `ended` will retry.
+        if (i >= source.length) {
+          setTimeout(() => { void advanceFrom(startIdx, currentKey); }, 150);
+          return;
+        }
+        continue;
+      }
+      const next = source[i];
+      if (next?.audio?.url) {
+        setScrollKey(next.verse_key);
+        playUrl(`https://verses.quran.com/${next.audio.url}`, next.verse_key);
+        return;
+      }
+      // No audio for this verse — skip silently.
+      skipped++;
+      i++;
+    }
+    // Too many consecutive missing audios → stop gracefully.
+    toast.info(bn ? 'পরবর্তী আয়াতের অডিও পাওয়া যায়নি' : 'No further audio available');
+  }, [continuous, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, playUrl, bn]);
+
+  // Keep the failure-fallback ref pointed at the latest advanceFrom.
+  useEffect(() => {
+    advanceOnFailureRef.current = (failedKey: string) => {
+      const source = isMushaf ? mushafVersesFlat : verses;
+      const idx = source.findIndex((v) => v.verse_key === failedKey);
+      void advanceFrom(idx >= 0 ? idx : 0, failedKey);
+    };
+  }, [advanceFrom, isMushaf, mushafVersesFlat, verses]);
+
+  // Continuous play: chain to the next verse when the current one finishes.
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onEnded = async () => {
+    const onEnded = () => {
       setIsPlaying(false);
       if (!continuous || !playingKey || playingKey === 'surah') return;
       const source = isMushaf ? mushafVersesFlat : verses;
       const idx = source.findIndex((v) => v.verse_key === playingKey);
       if (idx < 0) return;
-      // Next verse already loaded → play it.
-      if (idx < source.length - 1) {
-        const next = source[idx + 1];
-        if (next.audio?.url) {
-          setScrollKey(next.verse_key);
-          playUrl(`https://verses.quran.com/${next.audio.url}`, next.verse_key);
-        }
-        return;
-      }
-      // Mushaf: at end of loaded pages — ensure next page is loaded, then continue.
-      if (isMushaf) {
-        const last = mushafPages[mushafPages.length - 1];
-        if (last && last.page < 604) {
-          await loadNextMushafPage();
-          // Poll briefly for the freshly appended page to appear in state.
-          const targetPage = last.page + 1;
-          let tries = 0;
-          const tick = () => {
-            tries++;
-            const page = mushafPages.find((p) => p.page === targetPage);
-            // Use functional read via flatMap from latest closure isn't possible here,
-            // so rely on a microtask to let React commit, then re-resolve.
-            const fresh = [...mushafPages, page ? page : { page: targetPage, verses: [] }]
-              .flatMap((p) => p.verses);
-            const i = fresh.findIndex((v) => v.verse_key === playingKey);
-            const nxt = i >= 0 ? fresh[i + 1] : undefined;
-            if (nxt?.audio?.url) {
-              setScrollKey(nxt.verse_key);
-              playUrl(`https://verses.quran.com/${nxt.audio.url}`, nxt.verse_key);
-            } else if (tries < 10) {
-              setTimeout(tick, 100);
-            }
-          };
-          setTimeout(tick, 50);
-        }
-      }
+      void advanceFrom(idx, playingKey);
     };
     a.addEventListener('ended', onEnded);
     return () => a.removeEventListener('ended', onEnded);
-  }, [continuous, playingKey, verses, mushafVersesFlat, isMushaf, mushafPages, loadNextMushafPage, playUrl]);
+  }, [continuous, playingKey, verses, mushafVersesFlat, isMushaf, advanceFrom]);
 
   // Cleanup
   useEffect(() => () => {
