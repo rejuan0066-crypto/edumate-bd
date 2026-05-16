@@ -1416,7 +1416,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1429,7 +1429,7 @@ const QuranPage = () => {
               <Button
                 variant="default"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={togglePlay}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -1437,7 +1437,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1450,7 +1450,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
