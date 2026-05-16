@@ -249,6 +249,32 @@ const QuranPage = () => {
     },
   });
 
+  // Keep ref in sync so the restore effect can read chapters for legacy migration,
+  // and re-run a one-shot restore once chapters arrive (if it was waiting).
+  useEffect(() => {
+    chaptersRef.current = chapters;
+    if (restored || chapters.length === 0) return;
+    // Only re-trigger if a legacy chapter entry is the saved state.
+    try {
+      const last = JSON.parse(localStorage.getItem(lastReadKey(userId)) || 'null');
+      const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
+      if ((!lastMushaf || lastMushaf < 1) && last?.mode === 'chapter') {
+        const ch = chapters.find((c) => c.id === last.id);
+        const targetPage = ch?.pages?.[0] || 1;
+        const vk = last.verseKey || `${last.id}:1`;
+        setMode('page');
+        setActiveId(targetPage);
+        if (/^\d+:\d+$/.test(vk)) setScrollKey(vk);
+        try {
+          localStorage.setItem(lastMushafKey(userId), String(targetPage));
+          localStorage.setItem(lastMushafVerseKey(userId), vk);
+        } catch { /* ignore */ }
+        toast.success(bn ? `পৃষ্ঠা ${targetPage} থেকে পুনরায় শুরু` : `Resumed from page ${targetPage}`);
+        setRestored(true);
+      }
+    } catch { /* ignore */ }
+  }, [chapters, restored, userId, bn]);
+
   // Single-ayah card view is removed — Mushaf is now the only reading mode.
   const isMushaf = true;
 
