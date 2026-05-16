@@ -1699,30 +1699,147 @@ const GotoDialog = ({
           </Button>
         </TabsContent>
 
-        <TabsContent value="bm" className="pt-4">
-          {bookmarks.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              {bn ? 'কোন বুকমার্ক নেই' : 'No bookmarks yet'}
-            </p>
-          ) : (
-            <ScrollArea className="max-h-[300px]">
-              <div className="space-y-1.5">
-                {bookmarks.map((k) => (
+        <TabsContent value="bm" className="pt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={bookmarks.includes(`p:${currentPage}`) ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-xl gap-1.5"
+              onClick={() => onToggleBookmark(`p:${currentPage}`)}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              {bn ? `পৃষ্ঠা ${currentPage} সেভ` : `Save page ${currentPage}`}
+            </Button>
+            <Button
+              variant={bookmarks.includes(`j:${currentJuzId}`) ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-xl gap-1.5"
+              onClick={() => onToggleBookmark(`j:${currentJuzId}`)}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {bn ? `পারা ${currentJuzId} সেভ` : `Save Juz ${currentJuzId}`}
+            </Button>
+          </div>
+
+          {(() => {
+            const verseBms = bookmarks.filter((k) => /^\d+:\d+$/.test(k));
+            const pageBms = bookmarks
+              .filter((k) => /^p:\d+$/.test(k))
+              .map((k) => Number(k.slice(2)))
+              .sort((a, b) => a - b);
+            const juzBms = bookmarks
+              .filter((k) => /^j:\d+$/.test(k))
+              .map((k) => Number(k.slice(2)))
+              .sort((a, b) => a - b);
+
+            if (verseBms.length === 0 && pageBms.length === 0 && juzBms.length === 0) {
+              return (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  {bn ? 'কোন বুকমার্ক নেই' : 'No bookmarks yet'}
+                </p>
+              );
+            }
+
+            const Section = ({ title, items }: { title: string; items: React.ReactNode[] }) =>
+              items.length > 0 ? (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground px-1">{title}</p>
+                  <div className="space-y-1.5">{items}</div>
+                </div>
+              ) : null;
+
+            const verseItems = verseBms.map((k) => {
+              const [sStr, aStr] = k.split(':');
+              const sid = Number(sStr);
+              const ch = chapters.find((c) => c.id === sid);
+              const surahName = ch
+                ? (bn ? ch.translated_name?.name || ch.name_simple : ch.name_simple)
+                : `Surah ${sid}`;
+              return (
+                <div key={k} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 hover:bg-muted/60 transition-colors">
                   <button
-                    key={k}
-                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-muted text-sm flex items-center justify-between"
-                    onClick={() => {
-                      const [s] = k.split(':');
-                      onGo('chapter', Number(s), k);
-                    }}
+                    type="button"
+                    className="flex-1 min-w-0 text-left flex items-center gap-2"
+                    onClick={() => onGo('chapter', sid, k)}
                   >
-                    <span className="font-mono">{k}</span>
-                    <History className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="inline-flex items-center justify-center min-w-[2.25rem] h-6 px-1.5 rounded-full bg-primary/10 text-primary text-[11px] font-mono font-bold">
+                      {k}
+                    </span>
+                    <span className="text-sm truncate">
+                      {sid}. {surahName}{ch ? ` · ${bn ? 'আয়াত' : 'Ayah'} ${aStr}` : ''}
+                    </span>
                   </button>
-                ))}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => onToggleBookmark(k)}
+                    title={bn ? 'সরান' : 'Remove'}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              );
+            });
+
+            const pageItems = pageBms.map((n) => (
+              <div key={`p:${n}`} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 hover:bg-muted/60 transition-colors">
+                <button
+                  type="button"
+                  className="flex-1 min-w-0 text-left flex items-center gap-2"
+                  onClick={() => onGo('page', n)}
+                >
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm">
+                    {bn ? `পৃষ্ঠা ${n}` : `Page ${n}`} <span className="text-muted-foreground">/ 604</span>
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => onToggleBookmark(`p:${n}`)}
+                  title={bn ? 'সরান' : 'Remove'}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </div>
-            </ScrollArea>
-          )}
+            ));
+
+            const juzItems = juzBms.map((n) => (
+              <div key={`j:${n}`} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 hover:bg-muted/60 transition-colors">
+                <button
+                  type="button"
+                  className="flex-1 min-w-0 text-left flex items-center gap-2"
+                  onClick={() => onGo('juz', n)}
+                >
+                  <Layers className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-sm">
+                    {bn ? `পারা ${n}` : `Juz ${n}`} <span className="text-muted-foreground">/ 30</span>
+                  </span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-destructive shrink-0"
+                  onClick={() => onToggleBookmark(`j:${n}`)}
+                  title={bn ? 'সরান' : 'Remove'}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            ));
+
+            return (
+              <ScrollArea className="max-h-[340px]">
+                <div className="space-y-4 pr-1">
+                  <Section title={bn ? 'আয়াত' : 'Verses'} items={verseItems} />
+                  <Section title={bn ? 'পৃষ্ঠা' : 'Pages'} items={pageItems} />
+                  <Section title={bn ? 'পারা' : 'Juz'} items={juzItems} />
+                </div>
+              </ScrollArea>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </DialogContent>
