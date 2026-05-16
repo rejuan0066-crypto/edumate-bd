@@ -724,17 +724,42 @@ const QuranPage = () => {
     );
   }, [chapters, search]);
 
-  const currentChapter = chapters.find((c) => c.id === activeId);
+  // Chapter/Juz the current Mushaf page belongs to — drives sidebar highlight
+  // and header sub-label so the user always sees what section they're on.
+  const currentChapterId = useMemo(() => {
+    if (!chapters.length) return null;
+    const hit = chapters.find((c) => {
+      const [start, end] = c.pages || [];
+      return start && end && activeId >= start && activeId <= end;
+    });
+    return hit?.id ?? null;
+  }, [chapters, activeId]);
+  const currentJuzId = useMemo(() => {
+    let j = 1;
+    for (let i = 1; i <= 30; i++) {
+      if ((JUZ_FIRST_PAGE[i] || 0) <= activeId) j = i;
+      else break;
+    }
+    return j;
+  }, [activeId]);
+  const currentChapter = chapters.find((c) => c.id === (currentChapterId ?? activeId));
   const headerTitle = useMemo(() => {
+    if (mode === 'page') {
+      const ch = chapters.find((c) => c.id === currentChapterId);
+      const surah = ch
+        ? (bn ? ch.translated_name?.name || ch.name_simple : ch.name_simple)
+        : '';
+      const pageLabel = bn ? `পৃষ্ঠা ${activeId}` : `Page ${activeId}`;
+      return surah ? `${pageLabel} • ${surah} • ${bn ? 'পারা' : 'Juz'} ${currentJuzId}` : pageLabel;
+    }
     if (mode === 'chapter') {
       if (!currentChapter) return '';
       return bn
         ? `${currentChapter.id}. ${currentChapter.translated_name?.name || currentChapter.name_simple}`
         : `${currentChapter.id}. ${currentChapter.name_simple}`;
     }
-    if (mode === 'page') return bn ? `পৃষ্ঠা ${activeId}` : `Page ${activeId}`;
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
-  }, [mode, activeId, currentChapter, bn]);
+  }, [mode, activeId, currentChapter, currentChapterId, currentJuzId, chapters, bn]);
 
 
   // Goto navigation — always resolves to a Mushaf page (single-ayah view removed).
