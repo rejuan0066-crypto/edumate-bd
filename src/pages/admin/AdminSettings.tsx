@@ -19,6 +19,7 @@ import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManage
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
 import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
+import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 import { useConfirm } from "@/contexts/ConfirmContext";
