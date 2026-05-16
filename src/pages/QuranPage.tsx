@@ -1342,12 +1342,15 @@ const SidebarContent = ({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2" ref={listRef}>
           {chapters.map((c) => {
-            const active = mode === 'chapter' && activeId === c.id;
+            const active =
+              (mode === 'chapter' && activeId === c.id) ||
+              (mode === 'page' && currentChapterId === c.id);
             return (
               <button
                 key={c.id}
+                data-chapter-id={c.id}
                 onClick={() => onSelect(c.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-muted/60 mb-0.5 ${
                   active ? 'bg-primary/10 text-primary' : ''
