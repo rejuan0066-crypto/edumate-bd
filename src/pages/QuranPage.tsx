@@ -334,20 +334,29 @@ const QuranPage = () => {
   const pageRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const suppressScrollSyncRef = useRef(false);
 
-  const fetchPageVerses = useCallback(async (page: number): Promise<Verse[]> => {
-    const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
-    url.searchParams.set('language', bn ? 'bn' : 'en');
-    url.searchParams.set('words', 'false');
-    url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
-    url.searchParams.set(
-      'fields',
-      'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
-    );
-    url.searchParams.set('audio', String(settings.reciterId));
-    url.searchParams.set('per_page', '300');
-    const res = await fetch(url.toString());
-    const json = await res.json();
-    return json.verses || [];
+  const fetchPageVerses = useCallback((page: number): Promise<Verse[]> => {
+    // Deduplicate concurrent requests for the same page.
+    const existing = inFlightPageRef.current.get(page);
+    if (existing) return existing;
+    const run = (async () => {
+      const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
+      url.searchParams.set('language', bn ? 'bn' : 'en');
+      url.searchParams.set('words', 'false');
+      url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
+      url.searchParams.set(
+        'fields',
+        'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
+      );
+      url.searchParams.set('audio', String(settings.reciterId));
+      url.searchParams.set('per_page', '300');
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.verses || []) as Verse[];
+    })();
+    inFlightPageRef.current.set(page, run);
+    run.finally(() => inFlightPageRef.current.delete(page));
+    return run;
   }, [bn, settings.reciterId]);
 
   useEffect(() => {
