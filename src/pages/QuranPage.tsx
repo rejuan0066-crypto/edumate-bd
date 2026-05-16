@@ -724,17 +724,42 @@ const QuranPage = () => {
     );
   }, [chapters, search]);
 
-  const currentChapter = chapters.find((c) => c.id === activeId);
+  // Chapter/Juz the current Mushaf page belongs to — drives sidebar highlight
+  // and header sub-label so the user always sees what section they're on.
+  const currentChapterId = useMemo(() => {
+    if (!chapters.length) return null;
+    const hit = chapters.find((c) => {
+      const [start, end] = c.pages || [];
+      return start && end && activeId >= start && activeId <= end;
+    });
+    return hit?.id ?? null;
+  }, [chapters, activeId]);
+  const currentJuzId = useMemo(() => {
+    let j = 1;
+    for (let i = 1; i <= 30; i++) {
+      if ((JUZ_FIRST_PAGE[i] || 0) <= activeId) j = i;
+      else break;
+    }
+    return j;
+  }, [activeId]);
+  const currentChapter = chapters.find((c) => c.id === (currentChapterId ?? activeId));
   const headerTitle = useMemo(() => {
+    if (mode === 'page') {
+      const ch = chapters.find((c) => c.id === currentChapterId);
+      const surah = ch
+        ? (bn ? ch.translated_name?.name || ch.name_simple : ch.name_simple)
+        : '';
+      const pageLabel = bn ? `পৃষ্ঠা ${activeId}` : `Page ${activeId}`;
+      return surah ? `${pageLabel} • ${surah} • ${bn ? 'পারা' : 'Juz'} ${currentJuzId}` : pageLabel;
+    }
     if (mode === 'chapter') {
       if (!currentChapter) return '';
       return bn
         ? `${currentChapter.id}. ${currentChapter.translated_name?.name || currentChapter.name_simple}`
         : `${currentChapter.id}. ${currentChapter.name_simple}`;
     }
-    if (mode === 'page') return bn ? `পৃষ্ঠা ${activeId}` : `Page ${activeId}`;
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
-  }, [mode, activeId, currentChapter, bn]);
+  }, [mode, activeId, currentChapter, currentChapterId, currentJuzId, chapters, bn]);
 
 
   // Goto navigation — always resolves to a Mushaf page (single-ayah view removed).
@@ -827,6 +852,7 @@ const QuranPage = () => {
             chapters={filteredChapters}
             activeId={activeId}
             mode={mode}
+            currentChapterId={currentChapterId}
             onSelect={(id) => goto('chapter', id)}
           />
         </aside>
@@ -841,6 +867,7 @@ const QuranPage = () => {
               chapters={filteredChapters}
               activeId={activeId}
               mode={mode}
+              currentChapterId={currentChapterId}
               onSelect={(id) => goto('chapter', id)}
             />
           </SheetContent>
@@ -1282,6 +1309,7 @@ const SidebarContent = ({
   chapters,
   activeId,
   mode,
+  currentChapterId,
   onSelect,
 }: {
   bn: boolean;
@@ -1290,8 +1318,16 @@ const SidebarContent = ({
   chapters: Chapter[];
   activeId: number;
   mode: 'chapter' | 'page' | 'juz';
+  currentChapterId?: number | null;
   onSelect: (id: number) => void;
 }) => {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  // Auto-scroll the highlighted chapter into view whenever it changes.
+  useEffect(() => {
+    if (!currentChapterId) return;
+    const el = listRef.current?.querySelector(`[data-chapter-id="${currentChapterId}"]`);
+    (el as HTMLElement | null)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [currentChapterId]);
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border/40">
@@ -1306,12 +1342,15 @@ const SidebarContent = ({
         </div>
       </div>
       <ScrollArea className="flex-1">
-        <div className="p-2">
+        <div className="p-2" ref={listRef}>
           {chapters.map((c) => {
-            const active = mode === 'chapter' && activeId === c.id;
+            const active =
+              (mode === 'chapter' && activeId === c.id) ||
+              (mode === 'page' && currentChapterId === c.id);
             return (
               <button
                 key={c.id}
+                data-chapter-id={c.id}
                 onClick={() => onSelect(c.id)}
                 className={`w-full text-left px-3 py-2.5 rounded-2xl flex items-center gap-3 transition-all hover:bg-muted/60 mb-0.5 ${
                   active ? 'bg-primary/10 text-primary' : ''
