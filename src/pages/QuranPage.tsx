@@ -160,7 +160,18 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [autoScroll, setAutoScroll] = useState(false);
+  const [autoScroll, setAutoScroll] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('quran:autoScroll') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('quran:autoScroll', autoScroll ? '1' : '0');
+    } catch {}
+  }, [autoScroll]);
 
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
