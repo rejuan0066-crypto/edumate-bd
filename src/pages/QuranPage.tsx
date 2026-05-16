@@ -155,6 +155,9 @@ const QuranPage = () => {
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
+  // Forward ref so the restore effect (which runs before `chapters` is declared)
+  // can read the latest chapters list for legacy migration.
+  const chaptersRef = useRef<Chapter[]>([]);
   useEffect(() => {
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
