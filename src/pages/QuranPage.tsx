@@ -493,6 +493,42 @@ const QuranPage = () => {
     playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
   }, [mushafPages, playUrl, bn]);
 
+  // Audio prefetch cache — warms HTTP cache so next verse starts instantly.
+  const prefetchedUrlsRef = useRef<Set<string>>(new Set());
+  const prefetchAudio = useCallback((url: string) => {
+    if (!url || prefetchedUrlsRef.current.has(url)) return;
+    prefetchedUrlsRef.current.add(url);
+    try {
+      const el = new Audio();
+      el.preload = 'auto';
+      el.src = url;
+      // Force the browser to start downloading.
+      el.load();
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // Whenever we start playing a verse in continuous Mushaf mode, eagerly:
+  //  1) prefetch the next few verses' audio
+  //  2) load the next Mushaf page early if we're near the end of loaded pages
+  useEffect(() => {
+    if (!continuous || !playingKey || playingKey === 'surah') return;
+    const source = isMushaf ? mushafVersesFlat : verses;
+    const idx = source.findIndex((v) => v.verse_key === playingKey);
+    if (idx < 0) return;
+    // Prefetch the next 3 verses' audio.
+    for (let i = 1; i <= 3; i++) {
+      const v = source[idx + i];
+      if (v?.audio?.url) prefetchAudio(`https://verses.quran.com/${v.audio.url}`);
+    }
+    // Mushaf: if within last 3 verses of the loaded set, preload the next page.
+    if (isMushaf && idx >= source.length - 3) {
+      const last = mushafPages[mushafPages.length - 1];
+      if (last && last.page < 604) loadNextMushafPage();
+    }
+  }, [continuous, playingKey, isMushaf, mushafVersesFlat, verses, mushafPages, loadNextMushafPage, prefetchAudio]);
+
   // Continuous play next ayah (works for both chapter & Mushaf modes)
   useEffect(() => {
     const a = audioRef.current;
@@ -512,21 +548,31 @@ const QuranPage = () => {
         }
         return;
       }
-      // Mushaf: at end of loaded pages — try to load next page and continue.
+      // Mushaf: at end of loaded pages — ensure next page is loaded, then continue.
       if (isMushaf) {
         const last = mushafPages[mushafPages.length - 1];
         if (last && last.page < 604) {
           await loadNextMushafPage();
-          // Re-resolve next verse after state updates settle.
-          setTimeout(() => {
-            const fresh = mushafPages.flatMap((p) => p.verses);
+          // Poll briefly for the freshly appended page to appear in state.
+          const targetPage = last.page + 1;
+          let tries = 0;
+          const tick = () => {
+            tries++;
+            const page = mushafPages.find((p) => p.page === targetPage);
+            // Use functional read via flatMap from latest closure isn't possible here,
+            // so rely on a microtask to let React commit, then re-resolve.
+            const fresh = [...mushafPages, page ? page : { page: targetPage, verses: [] }]
+              .flatMap((p) => p.verses);
             const i = fresh.findIndex((v) => v.verse_key === playingKey);
             const nxt = i >= 0 ? fresh[i + 1] : undefined;
             if (nxt?.audio?.url) {
               setScrollKey(nxt.verse_key);
               playUrl(`https://verses.quran.com/${nxt.audio.url}`, nxt.verse_key);
+            } else if (tries < 10) {
+              setTimeout(tick, 100);
             }
-          }, 300);
+          };
+          setTimeout(tick, 50);
         }
       }
     };
