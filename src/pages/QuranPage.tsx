@@ -473,25 +473,64 @@ const QuranPage = () => {
     playUrl(surahAudio, 'surah');
   };
 
-  // Continuous play next ayah
+  // Flat list of all currently-loaded Mushaf verses (in page order).
+  const mushafVersesFlat = useMemo(
+    () => mushafPages.flatMap((p) => p.verses),
+    [mushafPages],
+  );
+
+  // Play the first audio-bearing verse of a given Mushaf page (continuous mode
+  // then chains through the rest of the page and subsequent loaded pages).
+  const playMushafPage = useCallback((pageNum: number) => {
+    const page = mushafPages.find((p) => p.page === pageNum);
+    const first = page?.verses.find((v) => v.audio?.url);
+    if (!first) {
+      return toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
+    }
+    setScrollKey(first.verse_key);
+    playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
+  }, [mushafPages, playUrl, bn]);
+
+  // Continuous play next ayah (works for both chapter & Mushaf modes)
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onEnded = () => {
+    const onEnded = async () => {
       setIsPlaying(false);
       if (!continuous || !playingKey || playingKey === 'surah') return;
-      const idx = verses.findIndex((v) => v.verse_key === playingKey);
-      if (idx >= 0 && idx < verses.length - 1) {
-        const next = verses[idx + 1];
+      const source = isMushaf ? mushafVersesFlat : verses;
+      const idx = source.findIndex((v) => v.verse_key === playingKey);
+      if (idx < 0) return;
+      // Next verse already loaded → play it.
+      if (idx < source.length - 1) {
+        const next = source[idx + 1];
         if (next.audio?.url) {
           setScrollKey(next.verse_key);
           playUrl(`https://verses.quran.com/${next.audio.url}`, next.verse_key);
+        }
+        return;
+      }
+      // Mushaf: at end of loaded pages — try to load next page and continue.
+      if (isMushaf) {
+        const last = mushafPages[mushafPages.length - 1];
+        if (last && last.page < 604) {
+          await loadNextMushafPage();
+          // Re-resolve next verse after state updates settle.
+          setTimeout(() => {
+            const fresh = mushafPages.flatMap((p) => p.verses);
+            const i = fresh.findIndex((v) => v.verse_key === playingKey);
+            const nxt = i >= 0 ? fresh[i + 1] : undefined;
+            if (nxt?.audio?.url) {
+              setScrollKey(nxt.verse_key);
+              playUrl(`https://verses.quran.com/${nxt.audio.url}`, nxt.verse_key);
+            }
+          }, 300);
         }
       }
     };
     a.addEventListener('ended', onEnded);
     return () => a.removeEventListener('ended', onEnded);
-  }, [continuous, playingKey, verses, playUrl]);
+  }, [continuous, playingKey, verses, mushafVersesFlat, isMushaf, mushafPages, loadNextMushafPage, playUrl]);
 
   // Cleanup
   useEffect(() => () => {
@@ -723,8 +762,31 @@ const QuranPage = () => {
                       <ChevronRight className="w-4 h-4" />
                       {bn ? 'পূর্ববর্তী' : 'Prev'}
                     </Button>
-                    <div className="text-sm font-semibold">
-                      {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold">
+                        {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={playingKey && playingKey !== 'surah' ? 'default' : 'outline'}
+                        className="rounded-xl gap-1.5 h-8 px-2.5"
+                        title={bn ? 'এই পৃষ্ঠা থেকে অডিও চালান (অটো-কন্টিনিউ)' : 'Play this page (auto-continue)'}
+                        onClick={() => {
+                          if (isPlaying) {
+                            audioRef.current?.pause();
+                            setIsPlaying(false);
+                          } else if (playingKey && playingKey !== 'surah' && audioRef.current?.src) {
+                            audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+                          } else {
+                            playMushafPage(activeId);
+                          }
+                        }}
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        <span className="hidden sm:inline text-xs">
+                          {bn ? 'পৃষ্ঠা' : 'Play'}
+                        </span>
+                      </Button>
                     </div>
                     <Button
                       variant="outline"
