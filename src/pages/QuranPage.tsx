@@ -92,6 +92,13 @@ const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
 
+// Standard Madinah Mushaf: first page of each Juz (1..30)
+const JUZ_FIRST_PAGE: Record<number, number> = {
+  1: 1, 2: 22, 3: 42, 4: 62, 5: 82, 6: 102, 7: 121, 8: 142, 9: 162, 10: 182,
+  11: 201, 12: 222, 13: 242, 14: 262, 15: 282, 16: 302, 17: 322, 18: 342, 19: 362, 20: 382,
+  21: 402, 22: 422, 23: 442, 24: 462, 25: 482, 26: 502, 27: 522, 28: 542, 29: 562, 30: 582,
+};
+
 interface Settings {
   script: 'uthmani' | 'indopak';
   showEn: boolean;
@@ -148,6 +155,9 @@ const QuranPage = () => {
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
+  // Forward ref so the restore effect (which runs before `chapters` is declared)
+  // can read the latest chapters list for legacy migration.
+  const chaptersRef = useRef<Chapter[]>([]);
   useEffect(() => {
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
@@ -159,7 +169,9 @@ const QuranPage = () => {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  // Restore last read on mount / when user scope resolves
+  // Restore last read on mount / when user scope resolves. Legacy chapter/juz
+  // entries are migrated to their starting Mushaf page so 'Continue reading'
+  // always lands on the correct page.
   useEffect(() => {
     document.title = bn ? 'কুরআন পাঠ' : 'Quran Reading';
     if (restored) return;
@@ -169,8 +181,7 @@ const QuranPage = () => {
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
       const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
-      // Mushaf is the only view — prefer saved Mushaf page, else convert any
-      // legacy chapter/juz last-read entry to its starting page.
+
       if (lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
@@ -181,9 +192,33 @@ const QuranPage = () => {
           toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
         }
       } else if (last) {
-        setMode('page');
-        setActiveId(last.mode === 'page' ? last.id : 1);
-        if (last.verseKey) setScrollKey(last.verseKey);
+        // Migrate legacy chapter/juz/page entry → Mushaf page.
+        let targetPage: number | null = null;
+        let vk: string | undefined = last.verseKey;
+        if (last.mode === 'page') {
+          targetPage = last.id >= 1 && last.id <= 604 ? last.id : 1;
+        } else if (last.mode === 'juz') {
+          targetPage = JUZ_FIRST_PAGE[last.id] || 1;
+          if (!vk) vk = undefined;
+        } else if (last.mode === 'chapter') {
+          // Need chapters list to resolve chapter → first page.
+          const chs = chaptersRef.current;
+          if (chs.length === 0) return; // wait until chapters arrive
+          const ch = chs.find((c) => c.id === last.id);
+          targetPage = ch?.pages?.[0] || 1;
+          if (!vk) vk = `${last.id}:1`;
+        }
+        if (targetPage) {
+          setMode('page');
+          setActiveId(targetPage);
+          if (vk && /^\d+:\d+$/.test(vk)) setScrollKey(vk);
+          // Persist migrated value so future loads skip the migration path.
+          try {
+            localStorage.setItem(lastMushafKey(userId), String(targetPage));
+            if (vk) localStorage.setItem(lastMushafVerseKey(userId), vk);
+          } catch { /* ignore */ }
+          toast.success(bn ? `পৃষ্ঠা ${targetPage} থেকে পুনরায় শুরু` : `Resumed from page ${targetPage}`);
+        }
       }
     } catch {/* ignore */}
     setRestored(true);
@@ -213,6 +248,32 @@ const QuranPage = () => {
       return json.chapters || [];
     },
   });
+
+  // Keep ref in sync so the restore effect can read chapters for legacy migration,
+  // and re-run a one-shot restore once chapters arrive (if it was waiting).
+  useEffect(() => {
+    chaptersRef.current = chapters;
+    if (restored || chapters.length === 0) return;
+    // Only re-trigger if a legacy chapter entry is the saved state.
+    try {
+      const last = JSON.parse(localStorage.getItem(lastReadKey(userId)) || 'null');
+      const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
+      if ((!lastMushaf || lastMushaf < 1) && last?.mode === 'chapter') {
+        const ch = chapters.find((c) => c.id === last.id);
+        const targetPage = ch?.pages?.[0] || 1;
+        const vk = last.verseKey || `${last.id}:1`;
+        setMode('page');
+        setActiveId(targetPage);
+        if (/^\d+:\d+$/.test(vk)) setScrollKey(vk);
+        try {
+          localStorage.setItem(lastMushafKey(userId), String(targetPage));
+          localStorage.setItem(lastMushafVerseKey(userId), vk);
+        } catch { /* ignore */ }
+        toast.success(bn ? `পৃষ্ঠা ${targetPage} থেকে পুনরায় শুরু` : `Resumed from page ${targetPage}`);
+        setRestored(true);
+      }
+    } catch { /* ignore */ }
+  }, [chapters, restored, userId, bn]);
 
   // Single-ayah card view is removed — Mushaf is now the only reading mode.
   const isMushaf = true;
@@ -675,12 +736,6 @@ const QuranPage = () => {
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
   }, [mode, activeId, currentChapter, bn]);
 
-  // Standard Madinah Mushaf: first page of each Juz (1..30)
-  const JUZ_FIRST_PAGE: Record<number, number> = {
-    1: 1, 2: 22, 3: 42, 4: 62, 5: 82, 6: 102, 7: 121, 8: 142, 9: 162, 10: 182,
-    11: 201, 12: 222, 13: 242, 14: 262, 15: 282, 16: 302, 17: 322, 18: 342, 19: 362, 20: 382,
-    21: 402, 22: 422, 23: 442, 24: 462, 25: 482, 26: 502, 27: 522, 28: 542, 29: 562, 30: 582,
-  };
 
   // Goto navigation — always resolves to a Mushaf page (single-ayah view removed).
   const goto = (m: typeof mode, id: number, vk?: string) => {
