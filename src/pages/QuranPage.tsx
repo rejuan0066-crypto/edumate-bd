@@ -169,8 +169,9 @@ const QuranPage = () => {
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
       const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
-      // If Mushaf view is on and we have a saved Mushaf page, prefer it
-      if (settings.mushafView && lastMushaf >= 1 && lastMushaf <= 604) {
+      // Mushaf is the only view — prefer saved Mushaf page, else convert any
+      // legacy chapter/juz last-read entry to its starting page.
+      if (lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
         if (lastMushafVerse && /^\d+:\d+$/.test(lastMushafVerse)) {
@@ -180,13 +181,13 @@ const QuranPage = () => {
           toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
         }
       } else if (last) {
-        setMode(last.mode);
-        setActiveId(last.id);
+        setMode('page');
+        setActiveId(last.mode === 'page' ? last.id : 1);
         if (last.verseKey) setScrollKey(last.verseKey);
       }
     } catch {/* ignore */}
     setRestored(true);
-  }, [bn, userId, restored, settings.mushafView]);
+  }, [bn, userId, restored]);
 
   // Persist last read (skipped while auto-save is paused)
   useEffect(() => {
