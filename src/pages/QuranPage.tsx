@@ -1419,24 +1419,40 @@ const QuranPage = () => {
                       {arabicText}
                     </p>
 
-                    {settings.showEn && tEn && (
-                      <div className="mb-3 pt-3 border-t border-border/40">
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">English</p>
-                        <p
-                          className="text-sm leading-relaxed text-foreground/90"
-                          dangerouslySetInnerHTML={{ __html: tEn.text }}
-                        />
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        settings.showEn && tEn ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        {tEn && (
+                          <div className="mb-3 pt-3 border-t border-border/40 animate-fade-in">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">English</p>
+                            <p
+                              className="text-sm leading-relaxed text-foreground/90"
+                              dangerouslySetInnerHTML={{ __html: tEn.text }}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {settings.showBn && tBn && (
-                      <div className="pt-3 border-t border-border/40">
-                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">বাংলা</p>
-                        <p
-                          className="text-sm leading-relaxed text-foreground/90"
-                          dangerouslySetInnerHTML={{ __html: tBn.text }}
-                        />
+                    </div>
+                    <div
+                      className={`grid transition-all duration-300 ease-out ${
+                        settings.showBn && tBn ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        {tBn && (
+                          <div className="pt-3 border-t border-border/40 animate-fade-in">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1">বাংলা</p>
+                            <p
+                              className="text-sm leading-relaxed text-foreground/90"
+                              dangerouslySetInnerHTML={{ __html: tBn.text }}
+                            />
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </Card>
                 );
               })}
