@@ -324,23 +324,39 @@ const QuranPage = () => {
   const [mushafPages, setMushafPages] = useState<{ page: number; verses: Verse[] }[]>([]);
   const [mushafLoading, setMushafLoading] = useState(false);
   const loadingMoreRef = useRef(false);
+  // Per-page in-flight promise cache — collapses concurrent fetches for the
+  // same page into a single network call.
+  const inFlightPageRef = useRef<Map<number, Promise<Verse[]>>>(new Map());
+  // Cooldown timestamp (ms) — blocks immediate re-entry after a load completes.
+  const nextLoadCooldownRef = useRef(0);
+  // Per-page retry attempt counters for exponential backoff.
+  const retryCountRef = useRef<Map<number, number>>(new Map());
   const pageRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const suppressScrollSyncRef = useRef(false);
 
-  const fetchPageVerses = useCallback(async (page: number): Promise<Verse[]> => {
-    const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
-    url.searchParams.set('language', bn ? 'bn' : 'en');
-    url.searchParams.set('words', 'false');
-    url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
-    url.searchParams.set(
-      'fields',
-      'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
-    );
-    url.searchParams.set('audio', String(settings.reciterId));
-    url.searchParams.set('per_page', '300');
-    const res = await fetch(url.toString());
-    const json = await res.json();
-    return json.verses || [];
+  const fetchPageVerses = useCallback((page: number): Promise<Verse[]> => {
+    // Deduplicate concurrent requests for the same page.
+    const existing = inFlightPageRef.current.get(page);
+    if (existing) return existing;
+    const run = (async () => {
+      const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
+      url.searchParams.set('language', bn ? 'bn' : 'en');
+      url.searchParams.set('words', 'false');
+      url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
+      url.searchParams.set(
+        'fields',
+        'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
+      );
+      url.searchParams.set('audio', String(settings.reciterId));
+      url.searchParams.set('per_page', '300');
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.verses || []) as Verse[];
+    })();
+    inFlightPageRef.current.set(page, run);
+    run.finally(() => inFlightPageRef.current.delete(page));
+    return run;
   }, [bn, settings.reciterId]);
 
   useEffect(() => {
@@ -363,17 +379,36 @@ const QuranPage = () => {
       .finally(() => setMushafLoading(false));
   }, [isMushaf, activeId, mushafPages, fetchPageVerses]);
 
-  const loadNextMushafPage = useCallback(async () => {
+  const loadNextMushafPage = useCallback(async (): Promise<void> => {
+    // Global lock + brief cooldown prevent concurrent + bursty re-entries
+    // from IntersectionObserver, audio `ended`, and continuous-play preload.
     if (loadingMoreRef.current) return;
+    if (Date.now() < nextLoadCooldownRef.current) return;
     const last = mushafPages[mushafPages.length - 1];
     if (!last || last.page >= 604) return;
+    const next = last.page + 1;
     loadingMoreRef.current = true;
     try {
-      const next = last.page + 1;
       const vs = await fetchPageVerses(next);
       setMushafPages((prev) =>
         prev.some((p) => p.page === next) ? prev : [...prev, { page: next, verses: vs }],
       );
+      retryCountRef.current.delete(next);
+      nextLoadCooldownRef.current = Date.now() + 250; // small cooldown after success
+    } catch (err) {
+      // Exponential backoff: 500ms, 1s, 2s, 4s, capped at 8s; max 5 attempts.
+      const attempt = (retryCountRef.current.get(next) || 0) + 1;
+      retryCountRef.current.set(next, attempt);
+      if (attempt <= 5) {
+        const delay = Math.min(500 * 2 ** (attempt - 1), 8000);
+        nextLoadCooldownRef.current = Date.now() + delay;
+        setTimeout(() => { void loadNextMushafPage(); }, delay);
+      } else {
+        // Give up after 5 attempts; reset so a future user action can retry.
+        retryCountRef.current.delete(next);
+        nextLoadCooldownRef.current = Date.now() + 5000;
+        console.warn('[Quran] Failed to load next Mushaf page after retries:', next, err);
+      }
     } finally {
       loadingMoreRef.current = false;
     }
