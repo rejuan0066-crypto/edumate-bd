@@ -155,6 +155,9 @@ const QuranPage = () => {
   const [scrollKey, setScrollKey] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [gotoOpen, setGotoOpen] = useState(false);
+  const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
 
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
