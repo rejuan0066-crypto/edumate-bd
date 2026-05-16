@@ -910,61 +910,73 @@ const QuranPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
-        <div className="max-w-[1440px] mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl"
+            className="lg:hidden rounded-full h-9 w-9 shrink-0"
             onClick={() => setSidebarOpen(true)}
+            aria-label={bn ? 'মেনু' : 'Menu'}
           >
-            <Menu className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base font-bold truncate">{bn ? 'কুরআন পাঠ' : 'Quran Reading'}</h1>
-              <p className="text-xs text-muted-foreground truncate">{headerTitle}</p>
+
+          {/* Segmented Juz · Page · Surah pill */}
+          <div className="flex-1 min-w-0 flex items-center justify-center">
+            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
+              <button
+                type="button"
+                onClick={() => { setGotoTab('juz'); setGotoOpen(true); }}
+                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate"
+              >
+                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setGotoTab('page'); setGotoOpen(true); }}
+                className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary hover:bg-background/60 transition-colors tabular-nums"
+                title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}
+              >
+                {bn ? activeId.toLocaleString('bn-BD') : activeId}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setGotoTab('surah'); setGotoOpen(true); }}
+                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate max-w-[140px] sm:max-w-[200px]"
+              >
+                {currentChapter
+                  ? (bn ? currentChapter.translated_name?.name || currentChapter.name_simple : currentChapter.name_simple)
+                  : (bn ? 'সূরা' : 'Surah')}
+              </button>
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
+                <Search className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <AyahSearchDialog bn={bn} onGo={goto} />
+          </Dialog>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                  <Search className="w-4 h-4" />
-                  <span className="hidden sm:inline">{bn ? 'খুঁজুন' : 'Search'}</span>
-                </Button>
-              </DialogTrigger>
-              <AyahSearchDialog bn={bn} onGo={goto} />
-            </Dialog>
+          <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
+            <GotoDialog
+              bn={bn}
+              chapters={chapters}
+              onGo={goto}
+              bookmarks={bookmarks}
+            />
+          </Dialog>
 
-            <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                  <ListOrdered className="w-4 h-4" />
-                  <span className="hidden sm:inline">{bn ? 'যান' : 'Go to'}</span>
-                </Button>
-              </DialogTrigger>
-              <GotoDialog
-                bn={bn}
-                chapters={chapters}
-                onGo={goto}
-                bookmarks={bookmarks}
-              />
-            </Dialog>
-
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-xl">
-                  <SettingsIcon className="w-4 h-4" />
-                </Button>
-              </SheetTrigger>
-              <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} continuous={continuous} setContinuous={setContinuous} />
-            </Sheet>
-          </div>
+          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
+                <SettingsIcon className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} continuous={continuous} setContinuous={setContinuous} />
+          </Sheet>
         </div>
       </header>
 
