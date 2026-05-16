@@ -1496,13 +1496,42 @@ const QuranPage = () => {
                 active: false,
                 onClick: shareCurrent,
               },
-              {
-                key: 'tr',
-                label: bn ? 'অনুবাদ' : 'Translation',
-                icon: <Languages className="w-5 h-5" />,
-                active: settings.showBn || settings.showEn,
-                onClick: () => setSettings({ ...settings, showBn: !(settings.showBn || settings.showEn), showEn: false }),
-              },
+              (() => {
+                // Cycle: off → Bengali → English → both → off
+                const trState: 'off' | 'bn' | 'en' | 'both' =
+                  settings.showBn && settings.showEn ? 'both'
+                  : settings.showBn ? 'bn'
+                  : settings.showEn ? 'en'
+                  : 'off';
+                const nextMap: Record<typeof trState, { showBn: boolean; showEn: boolean }> = {
+                  off:  { showBn: true,  showEn: false },
+                  bn:   { showBn: false, showEn: true  },
+                  en:   { showBn: true,  showEn: true  },
+                  both: { showBn: false, showEn: false },
+                };
+                const badge =
+                  trState === 'bn'   ? (bn ? 'বাং' : 'BN')
+                  : trState === 'en' ? (bn ? 'ইং'  : 'EN')
+                  : trState === 'both' ? (bn ? 'উভয়' : 'BN+EN')
+                  : null;
+                return {
+                  key: 'tr',
+                  label: badge ? `${bn ? 'অনুবাদ' : 'Translation'}: ${badge}` : (bn ? 'অনুবাদ' : 'Translation'),
+                  icon: <Languages className="w-5 h-5" />,
+                  active: trState !== 'off',
+                  badge,
+                  onClick: () => {
+                    const next = nextMap[trState];
+                    setSettings({ ...settings, ...next });
+                    const msg =
+                      next.showBn && next.showEn ? (bn ? 'বাংলা ও ইংরেজি অনুবাদ চালু' : 'Bengali + English translation on')
+                      : next.showBn ? (bn ? 'বাংলা অনুবাদ চালু' : 'Bengali translation on')
+                      : next.showEn ? (bn ? 'ইংরেজি অনুবাদ চালু' : 'English translation on')
+                      : (bn ? 'অনুবাদ বন্ধ' : 'Translation off');
+                    toast.success(msg);
+                  },
+                };
+              })(),
               {
                 key: 'more',
                 label: bn ? 'আরও' : 'More',
@@ -1521,8 +1550,13 @@ const QuranPage = () => {
                 aria-label={b.label}
                 title={b.label}
               >
-                <span className={`flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
+                <span className={`relative flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
                   {b.icon}
+                  {('badge' in b) && (b as any).badge && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-[18px] text-center shadow">
+                      {(b as any).badge}
+                    </span>
+                  )}
                 </span>
               </button>
             ))}
