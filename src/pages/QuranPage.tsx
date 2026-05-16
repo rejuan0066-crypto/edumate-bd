@@ -852,6 +852,7 @@ const QuranPage = () => {
             chapters={filteredChapters}
             activeId={activeId}
             mode={mode}
+            currentChapterId={currentChapterId}
             onSelect={(id) => goto('chapter', id)}
           />
         </aside>
@@ -866,6 +867,7 @@ const QuranPage = () => {
               chapters={filteredChapters}
               activeId={activeId}
               mode={mode}
+              currentChapterId={currentChapterId}
               onSelect={(id) => goto('chapter', id)}
             />
           </SheetContent>
