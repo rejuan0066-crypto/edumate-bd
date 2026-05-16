@@ -1030,7 +1030,14 @@ const QuranPage = () => {
         </Sheet>
 
         {/* ===== Main reading area ===== */}
-        <main className="flex-1 min-w-0 px-4 py-6 pb-44">
+        <main
+          className="flex-1 min-w-0 px-4 py-6"
+          style={{
+            paddingBottom: playingKey
+              ? 'calc(168px + env(safe-area-inset-bottom))'
+              : 'calc(104px + env(safe-area-inset-bottom))',
+          }}
+        >
           {versesLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -1384,8 +1391,11 @@ const QuranPage = () => {
 
       {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
-        <div className="fixed bottom-[84px] inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
-          <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-center gap-3">
+        <div
+          className="fixed inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl"
+          style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }}
+        >
+          <div className="max-w-[1440px] mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
@@ -1406,7 +1416,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1419,7 +1429,7 @@ const QuranPage = () => {
               <Button
                 variant="default"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={togglePlay}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -1427,7 +1437,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1440,7 +1450,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full h-9 w-9"
+                className="rounded-full h-8 w-8 sm:h-9 sm:w-9"
                 onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
@@ -1456,8 +1466,8 @@ const QuranPage = () => {
 
       {/* ===== Floating bottom toolbar (Quran-Majeed style) ===== */}
       <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
-        <div className="max-w-[1440px] mx-auto px-3 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
-          <div className="mx-auto flex items-center justify-around gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-2 py-2">
+        <div className="max-w-[1440px] mx-auto px-2 sm:px-3 pt-2 sm:pt-3 pb-[max(env(safe-area-inset-bottom),10px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
+          <div className="mx-auto flex items-center justify-around gap-0.5 sm:gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-1.5 sm:px-2 py-1.5 sm:py-2">
             {[
               {
                 key: 'play',
