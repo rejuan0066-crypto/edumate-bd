@@ -192,19 +192,51 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const AS_KEY = 'quran:autoScroll';
+  const AS_TS_KEY = 'quran:autoScroll:updatedAt';
   const [autoScroll, setAutoScroll] = useState<boolean>(() => {
     try {
-      return localStorage.getItem('quran:autoScroll') === '1';
+      return localStorage.getItem(AS_KEY) === '1';
     } catch {
       return false;
     }
   });
   const autoScrollHydratedRef = useRef(false);
+  // Track the most recent local-change timestamp so we can resolve conflicts
+  // against the DB's updated_at on login.
+  const autoScrollLocalTsRef = useRef<string>(
+    (() => {
+      try { return localStorage.getItem(AS_TS_KEY) || ''; } catch { return ''; }
+    })()
+  );
+  // Persist autoScroll + timestamp locally on every change. The timestamp is
+  // only bumped for user-driven changes (after hydration) — DB-applied values
+  // keep the DB's timestamp so we don't trigger a redundant push back.
   useEffect(() => {
     try {
-      localStorage.setItem('quran:autoScroll', autoScroll ? '1' : '0');
+      localStorage.setItem(AS_KEY, autoScroll ? '1' : '0');
+      if (autoScrollHydratedRef.current) {
+        const ts = new Date().toISOString();
+        autoScrollLocalTsRef.current = ts;
+        localStorage.setItem(AS_TS_KEY, ts);
+      }
     } catch {}
   }, [autoScroll]);
+
+  // Cross-tab sync: react to localStorage changes from other tabs.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === AS_KEY && e.newValue != null) {
+        const next = e.newValue === '1';
+        setAutoScroll((prev) => (prev === next ? prev : next));
+      }
+      if (e.key === AS_TS_KEY && e.newValue) {
+        autoScrollLocalTsRef.current = e.newValue;
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
@@ -223,7 +255,9 @@ const QuranPage = () => {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  // Sync autoScroll with DB per logged-in user (so the setting follows the account)
+  // Sync autoScroll with DB per logged-in user (so the setting follows the
+  // account). Conflict resolution: compare local updated_at vs DB updated_at,
+  // newest wins. If local is newer (or DB row missing), push local → DB.
   useEffect(() => {
     if (!userId) {
       autoScrollHydratedRef.current = true;
@@ -234,14 +268,40 @@ const QuranPage = () => {
     (async () => {
       const { data } = await supabase
         .from('user_quran_prefs')
-        .select('auto_scroll')
+        .select('auto_scroll, updated_at')
         .eq('user_id', userId)
         .maybeSingle();
       if (cancelled) return;
-      if (data && typeof data.auto_scroll === 'boolean') {
-        setAutoScroll(data.auto_scroll);
+
+      const localTs = autoScrollLocalTsRef.current;
+      const dbTs = data?.updated_at || '';
+      const dbVal = data && typeof data.auto_scroll === 'boolean' ? data.auto_scroll : null;
+      const localVal = (() => {
+        try { return localStorage.getItem(AS_KEY) === '1'; } catch { return autoScroll; }
+      })();
+
+      const dbNewer = dbVal !== null && (!localTs || (dbTs && dbTs > localTs));
+
+      if (dbNewer) {
+        // DB wins — apply to local without bumping local timestamp.
+        autoScrollLocalTsRef.current = dbTs;
+        try { localStorage.setItem(AS_TS_KEY, dbTs); } catch {}
+        autoScrollHydratedRef.current = true; // mark hydrated BEFORE setState so the
+        // localStorage effect doesn't re-bump the timestamp on this DB-applied value
+        setAutoScroll(dbVal!);
+      } else {
+        // Local wins (or no DB row yet) — push to DB.
+        autoScrollHydratedRef.current = true;
+        const ts = localTs || new Date().toISOString();
+        await supabase
+          .from('user_quran_prefs')
+          .upsert(
+            { user_id: userId, auto_scroll: localVal, updated_at: ts },
+            { onConflict: 'user_id' }
+          );
+        autoScrollLocalTsRef.current = ts;
+        try { localStorage.setItem(AS_TS_KEY, ts); } catch {}
       }
-      autoScrollHydratedRef.current = true;
     })();
     return () => { cancelled = true; };
   }, [userId]);
@@ -249,9 +309,13 @@ const QuranPage = () => {
   // Push autoScroll changes back to DB (after hydration, only when signed in)
   useEffect(() => {
     if (!userId || !autoScrollHydratedRef.current) return;
+    const ts = autoScrollLocalTsRef.current || new Date().toISOString();
     void supabase
       .from('user_quran_prefs')
-      .upsert({ user_id: userId, auto_scroll: autoScroll }, { onConflict: 'user_id' });
+      .upsert(
+        { user_id: userId, auto_scroll: autoScroll, updated_at: ts },
+        { onConflict: 'user_id' }
+      );
   }, [autoScroll, userId]);
 
   // Restore last read on mount / when user scope resolves. Legacy chapter/juz
