@@ -1391,8 +1391,11 @@ const QuranPage = () => {
 
       {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
-        <div className="fixed bottom-[84px] inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
-          <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-center gap-3">
+        <div
+          className="fixed inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl"
+          style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }}
+        >
+          <div className="max-w-[1440px] mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
