@@ -169,8 +169,9 @@ const QuranPage = () => {
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
       const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
-      // If Mushaf view is on and we have a saved Mushaf page, prefer it
-      if (settings.mushafView && lastMushaf >= 1 && lastMushaf <= 604) {
+      // Mushaf is the only view — prefer saved Mushaf page, else convert any
+      // legacy chapter/juz last-read entry to its starting page.
+      if (lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
         if (lastMushafVerse && /^\d+:\d+$/.test(lastMushafVerse)) {
@@ -180,13 +181,13 @@ const QuranPage = () => {
           toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
         }
       } else if (last) {
-        setMode(last.mode);
-        setActiveId(last.id);
+        setMode('page');
+        setActiveId(last.mode === 'page' ? last.id : 1);
         if (last.verseKey) setScrollKey(last.verseKey);
       }
     } catch {/* ignore */}
     setRestored(true);
-  }, [bn, userId, restored, settings.mushafView]);
+  }, [bn, userId, restored]);
 
   // Persist last read (skipped while auto-save is paused)
   useEffect(() => {
@@ -213,7 +214,8 @@ const QuranPage = () => {
     },
   });
 
-  const isMushaf = mode === 'page' && settings.mushafView;
+  // Single-ayah card view is removed — Mushaf is now the only reading mode.
+  const isMushaf = true;
 
   // Verses (single block — used for chapter / juz / non-mushaf page view)
   const { data: verses = [], isLoading: versesLoading } = useQuery<Verse[]>({
@@ -627,10 +629,26 @@ const QuranPage = () => {
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
   }, [mode, activeId, currentChapter, bn]);
 
-  // Goto navigation
+  // Standard Madinah Mushaf: first page of each Juz (1..30)
+  const JUZ_FIRST_PAGE: Record<number, number> = {
+    1: 1, 2: 22, 3: 42, 4: 62, 5: 82, 6: 102, 7: 121, 8: 142, 9: 162, 10: 182,
+    11: 201, 12: 222, 13: 242, 14: 262, 15: 282, 16: 302, 17: 322, 18: 342, 19: 362, 20: 382,
+    21: 402, 22: 422, 23: 442, 24: 462, 25: 482, 26: 502, 27: 522, 28: 542, 29: 562, 30: 582,
+  };
+
+  // Goto navigation — always resolves to a Mushaf page (single-ayah view removed).
   const goto = (m: typeof mode, id: number, vk?: string) => {
-    setMode(m);
-    setActiveId(id);
+    let page = id;
+    if (m === 'chapter') {
+      const ch = chapters.find((c) => c.id === id);
+      page = ch?.pages?.[0] || 1;
+      // If a specific verse was requested, prefer scrolling to it.
+      if (!vk) vk = `${id}:1`;
+    } else if (m === 'juz') {
+      page = JUZ_FIRST_PAGE[id] || 1;
+    }
+    setMode('page');
+    setActiveId(page);
     setScrollKey(vk || null);
     setGotoOpen(false);
     setSidebarOpen(false);
