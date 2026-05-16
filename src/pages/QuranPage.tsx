@@ -379,17 +379,36 @@ const QuranPage = () => {
       .finally(() => setMushafLoading(false));
   }, [isMushaf, activeId, mushafPages, fetchPageVerses]);
 
-  const loadNextMushafPage = useCallback(async () => {
+  const loadNextMushafPage = useCallback(async (): Promise<void> => {
+    // Global lock + brief cooldown prevent concurrent + bursty re-entries
+    // from IntersectionObserver, audio `ended`, and continuous-play preload.
     if (loadingMoreRef.current) return;
+    if (Date.now() < nextLoadCooldownRef.current) return;
     const last = mushafPages[mushafPages.length - 1];
     if (!last || last.page >= 604) return;
+    const next = last.page + 1;
     loadingMoreRef.current = true;
     try {
-      const next = last.page + 1;
       const vs = await fetchPageVerses(next);
       setMushafPages((prev) =>
         prev.some((p) => p.page === next) ? prev : [...prev, { page: next, verses: vs }],
       );
+      retryCountRef.current.delete(next);
+      nextLoadCooldownRef.current = Date.now() + 250; // small cooldown after success
+    } catch (err) {
+      // Exponential backoff: 500ms, 1s, 2s, 4s, capped at 8s; max 5 attempts.
+      const attempt = (retryCountRef.current.get(next) || 0) + 1;
+      retryCountRef.current.set(next, attempt);
+      if (attempt <= 5) {
+        const delay = Math.min(500 * 2 ** (attempt - 1), 8000);
+        nextLoadCooldownRef.current = Date.now() + delay;
+        setTimeout(() => { void loadNextMushafPage(); }, delay);
+      } else {
+        // Give up after 5 attempts; reset so a future user action can retry.
+        retryCountRef.current.delete(next);
+        nextLoadCooldownRef.current = Date.now() + 5000;
+        console.warn('[Quran] Failed to load next Mushaf page after retries:', next, err);
+      }
     } finally {
       loadingMoreRef.current = false;
     }
