@@ -191,6 +191,37 @@ const QuranPage = () => {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
+  // Sync autoScroll with DB per logged-in user (so the setting follows the account)
+  useEffect(() => {
+    if (!userId) {
+      autoScrollHydratedRef.current = true;
+      return;
+    }
+    autoScrollHydratedRef.current = false;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('user_quran_prefs')
+        .select('auto_scroll')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data && typeof data.auto_scroll === 'boolean') {
+        setAutoScroll(data.auto_scroll);
+      }
+      autoScrollHydratedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  // Push autoScroll changes back to DB (after hydration, only when signed in)
+  useEffect(() => {
+    if (!userId || !autoScrollHydratedRef.current) return;
+    void supabase
+      .from('user_quran_prefs')
+      .upsert({ user_id: userId, auto_scroll: autoScroll }, { onConflict: 'user_id' });
+  }, [autoScroll, userId]);
+
   // Restore last read on mount / when user scope resolves. Legacy chapter/juz
   // entries are migrated to their starting Mushaf page so 'Continue reading'
   // always lands on the correct page.
