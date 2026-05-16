@@ -970,6 +970,9 @@ const QuranPage = () => {
               onGo={goto}
               bookmarks={bookmarks}
               initialTab={gotoTab}
+              currentPage={activeId}
+              currentJuzId={currentJuzId}
+              onToggleBookmark={toggleBookmark}
             />
           </Dialog>
 
