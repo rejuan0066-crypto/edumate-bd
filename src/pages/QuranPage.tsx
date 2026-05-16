@@ -544,15 +544,29 @@ const QuranPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [continuous, setContinuous] = useState(true);
 
+  // Fallback handler — invoked when an audio src fails to load OR errors out.
+  // Forward-declared via ref so playUrl can call into the latest version.
+  const advanceOnFailureRef = useRef<(failedKey: string) => void>(() => {});
+
   const playUrl = useCallback((url: string, key: string) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
+    // Detach any previous handlers from earlier src.
+    a.onerror = null;
     a.src = url;
+    a.onerror = () => {
+      // Network / 404 / decoding error → skip to next available verse.
+      console.warn('[Quran] Audio failed to load, skipping:', key, url);
+      advanceOnFailureRef.current(key);
+    };
     a.play().then(() => {
       setPlayingKey(key);
       setIsPlaying(true);
-    }).catch(() => toast.error(bn ? 'অডিও চালানো যায়নি' : 'Could not play audio'));
-  }, [bn]);
+    }).catch(() => {
+      // play() rejection (autoplay block, decode error, etc.) → try next.
+      advanceOnFailureRef.current(key);
+    });
+  }, []);
 
   const togglePlay = () => {
     const a = audioRef.current;
