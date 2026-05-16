@@ -1309,6 +1309,7 @@ const SidebarContent = ({
   chapters,
   activeId,
   mode,
+  currentChapterId,
   onSelect,
 }: {
   bn: boolean;
@@ -1317,8 +1318,16 @@ const SidebarContent = ({
   chapters: Chapter[];
   activeId: number;
   mode: 'chapter' | 'page' | 'juz';
+  currentChapterId?: number | null;
   onSelect: (id: number) => void;
 }) => {
+  const listRef = useRef<HTMLDivElement | null>(null);
+  // Auto-scroll the highlighted chapter into view whenever it changes.
+  useEffect(() => {
+    if (!currentChapterId) return;
+    const el = listRef.current?.querySelector(`[data-chapter-id="${currentChapterId}"]`);
+    (el as HTMLElement | null)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [currentChapterId]);
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border/40">
