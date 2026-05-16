@@ -591,17 +591,30 @@ const QuranPage = () => {
     [mushafPages],
   );
 
-  // Play the first audio-bearing verse of a given Mushaf page (continuous mode
-  // then chains through the rest of the page and subsequent loaded pages).
-  const playMushafPage = useCallback((pageNum: number) => {
-    const page = mushafPages.find((p) => p.page === pageNum);
-    const first = page?.verses.find((v) => v.audio?.url);
-    if (!first) {
-      return toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
+  // Play the first audio-bearing verse of a given Mushaf page. If the page has
+  // no playable verses, transparently load and skip to the next page.
+  const playMushafPage = useCallback(async (pageNum: number) => {
+    let target = pageNum;
+    let guard = 0;
+    while (guard < 10 && target <= 604) {
+      const page = mushafPages.find((p) => p.page === target);
+      if (!page) {
+        await loadNextMushafPage();
+        await new Promise((r) => setTimeout(r, 120));
+        guard++;
+        continue;
+      }
+      const first = page.verses.find((v) => v.audio?.url);
+      if (first) {
+        setScrollKey(first.verse_key);
+        playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
+        return;
+      }
+      target++;
+      guard++;
     }
-    setScrollKey(first.verse_key);
-    playUrl(`https://verses.quran.com/${first.audio!.url}`, first.verse_key);
-  }, [mushafPages, playUrl, bn]);
+    toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
+  }, [mushafPages, loadNextMushafPage, playUrl, bn]);
 
   // Audio prefetch cache — warms HTTP cache so next verse starts instantly.
   const prefetchedUrlsRef = useRef<Set<string>>(new Set());
