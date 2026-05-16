@@ -222,7 +222,7 @@ const QuranPage = () => {
       }
     } catch {/* ignore */}
     setRestored(true);
-  }, [bn, userId, restored, chapters]);
+  }, [bn, userId, restored]);
 
   // Persist last read (skipped while auto-save is paused)
   useEffect(() => {
