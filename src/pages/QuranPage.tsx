@@ -44,6 +44,10 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpenText,
+  Share2,
+  ChevronsDown,
+  MoreHorizontal,
+  Languages,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
