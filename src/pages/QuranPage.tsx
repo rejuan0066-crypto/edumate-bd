@@ -167,6 +167,7 @@ const QuranPage = () => {
       return false;
     }
   });
+  const autoScrollHydratedRef = useRef(false);
   useEffect(() => {
     try {
       localStorage.setItem('quran:autoScroll', autoScroll ? '1' : '0');
