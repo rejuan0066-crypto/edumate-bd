@@ -44,6 +44,10 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpenText,
+  Share2,
+  ChevronsDown,
+  MoreHorizontal,
+  Languages,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,6 +155,9 @@ const QuranPage = () => {
   const [scrollKey, setScrollKey] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [gotoOpen, setGotoOpen] = useState(false);
+  const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
 
   // Per-user scope (Supabase auth uid when available, else anon)
   const [userId, setUserId] = useState<string | null>(null);
@@ -865,65 +872,112 @@ const QuranPage = () => {
     setSidebarOpen(false);
   };
 
+  // Auto scroll: slow continuous downward scroll while enabled
+  useEffect(() => {
+    if (!autoScroll) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = now - last;
+      last = now;
+      // ~30px/sec
+      window.scrollBy({ top: (30 * dt) / 1000, behavior: 'auto' });
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) {
+        setAutoScroll(false);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [autoScroll]);
+
+  const shareCurrent = useCallback(async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const title = bn ? `কুরআন — পৃষ্ঠা ${activeId}` : `Quran — Page ${activeId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success(bn ? 'লিংক কপি হয়েছে' : 'Link copied');
+      }
+    } catch { /* ignore */ }
+  }, [bn, activeId]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
-        <div className="max-w-[1440px] mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden rounded-xl"
+            className="lg:hidden rounded-full h-9 w-9 shrink-0"
             onClick={() => setSidebarOpen(true)}
+            aria-label={bn ? 'মেনু' : 'Menu'}
           >
-            <Menu className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base font-bold truncate">{bn ? 'কুরআন পাঠ' : 'Quran Reading'}</h1>
-              <p className="text-xs text-muted-foreground truncate">{headerTitle}</p>
+
+          {/* Segmented Juz · Page · Surah pill */}
+          <div className="flex-1 min-w-0 flex items-center justify-center">
+            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1 max-w-full">
+              <button
+                type="button"
+                onClick={() => { setGotoTab('juz'); setGotoOpen(true); }}
+                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate"
+              >
+                {bn ? `পারা ${currentJuzId}` : `Juz ${currentJuzId}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setGotoTab('page'); setGotoOpen(true); }}
+                className="px-2.5 h-8 rounded-full text-xs sm:text-sm font-bold text-primary hover:bg-background/60 transition-colors tabular-nums"
+                title={bn ? 'পৃষ্ঠায় যান' : 'Go to page'}
+              >
+                {bn ? activeId.toLocaleString('bn-BD') : activeId}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setGotoTab('surah'); setGotoOpen(true); }}
+                className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate max-w-[140px] sm:max-w-[200px]"
+              >
+                {currentChapter
+                  ? (bn ? currentChapter.translated_name?.name || currentChapter.name_simple : currentChapter.name_simple)
+                  : (bn ? 'সূরা' : 'Surah')}
+              </button>
             </div>
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
+                <Search className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <AyahSearchDialog bn={bn} onGo={goto} />
+          </Dialog>
 
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                  <Search className="w-4 h-4" />
-                  <span className="hidden sm:inline">{bn ? 'খুঁজুন' : 'Search'}</span>
-                </Button>
-              </DialogTrigger>
-              <AyahSearchDialog bn={bn} onGo={goto} />
-            </Dialog>
+          <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
+            <GotoDialog
+              bn={bn}
+              chapters={chapters}
+              onGo={goto}
+              bookmarks={bookmarks}
+              initialTab={gotoTab}
+            />
+          </Dialog>
 
-            <Dialog open={gotoOpen} onOpenChange={setGotoOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                  <ListOrdered className="w-4 h-4" />
-                  <span className="hidden sm:inline">{bn ? 'যান' : 'Go to'}</span>
-                </Button>
-              </DialogTrigger>
-              <GotoDialog
-                bn={bn}
-                chapters={chapters}
-                onGo={goto}
-                bookmarks={bookmarks}
-              />
-            </Dialog>
-
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-xl">
-                  <SettingsIcon className="w-4 h-4" />
-                </Button>
-              </SheetTrigger>
-              <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} continuous={continuous} setContinuous={setContinuous} />
-            </Sheet>
-          </div>
+          <Sheet open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'সেটিংস' : 'Settings'}>
+                <SettingsIcon className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SettingsSheet bn={bn} settings={settings} setSettings={setSettings} continuous={continuous} setContinuous={setContinuous} />
+          </Sheet>
         </div>
       </header>
 
@@ -959,7 +1013,7 @@ const QuranPage = () => {
         </Sheet>
 
         {/* ===== Main reading area ===== */}
-        <main className="flex-1 min-w-0 px-4 py-6 pb-32">
+        <main className="flex-1 min-w-0 px-4 py-6 pb-44">
           {versesLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -1311,12 +1365,12 @@ const QuranPage = () => {
         </main>
       </div>
 
-      {/* ===== Audio player bar ===== */}
+      {/* ===== Audio player bar (sits above floating toolbar) ===== */}
       {playingKey && (
-        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
-          <div className="max-w-[1440px] mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="fixed bottom-[84px] inset-x-0 z-40 border-t border-border/50 bg-background/95 backdrop-blur-xl">
+          <div className="max-w-[1440px] mx-auto px-4 py-2.5 flex items-center gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <BookOpen className="w-4 h-4 text-primary" />
               </div>
               <div className="min-w-0">
@@ -1335,7 +1389,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1348,7 +1402,7 @@ const QuranPage = () => {
               <Button
                 variant="default"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={togglePlay}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -1356,7 +1410,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   if (playingKey === 'surah') return;
                   const idx = verses.findIndex((v) => v.verse_key === playingKey);
@@ -1369,7 +1423,7 @@ const QuranPage = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-xl"
+                className="rounded-full h-9 w-9"
                 onClick={() => {
                   audioRef.current?.pause();
                   setPlayingKey(null);
@@ -1382,6 +1436,83 @@ const QuranPage = () => {
           </div>
         </div>
       )}
+
+      {/* ===== Floating bottom toolbar (Quran-Majeed style) ===== */}
+      <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+        <div className="max-w-[1440px] mx-auto px-3 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] bg-gradient-to-t from-background via-background/90 to-transparent pointer-events-auto">
+          <div className="mx-auto flex items-center justify-around gap-1 max-w-md rounded-full border border-border/60 bg-background/85 backdrop-blur-xl shadow-lg px-2 py-2">
+            {[
+              {
+                key: 'play',
+                label: bn ? 'প্লে' : 'Play',
+                icon: isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />,
+                active: isPlaying,
+                onClick: () => {
+                  if (isPlaying) {
+                    audioRef.current?.pause();
+                    setIsPlaying(false);
+                  } else if (playingKey && audioRef.current?.src) {
+                    audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+                  } else {
+                    playMushafPage(activeId);
+                  }
+                },
+              },
+              {
+                key: 'bm',
+                label: bn ? 'বুকমার্ক' : 'Bookmarks',
+                icon: <Bookmark className="w-5 h-5" />,
+                active: false,
+                onClick: () => { setGotoTab('bm'); setGotoOpen(true); },
+              },
+              {
+                key: 'auto',
+                label: bn ? 'অটো স্ক্রল' : 'Auto Scroll',
+                icon: <ChevronsDown className="w-5 h-5" />,
+                active: autoScroll,
+                onClick: () => setAutoScroll((v) => !v),
+              },
+              {
+                key: 'share',
+                label: bn ? 'শেয়ার' : 'Share',
+                icon: <Share2 className="w-5 h-5" />,
+                active: false,
+                onClick: shareCurrent,
+              },
+              {
+                key: 'tr',
+                label: bn ? 'অনুবাদ' : 'Translation',
+                icon: <Languages className="w-5 h-5" />,
+                active: settings.showBn || settings.showEn,
+                onClick: () => setSettings({ ...settings, showBn: !(settings.showBn || settings.showEn), showEn: false }),
+              },
+              {
+                key: 'more',
+                label: bn ? 'আরও' : 'More',
+                icon: <MoreHorizontal className="w-5 h-5" />,
+                active: false,
+                onClick: () => setSettingsOpen(true),
+              },
+            ].map((b) => (
+              <button
+                key={b.key}
+                type="button"
+                onClick={b.onClick}
+                className={`flex flex-col items-center justify-center flex-1 min-w-0 h-12 rounded-full transition-colors ${
+                  b.active ? 'text-primary' : 'text-foreground/80 hover:text-foreground'
+                }`}
+                aria-label={b.label}
+                title={b.label}
+              >
+                <span className={`flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
+                  {b.icon}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };
@@ -1478,11 +1609,13 @@ const GotoDialog = ({
   chapters,
   onGo,
   bookmarks,
+  initialTab = 'surah',
 }: {
   bn: boolean;
   chapters: Chapter[];
   onGo: (m: 'chapter' | 'page' | 'juz', id: number, vk?: string) => void;
   bookmarks: string[];
+  initialTab?: 'surah' | 'page' | 'juz' | 'bm';
 }) => {
   const [surah, setSurah] = useState('1');
   const [ayah, setAyah] = useState('1');
@@ -1495,7 +1628,7 @@ const GotoDialog = ({
       <DialogHeader>
         <DialogTitle>{bn ? 'নেভিগেশন' : 'Go to'}</DialogTitle>
       </DialogHeader>
-      <Tabs defaultValue="surah">
+      <Tabs defaultValue={initialTab} key={initialTab}>
         <TabsList className="grid grid-cols-4 rounded-xl">
           <TabsTrigger value="surah" className="rounded-lg">{bn ? 'সূরা' : 'Surah'}</TabsTrigger>
           <TabsTrigger value="page" className="rounded-lg">{bn ? 'পৃষ্ঠা' : 'Page'}</TabsTrigger>
