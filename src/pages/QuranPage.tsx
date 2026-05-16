@@ -1608,11 +1608,13 @@ const GotoDialog = ({
   chapters,
   onGo,
   bookmarks,
+  initialTab = 'surah',
 }: {
   bn: boolean;
   chapters: Chapter[];
   onGo: (m: 'chapter' | 'page' | 'juz', id: number, vk?: string) => void;
   bookmarks: string[];
+  initialTab?: 'surah' | 'page' | 'juz' | 'bm';
 }) => {
   const [surah, setSurah] = useState('1');
   const [ayah, setAyah] = useState('1');
