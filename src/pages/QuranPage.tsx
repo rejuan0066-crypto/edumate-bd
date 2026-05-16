@@ -213,7 +213,8 @@ const QuranPage = () => {
     },
   });
 
-  const isMushaf = mode === 'page' && settings.mushafView;
+  // Single-ayah card view is removed — Mushaf is now the only reading mode.
+  const isMushaf = true;
 
   // Verses (single block — used for chapter / juz / non-mushaf page view)
   const { data: verses = [], isLoading: versesLoading } = useQuery<Verse[]>({
