@@ -762,8 +762,31 @@ const QuranPage = () => {
                       <ChevronRight className="w-4 h-4" />
                       {bn ? 'পূর্ববর্তী' : 'Prev'}
                     </Button>
-                    <div className="text-sm font-semibold">
-                      {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold">
+                        {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={playingKey && playingKey !== 'surah' ? 'default' : 'outline'}
+                        className="rounded-xl gap-1.5 h-8 px-2.5"
+                        title={bn ? 'এই পৃষ্ঠা থেকে অডিও চালান (অটো-কন্টিনিউ)' : 'Play this page (auto-continue)'}
+                        onClick={() => {
+                          if (isPlaying) {
+                            audioRef.current?.pause();
+                            setIsPlaying(false);
+                          } else if (playingKey && playingKey !== 'surah' && audioRef.current?.src) {
+                            audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+                          } else {
+                            playMushafPage(activeId);
+                          }
+                        }}
+                      >
+                        {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        <span className="hidden sm:inline text-xs">
+                          {bn ? 'পৃষ্ঠা' : 'Play'}
+                        </span>
+                      </Button>
                     </div>
                     <Button
                       variant="outline"
