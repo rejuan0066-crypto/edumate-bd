@@ -966,6 +966,7 @@ const QuranPage = () => {
               chapters={chapters}
               onGo={goto}
               bookmarks={bookmarks}
+              initialTab={gotoTab}
             />
           </Dialog>
 
