@@ -9353,6 +9353,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_quran_prefs: {
+        Row: {
+          auto_scroll: boolean
+          created_at: string
+          prefs: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_scroll?: boolean
+          created_at?: string
+          prefs?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_scroll?: boolean
+          created_at?: string
+          prefs?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
