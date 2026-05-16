@@ -872,6 +872,40 @@ const QuranPage = () => {
     setSidebarOpen(false);
   };
 
+  // Auto scroll: slow continuous downward scroll while enabled
+  useEffect(() => {
+    if (!autoScroll) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = now - last;
+      last = now;
+      // ~30px/sec
+      window.scrollBy({ top: (30 * dt) / 1000, behavior: 'auto' });
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      if (atBottom) {
+        setAutoScroll(false);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [autoScroll]);
+
+  const shareCurrent = useCallback(async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const title = bn ? `কুরআন — পৃষ্ঠা ${activeId}` : `Quran — Page ${activeId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success(bn ? 'লিংক কপি হয়েছে' : 'Link copied');
+      }
+    } catch { /* ignore */ }
+  }, [bn, activeId]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* ===== Header ===== */}
