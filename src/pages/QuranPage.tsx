@@ -134,6 +134,11 @@ const QuranPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
 
+  // Track whether the user has any persisted settings yet. If not, we'll apply
+  // the admin-configured default translation state once it's fetched.
+  const hadStoredSettingsRef = useRef<boolean>(
+    typeof window !== 'undefined' && !!localStorage.getItem(LS_SETTINGS),
+  );
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       return { ...defaultSettings, ...JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') };
@@ -144,6 +149,33 @@ const QuranPage = () => {
   useEffect(() => {
     localStorage.setItem(LS_SETTINGS, JSON.stringify(settings));
   }, [settings]);
+
+  // Fetch admin default translation state and apply when the user has no
+  // existing local settings yet (first-time visitors only).
+  useEffect(() => {
+    if (hadStoredSettingsRef.current) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'quran_default_translation')
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const v = data.value as 'off' | 'bn' | 'en' | 'both' | null;
+      if (!v) return;
+      const map: Record<string, { showBn: boolean; showEn: boolean }> = {
+        off:  { showBn: false, showEn: false },
+        bn:   { showBn: true,  showEn: false },
+        en:   { showBn: false, showEn: true  },
+        both: { showBn: true,  showEn: true  },
+      };
+      const next = map[v];
+      if (next) setSettings((s) => ({ ...s, ...next }));
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
 
   const [mode, setMode] = useState<'chapter' | 'page' | 'juz'>('chapter');
   const [activeId, setActiveId] = useState<number>(1);

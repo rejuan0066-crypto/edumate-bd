@@ -19,6 +19,7 @@ import WhatsAppTemplatesManager from '@/components/admin/WhatsAppTemplatesManage
 import SalaryWorkflowSettings from '@/components/admin/SalaryWorkflowSettings';
 import TimezoneSettings from '@/components/admin/TimezoneSettings';
 import ReceiptQrSettings from '@/components/admin/ReceiptQrSettings';
+import QuranDefaultsSettings from '@/components/admin/QuranDefaultsSettings';
 import RateLimitSettings from '@/components/admin/RateLimitSettings';
 import { SecurityBackupPanel } from '@/components/admin/SecurityBackupPanel';
 import { useConfirm } from "@/contexts/ConfirmContext";
@@ -624,6 +625,9 @@ const AdminSettings = () => {
             </TabsTrigger>
             <TabsTrigger value="receipt_qr" className="gap-1.5">
               <Clock className="w-4 h-4" /> {bn ? 'রিসিট QR' : 'Receipt QR'}
+            </TabsTrigger>
+            <TabsTrigger value="quran" className="gap-1.5">
+              <Mail className="w-4 h-4" /> {bn ? 'কুরআন' : 'Quran'}
             </TabsTrigger>
             <TabsTrigger value="id_format" className="gap-1.5" asChild>
               <a href="/admin/settings/id-format">
@@ -1390,6 +1394,10 @@ const AdminSettings = () => {
 
           <TabsContent value="receipt_qr" className="mt-6">
             <ReceiptQrSettings />
+          </TabsContent>
+
+          <TabsContent value="quran" className="mt-6">
+            <QuranDefaultsSettings />
           </TabsContent>
         </Tabs>
       </div>
