@@ -1616,12 +1616,18 @@ const GotoDialog = ({
   onGo,
   bookmarks,
   initialTab = 'surah',
+  currentPage,
+  currentJuzId,
+  onToggleBookmark,
 }: {
   bn: boolean;
   chapters: Chapter[];
   onGo: (m: 'chapter' | 'page' | 'juz', id: number, vk?: string) => void;
   bookmarks: string[];
   initialTab?: 'surah' | 'page' | 'juz' | 'bm';
+  currentPage: number;
+  currentJuzId: number;
+  onToggleBookmark: (key: string) => void;
 }) => {
   const [surah, setSurah] = useState('1');
   const [ayah, setAyah] = useState('1');
