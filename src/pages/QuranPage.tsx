@@ -166,7 +166,9 @@ const QuranPage = () => {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
-  // Restore last read on mount / when user scope resolves
+  // Restore last read on mount / when user scope resolves. Legacy chapter/juz
+  // entries are migrated to their starting Mushaf page so 'Continue reading'
+  // always lands on the correct page.
   useEffect(() => {
     document.title = bn ? 'কুরআন পাঠ' : 'Quran Reading';
     if (restored) return;
@@ -176,8 +178,7 @@ const QuranPage = () => {
         | null;
       const lastMushaf = Number(localStorage.getItem(lastMushafKey(userId)) || '');
       const lastMushafVerse = localStorage.getItem(lastMushafVerseKey(userId)) || '';
-      // Mushaf is the only view — prefer saved Mushaf page, else convert any
-      // legacy chapter/juz last-read entry to its starting page.
+
       if (lastMushaf >= 1 && lastMushaf <= 604) {
         setMode('page');
         setActiveId(lastMushaf);
@@ -188,13 +189,36 @@ const QuranPage = () => {
           toast.success(bn ? `পৃষ্ঠা ${lastMushaf} থেকে পুনরায় শুরু` : `Resumed from page ${lastMushaf}`);
         }
       } else if (last) {
-        setMode('page');
-        setActiveId(last.mode === 'page' ? last.id : 1);
-        if (last.verseKey) setScrollKey(last.verseKey);
+        // Migrate legacy chapter/juz/page entry → Mushaf page.
+        let targetPage: number | null = null;
+        let vk: string | undefined = last.verseKey;
+        if (last.mode === 'page') {
+          targetPage = last.id >= 1 && last.id <= 604 ? last.id : 1;
+        } else if (last.mode === 'juz') {
+          targetPage = JUZ_FIRST_PAGE[last.id] || 1;
+          if (!vk) vk = undefined;
+        } else if (last.mode === 'chapter') {
+          // Need chapters list to resolve chapter → first page.
+          if (chapters.length === 0) return; // wait until chapters arrive
+          const ch = chapters.find((c) => c.id === last.id);
+          targetPage = ch?.pages?.[0] || 1;
+          if (!vk) vk = `${last.id}:1`;
+        }
+        if (targetPage) {
+          setMode('page');
+          setActiveId(targetPage);
+          if (vk && /^\d+:\d+$/.test(vk)) setScrollKey(vk);
+          // Persist migrated value so future loads skip the migration path.
+          try {
+            localStorage.setItem(lastMushafKey(userId), String(targetPage));
+            if (vk) localStorage.setItem(lastMushafVerseKey(userId), vk);
+          } catch { /* ignore */ }
+          toast.success(bn ? `পৃষ্ঠা ${targetPage} থেকে পুনরায় শুরু` : `Resumed from page ${targetPage}`);
+        }
       }
     } catch {/* ignore */}
     setRestored(true);
-  }, [bn, userId, restored]);
+  }, [bn, userId, restored, chapters]);
 
   // Persist last read (skipped while auto-save is paused)
   useEffect(() => {
