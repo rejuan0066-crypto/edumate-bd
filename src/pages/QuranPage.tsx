@@ -675,12 +675,6 @@ const QuranPage = () => {
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
   }, [mode, activeId, currentChapter, bn]);
 
-  // Standard Madinah Mushaf: first page of each Juz (1..30)
-  const JUZ_FIRST_PAGE: Record<number, number> = {
-    1: 1, 2: 22, 3: 42, 4: 62, 5: 82, 6: 102, 7: 121, 8: 142, 9: 162, 10: 182,
-    11: 201, 12: 222, 13: 242, 14: 262, 15: 282, 16: 302, 17: 322, 18: 342, 19: 362, 20: 382,
-    21: 402, 22: 422, 23: 442, 24: 462, 25: 482, 26: 502, 27: 522, 28: 542, 29: 562, 30: 582,
-  };
 
   // Goto navigation — always resolves to a Mushaf page (single-ayah view removed).
   const goto = (m: typeof mode, id: number, vk?: string) => {
