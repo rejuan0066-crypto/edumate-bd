@@ -324,6 +324,13 @@ const QuranPage = () => {
   const [mushafPages, setMushafPages] = useState<{ page: number; verses: Verse[] }[]>([]);
   const [mushafLoading, setMushafLoading] = useState(false);
   const loadingMoreRef = useRef(false);
+  // Per-page in-flight promise cache — collapses concurrent fetches for the
+  // same page into a single network call.
+  const inFlightPageRef = useRef<Map<number, Promise<Verse[]>>>(new Map());
+  // Cooldown timestamp (ms) — blocks immediate re-entry after a load completes.
+  const nextLoadCooldownRef = useRef(0);
+  // Per-page retry attempt counters for exponential backoff.
+  const retryCountRef = useRef<Map<number, number>>(new Map());
   const pageRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const suppressScrollSyncRef = useRef(false);
 
