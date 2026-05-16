@@ -1550,8 +1550,13 @@ const QuranPage = () => {
                 aria-label={b.label}
                 title={b.label}
               >
-                <span className={`flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
+                <span className={`relative flex items-center justify-center w-9 h-9 rounded-full ${b.active ? 'bg-primary/15' : 'bg-muted/50'}`}>
                   {b.icon}
+                  {('badge' in b) && (b as any).badge && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold leading-[18px] text-center shadow">
+                      {(b as any).badge}
+                    </span>
+                  )}
                 </span>
               </button>
             ))}
