@@ -1600,8 +1600,8 @@ const QuranPage = () => {
                         fontSize: `${settings.arabicSize}px`,
                         fontFamily:
                           settings.script === 'indopak'
-                            ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
-                            : '"Amiri Quran", "Scheherazade New", "Amiri", serif',
+                            ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
+                            : '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif',
                       }}
                     >
                       {arabicText}
