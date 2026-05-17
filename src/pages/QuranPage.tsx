@@ -65,6 +65,16 @@ interface Chapter {
   revelation_place: string;
   pages: [number, number];
 }
+interface QWord {
+  id: number;
+  position: number;
+  line_number: number;
+  page_number?: number;
+  text_uthmani?: string;
+  text_indopak?: string;
+  char_type_name?: string; // 'word' | 'end' | 'pause' | 'rub-el-hizb' | 'sajdah'
+  verse_key?: string;
+}
 interface Verse {
   id: number;
   verse_key: string; // "1:1"
@@ -76,6 +86,7 @@ interface Verse {
   ruku_number?: number;
   audio?: { url: string };
   translations: { id: number; resource_id: number; text: string }[];
+  words?: QWord[];
 }
 
 const QURAN_API = 'https://api.quran.com/api/v4';
@@ -493,7 +504,8 @@ const QuranPage = () => {
     const run = (async () => {
       const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
       url.searchParams.set('language', bn ? 'bn' : 'en');
-      url.searchParams.set('words', 'false');
+      url.searchParams.set('words', 'true');
+      url.searchParams.set('word_fields', 'line_number,text_uthmani,text_indopak,char_type_name,page_number');
       url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
       url.searchParams.set(
         'fields',
@@ -1339,57 +1351,145 @@ const QuranPage = () => {
                                       </span>
                                     </div>
                                   )}
-                                  <p
-                                    dir="rtl"
-                                    lang="ar"
-                                    className="text-justify"
-                                    style={{
-                                      fontSize: `${settings.arabicSize}px`,
-                                      lineHeight: 2.4,
-                                      fontFamily: arabicFont,
-                                      color: '#1f1810',
-                                      textAlignLast: 'center',
-                                    }}
-                                  >
-                                    {seg.verses.map((v) => {
-                                      const arabicText = settings.script === 'indopak' && v.text_indopak ? v.text_indopak : v.text_uthmani;
-                                      const num = v.verse_key.split(':')[1];
-                                      const isCurrent = playingKey === v.verse_key;
+                                  {(() => {
+                                    // Group this segment's words by Mushaf line_number
+                                    // so we can render each typeset line as its own row
+                                    // with a subtle horizontal divider (matches Madinah Mushaf).
+                                    const linesMap = new Map<number, Array<{ word: QWord; verse: Verse }>>();
+                                    seg.verses.forEach((v) => {
+                                      (v.words || []).forEach((w) => {
+                                        const ln = w.line_number || 0;
+                                        if (!linesMap.has(ln)) linesMap.set(ln, []);
+                                        linesMap.get(ln)!.push({ word: w, verse: v });
+                                      });
+                                    });
+                                    const sortedLines = [...linesMap.entries()].sort((a, b) => a[0] - b[0]);
+
+                                    // Fallback: API returned no words → render the whole
+                                    // segment as a single justified paragraph (legacy path).
+                                    if (sortedLines.length === 0) {
                                       return (
-                                        <span key={v.id} id={`v-${v.verse_key}`}>
-                                          <span
-                                            onClick={() => playVerse(v)}
-                                            className="cursor-pointer transition-colors"
-                                            style={{
-                                              background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
-                                              borderRadius: 6,
-                                              padding: isCurrent ? '0 4px' : undefined,
-                                            }}
-                                          >
-                                            {arabicText}
-                                          </span>
-                                          <span
-                                            className="inline-flex items-center justify-center mx-1 text-base font-bold align-middle cursor-pointer"
-                                            onClick={() => toggleBookmark(v.verse_key)}
-                                            title={v.verse_key}
-                                            style={{
-                                              width: '1.6em',
-                                              height: '1.6em',
-                                              background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
-                                              color: '#fdf6e3',
-                                              borderRadius: '50%',
-                                              fontSize: '0.55em',
-                                              boxShadow: bookmarks.includes(v.verse_key)
-                                                ? '0 0 0 2px hsl(var(--primary))'
-                                                : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
-                                            }}
-                                          >
-                                            {Number(num).toLocaleString('ar-EG')}
-                                          </span>{' '}
-                                        </span>
+                                        <p
+                                          dir="rtl"
+                                          lang="ar"
+                                          className="text-justify"
+                                          style={{
+                                            fontSize: `${settings.arabicSize}px`,
+                                            lineHeight: 2.4,
+                                            fontFamily: arabicFont,
+                                            color: '#1f1810',
+                                            textAlignLast: 'center',
+                                          }}
+                                        >
+                                          {seg.verses.map((v) => {
+                                            const arabicText = settings.script === 'indopak' && v.text_indopak ? v.text_indopak : v.text_uthmani;
+                                            const num = v.verse_key.split(':')[1];
+                                            return (
+                                              <span key={v.id} id={`v-${v.verse_key}`}>
+                                                <span onClick={() => playVerse(v)} className="cursor-pointer">{arabicText}</span>
+                                                <span
+                                                  className="inline-flex items-center justify-center mx-1 text-base font-bold align-middle cursor-pointer"
+                                                  onClick={() => toggleBookmark(v.verse_key)}
+                                                  style={{
+                                                    width: '1.6em', height: '1.6em',
+                                                    background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
+                                                    color: '#fdf6e3', borderRadius: '50%', fontSize: '0.55em',
+                                                  }}
+                                                >
+                                                  {Number(num).toLocaleString('ar-EG')}
+                                                </span>{' '}
+                                              </span>
+                                            );
+                                          })}
+                                        </p>
                                       );
-                                    })}
-                                  </p>
+                                    }
+
+                                    // Track which verses we've already anchored on this segment
+                                    const anchoredVerses = new Set<string>();
+
+                                    return sortedLines.map(([lineNum, items]) => {
+                                      const lastItem = items[items.length - 1];
+                                      const lastVerse = lastItem.verse;
+                                      const vIdx = seg.verses.findIndex((v) => v.id === lastVerse.id);
+                                      const nextVerse = seg.verses[vIdx + 1];
+                                      const showRuku =
+                                        lastItem.word.char_type_name === 'end' &&
+                                        !!lastVerse.ruku_number &&
+                                        (!nextVerse || nextVerse.ruku_number !== lastVerse.ruku_number);
+
+                                      return (
+                                        <div
+                                          key={lineNum}
+                                          dir="rtl"
+                                          className="relative flex items-center justify-between gap-1 py-2 border-b last:border-b-0"
+                                          style={{ borderColor: 'rgba(139,111,58,0.25)' }}
+                                        >
+                                          {items.map(({ word, verse }) => {
+                                            const isEnd = word.char_type_name === 'end';
+                                            const verseNum = verse.verse_key.split(':')[1];
+                                            const needAnchor = !anchoredVerses.has(verse.verse_key);
+                                            if (needAnchor) anchoredVerses.add(verse.verse_key);
+                                            const anchorId = needAnchor ? `v-${verse.verse_key}` : undefined;
+
+                                            if (isEnd) {
+                                              return (
+                                                <span
+                                                  key={word.id}
+                                                  id={anchorId}
+                                                  onClick={() => toggleBookmark(verse.verse_key)}
+                                                  className="inline-flex items-center justify-center font-bold cursor-pointer mx-0.5 shrink-0"
+                                                  title={verse.verse_key}
+                                                  style={{
+                                                    width: '1.6em',
+                                                    height: '1.6em',
+                                                    background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
+                                                    color: '#fdf6e3',
+                                                    borderRadius: '50%',
+                                                    fontSize: `${Math.max(10, settings.arabicSize * 0.5)}px`,
+                                                    boxShadow: bookmarks.includes(verse.verse_key)
+                                                      ? '0 0 0 2px hsl(var(--primary))'
+                                                      : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
+                                                  }}
+                                                >
+                                                  {Number(verseNum).toLocaleString('ar-EG')}
+                                                </span>
+                                              );
+                                            }
+                                            const txt = settings.script === 'indopak' && word.text_indopak ? word.text_indopak : word.text_uthmani;
+                                            const isCurrent = playingKey === verse.verse_key;
+                                            return (
+                                              <span
+                                                key={word.id}
+                                                id={anchorId}
+                                                onClick={() => playVerse(verse)}
+                                                className="cursor-pointer transition-colors"
+                                                style={{
+                                                  fontFamily: arabicFont,
+                                                  fontSize: `${settings.arabicSize}px`,
+                                                  color: '#1f1810',
+                                                  background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
+                                                  borderRadius: 4,
+                                                  padding: isCurrent ? '0 3px' : undefined,
+                                                }}
+                                              >
+                                                {txt}
+                                              </span>
+                                            );
+                                          })}
+                                          {showRuku && (
+                                            <span
+                                              className="absolute top-1/2 -translate-y-1/2 -left-1 sm:-left-3 text-xs sm:text-sm font-bold opacity-75 select-none"
+                                              style={{ fontFamily: arabicFont, color: '#5a4520' }}
+                                              title={bn ? `রুকু ${lastVerse.ruku_number}` : `Ruku ${lastVerse.ruku_number}`}
+                                            >
+                                              ع
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    });
+                                  })()}
                                 </div>
                               );
                             });
