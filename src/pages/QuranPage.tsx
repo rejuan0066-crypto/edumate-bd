@@ -1335,7 +1335,7 @@ const QuranPage = () => {
                                       {seg.sid !== 1 && seg.sid !== 9 && (
                                         <p
                                           dir="rtl"
-                                          className="mt-3 text-2xl"
+                                          className="quran-mushaf-text mt-3 text-2xl"
                                           style={{ fontFamily: arabicFont, color: '#3d2f15' }}
                                         >
                                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
