@@ -504,7 +504,8 @@ const QuranPage = () => {
     const run = (async () => {
       const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
       url.searchParams.set('language', bn ? 'bn' : 'en');
-      url.searchParams.set('words', 'false');
+      url.searchParams.set('words', 'true');
+      url.searchParams.set('word_fields', 'line_number,text_uthmani,text_indopak,char_type_name,page_number');
       url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
       url.searchParams.set(
         'fields',
