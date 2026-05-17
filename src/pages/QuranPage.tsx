@@ -65,6 +65,16 @@ interface Chapter {
   revelation_place: string;
   pages: [number, number];
 }
+interface QWord {
+  id: number;
+  position: number;
+  line_number: number;
+  page_number?: number;
+  text_uthmani?: string;
+  text_indopak?: string;
+  char_type_name?: string; // 'word' | 'end' | 'pause' | 'rub-el-hizb' | 'sajdah'
+  verse_key?: string;
+}
 interface Verse {
   id: number;
   verse_key: string; // "1:1"
@@ -76,6 +86,7 @@ interface Verse {
   ruku_number?: number;
   audio?: { url: string };
   translations: { id: number; resource_id: number; text: string }[];
+  words?: QWord[];
 }
 
 const QURAN_API = 'https://api.quran.com/api/v4';
