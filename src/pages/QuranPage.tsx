@@ -1380,7 +1380,7 @@ const QuranPage = () => {
                                         <p
                                           dir="rtl"
                                           lang="ar"
-                                          className="text-justify"
+                                          className="quran-mushaf-text text-justify"
                                           style={{
                                             fontSize: `${settings.arabicSize}px`,
                                             lineHeight: 2.4,
