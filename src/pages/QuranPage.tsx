@@ -476,6 +476,10 @@ const QuranPage = () => {
     enabled: mode === 'chapter' && !!activeId,
     staleTime: 1000 * 60 * 60,
     queryFn: async () => {
+      // Custom reciters (e.g. Shakir Qasami) — not on Quran.com API.
+      if (isCustomReciter(settings.reciterId)) {
+        return CUSTOM_SURAH_AUDIO[settings.reciterId](activeId);
+      }
       try {
         const res = await fetch(
           `${QURAN_API}/chapter_recitations/${settings.reciterId}/${activeId}`,
