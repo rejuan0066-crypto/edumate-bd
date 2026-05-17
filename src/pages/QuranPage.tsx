@@ -482,6 +482,9 @@ const QuranPage = () => {
   const retryCountRef = useRef<Map<number, number>>(new Map());
   const pageRefsMap = useRef<Map<number, HTMLDivElement | null>>(new Map());
   const suppressScrollSyncRef = useRef(false);
+  // When user navigates via Go-to (Page/Juz), remember which page to scroll
+  // into view once it's mounted. Cleared after a successful scroll.
+  const pendingScrollPageRef = useRef<number | null>(null);
 
   const fetchPageVerses = useCallback((page: number): Promise<Verse[]> => {
     // Deduplicate concurrent requests for the same page.
