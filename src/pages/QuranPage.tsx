@@ -2417,7 +2417,7 @@ const AyahSearchDialog = ({
                     dir="rtl"
                     lang="ar"
                     className="text-right text-lg leading-loose"
-                    style={{ fontFamily: '"Amiri Quran", "Scheherazade New", serif' }}
+                    style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", serif' }}
                     dangerouslySetInnerHTML={{ __html: r.text }}
                   />
                   {r.translation && (
