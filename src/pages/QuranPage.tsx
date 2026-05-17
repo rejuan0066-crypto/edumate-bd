@@ -752,6 +752,11 @@ const QuranPage = () => {
   };
 
   const playVerse = (v: Verse) => {
+    // Custom (full-surah-only) reciter: play the surah this verse belongs to.
+    if (isCustomReciter(settings.reciterId)) {
+      const sid = Number(v.verse_key.split(':')[0]);
+      return playUrl(CUSTOM_SURAH_AUDIO[settings.reciterId](sid), `surah-${sid}`);
+    }
     if (!v.audio?.url) return toast.error(bn ? 'এই আয়াতের অডিও পাওয়া যায়নি' : 'Audio not available');
     playUrl(`https://verses.quran.com/${v.audio.url}`, v.verse_key);
   };
@@ -780,6 +785,17 @@ const QuranPage = () => {
         guard++;
         continue;
       }
+      // Custom reciter (e.g. Shakir Qasami): no per-verse audio — play full
+      // surah of the first verse on this page.
+      if (isCustomReciter(settings.reciterId)) {
+        const firstVerse = page.verses[0];
+        if (firstVerse) {
+          const sid = Number(firstVerse.verse_key.split(':')[0]);
+          setScrollKey(firstVerse.verse_key);
+          playUrl(CUSTOM_SURAH_AUDIO[settings.reciterId](sid), `surah-${sid}`);
+          return;
+        }
+      }
       const first = page.verses.find((v) => v.audio?.url);
       if (first) {
         setScrollKey(first.verse_key);
@@ -790,7 +806,7 @@ const QuranPage = () => {
       guard++;
     }
     toast.error(bn ? 'এই পৃষ্ঠার অডিও পাওয়া যায়নি' : 'Audio not available for this page');
-  }, [mushafPages, loadNextMushafPage, playUrl, bn]);
+  }, [mushafPages, loadNextMushafPage, playUrl, bn, settings.reciterId]);
 
   // Audio prefetch cache — warms HTTP cache so next verse starts instantly.
   const prefetchedUrlsRef = useRef<Set<string>>(new Set());
