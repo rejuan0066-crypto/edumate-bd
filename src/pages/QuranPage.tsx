@@ -1292,8 +1292,8 @@ const QuranPage = () => {
                             const segments = groupVersesBySurah(pageVerses);
                             const arabicFont =
                               settings.script === 'indopak'
-                                ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
-                                : '"Amiri Quran", "Scheherazade New", "Amiri", serif';
+                                ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
+                                : '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif';
                             return segments.map((seg, segIdx) => {
                               const ch = chapters.find((c) => c.id === seg.sid);
                               const startsHere = seg.startsAtAyah1;
