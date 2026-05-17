@@ -1219,17 +1219,7 @@ const QuranPage = () => {
               {/* ===== Mushaf Page View ===== */}
               {isMushaf ? (
                 <div>
-                  <div className="flex items-center justify-between mb-4 sticky top-[68px] z-10 bg-background/70 backdrop-blur-xl rounded-xl px-2 py-2 border border-border/40">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl gap-1.5"
-                      disabled={activeId <= 1}
-                      onClick={() => goto('page', Math.max(1, activeId - 1))}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                      {bn ? 'পূর্ববর্তী' : 'Prev'}
-                    </Button>
+                  <div className="flex items-center justify-center mb-4 sticky top-[68px] z-10 bg-background/70 backdrop-blur-xl rounded-xl px-2 py-2 border border-border/40">
                     <div className="flex items-center gap-2">
                       <div className="text-sm font-semibold">
                         {bn ? 'পৃষ্ঠা' : 'Page'} <span className="text-primary">{activeId}</span> / 604
@@ -1256,16 +1246,6 @@ const QuranPage = () => {
                         </span>
                       </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl gap-1.5"
-                      disabled={activeId >= 604}
-                      onClick={() => goto('page', Math.min(604, activeId + 1))}
-                    >
-                      {bn ? 'পরবর্তী' : 'Next'}
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
                   </div>
 
                   {mushafLoading && mushafPages.length === 0 ? (
