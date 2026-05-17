@@ -1611,7 +1611,7 @@ const QuranPage = () => {
                     <p
                       dir="rtl"
                       lang="ar"
-                      className="text-right leading-[2.4] mb-5"
+                      className="quran-mushaf-text text-right leading-[2.4] mb-5"
                       style={{
                         fontSize: `${settings.arabicSize}px`,
                         fontFamily:
