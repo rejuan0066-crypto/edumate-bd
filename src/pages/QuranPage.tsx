@@ -1918,7 +1918,7 @@ const SidebarContent = ({
                 </div>
                 <span
                   className="text-base shrink-0"
-                  style={{ fontFamily: 'Amiri, serif' }}
+                  style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Amiri", serif' }}
                   dir="rtl"
                 >
                   {c.name_arabic}
