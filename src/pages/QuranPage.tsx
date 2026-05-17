@@ -1335,7 +1335,7 @@ const QuranPage = () => {
                                       {seg.sid !== 1 && seg.sid !== 9 && (
                                         <p
                                           dir="rtl"
-                                          className="mt-3 text-2xl"
+                                          className="quran-mushaf-text mt-3 text-2xl"
                                           style={{ fontFamily: arabicFont, color: '#3d2f15' }}
                                         >
                                           بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
@@ -1380,7 +1380,7 @@ const QuranPage = () => {
                                         <p
                                           dir="rtl"
                                           lang="ar"
-                                          className="text-justify"
+                                          className="quran-mushaf-text text-justify"
                                           style={{
                                             fontSize: `${settings.arabicSize}px`,
                                             lineHeight: 2.4,
@@ -1430,7 +1430,7 @@ const QuranPage = () => {
                                         <div
                                           key={lineNum}
                                           dir="rtl"
-                                          className="relative flex items-center justify-between gap-1 py-2 border-b last:border-b-0"
+                                          className="quran-mushaf-text relative flex items-center justify-between gap-1 py-2 border-b last:border-b-0"
                                           style={{ borderColor: 'rgba(139,111,58,0.25)' }}
                                         >
                                           {items.map(({ word, verse }) => {
@@ -1611,7 +1611,7 @@ const QuranPage = () => {
                     <p
                       dir="rtl"
                       lang="ar"
-                      className="text-right leading-[2.4] mb-5"
+                      className="quran-mushaf-text text-right leading-[2.4] mb-5"
                       style={{
                         fontSize: `${settings.arabicSize}px`,
                         fontFamily:
