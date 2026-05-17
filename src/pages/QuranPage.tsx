@@ -1246,16 +1246,6 @@ const QuranPage = () => {
                         </span>
                       </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl gap-1.5"
-                      disabled={activeId >= 604}
-                      onClick={() => goto('page', Math.min(604, activeId + 1))}
-                    >
-                      {bn ? 'পরবর্তী' : 'Next'}
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
                   </div>
 
                   {mushafLoading && mushafPages.length === 0 ? (
