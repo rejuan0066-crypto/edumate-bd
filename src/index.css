@@ -1,13 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800&family=Noto+Serif+Bengali:wght@300;400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&family=Baloo+Da+2:wght@400;500;600;700;800&family=Anek+Bangla:wght@300;400;500;600;700;800&family=Tiro+Bangla:ital@0;1&family=Galada&family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Amiri+Quran&family=Scheherazade+New:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap');
 
-/* Official Madinah Mushaf font (KFGQPC Uthmanic Hafs) — used by the Quran read page */
+/* Official Madinah Mushaf font (KFGQPC Uthmanic Hafs v18) — used by the Quran read page */
 @font-face {
   font-family: 'KFGQPC Uthmanic Script HAFS';
-  src: url('https://cdn.jsdelivr.net/gh/mustafa0x/qpc-fonts@main/mushaf-woff2/hafs-smart_08.woff2') format('woff2');
+  src: url('https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf') format('truetype');
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
+}
+@font-face {
+  font-family: 'UthmanicHafs';
+  src: url('https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+/* Hard override for any Arabic text rendered with this class. */
+.quran-mushaf-text,
+.quran-mushaf-text * {
+  font-family: 'KFGQPC Uthmanic Script HAFS', 'UthmanicHafs', 'Amiri Quran', 'Scheherazade New', serif !important;
 }
 @font-face {
   font-family: 'SutonnyOMJ';
