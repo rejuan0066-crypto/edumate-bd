@@ -1515,7 +1515,7 @@ const QuranPage = () => {
               <>
               {mode === 'chapter' && currentChapter && (
                 <Card className="p-6 rounded-[32px] text-center bg-card/80 backdrop-blur-xl border border-border/60">
-                  <p className="text-3xl font-bold mb-1" style={{ fontFamily: 'Amiri, "Scheherazade New", serif' }}>
+                  <p className="text-3xl font-bold mb-1" style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Amiri", "Scheherazade New", serif' }}>
                     {currentChapter.name_arabic}
                   </p>
                   <p className="text-sm text-muted-foreground">
