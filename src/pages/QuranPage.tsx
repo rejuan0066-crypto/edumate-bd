@@ -99,7 +99,15 @@ const RECITERS = [
   { id: 3, name_en: 'Abdur-Rahman as-Sudais', name_bn: 'আব্দুর রহমান আস-সুদাইস' },
   { id: 4, name_en: 'Abu Bakr al-Shatri', name_bn: 'আবু বকর আশ-শাতরি' },
   { id: 5, name_en: 'Hani ar-Rifai', name_bn: 'হানি আর-রিফাঈ' },
+  { id: 1001, name_en: 'Shakir Qasami (Full Surah only)', name_bn: 'ক্বারী শাকির ক্বাসমী (শুধু পূর্ণ সূরা)' },
 ];
+
+// Custom reciters not in Quran.com API — provide direct CDN URL per surah.
+const CUSTOM_SURAH_AUDIO: Record<number, (chapter: number) => string> = {
+  1001: (c) =>
+    `https://download.quranicaudio.com/quran/shakir_qasami_with_english/${String(c).padStart(3, '0')}.mp3`,
+};
+const isCustomReciter = (id: number) => id in CUSTOM_SURAH_AUDIO;
 
 const LS_BOOKMARKS = 'quran:bookmarks';
 const LS_LAST_READ = 'quran:lastRead'; // suffixed with user scope
