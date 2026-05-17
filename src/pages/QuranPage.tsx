@@ -1010,12 +1010,41 @@ const QuranPage = () => {
     } else if (m === 'juz') {
       page = JUZ_FIRST_PAGE[id] || 1;
     }
+    // For Page/Juz jumps (no verse key), remember the target page so we can
+    // scroll the viewport to its element once it mounts. Verse-key jumps are
+    // handled by the scroll-to-verse effect.
+    if (!vk) pendingScrollPageRef.current = page;
     setMode('page');
     setActiveId(page);
     setScrollKey(vk || null);
     setGotoOpen(false);
     setSidebarOpen(false);
   };
+
+  // Scroll to the pending target page once it (and its element) is available.
+  useEffect(() => {
+    const target = pendingScrollPageRef.current;
+    if (!target) return;
+    if (!mushafPages.some((p) => p.page === target)) return;
+    let attempts = 0;
+    const tryScroll = () => {
+      const el = pageRefsMap.current.get(target);
+      if (el) {
+        suppressScrollSyncRef.current = true;
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => { suppressScrollSyncRef.current = false; }, 1200);
+        pendingScrollPageRef.current = null;
+        return true;
+      }
+      return false;
+    };
+    if (tryScroll()) return;
+    const interval = setInterval(() => {
+      attempts += 1;
+      if (tryScroll() || attempts >= 20) clearInterval(interval);
+    }, 150);
+    return () => clearInterval(interval);
+  }, [mushafPages]);
 
   // Auto scroll: slow continuous downward scroll while enabled
   useEffect(() => {
