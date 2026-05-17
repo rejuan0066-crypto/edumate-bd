@@ -752,6 +752,11 @@ const QuranPage = () => {
   };
 
   const playVerse = (v: Verse) => {
+    // Custom (full-surah-only) reciter: play the surah this verse belongs to.
+    if (isCustomReciter(settings.reciterId)) {
+      const sid = Number(v.verse_key.split(':')[0]);
+      return playUrl(CUSTOM_SURAH_AUDIO[settings.reciterId](sid), `surah-${sid}`);
+    }
     if (!v.audio?.url) return toast.error(bn ? 'এই আয়াতের অডিও পাওয়া যায়নি' : 'Audio not available');
     playUrl(`https://verses.quran.com/${v.audio.url}`, v.verse_key);
   };
