@@ -1292,8 +1292,8 @@ const QuranPage = () => {
                             const segments = groupVersesBySurah(pageVerses);
                             const arabicFont =
                               settings.script === 'indopak'
-                                ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
-                                : '"Amiri Quran", "Scheherazade New", "Amiri", serif';
+                                ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
+                                : '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif';
                             return segments.map((seg, segIdx) => {
                               const ch = chapters.find((c) => c.id === seg.sid);
                               const startsHere = seg.startsAtAyah1;
@@ -1515,7 +1515,7 @@ const QuranPage = () => {
               <>
               {mode === 'chapter' && currentChapter && (
                 <Card className="p-6 rounded-[32px] text-center bg-card/80 backdrop-blur-xl border border-border/60">
-                  <p className="text-3xl font-bold mb-1" style={{ fontFamily: 'Amiri, "Scheherazade New", serif' }}>
+                  <p className="text-3xl font-bold mb-1" style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Amiri", "Scheherazade New", serif' }}>
                     {currentChapter.name_arabic}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -1600,8 +1600,8 @@ const QuranPage = () => {
                         fontSize: `${settings.arabicSize}px`,
                         fontFamily:
                           settings.script === 'indopak'
-                            ? '"Noto Nastaliq Urdu", "Scheherazade New", serif'
-                            : '"Amiri Quran", "Scheherazade New", "Amiri", serif',
+                            ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
+                            : '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif',
                       }}
                     >
                       {arabicText}
@@ -1918,7 +1918,7 @@ const SidebarContent = ({
                 </div>
                 <span
                   className="text-base shrink-0"
-                  style={{ fontFamily: 'Amiri, serif' }}
+                  style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Amiri", serif' }}
                   dir="rtl"
                 >
                   {c.name_arabic}
@@ -2417,7 +2417,7 @@ const AyahSearchDialog = ({
                     dir="rtl"
                     lang="ar"
                     className="text-right text-lg leading-loose"
-                    style={{ fontFamily: '"Amiri Quran", "Scheherazade New", serif' }}
+                    style={{ fontFamily: '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", serif' }}
                     dangerouslySetInnerHTML={{ __html: r.text }}
                   />
                   {r.translation && (
