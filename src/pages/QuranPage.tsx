@@ -523,7 +523,7 @@ const QuranPage = () => {
         'fields',
         'text_uthmani,text_indopak,verse_key,verse_number,juz_number,page_number,ruku_number',
       );
-      url.searchParams.set('audio', String(settings.reciterId));
+      if (!isCustomReciter(settings.reciterId)) url.searchParams.set('audio', String(settings.reciterId));
       url.searchParams.set('per_page', '300');
       const res = await fetch(url.toString());
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
