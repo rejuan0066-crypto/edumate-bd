@@ -213,6 +213,20 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ===== Mushaf theme (dark / light) — separate from app theme =====
+  const MUSHAF_THEME_KEY = 'quran:mushafTheme';
+  const [mushafTheme, setMushafTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const v = localStorage.getItem(MUSHAF_THEME_KEY);
+      return v === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(MUSHAF_THEME_KEY, mushafTheme); } catch {}
+  }, [mushafTheme]);
   const AS_KEY = 'quran:autoScroll';
   const AS_TS_KEY = 'quran:autoScroll:updatedAt';
   const [autoScroll, setAutoScroll] = useState<boolean>(() => {
