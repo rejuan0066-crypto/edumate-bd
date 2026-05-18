@@ -51,6 +51,8 @@ import {
   Trash2,
   FileText,
   Layers,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -211,6 +213,20 @@ const QuranPage = () => {
   const [gotoOpen, setGotoOpen] = useState(false);
   const [gotoTab, setGotoTab] = useState<'surah' | 'page' | 'juz' | 'bm'>('surah');
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // ===== Mushaf theme (dark / light) — separate from app theme =====
+  const MUSHAF_THEME_KEY = 'quran:mushafTheme';
+  const [mushafTheme, setMushafTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const v = localStorage.getItem(MUSHAF_THEME_KEY);
+      return v === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(MUSHAF_THEME_KEY, mushafTheme); } catch {}
+  }, [mushafTheme]);
   const AS_KEY = 'quran:autoScroll';
   const AS_TS_KEY = 'quran:autoScroll:updatedAt';
   const [autoScroll, setAutoScroll] = useState<boolean>(() => {
@@ -1121,7 +1137,10 @@ const QuranPage = () => {
   }, [bn, activeId]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div
+      data-mushaf-theme={mushafTheme}
+      className="quran-mushaf-root min-h-screen bg-gradient-to-br from-background via-background to-primary/5"
+    >
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
@@ -1164,6 +1183,21 @@ const QuranPage = () => {
               </button>
             </div>
           </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-9 w-9 shrink-0"
+            onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
+            title={
+              mushafTheme === 'dark'
+                ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf')
+                : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')
+            }
+          >
+            {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
 
           <Dialog>
             <DialogTrigger asChild>
