@@ -1184,6 +1184,21 @@ const QuranPage = () => {
             </div>
           </div>
 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-9 w-9 shrink-0"
+            onClick={() => setMushafTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            aria-label={bn ? 'মুসহাফ থিম' : 'Mushaf theme'}
+            title={
+              mushafTheme === 'dark'
+                ? (bn ? 'লাইট মুসহাফ' : 'Light mushaf')
+                : (bn ? 'ডার্ক মুসহাফ' : 'Dark mushaf')
+            }
+          >
+            {mushafTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </Button>
+
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 shrink-0" aria-label={bn ? 'খুঁজুন' : 'Search'}>
