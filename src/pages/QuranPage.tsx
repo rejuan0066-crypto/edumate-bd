@@ -1137,7 +1137,10 @@ const QuranPage = () => {
   }, [bn, activeId]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div
+      data-mushaf-theme={mushafTheme}
+      className="quran-mushaf-root min-h-screen bg-gradient-to-br from-background via-background to-primary/5"
+    >
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
