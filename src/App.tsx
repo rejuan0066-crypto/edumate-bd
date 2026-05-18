@@ -187,6 +187,12 @@ const AdminCommittees = lazy(() => import("@/pages/admin/AdminCommittees"));
 const AdminCommitteeAuditLog = lazy(() => import("@/pages/admin/AdminCommitteeAuditLog"));
 import ScrollToTop from "./components/ScrollToTop";
 import ScrollNavigation from "./components/ScrollNavigation";
+import { useLocation } from "react-router-dom";
+const HideOnRoutes = ({ paths, children }: { paths: string[]; children: React.ReactNode }) => {
+  const { pathname } = useLocation();
+  if (paths.some((p) => pathname === p || pathname.startsWith(p + "/"))) return null;
+  return <>{children}</>;
+};
 import RouteLoader from "./components/RouteLoader";
 import RoutePrefetcher from "./components/RoutePrefetcher";
 import InstallPrompt from "./components/InstallPrompt";
@@ -284,11 +290,15 @@ const App = () => (
               <BrowserRouter>
                 <RouteLoader />
                 <RoutePrefetcher />
-                <ScrollToTop />
-                <ScrollNavigation />
+                <HideOnRoutes paths={["/quran"]}>
+                  <ScrollToTop />
+                  <ScrollNavigation />
+                </HideOnRoutes>
                 <InstallPrompt />
                 <NetworkStatusIndicator />
-                <FloatingWhatsAppButton />
+                <HideOnRoutes paths={["/quran"]}>
+                  <FloatingWhatsAppButton />
+                </HideOnRoutes>
                 <Suspense fallback={<RouteShimmer />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
