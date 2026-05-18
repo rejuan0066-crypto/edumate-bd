@@ -284,11 +284,15 @@ const App = () => (
               <BrowserRouter>
                 <RouteLoader />
                 <RoutePrefetcher />
-                <ScrollToTop />
-                <ScrollNavigation />
+                <HideOnRoutes paths={["/quran"]}>
+                  <ScrollToTop />
+                  <ScrollNavigation />
+                </HideOnRoutes>
                 <InstallPrompt />
                 <NetworkStatusIndicator />
-                <FloatingWhatsAppButton />
+                <HideOnRoutes paths={["/quran"]}>
+                  <FloatingWhatsAppButton />
+                </HideOnRoutes>
                 <Suspense fallback={<RouteShimmer />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
