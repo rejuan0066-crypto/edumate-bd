@@ -1460,19 +1460,18 @@ const QuranPage = () => {
                                         !!lastVerse.ruku_number &&
                                         (!nextVerse || nextVerse.ruku_number !== lastVerse.ruku_number);
 
-                                      // Only stretch words across the full line width when
-                                      // the line actually has enough words to fill it. Otherwise
-                                      // (e.g. end-of-ayah lines with 1–2 words) keep them
-                                      // centered with natural spacing so they don't get pushed
-                                      // to opposite edges with huge gaps in between.
-                                      const wordCount = items.filter((it) => it.word.char_type_name !== 'end').length;
-                                      const isFullLine = wordCount >= 4;
+                                      // Lines that contain a verse-end marker should NOT
+                                      // stretch — otherwise the end circle gets pushed to the
+                                      // far edge with a huge gap before the last word. Only
+                                      // continuation lines (no end marker) get justify-between
+                                      // for Madinah-style full-width stretching.
+                                      const hasEnd = items.some((it) => it.word.char_type_name === 'end');
                                       return (
                                         <div
                                           key={lineNum}
                                           dir="rtl"
                                           className={`quran-mushaf-text relative flex items-center gap-x-2 py-2 border-b last:border-b-0 ${
-                                            isFullLine ? 'justify-between' : 'justify-center'
+                                            hasEnd ? 'justify-start flex-wrap' : 'justify-between'
                                           }`}
                                           style={{ borderColor: 'rgba(139,111,58,0.25)' }}
                                         >
