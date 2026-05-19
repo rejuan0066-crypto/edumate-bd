@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { groupVersesBySurah } from '@/lib/quranSegments';
 import { Card } from '@/components/ui/card';
@@ -1460,71 +1460,77 @@ const QuranPage = () => {
                                         !!lastVerse.ruku_number &&
                                         (!nextVerse || nextVerse.ruku_number !== lastVerse.ruku_number);
 
-                                      // Lines that contain a verse-end marker should NOT
-                                      // stretch — otherwise the end circle gets pushed to the
-                                      // far edge with a huge gap before the last word. Only
-                                      // continuation lines (no end marker) get justify-between
-                                      // for Madinah-style full-width stretching.
-                                      const hasEnd = items.some((it) => it.word.char_type_name === 'end');
+                                      // Madinah Mushaf style: every line stretches edge-to-edge
+                                      // using CSS text-align: justify with text-align-last: justify
+                                      // so even the final line (with the verse-end marker) fills
+                                      // the full width. Verse markers sit inline with the words.
                                       return (
                                         <div
                                           key={lineNum}
                                           dir="rtl"
-                                          className={`quran-mushaf-text relative flex items-center gap-x-2 py-2 border-b last:border-b-0 ${
-                                            hasEnd ? 'justify-start flex-wrap' : 'justify-between'
-                                          }`}
-                                          style={{ borderColor: 'rgba(139,111,58,0.25)' }}
+                                          className="quran-mushaf-text relative py-2 border-b last:border-b-0"
+                                          style={{
+                                            borderColor: 'rgba(139,111,58,0.25)',
+                                            textAlign: 'justify',
+                                            textAlignLast: 'justify',
+                                            textJustify: 'inter-word',
+                                            lineHeight: 1.9,
+                                          }}
                                         >
-                                          {items.map(({ word, verse }) => {
+                                          {items.map(({ word, verse }, idx) => {
                                             const isEnd = word.char_type_name === 'end';
                                             const verseNum = verse.verse_key.split(':')[1];
                                             const needAnchor = !anchoredVerses.has(verse.verse_key);
                                             if (needAnchor) anchoredVerses.add(verse.verse_key);
                                             const anchorId = needAnchor ? `v-${verse.verse_key}` : undefined;
+                                            const sep = idx < items.length - 1 ? ' ' : '';
 
                                             if (isEnd) {
                                               return (
-                                                <span
-                                                  key={word.id}
-                                                  id={anchorId}
-                                                  onClick={() => toggleBookmark(verse.verse_key)}
-                                                  className="inline-flex items-center justify-center font-bold cursor-pointer mx-0.5 shrink-0"
-                                                  title={verse.verse_key}
-                                                  style={{
-                                                    width: '1.6em',
-                                                    height: '1.6em',
-                                                    background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
-                                                    color: '#fdf6e3',
-                                                    borderRadius: '50%',
-                                                    fontSize: `${Math.max(10, settings.arabicSize * 0.5)}px`,
-                                                    boxShadow: bookmarks.includes(verse.verse_key)
-                                                      ? '0 0 0 2px hsl(var(--primary))'
-                                                      : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
-                                                  }}
-                                                >
-                                                  {Number(verseNum).toLocaleString('ar-EG')}
-                                                </span>
+                                                <React.Fragment key={word.id}>
+                                                  <span
+                                                    id={anchorId}
+                                                    onClick={() => toggleBookmark(verse.verse_key)}
+                                                    className="inline-flex items-center justify-center font-bold cursor-pointer align-middle"
+                                                    title={verse.verse_key}
+                                                    style={{
+                                                      width: '1.6em',
+                                                      height: '1.6em',
+                                                      background: 'radial-gradient(circle, #d4a543 0%, #8b6f3a 100%)',
+                                                      color: '#fdf6e3',
+                                                      borderRadius: '50%',
+                                                      fontSize: `${Math.max(10, settings.arabicSize * 0.5)}px`,
+                                                      boxShadow: bookmarks.includes(verse.verse_key)
+                                                        ? '0 0 0 2px hsl(var(--primary))'
+                                                        : 'inset 0 0 0 1px rgba(255,255,255,0.4)',
+                                                    }}
+                                                  >
+                                                    {Number(verseNum).toLocaleString('ar-EG')}
+                                                  </span>
+                                                  {sep}
+                                                </React.Fragment>
                                               );
                                             }
                                             const txt = settings.script === 'indopak' && word.text_indopak ? word.text_indopak : word.text_uthmani;
                                             const isCurrent = playingKey === verse.verse_key;
                                             return (
-                                              <span
-                                                key={word.id}
-                                                id={anchorId}
-                                                onClick={() => playVerse(verse)}
-                                                className="cursor-pointer transition-colors"
-                                                style={{
-                                                  fontFamily: arabicFont,
-                                                  fontSize: `${settings.arabicSize}px`,
-                                                  color: '#1f1810',
-                                                  background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
-                                                  borderRadius: 4,
-                                                  padding: isCurrent ? '0 3px' : undefined,
-                                                }}
-                                              >
-                                                {txt}
-                                              </span>
+                                              <React.Fragment key={word.id}>
+                                                <span
+                                                  id={anchorId}
+                                                  onClick={() => playVerse(verse)}
+                                                  className="cursor-pointer transition-colors"
+                                                  style={{
+                                                    fontFamily: arabicFont,
+                                                    fontSize: `${settings.arabicSize}px`,
+                                                    background: isCurrent ? 'rgba(212,165,67,0.35)' : undefined,
+                                                    borderRadius: 4,
+                                                    padding: isCurrent ? '0 3px' : undefined,
+                                                  }}
+                                                >
+                                                  {txt}
+                                                </span>
+                                                {sep}
+                                              </React.Fragment>
                                             );
                                           })}
                                           {showRuku && (
