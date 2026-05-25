@@ -288,7 +288,6 @@ const App = () => (
               <DynamicFavicon />
               <UpdatePrompt />
               <BrowserRouter>
-                <RouteLoader />
                 <RoutePrefetcher />
                 <HideOnRoutes paths={["/quran"]}>
                   <ScrollToTop />
