@@ -193,7 +193,7 @@ const HideOnRoutes = ({ paths, children }: { paths: string[]; children: React.Re
   if (paths.some((p) => pathname === p || pathname.startsWith(p + "/"))) return null;
   return <>{children}</>;
 };
-import RouteLoader from "./components/RouteLoader";
+
 import RoutePrefetcher from "./components/RoutePrefetcher";
 import InstallPrompt from "./components/InstallPrompt";
 import NetworkStatusIndicator from "./components/NetworkStatusIndicator";
@@ -288,7 +288,6 @@ const App = () => (
               <DynamicFavicon />
               <UpdatePrompt />
               <BrowserRouter>
-                <RouteLoader />
                 <RoutePrefetcher />
                 <HideOnRoutes paths={["/quran"]}>
                   <ScrollToTop />
