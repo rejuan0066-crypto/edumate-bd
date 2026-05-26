@@ -12,7 +12,7 @@
 //
 // Bump CACHE_VERSION whenever you change the SW logic.
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
@@ -163,19 +163,29 @@ async function cacheFirst(req, cacheName) {
   }
 }
 
-// Navigation handler: try preload/network fast (3s), fall back to cached "/"
+// Navigation handler: try preload/network fast, fall back to cached "/"
 async function handleNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
   const cachedShell = await cache.match('/');
+  const reqUrl = new URL(event.request.url);
+  const isRootNav = reqUrl.pathname === '/' || reqUrl.pathname === '';
 
-  // Race: network (with preload if any) vs. 1.2s timeout. If network wins,
-  // refresh the shell cache. Otherwise serve cached shell instantly.
   const networkPromise = (async () => {
     try {
       const preload = event.preloadResponse ? await event.preloadResponse : null;
       const res = preload || (await fetch(event.request));
-      if (res && res.ok && (event.request.mode === 'navigate')) {
-        // Update the "/" shell so the next launch is also fresh
+      // ONLY update "/" shell when the request itself was for "/" AND response
+      // was a clean 200 (not a redirect, not an auth-gated page). This prevents
+      // poisoning the shell cache with login redirects or deep-page HTML.
+      if (
+        res &&
+        res.ok &&
+        res.status === 200 &&
+        res.type !== 'opaqueredirect' &&
+        !res.redirected &&
+        isRootNav &&
+        event.request.mode === 'navigate'
+      ) {
         try { await cache.put('/', res.clone()); } catch (_) {}
       }
       return res;
@@ -185,19 +195,27 @@ async function handleNavigation(event) {
   })();
 
   if (!cachedShell) {
-    // First-ever visit, no cache yet — must wait for network
     const res = await networkPromise;
     if (res) return res;
     const offline = await cache.match(OFFLINE_URL);
     return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
   }
 
-  // Have cached shell → serve fast, but give network a brief head start
+  // For non-root navigations, always prefer network — never serve cached "/" for /admin/x etc.
+  if (!isRootNav) {
+    const res = await networkPromise;
+    if (res) return res;
+    if (!self.navigator.onLine) {
+      const offline = await cache.match(OFFLINE_URL);
+      if (offline) return offline;
+    }
+    return cachedShell;
+  }
+
+  // Root nav: give network a brief head start, else serve cached shell
   const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
   const winner = await Promise.race([networkPromise, timeoutPromise]);
   if (winner) return winner;
-  // If we're offline (no network response and navigator says offline), prefer the
-  // dedicated offline page when the cached shell would just spin forever.
   if (!self.navigator.onLine) {
     const offline = await cache.match(OFFLINE_URL);
     if (offline) return offline;
