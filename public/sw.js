@@ -12,7 +12,7 @@
 //
 // Bump CACHE_VERSION whenever you change the SW logic.
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
