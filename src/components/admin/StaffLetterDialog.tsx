@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { getSecureUrl } from '@/lib/secureStorage';
 
 interface StaffLetterDialogProps {
   open: boolean;
@@ -107,12 +108,15 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     if (!res.ok) throw new Error('Letter generation failed');
     const html = await res.text();
 
-    // 1) Open in new window for print
+    // 1) Open in new window — the generated HTML auto-prints once the Bengali
+    // font and logo image have finished loading (handled inside the document),
+    // so we no longer fire a premature setTimeout(print) here that produced
+    // blank / wrong-font output.
     const win = window.open('', '_blank');
     if (win) {
+      win.document.open();
       win.document.write(html);
       win.document.close();
-      setTimeout(() => win.print(), 500);
     }
 
     // 2) Upload HTML to storage so it persists as a file
@@ -318,7 +322,17 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     }
   };
 
+  // History "Download" links store a private storage ref (e.g. "staff-letters/..").
+  // Resolve a short-lived signed URL on demand instead of linking the raw path.
+  const openLetterFile = async (ref?: string | null) => {
+    if (!ref) return;
+    const url = await getSecureUrl(ref);
+    if (url) window.open(url, '_blank');
+    else toast.error(bn ? 'ফাইল পাওয়া যায়নি' : 'File not found');
+  };
+
   if (!staff) return null;
+
 
   const staffName = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
@@ -450,10 +464,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                       <span className="font-semibold text-primary">{h.new_designation}</span>
                       <div className="ml-auto flex gap-1">
                         {h.letter_file_url && (
-                          <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
-                            <a href={h.letter_file_url} target="_blank" rel="noopener noreferrer" download>
-                              <Download className="w-3.5 h-3.5" />
-                            </a>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openLetterFile(h.letter_file_url)} title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
+                            <Download className="w-3.5 h-3.5" />
                           </Button>
                         )}
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintPromo(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>
@@ -593,10 +605,8 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
                       </span>
                       <div className="ml-auto flex gap-1">
                         {h.letter_file_url && (
-                          <Button asChild size="icon" variant="ghost" className="h-7 w-7" title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
-                            <a href={h.letter_file_url} target="_blank" rel="noopener noreferrer" download>
-                              <Download className="w-3.5 h-3.5" />
-                            </a>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openLetterFile(h.letter_file_url)} title={bn ? 'ফাইল ডাউনলোড' : 'Download File'}>
+                            <Download className="w-3.5 h-3.5" />
                           </Button>
                         )}
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => reprintSalary(h)} title={bn ? 'পুনরায় প্রিন্ট' : 'Reprint'}>

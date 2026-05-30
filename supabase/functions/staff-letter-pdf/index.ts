@@ -465,6 +465,41 @@ Deno.serve(async (req) => {
     <div class="ref">${bn ? 'স্মারক:' : 'Ref:'} ${memoNo} &nbsp;•&nbsp; ${bn ? 'মুদ্রণ' : 'Printed'}: ${issueDate}</div>
   </div>
 </div>
+<script>
+  (function () {
+    var printed = false;
+    function doPrint() {
+      if (printed) return;
+      printed = true;
+      try { window.focus(); } catch (e) {}
+      try { window.print(); } catch (e) {}
+    }
+    function waitImages() {
+      var imgs = Array.prototype.slice.call(document.images || []);
+      var pending = imgs.filter(function (i) { return !i.complete; });
+      if (!pending.length) return Promise.resolve();
+      return Promise.all(pending.map(function (i) {
+        return new Promise(function (res) {
+          i.addEventListener('load', res);
+          i.addEventListener('error', res);
+          setTimeout(res, 3000);
+        });
+      }));
+    }
+    function start() {
+      var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+      Promise.all([fontsReady, waitImages()]).then(function () {
+        setTimeout(doPrint, 250);
+      }).catch(function () {
+        setTimeout(doPrint, 700);
+      });
+      // Hard fallback so it always prints even if a resource hangs.
+      setTimeout(doPrint, 4000);
+    }
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start);
+  })();
+</script>
 </body></html>`;
 
     return new Response(html, {
