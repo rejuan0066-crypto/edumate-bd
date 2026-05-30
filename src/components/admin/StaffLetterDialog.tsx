@@ -107,12 +107,15 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     if (!res.ok) throw new Error('Letter generation failed');
     const html = await res.text();
 
-    // 1) Open in new window for print
+    // 1) Open in new window — the generated HTML auto-prints once the Bengali
+    // font and logo image have finished loading (handled inside the document),
+    // so we no longer fire a premature setTimeout(print) here that produced
+    // blank / wrong-font output.
     const win = window.open('', '_blank');
     if (win) {
+      win.document.open();
       win.document.write(html);
       win.document.close();
-      setTimeout(() => win.print(), 500);
     }
 
     // 2) Upload HTML to storage so it persists as a file
