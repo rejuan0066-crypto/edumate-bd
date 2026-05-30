@@ -30,6 +30,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
+import { downloadSlipAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -2079,6 +2080,20 @@ const AdminSalary = () => {
       </div>
     </div>
     </body></html>`;
+    // On mobile / installed PWA, iframe printing prints the parent (blank) page
+    // on iOS. Generate a real downloadable PDF instead.
+    if (isMobileOrPwa()) {
+      const fname = `salary-slip-${(staffMember.name_en || staffMember.name_bn || 'staff').replace(/\s+/g, '_')}-${selectedYear}${selectedMonth}.pdf`;
+      try {
+        toast.info(bn ? 'স্লিপ PDF তৈরি হচ্ছে…' : 'Generating slip PDF…');
+        await downloadSlipAsPdf(html, fname);
+        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+      } catch (e) {
+        toast.error(bn ? 'PDF তৈরিতে সমস্যা হয়েছে' : 'Failed to generate PDF');
+      }
+      return;
+    }
+
     const w = window.open('', '_blank');
     if (w) {
       w.document.write(html);
