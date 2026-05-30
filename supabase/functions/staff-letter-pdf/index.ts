@@ -418,12 +418,21 @@ Deno.serve(async (req) => {
   .footer .brand { color: var(--accent); font-weight: 600; letter-spacing: .5pt; }
   .footer .ref { margin-top: 2pt; font-size: 8pt; }
 
+  /* On-screen preview (incl. mobile print-preview frame): show the full A4
+     page laid out at its natural width. The viewport meta (width=840) makes
+     mobile browsers fit the whole page into the screen instead of squeezing
+     the content into a narrow, oversized column. */
+  @media screen {
+    body { background: #e5e7eb; padding: 16px 0; }
+    .sheet { margin: 0 auto; width: 190mm; max-width: 190mm; }
+  }
+
   @media print {
     body { padding: 0; background: #fff; }
     .sheet { border: none; box-shadow: 0 0 0 2pt var(--accent); max-width: 100%; min-height: auto; }
     @page { size: A4 portrait; margin: 12mm; }
   }
-</style></head><body>
+</style></head><body class="${bn ? 'lang-bn' : 'lang-en'}">
 <div class="sheet">
   <div class="letterhead">
     <div class="logo-wrap">${logoBlock}</div>
