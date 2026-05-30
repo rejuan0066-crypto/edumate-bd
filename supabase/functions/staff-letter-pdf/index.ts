@@ -288,11 +288,12 @@ Deno.serve(async (req) => {
   }
   .inst-tagline {
     font-size: 9.5pt;
-    letter-spacing: 5pt;
-    text-transform: uppercase;
+    letter-spacing: normal;
     color: var(--muted);
     margin: 1pt 0 4pt;
   }
+  /* Wide tracking + caps only for Latin text — it breaks Bangla conjuncts. */
+  .lang-en .inst-tagline { letter-spacing: 5pt; text-transform: uppercase; }
   .inst-address { font-size: 10.5pt; color: var(--ink-soft); line-height: 1.4; }
   .inst-contact { font-size: 10pt; color: var(--muted); margin-top: 2pt; }
   .inst-contact .sep { margin: 0 6pt; color: var(--accent); }
