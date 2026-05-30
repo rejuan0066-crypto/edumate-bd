@@ -322,7 +322,17 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
     }
   };
 
+  // History "Download" links store a private storage ref (e.g. "staff-letters/..").
+  // Resolve a short-lived signed URL on demand instead of linking the raw path.
+  const openLetterFile = async (ref?: string | null) => {
+    if (!ref) return;
+    const url = await getSecureUrl(ref);
+    if (url) window.open(url, '_blank');
+    else toast.error(bn ? 'ফাইল পাওয়া যায়নি' : 'File not found');
+  };
+
   if (!staff) return null;
+
 
   const staffName = bn ? (staff.name_bn || staff.name_en) : (staff.name_en || staff.name_bn);
 
