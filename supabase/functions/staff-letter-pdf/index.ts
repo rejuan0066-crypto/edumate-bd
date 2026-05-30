@@ -186,6 +186,7 @@ Deno.serve(async (req) => {
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
+<meta name="viewport" content="width=840, initial-scale=1, viewport-fit=cover">
 <title>${titleText} — ${staffName}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@500;600;700&display=swap');
