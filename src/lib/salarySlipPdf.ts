@@ -99,26 +99,26 @@ export async function downloadSlipAsPdf(
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        const margin = 10; // mm margin on all sides
+
+        const availW = pdfWidth - margin * 2;
+        const availH = pdfHeight - margin * 2;
+
+        // Scale image to fit the printable area while preserving aspect ratio,
+        // so the whole slip always fits on a SINGLE page within the margins.
+        const ratio = canvas.width / canvas.height;
+        let drawW = availW;
+        let drawH = drawW / ratio;
+        if (drawH > availH) {
+          drawH = availH;
+          drawW = drawH * ratio;
+        }
+
+        const offsetX = margin + (availW - drawW) / 2;
+        const offsetY = margin + (availH - drawH) / 2;
 
         const imgData = canvas.toDataURL('image/png');
-
-        if (imgHeight <= pdfHeight) {
-          // Single page — center vertically if shorter than the page.
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-        } else {
-          // Multi-page slicing.
-          let heightLeft = imgHeight;
-          let position = 0;
-          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-          heightLeft -= pdfHeight;
-          while (heightLeft > 0) {
-            position -= pdfHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-            heightLeft -= pdfHeight;
-          }
-        }
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
 
         pdf.save(filename);
         resolve();
