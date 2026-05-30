@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Loader2, FileText, TrendingUp, TrendingDown, ArrowRight, Printer, Pencil, X, Save, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { getSecureUrl } from '@/lib/secureStorage';
 
 interface StaffLetterDialogProps {
   open: boolean;
