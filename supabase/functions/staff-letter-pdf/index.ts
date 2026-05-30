@@ -304,14 +304,14 @@ Deno.serve(async (req) => {
     display: inline-block;
     font-size: 14.5pt;
     font-weight: 700;
-    letter-spacing: 2.5pt;
-    text-transform: uppercase;
+    letter-spacing: normal;
     color: var(--accent);
     padding: 5pt 26pt;
     border-top: 0.8pt solid var(--accent);
     border-bottom: 0.8pt solid var(--accent);
     background: linear-gradient(180deg, transparent 0%, var(--accent-soft) 100%);
   }
+  .lang-en .doc-title h2 { letter-spacing: 2.5pt; text-transform: uppercase; }
 
   /* === Memo row === */
   .memo-row {
