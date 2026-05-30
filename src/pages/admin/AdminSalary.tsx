@@ -1897,7 +1897,7 @@ const AdminSalary = () => {
       .body{padding:24px 32px;position:relative;z-index:1}
       .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:18px}
       .info-cell{padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}
-      .info-cell:nth-last-child(-n+2){border-bottom:none}
+      .info-cell:last-child{border-bottom:none}
       .info-cell:nth-child(odd){border-right:1px solid #e2e8f0}
       .info-cell .lbl{color:#64748b;font-weight:500}
       .info-cell .val{color:#0f172a;font-weight:700}
