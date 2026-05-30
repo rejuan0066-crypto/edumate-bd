@@ -186,6 +186,7 @@ Deno.serve(async (req) => {
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
+<meta name="viewport" content="width=840, initial-scale=1, viewport-fit=cover">
 <title>${titleText} — ${staffName}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@500;600;700&display=swap');
@@ -287,11 +288,12 @@ Deno.serve(async (req) => {
   }
   .inst-tagline {
     font-size: 9.5pt;
-    letter-spacing: 5pt;
-    text-transform: uppercase;
+    letter-spacing: normal;
     color: var(--muted);
     margin: 1pt 0 4pt;
   }
+  /* Wide tracking + caps only for Latin text — it breaks Bangla conjuncts. */
+  .lang-en .inst-tagline { letter-spacing: 5pt; text-transform: uppercase; }
   .inst-address { font-size: 10.5pt; color: var(--ink-soft); line-height: 1.4; }
   .inst-contact { font-size: 10pt; color: var(--muted); margin-top: 2pt; }
   .inst-contact .sep { margin: 0 6pt; color: var(--accent); }
@@ -302,14 +304,14 @@ Deno.serve(async (req) => {
     display: inline-block;
     font-size: 14.5pt;
     font-weight: 700;
-    letter-spacing: 2.5pt;
-    text-transform: uppercase;
+    letter-spacing: normal;
     color: var(--accent);
     padding: 5pt 26pt;
     border-top: 0.8pt solid var(--accent);
     border-bottom: 0.8pt solid var(--accent);
     background: linear-gradient(180deg, transparent 0%, var(--accent-soft) 100%);
   }
+  .lang-en .doc-title h2 { letter-spacing: 2.5pt; text-transform: uppercase; }
 
   /* === Memo row === */
   .memo-row {
@@ -416,12 +418,21 @@ Deno.serve(async (req) => {
   .footer .brand { color: var(--accent); font-weight: 600; letter-spacing: .5pt; }
   .footer .ref { margin-top: 2pt; font-size: 8pt; }
 
+  /* On-screen preview (incl. mobile print-preview frame): show the full A4
+     page laid out at its natural width. The viewport meta (width=840) makes
+     mobile browsers fit the whole page into the screen instead of squeezing
+     the content into a narrow, oversized column. */
+  @media screen {
+    body { background: #e5e7eb; padding: 16px 0; }
+    .sheet { margin: 0 auto; width: 190mm; max-width: 190mm; }
+  }
+
   @media print {
     body { padding: 0; background: #fff; }
     .sheet { border: none; box-shadow: 0 0 0 2pt var(--accent); max-width: 100%; min-height: auto; }
     @page { size: A4 portrait; margin: 12mm; }
   }
-</style></head><body>
+</style></head><body class="${bn ? 'lang-bn' : 'lang-en'}">
 <div class="sheet">
   <div class="letterhead">
     <div class="logo-wrap">${logoBlock}</div>
