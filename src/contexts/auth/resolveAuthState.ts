@@ -48,26 +48,27 @@ export const fetchResolvedAuthState = async (userId: string) => {
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const rolesResult = await withTimeout(
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId),
-        'user_roles lookup'
-      );
+      const [rolesResult, profileResult] = await Promise.all([
+        withTimeout(
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId),
+          'user_roles lookup'
+        ),
+        withTimeout(
+          supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', userId)
+            .maybeSingle(),
+          'profiles lookup'
+        ),
+      ]);
 
       if (rolesResult.error) {
         throw rolesResult.error;
       }
-
-      const profileResult = await withTimeout(
-        supabase
-          .from('profiles')
-          .select('status')
-          .eq('id', userId)
-          .maybeSingle(),
-        'profiles lookup'
-      );
 
       if (profileResult.error) {
         throw profileResult.error;
