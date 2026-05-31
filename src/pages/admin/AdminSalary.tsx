@@ -1998,7 +1998,7 @@ const AdminSalary = () => {
           <div class="info-cell"><span class="lbl">${bn ? 'স্টাফ আইডি' : 'Staff ID'}</span><span class="val">${staffMember.staff_id || '-'}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'পদবি' : 'Designation'}</span><span class="val">${getDesignation(staffMember.designation)}</span></div>
           <div class="info-cell"><span class="lbl">${bn ? 'বিভাগ' : 'Department'}</span><span class="val">${getDepartmentLabel(staffMember.staff_category || staffMember.department)}</span></div>
-          <div class="info-cell"><span class="lbl">${bn ? 'ডিউটি সময়' : 'Duty Hours'}</span><span class="val">${(() => {
+          <div class="info-cell"><span class="lbl">${bn ? 'ক্লাসের সময়' : 'Class Hours'}</span><span class="val">${(() => {
             const t = getDutyTimeWithSource(staffMember);
             return `${fmt(t.start)} – ${fmt(t.end)}`;
           })()}</span></div>
