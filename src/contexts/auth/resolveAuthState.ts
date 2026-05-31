@@ -12,7 +12,7 @@ const withTimeout = async <T>(promise: PromiseLike<T>, label: string): Promise<T
   ]);
 };
 
-const isTransientAuthStateError = (error: unknown) => {
+export const isTransientAuthStateError = (error: unknown) => {
   const message = [
     error instanceof Error ? error.message : '',
     typeof error === 'object' && error !== null && 'details' in error ? String((error as { details?: unknown }).details ?? '') : '',
@@ -25,7 +25,12 @@ const isTransientAuthStateError = (error: unknown) => {
     message.includes('aborterror') ||
     message.includes('lock broken') ||
     message.includes('timeout') ||
+    message.includes('timed out') ||
     message.includes('request was aborted') ||
+    message.includes('load failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('network error') ||
     message.includes('jwt expired') ||
     message.includes('pgrst303')
   );
