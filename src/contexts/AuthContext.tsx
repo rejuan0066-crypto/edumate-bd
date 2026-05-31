@@ -221,6 +221,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (lastResolved?.userId === user.id) {
           setRole(lastResolved.role);
           setUserStatus(lastResolved.userStatus);
+        } else if (isTransientAuthStateError(error)) {
+          // Network/timeout while resolving roles right after login. Do NOT sign
+          // the user out (that caused the "login then instantly logout" loop on
+          // slow connections). Instead keep the session and retry with backoff.
+          const retry = authResolveRetryRef.current;
+          if (retry.key !== fetchKey) {
+            authResolveRetryRef.current = { key: fetchKey, count: 0 };
+          }
+          if (authResolveRetryRef.current.count < 5) {
+            authResolveRetryRef.current.count += 1;
+            const delay = Math.min(1500 * authResolveRetryRef.current.count, 6000);
+            console.warn(
+              `Transient error resolving auth state, retrying in ${delay}ms (attempt ${authResolveRetryRef.current.count}/5)`
+            );
+            fetchedForSession.current = null;
+            if (authResolveRetryTimer.current) clearTimeout(authResolveRetryTimer.current);
+            authResolveRetryTimer.current = setTimeout(() => {
+              setResolveNonce((n) => n + 1);
+            }, delay);
+            return;
+          }
+          console.warn('Exhausted auth-state retries; keeping session signed in without resolved role.');
         } else {
           console.warn('Unable to resolve auth state for active session, clearing local session to avoid stuck loading state.');
           fetchedForSession.current = null;
