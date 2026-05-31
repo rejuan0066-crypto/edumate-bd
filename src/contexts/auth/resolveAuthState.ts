@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const AUTH_STATE_REQUEST_TIMEOUT_MS = 6000;
+const AUTH_STATE_REQUEST_TIMEOUT_MS = 12000;
 
 const withTimeout = async <T>(promise: PromiseLike<T>, label: string): Promise<T> => {
   return await Promise.race<T>([
