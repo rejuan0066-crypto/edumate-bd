@@ -112,7 +112,24 @@ const Login = () => {
     if (error) {
       try { sessionStorage.removeItem(LOGIN_OTP_FLAG); } catch { /* ignore */ }
       setPendingOtp(false);
-      toast.error(language === 'bn' ? 'ইউজারনেম বা পাসওয়ার্ড ভুল' : 'Invalid credentials');
+      const rawMsg = (error instanceof Error ? error.message : String((error as { message?: unknown })?.message ?? error ?? '')).toLowerCase();
+      const isNetworkError =
+        rawMsg.includes('load failed') ||
+        rawMsg.includes('failed to fetch') ||
+        rawMsg.includes('networkerror') ||
+        rawMsg.includes('network error') ||
+        rawMsg.includes('fetch failed') ||
+        rawMsg.includes('timeout') ||
+        rawMsg.includes('timed out');
+      if (isNetworkError) {
+        toast.error(
+          language === 'bn'
+            ? 'ইন্টারনেট সংযোগে সমস্যা হচ্ছে। একটু পরে আবার চেষ্টা করুন।'
+            : 'Network problem. Please check your connection and try again.'
+        );
+      } else {
+        toast.error(language === 'bn' ? 'ইউজারনেম বা পাসওয়ার্ড ভুল' : 'Invalid credentials');
+      }
     }
     // On success: useEffect above will resolve role and open OTP dialog if needed.
   };

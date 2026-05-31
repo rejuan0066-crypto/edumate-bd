@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchResolvedAuthState } from '@/contexts/auth/resolveAuthState';
+import { fetchResolvedAuthState, isTransientAuthStateError } from '@/contexts/auth/resolveAuthState';
 
 export interface AuthContextType {
   user: User | null;
@@ -23,12 +23,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [resolveNonce, setResolveNonce] = useState(0);
 
   const fetchedForSession = useRef<string | null>(null);
   const lastHandledAccessToken = useRef<string | null>(null);
   const sessionRef = useRef<Session | null>(null);
   const userRef = useRef<User | null>(null);
   const lastResolvedAccessState = useRef<{ userId: string; role: string | null; userStatus: string | null } | null>(null);
+  const authResolveRetryRef = useRef<{ key: string; count: number }>({ key: '', count: 0 });
+  const authResolveRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     userRef.current = user;
@@ -218,6 +221,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (lastResolved?.userId === user.id) {
           setRole(lastResolved.role);
           setUserStatus(lastResolved.userStatus);
+        } else if (isTransientAuthStateError(error)) {
+          // Network/timeout while resolving roles right after login. Do NOT sign
+          // the user out (that caused the "login then instantly logout" loop on
+          // slow connections). Instead keep the session and retry with backoff.
+          const retry = authResolveRetryRef.current;
+          if (retry.key !== fetchKey) {
+            authResolveRetryRef.current = { key: fetchKey, count: 0 };
+          }
+          if (authResolveRetryRef.current.count < 5) {
+            authResolveRetryRef.current.count += 1;
+            const delay = Math.min(1500 * authResolveRetryRef.current.count, 6000);
+            console.warn(
+              `Transient error resolving auth state, retrying in ${delay}ms (attempt ${authResolveRetryRef.current.count}/5)`
+            );
+            fetchedForSession.current = null;
+            if (authResolveRetryTimer.current) clearTimeout(authResolveRetryTimer.current);
+            authResolveRetryTimer.current = setTimeout(() => {
+              setResolveNonce((n) => n + 1);
+            }, delay);
+            return;
+          }
+          console.warn('Exhausted auth-state retries; keeping session signed in without resolved role.');
         } else {
           console.warn('Unable to resolve auth state for active session, clearing local session to avoid stuck loading state.');
           fetchedForSession.current = null;
@@ -234,7 +259,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [authReady, user?.id, session?.access_token]);
+  }, [authReady, user?.id, session?.access_token, resolveNonce]);
 
   const loading = !authReady || profileLoading;
 

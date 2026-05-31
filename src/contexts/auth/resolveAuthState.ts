@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-const AUTH_STATE_REQUEST_TIMEOUT_MS = 6000;
+const AUTH_STATE_REQUEST_TIMEOUT_MS = 12000;
 
 const withTimeout = async <T>(promise: PromiseLike<T>, label: string): Promise<T> => {
   return await Promise.race<T>([
@@ -12,7 +12,7 @@ const withTimeout = async <T>(promise: PromiseLike<T>, label: string): Promise<T
   ]);
 };
 
-const isTransientAuthStateError = (error: unknown) => {
+export const isTransientAuthStateError = (error: unknown) => {
   const message = [
     error instanceof Error ? error.message : '',
     typeof error === 'object' && error !== null && 'details' in error ? String((error as { details?: unknown }).details ?? '') : '',
@@ -25,7 +25,12 @@ const isTransientAuthStateError = (error: unknown) => {
     message.includes('aborterror') ||
     message.includes('lock broken') ||
     message.includes('timeout') ||
+    message.includes('timed out') ||
     message.includes('request was aborted') ||
+    message.includes('load failed') ||
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('network error') ||
     message.includes('jwt expired') ||
     message.includes('pgrst303')
   );
@@ -43,26 +48,27 @@ export const fetchResolvedAuthState = async (userId: string) => {
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      const rolesResult = await withTimeout(
-        supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId),
-        'user_roles lookup'
-      );
+      const [rolesResult, profileResult] = await Promise.all([
+        withTimeout(
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId),
+          'user_roles lookup'
+        ),
+        withTimeout(
+          supabase
+            .from('profiles')
+            .select('status')
+            .eq('id', userId)
+            .maybeSingle(),
+          'profiles lookup'
+        ),
+      ]);
 
       if (rolesResult.error) {
         throw rolesResult.error;
       }
-
-      const profileResult = await withTimeout(
-        supabase
-          .from('profiles')
-          .select('status')
-          .eq('id', userId)
-          .maybeSingle(),
-        'profiles lookup'
-      );
 
       if (profileResult.error) {
         throw profileResult.error;
