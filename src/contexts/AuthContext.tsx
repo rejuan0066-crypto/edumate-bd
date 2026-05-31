@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [role, setRole] = useState<string | null>(null);
   const [userStatus, setUserStatus] = useState<string | null>(null);
+  const [resolveNonce, setResolveNonce] = useState(0);
 
   const fetchedForSession = useRef<string | null>(null);
   const lastHandledAccessToken = useRef<string | null>(null);
