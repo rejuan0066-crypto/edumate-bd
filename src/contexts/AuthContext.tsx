@@ -29,6 +29,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const sessionRef = useRef<Session | null>(null);
   const userRef = useRef<User | null>(null);
   const lastResolvedAccessState = useRef<{ userId: string; role: string | null; userStatus: string | null } | null>(null);
+  const authResolveRetryRef = useRef<{ key: string; count: number }>({ key: '', count: 0 });
+  const authResolveRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     userRef.current = user;
