@@ -1,7 +1,7 @@
 import { createContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchResolvedAuthState } from '@/contexts/auth/resolveAuthState';
+import { fetchResolvedAuthState, isTransientAuthStateError } from '@/contexts/auth/resolveAuthState';
 
 export interface AuthContextType {
   user: User | null;
