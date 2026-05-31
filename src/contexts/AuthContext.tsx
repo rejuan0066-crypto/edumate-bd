@@ -259,7 +259,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [authReady, user?.id, session?.access_token]);
+  }, [authReady, user?.id, session?.access_token, resolveNonce]);
 
   const loading = !authReady || profileLoading;
 
