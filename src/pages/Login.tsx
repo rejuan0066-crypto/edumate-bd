@@ -19,6 +19,26 @@ import { supabase } from '@/integrations/supabase/client';
 
 const LOGIN_OTP_FLAG = 'pending_login_otp_v1';
 
+// Synchronously detect whether the browser has a persisted Supabase session.
+// If there is NO stored token, the visitor is definitely logged out, so we can
+// render the login form immediately instead of flashing a full-page loader
+// while auth initializes (that loader -> form swap looks like a page reload).
+function hasStoredSession(): boolean {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && /^sb-.*-auth-token$/.test(key)) {
+        const val = localStorage.getItem(key);
+        if (val && val !== 'null' && val.length > 2) return true;
+      }
+    }
+  } catch {
+    // localStorage blocked → assume a session might exist (safer: keep loader)
+    return true;
+  }
+  return false;
+}
+
 function mapRoleToOtpScope(role: string | null | undefined): OtpRoleScope | undefined {
   if (!role) return undefined;
   const r = role.toLowerCase();
