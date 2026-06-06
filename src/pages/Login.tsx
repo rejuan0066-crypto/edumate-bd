@@ -57,6 +57,9 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
+  // Computed once on mount: is there a persisted session in this browser?
+  const [storedSession] = useState<boolean>(() => hasStoredSession());
+
 
   // OTP 2FA gate
   const [otpOpen, setOtpOpen] = useState(false);
