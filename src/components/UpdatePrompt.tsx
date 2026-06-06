@@ -176,8 +176,8 @@ const UpdatePrompt = () => {
 
   const handleUpdate = async () => {
     setUpdating(true);
-    setProgress(5);
-    setStatusText(bn ? 'ক্যাশ পরিষ্কার করা হচ্ছে…' : 'Clearing cache…');
+    setProgress(20);
+    setStatusText(bn ? 'আপডেট প্রস্তুত হচ্ছে…' : 'Preparing update…');
     pwaLog('info', 'update_start', {
       url: window.location.href,
       standalone: isStandalonePWA(),
@@ -185,97 +185,58 @@ const UpdatePrompt = () => {
       ua: navigator.userAgent,
     });
 
-    // 1) Clear window-side Cache Storage
-    try {
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        pwaLog('info', 'cache_clear_start', { count: keys.length, keys });
-        let done = 0;
-        for (const k of keys) {
-          await caches.delete(k);
-          done++;
-          setProgress(5 + Math.round((done / Math.max(keys.length, 1)) * 35));
-        }
-        pwaLog('info', 'cache_clear_done', { cleared: done });
+    // Production-safe update: NO forced cache clears.
+    // The new service worker (with a bumped CACHE_VERSION) cleans its own stale
+    // caches on activate, and navigations are network-first — so the fresh HTML
+    // and its new hashed chunks always load. We only need to activate the waiting
+    // worker and reload exactly once when it takes control.
+    let didReload = false;
+    const reloadOnce = (reason: string) => {
+      if (didReload) return;
+      didReload = true;
+      pwaLog('info', 'update_reload', { reason });
+      try {
+        window.location.reload();
+      } catch {
+        /* no-op */
       }
-    } catch (e) {
-      pwaLog('error', 'cache_clear_fail', { err: String(e) });
-    }
+    };
 
-    setProgress(45);
+    setProgress(55);
     setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
 
-    // 2) Tell SW to clear its caches too (covers mobile where window+SW caches differ)
-    try {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        pwaLog('info', 'sw_postmessage_clear', {
-          controller_state: navigator.serviceWorker.controller.state,
-        });
-        await new Promise<void>((resolve) => {
-          const ch = new MessageChannel();
-          const t = setTimeout(() => {
-            pwaLog('warn', 'sw_clear_timeout');
-            resolve();
-          }, 1500);
-          ch.port1.onmessage = (ev) => {
-            clearTimeout(t);
-            pwaLog('info', 'sw_clear_reply', { data: ev.data });
-            resolve();
-          };
-          navigator.serviceWorker.controller!.postMessage({ type: 'CLEAR_CACHES' }, [ch.port2]);
-        });
-      } else {
-        pwaLog('info', 'sw_no_controller');
-      }
-    } catch (e) {
-      pwaLog('error', 'sw_clear_fail', { err: String(e) });
-    }
-
-    setProgress(65);
-
-    // 3) Force SW update + activate any waiting worker
-    let didReloadViaController = false;
     try {
       if ('serviceWorker' in navigator) {
-        // One-shot reload when the new SW takes control (mobile-safe path)
-        const onControllerChange = () => {
-          if (didReloadViaController) return;
-          didReloadViaController = true;
-          pwaLog('info', 'controllerchange_reload');
-          try {
-            const u = new URL(window.location.href);
-            u.searchParams.set('_v', Date.now().toString());
-            window.location.replace(u.toString());
-          } catch {
-            window.location.reload();
-          }
-        };
-        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
+        // Reload exactly once when the new worker takes control.
+        navigator.serviceWorker.addEventListener(
+          'controllerchange',
+          () => reloadOnce('controllerchange'),
+          { once: true }
+        );
 
         const regs = await navigator.serviceWorker.getRegistrations();
-        pwaLog('info', 'sw_registrations', {
-          count: regs.length,
-          regs: regs.map(describeReg),
-        });
-        await Promise.all(regs.map(async (r) => {
-          try {
-            await r.update();
-            pwaLog('info', 'sw_update_done', describeReg(r));
-          } catch (e) {
-            pwaLog('warn', 'sw_update_fail', { err: String(e) });
-          }
-          const waiting = r.waiting || r.installing;
-          if (waiting) {
+        pwaLog('info', 'sw_registrations', { count: regs.length, regs: regs.map(describeReg) });
+        await Promise.all(
+          regs.map(async (r) => {
             try {
-              waiting.postMessage({ type: 'SKIP_WAITING' });
-              pwaLog('info', 'skip_waiting_sent', { state: waiting.state });
+              await r.update();
+              pwaLog('info', 'sw_update_done', describeReg(r));
             } catch (e) {
-              pwaLog('warn', 'skip_waiting_fail', { err: String(e) });
+              pwaLog('warn', 'sw_update_fail', { err: String(e) });
             }
-          } else {
-            pwaLog('info', 'no_waiting_worker');
-          }
-        }));
+            const waiting = r.waiting || r.installing;
+            if (waiting) {
+              try {
+                waiting.postMessage({ type: 'SKIP_WAITING' });
+                pwaLog('info', 'skip_waiting_sent', { state: waiting.state });
+              } catch (e) {
+                pwaLog('warn', 'skip_waiting_fail', { err: String(e) });
+              }
+            } else {
+              pwaLog('info', 'no_waiting_worker');
+            }
+          })
+        );
       } else {
         pwaLog('info', 'sw_unsupported');
       }
@@ -283,33 +244,15 @@ const UpdatePrompt = () => {
       pwaLog('error', 'sw_phase_fail', { err: String(e) });
     }
 
-    setProgress(90);
-    setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
     setProgress(100);
+    setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
 
-    // 4) Fallback hard reload — shorter timeout so it always fires reliably,
-    //    even when controllerchange never triggers (no waiting SW, identical SW build,
-    //    iOS PWA quirks, etc.). The cache-busted URL forces a fresh shell fetch.
-    const doReload = () => {
-      if (didReloadViaController) return;
-      didReloadViaController = true;
-      pwaLog('info', 'fallback_reload_600ms');
-      try {
-        const u = new URL(window.location.href);
-        u.searchParams.set('_v', Date.now().toString());
-        try { localStorage.removeItem(BUILD_ID_KEY); } catch {}
-        window.location.replace(u.toString());
-      } catch {
-        window.location.reload();
-      }
-    };
-    setTimeout(doReload, 600);
-    // Safety net in case the first reload was suppressed by the browser
-    setTimeout(() => {
-      pwaLog('warn', 'safety_net_reload_2500ms');
-      try { window.location.reload(); } catch {}
-    }, 2500);
+    // Fallback single reload if no waiting worker existed (already up to date SW,
+    // or controllerchange never fires). Network-first navigation guarantees the
+    // fresh shell loads — no cache busting needed.
+    setTimeout(() => reloadOnce('fallback'), 1200);
   };
+
 
   // Floating update button: ALWAYS clickable in the installed PWA.
   // - If we already know an update is available → install immediately.
