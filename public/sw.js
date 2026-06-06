@@ -1,22 +1,23 @@
-// Service Worker — PWA install + Web Push + smart pre-cache
+// Service Worker — PWA install + Web Push + production-safe caching
 //
-// Strategy:
-//  - Pre-cache app shell ("/", manifest, icons) on install so the very first
-//    PWA launch paints instantly from cache.
-//  - Navigations: stale-while-revalidate. We serve the cached "/" immediately
-//    (instant Home), then refresh it in the background. New deploys land on
-//    the next launch — old hashed chunks are cleaned via cache versioning.
+// Strategy (production-safe, no forced cache clears, no reload loops):
+//  - Navigations (HTML): NETWORK-FIRST. Always fetch fresh HTML so a new deploy
+//    immediately serves the new shell referencing the new hashed chunks. The
+//    cached "/" is only used as an OFFLINE fallback. This prevents the classic
+//    "stale shell points at deleted chunks" white-screen / reload loop.
 //  - Hashed build assets (/assets/*-[hash].js|css): cache-first, immutable.
 //  - Images/fonts: stale-while-revalidate.
 //  - Supabase / cross-origin API: never touched.
 //
-// Bump CACHE_VERSION whenever you change the SW logic.
+// Stale caches are cleaned ONLY by version bump on activate (targeted), never by
+// blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
+
 
 // Files we want available offline / instantly on first PWA launch
 const PRECACHE_URLS = [
@@ -163,65 +164,44 @@ async function cacheFirst(req, cacheName) {
   }
 }
 
-// Navigation handler: try preload/network fast, fall back to cached "/"
+// Navigation handler: NETWORK-FIRST.
+// Always try the network so a fresh deploy serves the new HTML shell (and its new
+// hashed chunks) immediately. The cached "/" is used ONLY as an offline fallback.
+// This is what prevents reload loops / white screens after deploy.
 async function handleNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
-  const cachedShell = await cache.match('/');
   const reqUrl = new URL(event.request.url);
   const isRootNav = reqUrl.pathname === '/' || reqUrl.pathname === '';
 
-  const networkPromise = (async () => {
-    try {
-      const preload = event.preloadResponse ? await event.preloadResponse : null;
-      const res = preload || (await fetch(event.request));
-      // ONLY update "/" shell when the request itself was for "/" AND response
-      // was a clean 200 (not a redirect, not an auth-gated page). This prevents
-      // poisoning the shell cache with login redirects or deep-page HTML.
-      if (
-        res &&
-        res.ok &&
-        res.status === 200 &&
-        res.type !== 'opaqueredirect' &&
-        !res.redirected &&
-        isRootNav &&
-        event.request.mode === 'navigate'
-      ) {
-        try { await cache.put('/', res.clone()); } catch (_) {}
-      }
-      return res;
-    } catch (_) {
-      return null;
+  try {
+    const preload = event.preloadResponse ? await event.preloadResponse : null;
+    const res = preload || (await fetch(event.request));
+
+    // Keep an up-to-date copy of the root shell for offline use ONLY when the
+    // response is a clean 200 for "/" (never redirects / auth-gated pages).
+    if (
+      res &&
+      res.ok &&
+      res.status === 200 &&
+      res.type !== 'opaqueredirect' &&
+      !res.redirected &&
+      isRootNav &&
+      event.request.mode === 'navigate'
+    ) {
+      try { await cache.put('/', res.clone()); } catch (_) {}
     }
-  })();
-
-  if (!cachedShell) {
-    const res = await networkPromise;
-    if (res) return res;
-    const offline = await cache.match(OFFLINE_URL);
-    return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
-  }
-
-  // For non-root navigations, always prefer network — never serve cached "/" for /admin/x etc.
-  if (!isRootNav) {
-    const res = await networkPromise;
-    if (res) return res;
-    if (!self.navigator.onLine) {
-      const offline = await cache.match(OFFLINE_URL);
-      if (offline) return offline;
-    }
-    return cachedShell;
-  }
-
-  // Root nav: give network a brief head start, else serve cached shell
-  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
-  const winner = await Promise.race([networkPromise, timeoutPromise]);
-  if (winner) return winner;
-  if (!self.navigator.onLine) {
+    return res;
+  } catch (_) {
+    // Network failed → offline fallback path
+    const cachedShell = await cache.match('/');
+    if (cachedShell && isRootNav) return cachedShell;
     const offline = await cache.match(OFFLINE_URL);
     if (offline) return offline;
+    if (cachedShell) return cachedShell;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
   }
-  return cachedShell;
 }
+
 
 // ───────── Fetch ─────────
 
