@@ -111,13 +111,18 @@ const Login = () => {
   // do NOT show a full-page loader. Otherwise the user sees a blank loader
   // between clicking "Sign in" and the OTP dialog appearing.
   if (!pendingOtp && !otpGateActive) {
-    if (authLoading || (user && !hasResolvedAuthRedirectState({ role, userStatus }))) {
+    // Only show the full-page loader if this browser actually has a stored
+    // session that might resolve to an authenticated user. Logged-out visitors
+    // (no stored token) get the login form immediately — no loader -> form
+    // flash that looks like a second page reload.
+    if (storedSession && (authLoading || (user && !hasResolvedAuthRedirectState({ role, userStatus })))) {
       return <PageLoader />;
     }
-    if (user) {
+    if (user && hasResolvedAuthRedirectState({ role, userStatus })) {
       return <Navigate to={getAuthenticatedHomePath({ role, userStatus })} replace />;
     }
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
