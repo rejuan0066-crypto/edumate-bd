@@ -55,27 +55,6 @@
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Cache-busting: detect new build and clear stale caches
-      (function () {
-        try {
-          const KEY = 'app_build_id';
-          const scripts = document.getElementsByTagName('script');
-          let buildId = '';
-          for (const s of scripts) {
-            const src = s.getAttribute('src') || '';
-            const m = src.match(/assets\/[^"']+-([a-zA-Z0-9]+)\.js/);
-            if (m) { buildId = m[1]; break; }
-          }
-          if (buildId) {
-            const stored = localStorage.getItem(KEY);
-            if (stored && stored !== buildId && 'caches' in window) {
-              caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
-            }
-            localStorage.setItem(KEY, buildId);
-          }
-        } catch (_) {}
-      })();
-    </script>
   </body>
 </html>
+
