@@ -164,65 +164,44 @@ async function cacheFirst(req, cacheName) {
   }
 }
 
-// Navigation handler: try preload/network fast, fall back to cached "/"
+// Navigation handler: NETWORK-FIRST.
+// Always try the network so a fresh deploy serves the new HTML shell (and its new
+// hashed chunks) immediately. The cached "/" is used ONLY as an offline fallback.
+// This is what prevents reload loops / white screens after deploy.
 async function handleNavigation(event) {
   const cache = await caches.open(SHELL_CACHE);
-  const cachedShell = await cache.match('/');
   const reqUrl = new URL(event.request.url);
   const isRootNav = reqUrl.pathname === '/' || reqUrl.pathname === '';
 
-  const networkPromise = (async () => {
-    try {
-      const preload = event.preloadResponse ? await event.preloadResponse : null;
-      const res = preload || (await fetch(event.request));
-      // ONLY update "/" shell when the request itself was for "/" AND response
-      // was a clean 200 (not a redirect, not an auth-gated page). This prevents
-      // poisoning the shell cache with login redirects or deep-page HTML.
-      if (
-        res &&
-        res.ok &&
-        res.status === 200 &&
-        res.type !== 'opaqueredirect' &&
-        !res.redirected &&
-        isRootNav &&
-        event.request.mode === 'navigate'
-      ) {
-        try { await cache.put('/', res.clone()); } catch (_) {}
-      }
-      return res;
-    } catch (_) {
-      return null;
+  try {
+    const preload = event.preloadResponse ? await event.preloadResponse : null;
+    const res = preload || (await fetch(event.request));
+
+    // Keep an up-to-date copy of the root shell for offline use ONLY when the
+    // response is a clean 200 for "/" (never redirects / auth-gated pages).
+    if (
+      res &&
+      res.ok &&
+      res.status === 200 &&
+      res.type !== 'opaqueredirect' &&
+      !res.redirected &&
+      isRootNav &&
+      event.request.mode === 'navigate'
+    ) {
+      try { await cache.put('/', res.clone()); } catch (_) {}
     }
-  })();
-
-  if (!cachedShell) {
-    const res = await networkPromise;
-    if (res) return res;
-    const offline = await cache.match(OFFLINE_URL);
-    return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
-  }
-
-  // For non-root navigations, always prefer network — never serve cached "/" for /admin/x etc.
-  if (!isRootNav) {
-    const res = await networkPromise;
-    if (res) return res;
-    if (!self.navigator.onLine) {
-      const offline = await cache.match(OFFLINE_URL);
-      if (offline) return offline;
-    }
-    return cachedShell;
-  }
-
-  // Root nav: give network a brief head start, else serve cached shell
-  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 1200));
-  const winner = await Promise.race([networkPromise, timeoutPromise]);
-  if (winner) return winner;
-  if (!self.navigator.onLine) {
+    return res;
+  } catch (_) {
+    // Network failed → offline fallback path
+    const cachedShell = await cache.match('/');
+    if (cachedShell && isRootNav) return cachedShell;
     const offline = await cache.match(OFFLINE_URL);
     if (offline) return offline;
+    if (cachedShell) return cachedShell;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
   }
-  return cachedShell;
 }
+
 
 // ───────── Fetch ─────────
 
