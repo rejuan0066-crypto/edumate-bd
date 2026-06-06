@@ -1,22 +1,23 @@
-// Service Worker — PWA install + Web Push + smart pre-cache
+// Service Worker — PWA install + Web Push + production-safe caching
 //
-// Strategy:
-//  - Pre-cache app shell ("/", manifest, icons) on install so the very first
-//    PWA launch paints instantly from cache.
-//  - Navigations: stale-while-revalidate. We serve the cached "/" immediately
-//    (instant Home), then refresh it in the background. New deploys land on
-//    the next launch — old hashed chunks are cleaned via cache versioning.
+// Strategy (production-safe, no forced cache clears, no reload loops):
+//  - Navigations (HTML): NETWORK-FIRST. Always fetch fresh HTML so a new deploy
+//    immediately serves the new shell referencing the new hashed chunks. The
+//    cached "/" is only used as an OFFLINE fallback. This prevents the classic
+//    "stale shell points at deleted chunks" white-screen / reload loop.
 //  - Hashed build assets (/assets/*-[hash].js|css): cache-first, immutable.
 //  - Images/fonts: stale-while-revalidate.
 //  - Supabase / cross-origin API: never touched.
 //
-// Bump CACHE_VERSION whenever you change the SW logic.
+// Stale caches are cleaned ONLY by version bump on activate (targeted), never by
+// blanket clears on every load. Bump CACHE_VERSION whenever you change SW logic.
 
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const OFFLINE_URL = '/offline.html';
 const SHELL_CACHE = `subhania-shell-${CACHE_VERSION}`;
 const ASSET_CACHE = `subhania-assets-${CACHE_VERSION}`;
 const IMAGE_CACHE = `subhania-images-${CACHE_VERSION}`;
+
 
 // Files we want available offline / instantly on first PWA launch
 const PRECACHE_URLS = [
