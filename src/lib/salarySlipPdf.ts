@@ -235,16 +235,40 @@ export async function downloadSheetAsPdf(
         const availH = pdfHeight - margin * 2;
 
         for (let i = 0; i < targets.length; i++) {
-          const canvas = await html2canvas(targets[i], {
+          const target = targets[i];
+
+          // Scale the inner content to fit inside the fixed A4 box so dense pages
+          // never overflow the border and sparse pages keep the same frame.
+          const fit = target.querySelector('.print-fit') as HTMLElement | null;
+          if (fit) {
+            fit.style.transform = 'none';
+            const cs = iframe.contentWindow?.getComputedStyle(target);
+            const padTop = parseFloat(cs?.paddingTop || '0') || 0;
+            const padBottom = parseFloat(cs?.paddingBottom || '0') || 0;
+            const borderTop = parseFloat(cs?.borderTopWidth || '0') || 0;
+            const borderBottom = parseFloat(cs?.borderBottomWidth || '0') || 0;
+            const availInner = pageH - padTop - padBottom - borderTop - borderBottom;
+            const contentH = fit.scrollHeight;
+            if (contentH > availInner && contentH > 0) {
+              fit.style.transform = `scale(${availInner / contentH})`;
+            }
+          }
+
+          const canvas = await html2canvas(target, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
+            width: pageW,
+            height: pageH,
             windowWidth: pageW,
+            windowHeight: pageH,
             logging: false,
             imageTimeout: 5000,
           });
 
+          // Every canvas now shares the A4-landscape ratio, so all pages map to
+          // an identical rectangle → uniform margins across the whole document.
           const ratio = canvas.width / canvas.height;
           let drawW = availW;
           let drawH = drawW / ratio;
