@@ -1773,7 +1773,17 @@ const AdminSalary = () => {
       const fontFace = `@font-face{font-family:"SutonnyOMJ";src:url("${fontUrl}") format("truetype");font-display:swap;}`;
       html = html.replace('</style>', `${fontFace}</style>`);
       html = html.replace(/font-family:\s*'Noto Sans Bengali'/g, `font-family:'SutonnyOMJ','Noto Sans Bengali'`);
-      
+
+      // On mobile / installed PWA, window.open + print outputs the blank parent
+      // app page (iOS). Generate a real downloadable landscape PDF instead.
+      if (isMobileOrPwa()) {
+        const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
+        toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
+        await downloadSheetAsPdf(html, fname);
+        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+        return;
+      }
+
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(html);
