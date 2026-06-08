@@ -229,6 +229,7 @@ const AdminHealthRecords = () => {
   const [profForm, setProfForm] = useState<Partial<HealthProfile>>({ person_type: 'student' });
   const [profClassFilter, setProfClassFilter] = useState<string>('all');
   const [delProfId, setDelProfId] = useState<string | null>(null);
+  const [viewProf, setViewProf] = useState<HealthProfile | null>(null);
 
   const saveProf = useMutation({
     mutationFn: async (payload: Partial<HealthProfile>) => {
