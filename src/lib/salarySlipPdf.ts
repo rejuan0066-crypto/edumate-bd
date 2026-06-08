@@ -134,6 +134,133 @@ export async function downloadSlipAsPdf(
   });
 }
 
+/**
+ * Renders the full salary-SHEET HTML (A4 landscape, one `.salary-page` section
+ * per printed page) into a hidden iframe, captures each `.salary-page` with
+ * html2canvas, and saves a multi-page A4 LANDSCAPE PDF.
+ *
+ * Why: on iOS Safari / installed PWAs `window.open()` + `window.print()` prints
+ * the blank parent app page, so the sheet never appears. A downloadable PDF
+ * works reliably everywhere.
+ */
+export async function downloadSheetAsPdf(
+  htmlContent: string,
+  filename: string = 'salary-sheet.pdf',
+): Promise<void> {
+  // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
+  let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
+  cleanHtml = cleanHtml.replace(/@media\s+screen\s*\{([\s\S]*?)\n\s*\}/g, '');
+
+  // A4 landscape at 96dpi ≈ 1123px wide.
+  const pageW = 1123;
+
+  const pdfOverrides = `
+    <style>
+      html, body { background:#fff !important; margin:0 !important; padding:0 !important; width:${pageW}px !important; }
+      .print-settings, [data-print-settings] { display:none !important; }
+      .sheet { width:${pageW}px !important; max-width:${pageW}px !important; margin:0 auto !important; }
+      .salary-page { box-shadow:none !important; }
+      * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
+    </style>
+  `;
+  cleanHtml = cleanHtml.replace('</head>', pdfOverrides + '</head>');
+
+  return new Promise((resolve, reject) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${pageW}px;height:794px;border:none;visibility:hidden;`;
+    document.body.appendChild(iframe);
+
+    let hasCaptured = false;
+    let isCleanedUp = false;
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    };
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      cleanup();
+      reject(new Error('Could not access iframe'));
+      return;
+    }
+
+    iframeDoc.open();
+    iframeDoc.write(cleanHtml);
+    iframeDoc.close();
+
+    const captureAndDownload = async () => {
+      if (hasCaptured) return;
+      hasCaptured = true;
+      try {
+        if (iframe.contentWindow?.document?.fonts) {
+          await iframe.contentWindow.document.fonts.ready;
+        }
+        const images = Array.from(iframeDoc.images || []);
+        await Promise.all(
+          images.map(
+            (img) =>
+              new Promise<void>((res) => {
+                if (img.complete) { res(); return; }
+                img.onload = () => res();
+                img.onerror = () => res();
+              }),
+          ),
+        );
+        await new Promise((r) => setTimeout(r, 800));
+
+        const pages = Array.from(iframeDoc.querySelectorAll('.salary-page')) as HTMLElement[];
+        const targets = pages.length > 0
+          ? pages
+          : [((iframeDoc.querySelector('.sheet') as HTMLElement) || iframeDoc.body)];
+
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdfWidth = 297;
+        const pdfHeight = 210;
+        const margin = 8;
+        const availW = pdfWidth - margin * 2;
+        const availH = pdfHeight - margin * 2;
+
+        for (let i = 0; i < targets.length; i++) {
+          const canvas = await html2canvas(targets[i], {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            windowWidth: pageW,
+            logging: false,
+            imageTimeout: 5000,
+          });
+
+          const ratio = canvas.width / canvas.height;
+          let drawW = availW;
+          let drawH = drawW / ratio;
+          if (drawH > availH) {
+            drawH = availH;
+            drawW = drawH * ratio;
+          }
+          const offsetX = margin + (availW - drawW) / 2;
+          const offsetY = margin + (availH - drawH) / 2;
+
+          if (i > 0) pdf.addPage('a4', 'landscape');
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
+        }
+
+        pdf.save(filename);
+        resolve();
+      } catch (err) {
+        reject(err);
+      } finally {
+        cleanup();
+      }
+    };
+
+    iframe.onload = () => { void captureAndDownload(); };
+    setTimeout(() => { void captureAndDownload(); }, 4000);
+  });
+}
+
 /** True when running on a mobile device or an installed standalone PWA. */
 export function isMobileOrPwa(): boolean {
   try {
