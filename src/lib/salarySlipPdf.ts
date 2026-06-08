@@ -151,15 +151,28 @@ export async function downloadSheetAsPdf(
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
   cleanHtml = cleanHtml.replace(/@media\s+screen\s*\{([\s\S]*?)\n\s*\}/g, '');
 
-  // A4 landscape at 96dpi ≈ 1123px wide.
+  // A4 landscape at 96dpi: 1123px x 794px. Lock EVERY page to this exact box so
+  // all captured pages share one aspect ratio → identical margins in the PDF.
   const pageW = 1123;
+  const pageH = 794;
 
   const pdfOverrides = `
     <style>
       html, body { background:#fff !important; margin:0 !important; padding:0 !important; width:${pageW}px !important; }
       .print-settings, [data-print-settings] { display:none !important; }
       .sheet { width:${pageW}px !important; max-width:${pageW}px !important; margin:0 auto !important; }
-      .salary-page { box-shadow:none !important; }
+      .salary-page {
+        box-shadow:none !important;
+        width:${pageW}px !important;
+        height:${pageH}px !important;
+        min-height:${pageH}px !important;
+        max-height:${pageH}px !important;
+        margin:0 auto !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+        position:relative !important;
+      }
+      .print-fit { transform-origin:top left !important; width:100% !important; }
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     </style>
   `;
@@ -167,7 +180,7 @@ export async function downloadSheetAsPdf(
 
   return new Promise((resolve, reject) => {
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${pageW}px;height:794px;border:none;visibility:hidden;`;
+    iframe.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${pageW}px;height:${pageH}px;border:none;visibility:hidden;`;
     document.body.appendChild(iframe);
 
     let hasCaptured = false;
@@ -222,16 +235,40 @@ export async function downloadSheetAsPdf(
         const availH = pdfHeight - margin * 2;
 
         for (let i = 0; i < targets.length; i++) {
-          const canvas = await html2canvas(targets[i], {
+          const target = targets[i];
+
+          // Scale the inner content to fit inside the fixed A4 box so dense pages
+          // never overflow the border and sparse pages keep the same frame.
+          const fit = target.querySelector('.print-fit') as HTMLElement | null;
+          if (fit) {
+            fit.style.transform = 'none';
+            const cs = iframe.contentWindow?.getComputedStyle(target);
+            const padTop = parseFloat(cs?.paddingTop || '0') || 0;
+            const padBottom = parseFloat(cs?.paddingBottom || '0') || 0;
+            const borderTop = parseFloat(cs?.borderTopWidth || '0') || 0;
+            const borderBottom = parseFloat(cs?.borderBottomWidth || '0') || 0;
+            const availInner = pageH - padTop - padBottom - borderTop - borderBottom;
+            const contentH = fit.scrollHeight;
+            if (contentH > availInner && contentH > 0) {
+              fit.style.transform = `scale(${availInner / contentH})`;
+            }
+          }
+
+          const canvas = await html2canvas(target, {
             scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
+            width: pageW,
+            height: pageH,
             windowWidth: pageW,
+            windowHeight: pageH,
             logging: false,
             imageTimeout: 5000,
           });
 
+          // Every canvas now shares the A4-landscape ratio, so all pages map to
+          // an identical rectangle → uniform margins across the whole document.
           const ratio = canvas.width / canvas.height;
           let drawW = availW;
           let drawH = drawW / ratio;
