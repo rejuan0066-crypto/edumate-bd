@@ -865,6 +865,128 @@ const AdminHealthRecords = () => {
         </TabsContent>
       </Tabs>
 
+      {/* ─── PROFILE DETAILS (READ-ONLY) ──────────────────────────────── */}
+      <Dialog open={!!viewProf} onOpenChange={(o) => { if (!o) setViewProf(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HeartPulse className="h-5 w-5 text-primary" />
+              {bn ? 'প্রোফাইল বিস্তারিত' : 'Profile Details'}
+            </DialogTitle>
+          </DialogHeader>
+          {viewProf && (() => {
+            const matchesPerson = makePersonMatcher(resolvePersonType(viewProf));
+            const pVisits = visits.filter(matchesPerson).sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime());
+            const pVaccs = vaccinations.filter(matchesPerson).sort((a, b) => new Date(b.vaccination_date).getTime() - new Date(a.vaccination_date).getTime());
+            const fmtD = (d?: string | null) => d ? new Date(d).toLocaleDateString('en-GB') : '—';
+            const Row = ({ label, value }: { label: string; value?: string | number | null }) => (
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-muted-foreground">{label}</span>
+                <span className="text-sm font-medium">{value !== null && value !== undefined && value !== '' ? value : '—'}</span>
+              </div>
+            );
+            return (
+              <div className="space-y-5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-base font-semibold">{personLabel(viewProf)}</span>
+                  {personTypeBadge(viewProf)}
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{bn ? 'মৌলিক তথ্য' : 'Basic Info'}</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <Row label={bn ? 'রক্তের গ্রুপ' : 'Blood Group'} value={viewProf.blood_group} />
+                    <Row label={bn ? 'উচ্চতা (সেমি)' : 'Height (cm)'} value={viewProf.height_cm} />
+                    <Row label={bn ? 'ওজন (কেজি)' : 'Weight (kg)'} value={viewProf.weight_kg} />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{bn ? 'স্বাস্থ্য তথ্য' : 'Medical Info'}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Row label={bn ? 'এলার্জি' : 'Allergies'} value={viewProf.allergies} />
+                    <Row label={bn ? 'দীর্ঘমেয়াদি রোগ' : 'Chronic Conditions'} value={viewProf.chronic_conditions} />
+                    <Row label={bn ? 'বর্তমান ঔষধ' : 'Current Medications'} value={viewProf.current_medications} />
+                    <Row label={bn ? 'পারিবারিক ইতিহাস' : 'Family History'} value={viewProf.family_history} />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{bn ? 'জরুরি যোগাযোগ' : 'Emergency Contact'}</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <Row label={bn ? 'নাম' : 'Name'} value={viewProf.emergency_contact_name} />
+                    <Row label={bn ? 'ফোন' : 'Phone'} value={viewProf.emergency_contact_phone} />
+                    <Row label={bn ? 'সম্পর্ক' : 'Relation'} value={viewProf.emergency_contact_relation} />
+                  </div>
+                </div>
+
+                {viewProf.notes && (
+                  <div>
+                    <h4 className="text-sm font-semibold mb-1">{bn ? 'নোট' : 'Notes'}</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{viewProf.notes}</p>
+                  </div>
+                )}
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{bn ? `মেডিকেল ভিজিট (${pVisits.length})` : `Medical Visits (${pVisits.length})`}</h4>
+                  {pVisits.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{bn ? 'কোনো ভিজিট নেই' : 'No visits'}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {pVisits.slice(0, 10).map(v => (
+                        <div key={v.id} className="rounded-[20px] border p-3 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium">{fmtD(v.visit_date)}</span>
+                            <Badge variant={severityVariant(v.severity) as any}>{SEVERITY_OPTIONS.find(o => o.v === v.severity)?.[bn ? 'bn' : 'en'] || v.severity}</Badge>
+                          </div>
+                          {v.symptoms && <p className="text-muted-foreground mt-1">{bn ? 'উপসর্গ: ' : 'Symptoms: '}{v.symptoms}</p>}
+                          {v.diagnosis && <p className="text-muted-foreground">{bn ? 'রোগ নির্ণয়: ' : 'Diagnosis: '}{v.diagnosis}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">{bn ? `টিকা (${pVaccs.length})` : `Vaccinations (${pVaccs.length})`}</h4>
+                  {pVaccs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{bn ? 'কোনো টিকা নেই' : 'No vaccinations'}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {pVaccs.slice(0, 10).map(v => (
+                        <div key={v.id} className="rounded-[20px] border p-3 text-sm flex items-center justify-between gap-2">
+                          <span className="font-medium">{bn ? (v.vaccine_name_bn || v.vaccine_name) : v.vaccine_name} · {bn ? 'ডোজ ' : 'Dose '}{v.dose_number}</span>
+                          <span className="text-muted-foreground">{fmtD(v.vaccination_date)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { if (viewProf) printSummary(viewProf); }}>
+              <Printer className="h-4 w-4 mr-1" />{bn ? 'প্রিন্ট' : 'Print'}
+            </Button>
+            {canEditItem && viewProf && (
+              <Button onClick={() => {
+                const p = viewProf;
+                setEditProf(p);
+                setProfForm(p);
+                const stu = p.student_id ? students.find(s => s.id === p.student_id) : null;
+                setProfClassFilter(stu?.class_id || 'all');
+                setViewProf(null);
+                setProfDlg(true);
+              }}>
+                <Pencil className="h-4 w-4 mr-1" />{bn ? 'সম্পাদনা' : 'Edit'}
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => setViewProf(null)}>{bn ? 'বন্ধ' : 'Close'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ─── PROFILE DIALOG ────────────────────────────────────────────── */}
       <Dialog open={profDlg} onOpenChange={setProfDlg}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
