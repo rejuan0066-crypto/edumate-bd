@@ -710,13 +710,22 @@ const AdminHealthRecords = () => {
                     )}
                     {profiles.map(p => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{personLabel(p)}</TableCell>
+                        <TableCell
+                          className="font-medium cursor-pointer hover:text-primary hover:underline"
+                          onClick={() => setViewProf(p)}
+                          title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                        >
+                          {personLabel(p)}
+                        </TableCell>
                         <TableCell>{personTypeBadge(p)}</TableCell>
                         <TableCell>{p.blood_group || '—'}</TableCell>
                         <TableCell>{p.height_cm ? `${p.height_cm}cm` : '—'} / {p.weight_kg ? `${p.weight_kg}kg` : '—'}</TableCell>
                         <TableCell className="max-w-[200px] truncate">{p.allergies || '—'}</TableCell>
                         <TableCell>{p.emergency_contact_name ? `${p.emergency_contact_name} (${p.emergency_contact_phone || ''})` : '—'}</TableCell>
                         <TableCell className="text-right">
+                          <Button size="icon" variant="ghost" title={bn ? 'বিস্তারিত দেখুন' : 'View details'} onClick={() => setViewProf(p)}>
+                            <Eye className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button size="icon" variant="ghost" title={bn ? 'প্রিন্ট সারসংক্ষেপ' : 'Print Summary'} onClick={() => printSummary(p)}>
                             <Printer className="h-4 w-4 text-primary" />
                           </Button>
