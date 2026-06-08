@@ -151,15 +151,28 @@ export async function downloadSheetAsPdf(
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
   cleanHtml = cleanHtml.replace(/@media\s+screen\s*\{([\s\S]*?)\n\s*\}/g, '');
 
-  // A4 landscape at 96dpi ≈ 1123px wide.
+  // A4 landscape at 96dpi: 1123px x 794px. Lock EVERY page to this exact box so
+  // all captured pages share one aspect ratio → identical margins in the PDF.
   const pageW = 1123;
+  const pageH = 794;
 
   const pdfOverrides = `
     <style>
       html, body { background:#fff !important; margin:0 !important; padding:0 !important; width:${pageW}px !important; }
       .print-settings, [data-print-settings] { display:none !important; }
       .sheet { width:${pageW}px !important; max-width:${pageW}px !important; margin:0 auto !important; }
-      .salary-page { box-shadow:none !important; }
+      .salary-page {
+        box-shadow:none !important;
+        width:${pageW}px !important;
+        height:${pageH}px !important;
+        min-height:${pageH}px !important;
+        max-height:${pageH}px !important;
+        margin:0 auto !important;
+        overflow:hidden !important;
+        box-sizing:border-box !important;
+        position:relative !important;
+      }
+      .print-fit { transform-origin:top left !important; width:100% !important; }
       * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; color-adjust:exact !important; }
     </style>
   `;
