@@ -30,7 +30,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
-import { downloadSlipAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
+import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
