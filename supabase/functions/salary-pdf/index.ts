@@ -151,7 +151,9 @@ Deno.serve(async (req) => {
         // fall back to random sheetId
       }
     }
-    const issueDate = new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
+    const issueDate = (issueDateInput && String(issueDateInput).trim())
+      ? String(issueDateInput).trim()
+      : new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
 
     const escapeHtml = (val: unknown): string => String(val ?? "").replace(/[&<>"']/g, (ch) => ({
       "&": "&amp;",
