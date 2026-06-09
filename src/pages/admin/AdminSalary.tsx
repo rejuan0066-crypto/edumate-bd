@@ -980,6 +980,11 @@ const AdminSalary = () => {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
         const sName = s.name_bn || s.name_en || 'Unknown';
 
+        // Skip staff who had not joined by this month (don't generate for past months).
+        if (!hasJoinedByMonth(s)) continue;
+
+
+
         // Hard validation — skip on any error (don't generate corrupt data)
         const v = getAttendanceValidation(s);
         if (v.hasErrors) {
