@@ -304,6 +304,7 @@ export async function downloadSheetAsPdf(
         }
         resolve();
       } catch (err) {
+        if (targetWindow && !targetWindow.closed) targetWindow.close();
         reject(err);
       } finally {
         cleanup();
