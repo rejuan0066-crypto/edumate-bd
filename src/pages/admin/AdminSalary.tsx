@@ -488,6 +488,12 @@ const AdminSalary = () => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
+      if (!hasJoinedByMonth(s)) {
+        const jdLabel = s.joining_date ? String(s.joining_date).slice(0, 10) : '';
+        throw new Error(bn
+          ? `${sName} এই মাসের আগে যোগদান করেননি (যোগদান: ${jdLabel})`
+          : `${sName} had not joined before this month (joined: ${jdLabel})`);
+      }
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       // Hard validation — block on any data error
       const v = getAttendanceValidation(s);
@@ -654,6 +660,29 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
+  // Joining-date guard: a staff is only relevant for a salary month if they had
+  // already joined by the END of that month. New staff must NOT appear in months
+  // before their joining month, and their pay is counted from the joining date.
+  const monthEndDate = (() => {
+    const [yy, mm] = monthYear.split('-').map(Number);
+    const lastDay = new Date(yy, mm, 0).getDate();
+    return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
+  })();
+  const hasJoinedByMonth = (s: any): boolean => {
+    const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
+    if (!jd) return true; // unknown joining date → always include (legacy data)
+    return jd <= monthEndDate;
+  };
+  // First day this staff is counted within the selected month (joining date if
+  // they joined mid-month, otherwise the 1st).
+  const joinedFromDay = (s: any): number => {
+    const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
+    if (!jd) return 1;
+    if (jd <= `${monthYear}-01`) return 1;
+    if (jd > monthEndDate) return 32; // hasn't joined this month at all
+    return Number(jd.slice(8, 10)) || 1;
+  };
+
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
@@ -812,10 +841,15 @@ const AdminSalary = () => {
 
     // Untracked working days (no attendance record AND not a paid holiday)
     // → treated as absent so subtractive mode pro-rates correctly.
+    // Days BEFORE the staff's joining date are NOT counted as absent — instead
+    // they are tracked separately (preJoinDays) so pay is prorated from joining.
     const [yy, mm] = monthYear.split('-').map(Number);
     const lastDay = new Date(yy, mm, 0).getDate();
+    const firstCountedDay = joinedFromDay(staffMember);
     let untrackedAbsentDays = 0;
+    let preJoinDays = 0;
     for (let d = 1; d <= lastDay; d++) {
+      if (d < firstCountedDay) { preJoinDays += 1; continue; }
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
       if (paidHolidaySet.has(dateStr)) continue;
@@ -825,7 +859,7 @@ const AdminSalary = () => {
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
-      untrackedAbsentDays, recordedAbsent,
+      untrackedAbsentDays, recordedAbsent, preJoinDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
@@ -863,7 +897,11 @@ const AdminSalary = () => {
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
-    const workingDays = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    // Pre-joining days are excluded from this month's working days so a mid-month
+    // joiner is paid only from the joining date onward.
+    const preJoinDays = attStats.preJoinDays || 0;
+    const workingDays = daysInMonth - preJoinDays;
 
     const bonus = 0;
     const otherAllowance = 0;
@@ -874,13 +912,15 @@ const AdminSalary = () => {
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
+    // Proration for the joining month: deduct the value of days before joining.
+    const preJoinDeduction = Math.round(preJoinDays * attStats.dailyRate);
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
     const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
     let earnedFromAttendance = calcBasis === 'additive'
       ? Math.round(attStats.totalDailyEarnings)
-      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
@@ -945,6 +985,11 @@ const AdminSalary = () => {
       for (const s of staff) {
         const existing = salaryRecords.find((r: any) => r.staff_id === s.id);
         const sName = s.name_bn || s.name_en || 'Unknown';
+
+        // Skip staff who had not joined by this month (don't generate for past months).
+        if (!hasJoinedByMonth(s)) continue;
+
+
 
         // Hard validation — skip on any error (don't generate corrupt data)
         const v = getAttendanceValidation(s);
@@ -1270,6 +1315,8 @@ const AdminSalary = () => {
 
   // Filter staff (search + eligibility/status filter)
   const filtered = staff.filter((s: any) => {
+    // Hide staff who had not yet joined by the selected month.
+    if (!hasJoinedByMonth(s)) return false;
     const q = searchQuery.toLowerCase();
     const matchesSearch = (s.name_bn + (s.name_en || '') + (s.designation || '')).toLowerCase().includes(q);
     if (!matchesSearch) return false;
