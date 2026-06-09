@@ -285,17 +285,21 @@ export async function downloadSheetAsPdf(
           pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
 
-        // Open the generated PDF in a new tab for PREVIEW (with download from the
-        // built-in viewer). Falls back to a direct download if the tab is blocked.
+        // Open the generated PDF in a new tab for PREVIEW. Use the window the
+        // caller opened synchronously on click (avoids popup blocking); fall back
+        // to opening here, then to a direct download.
         try {
           const blob = pdf.output('blob');
           const url = URL.createObjectURL(blob);
-          const win = window.open(url, '_blank');
-          if (!win) {
-            pdf.save(filename);
+          if (targetWindow && !targetWindow.closed) {
+            targetWindow.location.href = url;
+          } else {
+            const win = window.open(url, '_blank');
+            if (!win) pdf.save(filename);
           }
           setTimeout(() => URL.revokeObjectURL(url), 60000);
         } catch {
+          if (targetWindow && !targetWindow.closed) targetWindow.close();
           pdf.save(filename);
         }
         resolve();
