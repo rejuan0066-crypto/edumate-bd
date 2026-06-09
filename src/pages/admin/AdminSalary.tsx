@@ -1638,6 +1638,17 @@ const AdminSalary = () => {
 
   // Export PDF via edge function
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Salary-sheet date (ISO yyyy-mm-dd). Defaults to the LAST day of the selected
+  // salary month, and admins can edit it before generating the PDF.
+  const [sheetDate, setSheetDate] = useState('');
+  useEffect(() => {
+    const y = Number(selectedYear);
+    const m = Number(selectedMonth);
+    if (!y || !m) return;
+    const lastDay = new Date(y, m, 0).getDate();
+    setSheetDate(`${selectedYear}-${selectedMonth}-${String(lastDay).padStart(2, '0')}`);
+  }, [selectedYear, selectedMonth]);
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigPreparedBy, setSigPreparedBy] = useState('');
   const [sigPreparedRole, setSigPreparedRole] = useState('');
