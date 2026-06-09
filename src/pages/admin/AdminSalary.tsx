@@ -835,10 +835,15 @@ const AdminSalary = () => {
 
     // Untracked working days (no attendance record AND not a paid holiday)
     // → treated as absent so subtractive mode pro-rates correctly.
+    // Days BEFORE the staff's joining date are NOT counted as absent — instead
+    // they are tracked separately (preJoinDays) so pay is prorated from joining.
     const [yy, mm] = monthYear.split('-').map(Number);
     const lastDay = new Date(yy, mm, 0).getDate();
+    const firstCountedDay = joinedFromDay(staffMember);
     let untrackedAbsentDays = 0;
+    let preJoinDays = 0;
     for (let d = 1; d <= lastDay; d++) {
+      if (d < firstCountedDay) { preJoinDays += 1; continue; }
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
       if (paidHolidaySet.has(dateStr)) continue;
@@ -848,7 +853,7 @@ const AdminSalary = () => {
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
-      untrackedAbsentDays, recordedAbsent,
+      untrackedAbsentDays, recordedAbsent, preJoinDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
