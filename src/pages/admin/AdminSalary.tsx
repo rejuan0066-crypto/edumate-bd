@@ -654,6 +654,29 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
+  // Joining-date guard: a staff is only relevant for a salary month if they had
+  // already joined by the END of that month. New staff must NOT appear in months
+  // before their joining month, and their pay is counted from the joining date.
+  const monthEndDate = (() => {
+    const [yy, mm] = monthYear.split('-').map(Number);
+    const lastDay = new Date(yy, mm, 0).getDate();
+    return `${monthYear}-${String(lastDay).padStart(2, '0')}`;
+  })();
+  const hasJoinedByMonth = (s: any): boolean => {
+    const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
+    if (!jd) return true; // unknown joining date → always include (legacy data)
+    return jd <= monthEndDate;
+  };
+  // First day this staff is counted within the selected month (joining date if
+  // they joined mid-month, otherwise the 1st).
+  const joinedFromDay = (s: any): number => {
+    const jd = s?.joining_date ? String(s.joining_date).slice(0, 10) : '';
+    if (!jd) return 1;
+    if (jd <= `${monthYear}-01`) return 1;
+    if (jd > monthEndDate) return 32; // hasn't joined this month at all
+    return Number(jd.slice(8, 10)) || 1;
+  };
+
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
