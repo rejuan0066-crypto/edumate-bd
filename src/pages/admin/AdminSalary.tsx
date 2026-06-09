@@ -31,6 +31,7 @@ import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
@@ -1637,6 +1638,17 @@ const AdminSalary = () => {
 
   // Export PDF via edge function
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Salary-sheet date (ISO yyyy-mm-dd). Defaults to the LAST day of the selected
+  // salary month, and admins can edit it before generating the PDF.
+  const [sheetDate, setSheetDate] = useState('');
+  useEffect(() => {
+    const y = Number(selectedYear);
+    const m = Number(selectedMonth);
+    if (!y || !m) return;
+    const lastDay = new Date(y, m, 0).getDate();
+    setSheetDate(`${selectedYear}-${selectedMonth}-${String(lastDay).padStart(2, '0')}`);
+  }, [selectedYear, selectedMonth]);
   const [sigDialogOpen, setSigDialogOpen] = useState(false);
   const [sigPreparedBy, setSigPreparedBy] = useState('');
   const [sigPreparedRole, setSigPreparedRole] = useState('');
@@ -1699,6 +1711,9 @@ const AdminSalary = () => {
     paid_by?: string; paid_by_role?: string;
   }) => {
     setPdfLoading(true);
+    // Open the preview tab synchronously (within the click gesture) so iOS/PWA
+    // popup blockers don't kill it after the async PDF build.
+    const previewWin = isMobileOrPwa() ? window.open('', '_blank') : null;
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
       const sig = sigOverride || (() => {
@@ -1739,10 +1754,14 @@ const AdminSalary = () => {
             status: rec?.status || 'not_generated',
           };
         });
+       const issueDate = sheetDate
+         ? new Date(`${sheetDate}T00:00:00`).toLocaleDateString(bn ? 'bn-BD' : 'en-GB')
+         : undefined;
        const payload = {
          monthYear,
          monthLabel: bn ? monthName?.bn : monthName?.en,
          year: selectedYear,
+         issueDate,
          language: bn ? 'bn' : 'en',
          staff: staffRows,
          totals: {
@@ -1775,16 +1794,17 @@ const AdminSalary = () => {
       html = html.replace(/font-family:\s*'Noto Sans Bengali'/g, `font-family:'SutonnyOMJ','Noto Sans Bengali'`);
 
       // On mobile / installed PWA, window.open + print outputs the blank parent
-      // app page (iOS). Generate a real downloadable landscape PDF instead.
+      // app page (iOS). Generate a real PDF and preview it in the pre-opened tab.
       if (isMobileOrPwa()) {
         const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
         toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
-        await downloadSheetAsPdf(html, fname);
-        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+        await downloadSheetAsPdf(html, fname, previewWin);
+        toast.success(bn ? 'PDF প্রিভিউ প্রস্তুত' : 'PDF preview ready');
         return;
       }
 
       const printWindow = window.open('', '_blank');
+
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
@@ -1794,6 +1814,7 @@ const AdminSalary = () => {
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {
       console.error(err);
+      if (previewWin && !previewWin.closed) previewWin.close();
       toast.error(bn ? 'PDF তৈরি করতে সমস্যা' : 'Failed to generate PDF');
     } finally {
       setPdfLoading(false);
@@ -3665,6 +3686,15 @@ const AdminSalary = () => {
               <p className="text-xs text-muted-foreground">
                 {bn ? 'খালি রাখলে সেটিংস থেকে ডিফল্ট নাম ব্যবহার হবে।' : 'Leave empty to use defaults from settings.'}
               </p>
+
+              <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
+                <Label className="text-sm font-semibold">{bn ? 'বেতন শিটের তারিখ' : 'Salary Sheet Date'}</Label>
+                <DatePicker value={sheetDate} onChange={setSheetDate} bengali={bn} />
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'ডিফল্টভাবে নির্বাচিত মাসের শেষ তারিখ; প্রয়োজনে এডিট করুন।' : 'Defaults to the last day of the selected month; edit if needed.'}
+                </p>
+              </div>
+
 
               <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
                 <Label className="text-sm font-semibold">{bn ? 'প্রস্তুতকারী' : 'Prepared by'}</Label>

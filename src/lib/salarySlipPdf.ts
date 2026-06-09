@@ -146,6 +146,7 @@ export async function downloadSlipAsPdf(
 export async function downloadSheetAsPdf(
   htmlContent: string,
   filename: string = 'salary-sheet.pdf',
+  targetWindow?: Window | null,
 ): Promise<void> {
   // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
@@ -284,9 +285,26 @@ export async function downloadSheetAsPdf(
           pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
 
-        pdf.save(filename);
+        // Open the generated PDF in a new tab for PREVIEW. Use the window the
+        // caller opened synchronously on click (avoids popup blocking); fall back
+        // to opening here, then to a direct download.
+        try {
+          const blob = pdf.output('blob');
+          const url = URL.createObjectURL(blob);
+          if (targetWindow && !targetWindow.closed) {
+            targetWindow.location.href = url;
+          } else {
+            const win = window.open(url, '_blank');
+            if (!win) pdf.save(filename);
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+        } catch {
+          if (targetWindow && !targetWindow.closed) targetWindow.close();
+          pdf.save(filename);
+        }
         resolve();
       } catch (err) {
+        if (targetWindow && !targetWindow.closed) targetWindow.close();
         reject(err);
       } finally {
         cleanup();
