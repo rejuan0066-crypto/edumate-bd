@@ -482,6 +482,54 @@ const AdminSalary = () => {
     onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
   });
 
+  // Recalculate a SINGLE existing pending salary record (e.g. after editing joining/date info)
+  const recalculateSingleMutation = useMutation({
+    mutationFn: async (staffId: string) => {
+      const staffMember = staff.find((s: any) => s.id === staffId);
+      if (!staffMember) throw new Error('Staff not found');
+      const sName = staffMember.name_bn || staffMember.name_en;
+      const existing = salaryRecords.find((r: any) => r.staff_id === staffId);
+      if (!existing) {
+        throw new Error(bn ? 'এই মাসে কোনো বেতন রেকর্ড নেই' : 'No salary record for this month');
+      }
+      if (existing.status === 'paid') {
+        throw new Error(bn ? 'পরিশোধিত বেতন পুনরায় হিসাব করা যাবে না' : 'Cannot recalculate a paid salary');
+      }
+      const calc = calculateSalary(staffMember);
+      const activeSavings = getActiveSavings(staffId);
+      const savingsDed = activeSavings ? activeSavings.amount : 0;
+      const netSalary = recomputeNetSalary(calc, {
+        bonus: existing.bonus,
+        other_allowance: existing.other_allowance,
+        advance_deduction: existing.advance_deduction,
+        savings_deduction: savingsDed,
+      });
+      const { error } = await supabase.from('salary_records').update({
+        ...calc,
+        bonus: Number(existing.bonus || 0),
+        other_allowance: Number(existing.other_allowance || 0),
+        advance_deduction: Number(existing.advance_deduction || 0),
+        savings_deduction: savingsDed,
+        net_salary: netSalary,
+        updated_at: new Date().toISOString(),
+      }).eq('id', existing.id);
+      if (error) throw error;
+      await logSalaryGeneration({
+        staff_id: staffId, staff_name: sName, action: 'recalculate', source: 'manual',
+        success: true, net_salary: Number(netSalary || 0),
+      });
+      return sName;
+    },
+    onSuccess: (name) => {
+      queryClient.invalidateQueries({ queryKey: ['salary-records', monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-savings-ledger'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-generation-log', monthYear] });
+      toast.success(bn ? `${name} এর বেতন পুনরায় হিসাব হয়েছে` : `Salary recalculated for ${name}`);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'রিক্যালকুলেট সমস্যা' : 'Recalculate failed')),
+  });
+
   // Generate salary for a single staff (per-row generate)
   const generateSingleMutation = useMutation({
     mutationFn: async (staffId: string) => {
