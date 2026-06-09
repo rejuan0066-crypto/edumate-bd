@@ -2788,6 +2788,18 @@ const AdminSalary = () => {
                                     {canEditItem && <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditDialog({ ...rec, staffName: s.name_bn })}>
                                       <Edit2 className="h-3 w-3" />
                                     </Button>}
+                                    {canEditItem && rec.status !== 'paid' && (
+                                      <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-6 w-6 text-indigo-600 hover:bg-indigo-100/60 dark:hover:bg-indigo-900/30 disabled:opacity-40"
+                                        title={bn ? 'তারিখ/যোগদান পরিবর্তনের পর শুধু এই স্টাফের বেতন পুনরায় হিসাব করুন' : 'Recalculate salary for this staff only'}
+                                        disabled={recalculateSingleMutation.isPending}
+                                        onClick={() => recalculateSingleMutation.mutate(s.id)}
+                                      >
+                                        <RefreshCw className={`h-3 w-3 ${recalculateSingleMutation.isPending ? 'animate-spin' : ''}`} />
+                                      </Button>
+                                    )}
                                     <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => printSlip(s, rec)}>
                                       <Printer className="h-3 w-3" />
                                     </Button>
