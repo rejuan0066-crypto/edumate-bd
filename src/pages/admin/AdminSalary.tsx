@@ -1814,6 +1814,7 @@ const AdminSalary = () => {
       toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
     } catch (err) {
       console.error(err);
+      if (previewWin && !previewWin.closed) previewWin.close();
       toast.error(bn ? 'PDF তৈরি করতে সমস্যা' : 'Failed to generate PDF');
     } finally {
       setPdfLoading(false);
