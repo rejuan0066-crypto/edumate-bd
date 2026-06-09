@@ -1751,10 +1751,14 @@ const AdminSalary = () => {
             status: rec?.status || 'not_generated',
           };
         });
+       const issueDate = sheetDate
+         ? new Date(`${sheetDate}T00:00:00`).toLocaleDateString(bn ? 'bn-BD' : 'en-GB')
+         : undefined;
        const payload = {
          monthYear,
          monthLabel: bn ? monthName?.bn : monthName?.en,
          year: selectedYear,
+         issueDate,
          language: bn ? 'bn' : 'en',
          staff: staffRows,
          totals: {
