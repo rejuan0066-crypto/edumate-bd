@@ -31,6 +31,7 @@ import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Wallet, Users, Search, Save, Download, Printer, Settings2,
   CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Edit2, Eye,
