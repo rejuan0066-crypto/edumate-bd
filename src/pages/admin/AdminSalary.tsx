@@ -1711,6 +1711,9 @@ const AdminSalary = () => {
     paid_by?: string; paid_by_role?: string;
   }) => {
     setPdfLoading(true);
+    // Open the preview tab synchronously (within the click gesture) so iOS/PWA
+    // popup blockers don't kill it after the async PDF build.
+    const previewWin = isMobileOrPwa() ? window.open('', '_blank') : null;
     try {
       const monthName = MONTHS.find(m => m.value === selectedMonth);
       const sig = sigOverride || (() => {
