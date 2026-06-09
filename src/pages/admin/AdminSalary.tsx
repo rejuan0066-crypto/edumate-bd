@@ -1794,16 +1794,17 @@ const AdminSalary = () => {
       html = html.replace(/font-family:\s*'Noto Sans Bengali'/g, `font-family:'SutonnyOMJ','Noto Sans Bengali'`);
 
       // On mobile / installed PWA, window.open + print outputs the blank parent
-      // app page (iOS). Generate a real downloadable landscape PDF instead.
+      // app page (iOS). Generate a real PDF and preview it in the pre-opened tab.
       if (isMobileOrPwa()) {
         const fname = `salary-sheet-${selectedYear}${selectedMonth}.pdf`;
         toast.info(bn ? 'বেতন শিট PDF তৈরি হচ্ছে…' : 'Generating salary sheet PDF…');
-        await downloadSheetAsPdf(html, fname);
-        toast.success(bn ? 'PDF ডাউনলোড হয়েছে' : 'PDF downloaded');
+        await downloadSheetAsPdf(html, fname, previewWin);
+        toast.success(bn ? 'PDF প্রিভিউ প্রস্তুত' : 'PDF preview ready');
         return;
       }
 
       const printWindow = window.open('', '_blank');
+
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
