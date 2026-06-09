@@ -488,6 +488,12 @@ const AdminSalary = () => {
       const s = staff.find((x: any) => x.id === staffId);
       if (!s) throw new Error('Staff not found');
       const sName = s.name_bn || s.name_en;
+      if (!hasJoinedByMonth(s)) {
+        const jdLabel = s.joining_date ? String(s.joining_date).slice(0, 10) : '';
+        throw new Error(bn
+          ? `${sName} এই মাসের আগে যোগদান করেননি (যোগদান: ${jdLabel})`
+          : `${sName} had not joined before this month (joined: ${jdLabel})`);
+      }
       const requireAttendance = getSetting('require_attendance')?.enabled !== false;
       // Hard validation — block on any data error
       const v = getAttendanceValidation(s);
