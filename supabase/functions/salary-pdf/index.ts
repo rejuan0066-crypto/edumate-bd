@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     }
 
     const body = bodyRaw;
-    const { monthYear, monthLabel, year, language, staff, totals,
+    const { monthYear, monthLabel, year, language, staff, totals, issueDate: issueDateInput,
       prepared_by, prepared_by_role, verified_by, verified_by_role,
       approved_by, approved_by_role, paid_by, paid_by_role } = body;
 
