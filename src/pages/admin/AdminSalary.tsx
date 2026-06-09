@@ -891,7 +891,11 @@ const AdminSalary = () => {
 
     const year = Number(selectedYear);
     const month = Number(selectedMonth);
-    const workingDays = new Date(year, month, 0).getDate();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    // Pre-joining days are excluded from this month's working days so a mid-month
+    // joiner is paid only from the joining date onward.
+    const preJoinDays = attStats.preJoinDays || 0;
+    const workingDays = daysInMonth - preJoinDays;
 
     const bonus = 0;
     const otherAllowance = 0;
@@ -902,13 +906,15 @@ const AdminSalary = () => {
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
     const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
+    // Proration for the joining month: deduct the value of days before joining.
+    const preJoinDeduction = Math.round(preJoinDays * attStats.dailyRate);
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
     const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
     let earnedFromAttendance = calcBasis === 'additive'
       ? Math.round(attStats.totalDailyEarnings)
-      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction);
+      : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
     if (dutySettings?.extra_duty_enabled && dutySettings?.extra_duty_rate > 0) {
