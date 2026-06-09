@@ -3683,6 +3683,15 @@ const AdminSalary = () => {
               </p>
 
               <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
+                <Label className="text-sm font-semibold">{bn ? 'বেতন শিটের তারিখ' : 'Salary Sheet Date'}</Label>
+                <DatePicker value={sheetDate} onChange={setSheetDate} bengali={bn} />
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'ডিফল্টভাবে নির্বাচিত মাসের শেষ তারিখ; প্রয়োজনে এডিট করুন।' : 'Defaults to the last day of the selected month; edit if needed.'}
+                </p>
+              </div>
+
+
+              <div className="space-y-2 p-3 rounded-2xl border bg-muted/30">
                 <Label className="text-sm font-semibold">{bn ? 'প্রস্তুতকারী' : 'Prepared by'}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <Input placeholder={bn ? 'নাম' : 'Name'} value={sigPreparedBy} onChange={(e) => setSigPreparedBy(e.target.value)} />
