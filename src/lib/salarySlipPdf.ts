@@ -146,6 +146,7 @@ export async function downloadSlipAsPdf(
 export async function downloadSheetAsPdf(
   htmlContent: string,
   filename: string = 'salary-sheet.pdf',
+  targetWindow?: Window | null,
 ): Promise<void> {
   // Strip the on-screen Print Settings bar + auto-print script and screen-only blocks.
   let cleanHtml = htmlContent.replace(/<script>[\s\S]*?<\/script>/gi, '');
