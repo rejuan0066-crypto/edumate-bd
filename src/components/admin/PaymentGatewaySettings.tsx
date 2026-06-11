@@ -70,6 +70,7 @@ const PaymentGatewaySettings = () => {
         api_secret: data.api_secret,
         merchant_id: data.merchant_id,
         callback_url: data.callback_url,
+        webhook_secret: (data as any).webhook_secret ?? '',
         is_enabled: data.is_enabled,
         is_sandbox: data.is_sandbox,
       });
