@@ -208,7 +208,7 @@ const PaymentGatewaySettings = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {currentProvider.fields.map(field => {
-              const label = FIELD_LABELS[field];
+              const label = getFieldLabel(selectedProvider, field);
               const isSecret = field === 'api_secret';
               return (
                 <div key={field} className={field === 'callback_url' ? 'sm:col-span-2' : ''}>
