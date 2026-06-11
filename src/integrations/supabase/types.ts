@@ -5966,6 +5966,7 @@ export type Database = {
           provider: string
           provider_name: string
           updated_at: string
+          webhook_secret: string
         }
         Insert: {
           api_key?: string
@@ -5981,6 +5982,7 @@ export type Database = {
           provider?: string
           provider_name?: string
           updated_at?: string
+          webhook_secret?: string
         }
         Update: {
           api_key?: string
@@ -5996,6 +5998,7 @@ export type Database = {
           provider?: string
           provider_name?: string
           updated_at?: string
+          webhook_secret?: string
         }
         Relationships: []
       }
