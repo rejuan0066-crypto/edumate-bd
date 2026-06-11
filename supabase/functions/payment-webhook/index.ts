@@ -151,7 +151,18 @@ Deno.serve(async (req) => {
     if (req.method !== 'POST' || !rawBody) {
       return jsonResp({ error: 'Webhook requires signed POST body' }, 401);
     }
-    const sigOk = await verifySignature(req, rawBody);
+
+    // Resolve the signing secret: prefer the admin-configured value in
+    // payment_gateway_config, fall back to the PAYMENT_WEBHOOK_SECRET env var.
+    let webhookSecret = '';
+    const { data: gwCfg } = await supabase
+      .from('payment_gateway_config')
+      .select('webhook_secret')
+      .limit(1)
+      .maybeSingle();
+    webhookSecret = (gwCfg?.webhook_secret || '').trim() || (Deno.env.get('PAYMENT_WEBHOOK_SECRET') || '').trim();
+
+    const sigOk = await verifySignature(req, rawBody, webhookSecret);
     if (!sigOk) {
       return jsonResp({ error: 'Invalid or missing webhook signature' }, 401);
     }
