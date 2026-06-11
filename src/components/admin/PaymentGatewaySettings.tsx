@@ -18,13 +18,39 @@ const PROVIDERS = [
   { id: 'generic', name: 'Generic / Other', fields: ['api_url', 'api_key', 'api_secret', 'merchant_id', 'callback_url'] },
 ];
 
-const FIELD_LABELS: Record<string, { en: string; bn: string; placeholder: string }> = {
+type FieldLabel = { en: string; bn: string; placeholder: string };
+
+const FIELD_LABELS: Record<string, FieldLabel> = {
   api_url: { en: 'API URL', bn: 'API URL', placeholder: 'https://api.example.com/v1' },
   api_key: { en: 'API Key / Store ID', bn: 'API Key / Store ID', placeholder: 'your-api-key' },
   api_secret: { en: 'API Secret / Store Password', bn: 'API Secret / Store Password', placeholder: 'your-secret-key' },
   merchant_id: { en: 'Merchant ID', bn: 'মার্চেন্ট আইডি', placeholder: 'merchant-id' },
   callback_url: { en: 'Callback / IPN URL', bn: 'কলব্যাক / IPN URL', placeholder: 'https://yourdomain.com/api/payment/callback' },
 };
+
+// Provider-specific field label / placeholder overrides (uses correct credential names)
+const PROVIDER_FIELD_LABELS: Record<string, Record<string, FieldLabel>> = {
+  stripe: {
+    api_key: { en: 'Publishable Key', bn: 'Publishable Key', placeholder: 'pk_test_... / pk_live_...' },
+    api_secret: { en: 'Secret Key', bn: 'Secret Key', placeholder: 'sk_test_... / sk_live_...' },
+    callback_url: { en: 'Success / Return URL', bn: 'সফল / রিটার্ন URL', placeholder: 'https://yourdomain.com/payment/success' },
+  },
+  paypal: {
+    api_url: { en: 'API Base URL', bn: 'API Base URL', placeholder: 'https://api-m.sandbox.paypal.com (live: https://api-m.paypal.com)' },
+    api_key: { en: 'Client ID', bn: 'Client ID', placeholder: 'AYxxxxxx... PayPal Client ID' },
+    api_secret: { en: 'Client Secret', bn: 'Client Secret', placeholder: 'ELxxxxxx... PayPal Client Secret' },
+    callback_url: { en: 'Success / Return URL', bn: 'সফল / রিটার্ন URL', placeholder: 'https://yourdomain.com/payment/success' },
+  },
+};
+
+// Provider-specific webhook secret label / placeholder
+const WEBHOOK_SECRET_LABELS: Record<string, FieldLabel> = {
+  stripe: { en: 'Webhook Signing Secret', bn: 'Webhook Signing Secret', placeholder: 'whsec_...' },
+  paypal: { en: 'Webhook ID', bn: 'Webhook ID', placeholder: 'PayPal Webhook ID (e.g. 1AB23456...)' },
+};
+
+const getFieldLabel = (provider: string, field: string): FieldLabel =>
+  PROVIDER_FIELD_LABELS[provider]?.[field] ?? FIELD_LABELS[field];
 
 const PaymentGatewaySettings = () => {
   const { language } = useLanguage();
@@ -182,7 +208,7 @@ const PaymentGatewaySettings = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {currentProvider.fields.map(field => {
-              const label = FIELD_LABELS[field];
+              const label = getFieldLabel(selectedProvider, field);
               const isSecret = field === 'api_secret';
               return (
                 <div key={field} className={field === 'callback_url' ? 'sm:col-span-2' : ''}>
@@ -232,15 +258,22 @@ const PaymentGatewaySettings = () => {
             </div>
 
             <div>
-              <Label>{bn ? 'Webhook Secret (সিগনেচার যাচাই)' : 'Webhook Secret (signature verification)'} <span className="text-destructive">*</span></Label>
+              <Label>
+                {(() => {
+                  const wl = WEBHOOK_SECRET_LABELS[selectedProvider];
+                  const base = wl ? (bn ? wl.bn : wl.en) : (bn ? 'Webhook Secret (সিগনেচার যাচাই)' : 'Webhook Secret (signature verification)');
+                  return base;
+                })()} <span className="text-destructive">*</span>
+              </Label>
               <div className="relative mt-1">
                 <Input
                   className="bg-background pr-10"
                   type={showWebhookSecret ? 'text' : 'password'}
                   value={config.webhook_secret}
                   onChange={(e) => setConfig({ ...config, webhook_secret: e.target.value })}
-                  placeholder={bn ? 'গেটওয়ের webhook সাইনিং সিক্রেট' : 'gateway webhook signing secret'}
+                  placeholder={WEBHOOK_SECRET_LABELS[selectedProvider]?.placeholder ?? (bn ? 'গেটওয়ের webhook সাইনিং সিক্রেট' : 'gateway webhook signing secret')}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowWebhookSecret(!showWebhookSecret)}
