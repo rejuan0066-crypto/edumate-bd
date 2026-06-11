@@ -39,13 +39,17 @@ const PaymentGatewaySettings = () => {
     api_secret: '',
     merchant_id: '',
     callback_url: '',
+    webhook_secret: '',
     is_enabled: false,
     is_sandbox: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
 
   useEffect(() => {
     loadConfig();
@@ -66,6 +70,7 @@ const PaymentGatewaySettings = () => {
         api_secret: data.api_secret,
         merchant_id: data.merchant_id,
         callback_url: data.callback_url,
+        webhook_secret: (data as any).webhook_secret ?? '',
         is_enabled: data.is_enabled,
         is_sandbox: data.is_sandbox,
       });
@@ -204,6 +209,54 @@ const PaymentGatewaySettings = () => {
               );
             })}
           </div>
+
+          {/* Webhook / Auto status update section */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <div>
+              <Label>{bn ? 'Webhook / IPN URL (গেটওয়েতে সেট করুন)' : 'Webhook / IPN URL (set this in your gateway)'}</Label>
+              <div className="relative mt-1">
+                <Input className="bg-background pr-20" value={webhookUrl} readOnly />
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(webhookUrl); toast.success(bn ? 'কপি হয়েছে' : 'Copied'); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-primary hover:underline"
+                >
+                  {bn ? 'কপি' : 'Copy'}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {bn
+                  ? 'পেমেন্ট সফল হলে গেটওয়ে এই URL-এ সাইন করা POST পাঠাবে — স্ট্যাটাস স্বয়ংক্রিয়ভাবে আপডেট হবে।'
+                  : 'On success the gateway sends a signed POST here — payment status updates automatically.'}
+              </p>
+            </div>
+
+            <div>
+              <Label>{bn ? 'Webhook Secret (সিগনেচার যাচাই)' : 'Webhook Secret (signature verification)'} <span className="text-destructive">*</span></Label>
+              <div className="relative mt-1">
+                <Input
+                  className="bg-background pr-10"
+                  type={showWebhookSecret ? 'text' : 'password'}
+                  value={config.webhook_secret}
+                  onChange={(e) => setConfig({ ...config, webhook_secret: e.target.value })}
+                  placeholder={bn ? 'গেটওয়ের webhook সাইনিং সিক্রেট' : 'gateway webhook signing secret'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowWebhookSecret(!showWebhookSecret)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showWebhookSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {bn
+                  ? 'এই সিক্রেট দিয়ে HMAC-SHA256 সিগনেচার যাচাই হয়। ভুল/অনুপস্থিত সিগনেচার সহ অনুরোধ প্রত্যাখ্যাত হবে।'
+                  : 'Used to verify the HMAC-SHA256 signature. Requests with a wrong/missing signature are rejected.'}
+              </p>
+            </div>
+          </div>
+
 
           <Button onClick={saveConfig} disabled={saving} className="btn-primary-gradient w-full">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
