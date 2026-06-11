@@ -90,11 +90,10 @@ async function reconcileDonation(
   return { verified: true, donor_id: donor.id };
 }
 
-async function verifySignature(req: Request, rawBody: string): Promise<boolean> {
-  const secret = Deno.env.get('PAYMENT_WEBHOOK_SECRET');
+async function verifySignature(req: Request, rawBody: string, secret: string): Promise<boolean> {
   if (!secret) {
     // Hard-fail if no secret configured — admin must configure before webhooks are trusted.
-    console.error('PAYMENT_WEBHOOK_SECRET is not configured; rejecting webhook.');
+    console.error('Webhook secret is not configured; rejecting webhook.');
     return false;
   }
   const provided =
