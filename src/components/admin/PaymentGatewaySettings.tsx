@@ -39,13 +39,17 @@ const PaymentGatewaySettings = () => {
     api_secret: '',
     merchant_id: '',
     callback_url: '',
+    webhook_secret: '',
     is_enabled: false,
     is_sandbox: true,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`;
 
   useEffect(() => {
     loadConfig();
