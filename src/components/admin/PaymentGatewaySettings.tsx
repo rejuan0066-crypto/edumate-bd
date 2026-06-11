@@ -258,15 +258,22 @@ const PaymentGatewaySettings = () => {
             </div>
 
             <div>
-              <Label>{bn ? 'Webhook Secret (সিগনেচার যাচাই)' : 'Webhook Secret (signature verification)'} <span className="text-destructive">*</span></Label>
+              <Label>
+                {(() => {
+                  const wl = WEBHOOK_SECRET_LABELS[selectedProvider];
+                  const base = wl ? (bn ? wl.bn : wl.en) : (bn ? 'Webhook Secret (সিগনেচার যাচাই)' : 'Webhook Secret (signature verification)');
+                  return base;
+                })()} <span className="text-destructive">*</span>
+              </Label>
               <div className="relative mt-1">
                 <Input
                   className="bg-background pr-10"
                   type={showWebhookSecret ? 'text' : 'password'}
                   value={config.webhook_secret}
                   onChange={(e) => setConfig({ ...config, webhook_secret: e.target.value })}
-                  placeholder={bn ? 'গেটওয়ের webhook সাইনিং সিক্রেট' : 'gateway webhook signing secret'}
+                  placeholder={WEBHOOK_SECRET_LABELS[selectedProvider]?.placeholder ?? (bn ? 'গেটওয়ের webhook সাইনিং সিক্রেট' : 'gateway webhook signing secret')}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowWebhookSecret(!showWebhookSecret)}
