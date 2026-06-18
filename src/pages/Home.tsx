@@ -17,11 +17,12 @@ import HomeGallery from '@/components/home/HomeGallery';
 import HomePostsSection from '@/components/home/HomePostsSection';
 import PrayerTimesWidget from '@/components/home/PrayerTimesWidget';
 import IslamicCalendarWidget from '@/components/home/IslamicCalendarWidget';
+import PageLoader from '@/components/PageLoader';
 
 const Home = () => {
   const { t, language } = useLanguage();
   const bn = language === 'bn';
-  const { settings } = useWebsiteSettings();
+  const { settings, isLoading: isSettingsLoading } = useWebsiteSettings();
   const isMobile = useIsMobile();
 
   // Helper to get dynamic inline styles for a section
@@ -248,6 +249,12 @@ const Home = () => {
 
   const hasRow1 = row1Keys.some(isVisible);
   const hasRow2 = row2Keys.some(isVisible);
+
+  // Show a clean loader on first load (no cached settings yet) to avoid
+  // a flash of half-rendered / empty content before settings arrive.
+  if (isSettingsLoading) {
+    return <PageLoader />;
+  }
 
   return (
     <PublicLayout>
