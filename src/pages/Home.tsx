@@ -250,6 +250,12 @@ const Home = () => {
   const hasRow1 = row1Keys.some(isVisible);
   const hasRow2 = row2Keys.some(isVisible);
 
+  // Show a clean loader on first load (no cached settings yet) to avoid
+  // a flash of half-rendered / empty content before settings arrive.
+  if (isSettingsLoading) {
+    return <PageLoader />;
+  }
+
   return (
     <PublicLayout>
       {/* ===== Row 1: Principal | Banner | Admin ===== */}
