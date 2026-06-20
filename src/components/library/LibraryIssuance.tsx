@@ -739,7 +739,7 @@ const LibraryIssuance = () => {
                   </div>
                   <div className="divide-y divide-border">
                     {cart.map(item => (
-                      <div key={item.bookId} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <div key={item.uid} className="flex items-center gap-2 px-3 py-2 text-sm">
                         <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{item.title}</p>
