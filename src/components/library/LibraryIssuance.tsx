@@ -751,7 +751,7 @@ const LibraryIssuance = () => {
                             </Badge>
                           </div>
                         </div>
-                        <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => removeFromCart(item.bookId)}>
+                        <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => removeFromCart(item.uid)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
