@@ -9,14 +9,19 @@ import { printIssuanceReceipt, printYearlyIssuanceList, downloadIssuanceReceipt,
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'sonner';
-import { Plus, Loader2, Search, ArrowRightLeft, Undo2, AlertTriangle, Printer, FileText, Download } from 'lucide-react';
+import { Plus, Loader2, Search, ArrowRightLeft, Undo2, AlertTriangle, Printer, FileText, Download, User, BookOpen, CalendarIcon, Trash2, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const LibraryIssuance = () => {
   const { language } = useLanguage();
