@@ -88,7 +88,7 @@ const LibraryReports = () => {
                   <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">{bn ? 'কোনো রেকর্ড নেই' : 'No records'}</TableCell></TableRow>
                 ) : filteredIss.map((i: any) => (
                   <TableRow key={i.id}>
-                    <TableCell className="font-medium">{bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}</TableCell>
+                    <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
                     <TableCell>
                       {i.recipient_name}
                       <br /><span className="text-xs text-muted-foreground">{i.recipient_type === 'student' ? (bn ? 'ছাত্র' : 'Student') : i.recipient_type === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff')}</span>

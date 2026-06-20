@@ -4178,8 +4178,9 @@ export type Database = {
       library_issuances: {
         Row: {
           book_condition: string
-          book_id: string
+          book_id: string | null
           created_at: string | null
+          custom_book_title: string | null
           distribution_type: string
           distributor_name: string | null
           id: string
@@ -4197,8 +4198,9 @@ export type Database = {
         }
         Insert: {
           book_condition?: string
-          book_id: string
+          book_id?: string | null
           created_at?: string | null
+          custom_book_title?: string | null
           distribution_type?: string
           distributor_name?: string | null
           id?: string
@@ -4216,8 +4218,9 @@ export type Database = {
         }
         Update: {
           book_condition?: string
-          book_id?: string
+          book_id?: string | null
           created_at?: string | null
+          custom_book_title?: string | null
           distribution_type?: string
           distributor_name?: string | null
           id?: string

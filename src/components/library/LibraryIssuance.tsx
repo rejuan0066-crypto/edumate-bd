@@ -58,12 +58,13 @@ const LibraryIssuance = () => {
 
   // "Add a book" working row (added into the cart)
   const [bookId, setBookId] = useState('');
+  const [bookName, setBookName] = useState(''); // free-text title when not in catalog
   const [distributionType, setDistributionType] = useState('free');
   const [sellingPrice, setSellingPrice] = useState(0);
   const [bookCondition, setBookCondition] = useState('new');
 
   // Selected books cart for this issuance
-  type CartItem = { bookId: string; title: string; condition: string; distributionType: string; sellingPrice: number };
+  type CartItem = { uid: string; bookId: string | null; title: string; condition: string; distributionType: string; sellingPrice: number; custom: boolean };
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const getRoleLabel = (roleName?: string | null) => {
@@ -194,9 +195,10 @@ const LibraryIssuance = () => {
       const distName = distributorName || autoDistributorName || null;
 
       for (const item of cart) {
-        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
         const payload: any = {
           book_id: item.bookId,
+          custom_book_title: item.custom ? item.title : null,
           recipient_type: recipientType,
           distribution_type: item.distributionType,
           selling_price: item.distributionType === 'sale' ? Number(item.sellingPrice) : 0,
@@ -214,7 +216,10 @@ const LibraryIssuance = () => {
         const { error } = await supabase.from('library_issuances').insert(payload);
         if (error) throw error;
 
-        await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', item.bookId);
+        // Only decrement inventory for catalog books (custom titles have no stock)
+        if (item.bookId) {
+          await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', item.bookId);
+        }
       }
     },
     onSuccess: () => {
@@ -230,9 +235,9 @@ const LibraryIssuance = () => {
 
       // Print a receipt for each issued book
       cart.forEach(item => {
-        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
         printIssuanceReceipt({
-          bookTitle: bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || ''),
+          bookTitle: item.custom ? item.title : (bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || '')),
           recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
           recipientType,
           distributionType: item.distributionType,
@@ -316,7 +321,7 @@ const LibraryIssuance = () => {
   }, [autoDistributorName, distributorResults, bn]);
 
   const resetForm = () => {
-    setOpen(false); setStep(1); setBookId(''); setRecipientType('student');
+    setOpen(false); setStep(1); setBookId(''); setBookName(''); setRecipientType('student');
     setRecipientSearch(''); setSelectedRecipient(null);
     setDistributionType('free'); setSellingPrice(0); setBookCondition('new');
     setIssuedDate(new Date()); setNotes(''); setCart([]);
@@ -324,24 +329,36 @@ const LibraryIssuance = () => {
   };
 
   const addToCart = () => {
-    if (!bookId) return;
-    if (cart.some(c => c.bookId === bookId)) {
-      toast.error(bn ? 'এই বইটি ইতিমধ্যে যুক্ত করা হয়েছে' : 'This book is already added');
-      return;
+    const trimmedName = bookName.trim();
+    // Either pick a catalog book OR type a free-text title
+    if (!bookId && !trimmedName) return;
+
+    let title = trimmedName;
+    let custom = true;
+    if (bookId) {
+      if (cart.some(c => c.bookId === bookId)) {
+        toast.error(bn ? 'এই বইটি ইতিমধ্যে যুক্ত করা হয়েছে' : 'This book is already added');
+        return;
+      }
+      const b = books.find((bk: any) => bk.id === bookId);
+      if (!b) return;
+      title = bn ? (b.title_bn || b.title) : b.title;
+      custom = false;
     }
-    const b = books.find((bk: any) => bk.id === bookId);
-    if (!b) return;
+
     setCart(prev => [...prev, {
-      bookId,
-      title: bn ? (b.title_bn || b.title) : b.title,
+      uid: (crypto as any)?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      bookId: bookId || null,
+      title,
       condition: bookCondition,
       distributionType,
       sellingPrice: distributionType === 'sale' ? Number(sellingPrice) : 0,
+      custom,
     }]);
-    setBookId(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
   };
 
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.bookId !== id));
+  const removeFromCart = (uid: string) => setCart(prev => prev.filter(c => c.uid !== uid));
 
   const recipientLabel = recipientType === 'student' ? (bn ? 'ছাত্র' : 'Student') : recipientType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
 
@@ -366,7 +383,7 @@ const LibraryIssuance = () => {
 
   const handlePrintSingleIssuance = (i: any) => {
     printIssuanceReceipt({
-      bookTitle: bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || ''),
+      bookTitle: i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || '')),
       recipientName: i.recipient_name || '',
       recipientType: i.recipient_type || 'student',
       distributionType: i.distribution_type || 'free',
@@ -386,7 +403,7 @@ const LibraryIssuance = () => {
   const handleDownloadSingleIssuance = async (i: any) => {
     try {
       await downloadIssuanceReceipt({
-        bookTitle: bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || ''),
+        bookTitle: i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || '')),
         recipientName: i.recipient_name || '',
         recipientType: i.recipient_type || 'student',
         distributionType: i.distribution_type || 'free',
@@ -480,7 +497,7 @@ const LibraryIssuance = () => {
             <TableBody>
               {filteredIss.map((i: any) => (
                 <TableRow key={i.id}>
-                  <TableCell className="font-medium">{bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}</TableCell>
+                  <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
                   <TableCell>
                     <div>
                       <span className="font-medium">{i.recipient_name}</span>
@@ -655,7 +672,7 @@ const LibraryIssuance = () => {
                 <p className="text-sm font-semibold flex items-center gap-1.5"><Plus className="w-4 h-4" />{bn ? 'বই যোগ করুন' : 'Add a Book'}</p>
                 <div>
                   <Label>{bn ? 'বই সিলেক্ট করুন' : 'Select Book'}</Label>
-                  <Select value={bookId} onValueChange={setBookId}>
+                  <Select value={bookId} onValueChange={(v) => { setBookId(v); setBookName(''); }}>
                     <SelectTrigger><SelectValue placeholder={bn ? 'বই বাছুন' : 'Choose a book'} /></SelectTrigger>
                     <SelectContent>
                       {books.filter((b: any) => !cart.some(c => c.bookId === b.id)).map((b: any) => (
@@ -665,6 +682,20 @@ const LibraryIssuance = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Separator className="flex-1" />
+                  <span className="text-[11px] text-muted-foreground">{bn ? 'অথবা' : 'OR'}</span>
+                  <Separator className="flex-1" />
+                </div>
+                <div>
+                  <Label>{bn ? 'বইয়ের নাম লিখুন (ক্যাটালগে নেই)' : 'Type Book Name (not in catalog)'}</Label>
+                  <Input
+                    value={bookName}
+                    onChange={e => { setBookName(e.target.value); if (e.target.value) setBookId(''); }}
+                    placeholder={bn ? 'বইয়ের নাম লিখুন...' : 'Enter book name...'}
+                    disabled={!!bookId}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -694,7 +725,7 @@ const LibraryIssuance = () => {
                     <Input type="number" value={sellingPrice || ''} onChange={e => setSellingPrice(Number(e.target.value))} />
                   </div>
                 )}
-                <Button type="button" variant="outline" className="w-full" onClick={addToCart} disabled={!bookId}>
+                <Button type="button" variant="outline" className="w-full" onClick={addToCart} disabled={!bookId && !bookName.trim()}>
                   <Plus className="w-4 h-4 mr-1.5" />{bn ? 'তালিকায় যোগ করুন' : 'Add to List'}
                 </Button>
               </div>
@@ -708,18 +739,19 @@ const LibraryIssuance = () => {
                   </div>
                   <div className="divide-y divide-border">
                     {cart.map(item => (
-                      <div key={item.bookId} className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <div key={item.uid} className="flex items-center gap-2 px-3 py-2 text-sm">
                         <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{item.title}</p>
                           <div className="flex gap-1.5 mt-0.5">
+                            {item.custom && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">{bn ? 'ম্যানুয়াল' : 'Manual'}</Badge>}
                             <Badge variant="outline" className="text-[10px]">{item.condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</Badge>
                             <Badge variant="outline" className="text-[10px]">
                               {item.distributionType === 'sale' ? `${bn ? 'বিক্রয়' : 'Sale'} ৳${item.sellingPrice}` : (bn ? 'ফ্রি' : 'Free')}
                             </Badge>
                           </div>
                         </div>
-                        <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => removeFromCart(item.bookId)}>
+                        <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => removeFromCart(item.uid)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -845,7 +877,7 @@ const LibraryIssuance = () => {
                       {issuedBooks.map((i: any) => (
                         <TableRow key={i.id}>
                           <TableCell className="font-medium">
-                            {bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}
+                            {i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}
                           </TableCell>
                           <TableCell>
                             <span>{i.recipient_name}</span>
