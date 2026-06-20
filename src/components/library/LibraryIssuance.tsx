@@ -540,6 +540,9 @@ const LibraryIssuance = () => {
               </Button>
             </>
           )}
+          <Button variant="outline" onClick={() => { setProfileType('student'); setProfileSearch(''); setProfileRecipient(null); setProfileOpen(true); }}>
+            <User className="w-4 h-4 mr-1.5" />{bn ? 'প্রোফাইল / লেজার' : 'Profile / Ledger'}
+          </Button>
           <Button variant="outline" onClick={() => { setReturnSearch(''); setReturnOpen(true); }}>
             <Undo2 className="w-4 h-4 mr-1.5" />{bn ? 'বই জমা নিন' : 'Accept Return'}
           </Button>
