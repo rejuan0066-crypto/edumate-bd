@@ -6,8 +6,9 @@ import { getProtectedRouteRedirect, hasResolvedAuthRedirectState } from '@/lib/a
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, role, userStatus } = useAuth();
   const location = useLocation();
+  const hasResolvedState = hasResolvedAuthRedirectState({ role, userStatus });
 
-  if (loading) {
+  if (loading && !user) {
     return <PageLoader />;
   }
 
@@ -23,7 +24,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (!hasResolvedAuthRedirectState({ role, userStatus })) {
+  if (!hasResolvedState) {
     return <PageLoader />;
   }
 
