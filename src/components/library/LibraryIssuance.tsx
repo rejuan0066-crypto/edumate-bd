@@ -744,6 +744,7 @@ const LibraryIssuance = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{item.title}</p>
                           <div className="flex gap-1.5 mt-0.5">
+                            {item.custom && <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">{bn ? 'ম্যানুয়াল' : 'Manual'}</Badge>}
                             <Badge variant="outline" className="text-[10px]">{item.condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</Badge>
                             <Badge variant="outline" className="text-[10px]">
                               {item.distributionType === 'sale' ? `${bn ? 'বিক্রয়' : 'Sale'} ৳${item.sellingPrice}` : (bn ? 'ফ্রি' : 'Free')}
