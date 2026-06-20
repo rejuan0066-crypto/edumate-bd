@@ -235,9 +235,9 @@ const LibraryIssuance = () => {
 
       // Print a receipt for each issued book
       cart.forEach(item => {
-        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
         printIssuanceReceipt({
-          bookTitle: bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || ''),
+          bookTitle: item.custom ? item.title : (bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || '')),
           recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
           recipientType,
           distributionType: item.distributionType,
