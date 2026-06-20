@@ -267,6 +267,36 @@ const LibraryProfiles = () => {
     },
   });
 
+  const deleteIssuanceMut = useMutation({
+    mutationFn: async (iss: any) => {
+      // restore stock if the book was held/issued
+      if (iss.status === 'issued' && iss.book_id) {
+        const { data: book } = await supabase.from('library_books').select('available_copies').eq('id', iss.book_id).single();
+        await supabase.from('library_books').update({ available_copies: (book?.available_copies || 0) + 1 }).eq('id', iss.book_id);
+      }
+      await supabase.from('library_fines').delete().eq('issuance_id', iss.id);
+      const { error } = await supabase.from('library_issuances').delete().eq('id', iss.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile-ledger'] });
+      qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['library-books-available'] });
+      toast.success(bn ? 'বই ইস্যু মুছে ফেলা হয়েছে' : 'Issuance deleted');
+    },
+    onError: () => toast.error(bn ? 'সমস্যা হয়েছে' : 'Error'),
+  });
+
+  const handleDeleteIssuance = async (i: any) => {
+    const ok = await confirm({
+      title: bn ? 'বই ইস্যু মুছবেন?' : 'Delete issuance?',
+      description: bn ? 'এই বই ইস্যুর রেকর্ড স্থায়ীভাবে মুছে ফেলা হবে।' : 'This issuance record will be permanently deleted.',
+      variant: 'destructive',
+      confirmText: bn ? 'মুছুন' : 'Delete',
+    });
+    if (ok) deleteIssuanceMut.mutate(i);
+  };
+
   // ===== Helpers =====
   const resetIssueForm = () => {
     setIssueOpen(false); setCart([]); setBookId(''); setBookName('');
