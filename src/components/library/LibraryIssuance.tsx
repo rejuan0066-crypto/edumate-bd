@@ -410,6 +410,35 @@ const LibraryIssuance = () => {
 
   const recipientLabel = recipientType === 'student' ? (bn ? 'ছাত্র' : 'Student') : recipientType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
 
+  const profileLabel = profileType === 'student' ? (bn ? 'ছাত্র' : 'Student') : profileType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
+
+  // Start a fresh issuance for the member currently open in the profile dialog
+  const issueFromProfile = () => {
+    if (!profileRecipient) return;
+    setRecipientType(profileType);
+    setSelectedRecipient(profileRecipient);
+    setRecipientSearch('');
+    setCart([]);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setIssuedDate(new Date()); setNotes('');
+    setDistributorName(autoDistributorName);
+    setStep(2);
+    setProfileOpen(false);
+    setOpen(true);
+  };
+
+  // Member ledger summary
+  const memberStats = useMemo(() => {
+    const held = memberIssuances.filter((i: any) => i.status === 'issued').length;
+    const returned = memberIssuances.filter((i: any) => i.status === 'returned').length;
+    const lost = memberIssuances.filter((i: any) => i.status === 'lost').length;
+    const dueAmount = memberIssuances
+      .filter((i: any) => i.distribution_type === 'sale')
+      .reduce((s: number, i: any) => s + Number(i.selling_price || 0), 0);
+    return { total: memberIssuances.length, held, returned, lost, dueAmount };
+  }, [memberIssuances]);
+
+
   const filteredIss = issuances.filter((i: any) => {
     // Year filter
     if (yearFilter && yearFilter !== 'all') {
