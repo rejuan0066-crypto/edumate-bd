@@ -58,12 +58,13 @@ const LibraryIssuance = () => {
 
   // "Add a book" working row (added into the cart)
   const [bookId, setBookId] = useState('');
+  const [bookName, setBookName] = useState(''); // free-text title when not in catalog
   const [distributionType, setDistributionType] = useState('free');
   const [sellingPrice, setSellingPrice] = useState(0);
   const [bookCondition, setBookCondition] = useState('new');
 
   // Selected books cart for this issuance
-  type CartItem = { bookId: string; title: string; condition: string; distributionType: string; sellingPrice: number };
+  type CartItem = { uid: string; bookId: string | null; title: string; condition: string; distributionType: string; sellingPrice: number; custom: boolean };
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const getRoleLabel = (roleName?: string | null) => {
