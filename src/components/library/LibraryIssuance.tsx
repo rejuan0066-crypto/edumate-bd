@@ -67,6 +67,12 @@ const LibraryIssuance = () => {
   type CartItem = { uid: string; bookId: string | null; title: string; condition: string; distributionType: string; sellingPrice: number; custom: boolean };
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  // Member profile / ledger state
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileType, setProfileType] = useState('student');
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileRecipient, setProfileRecipient] = useState<any>(null);
+
   const getRoleLabel = (roleName?: string | null) => {
     switch (roleName) {
       case 'teacher':
