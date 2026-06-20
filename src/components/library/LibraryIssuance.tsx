@@ -597,6 +597,15 @@ const LibraryIssuance = () => {
                     ))}
                   </div>
                 )}
+                {!selectedRecipient && recipientSearch.length >= 2 && recipients.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1.5">{bn ? 'কোনো ফলাফল পাওয়া যায়নি। আইডি বা নামের বানান যাচাই করুন।' : 'No results found. Check the ID or name spelling.'}</p>
+                )}
+                {!selectedRecipient && (
+                  <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    {bn ? 'পরবর্তী ধাপে যেতে তালিকা থেকে একজন গ্রহীতা নির্বাচন করুন।' : 'Select a recipient from the list to continue.'}
+                  </p>
+                )}
               </div>
 
               {/* Selected profile card */}
