@@ -316,11 +316,34 @@ const LibraryIssuance = () => {
   }, [autoDistributorName, distributorResults, bn]);
 
   const resetForm = () => {
-    setOpen(false); setBookId(''); setRecipientType('student');
+    setOpen(false); setStep(1); setBookId(''); setRecipientType('student');
     setRecipientSearch(''); setSelectedRecipient(null);
     setDistributionType('free'); setSellingPrice(0); setBookCondition('new');
+    setIssuedDate(new Date()); setNotes(''); setCart([]);
     setDistributorName(autoDistributorName);
   };
+
+  const addToCart = () => {
+    if (!bookId) return;
+    if (cart.some(c => c.bookId === bookId)) {
+      toast.error(bn ? 'এই বইটি ইতিমধ্যে যুক্ত করা হয়েছে' : 'This book is already added');
+      return;
+    }
+    const b = books.find((bk: any) => bk.id === bookId);
+    if (!b) return;
+    setCart(prev => [...prev, {
+      bookId,
+      title: bn ? (b.title_bn || b.title) : b.title,
+      condition: bookCondition,
+      distributionType,
+      sellingPrice: distributionType === 'sale' ? Number(sellingPrice) : 0,
+    }]);
+    setBookId(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+  };
+
+  const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.bookId !== id));
+
+  const recipientLabel = recipientType === 'student' ? (bn ? 'ছাত্র' : 'Student') : recipientType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
 
   const filteredIss = issuances.filter((i: any) => {
     // Year filter
