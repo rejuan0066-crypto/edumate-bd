@@ -877,7 +877,7 @@ const LibraryIssuance = () => {
                       {issuedBooks.map((i: any) => (
                         <TableRow key={i.id}>
                           <TableCell className="font-medium">
-                            {bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}
+                            {i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}
                           </TableCell>
                           <TableCell>
                             <span>{i.recipient_name}</span>
