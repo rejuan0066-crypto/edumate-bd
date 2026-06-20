@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { isAdminRole } from '@/lib/roles';
-import { printIssuanceReceipt, printYearlyIssuanceList, downloadIssuanceReceipt, downloadYearlyIssuanceList } from '@/lib/libraryIssuancePrint';
+import { printIssuanceReceipt, printCombinedIssuanceReceipt, printYearlyIssuanceList, downloadIssuanceReceipt, downloadYearlyIssuanceList } from '@/lib/libraryIssuancePrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
