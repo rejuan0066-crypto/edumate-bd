@@ -331,6 +331,7 @@ const LibraryIssuance = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['member-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
       toast.success(bn ? 'হারানো হিসেবে চিহ্নিত' : 'Marked as lost');
