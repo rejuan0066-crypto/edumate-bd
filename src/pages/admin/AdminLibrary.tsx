@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Package, ArrowRightLeft, BarChart3 } from 'lucide-react';
+import { BookOpen, Package, ArrowRightLeft, BarChart3, Users } from 'lucide-react';
 import LibraryDashboard from '@/components/library/LibraryDashboard';
 import LibraryInventory from '@/components/library/LibraryInventory';
 import LibraryIssuance from '@/components/library/LibraryIssuance';
+import LibraryProfiles from '@/components/library/LibraryProfiles';
 import LibraryReports from '@/components/library/LibraryReports';
 
 const AdminLibrary = () => {
@@ -15,9 +16,11 @@ const AdminLibrary = () => {
   const tabs = [
     { key: 'dashboard', label: bn ? 'ড্যাশবোর্ড' : 'Dashboard', icon: BarChart3 },
     { key: 'inventory', label: bn ? 'ইনভেন্টরি' : 'Inventory', icon: Package },
+    { key: 'profiles', label: bn ? 'প্রোফাইল' : 'Profiles', icon: Users },
     { key: 'issuance', label: bn ? 'ইস্যু / বিতরণ' : 'Issue / Distribute', icon: ArrowRightLeft },
     { key: 'reports', label: bn ? 'রিপোর্ট' : 'Reports', icon: BookOpen },
   ];
+
 
   return (
     <div className="space-y-6">
