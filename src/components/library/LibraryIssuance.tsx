@@ -403,7 +403,7 @@ const LibraryIssuance = () => {
   const handleDownloadSingleIssuance = async (i: any) => {
     try {
       await downloadIssuanceReceipt({
-        bookTitle: bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || ''),
+        bookTitle: i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || '')),
         recipientName: i.recipient_name || '',
         recipientType: i.recipient_type || 'student',
         distributionType: i.distribution_type || 'free',
