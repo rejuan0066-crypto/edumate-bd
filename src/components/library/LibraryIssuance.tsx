@@ -627,7 +627,14 @@ const LibraryIssuance = () => {
                 </div>
               )}
 
-              <Button onClick={() => setStep(2)} disabled={!selectedRecipient} className="btn-primary-gradient">
+              <Button
+                onClick={() => {
+                  if (selectedRecipient) { setStep(2); return; }
+                  if (recipients.length === 1) { setSelectedRecipient(recipients[0]); setStep(2); return; }
+                  toast.error(bn ? 'তালিকা থেকে একজন গ্রহীতা নির্বাচন করুন' : 'Please select a recipient from the list');
+                }}
+                className="btn-primary-gradient"
+              >
                 {bn ? 'পরবর্তী: বই নির্বাচন' : 'Next: Select Books'}<ChevronRight className="w-4 h-4 ml-1.5" />
               </Button>
             </div>
