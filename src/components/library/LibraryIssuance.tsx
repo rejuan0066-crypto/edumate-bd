@@ -526,109 +526,243 @@ const LibraryIssuance = () => {
         </div>
       )}
 
-      {/* Issue Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{bn ? 'বই ইস্যু করুন' : 'Issue Book'}</DialogTitle></DialogHeader>
-          <div className="grid gap-4">
-            <div>
-              <Label>{bn ? 'বই সিলেক্ট করুন' : 'Select Book'}</Label>
-              <Select value={bookId} onValueChange={setBookId}>
-                <SelectTrigger><SelectValue placeholder={bn ? 'বই বাছুন' : 'Choose a book'} /></SelectTrigger>
-                <SelectContent>
-                  {books.map((b: any) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {bn ? (b.title_bn || b.title) : b.title} ({b.available_copies} {bn ? 'কপি' : 'copies'})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Issue Dialog — 2-step wizard */}
+      <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); else setOpen(o); }}>
+        <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              {bn ? 'বই ইস্যু করুন' : 'Issue Book'}
+            </DialogTitle>
+          </DialogHeader>
 
-            <div>
-              <Label>{bn ? 'গ্রহীতার ধরন' : 'Recipient Type'}</Label>
-              <Select value={recipientType} onValueChange={v => { setRecipientType(v); setSelectedRecipient(null); setRecipientSearch(''); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
-                  <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                  <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Stepper */}
+          <div className="flex items-center gap-2 mb-2">
+            {[
+              { n: 1, label: bn ? 'প্রোফাইল' : 'Profile' },
+              { n: 2, label: bn ? 'বই ও তথ্য' : 'Books & Details' },
+            ].map((s, idx) => (
+              <div key={s.n} className="flex items-center gap-2 flex-1">
+                <div className={cn(
+                  'flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+                  step === s.n ? 'bg-primary text-primary-foreground' : step > s.n ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                )}>
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-background/30 text-xs">
+                    {step > s.n ? <Check className="w-3 h-3" /> : s.n}
+                  </span>
+                  {s.label}
+                </div>
+                {idx === 0 && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+              </div>
+            ))}
+          </div>
 
-            <div>
-              <Label>{bn ? 'গ্রহীতা খুঁজুন (আইডি/নাম)' : 'Search Recipient (ID/Name)'}</Label>
-              <Input
-                value={selectedRecipient ? (selectedRecipient.name_bn || selectedRecipient.name_en) : recipientSearch}
-                onChange={e => { setRecipientSearch(e.target.value); setSelectedRecipient(null); }}
-                placeholder={bn ? 'আইডি বা নাম লিখুন...' : 'Type ID or name...'}
-              />
-              {!selectedRecipient && recipients.length > 0 && (
-                <div className="border border-border rounded-md mt-1 max-h-40 overflow-y-auto bg-background shadow-lg">
-                  {recipients.map((r: any) => (
-                    <button key={r.id} onClick={() => setSelectedRecipient(r)}
-                      className="w-full text-left px-3 py-2 hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
-                      <span className="font-medium">{r.name_bn || r.name_en}</span>
-                      {r.student_id && <span className="text-muted-foreground ml-2">({r.student_id})</span>}
-                      {r.classes && <span className="text-muted-foreground ml-2">— {bn ? r.classes.name_bn : r.classes.name}</span>}
-                      {r.designation && <span className="text-muted-foreground ml-2">— {r.designation}</span>}
-                    </button>
-                  ))}
+          {/* STEP 1 — Recipient profile */}
+          {step === 1 && (
+            <div className="grid gap-4">
+              <div>
+                <Label className="flex items-center gap-1.5"><User className="w-4 h-4" />{bn ? 'গ্রহীতার ধরন' : 'Recipient Type'}</Label>
+                <Select value={recipientType} onValueChange={v => { setRecipientType(v); setSelectedRecipient(null); setRecipientSearch(''); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
+                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                    <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>{bn ? 'গ্রহীতা খুঁজুন (আইডি/নাম)' : 'Search Recipient (ID/Name)'}</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
+                    value={selectedRecipient ? (selectedRecipient.name_bn || selectedRecipient.name_en) : recipientSearch}
+                    onChange={e => { setRecipientSearch(e.target.value); setSelectedRecipient(null); }}
+                    placeholder={bn ? 'আইডি বা নাম লিখুন...' : 'Type ID or name...'}
+                  />
+                </div>
+                {!selectedRecipient && recipients.length > 0 && (
+                  <div className="border border-border rounded-md mt-1 max-h-44 overflow-y-auto bg-background shadow-lg">
+                    {recipients.map((r: any) => (
+                      <button key={r.id} onClick={() => setSelectedRecipient(r)}
+                        className="w-full text-left px-3 py-2 hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
+                        <span className="font-medium">{r.name_bn || r.name_en}</span>
+                        {r.student_id && <span className="text-muted-foreground ml-2">({r.student_id})</span>}
+                        {r.staff_id && <span className="text-muted-foreground ml-2">({r.staff_id})</span>}
+                        {r.classes && <span className="text-muted-foreground ml-2">— {bn ? r.classes.name_bn : r.classes.name}</span>}
+                        {r.designation && <span className="text-muted-foreground ml-2">— {r.designation}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Selected profile card */}
+              {selectedRecipient && (
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{selectedRecipient.name_bn || selectedRecipient.name_en}</p>
+                    <p className="text-xs text-muted-foreground">
+                      <Badge variant="secondary" className="mr-2">{recipientLabel}</Badge>
+                      {selectedRecipient.student_id || selectedRecipient.staff_id || ''}
+                      {selectedRecipient.roll_number && <span className="ml-2">{bn ? 'রোল' : 'Roll'}: {selectedRecipient.roll_number}</span>}
+                      {selectedRecipient.classes && <span className="ml-2">{bn ? selectedRecipient.classes.name_bn : selectedRecipient.classes.name}</span>}
+                      {selectedRecipient.designation && <span className="ml-2">{selectedRecipient.designation}</span>}
+                    </p>
+                  </div>
                 </div>
               )}
+
+              <Button onClick={() => setStep(2)} disabled={!selectedRecipient} className="btn-primary-gradient">
+                {bn ? 'পরবর্তী: বই নির্বাচন' : 'Next: Select Books'}<ChevronRight className="w-4 h-4 ml-1.5" />
+              </Button>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>{bn ? 'বিতরণ ধরন' : 'Distribution Type'}</Label>
-                <Select value={distributionType} onValueChange={setDistributionType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">{bn ? 'ফ্রি (উপহার/লাইব্রেরি)' : 'Free (Gift/Library)'}</SelectItem>
-                    <SelectItem value="sale">{bn ? 'বিক্রয়' : 'Sale'}</SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* STEP 2 — Books & details */}
+          {step === 2 && (
+            <div className="grid gap-4">
+              {/* recipient summary */}
+              <div className="rounded-xl bg-muted/50 px-3 py-2 flex items-center gap-2 text-sm">
+                <User className="w-4 h-4 text-primary" />
+                <span className="font-medium">{selectedRecipient?.name_bn || selectedRecipient?.name_en}</span>
+                <Badge variant="secondary">{recipientLabel}</Badge>
               </div>
+
+              {/* Add-a-book panel */}
+              <div className="rounded-2xl border border-border p-3 space-y-3">
+                <p className="text-sm font-semibold flex items-center gap-1.5"><Plus className="w-4 h-4" />{bn ? 'বই যোগ করুন' : 'Add a Book'}</p>
+                <div>
+                  <Label>{bn ? 'বই সিলেক্ট করুন' : 'Select Book'}</Label>
+                  <Select value={bookId} onValueChange={setBookId}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'বই বাছুন' : 'Choose a book'} /></SelectTrigger>
+                    <SelectContent>
+                      {books.filter((b: any) => !cart.some(c => c.bookId === b.id)).map((b: any) => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {bn ? (b.title_bn || b.title) : b.title} ({b.available_copies} {bn ? 'কপি' : 'copies'})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>{bn ? 'বইয়ের অবস্থা' : 'Book Condition'}</Label>
+                    <Select value={bookCondition} onValueChange={setBookCondition}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="new">{bn ? 'নতুন' : 'New'}</SelectItem>
+                        <SelectItem value="old">{bn ? 'পুরাতন' : 'Old'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{bn ? 'বিতরণ ধরন' : 'Distribution Type'}</Label>
+                    <Select value={distributionType} onValueChange={setDistributionType}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">{bn ? 'ফ্রি (উপহার/লাইব্রেরি)' : 'Free (Gift/Library)'}</SelectItem>
+                        <SelectItem value="sale">{bn ? 'বিক্রয়' : 'Sale'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {distributionType === 'sale' && (
+                  <div>
+                    <Label>{bn ? 'বিক্রয়মূল্য (৳)' : 'Selling Price (৳)'}</Label>
+                    <Input type="number" value={sellingPrice || ''} onChange={e => setSellingPrice(Number(e.target.value))} />
+                  </div>
+                )}
+                <Button type="button" variant="outline" className="w-full" onClick={addToCart} disabled={!bookId}>
+                  <Plus className="w-4 h-4 mr-1.5" />{bn ? 'তালিকায় যোগ করুন' : 'Add to List'}
+                </Button>
+              </div>
+
+              {/* Selected books list */}
+              {cart.length > 0 && (
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <div className="px-3 py-2 bg-muted/50 text-sm font-semibold flex items-center justify-between">
+                    <span>{bn ? 'নির্বাচিত বই' : 'Selected Books'}</span>
+                    <Badge variant="secondary">{cart.length}</Badge>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {cart.map(item => (
+                      <div key={item.bookId} className="flex items-center gap-2 px-3 py-2 text-sm">
+                        <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.title}</p>
+                          <div className="flex gap-1.5 mt-0.5">
+                            <Badge variant="outline" className="text-[10px]">{item.condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              {item.distributionType === 'sale' ? `${bn ? 'বিক্রয়' : 'Sale'} ৳${item.sellingPrice}` : (bn ? 'ফ্রি' : 'Free')}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" className="text-destructive h-8 w-8 p-0" onClick={() => removeFromCart(item.bookId)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Shared details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" />{bn ? 'ইস্যুর তারিখ' : 'Issue Date'}</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !issuedDate && 'text-muted-foreground')}>
+                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        {issuedDate ? format(issuedDate, 'dd/MM/yyyy') : <span>{bn ? 'তারিখ বাছুন' : 'Pick a date'}</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={issuedDate} onSelect={(d) => d && setIssuedDate(d)} initialFocus className={cn('p-3 pointer-events-auto')} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div>
+                  <Label>{bn ? 'বিতরণকারী নাম' : 'Distributor Name'}</Label>
+                  <SearchableSelect
+                    options={distributorOptions}
+                    value={distributorName || autoDistributorName}
+                    onValueChange={setDistributorName}
+                    placeholder={bn ? 'বিতরণকারী নাম বাছুন' : 'Select distributor name'}
+                    searchPlaceholder={bn ? 'স্টাফ/শিক্ষক খুঁজুন...' : 'Search staff/teacher...'}
+                    allowCustom
+                    customLabel={bn ? 'নতুন নাম লিখুন' : 'Use typed name'}
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label>{bn ? 'বইয়ের অবস্থা' : 'Book Condition'}</Label>
-                <Select value={bookCondition} onValueChange={setBookCondition}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">{bn ? 'নতুন' : 'New'}</SelectItem>
-                    <SelectItem value="old">{bn ? 'পুরাতন' : 'Old'}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>{bn ? 'মন্তব্য (ঐচ্ছিক)' : 'Notes (optional)'}</Label>
+                <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder={bn ? 'অতিরিক্ত তথ্য...' : 'Additional info...'} />
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                  <ChevronLeft className="w-4 h-4 mr-1.5" />{bn ? 'পূর্ববর্তী' : 'Back'}
+                </Button>
+                <Button onClick={() => issueMut.mutate()} disabled={cart.length === 0 || !selectedRecipient || issueMut.isPending} className="btn-primary-gradient flex-1">
+                  {issueMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                  {bn ? `ইস্যু করুন (${cart.length})` : `Issue (${cart.length})`}
+                </Button>
               </div>
             </div>
-
-            {distributionType === 'sale' && (
-              <div>
-                <Label>{bn ? 'বিক্রয়মূল্য (৳)' : 'Selling Price (৳)'}</Label>
-                <Input type="number" value={sellingPrice || ''} onChange={e => setSellingPrice(Number(e.target.value))} />
-              </div>
-            )}
-
-            <div>
-              <Label>{bn ? 'বিতরণকারী নাম' : 'Distributor Name'}</Label>
-              <SearchableSelect
-                options={distributorOptions}
-                value={distributorName || autoDistributorName}
-                onValueChange={setDistributorName}
-                placeholder={bn ? 'বিতরণকারী নাম বাছুন' : 'Select distributor name'}
-                searchPlaceholder={bn ? 'স্টাফ/শিক্ষক খুঁজুন...' : 'Search staff/teacher...'}
-                allowCustom
-                customLabel={bn ? 'নতুন নাম লিখুন' : 'Use typed name'}
-              />
-            </div>
-
-            <Button onClick={() => issueMut.mutate()} disabled={!bookId || !selectedRecipient || issueMut.isPending} className="btn-primary-gradient">
-              {issueMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-              {bn ? 'ইস্যু করুন' : 'Issue'}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
+
 
       {/* Lost/Fine Dialog */}
       <Dialog open={lossOpen} onOpenChange={setLossOpen}>
