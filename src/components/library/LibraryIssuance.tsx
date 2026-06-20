@@ -672,7 +672,7 @@ const LibraryIssuance = () => {
                 <p className="text-sm font-semibold flex items-center gap-1.5"><Plus className="w-4 h-4" />{bn ? 'বই যোগ করুন' : 'Add a Book'}</p>
                 <div>
                   <Label>{bn ? 'বই সিলেক্ট করুন' : 'Select Book'}</Label>
-                  <Select value={bookId} onValueChange={setBookId}>
+                  <Select value={bookId} onValueChange={(v) => { setBookId(v); setBookName(''); }}>
                     <SelectTrigger><SelectValue placeholder={bn ? 'বই বাছুন' : 'Choose a book'} /></SelectTrigger>
                     <SelectContent>
                       {books.filter((b: any) => !cart.some(c => c.bookId === b.id)).map((b: any) => (
@@ -682,6 +682,20 @@ const LibraryIssuance = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Separator className="flex-1" />
+                  <span className="text-[11px] text-muted-foreground">{bn ? 'অথবা' : 'OR'}</span>
+                  <Separator className="flex-1" />
+                </div>
+                <div>
+                  <Label>{bn ? 'বইয়ের নাম লিখুন (ক্যাটালগে নেই)' : 'Type Book Name (not in catalog)'}</Label>
+                  <Input
+                    value={bookName}
+                    onChange={e => { setBookName(e.target.value); if (e.target.value) setBookId(''); }}
+                    placeholder={bn ? 'বইয়ের নাম লিখুন...' : 'Enter book name...'}
+                    disabled={!!bookId}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
