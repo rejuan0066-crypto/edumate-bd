@@ -193,6 +193,45 @@ const LibraryIssuance = () => {
     enabled: ['teacher', 'staff'].includes(recipientType) && recipientSearch.length >= 2,
   });
 
+  // ===== Member profile search (separate from issue flow) =====
+  const { data: profileStudentResults = [] } = useQuery({
+    queryKey: ['profile-student-search', profileSearch, profileType],
+    queryFn: async () => {
+      if (profileType !== 'student' || profileSearch.length < 2) return [];
+      const { data } = await supabase.from('students').select('id, name_bn, name_en, student_id, roll_number, class_id, classes(name_bn, name)').or(`student_id.ilike.%${profileSearch}%,name_bn.ilike.%${profileSearch}%,name_en.ilike.%${profileSearch}%,roll_number.ilike.%${profileSearch}%`).limit(10);
+      return data || [];
+    },
+    enabled: profileType === 'student' && profileSearch.length >= 2,
+  });
+
+  const { data: profileStaffResults = [] } = useQuery({
+    queryKey: ['profile-staff-search', profileSearch, profileType],
+    queryFn: async () => {
+      if (!['teacher', 'staff'].includes(profileType) || profileSearch.length < 2) return [];
+      const { data } = await supabase.from('staff').select('id, name_bn, name_en, staff_id, designation').or(`name_bn.ilike.%${profileSearch}%,name_en.ilike.%${profileSearch}%,staff_id.ilike.%${profileSearch}%`).limit(10);
+      return data || [];
+    },
+    enabled: ['teacher', 'staff'].includes(profileType) && profileSearch.length >= 2,
+  });
+
+  const profileResults = profileType === 'student' ? profileStudentResults : profileStaffResults;
+
+  // All library records for the selected member
+  const { data: memberIssuances = [], isLoading: memberLoading } = useQuery({
+    queryKey: ['member-issuances', profileRecipient?.id, profileType],
+    queryFn: async () => {
+      if (!profileRecipient?.id) return [];
+      const col = profileType === 'student' ? 'student_id' : 'staff_id';
+      const { data } = await supabase
+        .from('library_issuances')
+        .select('*, library_books(title, title_bn)')
+        .eq(col, profileRecipient.id)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!profileRecipient?.id,
+  });
+
   const issueMut = useMutation({
     mutationFn: async () => {
       if (!selectedRecipient || cart.length === 0) throw new Error('Missing data');
