@@ -67,6 +67,12 @@ const LibraryIssuance = () => {
   type CartItem = { uid: string; bookId: string | null; title: string; condition: string; distributionType: string; sellingPrice: number; custom: boolean };
   const [cart, setCart] = useState<CartItem[]>([]);
 
+  // Member profile / ledger state
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileType, setProfileType] = useState('student');
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileRecipient, setProfileRecipient] = useState<any>(null);
+
   const getRoleLabel = (roleName?: string | null) => {
     switch (roleName) {
       case 'teacher':
@@ -187,6 +193,45 @@ const LibraryIssuance = () => {
     enabled: ['teacher', 'staff'].includes(recipientType) && recipientSearch.length >= 2,
   });
 
+  // ===== Member profile search (separate from issue flow) =====
+  const { data: profileStudentResults = [] } = useQuery({
+    queryKey: ['profile-student-search', profileSearch, profileType],
+    queryFn: async () => {
+      if (profileType !== 'student' || profileSearch.length < 2) return [];
+      const { data } = await supabase.from('students').select('id, name_bn, name_en, student_id, roll_number, class_id, classes(name_bn, name)').or(`student_id.ilike.%${profileSearch}%,name_bn.ilike.%${profileSearch}%,name_en.ilike.%${profileSearch}%,roll_number.ilike.%${profileSearch}%`).limit(10);
+      return data || [];
+    },
+    enabled: profileType === 'student' && profileSearch.length >= 2,
+  });
+
+  const { data: profileStaffResults = [] } = useQuery({
+    queryKey: ['profile-staff-search', profileSearch, profileType],
+    queryFn: async () => {
+      if (!['teacher', 'staff'].includes(profileType) || profileSearch.length < 2) return [];
+      const { data } = await supabase.from('staff').select('id, name_bn, name_en, staff_id, designation').or(`name_bn.ilike.%${profileSearch}%,name_en.ilike.%${profileSearch}%,staff_id.ilike.%${profileSearch}%`).limit(10);
+      return data || [];
+    },
+    enabled: ['teacher', 'staff'].includes(profileType) && profileSearch.length >= 2,
+  });
+
+  const profileResults = profileType === 'student' ? profileStudentResults : profileStaffResults;
+
+  // All library records for the selected member
+  const { data: memberIssuances = [], isLoading: memberLoading } = useQuery({
+    queryKey: ['member-issuances', profileRecipient?.id, profileType],
+    queryFn: async () => {
+      if (!profileRecipient?.id) return [];
+      const col = profileType === 'student' ? 'student_id' : 'staff_id';
+      const { data } = await supabase
+        .from('library_issuances')
+        .select('*, library_books(title, title_bn)')
+        .eq(col, profileRecipient.id)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!profileRecipient?.id,
+  });
+
   const issueMut = useMutation({
     mutationFn: async () => {
       if (!selectedRecipient || cart.length === 0) throw new Error('Missing data');
@@ -224,6 +269,7 @@ const LibraryIssuance = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['member-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books-available'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
@@ -265,6 +311,7 @@ const LibraryIssuance = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['member-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books-available'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
@@ -284,6 +331,7 @@ const LibraryIssuance = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['member-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
       toast.success(bn ? 'হারানো হিসেবে চিহ্নিত' : 'Marked as lost');
@@ -361,6 +409,35 @@ const LibraryIssuance = () => {
   const removeFromCart = (uid: string) => setCart(prev => prev.filter(c => c.uid !== uid));
 
   const recipientLabel = recipientType === 'student' ? (bn ? 'ছাত্র' : 'Student') : recipientType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
+
+  const profileLabel = profileType === 'student' ? (bn ? 'ছাত্র' : 'Student') : profileType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
+
+  // Start a fresh issuance for the member currently open in the profile dialog
+  const issueFromProfile = () => {
+    if (!profileRecipient) return;
+    setRecipientType(profileType);
+    setSelectedRecipient(profileRecipient);
+    setRecipientSearch('');
+    setCart([]);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setIssuedDate(new Date()); setNotes('');
+    setDistributorName(autoDistributorName);
+    setStep(2);
+    setProfileOpen(false);
+    setOpen(true);
+  };
+
+  // Member ledger summary
+  const memberStats = useMemo(() => {
+    const held = memberIssuances.filter((i: any) => i.status === 'issued').length;
+    const returned = memberIssuances.filter((i: any) => i.status === 'returned').length;
+    const lost = memberIssuances.filter((i: any) => i.status === 'lost').length;
+    const dueAmount = memberIssuances
+      .filter((i: any) => i.distribution_type === 'sale')
+      .reduce((s: number, i: any) => s + Number(i.selling_price || 0), 0);
+    return { total: memberIssuances.length, held, returned, lost, dueAmount };
+  }, [memberIssuances]);
+
 
   const filteredIss = issuances.filter((i: any) => {
     // Year filter
@@ -463,6 +540,9 @@ const LibraryIssuance = () => {
               </Button>
             </>
           )}
+          <Button variant="outline" onClick={() => { setProfileType('student'); setProfileSearch(''); setProfileRecipient(null); setProfileOpen(true); }}>
+            <User className="w-4 h-4 mr-1.5" />{bn ? 'প্রোফাইল / লেজার' : 'Profile / Ledger'}
+          </Button>
           <Button variant="outline" onClick={() => { setReturnSearch(''); setReturnOpen(true); }}>
             <Undo2 className="w-4 h-4 mr-1.5" />{bn ? 'বই জমা নিন' : 'Accept Return'}
           </Button>
@@ -810,6 +890,164 @@ const LibraryIssuance = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Member Profile / Ledger Dialog */}
+      <Dialog open={profileOpen} onOpenChange={(o) => { if (!o) { setProfileRecipient(null); setProfileSearch(''); } setProfileOpen(o); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              {bn ? 'সদস্য প্রোফাইল ও বই লেজার' : 'Member Profile & Book Ledger'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Search section */}
+          <div className="grid gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] gap-3">
+              <div>
+                <Label>{bn ? 'ধরন' : 'Type'}</Label>
+                <Select value={profileType} onValueChange={v => { setProfileType(v); setProfileRecipient(null); setProfileSearch(''); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
+                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                    <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{bn ? 'খুঁজুন (আইডি/নাম)' : 'Search (ID/Name)'}</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    className="pl-9"
+                    value={profileRecipient ? (profileRecipient.name_bn || profileRecipient.name_en) : profileSearch}
+                    onChange={e => { setProfileSearch(e.target.value); setProfileRecipient(null); }}
+                    placeholder={bn ? 'আইডি বা নাম লিখুন...' : 'Type ID or name...'}
+                  />
+                </div>
+                {!profileRecipient && profileResults.length > 0 && (
+                  <div className="border border-border rounded-md mt-1 max-h-44 overflow-y-auto bg-background shadow-lg">
+                    {profileResults.map((r: any) => (
+                      <button key={r.id} onClick={() => setProfileRecipient(r)}
+                        className="w-full text-left px-3 py-2 hover:bg-muted/50 text-sm border-b border-border/50 last:border-0">
+                        <span className="font-medium">{r.name_bn || r.name_en}</span>
+                        {r.student_id && <span className="text-muted-foreground ml-2">({r.student_id})</span>}
+                        {r.staff_id && <span className="text-muted-foreground ml-2">({r.staff_id})</span>}
+                        {r.classes && <span className="text-muted-foreground ml-2">— {bn ? r.classes.name_bn : r.classes.name}</span>}
+                        {r.designation && <span className="text-muted-foreground ml-2">— {r.designation}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!profileRecipient && profileSearch.length >= 2 && profileResults.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1.5">{bn ? 'কোনো ফলাফল পাওয়া যায়নি।' : 'No results found.'}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Profile + ledger */}
+            {profileRecipient && (
+              <div className="space-y-4">
+                {/* Profile card + actions */}
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                    <User className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold truncate">{profileRecipient.name_bn || profileRecipient.name_en}</p>
+                    <p className="text-xs text-muted-foreground">
+                      <Badge variant="secondary" className="mr-2">{profileLabel}</Badge>
+                      {profileRecipient.student_id || profileRecipient.staff_id || ''}
+                      {profileRecipient.roll_number && <span className="ml-2">{bn ? 'রোল' : 'Roll'}: {profileRecipient.roll_number}</span>}
+                      {profileRecipient.classes && <span className="ml-2">{bn ? profileRecipient.classes.name_bn : profileRecipient.classes.name}</span>}
+                      {profileRecipient.designation && <span className="ml-2">{profileRecipient.designation}</span>}
+                    </p>
+                  </div>
+                  <Button onClick={issueFromProfile} className="btn-primary-gradient shrink-0">
+                    <Plus className="w-4 h-4 mr-1.5" />{bn ? 'নতুন বই ইস্যু করুন' : 'Issue New Book'}
+                  </Button>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="rounded-xl border border-border p-3 text-center">
+                    <p className="text-2xl font-bold">{memberStats.total}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'মোট' : 'Total'}</p>
+                  </div>
+                  <div className="rounded-xl border border-border p-3 text-center">
+                    <p className="text-2xl font-bold text-blue-600">{memberStats.held}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'কাছে আছে' : 'Currently Held'}</p>
+                  </div>
+                  <div className="rounded-xl border border-border p-3 text-center">
+                    <p className="text-2xl font-bold text-emerald-600">{memberStats.returned}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'ফেরত' : 'Returned'}</p>
+                  </div>
+                  <div className="rounded-xl border border-border p-3 text-center">
+                    <p className="text-2xl font-bold text-destructive">{memberStats.lost}</p>
+                    <p className="text-xs text-muted-foreground">{bn ? 'হারানো' : 'Lost'}</p>
+                  </div>
+                </div>
+
+                {/* Ledger table */}
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <div className="px-3 py-2 bg-muted/50 text-sm font-semibold">{bn ? 'বই গ্রহণের তালিকা' : 'Book Records'}</div>
+                  {memberLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+                  ) : memberIssuances.length === 0 ? (
+                    <div className="text-center py-8 text-sm text-muted-foreground">{bn ? 'এই সদস্যের কোনো বই রেকর্ড নেই' : 'No book records for this member'}</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{bn ? 'বই' : 'Book'}</TableHead>
+                            <TableHead className="text-center">{bn ? 'অবস্থা' : 'Condition'}</TableHead>
+                            <TableHead>{bn ? 'ইস্যু তারিখ' : 'Issued'}</TableHead>
+                            <TableHead>{bn ? 'ফেরত তারিখ' : 'Returned'}</TableHead>
+                            <TableHead className="text-center">{bn ? 'স্ট্যাটাস' : 'Status'}</TableHead>
+                            <TableHead className="text-center">{bn ? 'অ্যাকশন' : 'Actions'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {memberIssuances.map((i: any) => (
+                            <TableRow key={i.id}>
+                              <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
+                              <TableCell className="text-center">{i.book_condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</TableCell>
+                              <TableCell>{i.issued_date ? format(new Date(i.issued_date), 'dd/MM/yyyy') : '—'}</TableCell>
+                              <TableCell>{i.returned_date ? format(new Date(i.returned_date), 'dd/MM/yyyy') : '—'}</TableCell>
+                              <TableCell className="text-center">{getStatusBadge(i.status)}</TableCell>
+                              <TableCell className="text-center">
+                                <div className="flex justify-center gap-1">
+                                  <Button size="sm" variant="outline" onClick={() => handlePrintSingleIssuance(i)} title={bn ? 'প্রিন্ট' : 'Print'}>
+                                    <Printer className="w-3.5 h-3.5" />
+                                  </Button>
+                                  {i.status === 'issued' && (
+                                    <>
+                                      <Button size="sm" variant="outline" onClick={() => returnMut.mutate(i)} disabled={returnMut.isPending} title={bn ? 'জমা নিন' : 'Return'}>
+                                        <Undo2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                      <Button size="sm" variant="outline" className="text-destructive" onClick={() => { setLossTarget(i); setFineAmount(0); setLossOpen(true); }} title={bn ? 'হারানো' : 'Lost'}>
+                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {/* Lost/Fine Dialog */}
