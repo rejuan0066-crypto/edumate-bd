@@ -4187,6 +4187,7 @@ export type Database = {
           issued_by: string | null
           issued_date: string
           notes: string | null
+          profile_id: string | null
           recipient_name: string | null
           recipient_type: string
           returned_date: string | null
@@ -4207,6 +4208,7 @@ export type Database = {
           issued_by?: string | null
           issued_date?: string
           notes?: string | null
+          profile_id?: string | null
           recipient_name?: string | null
           recipient_type?: string
           returned_date?: string | null
@@ -4227,6 +4229,7 @@ export type Database = {
           issued_by?: string | null
           issued_date?: string
           notes?: string | null
+          profile_id?: string | null
           recipient_name?: string | null
           recipient_type?: string
           returned_date?: string | null
@@ -4245,6 +4248,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "library_issuances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "library_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "library_issuances_staff_id_fkey"
             columns: ["staff_id"]
             isOneToOne: false
@@ -4260,6 +4270,82 @@ export type Database = {
           },
           {
             foreignKeyName: "library_issuances_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_profiles: {
+        Row: {
+          address: string | null
+          class_name: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          member_code: string | null
+          member_type: string
+          name: string
+          notes: string | null
+          phone: string | null
+          roll_number: string | null
+          staff_id: string | null
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          class_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          member_code?: string | null
+          member_type?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          roll_number?: string | null
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          class_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          member_code?: string | null
+          member_type?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          roll_number?: string | null
+          staff_id?: string | null
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_profiles_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_profiles_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "library_profiles_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students_public"
