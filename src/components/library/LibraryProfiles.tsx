@@ -592,6 +592,9 @@ const LibraryProfiles = () => {
                                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => { setLossTarget(i); setFineAmount(0); setLossOpen(true); }} title={bn ? 'হারানো' : 'Lost'}><AlertTriangle className="w-3.5 h-3.5" /></Button>
                                     </>
                                   )}
+                                  {canManage && (
+                                    <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleDeleteIssuance(i)} disabled={deleteIssuanceMut.isPending} title={bn ? 'মুছুন' : 'Delete'}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
