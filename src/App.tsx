@@ -269,7 +269,12 @@ const queryClient = new QueryClient({
 const AdminShell = () => (
   <ProtectedRoute>
     <AdminLayout>
-      <Outlet />
+      {/* Inner Suspense keeps the admin shell mounted while a lazy page chunk
+          loads, so navigation shows a single contained shimmer instead of a
+          full-screen loader swap (the "double flash"). */}
+      <Suspense fallback={<RouteShimmer />}>
+        <Outlet />
+      </Suspense>
     </AdminLayout>
   </ProtectedRoute>
 );
