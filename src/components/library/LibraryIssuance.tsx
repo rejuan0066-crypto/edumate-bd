@@ -279,21 +279,28 @@ const LibraryIssuance = () => {
         toast.info(bn ? `৳${totalSale} ছাত্রের লেজারে বকেয়া যোগ হয়েছে` : `৳${totalSale} added as due to student ledger`);
       }
 
-      // Print a receipt for each issued book
-      cart.forEach(item => {
-        const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
-        printIssuanceReceipt({
-          bookTitle: item.custom ? item.title : (bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || '')),
-          recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
-          recipientType,
-          distributionType: item.distributionType,
-          bookCondition: item.condition,
-          sellingPrice: Number(item.sellingPrice),
-          distributorName: distributorName || autoDistributorName || '',
-          issuedDate: format(issuedDate, 'dd/MM/yyyy'),
-          recipientId: selectedRecipient?.student_id || selectedRecipient?.staff_id || '',
-        }, institutionInfo);
-      });
+      // Print a single combined receipt: recipient info on top, per-book table below
+      const distName = distributorName || autoDistributorName || '';
+      const issuedDateStr = format(issuedDate, 'dd/MM/yyyy');
+      printCombinedIssuanceReceipt({
+        recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
+        recipientType,
+        recipientId: selectedRecipient?.student_id || selectedRecipient?.staff_id || '',
+        rollNumber: selectedRecipient?.roll_number || '',
+        className: selectedRecipient?.classes ? (bn ? (selectedRecipient.classes.name_bn || selectedRecipient.classes.name) : selectedRecipient.classes.name) : '',
+        designation: selectedRecipient?.designation || '',
+        items: cart.map(item => {
+          const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
+          return {
+            bookTitle: item.custom ? item.title : (bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || '')),
+            bookCondition: item.condition,
+            distributionType: item.distributionType,
+            sellingPrice: Number(item.sellingPrice),
+            distributorName: distName,
+            issuedDate: issuedDateStr,
+          };
+        }),
+      }, institutionInfo);
 
       resetForm();
     },
