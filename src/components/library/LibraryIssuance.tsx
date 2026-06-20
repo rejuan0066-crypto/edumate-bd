@@ -725,7 +725,7 @@ const LibraryIssuance = () => {
                     <Input type="number" value={sellingPrice || ''} onChange={e => setSellingPrice(Number(e.target.value))} />
                   </div>
                 )}
-                <Button type="button" variant="outline" className="w-full" onClick={addToCart} disabled={!bookId}>
+                <Button type="button" variant="outline" className="w-full" onClick={addToCart} disabled={!bookId && !bookName.trim()}>
                   <Plus className="w-4 h-4 mr-1.5" />{bn ? 'তালিকায় যোগ করুন' : 'Add to List'}
                 </Button>
               </div>
