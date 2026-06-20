@@ -321,7 +321,7 @@ const LibraryIssuance = () => {
   }, [autoDistributorName, distributorResults, bn]);
 
   const resetForm = () => {
-    setOpen(false); setStep(1); setBookId(''); setRecipientType('student');
+    setOpen(false); setStep(1); setBookId(''); setBookName(''); setRecipientType('student');
     setRecipientSearch(''); setSelectedRecipient(null);
     setDistributionType('free'); setSellingPrice(0); setBookCondition('new');
     setIssuedDate(new Date()); setNotes(''); setCart([]);
@@ -329,24 +329,36 @@ const LibraryIssuance = () => {
   };
 
   const addToCart = () => {
-    if (!bookId) return;
-    if (cart.some(c => c.bookId === bookId)) {
-      toast.error(bn ? 'এই বইটি ইতিমধ্যে যুক্ত করা হয়েছে' : 'This book is already added');
-      return;
+    const trimmedName = bookName.trim();
+    // Either pick a catalog book OR type a free-text title
+    if (!bookId && !trimmedName) return;
+
+    let title = trimmedName;
+    let custom = true;
+    if (bookId) {
+      if (cart.some(c => c.bookId === bookId)) {
+        toast.error(bn ? 'এই বইটি ইতিমধ্যে যুক্ত করা হয়েছে' : 'This book is already added');
+        return;
+      }
+      const b = books.find((bk: any) => bk.id === bookId);
+      if (!b) return;
+      title = bn ? (b.title_bn || b.title) : b.title;
+      custom = false;
     }
-    const b = books.find((bk: any) => bk.id === bookId);
-    if (!b) return;
+
     setCart(prev => [...prev, {
-      bookId,
-      title: bn ? (b.title_bn || b.title) : b.title,
+      uid: (crypto as any)?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+      bookId: bookId || null,
+      title,
       condition: bookCondition,
       distributionType,
       sellingPrice: distributionType === 'sale' ? Number(sellingPrice) : 0,
+      custom,
     }]);
-    setBookId(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
   };
 
-  const removeFromCart = (id: string) => setCart(prev => prev.filter(c => c.bookId !== id));
+  const removeFromCart = (uid: string) => setCart(prev => prev.filter(c => c.uid !== uid));
 
   const recipientLabel = recipientType === 'student' ? (bn ? 'ছাত্র' : 'Student') : recipientType === 'teacher' ? (bn ? 'শিক্ষক' : 'Teacher') : (bn ? 'স্টাফ' : 'Staff');
 
