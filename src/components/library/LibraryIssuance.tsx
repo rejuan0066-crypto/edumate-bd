@@ -269,6 +269,7 @@ const LibraryIssuance = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
+      qc.invalidateQueries({ queryKey: ['member-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books-available'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
