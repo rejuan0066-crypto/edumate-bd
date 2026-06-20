@@ -48,14 +48,23 @@ const LibraryIssuance = () => {
   }), [settings]);
 
   // Issue form state
-  const [bookId, setBookId] = useState('');
+  const [step, setStep] = useState<1 | 2>(1);
   const [recipientType, setRecipientType] = useState('student');
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipient, setSelectedRecipient] = useState<any>(null);
+  const [issuedDate, setIssuedDate] = useState<Date>(new Date());
+  const [notes, setNotes] = useState('');
+  const [distributorName, setDistributorName] = useState('');
+
+  // "Add a book" working row (added into the cart)
+  const [bookId, setBookId] = useState('');
   const [distributionType, setDistributionType] = useState('free');
   const [sellingPrice, setSellingPrice] = useState(0);
   const [bookCondition, setBookCondition] = useState('new');
-  const [distributorName, setDistributorName] = useState('');
+
+  // Selected books cart for this issuance
+  type CartItem = { bookId: string; title: string; condition: string; distributionType: string; sellingPrice: number };
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const getRoleLabel = (roleName?: string | null) => {
     switch (roleName) {
