@@ -13,6 +13,134 @@ interface IssuancePrintData {
   recipientId?: string;
 }
 
+interface CombinedIssuanceItem {
+  bookTitle: string;
+  bookCondition: string;
+  distributionType: string;
+  sellingPrice: number;
+  distributorName: string;
+  issuedDate: string;
+}
+
+interface CombinedIssuanceData {
+  recipientName: string;
+  recipientType: string;
+  recipientId?: string;
+  className?: string;
+  rollNumber?: string;
+  designation?: string;
+  items: CombinedIssuanceItem[];
+}
+
+const buildCombinedReceiptHtml = (data: CombinedIssuanceData, institution: InstitutionInfo, withButtons: boolean) => {
+  const recipientTypeLabel: Record<string, string> = {
+    student: 'ছাত্র',
+    teacher: 'শিক্ষক',
+    staff: 'স্টাফ',
+  };
+  const typeBn = recipientTypeLabel[data.recipientType] || '—';
+
+  let totalSale = 0;
+  const rows = data.items.map((it, idx) => {
+    const condBn = it.bookCondition === 'new' ? 'নতুন' : 'পুরাতন';
+    const distTypeBn = it.distributionType === 'sale' ? 'ক্রয়' : 'ফ্রি';
+    const price = it.distributionType === 'sale' ? Number(it.sellingPrice || 0) : 0;
+    totalSale += price;
+    return `<tr>
+      <td style="text-align:center">${idx + 1}</td>
+      <td>${it.bookTitle || '—'}</td>
+      <td style="text-align:center">${it.issuedDate}</td>
+      <td style="text-align:center">${condBn}</td>
+      <td style="text-align:center">${distTypeBn}</td>
+      <td style="text-align:right">${price > 0 ? `৳${price}` : '—'}</td>
+      <td style="text-align:center">${it.distributorName || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="bn"><head><meta charset="UTF-8">
+<title>বই বিতরণ রসিদ</title>
+<style>@font-face{font-family:"Kalpurush";src:url("https://cdn.jsdelivr.net/gh/maateen/bangla-web-fonts/fonts/kalpurush/Kalpurush-v0.258.ttf") format("truetype");font-display:block;}@font-face{font-family:"SutonnyOMJ";src:url("/fonts/SutonnyOMJ.ttf") format("truetype");font-display:swap;}</style><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family: 'Kalpurush', 'SutonnyOMJ','Noto Sans Bengali',sans-serif;padding:20px;color:#1a1a1a;font-size:13px}
+  .receipt{max-width:640px;margin:auto;border:2px solid #333;padding:24px;border-radius:8px}
+  .header{text-align:center;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:14px}
+  .header img{width:60px;height:60px;object-fit:contain;margin-bottom:6px}
+  .header h1{font-size:18px;font-weight:700;margin:0}
+  .header p{font-size:12px;color:#555;margin:2px 0}
+  .title{text-align:center;font-size:16px;font-weight:700;margin:10px 0 14px;padding:6px;background:#f0f0f0;border-radius:4px}
+  .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:14px;border:1px solid #ddd;border-radius:6px;padding:12px}
+  .info .item{display:flex;gap:6px;font-size:13px}
+  .info .label{font-weight:600;color:#555;min-width:78px}
+  .info .value{font-weight:700}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th,td{border:1px solid #999;padding:6px 6px;font-size:12px}
+  th{background:#e8e8e8;font-weight:700;text-align:center}
+  .total-row{font-weight:700;background:#f0f0f0}
+  .footer{margin-top:28px;display:flex;justify-content:space-between;padding-top:36px}
+  .sig{text-align:center;border-top:1px solid #333;padding-top:4px;min-width:120px;font-size:12px}
+  .print-date{text-align:center;font-size:11px;color:#888;margin-top:16px}
+  @media print{body{padding:0}.no-print{display:none!important}}
+</style>
+</head><body>
+${withButtons ? `<div class="no-print" style="text-align:center;margin-bottom:16px">
+  <button onclick="window.print()" style="padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #333;border-radius:4px;background:#fff">🖨️ প্রিন্ট করুন</button>
+  <button onclick="window.close()" style="padding:8px 24px;font-size:14px;cursor:pointer;border:1px solid #ccc;border-radius:4px;background:#fff;margin-left:8px">✕ বন্ধ করুন</button>
+</div>` : ''}
+<div class="receipt">
+  <div class="header">
+    ${institution.logoUrl ? `<img src="${institution.logoUrl}" alt="Logo">` : ''}
+    <h1>${institution.name}</h1>
+    ${institution.nameEn ? `<p style="font-size:13px">${institution.nameEn}</p>` : ''}
+    <p>${institution.address}</p>
+    <p>📞 ${institution.phone}</p>
+  </div>
+  <div class="title">📚 বই বিতরণ রসিদ</div>
+  <div class="info">
+    <div class="item"><span class="label">নাম:</span><span class="value">${data.recipientName || '—'}</span></div>
+    <div class="item"><span class="label">ধরন:</span><span class="value">${typeBn}</span></div>
+    ${data.recipientId ? `<div class="item"><span class="label">আইডি:</span><span class="value">${data.recipientId}</span></div>` : ''}
+    ${data.rollNumber ? `<div class="item"><span class="label">রোল:</span><span class="value">${data.rollNumber}</span></div>` : ''}
+    ${data.className ? `<div class="item"><span class="label">শ্রেণি:</span><span class="value">${data.className}</span></div>` : ''}
+    ${data.designation ? `<div class="item"><span class="label">পদবি:</span><span class="value">${data.designation}</span></div>` : ''}
+  </div>
+  <table>
+    <thead><tr>
+      <th>ক্র.</th><th>বইয়ের নাম</th><th>তারিখ</th><th>অবস্থা</th><th>বিতরণ</th><th>মূল্য</th><th>মাধ্যম</th>
+    </tr></thead>
+    <tbody>
+      ${rows}
+      <tr class="total-row">
+        <td colspan="5" style="text-align:right">মোট ক্রয়মূল্য:</td>
+        <td style="text-align:right">${totalSale > 0 ? `৳${totalSale}` : '—'}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <div class="sig">গ্রহীতার স্বাক্ষর</div>
+    <div class="sig">বিতরণকারীর স্বাক্ষর</div>
+  </div>
+  <div class="print-date">প্রিন্ট: ${format(new Date(), 'dd/MM/yyyy hh:mm a')}</div>
+</div>
+</body></html>`;
+};
+
+export const printCombinedIssuanceReceipt = (data: CombinedIssuanceData, institution: InstitutionInfo) => {
+  const html = buildCombinedReceiptHtml(data, institution, true);
+  const w = window.open('', '_blank', 'width=720,height=800');
+  if (w) {
+    w.document.write(html);
+    w.document.close();
+  }
+};
+
+export const downloadCombinedIssuanceReceipt = async (data: CombinedIssuanceData, institution: InstitutionInfo) => {
+  const html = buildCombinedReceiptHtml(data, institution, false);
+  await downloadReceiptAsPdf(html, `book-issuance-receipt.pdf`);
+};
+
 interface InstitutionInfo {
   name: string;
   nameEn: string;
