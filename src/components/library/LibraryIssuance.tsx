@@ -497,7 +497,7 @@ const LibraryIssuance = () => {
             <TableBody>
               {filteredIss.map((i: any) => (
                 <TableRow key={i.id}>
-                  <TableCell className="font-medium">{bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title}</TableCell>
+                  <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
                   <TableCell>
                     <div>
                       <span className="font-medium">{i.recipient_name}</span>
