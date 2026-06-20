@@ -195,9 +195,10 @@ const LibraryIssuance = () => {
       const distName = distributorName || autoDistributorName || null;
 
       for (const item of cart) {
-        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        const selectedBook = item.bookId ? books.find((b: any) => b.id === item.bookId) : null;
         const payload: any = {
           book_id: item.bookId,
+          custom_book_title: item.custom ? item.title : null,
           recipient_type: recipientType,
           distribution_type: item.distributionType,
           selling_price: item.distributionType === 'sale' ? Number(item.sellingPrice) : 0,
@@ -215,7 +216,10 @@ const LibraryIssuance = () => {
         const { error } = await supabase.from('library_issuances').insert(payload);
         if (error) throw error;
 
-        await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', item.bookId);
+        // Only decrement inventory for catalog books (custom titles have no stock)
+        if (item.bookId) {
+          await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', item.bookId);
+        }
       }
     },
     onSuccess: () => {
