@@ -188,51 +188,61 @@ const LibraryIssuance = () => {
 
   const issueMut = useMutation({
     mutationFn: async () => {
-      if (!bookId || !selectedRecipient) throw new Error('Missing data');
-      const selectedBook = books.find((b: any) => b.id === bookId);
-      const payload: any = {
-        book_id: bookId,
-        recipient_type: recipientType,
-        distribution_type: distributionType,
-        selling_price: distributionType === 'sale' ? Number(sellingPrice) : 0,
-        book_condition: bookCondition,
-        issued_date: format(new Date(), 'yyyy-MM-dd'),
-        issued_by: user?.id,
-        status: 'issued',
-        recipient_name: selectedRecipient.name_bn || selectedRecipient.name_en,
-        distributor_name: distributorName || autoDistributorName || null,
-      };
-      if (recipientType === 'student') payload.student_id = selectedRecipient.id;
-      else payload.staff_id = selectedRecipient.id;
+      if (!selectedRecipient || cart.length === 0) throw new Error('Missing data');
+      const issuedDateStr = format(issuedDate, 'yyyy-MM-dd');
+      const recipientName = selectedRecipient.name_bn || selectedRecipient.name_en;
+      const distName = distributorName || autoDistributorName || null;
 
-      const { error } = await supabase.from('library_issuances').insert(payload);
-      if (error) throw error;
+      for (const item of cart) {
+        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        const payload: any = {
+          book_id: item.bookId,
+          recipient_type: recipientType,
+          distribution_type: item.distributionType,
+          selling_price: item.distributionType === 'sale' ? Number(item.sellingPrice) : 0,
+          book_condition: item.condition,
+          issued_date: issuedDateStr,
+          issued_by: user?.id,
+          status: 'issued',
+          recipient_name: recipientName,
+          distributor_name: distName,
+          notes: notes || null,
+        };
+        if (recipientType === 'student') payload.student_id = selectedRecipient.id;
+        else payload.staff_id = selectedRecipient.id;
 
-      await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', bookId);
+        const { error } = await supabase.from('library_issuances').insert(payload);
+        if (error) throw error;
+
+        await supabase.from('library_books').update({ available_copies: (selectedBook?.available_copies || 1) - 1 }).eq('id', item.bookId);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['library-issuances'] });
       qc.invalidateQueries({ queryKey: ['library-books-available'] });
       qc.invalidateQueries({ queryKey: ['library-books'] });
       qc.invalidateQueries({ queryKey: ['library-books-all'] });
-      toast.success(bn ? 'বই ইস্যু হয়েছে' : 'Book issued');
-      if (distributionType === 'sale' && recipientType === 'student') {
-        toast.info(bn ? `৳${sellingPrice} ছাত্রের লেজারে বকেয়া যোগ হয়েছে` : `৳${sellingPrice} added as due to student ledger`);
+      toast.success(bn ? `${cart.length} টি বই ইস্যু হয়েছে` : `${cart.length} book(s) issued`);
+      const totalSale = cart.filter(c => c.distributionType === 'sale').reduce((s, c) => s + Number(c.sellingPrice || 0), 0);
+      if (totalSale > 0 && recipientType === 'student') {
+        toast.info(bn ? `৳${totalSale} ছাত্রের লেজারে বকেয়া যোগ হয়েছে` : `৳${totalSale} added as due to student ledger`);
       }
 
-      // Print receipt
-      const selectedBook = books.find((b: any) => b.id === bookId);
-      printIssuanceReceipt({
-        bookTitle: bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || ''),
-        recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
-        recipientType,
-        distributionType,
-        bookCondition,
-        sellingPrice: Number(sellingPrice),
-        distributorName: distributorName || autoDistributorName || '',
-        issuedDate: format(new Date(), 'dd/MM/yyyy'),
-        recipientId: selectedRecipient?.student_id || selectedRecipient?.staff_id || '',
-      }, institutionInfo);
+      // Print a receipt for each issued book
+      cart.forEach(item => {
+        const selectedBook = books.find((b: any) => b.id === item.bookId);
+        printIssuanceReceipt({
+          bookTitle: bn ? (selectedBook?.title_bn || selectedBook?.title || '') : (selectedBook?.title || ''),
+          recipientName: selectedRecipient?.name_bn || selectedRecipient?.name_en || '',
+          recipientType,
+          distributionType: item.distributionType,
+          bookCondition: item.condition,
+          sellingPrice: Number(item.sellingPrice),
+          distributorName: distributorName || autoDistributorName || '',
+          issuedDate: format(issuedDate, 'dd/MM/yyyy'),
+          recipientId: selectedRecipient?.student_id || selectedRecipient?.staff_id || '',
+        }, institutionInfo);
+      });
 
       resetForm();
     },
