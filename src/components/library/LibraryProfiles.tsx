@@ -33,6 +33,8 @@ const typeLabel = (t: string, bn: boolean) =>
 
 const emptyForm = {
   member_type: 'student' as MemberType,
+  student_id: '',
+  staff_id: '',
   name: '',
   member_code: '',
   class_name: '',
@@ -127,12 +129,74 @@ const LibraryProfiles = () => {
     enabled: !!activeProfile?.id,
   });
 
+  const { data: studentsList = [] } = useQuery({
+    queryKey: ['library-students-list'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('students')
+        .select('id, student_id, name_bn, name_en, roll_number, phone, class_id')
+        .is('deleted_at', null)
+        .order('name_bn', { ascending: true })
+        .limit(2000);
+      return data || [];
+    },
+    enabled: formOpen,
+  });
+
+  const { data: classesList = [] } = useQuery({
+    queryKey: ['library-classes-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('classes').select('id, name_bn').is('deleted_at', null);
+      return data || [];
+    },
+    enabled: formOpen,
+  });
+
+  const { data: staffList = [] } = useQuery({
+    queryKey: ['library-staff-list'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff')
+        .select('id, name_bn, name_en, staff_category, designation, phone, staff_id')
+        .is('deleted_at', null)
+        .eq('status', 'active')
+        .order('name_bn', { ascending: true })
+        .limit(2000);
+      return data || [];
+    },
+    enabled: formOpen,
+  });
+
+  const classesMap = useMemo(() => {
+    const m = new Map<string, string>();
+    classesList.forEach((c: any) => { if (c.id) m.set(c.id, c.name_bn || ''); });
+    return m;
+  }, [classesList]);
+
+  const studentOptions = useMemo(() => studentsList.map((s: any) => {
+    const className = classesMap.get(s.class_id || '') || '';
+    const label = [s.name_bn || s.name_en, s.student_id, s.roll_number, className].filter(Boolean).join(' — ');
+    return { value: s.id, label };
+  }), [studentsList, classesMap]);
+
+  const staffOptions = useMemo(() => {
+    const isTeacher = form.member_type === 'teacher';
+    return staffList
+      .filter((s: any) => (isTeacher ? s.staff_category === 'teacher' : s.staff_category !== 'teacher'))
+      .map((s: any) => {
+        const label = [s.name_bn || s.name_en, s.designation, s.staff_id].filter(Boolean).join(' — ');
+        return { value: s.id, label };
+      });
+  }, [staffList, form.member_type]);
+
   // ===== Profile create/edit/delete =====
   const saveProfile = useMutation({
     mutationFn: async () => {
       if (!form.name.trim()) throw new Error('name');
       const payload: any = {
         member_type: form.member_type,
+        student_id: form.student_id || null,
+        staff_id: form.staff_id || null,
         name: form.name.trim(),
         member_code: form.member_code.trim() || null,
         class_name: form.class_name.trim() || null,
@@ -324,13 +388,54 @@ const LibraryProfiles = () => {
     setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
   };
 
+  const handleSelectStudent = (studentId: string) => {
+    const s = studentsList.find((x: any) => x.id === studentId);
+    if (!s) {
+      setForm(f => ({ ...f, student_id: studentId, name: '', class_name: '', roll_number: '', phone: '' }));
+      return;
+    }
+    setForm(f => ({
+      ...f,
+      student_id: studentId,
+      staff_id: '',
+      name: s.name_bn || s.name_en || '',
+      member_code: s.student_id || '',
+      class_name: classesMap.get(s.class_id || '') || '',
+      roll_number: s.roll_number || '',
+      phone: s.phone || '',
+    }));
+  };
+
+  const handleSelectStaff = (staffId: string) => {
+    const s = staffList.find((x: any) => x.id === staffId);
+    if (!s) {
+      setForm(f => ({ ...f, staff_id: staffId, name: '', member_code: '', phone: '' }));
+      return;
+    }
+    setForm(f => ({
+      ...f,
+      staff_id: staffId,
+      student_id: '',
+      name: s.name_bn || s.name_en || '',
+      member_code: s.staff_id || '',
+      phone: s.phone || '',
+    }));
+  };
+
   const openCreate = () => { setEditingId(null); setForm({ ...emptyForm }); setFormOpen(true); };
   const openEdit = (p: any) => {
     setEditingId(p.id);
     setForm({
-      member_type: p.member_type, name: p.name || '', member_code: p.member_code || '',
-      class_name: p.class_name || '', roll_number: p.roll_number || '', phone: p.phone || '',
-      address: p.address || '', notes: p.notes || '',
+      member_type: p.member_type,
+      student_id: p.student_id || '',
+      staff_id: p.staff_id || '',
+      name: p.name || '',
+      member_code: p.member_code || '',
+      class_name: p.class_name || '',
+      roll_number: p.roll_number || '',
+      phone: p.phone || '',
+      address: p.address || '',
+      notes: p.notes || '',
     });
     setFormOpen(true);
   };
@@ -456,27 +561,52 @@ const LibraryProfiles = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>{bn ? 'ধরন' : 'Type'}</Label>
+              <Select value={form.member_type} onValueChange={(v: MemberType) => setForm(f => ({ ...f, member_type: v, student_id: '', staff_id: '' }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
+                  <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
+                  <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
+                  <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {form.member_type === 'student' && (
               <div>
-                <Label>{bn ? 'ধরন' : 'Type'}</Label>
-                <Select value={form.member_type} onValueChange={(v: MemberType) => setForm(f => ({ ...f, member_type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
-                    <SelectItem value="teacher">{bn ? 'শিক্ষক' : 'Teacher'}</SelectItem>
-                    <SelectItem value="staff">{bn ? 'স্টাফ' : 'Staff'}</SelectItem>
-                    <SelectItem value="other">{bn ? 'অন্যান্য' : 'Other'}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>{bn ? 'ছাত্র সিলেক্ট করুন' : 'Select Student'}</Label>
+                <SearchableSelect
+                  value={form.student_id}
+                  onValueChange={handleSelectStudent}
+                  options={studentOptions}
+                  placeholder={bn ? 'নাম / আইডি / রোল দিয়ে খুঁজুন...' : 'Search by name / ID / roll...'}
+                />
               </div>
+            )}
+
+            {(form.member_type === 'teacher' || form.member_type === 'staff') && (
+              <div>
+                <Label>{bn ? (form.member_type === 'teacher' ? 'শিক্ষক সিলেক্ট করুন' : 'স্টাফ সিলেক্ট করুন') : (form.member_type === 'teacher' ? 'Select Teacher' : 'Select Staff')}</Label>
+                <SearchableSelect
+                  value={form.staff_id}
+                  onValueChange={handleSelectStaff}
+                  options={staffOptions}
+                  placeholder={bn ? 'নাম / পদবি / আইডি দিয়ে খুঁজুন...' : 'Search by name / designation / ID...'}
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{bn ? 'আইডি / কোড' : 'ID / Code'}</Label>
                 <Input value={form.member_code} onChange={e => setForm(f => ({ ...f, member_code: e.target.value }))} placeholder={bn ? 'ঐচ্ছিক' : 'Optional'} />
               </div>
-            </div>
-            <div>
-              <Label>{bn ? 'নাম' : 'Name'} *</Label>
-              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={bn ? 'পূর্ণ নাম' : 'Full name'} />
+              <div>
+                <Label>{bn ? 'নাম' : 'Name'} *</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={bn ? 'পূর্ণ নাম' : 'Full name'} />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
