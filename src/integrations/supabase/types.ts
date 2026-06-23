@@ -10312,25 +10312,6 @@ export type Database = {
           },
         ]
       }
-      whatsapp_public_config: {
-        Row: {
-          away_message: string | null
-          business_account_id: string | null
-          business_hours: string | null
-          button_label: string | null
-          button_position: string | null
-          cloud_api_enabled: boolean | null
-          default_language: string | null
-          id: string | null
-          phone_number: string | null
-          phone_number_id: string | null
-          route_mode: string | null
-          route_patterns: string[] | null
-          show_floating_button: boolean | null
-          welcome_message: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       acquire_user_create_lock:
@@ -10568,6 +10549,17 @@ export type Database = {
         Args: { p_month_year: string }
         Returns: string
       }
+      get_otp_requirements: {
+        Args: never
+        Returns: {
+          is_enabled: boolean
+          require_for_email_change: boolean
+          require_for_login: boolean
+          require_for_password_change: boolean
+          require_for_password_reset: boolean
+          role_overrides: Json
+        }[]
+      }
       get_parent_fee_payments: {
         Args: { _parent_account_id: string; _student_uuid: string }
         Returns: {
@@ -10643,6 +10635,25 @@ export type Database = {
         }
       }
       get_user_role: { Args: { _user_id: string }; Returns: string }
+      get_whatsapp_public_config: {
+        Args: never
+        Returns: {
+          away_message: string
+          business_account_id: string
+          business_hours: string
+          button_label: string
+          button_position: string
+          cloud_api_enabled: boolean
+          default_language: string
+          id: string
+          phone_number: string
+          phone_number_id: string
+          route_mode: string
+          route_patterns: string[]
+          show_floating_button: boolean
+          welcome_message: string
+        }[]
+      }
       has_menu_permission: {
         Args: { _action: string; _menu_path: string; _user_id: string }
         Returns: boolean
@@ -10906,6 +10917,13 @@ export type Database = {
       permanent_block_device: {
         Args: { _device_id: string; _notes?: string; _reason: string }
         Returns: Json
+      }
+      public_find_exam_student: {
+        Args: { p_roll: string; p_session_id: string }
+        Returns: {
+          class_id: string
+          student_id: string
+        }[]
       }
       reconcile_fee_payment: {
         Args: {
