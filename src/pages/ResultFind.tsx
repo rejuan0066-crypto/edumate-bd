@@ -62,34 +62,26 @@ const ResultFind = () => {
         return;
       }
 
-      // Find student by roll number in exam session
-      const { data: sessionStudents } = await supabase
-        .from('exam_session_students')
-        .select('student_id, class_id')
-        .eq('exam_session_id', examSessionId);
+      // Find the matching student via a security-definer RPC (only returns the
+      // single matched student for a published session — no bulk UUID exposure).
+      const { data: matched } = await (supabase as any).rpc('public_find_exam_student', {
+        p_session_id: examSessionId,
+        p_roll: rollNumber.trim(),
+      });
+      const found = Array.isArray(matched) ? matched[0] : matched;
 
-      if (!sessionStudents?.length) {
+      if (!found?.student_id) {
         setError(bn ? 'ছাত্র পাওয়া যায়নি' : 'Student not found');
         return;
       }
 
       // Get student info from public view (non-sensitive fields only)
-      const studentIds = sessionStudents.map((s: any) => s.student_id);
       const { data: publicStudents } = await (supabase as any)
         .from('students_public')
         .select('*')
-        .in('id', studentIds);
+        .eq('id', found.student_id);
 
-      const found = sessionStudents.find((es: any) => {
-        const st = (publicStudents || []).find((ps: any) => ps.id === es.student_id);
-        return st && (
-          String(st.roll_number) === rollNumber.trim() ||
-          st.student_id === rollNumber.trim() ||
-          st.registration_number === rollNumber.trim()
-        );
-      });
-
-      const student = found ? (publicStudents || []).find((ps: any) => ps.id === found.student_id) : null;
+      const student = (publicStudents || []).find((ps: any) => ps.id === found.student_id) || null;
       if (!student) {
         setError(bn ? 'ছাত্র পাওয়া যায়নি' : 'Student not found');
         return;

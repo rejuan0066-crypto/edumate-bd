@@ -36,12 +36,8 @@ export function clearOtpRequirementsCache() {
 
 export async function fetchOtpRequirements(force = false): Promise<OtpRequirements> {
   if (!force && cache && Date.now() - cacheAt < TTL_MS) return cache;
-  const { data } = await supabase
-    .from("otp_config")
-    .select("is_enabled, require_for_login, require_for_password_reset, require_for_email_change, require_for_password_change, role_overrides")
-    .eq("id", 1)
-    .maybeSingle();
-  const d = data as any;
+  const { data } = await (supabase as any).rpc("get_otp_requirements");
+  const d = (Array.isArray(data) ? data[0] : data) as any;
   cache = {
     is_enabled: d?.is_enabled ?? DEFAULTS.is_enabled,
     require_for_login: d?.require_for_login ?? DEFAULTS.require_for_login,
