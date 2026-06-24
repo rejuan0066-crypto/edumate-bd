@@ -107,6 +107,23 @@ const LibraryProfiles = () => {
   const [lossTarget, setLossTarget] = useState<any>(null);
   const [fineAmount, setFineAmount] = useState(0);
 
+  // Audit history dialog
+  const [historyTarget, setHistoryTarget] = useState<any>(null);
+
+  const { data: auditRows = [], isLoading: auditLoading } = useQuery({
+    queryKey: ['issuance-audit', historyTarget?.id],
+    queryFn: async () => {
+      if (!historyTarget?.id) return [];
+      const { data } = await supabase
+        .from('library_issuance_audit' as any)
+        .select('*')
+        .eq('issuance_id', historyTarget.id)
+        .order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+    enabled: !!historyTarget?.id,
+  });
+
   // ===== Queries =====
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ['library-profiles', search, typeFilter],
