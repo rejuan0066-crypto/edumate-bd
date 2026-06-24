@@ -43,7 +43,7 @@ const buildCombinedReceiptHtml = (data: CombinedIssuanceData, institution: Insti
   let totalSale = 0;
   const rows = data.items.map((it, idx) => {
     const condBn = it.bookCondition === 'new' ? 'নতুন' : 'পুরাতন';
-    const distTypeBn = it.distributionType === 'sale' ? 'ক্রয়' : 'ফ্রি';
+    const distTypeBn = it.distributionType === 'sale' ? 'বিক্রয়' : it.distributionType === 'issue' ? 'ধার' : 'ফ্রি';
     const price = it.distributionType === 'sale' ? Number(it.sellingPrice || 0) : 0;
     totalSale += price;
     return `<tr>
@@ -157,7 +157,7 @@ export const printIssuanceReceipt = (data: IssuancePrintData, institution: Insti
   };
   const [typeBn] = recipientTypeLabel[data.recipientType] || ['—', '—'];
   const conditionBn = data.bookCondition === 'new' ? 'নতুন' : 'পুরাতন';
-  const distTypeBn = data.distributionType === 'sale' ? 'বিক্রয়' : 'ফ্রি';
+  const distTypeBn = data.distributionType === 'sale' ? 'বিক্রয়' : data.distributionType === 'issue' ? 'ধার' : 'ফ্রি';
 
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
@@ -227,7 +227,7 @@ export const downloadIssuanceReceipt = async (data: IssuancePrintData, instituti
   };
   const [typeBn] = recipientTypeLabel[data.recipientType] || ['—', '—'];
   const conditionBn = data.bookCondition === 'new' ? 'নতুন' : 'পুরাতন';
-  const distTypeBn = data.distributionType === 'sale' ? 'বিক্রয়' : 'ফ্রি';
+  const distTypeBn = data.distributionType === 'sale' ? 'বিক্রয়' : data.distributionType === 'issue' ? 'ধার' : 'ফ্রি';
 
   const html = `<!DOCTYPE html>
 <html lang="bn"><head><meta charset="UTF-8">
@@ -289,7 +289,7 @@ export const printYearlyIssuanceList = (
   const rows = issuances.map((i: any, idx: number) => {
     const bookTitle = i.library_books?.title_bn || i.library_books?.title || '—';
     const recipientTypeBn = i.recipient_type === 'student' ? 'ছাত্র' : i.recipient_type === 'teacher' ? 'শিক্ষক' : 'স্টাফ';
-    const distBn = i.distribution_type === 'sale' ? 'বিক্রয়' : 'ফ্রি';
+    const distBn = i.distribution_type === 'sale' ? 'বিক্রয়' : i.distribution_type === 'issue' ? 'ধার' : 'ফ্রি';
     const condBn = i.book_condition === 'new' ? 'নতুন' : 'পুরাতন';
     const statusBn = i.status === 'issued' ? 'ইস্যু' : i.status === 'returned' ? 'ফেরত' : 'হারানো';
     const price = i.distribution_type === 'sale' ? (i.selling_price || 0) : 0;
@@ -396,7 +396,7 @@ export const downloadYearlyIssuanceList = async (
   const rows = issuances.map((i: any, idx: number) => {
     const bookTitle = i.library_books?.title_bn || i.library_books?.title || '—';
     const recipientTypeBn = i.recipient_type === 'student' ? 'ছাত্র' : i.recipient_type === 'teacher' ? 'শিক্ষক' : 'স্টাফ';
-    const distBn = i.distribution_type === 'sale' ? 'বিক্রয়' : 'ফ্রি';
+    const distBn = i.distribution_type === 'sale' ? 'বিক্রয়' : i.distribution_type === 'issue' ? 'ধার' : 'ফ্রি';
     const condBn = i.book_condition === 'new' ? 'নতুন' : 'পুরাতন';
     const statusBn = i.status === 'issued' ? 'ইস্যু' : i.status === 'returned' ? 'ফেরত' : 'হারানো';
     const price = i.distribution_type === 'sale' ? (i.selling_price || 0) : 0;
