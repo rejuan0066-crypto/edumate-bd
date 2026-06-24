@@ -787,6 +787,7 @@ const LibraryProfiles = () => {
                               <TableCell className="text-center">
                                 <div className="flex justify-center gap-1">
                                   <Button size="sm" variant="outline" onClick={() => printSingle(i)} title={bn ? 'প্রিন্ট' : 'Print'}><Printer className="w-3.5 h-3.5" /></Button>
+                                  <Button size="sm" variant="outline" onClick={() => setHistoryTarget(i)} title={bn ? 'অডিট হিস্ট্রি' : 'Audit History'}><History className="w-3.5 h-3.5" /></Button>
                                   {i.status === 'issued' && isReturnable(i.distribution_type) && (
                                     <>
                                       <Button size="sm" variant="outline" className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10" onClick={() => returnMut.mutate(i)} disabled={returnMut.isPending} title={bn ? 'জমা নিন' : 'Return'}><Undo2 className="w-3.5 h-3.5 mr-1" />{bn ? 'জমা' : 'Return'}</Button>
