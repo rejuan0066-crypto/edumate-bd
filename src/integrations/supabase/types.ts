@@ -4185,6 +4185,8 @@ export type Database = {
           issuance_id: string | null
           issued_by: string | null
           issued_by_name: string | null
+          new_distributor_name: string | null
+          old_distributor_name: string | null
         }
         Insert: {
           action?: string
@@ -4195,6 +4197,8 @@ export type Database = {
           issuance_id?: string | null
           issued_by?: string | null
           issued_by_name?: string | null
+          new_distributor_name?: string | null
+          old_distributor_name?: string | null
         }
         Update: {
           action?: string
@@ -4205,6 +4209,8 @@ export type Database = {
           issuance_id?: string | null
           issued_by?: string | null
           issued_by_name?: string | null
+          new_distributor_name?: string | null
+          old_distributor_name?: string | null
         }
         Relationships: []
       }
