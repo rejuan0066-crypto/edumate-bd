@@ -55,6 +55,7 @@ const Login = () => {
   const { settings } = useWebsiteSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   // Computed once on mount: is there a persisted session in this browser?
