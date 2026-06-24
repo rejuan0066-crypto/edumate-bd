@@ -475,7 +475,7 @@ const LibraryProfiles = () => {
     lost: ledger.filter((i: any) => i.status === 'lost').length,
   }), [ledger]);
 
-  const isReturnable = (dt: string) => dt === 'issue';
+  const isReturnable = (dt: string) => dt === 'issue' || dt === 'free';
 
   const distTypeLabel = (dt: string) =>
     dt === 'sale' ? (bn ? 'বিক্রয়' : 'Sale')
