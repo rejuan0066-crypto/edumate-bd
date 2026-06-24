@@ -469,6 +469,30 @@ const LibraryProfiles = () => {
     }, institutionInfo);
   };
 
+  const printFullLedger = () => {
+    if (!activeProfile || ledger.length === 0) {
+      toast.error(bn ? 'কোনো বই রেকর্ড নেই' : 'No book records');
+      return;
+    }
+    printCombinedIssuanceReceipt({
+      recipientName: activeProfile.name,
+      recipientType: activeProfile.member_type,
+      recipientId: activeProfile.member_code || '',
+      rollNumber: activeProfile.roll_number || '',
+      className: activeProfile.class_name || '',
+      items: [...ledger]
+        .sort((a: any, b: any) => new Date(a.issued_date || a.created_at).getTime() - new Date(b.issued_date || b.created_at).getTime())
+        .map((i: any) => ({
+          bookTitle: i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || '')),
+          bookCondition: i.book_condition,
+          distributionType: i.distribution_type,
+          sellingPrice: i.selling_price || 0,
+          distributorName: i.distributor_name || '',
+          issuedDate: i.issued_date ? format(new Date(i.issued_date), 'dd/MM/yyyy') : '',
+        })),
+    }, institutionInfo);
+  };
+
   const stats = useMemo(() => ({
     total: ledger.length,
     held: ledger.filter((i: any) => i.status === 'issued' && (i.distribution_type === 'issue' || i.distribution_type === 'free')).length,
@@ -683,6 +707,9 @@ const LibraryProfiles = () => {
                   </div>
                   <Button onClick={() => { resetIssueForm(); setDistributorName(''); setIssueOpen(true); }} className="btn-primary-gradient shrink-0">
                     <Plus className="w-4 h-4 mr-1.5" />{bn ? 'বই ইস্যু করুন' : 'Issue Book'}
+                  </Button>
+                  <Button variant="outline" onClick={printFullLedger} disabled={ledger.length === 0} className="shrink-0">
+                    <Printer className="w-4 h-4 mr-1.5" />{bn ? 'সম্পূর্ণ লেজার প্রিন্ট' : 'Print Full Ledger'}
                   </Button>
                 </div>
 
