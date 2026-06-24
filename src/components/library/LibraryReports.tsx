@@ -79,7 +79,18 @@ const LibraryReports = () => {
             <Input placeholder={bn ? 'খুঁজুন...' : 'Search...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
         )}
+        {reportType === 'issuance_log' && (
+          <div className="flex gap-2 sm:ml-auto">
+            <Button variant="outline" disabled={filteredIss.length === 0} onClick={() => printYearlyIssuanceList(filteredIss, new Date().getFullYear(), institutionInfo)}>
+              <Printer className="w-4 h-4 mr-1.5" />{bn ? 'তালিকা প্রিন্ট' : 'Print List'}
+            </Button>
+            <Button variant="outline" disabled={filteredIss.length === 0} onClick={() => downloadYearlyIssuanceList(filteredIss, new Date().getFullYear(), institutionInfo)}>
+              <Download className="w-4 h-4 mr-1.5" />PDF
+            </Button>
+          </div>
+        )}
       </div>
+
 
       {/* Issuance Log */}
       {reportType === 'issuance_log' && (
