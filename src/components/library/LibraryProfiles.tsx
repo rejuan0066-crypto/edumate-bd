@@ -720,15 +720,15 @@ const LibraryProfiles = () => {
                             <TableRow key={i.id}>
                               <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
                               <TableCell className="text-center">{i.book_condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</TableCell>
-                              <TableCell className="text-center">{i.distribution_type === 'sale' ? (bn ? 'ক্রয়' : 'Sale') : (bn ? 'ফ্রি' : 'Free')}</TableCell>
+                              <TableCell className="text-center">{distTypeLabel(i.distribution_type)}</TableCell>
                               <TableCell className="text-right">{i.distribution_type === 'sale' && i.selling_price > 0 ? `৳${i.selling_price}` : '—'}</TableCell>
                               <TableCell>{i.issued_date ? format(new Date(i.issued_date), 'dd/MM/yyyy') : '—'}</TableCell>
                               <TableCell>{i.returned_date ? format(new Date(i.returned_date), 'dd/MM/yyyy') : '—'}</TableCell>
-                              <TableCell className="text-center">{statusBadge(i.status)}</TableCell>
+                              <TableCell className="text-center">{statusBadge(i.status, i.distribution_type)}</TableCell>
                               <TableCell className="text-center">
                                 <div className="flex justify-center gap-1">
                                   <Button size="sm" variant="outline" onClick={() => printSingle(i)} title={bn ? 'প্রিন্ট' : 'Print'}><Printer className="w-3.5 h-3.5" /></Button>
-                                  {i.status === 'issued' && (
+                                  {i.status === 'issued' && isReturnable(i.distribution_type) && (
                                     <>
                                       <Button size="sm" variant="outline" onClick={() => returnMut.mutate(i)} disabled={returnMut.isPending} title={bn ? 'জমা নিন' : 'Return'}><Undo2 className="w-3.5 h-3.5" /></Button>
                                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => { setLossTarget(i); setFineAmount(0); setLossOpen(true); }} title={bn ? 'হারানো' : 'Lost'}><AlertTriangle className="w-3.5 h-3.5" /></Button>
