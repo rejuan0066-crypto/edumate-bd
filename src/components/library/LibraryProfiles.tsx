@@ -851,7 +851,7 @@ const LibraryProfiles = () => {
                       <TableRow key={c.uid}>
                         <TableCell className="font-medium">{c.title}</TableCell>
                         <TableCell className="text-center">{c.condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</TableCell>
-                        <TableCell className="text-center">{c.distributionType === 'sale' ? (bn ? 'ক্রয়' : 'Sale') : (bn ? 'ফ্রি' : 'Free')}</TableCell>
+                        <TableCell className="text-center">{distTypeLabel(c.distributionType)}</TableCell>
                         <TableCell className="text-right">{c.distributionType === 'sale' ? `৳${c.sellingPrice}` : '—'}</TableCell>
                         <TableCell className="text-right"><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setCart(prev => prev.filter(x => x.uid !== c.uid))}><X className="w-4 h-4" /></Button></TableCell>
                       </TableRow>
