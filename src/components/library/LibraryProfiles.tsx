@@ -719,7 +719,7 @@ const LibraryProfiles = () => {
                       {activeProfile.phone && <span>📞 {activeProfile.phone}</span>}
                     </p>
                   </div>
-                  <Button onClick={() => { resetIssueForm(); setDistributorName(''); setIssueOpen(true); }} className="btn-primary-gradient shrink-0">
+                  <Button onClick={() => { resetIssueForm(); setDistributorName(currentUserName); setIssueOpen(true); }} className="btn-primary-gradient shrink-0">
                     <Plus className="w-4 h-4 mr-1.5" />{bn ? 'বই ইস্যু করুন' : 'Issue Book'}
                   </Button>
                   <Button variant="outline" onClick={printFullLedger} disabled={ledger.length === 0} className="shrink-0">
