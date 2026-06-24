@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'sonner';
-import { Plus, Loader2, Search, Undo2, AlertTriangle, Printer, User, Pencil, Trash2, CalendarIcon, X, BookOpen, IdCard } from 'lucide-react';
+import { Plus, Loader2, Search, Undo2, AlertTriangle, Printer, User, Pencil, Trash2, CalendarIcon, X, BookOpen, IdCard, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
