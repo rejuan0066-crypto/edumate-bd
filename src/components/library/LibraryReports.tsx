@@ -1,17 +1,31 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, FileText, AlertTriangle, Printer, Download } from 'lucide-react';
+import { printYearlyIssuanceList, downloadYearlyIssuanceList } from '@/lib/libraryIssuancePrint';
 import { format } from 'date-fns';
+
 
 const LibraryReports = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { settings } = useWebsiteSettings();
+
+  const institutionInfo = useMemo(() => ({
+    name: settings.institution_name,
+    nameEn: settings.institution_name_en,
+    address: settings.address,
+    phone: settings.phone,
+    logoUrl: settings.logo_url,
+  }), [settings]);
+
 
   const [reportType, setReportType] = useState('issuance_log');
   const [search, setSearch] = useState('');
@@ -65,7 +79,18 @@ const LibraryReports = () => {
             <Input placeholder={bn ? 'খুঁজুন...' : 'Search...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
         )}
+        {reportType === 'issuance_log' && (
+          <div className="flex gap-2 sm:ml-auto">
+            <Button variant="outline" disabled={filteredIss.length === 0} onClick={() => printYearlyIssuanceList(filteredIss, new Date().getFullYear(), institutionInfo)}>
+              <Printer className="w-4 h-4 mr-1.5" />{bn ? 'তালিকা প্রিন্ট' : 'Print List'}
+            </Button>
+            <Button variant="outline" disabled={filteredIss.length === 0} onClick={() => downloadYearlyIssuanceList(filteredIss, new Date().getFullYear(), institutionInfo)}>
+              <Download className="w-4 h-4 mr-1.5" />PDF
+            </Button>
+          </div>
+        )}
       </div>
+
 
       {/* Issuance Log */}
       {reportType === 'issuance_log' && (
