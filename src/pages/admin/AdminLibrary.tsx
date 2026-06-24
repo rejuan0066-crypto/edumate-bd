@@ -33,7 +33,7 @@ const AdminLibrary = () => {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           {tabs.map(t => (
             <TabsTrigger key={t.key} value={t.key} className="flex items-center gap-1.5 text-xs sm:text-sm">
               <t.icon className="w-4 h-4" />
@@ -41,10 +41,9 @@ const AdminLibrary = () => {
             </TabsTrigger>
           ))}
         </TabsList>
+        <TabsContent value="profiles"><LibraryProfiles /></TabsContent>
         <TabsContent value="dashboard"><LibraryDashboard /></TabsContent>
         <TabsContent value="inventory"><LibraryInventory /></TabsContent>
-        <TabsContent value="profiles"><LibraryProfiles /></TabsContent>
-        <TabsContent value="issuance"><LibraryIssuance /></TabsContent>
         <TabsContent value="reports"><LibraryReports /></TabsContent>
       </Tabs>
 
