@@ -820,7 +820,19 @@ const LibraryProfiles = () => {
               </div>
               <div>
                 <Label>{bn ? 'কার মাধ্যমে (বিতরণকারী)' : 'Issued By (Distributor)'}</Label>
-                <Input value={distributorName} onChange={e => setDistributorName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Name'} />
+                {canManage ? (
+                  <SearchableSelect
+                    options={distributorOptions}
+                    value={distributorName}
+                    onValueChange={setDistributorName}
+                    placeholder={bn ? 'নাম নির্বাচন/লিখুন' : 'Select/type name'}
+                    searchPlaceholder={bn ? 'নাম খুঁজুন...' : 'Search name...'}
+                    allowCustom
+                    customLabel={bn ? 'ব্যবহার করুন' : 'Use'}
+                  />
+                ) : (
+                  <Input value={distributorName} readOnly className="bg-muted/50" />
+                )}
               </div>
             </div>
 
