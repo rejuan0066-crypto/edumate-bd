@@ -470,7 +470,7 @@ const LibraryProfiles = () => {
 
   const stats = useMemo(() => ({
     total: ledger.length,
-    held: ledger.filter((i: any) => i.status === 'issued').length,
+    held: ledger.filter((i: any) => i.status === 'issued' && i.distribution_type === 'issue').length,
     returned: ledger.filter((i: any) => i.status === 'returned').length,
     lost: ledger.filter((i: any) => i.status === 'lost').length,
   }), [ledger]);
