@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
+import { useStaffDirectory } from '@/hooks/useStaffDirectory';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { isAdminRole } from '@/lib/roles';
 import { useConfirm } from '@/contexts/ConfirmContext';
@@ -55,6 +57,18 @@ const LibraryProfiles = () => {
   const { settings } = useWebsiteSettings();
   const confirm = useConfirm();
   const canManage = isAdminRole(role);
+
+  // Name of the currently logged-in user (issuer/distributor)
+  const { data: currentStaff } = useCurrentStaff();
+  const currentUserName = (currentStaff?.name_bn || currentStaff?.name_en || user?.email || '').trim();
+
+  // Directory of all personnel — admins can pick someone else as distributor
+  const { data: directory = [] } = useStaffDirectory({ status: 'all', enabled: canManage });
+  const distributorOptions = useMemo(
+    () => directory.map(p => ({ value: (p.name_bn || p.name_en || '').trim(), label: `${p.name_bn || p.name_en}${p.designation ? ' — ' + p.designation : ''}` }))
+      .filter(o => o.value),
+    [directory]
+  );
 
   const institutionInfo = useMemo(() => ({
     name: settings.institution_name,
@@ -705,7 +719,7 @@ const LibraryProfiles = () => {
                       {activeProfile.phone && <span>📞 {activeProfile.phone}</span>}
                     </p>
                   </div>
-                  <Button onClick={() => { resetIssueForm(); setDistributorName(''); setIssueOpen(true); }} className="btn-primary-gradient shrink-0">
+                  <Button onClick={() => { resetIssueForm(); setDistributorName(currentUserName); setIssueOpen(true); }} className="btn-primary-gradient shrink-0">
                     <Plus className="w-4 h-4 mr-1.5" />{bn ? 'বই ইস্যু করুন' : 'Issue Book'}
                   </Button>
                   <Button variant="outline" onClick={printFullLedger} disabled={ledger.length === 0} className="shrink-0">
@@ -806,7 +820,19 @@ const LibraryProfiles = () => {
               </div>
               <div>
                 <Label>{bn ? 'কার মাধ্যমে (বিতরণকারী)' : 'Issued By (Distributor)'}</Label>
-                <Input value={distributorName} onChange={e => setDistributorName(e.target.value)} placeholder={bn ? 'নাম লিখুন' : 'Name'} />
+                {canManage ? (
+                  <SearchableSelect
+                    options={distributorOptions}
+                    value={distributorName}
+                    onValueChange={setDistributorName}
+                    placeholder={bn ? 'নাম নির্বাচন/লিখুন' : 'Select/type name'}
+                    searchPlaceholder={bn ? 'নাম খুঁজুন...' : 'Search name...'}
+                    allowCustom
+                    customLabel={bn ? 'ব্যবহার করুন' : 'Use'}
+                  />
+                ) : (
+                  <Input value={distributorName} readOnly className="bg-muted/50" />
+                )}
               </div>
             </div>
 
