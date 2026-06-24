@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, FileText, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, FileText, AlertTriangle, Printer, Download } from 'lucide-react';
+import { printYearlyIssuanceList, downloadYearlyIssuanceList } from '@/lib/libraryIssuancePrint';
 import { format } from 'date-fns';
+
 
 const LibraryReports = () => {
   const { language } = useLanguage();
