@@ -5,6 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -300,8 +301,8 @@ const LibraryInventory = () => {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label>{bn ? 'কেনার তারিখ' : 'Purchase Date'}</Label><DatePicker bengali={bn} value={form.purchase_date} onChange={v => setForm({ ...form, purchase_date: v })} /></div>
-              <div><Label>{bn ? 'দাম (৳)' : 'Price (৳)'}</Label><Input type="number" value={form.buying_price || ''} onChange={e => setForm({ ...form, buying_price: Number(e.target.value) })} /></div>
-              <div><Label>{bn ? 'কপি সংখ্যা' : 'Copies'}</Label><Input type="number" min={1} value={form.total_copies || ''} onChange={e => setForm({ ...form, total_copies: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'দাম (৳)' : 'Price (৳)'}</Label><NumberInput value={form.buying_price} onValueChange={v => setForm({ ...form, buying_price: v })} /></div>
+              <div><Label>{bn ? 'কপি সংখ্যা' : 'Copies'}</Label><NumberInput min={1} value={form.total_copies} onValueChange={v => setForm({ ...form, total_copies: v })} /></div>
             </div>
             <div><Label>{bn ? 'ক্রয়কারী নাম' : 'Purchaser Name'}</Label>
               <SearchableSelect

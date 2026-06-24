@@ -9,6 +9,7 @@ import { useConfirm } from '@/contexts/ConfirmContext';
 import { printCombinedIssuanceReceipt } from '@/lib/libraryIssuancePrint';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -824,7 +825,7 @@ const LibraryProfiles = () => {
                 {distributionType === 'sale' && (
                   <div>
                     <Label className="text-xs">{bn ? 'ক্রয়মূল্য' : 'Price'}</Label>
-                    <Input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
+                    <NumberInput value={sellingPrice} onValueChange={setSellingPrice} />
                   </div>
                 )}
               </div>
@@ -886,7 +887,7 @@ const LibraryProfiles = () => {
           <div className="grid gap-3">
             <div>
               <Label>{bn ? 'জরিমানা (ঐচ্ছিক)' : 'Fine (optional)'}</Label>
-              <Input type="number" value={fineAmount} onChange={e => setFineAmount(Number(e.target.value))} />
+              <NumberInput value={fineAmount} onValueChange={setFineAmount} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setLossOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
