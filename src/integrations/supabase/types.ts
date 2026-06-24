@@ -4175,6 +4175,39 @@ export type Database = {
           },
         ]
       }
+      library_issuance_audit: {
+        Row: {
+          action: string
+          created_at: string
+          distributor_changed_by_admin: boolean
+          distributor_name: string | null
+          id: string
+          issuance_id: string | null
+          issued_by: string | null
+          issued_by_name: string | null
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          distributor_changed_by_admin?: boolean
+          distributor_name?: string | null
+          id?: string
+          issuance_id?: string | null
+          issued_by?: string | null
+          issued_by_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          distributor_changed_by_admin?: boolean
+          distributor_name?: string | null
+          id?: string
+          issuance_id?: string | null
+          issued_by?: string | null
+          issued_by_name?: string | null
+        }
+        Relationships: []
+      }
       library_issuances: {
         Row: {
           book_condition: string
