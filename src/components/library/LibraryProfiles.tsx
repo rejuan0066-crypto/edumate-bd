@@ -815,8 +815,9 @@ const LibraryProfiles = () => {
                   <Select value={distributionType} onValueChange={setDistributionType}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="free">{bn ? 'ফ্রি' : 'Free'}</SelectItem>
-                      <SelectItem value="sale">{bn ? 'ক্রয়' : 'Sale'}</SelectItem>
+                      <SelectItem value="issue">{bn ? 'ধার (ফেরতযোগ্য)' : 'Lend (returnable)'}</SelectItem>
+                      <SelectItem value="free">{bn ? 'ফ্রি বিতরণ' : 'Free'}</SelectItem>
+                      <SelectItem value="sale">{bn ? 'বিক্রয়' : 'Sale'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
