@@ -154,6 +154,32 @@ const ReceiptQrSettings = () => {
               <Switch checked={autoRotate} onCheckedChange={setAutoRotate} />
             </div>
 
+            {/* Live QR preview */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl border border-border bg-secondary/40">
+              <div className="bg-white p-3 rounded-xl shrink-0">
+                <QRCodeSVG value={preview.url} size={120} level="M" />
+              </div>
+              <div className="min-w-0 space-y-1 text-center sm:text-left">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2 justify-center sm:justify-start">
+                  <QrCode className="w-4 h-4 text-primary" />
+                  {bn ? 'লাইভ QR প্রিভিউ' : 'Live QR Preview'}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'মেয়াদ শেষ হবে: ' : 'Expires on: '}
+                  <span className="font-semibold text-foreground">{preview.expiryStr}</span>
+                  {' '}({ttlValid ? ttlDays : DEFAULT_TTL} {bn ? 'দিন' : 'days'})
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {bn ? 'অটো-রোটেশন: ' : 'Auto-rotation: '}
+                  <span className={autoRotate ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground font-semibold'}>
+                    {autoRotate ? (bn ? 'চালু' : 'ON') : (bn ? 'বন্ধ' : 'OFF')}
+                  </span>
+                </p>
+                <p className="text-[10px] text-muted-foreground break-all">{preview.url}</p>
+              </div>
+            </div>
+
+
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <Button
