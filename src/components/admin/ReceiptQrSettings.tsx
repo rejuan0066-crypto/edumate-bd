@@ -49,6 +49,17 @@ const ReceiptQrSettings = () => {
   const isDirty = ttlDays !== savedTtl || autoRotate !== savedRotate;
   const ttlValid = Number.isFinite(ttlDays) && ttlDays >= 1 && ttlDays <= 3650;
 
+  const preview = useMemo(() => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const sampleToken = 'SAMPLE-PREVIEW-TOKEN';
+    const url = `${origin}/verify-receipt/${sampleToken}`;
+    const days = ttlValid ? ttlDays : DEFAULT_TTL;
+    const expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    const expiryStr = expiry.toLocaleDateString(bn ? 'bn-BD' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return { url, expiryStr };
+  }, [ttlDays, ttlValid, bn]);
+
+
   const handleSave = async () => {
     if (!ttlValid) {
       toast.error(bn ? 'TTL ১ থেকে ৩৬৫০ দিনের মধ্যে হতে হবে' : 'TTL must be between 1 and 3650 days');
