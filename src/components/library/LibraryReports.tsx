@@ -16,6 +16,16 @@ import { format } from 'date-fns';
 const LibraryReports = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const { settings } = useWebsiteSettings();
+
+  const institutionInfo = useMemo(() => ({
+    name: settings.institution_name,
+    nameEn: settings.institution_name_en,
+    address: settings.address,
+    phone: settings.phone,
+    logoUrl: settings.logo_url,
+  }), [settings]);
+
 
   const [reportType, setReportType] = useState('issuance_log');
   const [search, setSearch] = useState('');
