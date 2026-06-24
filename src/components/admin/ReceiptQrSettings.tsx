@@ -115,7 +115,7 @@ const ReceiptQrSettings = () => {
                 type="number"
                 min={1}
                 max={3650}
-                value={Number.isFinite(ttlDays) ? ttlDays : '' || ''}
+                value={Number.isFinite(ttlDays) ? ttlDays : ''}
                 onChange={(e) => setTtlDays(parseInt(e.target.value, 10))}
                 className={!ttlValid ? 'border-destructive max-w-[180px]' : 'max-w-[180px]'}
               />
