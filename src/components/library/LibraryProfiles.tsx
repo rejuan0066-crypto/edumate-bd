@@ -469,6 +469,30 @@ const LibraryProfiles = () => {
     }, institutionInfo);
   };
 
+  const printFullLedger = () => {
+    if (!activeProfile || ledger.length === 0) {
+      toast.error(bn ? 'কোনো বই রেকর্ড নেই' : 'No book records');
+      return;
+    }
+    printCombinedIssuanceReceipt({
+      recipientName: activeProfile.name,
+      recipientType: activeProfile.member_type,
+      recipientId: activeProfile.member_code || '',
+      rollNumber: activeProfile.roll_number || '',
+      className: activeProfile.class_name || '',
+      items: [...ledger]
+        .sort((a: any, b: any) => new Date(a.issued_date || a.created_at).getTime() - new Date(b.issued_date || b.created_at).getTime())
+        .map((i: any) => ({
+          bookTitle: i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title || '') : (i.library_books?.title || '')),
+          bookCondition: i.book_condition,
+          distributionType: i.distribution_type,
+          sellingPrice: i.selling_price || 0,
+          distributorName: i.distributor_name || '',
+          issuedDate: i.issued_date ? format(new Date(i.issued_date), 'dd/MM/yyyy') : '',
+        })),
+    }, institutionInfo);
+  };
+
   const stats = useMemo(() => ({
     total: ledger.length,
     held: ledger.filter((i: any) => i.status === 'issued' && (i.distribution_type === 'issue' || i.distribution_type === 'free')).length,
