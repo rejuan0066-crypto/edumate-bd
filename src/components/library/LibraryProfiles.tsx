@@ -84,7 +84,7 @@ const LibraryProfiles = () => {
   const [bookId, setBookId] = useState('');
   const [bookName, setBookName] = useState('');
   const [bookCondition, setBookCondition] = useState('new');
-  const [distributionType, setDistributionType] = useState('free');
+  const [distributionType, setDistributionType] = useState('issue');
   const [sellingPrice, setSellingPrice] = useState(0);
 
   // Loss dialog
@@ -364,7 +364,7 @@ const LibraryProfiles = () => {
   // ===== Helpers =====
   const resetIssueForm = () => {
     setIssueOpen(false); setCart([]); setBookId(''); setBookName('');
-    setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookCondition('new'); setDistributionType('issue'); setSellingPrice(0);
     setIssuedDate(new Date()); setIssueNotes('');
   };
 
@@ -385,7 +385,7 @@ const LibraryProfiles = () => {
       bookId: bookId || null, title, condition: bookCondition, distributionType,
       sellingPrice: distributionType === 'sale' ? Number(sellingPrice) : 0, custom,
     }]);
-    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('issue'); setSellingPrice(0);
   };
 
   const handleSelectStudent = (studentId: string) => {
