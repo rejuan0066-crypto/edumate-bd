@@ -824,7 +824,7 @@ const LibraryProfiles = () => {
                 {distributionType === 'sale' && (
                   <div>
                     <Label className="text-xs">{bn ? 'ক্রয়মূল্য' : 'Price'}</Label>
-                    <Input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
+                    <NumberInput value={sellingPrice} onValueChange={setSellingPrice} />
                   </div>
                 )}
               </div>
