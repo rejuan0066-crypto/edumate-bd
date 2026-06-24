@@ -166,6 +166,7 @@ const AdminSignatoryAudit = lazy(() => import("./pages/admin/AdminSignatoryAudit
 const AdminFooterAudit = lazy(() => import("./pages/admin/AdminFooterAudit"));
 const AdminAdministrativeDebug = lazy(() => import("./pages/admin/AdminAdministrativeDebug"));
 const AdminNamePermissionAudit = lazy(() => import("./pages/admin/AdminNamePermissionAudit"));
+const AdminLibraryAudit = lazy(() => import("./pages/admin/AdminLibraryAudit"));
 const AdminDonorsRoleAudit = lazy(() => import("./pages/admin/AdminDonorsRoleAudit"));
 const AdminAuditDeviceAllowlist = lazy(() => import("./pages/admin/AdminAuditDeviceAllowlist"));
 const AdminBlockedDevices = lazy(() => import("./pages/admin/AdminBlockedDevices"));
