@@ -270,7 +270,7 @@ const Login = () => {
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(sanitizePasswordInput(e.target.value))}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               className="bg-background"
               name="password"
