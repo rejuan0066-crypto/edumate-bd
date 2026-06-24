@@ -319,7 +319,7 @@ const FeeTypeManager = () => {
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'} *</label>
-              <Input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} className="mt-1" />
+              <Input type="number" value={form.amount || ''} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'ক্যাটাগরি' : 'Category'}</label>

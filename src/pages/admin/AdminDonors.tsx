@@ -148,7 +148,7 @@ const AdminDonors = () => {
             </div>
             <div>
               <Label className="text-sm font-medium text-foreground">{bn ? 'টাকার পরিমাণ' : 'Amount'} *</Label>
-              <Input type="number" className="bg-background mt-1" value={form.donationAmount} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
+              <Input type="number" className="bg-background mt-1" value={form.donationAmount || ''} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
             </div>
             {paymentMethod === 'online' && (
               <>

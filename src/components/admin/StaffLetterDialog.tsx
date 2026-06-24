@@ -500,7 +500,7 @@ const StaffLetterDialog = ({ open, onOpenChange, staff, bn }: StaffLetterDialogP
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{bn ? 'নতুন বেতন (৳) *' : 'New Salary (BDT) *'}</Label>
-                <Input type="number" value={newSalary} onChange={e => setNewSalary(e.target.value)} placeholder="0" className="mt-1" />
+                <Input type="number" value={newSalary || ''} onChange={e => setNewSalary(e.target.value)} placeholder="0" className="mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'পরিবর্তনের ধরন' : 'Change Type'}</Label>

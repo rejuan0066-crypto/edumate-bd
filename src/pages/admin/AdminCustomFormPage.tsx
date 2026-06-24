@@ -232,7 +232,7 @@ const AdminCustomFormPage = () => {
                       {field.field_type === 'text' && <Input placeholder={field.placeholder || ''} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'email' && <Input type="email" placeholder={field.placeholder || ''} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'phone' && <Input type="tel" placeholder={field.placeholder || ''} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
-                      {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
+                      {field.field_type === 'number' && <Input type="number" placeholder={field.placeholder || ''} value={value || ''} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'textarea' && <Textarea placeholder={field.placeholder || ''} rows={3} value={value} onChange={e => updateValue(field.id, e.target.value)} />}
                       {field.field_type === 'date' && <DatePicker bengali={bn} value={value} onChange={v => updateValue(field.id, v)} />}
                       {field.field_type === 'file' && <Input type="file" onChange={e => updateValue(field.id, e.target.files?.[0]?.name || '')} />}

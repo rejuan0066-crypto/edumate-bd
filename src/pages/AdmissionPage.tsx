@@ -763,7 +763,7 @@ const AdmissionPage = () => {
       <div key={config.id}>
         <Label>{label} {required && <span className="text-destructive">*</span>}</Label>
         {config.field_type === 'text' && <Input className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} placeholder={config.placeholder || ''} />}
-        {config.field_type === 'number' && <Input type="number" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}
+        {config.field_type === 'number' && <Input type="number" className="bg-background mt-1" value={val || ''} onChange={e => update(e.target.value)} />}
         {config.field_type === 'textarea' && <Textarea className="bg-background mt-1" rows={3} value={val} onChange={e => update(e.target.value)} />}
         {config.field_type === 'date' && <DatePicker bengali={bn} className="mt-1" value={val} onChange={v => update(v)} />}
         {config.field_type === 'email' && <Input type="email" className="bg-background mt-1" value={val} onChange={e => update(e.target.value)} />}

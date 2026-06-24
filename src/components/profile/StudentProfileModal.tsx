@@ -849,7 +849,7 @@ const StudentProfileModal = ({
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'ছাড়ের পরিমাণ (৳)' : 'Discount Amount (৳)'} *</label>
-              <Input type="number" min="1" value={waiverForm.waiver_amount} onChange={e => setWaiverForm(p => ({ ...p, waiver_amount: e.target.value }))} className="mt-1" placeholder={bn ? 'টাকার পরিমাণ' : 'Amount in Taka'} />
+              <Input type="number" min="1" value={waiverForm.waiver_amount || ''} onChange={e => setWaiverForm(p => ({ ...p, waiver_amount: e.target.value }))} className="mt-1" placeholder={bn ? 'টাকার পরিমাণ' : 'Amount in Taka'} />
               {waiverForm.fee_type_id && waiverForm.waiver_amount && (() => {
                 const ft = applicableFeeTypes.find((f: any) => f.id === waiverForm.fee_type_id);
                 if (!ft) return null;

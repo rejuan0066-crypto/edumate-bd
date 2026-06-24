@@ -125,7 +125,7 @@ const AdminIdFormatSettings = () => {
                     <Label className="text-xs">{bn ? 'প্যাডিং (ডিজিট সংখ্যা)' : 'Padding (digits)'}</Label>
                     <Input
                       type="number" min={1} max={8}
-                      value={r.serial_padding}
+                      value={r.serial_padding || ''}
                       onChange={(e) => update(r.entity_key, { serial_padding: Math.max(1, Math.min(8, parseInt(e.target.value) || 4)) })}
                       className="rounded-xl"
                     />
@@ -134,7 +134,7 @@ const AdminIdFormatSettings = () => {
                     <Label className="text-xs">{bn ? 'শুরুর সিরিয়াল' : 'Start serial'}</Label>
                     <Input
                       type="number" min={1}
-                      value={r.start_serial}
+                      value={r.start_serial || ''}
                       onChange={(e) => update(r.entity_key, { start_serial: Math.max(1, parseInt(e.target.value) || 1) })}
                       className="rounded-xl"
                     />

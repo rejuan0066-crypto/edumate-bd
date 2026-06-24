@@ -164,19 +164,19 @@ export const AIQuestionGeneratorDialog = ({
           <div className="grid grid-cols-4 gap-2 p-3 rounded-2xl bg-muted/30 border border-border/40">
             <div className="space-y-1">
               <Label className="text-[10px] font-semibold uppercase">MCQ</Label>
-              <Input type="number" min={0} max={50} value={mcqCount} onChange={(e) => setMcqCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
+              <Input type="number" min={0} max={50} value={mcqCount || ''} onChange={(e) => setMcqCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] font-semibold uppercase">{bn ? 'সংক্ষিপ্ত' : 'Short'}</Label>
-              <Input type="number" min={0} max={30} value={shortCount} onChange={(e) => setShortCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
+              <Input type="number" min={0} max={30} value={shortCount || ''} onChange={(e) => setShortCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] font-semibold uppercase">CQ</Label>
-              <Input type="number" min={0} max={20} value={cqCount} onChange={(e) => setCqCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
+              <Input type="number" min={0} max={20} value={cqCount || ''} onChange={(e) => setCqCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
             </div>
             <div className="space-y-1">
               <Label className="text-[10px] font-semibold uppercase">{bn ? 'রচনা' : 'Desc'}</Label>
-              <Input type="number" min={0} max={20} value={descCount} onChange={(e) => setDescCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
+              <Input type="number" min={0} max={20} value={descCount || ''} onChange={(e) => setDescCount(Math.max(0, parseInt(e.target.value) || 0))} className="h-8 text-sm text-center rounded-lg" />
             </div>
           </div>
 

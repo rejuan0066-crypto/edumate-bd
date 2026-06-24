@@ -2326,7 +2326,7 @@ const AdminSalary = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input type="number" value={selectedYear} onChange={e => setSelectedYear(e.target.value)}
+                <Input type="number" value={selectedYear || ''} onChange={e => setSelectedYear(e.target.value)}
                   className="w-20 h-8 text-sm" min="2020" max="2040" />
               </div>
 
@@ -2555,7 +2555,7 @@ const AdminSalary = () => {
                                     type="number"
                                     min={1}
                                     max={filtered.length}
-                                    value={serialDraft}
+                                    value={serialDraft || ''}
                                     onChange={(e) => setSerialDraft(e.target.value)}
                                     onBlur={() => {
                                       const n = parseInt(serialDraft, 10);
@@ -2875,7 +2875,7 @@ const AdminSalary = () => {
                   </CardTitle>
                   <div className="flex gap-2 items-center">
                     <Label className="text-xs shrink-0">{bn ? 'বছর' : 'Year'}</Label>
-                    <Input type="number" className="w-24 h-8 text-sm" value={bonusYear}
+                    <Input type="number" className="w-24 h-8 text-sm" value={bonusYear || ''}
                       onChange={e => setBonusYear(e.target.value)} min="2020" max="2040" />
                     <Button size="sm" variant="outline" onClick={() => {
                       const bData = staff.map((s: any, i: number) => {
@@ -3284,7 +3284,7 @@ const AdminSalary = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">{bn ? 'মূল বেতন' : 'Base Salary'}</Label>
-                    <Input type="number" value={editDialog.base_salary} onChange={e => setEditDialog({ ...editDialog, base_salary: Number(e.target.value) })} />
+                    <Input type="number" value={editDialog.base_salary || ''} onChange={e => setEditDialog({ ...editDialog, base_salary: Number(e.target.value) })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'বোনাস' : 'Bonus'}</Label>

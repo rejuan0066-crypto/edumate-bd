@@ -162,7 +162,7 @@ const DonationReceiptDesigner = () => {
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{bn ? 'টাকার পরিমাণ' : 'Amount'}</Label>
-            <Input className="h-8 text-sm" type="number" value={form.donationAmount} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
+            <Input className="h-8 text-sm" type="number" value={form.donationAmount || ''} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{bn ? 'পেমেন্ট পদ্ধতি' : 'Payment Method'}</Label>

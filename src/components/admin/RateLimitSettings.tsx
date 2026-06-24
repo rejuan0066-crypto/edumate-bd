@@ -291,7 +291,7 @@ export default function RateLimitSettings() {
                       <Input
                         type="number"
                         min={1}
-                        value={row.max_requests}
+                        value={row.max_requests || ''}
                         onChange={e => update(row.id, { max_requests: parseInt(e.target.value) || 1 })}
                         className="h-9"
                       />
@@ -301,7 +301,7 @@ export default function RateLimitSettings() {
                       <Input
                         type="number"
                         min={1}
-                        value={row.window_seconds}
+                        value={row.window_seconds || ''}
                         onChange={e => update(row.id, { window_seconds: parseInt(e.target.value) || 1 })}
                         className="h-9"
                       />
@@ -375,11 +375,11 @@ export default function RateLimitSettings() {
             </div>
             <div>
               <Label className="text-xs">{bn ? 'সর্বোচ্চ অনুরোধ' : 'Max Requests'}</Label>
-              <Input type="number" min={1} value={form.max_requests} onChange={e => setForm({ ...form, max_requests: parseInt(e.target.value) || 1 })} />
+              <Input type="number" min={1} value={form.max_requests || ''} onChange={e => setForm({ ...form, max_requests: parseInt(e.target.value) || 1 })} />
             </div>
             <div>
               <Label className="text-xs">{bn ? 'উইন্ডো (সেকেন্ড)' : 'Window (sec)'}</Label>
-              <Input type="number" min={1} value={form.window_seconds} onChange={e => setForm({ ...form, window_seconds: parseInt(e.target.value) || 1 })} />
+              <Input type="number" min={1} value={form.window_seconds || ''} onChange={e => setForm({ ...form, window_seconds: parseInt(e.target.value) || 1 })} />
             </div>
             <div>
               <Label className="text-xs">{bn ? 'ক্যাটাগরি' : 'Category'}</Label>

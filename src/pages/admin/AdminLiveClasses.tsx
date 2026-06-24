@@ -650,7 +650,7 @@ const AdminLiveClasses = () => {
                 <Label>{bn ? 'রিমাইন্ডার (মিনিট আগে)' : 'Reminder (minutes before)'}</Label>
                 <Input
                   type="number" min={1} max={1440}
-                  value={form.reminder_minutes_before}
+                  value={form.reminder_minutes_before || ''}
                   onChange={(e) => setForm({ ...form, reminder_minutes_before: Number(e.target.value) || 10 })}
                   className="mt-1.5 rounded-xl"
                 />

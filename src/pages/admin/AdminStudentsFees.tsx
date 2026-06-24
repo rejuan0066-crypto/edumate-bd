@@ -939,7 +939,7 @@ const AdminStudentsFees = () => {
                 <Input
                   type="number"
                   className="bg-muted/40 cursor-not-allowed"
-                  value={amount}
+                  value={amount || ''}
                   readOnly
                   tabIndex={-1}
                   placeholder="৳ 0.00"

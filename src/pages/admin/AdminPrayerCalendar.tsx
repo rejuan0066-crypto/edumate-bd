@@ -244,7 +244,7 @@ const AdminPrayerCalendar = () => {
                 <Input
                   type="number"
                   className="w-24 bg-background"
-                  value={cfg.hijri_offset}
+                  value={cfg.hijri_offset || ''}
                   onChange={e => updateCfg({ hijri_offset: parseInt(e.target.value) || 0 })}
                   min={-3}
                   max={3}

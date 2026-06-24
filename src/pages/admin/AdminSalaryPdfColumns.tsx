@@ -201,7 +201,7 @@ export default function AdminSalaryPdfColumns() {
                       <TableCell>
                         <Input
                           type="number" min={1} step={1}
-                          value={r.weight}
+                          value={r.weight || ''}
                           onChange={(e) => update(r.id, { weight: Number(e.target.value) || 1 })}
                         />
                       </TableCell>

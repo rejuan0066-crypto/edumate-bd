@@ -261,7 +261,7 @@ const ZakatFitraPage = () => {
                       <Label className="text-xs">{label as string}</Label>
                       <Input
                         type="number"
-                        value={val as string}
+                        value={val as string || ''}
                         onChange={(e) => (setter as (s: string) => void)(e.target.value)}
                         className="rounded-xl"
                         placeholder="0"
@@ -340,7 +340,7 @@ const ZakatFitraPage = () => {
 
                 <div>
                   <Label className="text-xs">{bn ? 'ব্যক্তি সংখ্যা' : 'Number of persons'}</Label>
-                  <Input type="number" min={1} value={persons} onChange={(e) => setPersons(e.target.value)} className="rounded-xl" />
+                  <Input type="number" min={1} value={persons || ''} onChange={(e) => setPersons(e.target.value)} className="rounded-xl" />
                 </div>
 
                 {fitra && (

@@ -835,7 +835,7 @@ const DocumentLayoutBuilder = () => {
                         ].map(m => (
                           <div key={m.k}>
                             <Label className="text-[10px]">{m.l} (mm)</Label>
-                            <Input type="number" value={(ps as any)[m.k]} onChange={e => updatePageSettings(m.k, Number(e.target.value))} className="h-8 text-xs" min={0} max={50} />
+                            <Input type="number" value={(ps as any)[m.k] || ''} onChange={e => updatePageSettings(m.k, Number(e.target.value))} className="h-8 text-xs" min={0} max={50} />
                           </div>
                         ))}
                       </div>

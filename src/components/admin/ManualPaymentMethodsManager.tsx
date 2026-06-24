@@ -249,7 +249,7 @@ const ManualPaymentMethodsManager = () => {
               </div>
               <div>
                 <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
-                <Input type="number" className="mt-1 w-24" value={form.sort_order} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                <Input type="number" className="mt-1 w-24" value={form.sort_order || ''} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
               </div>
               <div className="flex gap-2 pt-2">
                 <Button onClick={handleSave} disabled={saveMutation.isPending} className="btn-primary-gradient flex-1">

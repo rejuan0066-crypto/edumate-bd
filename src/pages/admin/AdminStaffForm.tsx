@@ -1056,7 +1056,7 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
                 {isFieldActive('salary') && isEditMode && existingStaff?.status === 'active' && (
                 <div>
                   <Label>{bn ? (getField('salary')?.label_bn || 'বেতন (টাকা)') : (getField('salary')?.label || 'Salary (BDT)')} {isFieldRequired('salary') && <span className="text-destructive">*</span>}</Label>
-                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
+                  <Input type="number" className={`bg-background mt-1 ${fieldErrors['salary'] ? 'border-destructive' : ''}`} value={salary || ''} onChange={e => handleFieldChange('salary', e.target.value, setSalary)} placeholder="৳" />
                   <FieldError field="salary" />
                 </div>
                 )}

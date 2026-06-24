@@ -2057,7 +2057,7 @@ const GotoDialog = ({
               type="number"
               min={1}
               max={ch?.verses_count}
-              value={ayah}
+              value={ayah || ''}
               onChange={(e) => setAyah(e.target.value)}
               className="rounded-xl"
             />
@@ -2072,7 +2072,7 @@ const GotoDialog = ({
 
         <TabsContent value="page" className="space-y-3 pt-4">
           <Label className="text-xs">{bn ? 'পৃষ্ঠা (১–৬০৪)' : 'Page (1–604)'}</Label>
-          <Input type="number" min={1} max={604} value={page} onChange={(e) => setPage(e.target.value)} className="rounded-xl" />
+          <Input type="number" min={1} max={604} value={page || ''} onChange={(e) => setPage(e.target.value)} className="rounded-xl" />
           <Button className="w-full rounded-xl" onClick={() => onGo('page', Math.min(604, Math.max(1, Number(page) || 1)))}>
             {bn ? 'যান' : 'Go'}
           </Button>
@@ -2080,7 +2080,7 @@ const GotoDialog = ({
 
         <TabsContent value="juz" className="space-y-3 pt-4">
           <Label className="text-xs">{bn ? 'পারা (১–৩০)' : 'Juz (1–30)'}</Label>
-          <Input type="number" min={1} max={30} value={juz} onChange={(e) => setJuz(e.target.value)} className="rounded-xl" />
+          <Input type="number" min={1} max={30} value={juz || ''} onChange={(e) => setJuz(e.target.value)} className="rounded-xl" />
           <Button className="w-full rounded-xl" onClick={() => onGo('juz', Math.min(30, Math.max(1, Number(juz) || 1)))}>
             {bn ? 'যান' : 'Go'}
           </Button>

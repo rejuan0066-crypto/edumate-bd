@@ -349,7 +349,7 @@ const DashboardInstitutionCard = () => {
                 min={0}
                 max={50}
                 step={1}
-                value={footerForm.global_footer_spacing_top}
+                value={footerForm.global_footer_spacing_top || ''}
                 onChange={e => setFooterForm(f => ({ ...f, global_footer_spacing_top: Math.max(0, Number(e.target.value) || 0) }))}
                 className="mt-1"
               />
@@ -366,7 +366,7 @@ const DashboardInstitutionCard = () => {
                 min={0}
                 max={50}
                 step={1}
-                value={footerForm.global_footer_spacing_bottom}
+                value={footerForm.global_footer_spacing_bottom || ''}
                 onChange={e => setFooterForm(f => ({ ...f, global_footer_spacing_bottom: Math.max(0, Number(e.target.value) || 0) }))}
                 className="mt-1"
               />
@@ -383,7 +383,7 @@ const DashboardInstitutionCard = () => {
                 min={6}
                 max={20}
                 step={1}
-                value={footerForm.global_footer_font_size}
+                value={footerForm.global_footer_font_size || ''}
                 onChange={e => setFooterForm(f => ({ ...f, global_footer_font_size: Math.max(6, Number(e.target.value) || 10) }))}
                 className="mt-1"
               />
