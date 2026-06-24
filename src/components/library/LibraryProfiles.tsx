@@ -831,7 +831,7 @@ const LibraryProfiles = () => {
                     customLabel={bn ? 'ব্যবহার করুন' : 'Use'}
                   />
                 ) : (
-                  <Input value={distributorName} readOnly className="bg-muted/50" />
+                  <Input value={distributorName || currentUserName} readOnly tabIndex={-1} className="bg-muted/50 cursor-not-allowed" />
                 )}
               </div>
             </div>
