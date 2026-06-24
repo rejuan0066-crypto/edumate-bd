@@ -58,6 +58,18 @@ const LibraryProfiles = () => {
   const confirm = useConfirm();
   const canManage = isAdminRole(role);
 
+  // Name of the currently logged-in user (issuer/distributor)
+  const { data: currentStaff } = useCurrentStaff();
+  const currentUserName = (currentStaff?.name_bn || currentStaff?.name_en || user?.email || '').trim();
+
+  // Directory of all personnel — admins can pick someone else as distributor
+  const { data: directory = [] } = useStaffDirectory({ status: 'all', enabled: canManage });
+  const distributorOptions = useMemo(
+    () => directory.map(p => ({ value: (p.name_bn || p.name_en || '').trim(), label: `${p.name_bn || p.name_en}${p.designation ? ' — ' + p.designation : ''}` }))
+      .filter(o => o.value),
+    [directory]
+  );
+
   const institutionInfo = useMemo(() => ({
     name: settings.institution_name,
     nameEn: settings.institution_name_en,
