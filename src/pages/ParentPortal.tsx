@@ -1281,7 +1281,7 @@ const FeesTab = ({ studentUuid, accountId, sessionToken, bn }: { studentUuid: st
             <TabsContent value="gateway" className="space-y-3 pt-3">
               <div>
                 <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
-                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+                <Input type="number" value={payAmount || ''} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
               </div>
               <Button onClick={handleGatewayPay} disabled={paySubmitting} className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700">
                 {paySubmitting ? (bn ? 'প্রসেসিং...' : 'Processing...') : (bn ? 'গেটওয়েতে যান' : 'Proceed to Gateway')}
@@ -1300,7 +1300,7 @@ const FeesTab = ({ studentUuid, accountId, sessionToken, bn }: { studentUuid: st
               </div>
               <div>
                 <Label>{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'}</Label>
-                <Input type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
+                <Input type="number" value={payAmount || ''} onChange={(e) => setPayAmount(e.target.value)} className="rounded-xl mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'TrxID / রেফারেন্স' : 'TrxID / Reference'}</Label>

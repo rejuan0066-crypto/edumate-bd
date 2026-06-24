@@ -64,7 +64,7 @@ const PropertiesPanel = ({
               <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Width</Label>
               <Input
                 type="number"
-                value={canvasWidth}
+                value={canvasWidth || ''}
                 onChange={(e) => onCanvasResize(parseInt(e.target.value) || 100, canvasHeight)}
                 className="h-9 text-xs mt-1 rounded-xl border-border/50 bg-background/50"
               />
@@ -73,7 +73,7 @@ const PropertiesPanel = ({
               <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Height</Label>
               <Input
                 type="number"
-                value={canvasHeight}
+                value={canvasHeight || ''}
                 onChange={(e) => onCanvasResize(canvasWidth, parseInt(e.target.value) || 100)}
                 className="h-9 text-xs mt-1 rounded-xl border-border/50 bg-background/50"
               />

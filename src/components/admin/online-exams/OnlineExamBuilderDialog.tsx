@@ -395,15 +395,15 @@ const OnlineExamBuilderDialog = ({ open, onOpenChange, examId, createdBy }: Prop
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label>{bn ? 'সময়সীমা (মিনিট)' : 'Duration (minutes)'} *</Label>
-                  <Input type="number" min={1} value={exam.duration_minutes} onChange={(e) => setExam({ ...exam, duration_minutes: Number(e.target.value) })} className="rounded-2xl" />
+                  <Input type="number" min={1} value={exam.duration_minutes || ''} onChange={(e) => setExam({ ...exam, duration_minutes: Number(e.target.value) })} className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
                   <Label>{bn ? 'মোট নম্বর' : 'Total Marks'}</Label>
-                  <Input type="number" value={exam.total_marks} readOnly className="rounded-2xl bg-muted/50" />
+                  <Input type="number" value={exam.total_marks || ''} readOnly className="rounded-2xl bg-muted/50" />
                 </div>
                 <div className="space-y-2">
                   <Label>{bn ? 'পাস নম্বর' : 'Pass Marks'}</Label>
-                  <Input type="number" value={exam.passing_marks} onChange={(e) => setExam({ ...exam, passing_marks: Number(e.target.value) })} className="rounded-2xl" />
+                  <Input type="number" value={exam.passing_marks || ''} onChange={(e) => setExam({ ...exam, passing_marks: Number(e.target.value) })} className="rounded-2xl" />
                 </div>
                 <div className="space-y-2">
                   <Label>{bn ? 'ফলাফল প্রকাশ' : 'Result Mode'}</Label>
@@ -485,11 +485,11 @@ const OnlineExamBuilderDialog = ({ open, onOpenChange, examId, createdBy }: Prop
                             </Select>
                             <div className="flex items-center gap-2">
                               <Label className="text-xs">{bn ? 'নম্বর' : 'Marks'}</Label>
-                              <Input type="number" min={0} step="0.5" value={q.marks} onChange={(e) => updateQuestion(q._localId, { marks: Number(e.target.value) })} className="rounded-xl w-20" />
+                              <Input type="number" min={0} step="0.5" value={q.marks || ''} onChange={(e) => updateQuestion(q._localId, { marks: Number(e.target.value) })} className="rounded-xl w-20" />
                             </div>
                             <div className="flex items-center gap-2">
                               <Label className="text-xs">{bn ? 'নেগেটিভ' : 'Negative'}</Label>
-                              <Input type="number" min={0} step="0.25" value={q.negative_marks} onChange={(e) => updateQuestion(q._localId, { negative_marks: Number(e.target.value) })} className="rounded-xl w-20" />
+                              <Input type="number" min={0} step="0.25" value={q.negative_marks || ''} onChange={(e) => updateQuestion(q._localId, { negative_marks: Number(e.target.value) })} className="rounded-xl w-20" />
                             </div>
                             <Button size="icon" variant="ghost" className="ml-auto rounded-xl text-destructive" onClick={() => removeQuestion(q._localId)}>
                               <Trash2 className="w-4 h-4" />
@@ -585,7 +585,7 @@ const OnlineExamBuilderDialog = ({ open, onOpenChange, examId, createdBy }: Prop
                 ))}
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/30">
                   <Label>{bn ? 'ট্যাব সুইচ লিমিট' : 'Tab switch limit'}</Label>
-                  <Input type="number" min={0} max={20} value={exam.settings.tab_switch_limit}
+                  <Input type="number" min={0} max={20} value={exam.settings.tab_switch_limit || ''}
                     onChange={(e) => setExam({ ...exam, settings: { ...exam.settings, tab_switch_limit: Number(e.target.value) } })}
                     className="rounded-xl w-24"
                   />

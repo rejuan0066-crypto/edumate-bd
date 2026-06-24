@@ -278,15 +278,15 @@ const AdmissionTestBuilderDialog = ({ open, onOpenChange, testId, onSaved }: Pro
               </div>
               <div>
                 <Label>{bn ? 'সময়কাল (মিনিট)' : 'Duration (minutes)'}</Label>
-                <Input type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
+                <Input type="number" value={duration || ''} onChange={(e) => setDuration(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'মোট নম্বর' : 'Total Marks'}</Label>
-                <Input type="number" value={totalMarks} onChange={(e) => setTotalMarks(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
+                <Input type="number" value={totalMarks || ''} onChange={(e) => setTotalMarks(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'পাশ নম্বর' : 'Pass Mark'}</Label>
-                <Input type="number" value={passMark} onChange={(e) => setPassMark(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
+                <Input type="number" value={passMark || ''} onChange={(e) => setPassMark(parseInt(e.target.value) || 0)} className="rounded-xl mt-1" />
               </div>
               <div>
                 <Label>{bn ? 'শুরুর সময়' : 'Opens At'}</Label>
@@ -326,7 +326,7 @@ const AdmissionTestBuilderDialog = ({ open, onOpenChange, testId, onSaved }: Pro
                       <Label className="text-xs">{bn ? 'নম্বর' : 'Marks'}</Label>
                       <Input
                         type="number"
-                        value={q.marks}
+                        value={q.marks || ''}
                         onChange={(e) => updateQ(idx, { marks: parseInt(e.target.value) || 1 })}
                         className="w-16 h-8 rounded-lg"
                       />

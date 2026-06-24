@@ -434,7 +434,7 @@ const AdminDesignations = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{bn ? 'ক্রম' : 'Sort Order'}</Label><Input type="number" className="bg-background mt-1 w-24" value={sortOrder} onChange={e => setSortOrder(parseInt(e.target.value) || 0)} /></div>
+              <div><Label>{bn ? 'ক্রম' : 'Sort Order'}</Label><Input type="number" className="bg-background mt-1 w-24" value={sortOrder || ''} onChange={e => setSortOrder(parseInt(e.target.value) || 0)} /></div>
               <div className="flex items-center gap-3"><Switch checked={isActive} onCheckedChange={setIsActive} /><Label>{bn ? 'সক্রিয়' : 'Active'}</Label></div>
               <Button onClick={() => saveMutation.mutate()} className="btn-primary-gradient w-full" disabled={saveMutation.isPending}>
                 {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -479,7 +479,7 @@ const AdminDesignations = () => {
               <div><Label>{bn ? 'রাউট পাথ' : 'Route Path'}</Label><Input className="bg-background mt-1 font-mono" value={catRoutePath} onChange={e => setCatRoutePath(e.target.value)} placeholder="/admin/teachers" /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>{bn ? 'আইডি প্রিফিক্স' : 'ID Prefix'} <span className="text-destructive">*</span></Label><Input className="bg-background mt-1 font-mono uppercase" value={catIdPrefix} onChange={e => setCatIdPrefix(e.target.value)} placeholder="TCH" maxLength={5} /></div>
-                <div><Label>{bn ? 'শুরু রেঞ্জ' : 'Start Range'}</Label><Input type="number" className="bg-background mt-1 font-mono" value={catIdStartRange} onChange={e => setCatIdStartRange(parseInt(e.target.value) || 1001)} placeholder="2001" /></div>
+                <div><Label>{bn ? 'শুরু রেঞ্জ' : 'Start Range'}</Label><Input type="number" className="bg-background mt-1 font-mono" value={catIdStartRange || ''} onChange={e => setCatIdStartRange(parseInt(e.target.value) || 1001)} placeholder="2001" /></div>
               </div>
               <div>
                 <Label>{bn ? 'রঙ' : 'Color'}</Label>
@@ -494,7 +494,7 @@ const AdminDesignations = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{bn ? 'ক্রম' : 'Sort Order'}</Label><Input type="number" className="bg-background mt-1 w-24" value={catSortOrder} onChange={e => setCatSortOrder(parseInt(e.target.value) || 0)} /></div>
+              <div><Label>{bn ? 'ক্রম' : 'Sort Order'}</Label><Input type="number" className="bg-background mt-1 w-24" value={catSortOrder || ''} onChange={e => setCatSortOrder(parseInt(e.target.value) || 0)} /></div>
               <div className="flex items-center gap-3"><Switch checked={catIsActive} onCheckedChange={setCatIsActive} /><Label>{bn ? 'সক্রিয়' : 'Active'}</Label></div>
               <Button onClick={() => saveCatMutation.mutate()} className="btn-primary-gradient w-full" disabled={saveCatMutation.isPending}>
                 {saveCatMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

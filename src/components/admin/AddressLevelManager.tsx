@@ -200,7 +200,7 @@ const AddressLevelManager = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
-                <Input className="mt-1 bg-background" type="number" value={formSortOrder} onChange={e => setFormSortOrder(Number(e.target.value))} />
+                <Input className="mt-1 bg-background" type="number" value={formSortOrder || ''} onChange={e => setFormSortOrder(Number(e.target.value))} />
               </div>
               <div>
                 <Label>{bn ? 'প্যারেন্ট লেভেল' : 'Parent Level'}</Label>

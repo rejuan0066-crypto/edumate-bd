@@ -901,11 +901,11 @@ const AdminFormBuilder = () => {
                                   <>
                                     <div>
                                       <Label className="text-xs">{bn ? 'সর্বনিম্ন অক্ষর' : 'Min Length'}</Label>
-                                      <Input type="number" className="mt-1" value={fieldData.validation.min_length} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_length: e.target.value } }))} placeholder="0" />
+                                      <Input type="number" className="mt-1" value={fieldData.validation.min_length || ''} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_length: e.target.value } }))} placeholder="0" />
                                     </div>
                                     <div>
                                       <Label className="text-xs">{bn ? 'সর্বোচ্চ অক্ষর' : 'Max Length'}</Label>
-                                      <Input type="number" className="mt-1" value={fieldData.validation.max_length} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_length: e.target.value } }))} placeholder="999" />
+                                      <Input type="number" className="mt-1" value={fieldData.validation.max_length || ''} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_length: e.target.value } }))} placeholder="999" />
                                     </div>
                                   </>
                                 )}
@@ -913,11 +913,11 @@ const AdminFormBuilder = () => {
                                   <>
                                     <div>
                                       <Label className="text-xs">{bn ? 'সর্বনিম্ন মান' : 'Min Value'}</Label>
-                                      <Input type="number" className="mt-1" value={fieldData.validation.min_value} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_value: e.target.value } }))} placeholder="0" />
+                                      <Input type="number" className="mt-1" value={fieldData.validation.min_value || ''} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, min_value: e.target.value } }))} placeholder="0" />
                                     </div>
                                     <div>
                                       <Label className="text-xs">{bn ? 'সর্বোচ্চ মান' : 'Max Value'}</Label>
-                                      <Input type="number" className="mt-1" value={fieldData.validation.max_value} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_value: e.target.value } }))} placeholder="999999" />
+                                      <Input type="number" className="mt-1" value={fieldData.validation.max_value || ''} onChange={e => setFieldData(p => ({ ...p, validation: { ...p.validation, max_value: e.target.value } }))} placeholder="999999" />
                                     </div>
                                   </>
                                 )}
@@ -995,7 +995,7 @@ const AdminFormBuilder = () => {
 
                           <div>
                             <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
-                            <Input type="number" value={fieldData.sort_order} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                            <Input type="number" value={fieldData.sort_order || ''} onChange={e => setFieldData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
                           </div>
 
                           <div>

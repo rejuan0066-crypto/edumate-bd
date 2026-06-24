@@ -243,7 +243,7 @@ const AttendanceDeviceManager = ({ open, onOpenChange }: Props) => {
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'পোর্ট' : 'Port'}</Label>
-                  <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder="4370" />
+                  <Input type="number" value={form.port || ''} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder="4370" />
                 </div>
               </div>
 

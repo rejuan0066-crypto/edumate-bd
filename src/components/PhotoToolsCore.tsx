@@ -233,11 +233,11 @@ const ResizeControls = ({ originalInfo, language, onProcess, processing }: {
         <div className="grid grid-cols-2 gap-2">
           <div className="relative">
             <MoveHorizontal className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
-            <Input type="number" min={stepVal} step={stepVal} value={displayW} onChange={e => onDisplayW(+e.target.value)} className="h-9 text-sm pl-8 bg-background/50" placeholder="Width" />
+            <Input type="number" min={stepVal} step={stepVal} value={displayW || ''} onChange={e => onDisplayW(+e.target.value)} className="h-9 text-sm pl-8 bg-background/50" placeholder="Width" />
           </div>
           <div className="relative">
             <MoveVertical className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/60" />
-            <Input type="number" min={stepVal} step={stepVal} value={displayH} onChange={e => onDisplayH(+e.target.value)} className="h-9 text-sm pl-8 bg-background/50" placeholder="Height" />
+            <Input type="number" min={stepVal} step={stepVal} value={displayH || ''} onChange={e => onDisplayH(+e.target.value)} className="h-9 text-sm pl-8 bg-background/50" placeholder="Height" />
           </div>
         </div>
         {unit !== 'px' && (

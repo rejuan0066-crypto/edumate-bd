@@ -338,7 +338,7 @@ const AdminModuleManager = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
-                  <Input type="number" value={moduleData.sort_order} onChange={e => setModuleData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                  <Input type="number" value={moduleData.sort_order || ''} onChange={e => setModuleData(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
                 </div>
                 <div className="flex items-end gap-4">
                   <div className="flex items-center gap-2">

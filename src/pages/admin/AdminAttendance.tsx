@@ -1910,11 +1910,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-[10px]">{bn ? 'সকাল ডিউটি (দিন)' : 'Morning Duty (Days)'}</Label>
-                      <Input type="number" className="h-8 text-sm" value={dutyTimes.morning_days} onChange={e => setDutyTimes(p => ({ ...p, morning_days: Number(e.target.value) }))} />
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.morning_days || ''} onChange={e => setDutyTimes(p => ({ ...p, morning_days: Number(e.target.value) }))} />
                     </div>
                     <div>
                       <Label className="text-[10px]">{bn ? 'সন্ধ্যা ডিউটি (দিন)' : 'Evening Duty (Days)'}</Label>
-                      <Input type="number" className="h-8 text-sm" value={dutyTimes.evening_days} onChange={e => setDutyTimes(p => ({ ...p, evening_days: Number(e.target.value) }))} />
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.evening_days || ''} onChange={e => setDutyTimes(p => ({ ...p, evening_days: Number(e.target.value) }))} />
                     </div>
                   </div>
                   <div>

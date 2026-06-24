@@ -258,7 +258,7 @@ const AdminFees = () => {
                 )}
                 <div>
                   <label className="text-sm font-medium text-foreground">{bn ? 'পরিশোধ পরিমাণ' : 'Amount'}</label>
-                  <Input type="number" className="bg-background mt-1" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="৳" />
+                  <Input type="number" className="bg-background mt-1" value={paidAmount || ''} onChange={(e) => setPaidAmount(e.target.value)} placeholder="৳" />
                   {waiverPercent > 0 && selectedFeeType && (
                     <div className="text-xs mt-1 space-y-0.5">
                       <p className="text-muted-foreground">{bn ? 'মূল ফি' : 'Original'}: ৳{originalAmount} | {bn ? 'ছাড়' : 'Discount'}: ৳{discountAmount} ({waiverPercent}%)</p>

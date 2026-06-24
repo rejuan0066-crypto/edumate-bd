@@ -745,7 +745,7 @@ const SyllabusCoverageSection = () => {
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">{bn ? 'মোট অগ্রগতি (%)' : 'Total Progress (%)'}</label>
-              <Input type="number" min={0} max={100} step={0.1} value={editing.progress_percent} onChange={(e) => setEditing({ ...editing, progress_percent: Number(e.target.value) })} />
+              <Input type="number" min={0} max={100} step={0.1} value={editing.progress_percent || ''} onChange={(e) => setEditing({ ...editing, progress_percent: Number(e.target.value) })} />
             </div>
             <div className="md:col-span-2">
               <label className="text-xs font-medium mb-1 block">{bn ? 'মন্তব্য' : 'Notes'}</label>

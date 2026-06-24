@@ -271,12 +271,12 @@ const AdminZakatFitra = () => {
                       </div>
                       <div className="sm:col-span-2">
                         <Label className="text-xs">{bn ? 'পরিমাণ (কেজি)' : 'Amount (kg)'}</Label>
-                        <Input type="number" step="0.01" value={o.amount_kg}
+                        <Input type="number" step="0.01" value={o.amount_kg || ''}
                           onChange={(e) => updateFitra(r.id, i, { amount_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" />
                       </div>
                       <div className="sm:col-span-3">
                         <Label className="text-xs">{bn ? 'মূল্য/কেজি (৳)' : 'Price/kg (৳)'}</Label>
-                        <Input type="number" step="0.01" value={o.price_per_kg}
+                        <Input type="number" step="0.01" value={o.price_per_kg || ''}
                           onChange={(e) => updateFitra(r.id, i, { price_per_kg: parseFloat(e.target.value) || 0 })} className="rounded-xl" />
                       </div>
                       <div className="sm:col-span-1">
@@ -311,7 +311,7 @@ const AdminZakatFitra = () => {
 const Field = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
   <div>
     <Label className="text-xs">{label}</Label>
-    <Input type="number" step="0.01" value={value} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} className="rounded-xl" />
+    <Input type="number" step="0.01" value={value || ''} onChange={(e) => onChange(parseFloat(e.target.value) || 0)} className="rounded-xl" />
   </div>
 );
 

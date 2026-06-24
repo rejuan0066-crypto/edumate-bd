@@ -523,7 +523,7 @@ const AdminClassRoutine = () => {
                 </Select>
               </div>
               <div><Label>{bn ? 'পিরিয়ড নম্বর' : 'Period #'}</Label>
-                <Input type="number" min={1} value={periodForm.period_number} onChange={e => setPeriodForm(f => ({ ...f, period_number: Number(e.target.value) }))} />
+                <Input type="number" min={1} value={periodForm.period_number || ''} onChange={e => setPeriodForm(f => ({ ...f, period_number: Number(e.target.value) }))} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

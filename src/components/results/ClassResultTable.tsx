@@ -169,7 +169,7 @@ const ClassResultTable = ({ students, subjects, marksMap, onMarksChange, onSave,
                         <Input
                           className={`w-16 h-8 text-center bg-background text-sm mx-auto focus:border-primary ${isFail ? 'border-destructive text-destructive' : 'border-border/50'}`}
                           type="number" min={minMarks} max={maxMarks}
-                          value={mark === 0 ? '' : mark}
+                          value={mark === 0 ? '' : mark || ''}
                           onChange={(e) => onMarksChange(`${st.id}_${sub.id}`, parseInt(e.target.value) || 0)}
                         />
                       </td>

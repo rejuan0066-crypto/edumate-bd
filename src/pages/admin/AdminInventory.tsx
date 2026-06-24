@@ -494,9 +494,9 @@ const AdminInventory = () => {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div><Label>{bn ? 'স্টক' : 'Stock'}</Label><Input type="number" value={itemForm.current_stock} onChange={e => setItemForm(f => ({ ...f, current_stock: e.target.value }))} /></div>
-              <div><Label>{bn ? 'ন্যূনতম' : 'Min Level'}</Label><Input type="number" value={itemForm.min_stock_level} onChange={e => setItemForm(f => ({ ...f, min_stock_level: e.target.value }))} /></div>
-              <div><Label>{bn ? 'দাম' : 'Price'}</Label><Input type="number" value={itemForm.buying_price} onChange={e => setItemForm(f => ({ ...f, buying_price: e.target.value }))} /></div>
+              <div><Label>{bn ? 'স্টক' : 'Stock'}</Label><Input type="number" value={itemForm.current_stock || ''} onChange={e => setItemForm(f => ({ ...f, current_stock: e.target.value }))} /></div>
+              <div><Label>{bn ? 'ন্যূনতম' : 'Min Level'}</Label><Input type="number" value={itemForm.min_stock_level || ''} onChange={e => setItemForm(f => ({ ...f, min_stock_level: e.target.value }))} /></div>
+              <div><Label>{bn ? 'দাম' : 'Price'}</Label><Input type="number" value={itemForm.buying_price || ''} onChange={e => setItemForm(f => ({ ...f, buying_price: e.target.value }))} /></div>
             </div>
             <div><Label>{bn ? 'নোট' : 'Notes'}</Label><Textarea value={itemForm.notes} onChange={e => setItemForm(f => ({ ...f, notes: e.target.value }))} /></div>
             <Button className="w-full" onClick={() => saveItem.mutate(itemForm)} disabled={saveItem.isPending || !itemForm.name_bn}>
@@ -538,8 +538,8 @@ const AdminInventory = () => {
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label>{bn ? 'তারিখ' : 'Date'}</Label><Input type="date" value={assetForm.purchase_date} onChange={e => setAssetForm(f => ({ ...f, purchase_date: e.target.value }))} /></div>
-              <div><Label>{bn ? 'দাম' : 'Price'}</Label><Input type="number" value={assetForm.purchase_price} onChange={e => setAssetForm(f => ({ ...f, purchase_price: e.target.value }))} /></div>
-              <div><Label>{bn ? 'সংখ্যা' : 'Qty'}</Label><Input type="number" value={assetForm.quantity} onChange={e => setAssetForm(f => ({ ...f, quantity: e.target.value }))} /></div>
+              <div><Label>{bn ? 'দাম' : 'Price'}</Label><Input type="number" value={assetForm.purchase_price || ''} onChange={e => setAssetForm(f => ({ ...f, purchase_price: e.target.value }))} /></div>
+              <div><Label>{bn ? 'সংখ্যা' : 'Qty'}</Label><Input type="number" value={assetForm.quantity || ''} onChange={e => setAssetForm(f => ({ ...f, quantity: e.target.value }))} /></div>
             </div>
             <div><Label>{bn ? 'অবস্থার বিবরণ' : 'Condition Notes'}</Label><Textarea value={assetForm.condition_notes} onChange={e => setAssetForm(f => ({ ...f, condition_notes: e.target.value }))} /></div>
             <Button className="w-full" onClick={() => saveAsset.mutate(assetForm)} disabled={saveAsset.isPending || !assetForm.asset_name_bn}>
@@ -570,7 +570,7 @@ const AdminInventory = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{bn ? 'পরিমাণ' : 'Amount'}</Label><Input type="number" value={stockForm.change_amount} onChange={e => setStockForm(f => ({ ...f, change_amount: e.target.value }))} /></div>
+              <div><Label>{bn ? 'পরিমাণ' : 'Amount'}</Label><Input type="number" value={stockForm.change_amount || ''} onChange={e => setStockForm(f => ({ ...f, change_amount: e.target.value }))} /></div>
               <div><Label>{bn ? 'কারণ' : 'Reason'}</Label><Input value={stockForm.reason} onChange={e => setStockForm(f => ({ ...f, reason: e.target.value }))} /></div>
               <Button className="w-full" onClick={() => adjustStock.mutate()} disabled={adjustStock.isPending}>
                 {adjustStock.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}

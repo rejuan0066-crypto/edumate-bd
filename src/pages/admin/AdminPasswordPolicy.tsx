@@ -95,7 +95,7 @@ const AdminPasswordPolicy = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>{bn ? 'ন্যূনতম দৈর্ঘ্য' : 'Minimum Length'} (6-64)</Label>
-                  <Input type="number" min={6} max={64} value={policy.min_length}
+                  <Input type="number" min={6} max={64} value={policy.min_length || ''}
                     onChange={e => setPolicy({ ...policy, min_length: parseInt(e.target.value) || 8 })} />
                 </div>
                 <div className="space-y-3">

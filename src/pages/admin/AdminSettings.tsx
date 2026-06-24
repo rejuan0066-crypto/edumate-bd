@@ -784,7 +784,7 @@ const AdminSettings = () => {
                         <Input
                           type="number"
                           className="mt-1 bg-background"
-                          value={p.priority}
+                          value={p.priority || ''}
                           onChange={(e) => updateSmtpProfile(idx, { priority: parseInt(e.target.value) || 0 })}
                           placeholder="0"
                         />
@@ -817,7 +817,7 @@ const AdminSettings = () => {
                         <Input
                           type="number"
                           className="mt-1 bg-background"
-                          value={p.smtp_port}
+                          value={p.smtp_port || ''}
                           onChange={(e) => updateSmtpProfile(idx, { smtp_port: parseInt(e.target.value) || 587 })}
                           placeholder="587"
                         />
@@ -1133,7 +1133,7 @@ const AdminSettings = () => {
                   <Label className="text-xs">{bn ? 'মেয়াদ (মিনিট)' : 'Expiry (min)'}</Label>
                   <Input
                     type="number" min={1} max={60}
-                    value={otpCfg.expiry_minutes}
+                    value={otpCfg.expiry_minutes || ''}
                     onChange={(e) => setOtpCfg({ ...otpCfg, expiry_minutes: parseInt(e.target.value) || 10 })}
                   />
                 </div>
@@ -1141,7 +1141,7 @@ const AdminSettings = () => {
                   <Label className="text-xs">{bn ? 'সর্বোচ্চ চেষ্টা' : 'Max attempts'}</Label>
                   <Input
                     type="number" min={1} max={10}
-                    value={otpCfg.max_attempts}
+                    value={otpCfg.max_attempts || ''}
                     onChange={(e) => setOtpCfg({ ...otpCfg, max_attempts: parseInt(e.target.value) || 3 })}
                   />
                 </div>
@@ -1149,7 +1149,7 @@ const AdminSettings = () => {
                   <Label className="text-xs">{bn ? 'কুলডাউন (সেকেন্ড)' : 'Cooldown (sec)'}</Label>
                   <Input
                     type="number" min={10} max={600}
-                    value={otpCfg.cooldown_seconds}
+                    value={otpCfg.cooldown_seconds || ''}
                     onChange={(e) => setOtpCfg({ ...otpCfg, cooldown_seconds: parseInt(e.target.value) || 60 })}
                   />
                 </div>
@@ -1157,7 +1157,7 @@ const AdminSettings = () => {
                   <Label className="text-xs">{bn ? 'ঘণ্টায় সর্বোচ্চ' : 'Hourly limit'}</Label>
                   <Input
                     type="number" min={1} max={50}
-                    value={otpCfg.hourly_limit}
+                    value={otpCfg.hourly_limit || ''}
                     onChange={(e) => setOtpCfg({ ...otpCfg, hourly_limit: parseInt(e.target.value) || 5 })}
                   />
                 </div>
@@ -1165,7 +1165,7 @@ const AdminSettings = () => {
                   <Label className="text-xs">{bn ? 'দৈনিক সর্বোচ্চ' : 'Daily limit'}</Label>
                   <Input
                     type="number" min={1} max={200}
-                    value={otpCfg.daily_limit}
+                    value={otpCfg.daily_limit || ''}
                     onChange={(e) => setOtpCfg({ ...otpCfg, daily_limit: parseInt(e.target.value) || 15 })}
                   />
                 </div>
@@ -1264,7 +1264,7 @@ const AdminSettings = () => {
                 <Input
                   type="number"
                   className="mt-1 bg-background"
-                  value={emailjs.otp_expiry_minutes}
+                  value={emailjs.otp_expiry_minutes || ''}
                   onChange={(e) => setEmailjs({ ...emailjs, otp_expiry_minutes: parseInt(e.target.value) || 10 })}
                   min={2}
                   max={30}
@@ -1325,11 +1325,11 @@ const AdminSettings = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>{bn ? 'OTP মেয়াদ (মিনিট)' : 'OTP Expiry (minutes)'}</Label>
-                      <Input type="number" className="bg-background mt-1" value={settings.otpExpiry} onChange={(e) => setSettings({...settings, otpExpiry: e.target.value})} min={2} max={10} />
+                      <Input type="number" className="bg-background mt-1" value={settings.otpExpiry || ''} onChange={(e) => setSettings({...settings, otpExpiry: e.target.value})} min={2} max={10} />
                     </div>
                     <div>
                       <Label>{bn ? 'সর্বোচ্চ OTP চেষ্টা' : 'Max OTP Attempts'}</Label>
-                      <Input type="number" className="bg-background mt-1" value={settings.maxOtpAttempts} onChange={(e) => setSettings({...settings, maxOtpAttempts: e.target.value})} min={3} max={5} />
+                      <Input type="number" className="bg-background mt-1" value={settings.maxOtpAttempts || ''} onChange={(e) => setSettings({...settings, maxOtpAttempts: e.target.value})} min={3} max={5} />
                     </div>
                   </div>
                 </div>

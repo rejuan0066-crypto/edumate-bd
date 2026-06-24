@@ -1877,7 +1877,7 @@ const AdminWebsite = () => {
                   </div>
                   <div>
                     <Label>{language === 'bn' ? 'বর্ডার রেডিয়াস (px)' : 'Border Radius (px)'}</Label>
-                    <Input className="bg-background mt-1" type="number" min={0} max={50} value={form.login_form_border_radius} onChange={e => updateField('login_form_border_radius', Number(e.target.value))} />
+                    <Input className="bg-background mt-1" type="number" min={0} max={50} value={form.login_form_border_radius || ''} onChange={e => updateField('login_form_border_radius', Number(e.target.value))} />
                   </div>
                   <div className="flex items-center gap-3 pt-5">
                     <Switch checked={form.login_form_shadow} onCheckedChange={(v) => updateField('login_form_shadow', v)} />

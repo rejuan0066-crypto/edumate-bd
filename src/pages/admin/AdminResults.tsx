@@ -719,7 +719,7 @@ const AdminResults = () => {
                           min={3}
                           max={25}
                           step={1}
-                          value={cur[side]}
+                          value={cur[side] || ''}
                           onChange={(e) => {
                             const v = Number(e.target.value);
                             const next = sanitizeMargins({ ...cur, [side]: v });
