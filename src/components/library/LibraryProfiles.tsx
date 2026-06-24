@@ -475,8 +475,20 @@ const LibraryProfiles = () => {
     lost: ledger.filter((i: any) => i.status === 'lost').length,
   }), [ledger]);
 
-  const statusBadge = (s: string) =>
-    s === 'issued' ? <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15">{bn ? 'ইস্যু' : 'Issued'}</Badge>
+  const isReturnable = (dt: string) => dt === 'issue';
+
+  const distTypeLabel = (dt: string) =>
+    dt === 'sale' ? (bn ? 'বিক্রয়' : 'Sale')
+    : dt === 'issue' ? (bn ? 'ধার' : 'Lend')
+    : (bn ? 'ফ্রি' : 'Free');
+
+  const statusBadge = (s: string, dt: string) =>
+    s === 'issued'
+      ? (isReturnable(dt)
+          ? <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15">{bn ? 'কাছে আছে' : 'Held'}</Badge>
+          : dt === 'sale'
+            ? <Badge className="bg-violet-500/15 text-violet-600 hover:bg-violet-500/15">{bn ? 'বিক্রিত' : 'Sold'}</Badge>
+            : <Badge className="bg-teal-500/15 text-teal-600 hover:bg-teal-500/15">{bn ? 'প্রদত্ত' : 'Given'}</Badge>)
     : s === 'returned' ? <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15">{bn ? 'ফেরত' : 'Returned'}</Badge>
     : <Badge variant="destructive">{bn ? 'হারানো' : 'Lost'}</Badge>;
 
