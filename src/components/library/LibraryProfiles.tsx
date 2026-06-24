@@ -886,7 +886,7 @@ const LibraryProfiles = () => {
           <div className="grid gap-3">
             <div>
               <Label>{bn ? 'জরিমানা (ঐচ্ছিক)' : 'Fine (optional)'}</Label>
-              <Input type="number" value={fineAmount} onChange={e => setFineAmount(Number(e.target.value))} />
+              <NumberInput value={fineAmount} onValueChange={setFineAmount} />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setLossOpen(false)}>{bn ? 'বাতিল' : 'Cancel'}</Button>
