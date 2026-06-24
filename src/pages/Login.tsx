@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { getAuthenticatedHomePath, hasResolvedAuthRedirectState } from '@/lib/authRedirect';
 import PageLoader from '@/components/PageLoader';
-import { sanitizePasswordInput } from '@/lib/passwordInput';
+
 import { fetchOtpRequirements, isOtpRequiredFor, type OtpRoleScope } from '@/hooks/useOtpRequirements';
 import { supabase } from '@/integrations/supabase/client';
 
