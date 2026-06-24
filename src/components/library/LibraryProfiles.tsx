@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useCurrentStaff } from '@/hooks/useCurrentStaff';
+import { useStaffDirectory } from '@/hooks/useStaffDirectory';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { isAdminRole } from '@/lib/roles';
 import { useConfirm } from '@/contexts/ConfirmContext';
