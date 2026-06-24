@@ -22,7 +22,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'sonner';
-import { Plus, Loader2, Search, Undo2, AlertTriangle, Printer, User, Pencil, Trash2, CalendarIcon, X, BookOpen, IdCard } from 'lucide-react';
+import { Plus, Loader2, Search, Undo2, AlertTriangle, Printer, User, Pencil, Trash2, CalendarIcon, X, BookOpen, IdCard, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -106,6 +106,23 @@ const LibraryProfiles = () => {
   const [lossOpen, setLossOpen] = useState(false);
   const [lossTarget, setLossTarget] = useState<any>(null);
   const [fineAmount, setFineAmount] = useState(0);
+
+  // Audit history dialog
+  const [historyTarget, setHistoryTarget] = useState<any>(null);
+
+  const { data: auditRows = [], isLoading: auditLoading } = useQuery({
+    queryKey: ['issuance-audit', historyTarget?.id],
+    queryFn: async () => {
+      if (!historyTarget?.id) return [];
+      const { data } = await supabase
+        .from('library_issuance_audit' as any)
+        .select('*')
+        .eq('issuance_id', historyTarget.id)
+        .order('created_at', { ascending: false });
+      return (data || []) as any[];
+    },
+    enabled: !!historyTarget?.id,
+  });
 
   // ===== Queries =====
   const { data: profiles = [], isLoading } = useQuery({
@@ -770,6 +787,7 @@ const LibraryProfiles = () => {
                               <TableCell className="text-center">
                                 <div className="flex justify-center gap-1">
                                   <Button size="sm" variant="outline" onClick={() => printSingle(i)} title={bn ? 'প্রিন্ট' : 'Print'}><Printer className="w-3.5 h-3.5" /></Button>
+                                  <Button size="sm" variant="outline" onClick={() => setHistoryTarget(i)} title={bn ? 'অডিট হিস্ট্রি' : 'Audit History'}><History className="w-3.5 h-3.5" /></Button>
                                   {i.status === 'issued' && isReturnable(i.distribution_type) && (
                                     <>
                                       <Button size="sm" variant="outline" className="border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10" onClick={() => returnMut.mutate(i)} disabled={returnMut.isPending} title={bn ? 'জমা নিন' : 'Return'}><Undo2 className="w-3.5 h-3.5 mr-1" />{bn ? 'জমা' : 'Return'}</Button>
@@ -928,6 +946,39 @@ const LibraryProfiles = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Audit History Dialog */}
+      <Dialog open={!!historyTarget} onOpenChange={(o) => { if (!o) setHistoryTarget(null); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" />
+              {bn ? 'অডিট হিস্ট্রি' : 'Audit History'}
+            </DialogTitle>
+          </DialogHeader>
+          {auditLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : auditRows.length === 0 ? (
+            <div className="text-center py-8 text-sm text-muted-foreground">{bn ? 'কোনো রেকর্ড নেই' : 'No history records'}</div>
+          ) : (
+            <div className="space-y-3">
+              {auditRows.map((a) => (
+                <div key={a.id} className="rounded-xl border border-border p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="secondary">{a.action || 'issued'}</Badge>
+                    <span className="text-xs text-muted-foreground">{a.created_at ? format(new Date(a.created_at), 'dd/MM/yyyy HH:mm') : '—'}</span>
+                  </div>
+                  <p className="mt-2"><span className="text-muted-foreground">{bn ? 'ইস্যুকারী' : 'Issued by'}: </span>{a.issued_by_name || '—'}</p>
+                  <p><span className="text-muted-foreground">{bn ? 'বিতরণকারী' : 'Distributor'}: </span>{a.distributor_name || '—'}</p>
+                  {a.distributor_changed_by_admin && (
+                    <Badge variant="destructive" className="mt-2">{bn ? 'অ্যাডমিন বিতরণকারী পরিবর্তন করেছেন' : 'Distributor changed by admin'}</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
