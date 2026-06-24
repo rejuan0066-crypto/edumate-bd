@@ -84,7 +84,7 @@ const LibraryProfiles = () => {
   const [bookId, setBookId] = useState('');
   const [bookName, setBookName] = useState('');
   const [bookCondition, setBookCondition] = useState('new');
-  const [distributionType, setDistributionType] = useState('free');
+  const [distributionType, setDistributionType] = useState('issue');
   const [sellingPrice, setSellingPrice] = useState(0);
 
   // Loss dialog
@@ -364,7 +364,7 @@ const LibraryProfiles = () => {
   // ===== Helpers =====
   const resetIssueForm = () => {
     setIssueOpen(false); setCart([]); setBookId(''); setBookName('');
-    setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookCondition('new'); setDistributionType('issue'); setSellingPrice(0);
     setIssuedDate(new Date()); setIssueNotes('');
   };
 
@@ -385,7 +385,7 @@ const LibraryProfiles = () => {
       bookId: bookId || null, title, condition: bookCondition, distributionType,
       sellingPrice: distributionType === 'sale' ? Number(sellingPrice) : 0, custom,
     }]);
-    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('free'); setSellingPrice(0);
+    setBookId(''); setBookName(''); setBookCondition('new'); setDistributionType('issue'); setSellingPrice(0);
   };
 
   const handleSelectStudent = (studentId: string) => {
@@ -470,13 +470,25 @@ const LibraryProfiles = () => {
 
   const stats = useMemo(() => ({
     total: ledger.length,
-    held: ledger.filter((i: any) => i.status === 'issued').length,
+    held: ledger.filter((i: any) => i.status === 'issued' && i.distribution_type === 'issue').length,
     returned: ledger.filter((i: any) => i.status === 'returned').length,
     lost: ledger.filter((i: any) => i.status === 'lost').length,
   }), [ledger]);
 
-  const statusBadge = (s: string) =>
-    s === 'issued' ? <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15">{bn ? 'ইস্যু' : 'Issued'}</Badge>
+  const isReturnable = (dt: string) => dt === 'issue';
+
+  const distTypeLabel = (dt: string) =>
+    dt === 'sale' ? (bn ? 'বিক্রয়' : 'Sale')
+    : dt === 'issue' ? (bn ? 'ধার' : 'Lend')
+    : (bn ? 'ফ্রি' : 'Free');
+
+  const statusBadge = (s: string, dt: string) =>
+    s === 'issued'
+      ? (isReturnable(dt)
+          ? <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15">{bn ? 'কাছে আছে' : 'Held'}</Badge>
+          : dt === 'sale'
+            ? <Badge className="bg-violet-500/15 text-violet-600 hover:bg-violet-500/15">{bn ? 'বিক্রিত' : 'Sold'}</Badge>
+            : <Badge className="bg-teal-500/15 text-teal-600 hover:bg-teal-500/15">{bn ? 'প্রদত্ত' : 'Given'}</Badge>)
     : s === 'returned' ? <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15">{bn ? 'ফেরত' : 'Returned'}</Badge>
     : <Badge variant="destructive">{bn ? 'হারানো' : 'Lost'}</Badge>;
 
@@ -708,15 +720,15 @@ const LibraryProfiles = () => {
                             <TableRow key={i.id}>
                               <TableCell className="font-medium">{i.custom_book_title || (bn ? (i.library_books?.title_bn || i.library_books?.title) : i.library_books?.title)}</TableCell>
                               <TableCell className="text-center">{i.book_condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</TableCell>
-                              <TableCell className="text-center">{i.distribution_type === 'sale' ? (bn ? 'ক্রয়' : 'Sale') : (bn ? 'ফ্রি' : 'Free')}</TableCell>
+                              <TableCell className="text-center">{distTypeLabel(i.distribution_type)}</TableCell>
                               <TableCell className="text-right">{i.distribution_type === 'sale' && i.selling_price > 0 ? `৳${i.selling_price}` : '—'}</TableCell>
                               <TableCell>{i.issued_date ? format(new Date(i.issued_date), 'dd/MM/yyyy') : '—'}</TableCell>
                               <TableCell>{i.returned_date ? format(new Date(i.returned_date), 'dd/MM/yyyy') : '—'}</TableCell>
-                              <TableCell className="text-center">{statusBadge(i.status)}</TableCell>
+                              <TableCell className="text-center">{statusBadge(i.status, i.distribution_type)}</TableCell>
                               <TableCell className="text-center">
                                 <div className="flex justify-center gap-1">
                                   <Button size="sm" variant="outline" onClick={() => printSingle(i)} title={bn ? 'প্রিন্ট' : 'Print'}><Printer className="w-3.5 h-3.5" /></Button>
-                                  {i.status === 'issued' && (
+                                  {i.status === 'issued' && isReturnable(i.distribution_type) && (
                                     <>
                                       <Button size="sm" variant="outline" onClick={() => returnMut.mutate(i)} disabled={returnMut.isPending} title={bn ? 'জমা নিন' : 'Return'}><Undo2 className="w-3.5 h-3.5" /></Button>
                                       <Button size="sm" variant="outline" className="text-destructive" onClick={() => { setLossTarget(i); setFineAmount(0); setLossOpen(true); }} title={bn ? 'হারানো' : 'Lost'}><AlertTriangle className="w-3.5 h-3.5" /></Button>
@@ -803,8 +815,9 @@ const LibraryProfiles = () => {
                   <Select value={distributionType} onValueChange={setDistributionType}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="free">{bn ? 'ফ্রি' : 'Free'}</SelectItem>
-                      <SelectItem value="sale">{bn ? 'ক্রয়' : 'Sale'}</SelectItem>
+                      <SelectItem value="issue">{bn ? 'ধার (ফেরতযোগ্য)' : 'Lend (returnable)'}</SelectItem>
+                      <SelectItem value="free">{bn ? 'ফ্রি বিতরণ' : 'Free'}</SelectItem>
+                      <SelectItem value="sale">{bn ? 'বিক্রয়' : 'Sale'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -838,7 +851,7 @@ const LibraryProfiles = () => {
                       <TableRow key={c.uid}>
                         <TableCell className="font-medium">{c.title}</TableCell>
                         <TableCell className="text-center">{c.condition === 'new' ? (bn ? 'নতুন' : 'New') : (bn ? 'পুরাতন' : 'Old')}</TableCell>
-                        <TableCell className="text-center">{c.distributionType === 'sale' ? (bn ? 'ক্রয়' : 'Sale') : (bn ? 'ফ্রি' : 'Free')}</TableCell>
+                        <TableCell className="text-center">{distTypeLabel(c.distributionType)}</TableCell>
                         <TableCell className="text-right">{c.distributionType === 'sale' ? `৳${c.sellingPrice}` : '—'}</TableCell>
                         <TableCell className="text-right"><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setCart(prev => prev.filter(x => x.uid !== c.uid))}><X className="w-4 h-4" /></Button></TableCell>
                       </TableRow>
