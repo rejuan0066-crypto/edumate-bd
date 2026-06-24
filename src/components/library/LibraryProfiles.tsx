@@ -973,7 +973,16 @@ const LibraryProfiles = () => {
                   <p className="mt-2"><span className="text-muted-foreground">{bn ? 'ইস্যুকারী' : 'Issued by'}: </span>{a.issued_by_name || '—'}</p>
                   <p><span className="text-muted-foreground">{bn ? 'বিতরণকারী' : 'Distributor'}: </span>{a.distributor_name || '—'}</p>
                   {a.distributor_changed_by_admin && (
-                    <Badge variant="destructive" className="mt-2">{bn ? 'অ্যাডমিন বিতরণকারী পরিবর্তন করেছেন' : 'Distributor changed by admin'}</Badge>
+                    <>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">{bn ? 'পুরাতন' : 'Old'}:</span>
+                        <Badge variant="outline">{a.old_distributor_name || '—'}</Badge>
+                        <span className="text-muted-foreground">→</span>
+                        <span className="text-muted-foreground">{bn ? 'নতুন' : 'New'}:</span>
+                        <Badge variant="secondary">{a.new_distributor_name || '—'}</Badge>
+                      </div>
+                      <Badge variant="destructive" className="mt-2">{bn ? 'অ্যাডমিন বিতরণকারী পরিবর্তন করেছেন' : 'Distributor changed by admin'}</Badge>
+                    </>
                   )}
                 </div>
               ))}
