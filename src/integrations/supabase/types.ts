@@ -3642,6 +3642,50 @@ export type Database = {
           },
         ]
       }
+      hostel_meal_attendance: {
+        Row: {
+          allocation_id: string
+          attendance_date: string
+          breakfast: boolean
+          created_at: string
+          dinner: boolean
+          id: string
+          lunch: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          allocation_id: string
+          attendance_date?: string
+          breakfast?: boolean
+          created_at?: string
+          dinner?: boolean
+          id?: string
+          lunch?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          allocation_id?: string
+          attendance_date?: string
+          breakfast?: boolean
+          created_at?: string
+          dinner?: boolean
+          id?: string
+          lunch?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_meal_attendance_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_allocations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hostel_meal_menu: {
         Row: {
           created_at: string
