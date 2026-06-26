@@ -298,6 +298,18 @@ const AdminHostel = () => {
   const activeAllocations = allocations.filter(a => a.status === 'active');
   const adHocRows = (mealAttendance as MealAttendance[]).filter(a => !a.allocation_id && a.person_id);
 
+  // Per-person record for the simplified meal-attendance roster
+  const personAtt = (type: 'student' | 'staff', id: string) =>
+    (mealAttendance as MealAttendance[]).find(a => a.person_type === type && a.person_id === id);
+
+  // Full roster for selected category, filtered by search
+  const attRoster = ((attCat === 'student' ? (students as any[]) : (staffList as any[])) || []).filter((p: any) => {
+    const q = attSearch.trim().toLowerCase();
+    if (!q) return true;
+    const code = (p.student_id || p.staff_id || '').toLowerCase();
+    return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
+  });
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
