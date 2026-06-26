@@ -743,7 +743,6 @@ const AdminHostel = () => {
       const grandTotal = rows.reduce((s: number, r: any) => s + (r.totalPresent || 0), 0);
       const head = `<tr><th class="num">#</th><th class="lft">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th class="lft">${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th class="day">${dateCol(d)}</th>`).join('')}<th class="tot">${bn ? 'মোট' : 'Total'}</th></tr>`;
       const body = rows.map(r => `<tr><td class="num">${r['#']}</td><td class="lft">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td class="lft">${r.class}</td>` : ''}${dates.map(d => cellHtml(r.cells[d])).join('')}<td class="tot">${r.totalPresent}</td></tr>`).join('');
-      const colCount = (attCat === 'student' ? 4 : 3) + dates.length;
       const foot = `<tr class="sum"><td class="lft" colspan="${attCat === 'student' ? 4 : 3}">${bn ? 'মোট' : 'Total'} · ${rows.length} ${bn ? 'জন' : 'people'}</td>${dates.map(() => '<td></td>').join('')}<td class="tot">${grandTotal}</td></tr>`;
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>${periodTitle(period, start, end)}</title>
         <style>
