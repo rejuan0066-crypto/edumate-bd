@@ -104,7 +104,7 @@ export default function CommitteeAuditDetailsDrawer({ open, onOpenChange, entry 
             </div>
             <div className="mt-1 font-semibold">{entry.action}</div>
             <div className="mt-2 text-xs text-muted-foreground">
-              {format(new Date(entry.created_at), "dd/MM/yyyy HH:mm:ss")} •{" "}
+              {format(new Date(entry.created_at), "dd/MM/yyyy hh:mm:ss a")} •{" "}
               {entry.performed_by_email || "system"}
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function CommitteeAuditDetailsDrawer({ open, onOpenChange, entry 
                   <div>
                     {bn ? "সর্বশেষ আপডেট:" : "Updated:"}{" "}
                     {current.updated_at
-                      ? format(new Date(current.updated_at), "dd/MM/yyyy HH:mm")
+                      ? format(new Date(current.updated_at), "dd/MM/yyyy hh:mm a")
                       : "—"}
                   </div>
                 </div>

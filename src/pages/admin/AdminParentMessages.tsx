@@ -276,7 +276,7 @@ const AdminParentMessages = () => {
                           {last.message}
                         </div>
                         <div className="text-[10px] text-muted-foreground mt-1">
-                          {format(new Date(c.lastAt), 'dd/MM/yyyy HH:mm')}
+                          {format(new Date(c.lastAt), 'dd/MM/yyyy hh:mm a')}
                         </div>
                       </button>
                     );
@@ -325,7 +325,7 @@ const AdminParentMessages = () => {
                             )}
                             <div className="text-sm whitespace-pre-wrap break-words">{m.message}</div>
                             <div className="text-[10px] opacity-70 mt-1.5 text-right">
-                              {format(new Date(m.created_at), 'dd/MM HH:mm')}
+                              {format(new Date(m.created_at), 'dd/MM hh:mm a')}
                             </div>
                           </div>
                         </div>

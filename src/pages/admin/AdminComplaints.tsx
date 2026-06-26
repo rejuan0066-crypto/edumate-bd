@@ -256,7 +256,7 @@ const AdminComplaints = () => {
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{c.description}</p>
                       <p className="text-xs text-muted-foreground mt-2">
                         {!c.is_anonymous && c.complainant_name && <span>{c.complainant_name} • </span>}
-                        {format(new Date(c.created_at), 'dd MMM yyyy, HH:mm')}
+                        {format(new Date(c.created_at), 'dd MMM yyyy, hh:mm a')}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -356,7 +356,7 @@ const AdminComplaints = () => {
                           <Badge variant="outline" className="text-xs capitalize">{u.update_type.replace('_', ' ')}</Badge>
                           {u.to_status && <Badge variant="outline" className="text-xs">→ {u.to_status}</Badge>}
                           {!u.is_public && <Badge variant="outline" className="text-xs bg-muted"><Lock className="w-3 h-3 mr-1" />{language === 'bn' ? 'অভ্যন্তরীণ' : 'Internal'}</Badge>}
-                          <span className="text-xs text-muted-foreground ml-auto">{format(new Date(u.created_at), 'dd MMM yyyy, HH:mm')}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">{format(new Date(u.created_at), 'dd MMM yyyy, hh:mm a')}</span>
                         </div>
                         {u.message && <p className="text-sm whitespace-pre-wrap">{u.message}</p>}
                       </div>

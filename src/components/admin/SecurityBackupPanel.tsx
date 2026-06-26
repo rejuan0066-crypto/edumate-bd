@@ -158,7 +158,7 @@ export function SecurityBackupPanel({ bn = true }: { bn?: boolean }) {
               )}
               {backups.map((b) => (
                 <tr key={b.id} className="border-t hover:bg-secondary/30">
-                  <td className="p-2">{format(new Date(b.started_at), "dd/MM/yyyy HH:mm")}</td>
+                  <td className="p-2">{format(new Date(b.started_at), "dd/MM/yyyy hh:mm a")}</td>
                   <td className="p-2"><Badge variant="outline">{b.backup_type}</Badge></td>
                   <td className="p-2">
                     <Badge variant={b.status === "success" ? "default" : b.status === "failed" ? "destructive" : "secondary"}>
@@ -211,7 +211,7 @@ export function SecurityBackupPanel({ bn = true }: { bn?: boolean }) {
               )}
               {audits.map((a) => (
                 <tr key={a.id} className="border-t hover:bg-secondary/30">
-                  <td className="p-2 whitespace-nowrap">{format(new Date(a.created_at), "dd/MM HH:mm:ss")}</td>
+                  <td className="p-2 whitespace-nowrap">{format(new Date(a.created_at), "dd/MM hh:mm:ss a")}</td>
                   <td className="p-2">
                     <Badge variant={a.action === "DELETE" ? "destructive" : a.action === "SOFT_DELETE" ? "secondary" : "outline"}>
                       {a.action}

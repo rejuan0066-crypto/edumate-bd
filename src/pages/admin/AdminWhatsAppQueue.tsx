@@ -250,7 +250,7 @@ export default function AdminWhatsAppQueue() {
                             <StatIcon className="w-3 h-3" /> {bn ? stat.bn : stat.en}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
-                            {format(new Date(row.created_at), 'dd MMM, HH:mm')}
+                            {format(new Date(row.created_at), 'dd MMM, hh:mm a')}
                           </span>
                         </div>
                         <div className="text-sm font-medium">

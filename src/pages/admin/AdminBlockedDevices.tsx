@@ -381,7 +381,7 @@ const AdminBlockedDevicesInner = () => {
                         <Badge variant="outline">{r.attempt_count}</Badge>
                       </TableCell>
                       <TableCell className="text-xs whitespace-nowrap">
-                        {format(new Date(r.last_attempt_at), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(r.last_attempt_at), 'dd/MM/yyyy hh:mm a')}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap justify-end gap-1.5">
@@ -769,7 +769,7 @@ const AdminBlockedDevicesInner = () => {
                         : bn ? 'আনব্লক' : 'UNBLOCKED'}
                     </Badge>
                     <span className="text-[11px] text-muted-foreground">
-                      {format(new Date(h.performed_at), 'dd/MM/yyyy HH:mm:ss')}
+                      {format(new Date(h.performed_at), 'dd/MM/yyyy hh:mm:ss a')}
                     </span>
                   </div>
                   <div className="text-sm font-medium">{h.reason}</div>

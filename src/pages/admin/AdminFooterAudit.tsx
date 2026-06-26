@@ -89,7 +89,7 @@ export default function AdminFooterAudit() {
                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{bn ? 'কোনো রেকর্ড নেই' : 'No entries'}</TableCell></TableRow>
                   ) : rows.map(r => (
                     <TableRow key={r.id}>
-                      <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.created_at), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.created_at), 'dd/MM/yyyy hh:mm:ss a')}</TableCell>
                       <TableCell className="text-xs">{r.actor_email || r.actor_id?.slice(0, 8) || '—'}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">{r.scope}</Badge>

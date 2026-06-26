@@ -205,7 +205,7 @@ export default function AdminOtpRecovery() {
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{u.last_purpose}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">
-                      {u.last_attempt_at ? format(new Date(u.last_attempt_at), "dd/MM/yyyy HH:mm") : "—"}
+                      {u.last_attempt_at ? format(new Date(u.last_attempt_at), "dd/MM/yyyy hh:mm a") : "—"}
                     </td>
                     <td className="px-4 py-3 rounded-r-[20px] text-right">
                       <div className="flex justify-end gap-2 flex-wrap">

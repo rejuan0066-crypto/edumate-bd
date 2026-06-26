@@ -968,7 +968,7 @@ const LibraryProfiles = () => {
                 <div key={a.id} className="rounded-xl border border-border p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <Badge variant="secondary">{a.action || 'issued'}</Badge>
-                    <span className="text-xs text-muted-foreground">{a.created_at ? format(new Date(a.created_at), 'dd/MM/yyyy HH:mm') : '—'}</span>
+                    <span className="text-xs text-muted-foreground">{a.created_at ? format(new Date(a.created_at), 'dd/MM/yyyy hh:mm a') : '—'}</span>
                   </div>
                   <p className="mt-2"><span className="text-muted-foreground">{bn ? 'ইস্যুকারী' : 'Issued by'}: </span>{a.issued_by_name || '—'}</p>
                   <p><span className="text-muted-foreground">{bn ? 'বিতরণকারী' : 'Distributor'}: </span>{a.distributor_name || '—'}</p>
