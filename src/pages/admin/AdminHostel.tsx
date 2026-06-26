@@ -950,6 +950,18 @@ const AdminHostel = () => {
                             >
                               {bn ? 'অনুপস্থিত' : 'Absent'}
                             </Button>
+                            {present !== null && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={attLocked}
+                                className="text-muted-foreground hover:text-destructive"
+                                title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                                onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
