@@ -663,6 +663,40 @@ const AdminHostel = () => {
                   <Input value={attSearch} onChange={e => setAttSearch(e.target.value)} placeholder={bn ? 'নাম বা আইডি' : 'Name or ID'} />
                 </div>
               </div>
+
+              {/* Admin-only cutoff settings */}
+              {isAdmin && (
+                <div className="mb-4 p-4 rounded-xl border border-border/60 bg-card">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold"><Clock className="w-4 h-4 text-primary" />{bn ? 'হাজিরা লক সেটিং' : 'Attendance Lock Settings'}</div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">{bn ? 'সক্রিয়' : 'Enabled'}</Label>
+                      <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div><Label className="text-xs">{bn ? 'সকাল শেষ' : 'Breakfast cutoff'}</Label><Input type="time" value={cf.breakfast} onChange={e => setCutoffForm({ ...cf, breakfast: e.target.value })} /></div>
+                    <div><Label className="text-xs">{bn ? 'দুপুর শেষ' : 'Lunch cutoff'}</Label><Input type="time" value={cf.lunch} onChange={e => setCutoffForm({ ...cf, lunch: e.target.value })} /></div>
+                    <div><Label className="text-xs">{bn ? 'রাত শেষ' : 'Dinner cutoff'}</Label><Input type="time" value={cf.dinner} onChange={e => setCutoffForm({ ...cf, dinner: e.target.value })} /></div>
+                  </div>
+                  {cutoffForm && (
+                    <div className="flex justify-end mt-3">
+                      <Button size="sm" onClick={() => saveCutoffs.mutate(cf)} disabled={saveCutoffs.isPending}>
+                        <Save className="w-4 h-4 mr-1.5" />{bn ? 'সেভ করুন' : 'Save'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {attLocked && (
+                <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+                  <Lock className="w-4 h-4 shrink-0" />
+                  {bn ? `এই তারিখ ও বেলার (${cf[attMeal]}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${cf[attMeal]}) has passed — attendance is locked. Contact an admin.`}
+                </div>
+              )}
+
               <Table>
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead>
