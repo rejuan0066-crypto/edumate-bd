@@ -94,7 +94,7 @@ const AdminWhatsAppLogs = () => {
                     {ev.is_pwa && <Badge variant="secondary">PWA</Badge>}
                     {ev.phone_number && <span className="text-xs text-muted-foreground">📞 {ev.phone_number}</span>}
                     <span className="text-xs text-muted-foreground ml-auto">
-                      {format(new Date(ev.created_at), 'dd/MM/yyyy HH:mm:ss')}
+                      {format(new Date(ev.created_at), 'dd/MM/yyyy hh:mm:ss a')}
                     </span>
                   </div>
                   {ev.error_reason && (

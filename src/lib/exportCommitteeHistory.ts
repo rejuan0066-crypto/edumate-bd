@@ -105,7 +105,7 @@ async function buildHistoryRows(
       status: "—",
       oldValue,
       newValue,
-      date: format(d, "dd/MM/yyyy HH:mm"),
+      date: format(d, "dd/MM/yyyy hh:mm a"),
       performedBy: a.performed_by_email || "system",
       rawDate: d,
     });
@@ -157,7 +157,7 @@ export async function exportStaffCommitteeHistoryCSV(
   const headerLines = [
     `# Committee Membership History`,
     `# Subject: ${staffName}`,
-    `# Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
+    `# Generated: ${format(new Date(), "dd/MM/yyyy hh:mm a")}`,
     `# Filters: ${filterSummary(filters)}`,
     `# Total Rows: ${rows.length}`,
   ].join("\n");
@@ -204,7 +204,7 @@ export async function exportStaffCommitteeHistoryPDF(
   doc.text("Committee Membership History", 40, 40);
   doc.setFontSize(10);
   doc.text(`Subject: ${staffName}`, 40, 60);
-  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 40, 75);
+  doc.text(`Generated: ${format(new Date(), "dd/MM/yyyy hh:mm a")}`, 40, 75);
   doc.text(`Filters: ${filterSummary(filters)}`, 40, 90);
   doc.text(`Total Rows: ${rows.length}`, 40, 105);
 

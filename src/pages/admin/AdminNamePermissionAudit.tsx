@@ -73,7 +73,7 @@ export default function AdminNamePermissionAudit() {
                     </span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm:ss')}
+                      {format(new Date(r.created_at), 'dd/MM/yyyy hh:mm:ss a')}
                     </span>
                   </CardTitle>
                 </CardHeader>

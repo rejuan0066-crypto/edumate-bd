@@ -305,7 +305,7 @@ const Inner = () => {
                           <TableCell className="text-xs">
                             {format(new Date(d.created_at), 'dd/MM/yyyy')}
                             <p className="text-[10px] text-muted-foreground">
-                              {bn ? 'সর্বশেষ' : 'Last'}: {format(new Date(d.last_seen_at), 'dd/MM HH:mm')}
+                              {bn ? 'সর্বশেষ' : 'Last'}: {format(new Date(d.last_seen_at), 'dd/MM hh:mm a')}
                             </p>
                           </TableCell>
                           <TableCell>
@@ -387,7 +387,7 @@ const Inner = () => {
                           <code className="text-[10px] text-muted-foreground">{r.ip_address}</code>
                         </TableCell>
                         <TableCell className="text-xs">
-                          {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm')}
+                          {format(new Date(r.created_at), 'dd/MM/yyyy hh:mm a')}
                         </TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button size="sm" className="rounded-xl bg-emerald-600 hover:bg-emerald-700"

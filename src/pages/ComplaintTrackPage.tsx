@@ -308,7 +308,7 @@ const ComplaintTrackPage = () => {
                 </div>
                 <div>
                   <p className="text-muted-foreground">{bn ? 'জমাদানের তারিখ' : 'Submitted'}</p>
-                  <p className="font-medium">{format(new Date(data.created_at), 'dd/MM/yyyy HH:mm')}</p>
+                  <p className="font-medium">{format(new Date(data.created_at), 'dd/MM/yyyy hh:mm a')}</p>
                 </div>
               </div>
 
@@ -346,7 +346,7 @@ const ComplaintTrackPage = () => {
                         <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
                           <p className="text-sm font-medium">{updateLabel(u)}</p>
                           <p className="text-xs text-muted-foreground">
-                            {format(new Date(u.created_at), 'dd/MM/yyyy HH:mm')}
+                            {format(new Date(u.created_at), 'dd/MM/yyyy hh:mm a')}
                           </p>
                         </div>
                         {u.message && (

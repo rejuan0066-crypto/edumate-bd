@@ -147,7 +147,7 @@ const AdminPasswordPolicy = () => {
                   const lbl = eventLabel(e.event_type);
                   return (
                     <tr key={e.id} className="border-b last:border-0">
-                      <td className="py-2 pr-3 whitespace-nowrap">{format(new Date(e.created_at), 'dd/MM/yyyy HH:mm')}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">{format(new Date(e.created_at), 'dd/MM/yyyy hh:mm a')}</td>
                       <td className="py-2 pr-3"><Badge variant={lbl.sev}>{bn ? lbl.bn : lbl.en}</Badge></td>
                       <td className="py-2 pr-3">{e.email || '-'}</td>
                       <td className="py-2 pr-3 text-muted-foreground">{e.reason || '-'}</td>

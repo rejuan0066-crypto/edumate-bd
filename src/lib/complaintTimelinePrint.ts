@@ -66,7 +66,7 @@ export const printComplaintTimeline = (complaint: ComplaintData, updates: Timeli
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   );
 
-  const fmt = (d: string) => format(new Date(d), 'dd/MM/yyyy HH:mm');
+  const fmt = (d: string) => format(new Date(d), 'dd/MM/yyyy hh:mm a');
 
   const timelineHtml = sorted.length === 0
     ? '<div class="empty">No timeline entries yet.</div>'
@@ -145,7 +145,7 @@ export const printComplaintTimeline = (complaint: ComplaintData, updates: Timeli
   <div class="header">
     <div>
       <h1>Complaint Timeline</h1>
-      <div class="sub">Generated ${escape(format(new Date(), 'dd/MM/yyyy HH:mm'))}</div>
+      <div class="sub">Generated ${escape(format(new Date(), 'dd/MM/yyyy hh:mm a'))}</div>
     </div>
     <div class="ticket-box">
       <div class="lbl">Ticket</div>

@@ -70,7 +70,7 @@ export default function AdminShiftAuditLog() {
                     {log.category_label || log.category_key}
                   </CardTitle>
                   <Badge variant="outline" className="text-[10px]">
-                    {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm')}
+                    {format(new Date(log.created_at), 'dd MMM yyyy, hh:mm a')}
                   </Badge>
                 </div>
               </CardHeader>

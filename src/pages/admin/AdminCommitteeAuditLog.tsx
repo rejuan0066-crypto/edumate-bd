@@ -241,7 +241,7 @@ export default function AdminCommitteeAuditLog() {
       action: undoTarget.action,
       committee: undoTarget.committee_name,
       staff: undoTarget.member_name,
-      when: format(new Date(undoTarget.created_at), "dd/MM/yyyy HH:mm"),
+      when: format(new Date(undoTarget.created_at), "dd/MM/yyyy hh:mm a"),
       currentState: undoCurrent
         ? undoCurrent.deleted
           ? "Removed"
@@ -437,7 +437,7 @@ export default function AdminCommitteeAuditLog() {
                       className="border-t border-border/40 hover:bg-muted/30"
                     >
                       <td className="px-4 py-3 font-mono text-xs">
-                        {format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}
+                        {format(new Date(r.created_at), "dd/MM/yyyy hh:mm a")}
                       </td>
                       <td className="px-4 py-3 font-medium">{r.member_name || "—"}</td>
                       <td className="px-4 py-3">{r.committee_name || "—"}</td>

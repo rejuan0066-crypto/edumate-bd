@@ -433,7 +433,7 @@ export default function AdminEmailTemplates() {
                             <div>
                               <div className="font-medium text-sm">{v.subject}</div>
                               <div className="text-xs text-muted-foreground">
-                                {format(new Date(v.created_at), "dd/MM/yyyy HH:mm")}
+                                {format(new Date(v.created_at), "dd/MM/yyyy hh:mm a")}
                                 {v.changed_by_email && ` • ${v.changed_by_email}`}
                               </div>
                             </div>

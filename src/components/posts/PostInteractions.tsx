@@ -149,7 +149,7 @@ const PostInteractions = ({ postId, title }: Props) => {
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-semibold text-foreground">{c.commenter_name}</span>
                       <span className="text-[10px] text-muted-foreground">
-                        {format(new Date(c.created_at), 'dd/MM/yy HH:mm')}
+                        {format(new Date(c.created_at), 'dd/MM/yy hh:mm a')}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line">{c.comment_text}</p>

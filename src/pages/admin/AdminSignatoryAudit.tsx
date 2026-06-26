@@ -119,7 +119,7 @@ export default function AdminSignatoryAudit() {
                     {rows.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                          {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm:ss')}
+                          {format(new Date(r.created_at), 'dd/MM/yyyy hh:mm:ss a')}
                         </TableCell>
                         <TableCell>
                           {r.action === 'normalized' ? (

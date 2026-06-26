@@ -80,7 +80,7 @@ const AdminZakatLogs = () => {
   const exportCsv = () => {
     const header = ['Created', 'Type', 'Year', 'Name', 'Phone', 'Inputs', 'Results'];
     const rowsCsv = filtered.map((r) => [
-      format(new Date(r.created_at), 'dd/MM/yyyy HH:mm'),
+      format(new Date(r.created_at), 'dd/MM/yyyy hh:mm a'),
       r.calc_type,
       r.settings_year ?? '',
       r.contact_name ?? '',
@@ -179,7 +179,7 @@ const AdminZakatLogs = () => {
                       : `৳ ${Number((r.results as { total?: number }).total || 0).toLocaleString()}`;
                     return (
                       <tr key={r.id} className="border-t border-border/40 hover:bg-muted/20">
-                        <td className="p-3 whitespace-nowrap">{format(new Date(r.created_at), 'dd/MM/yyyy HH:mm')}</td>
+                        <td className="p-3 whitespace-nowrap">{format(new Date(r.created_at), 'dd/MM/yyyy hh:mm a')}</td>
                         <td className="p-3">
                           <Badge variant={r.calc_type === 'zakat' ? 'default' : 'secondary'}>
                             {r.calc_type === 'zakat' ? (bn ? 'যাকাত' : 'Zakat') : (bn ? 'ফিতরা' : 'Fitra')}
@@ -218,7 +218,7 @@ const AdminZakatLogs = () => {
             {viewing && (
               <div className="space-y-4 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <Info label={bn ? 'তারিখ' : 'Date'} value={format(new Date(viewing.created_at), 'dd/MM/yyyy HH:mm')} />
+                  <Info label={bn ? 'তারিখ' : 'Date'} value={format(new Date(viewing.created_at), 'dd/MM/yyyy hh:mm a')} />
                   <Info label={bn ? 'বছর' : 'Year'} value={String(viewing.settings_year ?? '—')} />
                   <Info label={bn ? 'নাম' : 'Name'} value={viewing.contact_name || '—'} />
                   <Info label={bn ? 'ফোন' : 'Phone'} value={viewing.contact_phone || '—'} />

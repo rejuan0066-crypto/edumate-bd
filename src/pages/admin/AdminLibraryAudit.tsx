@@ -120,7 +120,7 @@ export default function AdminLibraryAudit() {
                     <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-10">{bn ? 'কোনো রেকর্ড নেই' : 'No entries'}</TableCell></TableRow>
                   ) : rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.created_at), 'dd/MM/yyyy HH:mm:ss')}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs">{format(new Date(r.created_at), 'dd/MM/yyyy hh:mm:ss a')}</TableCell>
                       <TableCell><Badge variant="outline" className="capitalize">{r.action}</Badge></TableCell>
                       <TableCell className="text-xs">{r.issued_by_name || r.issued_by?.slice(0, 8) || '—'}</TableCell>
                       <TableCell className="text-xs">{r.distributor_name || '—'}</TableCell>

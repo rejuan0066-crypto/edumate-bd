@@ -277,7 +277,7 @@ const AdminPushNotifications = () => {
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">{l.title}</div>
                       {l.body && <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{l.body}</div>}
-                      <div className="text-[10px] text-muted-foreground mt-1">{format(new Date(l.created_at), 'dd/MM/yyyy HH:mm')}</div>
+                      <div className="text-[10px] text-muted-foreground mt-1">{format(new Date(l.created_at), 'dd/MM/yyyy hh:mm a')}</div>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Badge variant="secondary" className="text-[10px]">✓ {l.sent_count}</Badge>

@@ -242,7 +242,7 @@ const AdminEmailDeliveryLog = () => {
                   {filtered.map(r => (
                     <tr key={r.id} className="bg-background/40 hover:bg-primary/5 transition-all">
                       <td className="py-3 px-4 first:rounded-l-[20px] whitespace-nowrap text-muted-foreground">
-                        {format(new Date(r.created_at), 'dd/MM/yyyy HH:mm')}
+                        {format(new Date(r.created_at), 'dd/MM/yyyy hh:mm a')}
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-medium">{r.recipient_name || '-'}</div>
@@ -305,7 +305,7 @@ const AdminEmailDeliveryLog = () => {
                 <Row label={bn ? 'ধরন' : 'Kind'} value={kindLabel(selected.template_kind)} />
                 <Row label={bn ? 'স্ট্যাটাস' : 'Status'} value={selected.status} />
                 <Row label={bn ? 'বিষয়' : 'Subject'} value={selected.subject || '-'} />
-                <Row label={bn ? 'সময়' : 'Time'} value={format(new Date(selected.created_at), 'dd/MM/yyyy HH:mm:ss')} />
+                <Row label={bn ? 'সময়' : 'Time'} value={format(new Date(selected.created_at), 'dd/MM/yyyy hh:mm:ss a')} />
                 {selected.error_message && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">{bn ? 'ত্রুটি' : 'Error message'}</p>

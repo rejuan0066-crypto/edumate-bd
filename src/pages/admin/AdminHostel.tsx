@@ -275,7 +275,7 @@ const AdminHostel = () => {
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
   });
 
-  // Current time in the app timezone as "YYYY-MM-DDTHH:mm" for lexical comparison
+  // Current time in the app timezone as "YYYY-MM-DDThh:mm a" for lexical comparison
   const nowInTz = (() => {
     const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
     const g = (t: string) => p.find(x => x.type === t)?.value || '00';
