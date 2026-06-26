@@ -922,7 +922,7 @@ const AdminHostel = () => {
                   )}
                   {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.map((p: AttendanceRosterPerson, idx: number) => {
                     const rec = personAtt(attCat, p.id);
-                    const present = rec ? !!rec[attMeal] : null;
+                    const present = !rec || rec[attMeal] === null || rec[attMeal] === undefined ? null : !!rec[attMeal];
                     const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
                     const code = p.person_code || '';
                     return (
