@@ -193,8 +193,8 @@ const AdminStaffReports = () => {
       return {
         ...s,
         att_status: r?.status || 'no_record',
-        check_in: r?.check_in_time ? new Date(r.check_in_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
-        check_out: r?.check_out_time ? new Date(r.check_out_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit' }) : '-',
+        check_in: r?.check_in_time ? new Date(r.check_in_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
+        check_out: r?.check_out_time ? new Date(r.check_out_time).toLocaleTimeString(bn ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-',
         shift: r?.shift || '-',
         remarks: r?.remarks || '-',
       };
