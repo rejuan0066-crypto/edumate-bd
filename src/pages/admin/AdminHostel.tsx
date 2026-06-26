@@ -69,6 +69,8 @@ const AdminHostel = () => {
   const { role } = useAuth();
   const isAdmin = isAdminRole(role);
   const { tz } = useAppTimezone();
+  const { data: institutionInfo } = useInstitutionInfo();
+
 
   // ─── Hostels ────────────────────────────────────────────────────────────
   const { data: hostels = [] } = useQuery({
