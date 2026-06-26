@@ -609,24 +609,119 @@ const AdminHostel = () => {
       const rows = buildPeriodRows(dates, records);
       const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
       const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
-      const aoaRows = rows.map(r => {
-        const base: Record<string, any> = { '#': r['#'], [bn ? 'নাম' : 'Name']: r.name, [bn ? 'আইডি' : 'ID']: r.id };
-        if (attCat === 'student') base[bn ? 'ক্লাস' : 'Class'] = r.class;
-        dates.forEach(dt => { base[dateCol(dt)] = r.cells[dt]; });
-        base[bn ? 'মোট বেলা' : 'Total Meals'] = r.totalPresent;
-        return base;
-      });
-      const ws = XLSX.utils.aoa_to_sheet([
-        [periodTitle(period, start, end)],
-        [bn ? 'ধরন' : 'Category', catLabel],
-        [bn ? 'নোট' : 'Note', bn ? 'প্রতি ঘরে সেই দিনে উপস্থিত বেলার সংখ্যা (০-৩)' : 'Each cell = meals present that day (0-3)'],
-        [],
-      ]);
-      XLSX.utils.sheet_add_json(ws, aoaRows, { origin: -1 });
+      const instName = institutionInfo ? (bn ? institutionInfo.name : (institutionInfo.name_en || institutionInfo.name)) : '';
+      const FONT = 'SutonnyOMJ';
+      const argb = (hex: string) => 'FF' + hex.replace('#', '');
+
+      // ── Column definitions (dynamic date columns) ──
+      type Col = { key: string; label: string; width: number; left?: boolean };
+      const cols: Col[] = [
+        { key: '#', label: '#', width: 5 },
+        { key: 'name', label: bn ? 'নাম' : 'Name', width: 26, left: true },
+        { key: 'id', label: bn ? 'আইডি' : 'ID', width: 16 },
+      ];
+      if (attCat === 'student') cols.push({ key: 'class', label: bn ? 'ক্লাস' : 'Class', width: 18, left: true });
+      dates.forEach(dt => cols.push({ key: dt, label: dateCol(dt), width: 7 }));
+      cols.push({ key: 'total', label: bn ? 'মোট বেলা' : 'Total Meals', width: 12 });
+      const totalCols = cols.length;
+
+      const cellValue = (r: any, key: string) => {
+        if (key === '#') return r['#'];
+        if (key === 'name') return r.name;
+        if (key === 'id') return r.id;
+        if (key === 'class') return r.class;
+        if (key === 'total') return r.totalPresent;
+        return r.cells[key];
+      };
+
+      // ── Sheet data (aoa) ──
+      const sheetData: any[][] = [];
+      sheetData.push([instName || (bn ? 'প্রতিষ্ঠান' : 'Institution')]);                       // 0 institution
+      sheetData.push([periodTitle(period, start, end)]);                                        // 1 title
+      sheetData.push([`${bn ? 'ধরন' : 'Category'}: ${catLabel}   |   ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present that day (0-3)'}`]); // 2 note
+      sheetData.push([]);                                                                       // 3 spacer
+      sheetData.push(cols.map(c => c.label));                                                   // 4 header
+      const headerRowIdx = 4;
+      rows.forEach(r => sheetData.push(cols.map(c => cellValue(r, c.key))));
+      const dataStart = headerRowIdx + 1;
+      const dataEnd = dataStart + rows.length - 1;
+
+      // Summary row
+      sheetData.push([]);
+      const summaryRowIdx = sheetData.length;
+      const grandTotal = rows.reduce((s: number, r: any) => s + (r.totalPresent || 0), 0);
+      const summary: any[] = new Array(totalCols).fill('');
+      summary[0] = bn ? 'মোট' : 'Total';
+      summary[1] = `${rows.length} ${bn ? 'জন' : 'people'}`;
+      summary[totalCols - 1] = grandTotal;
+      sheetData.push(summary);
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } },
+      ];
+      ws['!cols'] = cols.map(c => ({ wch: c.width }));
+      // Freeze header + name columns for easy scrolling
+      ws['!freeze'] = { xSplit: attCat === 'student' ? 4 : 3, ySplit: headerRowIdx + 1 } as any;
+
+      const rowHeights: Record<number, number> = { 0: 30, 1: 24, 2: 20, 3: 8, [headerRowIdx]: 26 };
+      ws['!rows'] = Array.from({ length: sheetData.length }, (_, i) => ({ hpt: rowHeights[i] ?? 22 }));
+
+      const thin = {
+        top: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+      };
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let r = range.s.r; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          if (!ws[ref]) ws[ref] = { t: 's', v: '' };
+          const cell = ws[ref];
+          cell.s = {
+            font: { name: FONT, sz: 11, color: { rgb: 'FF1E293B' } },
+            alignment: { vertical: 'center', horizontal: cols[c]?.left ? 'left' : 'center', wrapText: true },
+            border: thin,
+          };
+          if (r === 0) { cell.s = { font: { name: FONT, sz: 16, bold: true, color: { rgb: 'FF064E3B' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 1) { cell.s = { font: { name: FONT, sz: 13, bold: true, color: { rgb: 'FF0F172A' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 2) { cell.s = { font: { name: FONT, sz: 10, color: { rgb: 'FF64748B' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 3) { cell.s = { font: { name: FONT, sz: 8 } }; }
+          else if (r === headerRowIdx) {
+            cell.s = {
+              fill: { fgColor: { rgb: argb('#059669') } },
+              font: { name: FONT, sz: 11, bold: true, color: { rgb: 'FFFFFFFF' } },
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: thin,
+            };
+          } else if (r >= dataStart && r <= dataEnd) {
+            if ((r - dataStart) % 2 === 1) cell.s.fill = { fgColor: { rgb: argb('#F8FAFC') } };
+            // Highlight the total-meals column
+            if (cols[c]?.key === 'total') cell.s.font = { name: FONT, sz: 11, bold: true, color: { rgb: 'FF059669' } };
+            // Dim empty "-" cells
+            const v = String(cell.v ?? '');
+            if (v === '-' || v === '0') cell.s.font = { name: FONT, sz: 11, color: { rgb: 'FFCBD5E1' } };
+            else if (cols[c]?.key !== 'name' && cols[c]?.key !== 'class' && cols[c]?.key !== 'id' && cols[c]?.key !== '#' && cols[c]?.key !== 'total')
+              cell.s.font = { name: FONT, sz: 11, bold: true, color: { rgb: 'FF16A34A' } };
+          } else if (r === summaryRowIdx) {
+            cell.s = {
+              fill: { fgColor: { rgb: argb('#ECFDF5') } },
+              font: { name: FONT, sz: 11, bold: true, color: { rgb: 'FF064E3B' } },
+              alignment: { horizontal: cols[c]?.left ? 'left' : 'center', vertical: 'center' },
+              border: { top: { style: 'medium', color: { rgb: 'FF059669' } }, bottom: { style: 'medium', color: { rgb: 'FF059669' } }, left: thin.left, right: thin.right },
+            };
+          }
+        }
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, period === 'week' ? 'Weekly' : 'Monthly');
       const fname = `meal-attendance_${period}_${start}_${attCat}.xlsx`;
-      XLSX.writeFile(wb, fname);
+      XLSX.writeFile(wb, fname, { bookType: 'xlsx', cellStyles: true });
       toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
     } catch (e: any) {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' });
