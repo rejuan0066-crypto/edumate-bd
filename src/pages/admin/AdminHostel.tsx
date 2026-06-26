@@ -592,95 +592,79 @@ const AdminHostel = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Add member without allocation */}
-              <div className="flex flex-col sm:flex-row sm:items-end gap-2 mb-4 p-3 rounded-xl bg-muted/40">
-                <div className="w-full sm:w-40">
-                  <Label className="text-xs">{bn ? 'ধরন' : 'Type'}</Label>
-                  <Select value={adHocType} onValueChange={(v: any) => { setAdHocType(v); setAdHocId(''); }}>
+              {/* Step 1 & 2: pick meal + category */}
+              <div className="flex flex-col lg:flex-row lg:items-end gap-3 mb-4 p-3 rounded-xl bg-muted/40">
+                <div className="w-full lg:w-56">
+                  <Label className="text-xs">{bn ? '১. বেলা বাছাই' : '1. Select Meal'}</Label>
+                  <Select value={attMeal} onValueChange={(v: any) => setAttMeal(v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="breakfast">{bn ? 'সকাল (নাশতা)' : 'Breakfast'}</SelectItem>
+                      <SelectItem value="lunch">{bn ? 'দুপুর' : 'Lunch'}</SelectItem>
+                      <SelectItem value="dinner">{bn ? 'রাত' : 'Dinner'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-full lg:w-56">
+                  <Label className="text-xs">{bn ? '২. ধরন বাছাই' : '2. Select Category'}</Label>
+                  <Select value={attCat} onValueChange={(v: any) => { setAttCat(v); setAttSearch(''); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
-                      <SelectItem value="staff">{bn ? 'স্টাফ/শিক্ষক' : 'Staff/Teacher'}</SelectItem>
+                      <SelectItem value="staff">{bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff'}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <Label className="text-xs">{bn ? 'সদস্য (বরাদ্দ ছাড়া)' : 'Member (no allocation)'}</Label>
-                  <Select value={adHocId} onValueChange={setAdHocId}>
-                    <SelectTrigger><SelectValue placeholder={bn ? 'সদস্য বাছাই' : 'Select member'} /></SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {(adHocType === 'student' ? (students as any[]) : (staffList as any[])).map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>{(bn ? p.name_bn : (p.name_en || p.name_bn))} ({p.student_id || p.staff_id})</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs">{bn ? 'খুঁজুন' : 'Search'}</Label>
+                  <Input value={attSearch} onChange={e => setAttSearch(e.target.value)} placeholder={bn ? 'নাম বা আইডি' : 'Name or ID'} />
                 </div>
-                <Button onClick={() => addAdHoc.mutate()} disabled={!adHocId || addAdHoc.isPending}><Plus className="w-4 h-4 mr-1" />{bn ? 'যোগ করুন' : 'Add'}</Button>
               </div>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>{bn ? 'সদস্য' : 'Member'}</TableHead>
-                  <TableHead>{bn ? 'রুম' : 'Room'}</TableHead>
-                  <TableHead className="text-center">{bn ? 'নাশতা' : 'Breakfast'}</TableHead>
-                  <TableHead className="text-center">{bn ? 'দুপুর' : 'Lunch'}</TableHead>
-                  <TableHead className="text-center">{bn ? 'রাত' : 'Dinner'}</TableHead>
-                  <TableHead></TableHead>
+                  <TableHead className="w-12">#</TableHead>
+                  <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
+                  <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'হাজিরা' : 'Attendance'}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {activeAllocations.map(a => {
-                    const att = attFor(a.id);
+                  {attRoster.map((p: any, idx: number) => {
+                    const rec = personAtt(attCat, p.id);
+                    const present = rec ? !!rec[attMeal] : null;
+                    const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
                     return (
-                      <TableRow key={a.id}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Badge variant={a.occupant_type === 'staff' ? 'secondary' : 'outline'}>
-                              {a.occupant_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
-                            </Badge>
-                            {occupantLabel(a)}
+                      <TableRow key={p.id}>
+                        <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                        <TableCell className="font-medium">{name}</TableCell>
+                        <TableCell className="text-muted-foreground">{p.student_id || p.staff_id || '—'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              size="sm"
+                              variant={present === true ? 'default' : 'outline'}
+                              className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: true })}
+                            >
+                              {bn ? 'উপস্থিত' : 'Present'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={present === false ? 'destructive' : 'outline'}
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: false })}
+                            >
+                              {bn ? 'অনুপস্থিত' : 'Absent'}
+                            </Button>
                           </div>
                         </TableCell>
-                        <TableCell>{roomLabel(a.room_id)}</TableCell>
-                        {(['breakfast', 'lunch', 'dinner'] as const).map(meal => (
-                          <TableCell key={meal} className="text-center">
-                            <Checkbox
-                              checked={!!att?.[meal]}
-                              onCheckedChange={(v) => saveAttendance.mutate({ allocation_id: a.id, meal, value: !!v })}
-                            />
-                          </TableCell>
-                        ))}
-                        <TableCell></TableCell>
                       </TableRow>
                     );
                   })}
-                  {adHocRows.map(att => (
-                    <TableRow key={att.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Badge variant={att.person_type === 'staff' ? 'secondary' : 'outline'}>
-                            {att.person_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
-                          </Badge>
-                          {att.person_name || '—'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{bn ? 'বরাদ্দ ছাড়া' : 'No allocation'}</TableCell>
-                      {(['breakfast', 'lunch', 'dinner'] as const).map(meal => (
-                        <TableCell key={meal} className="text-center">
-                          <Checkbox
-                            checked={!!att[meal]}
-                            onCheckedChange={(v) => saveAttendance.mutate({ person: { type: att.person_type!, id: att.person_id!, name: att.person_name || '' }, meal, value: !!v })}
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell className="text-center">
-                        <Button size="icon" variant="ghost" onClick={() => deleteAttendance.mutate(att.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {activeAllocations.length === 0 && adHocRows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{bn ? 'কোনো সদস্য নেই — উপরে থেকে সদস্য যোগ করুন' : 'No members — add one above'}</TableCell></TableRow>}
+                  {attRoster.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
-              <p className="text-xs text-muted-foreground mt-3">{bn ? 'চেকবক্সে টিক দিলে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে। বরাদ্দ ছাড়াও সদস্য যোগ করে হাজিরা দেওয়া যাবে।' : 'Ticking a checkbox saves automatically. You can add members without an allocation.'}</p>
+              <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
             </CardContent>
+
 
           </Card>
         </TabsContent>
