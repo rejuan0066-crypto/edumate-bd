@@ -428,7 +428,7 @@ const DonationPage = () => {
         date: new Date().toLocaleDateString(bn ? 'bn-BD' : 'en-GB'),
         transactionId: result.trxId,
         gatewayTrxId: result.trxId,
-        paymentTimestamp: new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB'),
+        paymentTimestamp: new Date().toLocaleString(bn ? 'bn-BD' : 'en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
         paymentMethod: payMode === 'online' ? 'Online Gateway' : manualMethod,
         collectorName: '—',
         approverName: '—',
