@@ -477,11 +477,17 @@ const AdminHostel = () => {
         if (b === '__none__') return -1;
         return order.indexOf(a) - order.indexOf(b);
       })
-      .map(([key, people]) => ({
-        key,
-        label: key === '__none__' ? (bn ? 'শ্রেণীবিহীন' : 'No Class') : (classLabel(key) || (bn ? 'অজানা শ্রেণী' : 'Unknown Class')),
-        people,
-      }));
+      .map(([key, people]) => {
+        const c: any = (classesList as any[]).find((x: any) => x.id === key);
+        return {
+          key,
+          label: key === '__none__'
+            ? (bn ? 'শ্রেণীবিহীন' : 'No Class')
+            : (c ? (bn ? c.name_bn : c.name) : (bn ? 'অজানা শ্রেণী' : 'Unknown Class')),
+          people,
+        };
+      });
+
   })();
 
 
