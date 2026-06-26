@@ -724,7 +724,7 @@ const AdminHostel = () => {
               {attLocked && (
                 <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
                   <Lock className="w-4 h-4 shrink-0" />
-                  {bn ? `এই তারিখ ও বেলার (${cf[attMeal]}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${cf[attMeal]}) has passed — attendance is locked. Contact an admin.`}
+                  {bn ? `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`}
                 </div>
               )}
 
