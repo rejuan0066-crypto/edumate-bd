@@ -132,7 +132,7 @@ const AdminHostel = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-min'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, academic_session_id, class_id').is('deleted_at', null).limit(2000);
+      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, session_id, class_id').is('deleted_at', null).limit(2000);
       if (error) throw error;
       return data;
     },
@@ -307,7 +307,7 @@ const AdminHostel = () => {
 
   // Filter students by selected session/class for allocation form
   const filteredStudents = (students as any[]).filter((s: any) => {
-    if (allocForm.academic_session_id && s.academic_session_id !== allocForm.academic_session_id) return false;
+    if (allocForm.academic_session_id && s.session_id !== allocForm.academic_session_id) return false;
     if (allocForm.class_id && s.class_id !== allocForm.class_id) return false;
     return true;
   });
