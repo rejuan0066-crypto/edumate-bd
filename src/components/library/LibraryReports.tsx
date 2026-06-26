@@ -60,9 +60,15 @@ const LibraryReports = () => {
   });
 
   const filteredIss = issuances.filter((i: any) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return i.recipient_name?.toLowerCase().includes(q) || i.library_books?.title?.toLowerCase().includes(q) || i.library_books?.title_bn?.includes(q);
+    if (search) {
+      const q = search.toLowerCase();
+      const match = i.recipient_name?.toLowerCase().includes(q) || i.library_books?.title?.toLowerCase().includes(q) || i.library_books?.title_bn?.includes(q);
+      if (!match) return false;
+    }
+    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+    if (dateFrom && (!i.issued_date || i.issued_date < dateFrom)) return false;
+    if (dateTo && (!i.issued_date || i.issued_date > dateTo)) return false;
+    return true;
   });
 
   return (
