@@ -12,10 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck } from 'lucide-react';
+import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
+import { useAuth } from '@/hooks/useAuth';
+import { isAdminRole } from '@/lib/roles';
+import { useAppTimezone } from '@/hooks/useAppTimezone';
 
 type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; address?: string | null; warden_name?: string | null; warden_phone?: string | null; total_capacity: number; is_active: boolean; notes?: string | null };
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
@@ -36,6 +40,9 @@ const AdminHostel = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  const { tz } = useAppTimezone();
 
   // ─── Hostels ────────────────────────────────────────────────────────────
   const { data: hostels = [] } = useQuery({
@@ -242,6 +249,42 @@ const AdminHostel = () => {
   const [attMeal, setAttMeal] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
   const [attCat, setAttCat] = useState<'student' | 'staff'>('student');
   const [attSearch, setAttSearch] = useState('');
+
+  // ─── Meal-attendance cutoff settings (lock non-admins after deadline) ─────
+  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string };
+  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00' };
+  const { data: cutoffs = DEFAULT_CUTOFFS } = useQuery({
+    queryKey: ['hostel-meal-cutoffs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('app_settings').select('value').eq('key', 'hostel_meal_attendance_cutoffs').maybeSingle();
+      const v = data?.value as Partial<MealCutoffs> | null;
+      return { ...DEFAULT_CUTOFFS, ...(v || {}) } as MealCutoffs;
+    },
+  });
+  const [cutoffForm, setCutoffForm] = useState<MealCutoffs | null>(null);
+  const cf = cutoffForm ?? cutoffs;
+  const saveCutoffs = useMutation({
+    mutationFn: async (payload: MealCutoffs) => {
+      const { error } = await supabase.from('app_settings').upsert(
+        { key: 'hostel_meal_attendance_cutoffs', value: payload as any, updated_at: new Date().toISOString() },
+        { onConflict: 'key' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meal-cutoffs'] }); setCutoffForm(null); toast({ title: bn ? 'সেটিং সংরক্ষিত' : 'Settings saved' }); },
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  // Current time in the app timezone as "YYYY-MM-DDTHH:mm" for lexical comparison
+  const nowInTz = (() => {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+    const g = (t: string) => p.find(x => x.type === t)?.value || '00';
+    return `${g('year')}-${g('month')}-${g('day')}T${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`;
+  })();
+  // Deadline passed for the selected date + meal? (locks non-admins)
+  const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
+  const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
+
 
   const { data: mealAttendance = [] } = useQuery({
     queryKey: ['hostel-meal-attendance', attDate],
@@ -620,6 +663,40 @@ const AdminHostel = () => {
                   <Input value={attSearch} onChange={e => setAttSearch(e.target.value)} placeholder={bn ? 'নাম বা আইডি' : 'Name or ID'} />
                 </div>
               </div>
+
+              {/* Admin-only cutoff settings */}
+              {isAdmin && (
+                <div className="mb-4 p-4 rounded-xl border border-border/60 bg-card">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold"><Clock className="w-4 h-4 text-primary" />{bn ? 'হাজিরা লক সেটিং' : 'Attendance Lock Settings'}</div>
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">{bn ? 'সক্রিয়' : 'Enabled'}</Label>
+                      <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div><Label className="text-xs">{bn ? 'সকাল শেষ' : 'Breakfast cutoff'}</Label><Input type="time" value={cf.breakfast} onChange={e => setCutoffForm({ ...cf, breakfast: e.target.value })} /></div>
+                    <div><Label className="text-xs">{bn ? 'দুপুর শেষ' : 'Lunch cutoff'}</Label><Input type="time" value={cf.lunch} onChange={e => setCutoffForm({ ...cf, lunch: e.target.value })} /></div>
+                    <div><Label className="text-xs">{bn ? 'রাত শেষ' : 'Dinner cutoff'}</Label><Input type="time" value={cf.dinner} onChange={e => setCutoffForm({ ...cf, dinner: e.target.value })} /></div>
+                  </div>
+                  {cutoffForm && (
+                    <div className="flex justify-end mt-3">
+                      <Button size="sm" onClick={() => saveCutoffs.mutate(cf)} disabled={saveCutoffs.isPending}>
+                        <Save className="w-4 h-4 mr-1.5" />{bn ? 'সেভ করুন' : 'Save'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {attLocked && (
+                <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+                  <Lock className="w-4 h-4 shrink-0" />
+                  {bn ? `এই তারিখ ও বেলার (${cf[attMeal]}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${cf[attMeal]}) has passed — attendance is locked. Contact an admin.`}
+                </div>
+              )}
+
               <Table>
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead>
@@ -642,6 +719,7 @@ const AdminHostel = () => {
                             <Button
                               size="sm"
                               variant={present === true ? 'default' : 'outline'}
+                              disabled={attLocked}
                               className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
                               onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: true })}
                             >
@@ -650,6 +728,7 @@ const AdminHostel = () => {
                             <Button
                               size="sm"
                               variant={present === false ? 'destructive' : 'outline'}
+                              disabled={attLocked}
                               onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: false })}
                             >
                               {bn ? 'অনুপস্থিত' : 'Absent'}
