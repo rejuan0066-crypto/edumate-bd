@@ -89,6 +89,21 @@ const LibraryReports = () => {
           </div>
         )}
         {reportType === 'issuance_log' && (
+          <>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-[150px]" title={bn ? 'শুরুর তারিখ' : 'From date'} />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-[150px]" title={bn ? 'শেষ তারিখ' : 'To date'} />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব স্ট্যাটাস' : 'All Status'}</SelectItem>
+                <SelectItem value="issued">{bn ? 'ইস্যু' : 'Issued'}</SelectItem>
+                <SelectItem value="returned">{bn ? 'ফেরত' : 'Returned'}</SelectItem>
+                <SelectItem value="lost">{bn ? 'হারানো' : 'Lost'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
+        )}
+        {reportType === 'issuance_log' && (
           <div className="flex gap-2 sm:ml-auto">
             <Button variant="outline" disabled={filteredIss.length === 0} onClick={() => printYearlyIssuanceList(filteredIss, new Date().getFullYear(), institutionInfo)}>
               <Printer className="w-4 h-4 mr-1.5" />{bn ? 'তালিকা প্রিন্ট' : 'Print List'}
