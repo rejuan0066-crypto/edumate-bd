@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -458,6 +458,38 @@ const AdminHostel = () => {
     const code = (p.person_code || '').toLowerCase();
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
+
+  // Group the student roster into separate per-class sections (staff stays as one group)
+  const attRosterGroups = (() => {
+    if (attCat !== 'student') {
+      return [{ key: 'all', label: '', people: attRoster }];
+    }
+    const map = new Map<string, AttendanceRosterPerson[]>();
+    attRoster.forEach((p: AttendanceRosterPerson) => {
+      const key = p.class_id || '__none__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    });
+    const order = (classesList as any[]).map((c: any) => c.id);
+    return Array.from(map.entries())
+      .sort(([a], [b]) => {
+        if (a === '__none__') return 1;
+        if (b === '__none__') return -1;
+        return order.indexOf(a) - order.indexOf(b);
+      })
+      .map(([key, people]) => {
+        const c: any = (classesList as any[]).find((x: any) => x.id === key);
+        return {
+          key,
+          label: key === '__none__'
+            ? (bn ? 'শ্রেণীবিহীন' : 'No Class')
+            : (c ? (bn ? c.name_bn : c.name) : (bn ? 'অজানা শ্রেণী' : 'Unknown Class')),
+          people,
+        };
+      });
+
+  })();
+
 
   // Per-meal present/absent tally for the current category + date
   const attStats = (() => {
@@ -920,53 +952,65 @@ const AdminHostel = () => {
                       </TableCell>
                     </TableRow>
                   )}
-                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.map((p: AttendanceRosterPerson, idx: number) => {
-                    const rec = personAtt(attCat, p.id);
-                    const present = !rec || rec[attMeal] === null || rec[attMeal] === undefined ? null : !!rec[attMeal];
-                    const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
-                    const code = p.person_code || '';
-                    return (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
-                        <TableCell className="font-medium">{name}</TableCell>
-                        <TableCell className="text-muted-foreground">{code || '—'}</TableCell>
-                        {attCat === 'student' && <TableCell className="text-muted-foreground">{classLabel(p.class_id) || '—'}</TableCell>}
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-2">
-                            <Button
-                              size="sm"
-                              variant={present === true ? 'default' : 'outline'}
-                              disabled={attLocked}
-                              className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
-                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: true })}
-                            >
-                              {bn ? 'উপস্থিত' : 'Present'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={present === false ? 'destructive' : 'outline'}
-                              disabled={attLocked}
-                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: false })}
-                            >
-                              {bn ? 'অনুপস্থিত' : 'Absent'}
-                            </Button>
-                            {present !== null && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                disabled={attLocked}
-                                className="text-muted-foreground hover:text-destructive"
-                                title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
-                                onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRosterGroups.map((group) => (
+                    <React.Fragment key={group.key}>
+                      {attCat === 'student' && (
+                        <TableRow className="hover:bg-transparent hover:translate-y-0">
+                          <TableCell colSpan={5} className="bg-muted/50 font-bold text-sm text-primary py-2">
+                            {group.label} <span className="text-muted-foreground font-normal">({group.people.length})</span>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {group.people.map((p: AttendanceRosterPerson, idx: number) => {
+                        const rec = personAtt(attCat, p.id);
+                        const present = !rec || rec[attMeal] === null || rec[attMeal] === undefined ? null : !!rec[attMeal];
+                        const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
+                        const code = p.person_code || '';
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
+                            <TableCell className="font-medium">{name}</TableCell>
+                            <TableCell className="text-muted-foreground">{code || '—'}</TableCell>
+                            {attCat === 'student' && <TableCell className="text-muted-foreground">{classLabel(p.class_id) || '—'}</TableCell>}
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant={present === true ? 'default' : 'outline'}
+                                  disabled={attLocked}
+                                  className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                                  onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: true })}
+                                >
+                                  {bn ? 'উপস্থিত' : 'Present'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={present === false ? 'destructive' : 'outline'}
+                                  disabled={attLocked}
+                                  onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: false })}
+                                >
+                                  {bn ? 'অনুপস্থিত' : 'Absent'}
+                                </Button>
+                                {present !== null && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={attLocked}
+                                    className="text-muted-foreground hover:text-destructive"
+                                    title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                                    onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+
                   {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
