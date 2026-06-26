@@ -478,7 +478,16 @@ const AdminHostel = () => {
       { '#': bn ? 'অনুপস্থিত' : 'Absent', [bn ? 'নাম' : 'Name']: attStats.absent },
       { '#': bn ? 'দেওয়া হয়নি' : 'Not marked', [bn ? 'নাম' : 'Name']: attStats.unmarked },
     ];
+    const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
     const ws = XLSX.utils.json_to_sheet([...rows, ...summary]);
+    // Prepend a header section showing which meal/date/category this attendance is for
+    XLSX.utils.sheet_add_aoa(ws, [
+      [bn ? 'খাবার হাজিরা' : 'Meal Attendance'],
+      [bn ? 'বেলা' : 'Meal', mealLabel(attMeal)],
+      [bn ? 'তারিখ' : 'Date', attDate],
+      [bn ? 'ধরন' : 'Category', catLabel],
+      [],
+    ], { origin: 'A1' });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
     const fname = `meal-attendance_${attDate}_${attMeal}_${attCat}.xlsx`;
