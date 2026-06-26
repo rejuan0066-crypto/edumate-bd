@@ -3646,11 +3646,11 @@ export type Database = {
         Row: {
           allocation_id: string | null
           attendance_date: string
-          breakfast: boolean
+          breakfast: boolean | null
           created_at: string
-          dinner: boolean
+          dinner: boolean | null
           id: string
-          lunch: boolean
+          lunch: boolean | null
           notes: string | null
           person_id: string | null
           person_name: string | null
@@ -3660,11 +3660,11 @@ export type Database = {
         Insert: {
           allocation_id?: string | null
           attendance_date?: string
-          breakfast?: boolean
+          breakfast?: boolean | null
           created_at?: string
-          dinner?: boolean
+          dinner?: boolean | null
           id?: string
-          lunch?: boolean
+          lunch?: boolean | null
           notes?: string | null
           person_id?: string | null
           person_name?: string | null
@@ -3674,11 +3674,11 @@ export type Database = {
         Update: {
           allocation_id?: string | null
           attendance_date?: string
-          breakfast?: boolean
+          breakfast?: boolean | null
           created_at?: string
-          dinner?: boolean
+          dinner?: boolean | null
           id?: string
-          lunch?: boolean
+          lunch?: boolean | null
           notes?: string | null
           person_id?: string | null
           person_name?: string | null
