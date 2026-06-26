@@ -268,10 +268,11 @@ const queryClient = new QueryClient({
     queries: {
       retry: (failureCount, error) => {
         const msg = error instanceof Error ? error.message : String(error ?? '');
-        // Allow JWT errors to retry a few times (session may be refreshing)
-        if (msg.includes('JWT expired') || msg.includes('PGRST303')) return failureCount < 2;
+        // Allow token/JWT errors to retry a few times (session may be refreshing)
+        if (isTokenError(msg)) return failureCount < 3;
         return failureCount < 1;
       },
+
       retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 3000),
       staleTime: 30_000,
       refetchOnWindowFocus: false,
