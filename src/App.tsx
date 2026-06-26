@@ -204,6 +204,25 @@ import { supabase } from "@/integrations/supabase/client";
 
 let isRefreshingSession = false;
 
+// Detects auth/token failures that should trigger a silent session refresh.
+// Covers both PostgREST errors and the Lovable Cloud data-API gateway envelope
+// ({"type":"unauthorized","message":"Invalid token"}).
+const isTokenError = (message: string): boolean => {
+  const m = message.toLowerCase();
+  return (
+    m.includes('jwt expired') ||
+    m.includes('pgrst303') ||
+    m.includes('invalid claim') ||
+    m.includes('missing sub claim') ||
+    m.includes('invalid token') ||
+    m.includes('token is expired') ||
+    m.includes('token expired') ||
+    m.includes('bad_jwt') ||
+    m.includes('jwt is expired') ||
+    (m.includes('unauthorized') && m.includes('token'))
+  );
+};
+
 const clearLocalExpiredSession = async () => {
   await supabase.auth.signOut({ scope: 'local' });
   queryClient.clear();
@@ -212,11 +231,7 @@ const clearLocalExpiredSession = async () => {
 const handleAuthError = async (error: unknown) => {
   if (isRefreshingSession) return;
   const message = error instanceof Error ? error.message : String(error ?? '');
-  const isJwtError =
-    message.includes('JWT expired') ||
-    message.includes('PGRST303') ||
-    message.includes('invalid claim: missing sub claim');
-  if (!isJwtError) return;
+  if (!isTokenError(message)) return;
 
   isRefreshingSession = true;
   try {
@@ -241,6 +256,7 @@ const handleAuthError = async (error: unknown) => {
   }
 };
 
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: handleAuthError,
@@ -252,10 +268,11 @@ const queryClient = new QueryClient({
     queries: {
       retry: (failureCount, error) => {
         const msg = error instanceof Error ? error.message : String(error ?? '');
-        // Allow JWT errors to retry a few times (session may be refreshing)
-        if (msg.includes('JWT expired') || msg.includes('PGRST303')) return failureCount < 2;
+        // Allow token/JWT errors to retry a few times (session may be refreshing)
+        if (isTokenError(msg)) return failureCount < 3;
         return failureCount < 1;
       },
+
       retryDelay: (attemptIndex) => Math.min(1000 * (attemptIndex + 1), 3000),
       staleTime: 30_000,
       refetchOnWindowFocus: false,
