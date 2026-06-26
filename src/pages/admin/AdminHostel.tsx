@@ -774,6 +774,20 @@ const AdminHostel = () => {
                 </div>
               )}
 
+              {/* Per-meal present/absent summary + export */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">{mealLabel(attMeal)} · {attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff')}</span>
+                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">{bn ? 'উপস্থিত' : 'Present'}: {attStats.present}</Badge>
+                  <Badge variant="destructive">{bn ? 'অনুপস্থিত' : 'Absent'}: {attStats.absent}</Badge>
+                  <Badge variant="outline">{bn ? 'দেওয়া হয়নি' : 'Not marked'}: {attStats.unmarked}</Badge>
+                  <Badge variant="secondary">{bn ? 'মোট' : 'Total'}: {attStats.total}</Badge>
+                </div>
+                <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0}>
+                  <Download className="w-4 h-4 mr-1.5" />{bn ? 'ফাইলে সেভ করুন' : 'Export'}
+                </Button>
+              </div>
+
               <Table>
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead>
