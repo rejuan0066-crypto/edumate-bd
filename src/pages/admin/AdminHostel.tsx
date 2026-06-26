@@ -250,6 +250,42 @@ const AdminHostel = () => {
   const [attCat, setAttCat] = useState<'student' | 'staff'>('student');
   const [attSearch, setAttSearch] = useState('');
 
+  // ─── Meal-attendance cutoff settings (lock non-admins after deadline) ─────
+  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string };
+  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00' };
+  const { data: cutoffs = DEFAULT_CUTOFFS } = useQuery({
+    queryKey: ['hostel-meal-cutoffs'],
+    queryFn: async () => {
+      const { data } = await supabase.from('app_settings').select('value').eq('key', 'hostel_meal_attendance_cutoffs').maybeSingle();
+      const v = data?.value as Partial<MealCutoffs> | null;
+      return { ...DEFAULT_CUTOFFS, ...(v || {}) } as MealCutoffs;
+    },
+  });
+  const [cutoffForm, setCutoffForm] = useState<MealCutoffs | null>(null);
+  const cf = cutoffForm ?? cutoffs;
+  const saveCutoffs = useMutation({
+    mutationFn: async (payload: MealCutoffs) => {
+      const { error } = await supabase.from('app_settings').upsert(
+        { key: 'hostel_meal_attendance_cutoffs', value: payload as any, updated_at: new Date().toISOString() },
+        { onConflict: 'key' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meal-cutoffs'] }); setCutoffForm(null); toast({ title: bn ? 'সেটিং সংরক্ষিত' : 'Settings saved' }); },
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  // Current time in the app timezone as "YYYY-MM-DDTHH:mm" for lexical comparison
+  const nowInTz = (() => {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+    const g = (t: string) => p.find(x => x.type === t)?.value || '00';
+    return `${g('year')}-${g('month')}-${g('day')}T${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`;
+  })();
+  // Deadline passed for the selected date + meal? (locks non-admins)
+  const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
+  const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
+
+
   const { data: mealAttendance = [] } = useQuery({
     queryKey: ['hostel-meal-attendance', attDate],
     queryFn: async () => {
