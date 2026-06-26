@@ -640,8 +640,7 @@ const AdminHostel = () => {
       const rows = buildPeriodRows(dates, records);
       const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
       const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
-      const inst = (institutions as any[])?.[0];
-      const instName = inst ? (bn ? (inst.name_bn || inst.name) : inst.name) : '';
+      const instName = institutionInfo ? (bn ? institutionInfo.name : (institutionInfo.name_en || institutionInfo.name)) : '';
       const head = `<tr><th>#</th><th style="text-align:left">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th>${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th>${dateCol(d)}</th>`).join('')}<th>${bn ? 'মোট' : 'Total'}</th></tr>`;
       const body = rows.map(r => `<tr><td>${r['#']}</td><td style="text-align:left">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td>${r.class}</td>` : ''}${dates.map(d => `<td>${r.cells[d]}</td>`).join('')}<td><b>${r.totalPresent}</b></td></tr>`).join('');
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>${periodTitle(period, start, end)}</title>
