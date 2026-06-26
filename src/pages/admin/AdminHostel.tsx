@@ -235,6 +235,36 @@ const AdminHostel = () => {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meals'] }); toast({ title: bn ? 'মুছে ফেলা হয়েছে' : 'Deleted' }); setDelMealId(null); },
   });
 
+  // ─── Meal Attendance (3 meals/day for boarding members) ──────────────────
+  const [attDate, setAttDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const { data: mealAttendance = [] } = useQuery({
+    queryKey: ['hostel-meal-attendance', attDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('hostel_meal_attendance' as any).select('*').eq('attendance_date', attDate);
+      if (error) throw error;
+      return data as unknown as MealAttendance[];
+    },
+  });
+
+  const saveAttendance = useMutation({
+    mutationFn: async (payload: { allocation_id: string; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a => a.allocation_id === payload.allocation_id);
+      if (existing) {
+        const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: payload.value }).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ allocation_id: payload.allocation_id, attendance_date: attDate, [payload.meal]: payload.value } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const attFor = (allocId: string) => (mealAttendance as MealAttendance[]).find(a => a.allocation_id === allocId);
+  const activeAllocations = allocations.filter(a => a.status === 'active');
+
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
   const totalBeds = rooms.reduce((s, r) => s + (r.bed_count || 0), 0);
