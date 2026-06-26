@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import DeleteConfirmDialog from '@/components/DeleteConfirmDialog';
 
@@ -20,6 +21,7 @@ type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; 
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
 type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
+type MealAttendance = { id: string; allocation_id: string; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 const DAYS_BN = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
@@ -235,6 +237,36 @@ const AdminHostel = () => {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meals'] }); toast({ title: bn ? 'মুছে ফেলা হয়েছে' : 'Deleted' }); setDelMealId(null); },
   });
 
+  // ─── Meal Attendance (3 meals/day for boarding members) ──────────────────
+  const [attDate, setAttDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  const { data: mealAttendance = [] } = useQuery({
+    queryKey: ['hostel-meal-attendance', attDate],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('hostel_meal_attendance' as any).select('*').eq('attendance_date', attDate);
+      if (error) throw error;
+      return data as unknown as MealAttendance[];
+    },
+  });
+
+  const saveAttendance = useMutation({
+    mutationFn: async (payload: { allocation_id: string; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a => a.allocation_id === payload.allocation_id);
+      if (existing) {
+        const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: payload.value }).eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ allocation_id: payload.allocation_id, attendance_date: attDate, [payload.meal]: payload.value } as any);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  const attFor = (allocId: string) => (mealAttendance as MealAttendance[]).find(a => a.allocation_id === allocId);
+  const activeAllocations = allocations.filter(a => a.status === 'active');
+
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
   const totalBeds = rooms.reduce((s, r) => s + (r.bed_count || 0), 0);
@@ -310,11 +342,12 @@ const AdminHostel = () => {
       </div>
 
       <Tabs defaultValue="hostels" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="hostels">{bn ? 'হোস্টেল' : 'Hostels'}</TabsTrigger>
           <TabsTrigger value="rooms">{bn ? 'রুম' : 'Rooms'}</TabsTrigger>
           <TabsTrigger value="allocations">{bn ? 'বরাদ্দ' : 'Allocations'}</TabsTrigger>
           <TabsTrigger value="meals">{bn ? 'খাবার মেনু' : 'Meal Menu'}</TabsTrigger>
+          <TabsTrigger value="meal-attendance">{bn ? 'খাবার হাজিরা' : 'Meal Attendance'}</TabsTrigger>
         </TabsList>
 
         {/* HOSTELS TAB */}
@@ -500,6 +533,60 @@ const AdminHostel = () => {
                   {meals.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{bn ? 'কোনো মেনু নেই' : 'No menu yet'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* MEAL ATTENDANCE TAB */}
+        <TabsContent value="meal-attendance">
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="flex items-center gap-2"><CalendarCheck className="w-5 h-5" />{bn ? '৩ বেলা খাবারের হাজিরা' : '3-Meal Attendance'}</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">{bn ? 'তারিখ' : 'Date'}</Label>
+                <Input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="w-auto" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>{bn ? 'সদস্য' : 'Member'}</TableHead>
+                  <TableHead>{bn ? 'রুম' : 'Room'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'নাশতা' : 'Breakfast'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'দুপুর' : 'Lunch'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'রাত' : 'Dinner'}</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {activeAllocations.map(a => {
+                    const att = attFor(a.id);
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={a.occupant_type === 'staff' ? 'secondary' : 'outline'}>
+                              {a.occupant_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
+                            </Badge>
+                            {occupantLabel(a)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{roomLabel(a.room_id)}</TableCell>
+                        {(['breakfast', 'lunch', 'dinner'] as const).map(meal => (
+                          <TableCell key={meal} className="text-center">
+                            <Checkbox
+                              checked={!!att?.[meal]}
+                              onCheckedChange={(v) => saveAttendance.mutate({ allocation_id: a.id, meal, value: !!v })}
+                            />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
+                  {activeAllocations.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{bn ? 'কোনো সক্রিয় বোর্ডিং সদস্য নেই' : 'No active boarding members'}</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+              {activeAllocations.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-3">{bn ? 'চেকবক্সে টিক দিলে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Ticking a checkbox saves automatically.'}</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
