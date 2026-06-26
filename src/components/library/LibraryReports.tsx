@@ -29,6 +29,9 @@ const LibraryReports = () => {
 
   const [reportType, setReportType] = useState('issuance_log');
   const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const { data: issuances = [], isLoading: issLoading } = useQuery({
     queryKey: ['library-report-issuances'],
@@ -57,9 +60,15 @@ const LibraryReports = () => {
   });
 
   const filteredIss = issuances.filter((i: any) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return i.recipient_name?.toLowerCase().includes(q) || i.library_books?.title?.toLowerCase().includes(q) || i.library_books?.title_bn?.includes(q);
+    if (search) {
+      const q = search.toLowerCase();
+      const match = i.recipient_name?.toLowerCase().includes(q) || i.library_books?.title?.toLowerCase().includes(q) || i.library_books?.title_bn?.includes(q);
+      if (!match) return false;
+    }
+    if (statusFilter !== 'all' && i.status !== statusFilter) return false;
+    if (dateFrom && (!i.issued_date || i.issued_date < dateFrom)) return false;
+    if (dateTo && (!i.issued_date || i.issued_date > dateTo)) return false;
+    return true;
   });
 
   return (
@@ -78,6 +87,21 @@ const LibraryReports = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder={bn ? 'খুঁজুন...' : 'Search...'} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
+        )}
+        {reportType === 'issuance_log' && (
+          <>
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-[150px]" title={bn ? 'শুরুর তারিখ' : 'From date'} />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-[150px]" title={bn ? 'শেষ তারিখ' : 'To date'} />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{bn ? 'সব স্ট্যাটাস' : 'All Status'}</SelectItem>
+                <SelectItem value="issued">{bn ? 'ইস্যু' : 'Issued'}</SelectItem>
+                <SelectItem value="returned">{bn ? 'ফেরত' : 'Returned'}</SelectItem>
+                <SelectItem value="lost">{bn ? 'হারানো' : 'Lost'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </>
         )}
         {reportType === 'issuance_log' && (
           <div className="flex gap-2 sm:ml-auto">
