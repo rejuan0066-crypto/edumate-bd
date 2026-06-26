@@ -28,6 +28,8 @@ type Allocation = { id: string; room_id: string; student_id?: string | null; sta
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
 type MealAttendance = { id: string; allocation_id: string | null; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null; person_type?: string | null; person_id?: string | null; person_name?: string | null };
 type AttendanceRosterPerson = { id: string; person_type: 'student' | 'staff'; person_code?: string | null; name_bn: string; name_en?: string | null; session_id?: string | null; class_id?: string | null };
+type CutoffMeal = 'breakfast' | 'lunch' | 'dinner';
+type TimePeriod = 'AM' | 'PM';
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 const DAYS_BN = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
@@ -37,6 +39,28 @@ const MEAL_TYPES = [
   { v: 'dinner', en: 'Dinner', bn: 'রাতের খাবার' },
   { v: 'snack', en: 'Snack', bn: 'বিকেলের নাশতা' },
 ];
+
+const HOUR_12_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+
+const parseTime12 = (time?: string): { hour: string; minute: string; period: TimePeriod } => {
+  const [rawHour = '0', rawMinute = '00'] = (time || '00:00').split(':');
+  const hour24 = Number(rawHour) || 0;
+  const period: TimePeriod = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return {
+    hour: String(hour12).padStart(2, '0'),
+    minute: rawMinute.padStart(2, '0').slice(0, 2),
+    period,
+  };
+};
+
+const to24h = (hour: string, minute: string, period: TimePeriod) => {
+  let h = Number(hour) || 12;
+  if (period === 'AM' && h === 12) h = 0;
+  if (period === 'PM' && h !== 12) h += 12;
+  return `${String(h).padStart(2, '0')}:${minute}`;
+};
 
 const AdminHostel = () => {
   const { language } = useLanguage();
@@ -286,11 +310,43 @@ const AdminHostel = () => {
   // Format an "HH:mm" 24h string to 12h "hh:mm AM/PM" for display
   const to12h = (t?: string) => {
     if (!t) return '';
-    const [hStr, mStr] = t.split(':');
-    let h = Number(hStr); const m = mStr ?? '00';
-    const period = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${h.toString().padStart(2, '0')}:${m} ${period}`;
+    const { hour, minute, period } = parseTime12(t);
+    return `${hour}:${minute} ${period}`;
+  };
+  const updateCutoffTime = (meal: CutoffMeal, part: 'hour' | 'minute' | 'period', value: string) => {
+    const current = parseTime12(cf[meal]);
+    const next = { ...current, [part]: value } as { hour: string; minute: string; period: TimePeriod };
+    setCutoffForm({ ...cf, [meal]: to24h(next.hour, next.minute, next.period) });
+  };
+  const renderCutoffTimePicker = (meal: CutoffMeal, label: string) => {
+    const value = parseTime12(cf[meal]);
+    return (
+      <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
+        <Label className="text-xs font-medium">{label}</Label>
+        <div className="grid grid-cols-[1fr_1fr_82px] gap-2">
+          <Select value={value.hour} onValueChange={(v) => updateCutoffTime(meal, 'hour', v)}>
+            <SelectTrigger aria-label={`${label} hour`} className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {HOUR_12_OPTIONS.map(hour => <SelectItem key={hour} value={hour}>{hour}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={value.minute} onValueChange={(v) => updateCutoffTime(meal, 'minute', v)}>
+            <SelectTrigger aria-label={`${label} minute`} className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {MINUTE_OPTIONS.map(minute => <SelectItem key={minute} value={minute}>{minute}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={value.period} onValueChange={(v) => updateCutoffTime(meal, 'period', v as TimePeriod)}>
+            <SelectTrigger aria-label={`${label} period`} className="h-10"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AM">AM</SelectItem>
+              <SelectItem value="PM">PM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="text-[11px] text-muted-foreground">{bn ? 'দেখাচ্ছে' : 'Showing'}: {to12h(cf[meal])}</p>
+      </div>
+    );
   };
   // Deadline passed for the selected date + meal? (locks non-admins)
   const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
@@ -752,10 +808,10 @@ const AdminHostel = () => {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div><Label className="text-xs">{bn ? 'সকাল শেষ' : 'Breakfast cutoff'}</Label><Input type="time" value={cf.breakfast} onChange={e => setCutoffForm({ ...cf, breakfast: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.breakfast)}</p></div>
-                    <div><Label className="text-xs">{bn ? 'দুপুর শেষ' : 'Lunch cutoff'}</Label><Input type="time" value={cf.lunch} onChange={e => setCutoffForm({ ...cf, lunch: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.lunch)}</p></div>
-                    <div><Label className="text-xs">{bn ? 'রাত শেষ' : 'Dinner cutoff'}</Label><Input type="time" value={cf.dinner} onChange={e => setCutoffForm({ ...cf, dinner: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.dinner)}</p></div>
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+                    {renderCutoffTimePicker('breakfast', bn ? 'সকাল শেষ' : 'Breakfast cutoff')}
+                    {renderCutoffTimePicker('lunch', bn ? 'দুপুর শেষ' : 'Lunch cutoff')}
+                    {renderCutoffTimePicker('dinner', bn ? 'রাত শেষ' : 'Dinner cutoff')}
                   </div>
                   {cutoffForm && (
                     <div className="flex justify-end mt-3">
