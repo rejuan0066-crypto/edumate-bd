@@ -282,6 +282,15 @@ const AdminHostel = () => {
     const g = (t: string) => p.find(x => x.type === t)?.value || '00';
     return `${g('year')}-${g('month')}-${g('day')}T${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`;
   })();
+  // Format an "HH:mm" 24h string to 12h "hh:mm AM/PM" for display
+  const to12h = (t?: string) => {
+    if (!t) return '';
+    const [hStr, mStr] = t.split(':');
+    let h = Number(hStr); const m = mStr ?? '00';
+    const period = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h.toString().padStart(2, '0')}:${m} ${period}`;
+  };
   // Deadline passed for the selected date + meal? (locks non-admins)
   const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
   const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
