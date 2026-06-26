@@ -609,24 +609,119 @@ const AdminHostel = () => {
       const rows = buildPeriodRows(dates, records);
       const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
       const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
-      const aoaRows = rows.map(r => {
-        const base: Record<string, any> = { '#': r['#'], [bn ? 'নাম' : 'Name']: r.name, [bn ? 'আইডি' : 'ID']: r.id };
-        if (attCat === 'student') base[bn ? 'ক্লাস' : 'Class'] = r.class;
-        dates.forEach(dt => { base[dateCol(dt)] = r.cells[dt]; });
-        base[bn ? 'মোট বেলা' : 'Total Meals'] = r.totalPresent;
-        return base;
-      });
-      const ws = XLSX.utils.aoa_to_sheet([
-        [periodTitle(period, start, end)],
-        [bn ? 'ধরন' : 'Category', catLabel],
-        [bn ? 'নোট' : 'Note', bn ? 'প্রতি ঘরে সেই দিনে উপস্থিত বেলার সংখ্যা (০-৩)' : 'Each cell = meals present that day (0-3)'],
-        [],
-      ]);
-      XLSX.utils.sheet_add_json(ws, aoaRows, { origin: -1 });
+      const instName = institutionInfo ? (bn ? institutionInfo.name : (institutionInfo.name_en || institutionInfo.name)) : '';
+      const FONT = 'SutonnyOMJ';
+      const argb = (hex: string) => 'FF' + hex.replace('#', '');
+
+      // ── Column definitions (dynamic date columns) ──
+      type Col = { key: string; label: string; width: number; left?: boolean };
+      const cols: Col[] = [
+        { key: '#', label: '#', width: 5 },
+        { key: 'name', label: bn ? 'নাম' : 'Name', width: 26, left: true },
+        { key: 'id', label: bn ? 'আইডি' : 'ID', width: 16 },
+      ];
+      if (attCat === 'student') cols.push({ key: 'class', label: bn ? 'ক্লাস' : 'Class', width: 18, left: true });
+      dates.forEach(dt => cols.push({ key: dt, label: dateCol(dt), width: 7 }));
+      cols.push({ key: 'total', label: bn ? 'মোট বেলা' : 'Total Meals', width: 12 });
+      const totalCols = cols.length;
+
+      const cellValue = (r: any, key: string) => {
+        if (key === '#') return r['#'];
+        if (key === 'name') return r.name;
+        if (key === 'id') return r.id;
+        if (key === 'class') return r.class;
+        if (key === 'total') return r.totalPresent;
+        return r.cells[key];
+      };
+
+      // ── Sheet data (aoa) ──
+      const sheetData: any[][] = [];
+      sheetData.push([instName || (bn ? 'প্রতিষ্ঠান' : 'Institution')]);                       // 0 institution
+      sheetData.push([periodTitle(period, start, end)]);                                        // 1 title
+      sheetData.push([`${bn ? 'ধরন' : 'Category'}: ${catLabel}   |   ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present that day (0-3)'}`]); // 2 note
+      sheetData.push([]);                                                                       // 3 spacer
+      sheetData.push(cols.map(c => c.label));                                                   // 4 header
+      const headerRowIdx = 4;
+      rows.forEach(r => sheetData.push(cols.map(c => cellValue(r, c.key))));
+      const dataStart = headerRowIdx + 1;
+      const dataEnd = dataStart + rows.length - 1;
+
+      // Summary row
+      sheetData.push([]);
+      const summaryRowIdx = sheetData.length;
+      const grandTotal = rows.reduce((s: number, r: any) => s + (r.totalPresent || 0), 0);
+      const summary: any[] = new Array(totalCols).fill('');
+      summary[0] = bn ? 'মোট' : 'Total';
+      summary[1] = `${rows.length} ${bn ? 'জন' : 'people'}`;
+      summary[totalCols - 1] = grandTotal;
+      sheetData.push(summary);
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } },
+      ];
+      ws['!cols'] = cols.map(c => ({ wch: c.width }));
+      // Freeze header + name columns for easy scrolling
+      ws['!freeze'] = { xSplit: attCat === 'student' ? 4 : 3, ySplit: headerRowIdx + 1 } as any;
+
+      const rowHeights: Record<number, number> = { 0: 30, 1: 24, 2: 20, 3: 8, [headerRowIdx]: 26 };
+      ws['!rows'] = Array.from({ length: sheetData.length }, (_, i) => ({ hpt: rowHeights[i] ?? 22 }));
+
+      const thin = {
+        top: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        bottom: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        left: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+        right: { style: 'thin', color: { rgb: 'FFD1D5DB' } },
+      };
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let r = range.s.r; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          if (!ws[ref]) ws[ref] = { t: 's', v: '' };
+          const cell = ws[ref];
+          cell.s = {
+            font: { name: FONT, sz: 11, color: { rgb: 'FF1E293B' } },
+            alignment: { vertical: 'center', horizontal: cols[c]?.left ? 'left' : 'center', wrapText: true },
+            border: thin,
+          };
+          if (r === 0) { cell.s = { font: { name: FONT, sz: 16, bold: true, color: { rgb: 'FF064E3B' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 1) { cell.s = { font: { name: FONT, sz: 13, bold: true, color: { rgb: 'FF0F172A' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 2) { cell.s = { font: { name: FONT, sz: 10, color: { rgb: 'FF64748B' } }, alignment: { horizontal: 'center', vertical: 'center' } }; }
+          else if (r === 3) { cell.s = { font: { name: FONT, sz: 8 } }; }
+          else if (r === headerRowIdx) {
+            cell.s = {
+              fill: { fgColor: { rgb: argb('#059669') } },
+              font: { name: FONT, sz: 11, bold: true, color: { rgb: 'FFFFFFFF' } },
+              alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+              border: thin,
+            };
+          } else if (r >= dataStart && r <= dataEnd) {
+            if ((r - dataStart) % 2 === 1) cell.s.fill = { fgColor: { rgb: argb('#F8FAFC') } };
+            // Highlight the total-meals column
+            if (cols[c]?.key === 'total') cell.s.font = { name: FONT, sz: 11, bold: true, color: { rgb: 'FF059669' } };
+            // Dim empty "-" cells
+            const v = String(cell.v ?? '');
+            if (v === '-' || v === '0') cell.s.font = { name: FONT, sz: 11, color: { rgb: 'FFCBD5E1' } };
+            else if (cols[c]?.key !== 'name' && cols[c]?.key !== 'class' && cols[c]?.key !== 'id' && cols[c]?.key !== '#' && cols[c]?.key !== 'total')
+              cell.s.font = { name: FONT, sz: 11, bold: true, color: { rgb: 'FF16A34A' } };
+          } else if (r === summaryRowIdx) {
+            cell.s = {
+              fill: { fgColor: { rgb: argb('#ECFDF5') } },
+              font: { name: FONT, sz: 11, bold: true, color: { rgb: 'FF064E3B' } },
+              alignment: { horizontal: cols[c]?.left ? 'left' : 'center', vertical: 'center' },
+              border: { top: { style: 'medium', color: { rgb: 'FF059669' } }, bottom: { style: 'medium', color: { rgb: 'FF059669' } }, left: thin.left, right: thin.right },
+            };
+          }
+        }
+      }
+
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, period === 'week' ? 'Weekly' : 'Monthly');
       const fname = `meal-attendance_${period}_${start}_${attCat}.xlsx`;
-      XLSX.writeFile(wb, fname);
+      XLSX.writeFile(wb, fname, { bookType: 'xlsx', cellStyles: true });
       toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
     } catch (e: any) {
       toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' });
@@ -641,24 +736,44 @@ const AdminHostel = () => {
       const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
       const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
       const instName = institutionInfo ? (bn ? institutionInfo.name : (institutionInfo.name_en || institutionInfo.name)) : '';
-      const head = `<tr><th>#</th><th style="text-align:left">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th>${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th>${dateCol(d)}</th>`).join('')}<th>${bn ? 'মোট' : 'Total'}</th></tr>`;
-      const body = rows.map(r => `<tr><td>${r['#']}</td><td style="text-align:left">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td>${r.class}</td>` : ''}${dates.map(d => `<td>${r.cells[d]}</td>`).join('')}<td><b>${r.totalPresent}</b></td></tr>`).join('');
+      const cellHtml = (v: string) => {
+        if (v === '-' || v === '0') return `<td class="dim">${v === '0' ? '0' : '–'}</td>`;
+        return `<td class="hit">${v}</td>`;
+      };
+      const grandTotal = rows.reduce((s: number, r: any) => s + (r.totalPresent || 0), 0);
+      const head = `<tr><th class="num">#</th><th class="lft">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th class="lft">${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th class="day">${dateCol(d)}</th>`).join('')}<th class="tot">${bn ? 'মোট' : 'Total'}</th></tr>`;
+      const body = rows.map(r => `<tr><td class="num">${r['#']}</td><td class="lft">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td class="lft">${r.class}</td>` : ''}${dates.map(d => cellHtml(r.cells[d])).join('')}<td class="tot">${r.totalPresent}</td></tr>`).join('');
+      const foot = `<tr class="sum"><td class="lft" colspan="${attCat === 'student' ? 4 : 3}">${bn ? 'মোট' : 'Total'} · ${rows.length} ${bn ? 'জন' : 'people'}</td>${dates.map(() => '<td></td>').join('')}<td class="tot">${grandTotal}</td></tr>`;
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>${periodTitle(period, start, end)}</title>
         <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: 'SutonnyOMJ', sans-serif; color: #0f172a; }
-          h1 { text-align:center; font-size: 18px; margin: 0 0 2px; }
-          h2 { text-align:center; font-size: 14px; font-weight: 600; margin: 0 0 2px; }
-          p.meta { text-align:center; font-size: 11px; color:#475569; margin: 0 0 10px; }
-          table { width: 100%; border-collapse: collapse; font-size: 10px; }
-          th, td { border: 1px solid #cbd5e1; padding: 3px 4px; text-align:center; }
-          th { background:#059669; color:#fff; }
-          tr:nth-child(even) td { background:#f8fafc; }
+          @page { size: A4 landscape; margin: 10mm; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font-family: 'SutonnyOMJ', 'Noto Sans Bengali', 'Nikosh', 'Kalpurush', 'SolaimanLipi', sans-serif; color: #0f172a; margin: 0; }
+          .head-band { border-bottom: 3px solid #059669; padding-bottom: 8px; margin-bottom: 12px; text-align: center; }
+          h1 { font-size: 20px; margin: 0; color:#064e3b; letter-spacing:.3px; }
+          h2 { font-size: 14px; font-weight: 600; margin: 4px 0 0; color:#0f172a; }
+          p.meta { font-size: 11px; color:#475569; margin: 4px 0 0; }
+          table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+          th, td { border: 1px solid #d1d5db; padding: 4px 5px; text-align:center; }
+          th { background:#059669; color:#fff; font-weight:700; }
+          th.day { background:#047857; }
+          td.lft, th.lft { text-align:left; }
+          td.num, th.num { width: 26px; color:#94a3b8; }
+          td.dim { color:#cbd5e1; }
+          td.hit { color:#16a34a; font-weight:700; }
+          td.tot, th.tot { font-weight:800; color:#064e3b; background:#ecfdf5; }
+          th.tot { color:#fff; background:#065f46; }
+          tbody tr:nth-child(even) td { background:#f8fafc; }
+          tbody tr:nth-child(even) td.tot { background:#d1fae5; }
+          tr.sum td { background:#ecfdf5; font-weight:800; border-top:2px solid #059669; }
+          tfoot { display: table-footer-group; }
         </style></head><body>
-        ${instName ? `<h1>${instName}</h1>` : ''}
-        <h2>${periodTitle(period, start, end)}</h2>
-        <p class="meta">${bn ? 'ধরন' : 'Category'}: ${catLabel} · ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present (0-3)'}</p>
-        <table><thead>${head}</thead><tbody>${body}</tbody></table>
+        <div class="head-band">
+          ${instName ? `<h1>${instName}</h1>` : ''}
+          <h2>${periodTitle(period, start, end)}</h2>
+          <p class="meta">${bn ? 'ধরন' : 'Category'}: ${catLabel} · ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present (0-3)'}</p>
+        </div>
+        <table><thead>${head}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { toast({ title: bn ? 'পপআপ ব্লক' : 'Popup blocked', variant: 'destructive' }); return; }
