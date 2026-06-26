@@ -385,6 +385,51 @@ const AdminHostel = () => {
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
 
+  // Per-meal present/absent tally for the current category + date
+  const attStats = (() => {
+    let present = 0, absent = 0, unmarked = 0;
+    (activeAttendanceRoster || []).forEach((p: AttendanceRosterPerson) => {
+      const rec = personAtt(attCat, p.id);
+      if (!rec || rec[attMeal] === null || rec[attMeal] === undefined) unmarked++;
+      else if (rec[attMeal]) present++;
+      else absent++;
+    });
+    return { present, absent, unmarked, total: (activeAttendanceRoster || []).length };
+  })();
+
+  const mealLabel = (m: 'breakfast' | 'lunch' | 'dinner') =>
+    m === 'breakfast' ? (bn ? 'সকাল' : 'Breakfast') : m === 'lunch' ? (bn ? 'দুপুর' : 'Lunch') : (bn ? 'রাত' : 'Dinner');
+
+  const exportAttendance = () => {
+    const rows = (activeAttendanceRoster || []).map((p: AttendanceRosterPerson, i: number) => {
+      const rec = personAtt(attCat, p.id);
+      const status = !rec || rec[attMeal] === null || rec[attMeal] === undefined
+        ? (bn ? 'দেওয়া হয়নি' : 'Not marked')
+        : rec[attMeal] ? (bn ? 'উপস্থিত' : 'Present') : (bn ? 'অনুপস্থিত' : 'Absent');
+      const row: Record<string, any> = {
+        '#': i + 1,
+        [bn ? 'নাম' : 'Name']: (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn,
+        [bn ? 'আইডি' : 'ID']: p.person_code || '',
+      };
+      if (attCat === 'student') row[bn ? 'ক্লাস' : 'Class'] = classLabel(p.class_id) || '';
+      row[bn ? 'হাজিরা' : 'Status'] = status;
+      return row;
+    });
+    const summary = [
+      {},
+      { '#': bn ? 'মোট' : 'Total', [bn ? 'নাম' : 'Name']: attStats.total },
+      { '#': bn ? 'উপস্থিত' : 'Present', [bn ? 'নাম' : 'Name']: attStats.present },
+      { '#': bn ? 'অনুপস্থিত' : 'Absent', [bn ? 'নাম' : 'Name']: attStats.absent },
+      { '#': bn ? 'দেওয়া হয়নি' : 'Not marked', [bn ? 'নাম' : 'Name']: attStats.unmarked },
+    ];
+    const ws = XLSX.utils.json_to_sheet([...rows, ...summary]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    const fname = `meal-attendance_${attDate}_${attMeal}_${attCat}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
+  };
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
