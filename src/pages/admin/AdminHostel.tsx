@@ -404,6 +404,20 @@ const AdminHostel = () => {
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  // Clear a single person's meal attendance for the selected meal
+  const clearAttendance = useMutation({
+    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string }; meal: 'breakfast' | 'lunch' | 'dinner' }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a =>
+        payload.allocation_id ? a.allocation_id === payload.allocation_id : (a.person_type === payload.person?.type && a.person_id === payload.person?.id)
+      );
+      if (!existing) return;
+      const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: null }).eq('id', existing.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
   // Add an ad-hoc member (no allocation) to today's meal attendance
   const [adHocType, setAdHocType] = useState<'student' | 'staff'>('student');
   const [adHocId, setAdHocId] = useState<string>('');
