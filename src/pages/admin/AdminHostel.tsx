@@ -956,10 +956,12 @@ const AdminHostel = () => {
                     <React.Fragment key={group.key}>
                       {attCat === 'student' && (
                         <TableRow className="hover:bg-transparent hover:translate-y-0">
-                          <TableCell colSpan={5} className="bg-muted/50 font-bold text-sm text-primary py-2">
-                            {group.label} <span className="text-muted-foreground font-normal">({group.people.length})</span>
+                          <TableCell colSpan={5} className="bg-primary/10 border-y-2 border-primary/30 py-4">
+                            <span className="text-lg font-extrabold text-primary">{group.label}</span>
+                            <span className="ml-2 text-sm text-muted-foreground font-medium">({group.people.length} {bn ? 'জন' : ''})</span>
                           </TableCell>
                         </TableRow>
+
                       )}
                       {group.people.map((p: AttendanceRosterPerson, idx: number) => {
                         const rec = personAtt(attCat, p.id);
