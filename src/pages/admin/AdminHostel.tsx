@@ -313,12 +313,13 @@ const AdminHostel = () => {
     const { hour, minute, period } = parseTime12(t);
     return `${hour}:${minute} ${period}`;
   };
-  const updateCutoffTime = (meal: CutoffMeal, part: 'hour' | 'minute' | 'period', value: string) => {
+  type CutoffKey = 'breakfast' | 'lunch' | 'dinner' | 'breakfast_start' | 'lunch_start' | 'dinner_start';
+  const updateCutoffTime = (meal: CutoffKey, part: 'hour' | 'minute' | 'period', value: string) => {
     const current = parseTime12(cf[meal]);
     const next = { ...current, [part]: value } as { hour: string; minute: string; period: TimePeriod };
     setCutoffForm({ ...cf, [meal]: to24h(next.hour, next.minute, next.period) });
   };
-  const renderCutoffTimePicker = (meal: CutoffMeal, label: string) => {
+  const renderCutoffTimePicker = (meal: CutoffKey, label: string) => {
     const value = parseTime12(cf[meal]);
     return (
       <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
