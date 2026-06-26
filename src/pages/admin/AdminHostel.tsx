@@ -821,7 +821,6 @@ const AdminHostel = () => {
                       <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
                   <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত শুরু সময়ের আগে বা শেষ সময়ের পরে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'Before the start time or after the end time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
                     {renderCutoffTimePicker('breakfast_start', bn ? 'সকাল শুরু' : 'Breakfast start')}
