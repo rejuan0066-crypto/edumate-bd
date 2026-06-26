@@ -733,19 +733,20 @@ const AdminHostel = () => {
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                   <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
+                  {attCat === 'student' && <TableHead>{bn ? 'ক্লাস' : 'Class'}</TableHead>}
                   <TableHead className="text-center">{bn ? 'হাজিরা' : 'Attendance'}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {activeAttendanceRosterError && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-destructive py-8">
+                      <TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-destructive py-8">
                         {bn ? 'হাজিরা তালিকা লোড করা যাচ্ছে না — আপনার হোস্টেল পারমিশন চেক করুন' : 'Could not load attendance roster — check hostel permission'}
                       </TableCell>
                     </TableRow>
                   )}
                   {isAttendanceRosterLoading && !activeAttendanceRosterError && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">
                         {bn ? 'তালিকা লোড হচ্ছে...' : 'Loading roster...'}
                       </TableCell>
                     </TableRow>
@@ -760,6 +761,7 @@ const AdminHostel = () => {
                         <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="font-medium">{name}</TableCell>
                         <TableCell className="text-muted-foreground">{code || '—'}</TableCell>
+                        {attCat === 'student' && <TableCell className="text-muted-foreground">{classLabel(p.class_id) || '—'}</TableCell>}
                         <TableCell>
                           <div className="flex items-center justify-center gap-2">
                             <Button
@@ -784,7 +786,7 @@ const AdminHostel = () => {
                       </TableRow>
                     );
                   })}
-                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
+                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
               <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
