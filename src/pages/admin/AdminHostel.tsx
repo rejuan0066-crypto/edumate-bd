@@ -349,9 +349,12 @@ const AdminHostel = () => {
       </div>
     );
   };
-  // Deadline passed for the selected date + meal? (locks non-admins)
+  // Outside the allowed window (start–end) for the selected date + meal? (locks non-admins)
+  const startStr = `${attDate}T${cf[`${attMeal}_start` as CutoffKey] || '00:00'}`;
   const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
-  const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
+  const beforeStart = nowInTz < startStr;
+  const afterDeadline = nowInTz > deadlineStr;
+  const attLocked = cf.enabled && !isAdmin && (beforeStart || afterDeadline);
 
 
   const { data: mealAttendance = [] } = useQuery({
