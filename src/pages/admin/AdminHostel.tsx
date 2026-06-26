@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save } from 'lucide-react';
+import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save, Download } from 'lucide-react';
+import * as XLSX from 'xlsx-js-style';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
@@ -384,6 +385,51 @@ const AdminHostel = () => {
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
 
+  // Per-meal present/absent tally for the current category + date
+  const attStats = (() => {
+    let present = 0, absent = 0, unmarked = 0;
+    (activeAttendanceRoster || []).forEach((p: AttendanceRosterPerson) => {
+      const rec = personAtt(attCat, p.id);
+      if (!rec || rec[attMeal] === null || rec[attMeal] === undefined) unmarked++;
+      else if (rec[attMeal]) present++;
+      else absent++;
+    });
+    return { present, absent, unmarked, total: (activeAttendanceRoster || []).length };
+  })();
+
+  const mealLabel = (m: 'breakfast' | 'lunch' | 'dinner') =>
+    m === 'breakfast' ? (bn ? 'সকাল' : 'Breakfast') : m === 'lunch' ? (bn ? 'দুপুর' : 'Lunch') : (bn ? 'রাত' : 'Dinner');
+
+  const exportAttendance = () => {
+    const rows = (activeAttendanceRoster || []).map((p: AttendanceRosterPerson, i: number) => {
+      const rec = personAtt(attCat, p.id);
+      const status = !rec || rec[attMeal] === null || rec[attMeal] === undefined
+        ? (bn ? 'দেওয়া হয়নি' : 'Not marked')
+        : rec[attMeal] ? (bn ? 'উপস্থিত' : 'Present') : (bn ? 'অনুপস্থিত' : 'Absent');
+      const row: Record<string, any> = {
+        '#': i + 1,
+        [bn ? 'নাম' : 'Name']: (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn,
+        [bn ? 'আইডি' : 'ID']: p.person_code || '',
+      };
+      if (attCat === 'student') row[bn ? 'ক্লাস' : 'Class'] = classLabel(p.class_id) || '';
+      row[bn ? 'হাজিরা' : 'Status'] = status;
+      return row;
+    });
+    const summary = [
+      {},
+      { '#': bn ? 'মোট' : 'Total', [bn ? 'নাম' : 'Name']: attStats.total },
+      { '#': bn ? 'উপস্থিত' : 'Present', [bn ? 'নাম' : 'Name']: attStats.present },
+      { '#': bn ? 'অনুপস্থিত' : 'Absent', [bn ? 'নাম' : 'Name']: attStats.absent },
+      { '#': bn ? 'দেওয়া হয়নি' : 'Not marked', [bn ? 'নাম' : 'Name']: attStats.unmarked },
+    ];
+    const ws = XLSX.utils.json_to_sheet([...rows, ...summary]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+    const fname = `meal-attendance_${attDate}_${attMeal}_${attCat}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
+  };
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
@@ -727,6 +773,20 @@ const AdminHostel = () => {
                   {bn ? `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`}
                 </div>
               )}
+
+              {/* Per-meal present/absent summary + export */}
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">{mealLabel(attMeal)} · {attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff')}</span>
+                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">{bn ? 'উপস্থিত' : 'Present'}: {attStats.present}</Badge>
+                  <Badge variant="destructive">{bn ? 'অনুপস্থিত' : 'Absent'}: {attStats.absent}</Badge>
+                  <Badge variant="outline">{bn ? 'দেওয়া হয়নি' : 'Not marked'}: {attStats.unmarked}</Badge>
+                  <Badge variant="secondary">{bn ? 'মোট' : 'Total'}: {attStats.total}</Badge>
+                </div>
+                <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0}>
+                  <Download className="w-4 h-4 mr-1.5" />{bn ? 'ফাইলে সেভ করুন' : 'Export'}
+                </Button>
+              </div>
 
               <Table>
                 <TableHeader><TableRow>
