@@ -775,18 +775,34 @@ const AdminHostel = () => {
               )}
 
               {/* Per-meal present/absent summary + export */}
-              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-2 text-sm">
+              <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <CalendarCheck className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-muted-foreground">{mealLabel(attMeal)} · {attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff')}</span>
-                  <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white">{bn ? 'উপস্থিত' : 'Present'}: {attStats.present}</Badge>
-                  <Badge variant="destructive">{bn ? 'অনুপস্থিত' : 'Absent'}: {attStats.absent}</Badge>
-                  <Badge variant="outline">{bn ? 'দেওয়া হয়নি' : 'Not marked'}: {attStats.unmarked}</Badge>
-                  <Badge variant="secondary">{bn ? 'মোট' : 'Total'}: {attStats.total}</Badge>
                 </div>
-                <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0}>
+                <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0} className="w-full sm:w-auto self-start lg:self-auto">
                   <Download className="w-4 h-4 mr-1.5" />{bn ? 'ফাইলে সেভ করুন' : 'Export'}
                 </Button>
               </div>
+              <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">{bn ? 'উপস্থিত' : 'Present'}</p>
+                  <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{attStats.present}</p>
+                </div>
+                <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-destructive">{bn ? 'অনুপস্থিত' : 'Absent'}</p>
+                  <p className="text-xl font-bold text-destructive tabular-nums">{attStats.absent}</p>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground">{bn ? 'দেওয়া হয়নি' : 'Not marked'}</p>
+                  <p className="text-xl font-bold text-foreground/70 tabular-nums">{attStats.unmarked}</p>
+                </div>
+                <div className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2.5">
+                  <p className="text-[11px] font-medium text-primary">{bn ? 'মোট' : 'Total'}</p>
+                  <p className="text-xl font-bold text-primary tabular-nums">{attStats.total}</p>
+                </div>
+              </div>
+
 
               <Table>
                 <TableHeader><TableRow>
