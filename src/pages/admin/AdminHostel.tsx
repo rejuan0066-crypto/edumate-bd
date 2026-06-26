@@ -342,11 +342,12 @@ const AdminHostel = () => {
       </div>
 
       <Tabs defaultValue="hostels" className="space-y-4">
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
           <TabsTrigger value="hostels">{bn ? 'হোস্টেল' : 'Hostels'}</TabsTrigger>
           <TabsTrigger value="rooms">{bn ? 'রুম' : 'Rooms'}</TabsTrigger>
           <TabsTrigger value="allocations">{bn ? 'বরাদ্দ' : 'Allocations'}</TabsTrigger>
           <TabsTrigger value="meals">{bn ? 'খাবার মেনু' : 'Meal Menu'}</TabsTrigger>
+          <TabsTrigger value="meal-attendance">{bn ? 'খাবার হাজিরা' : 'Meal Attendance'}</TabsTrigger>
         </TabsList>
 
         {/* HOSTELS TAB */}
