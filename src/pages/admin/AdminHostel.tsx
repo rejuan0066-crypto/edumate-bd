@@ -40,6 +40,9 @@ const AdminHostel = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
   const qc = useQueryClient();
+  const { role } = useAuth();
+  const isAdmin = isAdminRole(role);
+  const { tz } = useAppTimezone();
 
   // ─── Hostels ────────────────────────────────────────────────────────────
   const { data: hostels = [] } = useQuery({
