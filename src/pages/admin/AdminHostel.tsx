@@ -239,6 +239,9 @@ const AdminHostel = () => {
 
   // ─── Meal Attendance (3 meals/day for boarding members) ──────────────────
   const [attDate, setAttDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [attMeal, setAttMeal] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
+  const [attCat, setAttCat] = useState<'student' | 'staff'>('student');
+  const [attSearch, setAttSearch] = useState('');
 
   const { data: mealAttendance = [] } = useQuery({
     queryKey: ['hostel-meal-attendance', attDate],
