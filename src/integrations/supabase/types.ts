@@ -10628,6 +10628,18 @@ export type Database = {
         }[]
       }
       get_encryption_key: { Args: never; Returns: string }
+      get_hostel_attendance_roster: {
+        Args: { p_person_type: string }
+        Returns: {
+          class_id: string
+          id: string
+          name_bn: string
+          name_en: string
+          person_code: string
+          person_type: string
+          session_id: string
+        }[]
+      }
       get_next_admission_roll: {
         Args: { p_class_id: string; p_session_id: string }
         Returns: string
