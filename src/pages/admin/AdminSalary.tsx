@@ -2513,9 +2513,12 @@ const AdminSalary = () => {
                               Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
                             : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
                               Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
-                        const displayOvertime = usePending ? Number(autoCalc.overtime || 0) : (rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0));
+                        const displayOvertime = usePending ? Number(rec.overtime ?? autoCalc.overtime ?? 0) : (rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0));
+                        // Honor a manually-edited overtime on pending records: add the delta over the
+                        // attendance-derived overtime (already baked into autoCalc.net_salary) to the net.
+                        const otDelta = usePending ? Number(rec.overtime ?? autoCalc.overtime ?? 0) - Number(autoCalc.overtime || 0) : 0;
                         const displayNet = usePending
-                          ? Math.max(0, Number(autoCalc.net_salary || 0) + Number(rec.bonus || 0) + Number(rec.other_allowance || 0) - Number(rec.advance_deduction || 0))
+                          ? Math.max(0, Number(autoCalc.net_salary || 0) + otDelta + Number(rec.bonus || 0) + Number(rec.other_allowance || 0) - Number(rec.advance_deduction || 0))
                           : (rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0));
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
