@@ -719,6 +719,7 @@ const AdminHostel = () => {
                             <Button
                               size="sm"
                               variant={present === true ? 'default' : 'outline'}
+                              disabled={attLocked}
                               className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
                               onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: true })}
                             >
@@ -727,6 +728,7 @@ const AdminHostel = () => {
                             <Button
                               size="sm"
                               variant={present === false ? 'destructive' : 'outline'}
+                              disabled={attLocked}
                               onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: false })}
                             >
                               {bn ? 'অনুপস্থিত' : 'Absent'}
