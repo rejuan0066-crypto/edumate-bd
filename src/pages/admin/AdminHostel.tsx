@@ -843,7 +843,13 @@ const AdminHostel = () => {
               {attLocked && (
                 <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
                   <Lock className="w-4 h-4 shrink-0" />
-                  {bn ? `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`}
+                  {bn
+                    ? (beforeStart
+                        ? `এই বেলার হাজিরা ${to12h(cf[`${attMeal}_start` as CutoffKey])} থেকে শুরু হবে — এখনো সময় হয়নি। এডমিনের সাথে যোগাযোগ করুন।`
+                        : `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।`)
+                    : (beforeStart
+                        ? `Attendance for this meal opens at ${to12h(cf[`${attMeal}_start` as CutoffKey])} — not started yet. Contact an admin.`
+                        : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`)}
                 </div>
               )}
 
