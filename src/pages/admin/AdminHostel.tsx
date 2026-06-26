@@ -282,6 +282,15 @@ const AdminHostel = () => {
     const g = (t: string) => p.find(x => x.type === t)?.value || '00';
     return `${g('year')}-${g('month')}-${g('day')}T${g('hour') === '24' ? '00' : g('hour')}:${g('minute')}`;
   })();
+  // Format an "HH:mm" 24h string to 12h "hh:mm AM/PM" for display
+  const to12h = (t?: string) => {
+    if (!t) return '';
+    const [hStr, mStr] = t.split(':');
+    let h = Number(hStr); const m = mStr ?? '00';
+    const period = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h.toString().padStart(2, '0')}:${m} ${period}`;
+  };
   // Deadline passed for the selected date + meal? (locks non-admins)
   const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
   const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
@@ -698,9 +707,9 @@ const AdminHostel = () => {
                   </div>
                   <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div><Label className="text-xs">{bn ? 'সকাল শেষ' : 'Breakfast cutoff'}</Label><Input type="time" value={cf.breakfast} onChange={e => setCutoffForm({ ...cf, breakfast: e.target.value })} /></div>
-                    <div><Label className="text-xs">{bn ? 'দুপুর শেষ' : 'Lunch cutoff'}</Label><Input type="time" value={cf.lunch} onChange={e => setCutoffForm({ ...cf, lunch: e.target.value })} /></div>
-                    <div><Label className="text-xs">{bn ? 'রাত শেষ' : 'Dinner cutoff'}</Label><Input type="time" value={cf.dinner} onChange={e => setCutoffForm({ ...cf, dinner: e.target.value })} /></div>
+                    <div><Label className="text-xs">{bn ? 'সকাল শেষ' : 'Breakfast cutoff'}</Label><Input type="time" value={cf.breakfast} onChange={e => setCutoffForm({ ...cf, breakfast: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.breakfast)}</p></div>
+                    <div><Label className="text-xs">{bn ? 'দুপুর শেষ' : 'Lunch cutoff'}</Label><Input type="time" value={cf.lunch} onChange={e => setCutoffForm({ ...cf, lunch: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.lunch)}</p></div>
+                    <div><Label className="text-xs">{bn ? 'রাত শেষ' : 'Dinner cutoff'}</Label><Input type="time" value={cf.dinner} onChange={e => setCutoffForm({ ...cf, dinner: e.target.value })} /><p className="text-[11px] text-muted-foreground mt-1">{to12h(cf.dinner)}</p></div>
                   </div>
                   {cutoffForm && (
                     <div className="flex justify-end mt-3">
@@ -715,7 +724,7 @@ const AdminHostel = () => {
               {attLocked && (
                 <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
                   <Lock className="w-4 h-4 shrink-0" />
-                  {bn ? `এই তারিখ ও বেলার (${cf[attMeal]}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${cf[attMeal]}) has passed — attendance is locked. Contact an admin.`}
+                  {bn ? `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`}
                 </div>
               )}
 
