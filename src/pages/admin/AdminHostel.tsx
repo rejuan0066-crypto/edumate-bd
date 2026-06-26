@@ -21,7 +21,7 @@ type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; 
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
 type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
-type MealAttendance = { id: string; allocation_id: string; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null };
+type MealAttendance = { id: string; allocation_id: string | null; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null; person_type?: string | null; person_id?: string | null; person_name?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 const DAYS_BN = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
@@ -250,13 +250,18 @@ const AdminHostel = () => {
   });
 
   const saveAttendance = useMutation({
-    mutationFn: async (payload: { allocation_id: string; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
-      const existing = (mealAttendance as MealAttendance[]).find(a => a.allocation_id === payload.allocation_id);
+    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string; name: string }; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a =>
+        payload.allocation_id ? a.allocation_id === payload.allocation_id : (a.person_type === payload.person?.type && a.person_id === payload.person?.id)
+      );
       if (existing) {
         const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: payload.value }).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ allocation_id: payload.allocation_id, attendance_date: attDate, [payload.meal]: payload.value } as any);
+        const row: any = { attendance_date: attDate, [payload.meal]: payload.value };
+        if (payload.allocation_id) row.allocation_id = payload.allocation_id;
+        else if (payload.person) { row.person_type = payload.person.type; row.person_id = payload.person.id; row.person_name = payload.person.name; }
+        const { error } = await supabase.from('hostel_meal_attendance' as any).insert(row);
         if (error) throw error;
       }
     },
@@ -264,8 +269,32 @@ const AdminHostel = () => {
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  // Add an ad-hoc member (no allocation) to today's meal attendance
+  const [adHocType, setAdHocType] = useState<'student' | 'staff'>('student');
+  const [adHocId, setAdHocId] = useState<string>('');
+  const addAdHoc = useMutation({
+    mutationFn: async () => {
+      if (!adHocId) throw new Error(bn ? 'সদস্য বাছাই করুন' : 'Select a member');
+      const list: any[] = adHocType === 'student' ? (students as any[]) : (staffList as any[]);
+      const p = list.find((x: any) => x.id === adHocId);
+      const name = p ? (bn ? p.name_bn : (p.name_en || p.name_bn)) + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') : '';
+      const dup = (mealAttendance as MealAttendance[]).find(a => a.person_type === adHocType && a.person_id === adHocId);
+      if (dup) throw new Error(bn ? 'এই সদস্য ইতিমধ্যে তালিকায় আছে' : 'Member already in list');
+      const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ attendance_date: attDate, person_type: adHocType, person_id: adHocId, person_name: name });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }); setAdHocId(''); toast({ title: bn ? 'যোগ করা হয়েছে' : 'Added' }); },
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+  const deleteAttendance = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from('hostel_meal_attendance' as any).delete().eq('id', id); if (error) throw error; },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+  });
+
   const attFor = (allocId: string) => (mealAttendance as MealAttendance[]).find(a => a.allocation_id === allocId);
   const activeAllocations = allocations.filter(a => a.status === 'active');
+  const adHocRows = (mealAttendance as MealAttendance[]).filter(a => !a.allocation_id && a.person_id);
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
@@ -548,6 +577,31 @@ const AdminHostel = () => {
               </div>
             </CardHeader>
             <CardContent>
+              {/* Add member without allocation */}
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2 mb-4 p-3 rounded-xl bg-muted/40">
+                <div className="w-full sm:w-40">
+                  <Label className="text-xs">{bn ? 'ধরন' : 'Type'}</Label>
+                  <Select value={adHocType} onValueChange={(v: any) => { setAdHocType(v); setAdHocId(''); }}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">{bn ? 'ছাত্র' : 'Student'}</SelectItem>
+                      <SelectItem value="staff">{bn ? 'স্টাফ/শিক্ষক' : 'Staff/Teacher'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1">
+                  <Label className="text-xs">{bn ? 'সদস্য (বরাদ্দ ছাড়া)' : 'Member (no allocation)'}</Label>
+                  <Select value={adHocId} onValueChange={setAdHocId}>
+                    <SelectTrigger><SelectValue placeholder={bn ? 'সদস্য বাছাই' : 'Select member'} /></SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {(adHocType === 'student' ? (students as any[]) : (staffList as any[])).map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{(bn ? p.name_bn : (p.name_en || p.name_bn))} ({p.student_id || p.staff_id})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={() => addAdHoc.mutate()} disabled={!adHocId || addAdHoc.isPending}><Plus className="w-4 h-4 mr-1" />{bn ? 'যোগ করুন' : 'Add'}</Button>
+              </div>
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>{bn ? 'সদস্য' : 'Member'}</TableHead>
@@ -555,6 +609,7 @@ const AdminHostel = () => {
                   <TableHead className="text-center">{bn ? 'নাশতা' : 'Breakfast'}</TableHead>
                   <TableHead className="text-center">{bn ? 'দুপুর' : 'Lunch'}</TableHead>
                   <TableHead className="text-center">{bn ? 'রাত' : 'Dinner'}</TableHead>
+                  <TableHead></TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {activeAllocations.map(a => {
@@ -578,16 +633,40 @@ const AdminHostel = () => {
                             />
                           </TableCell>
                         ))}
+                        <TableCell></TableCell>
                       </TableRow>
                     );
                   })}
-                  {activeAllocations.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{bn ? 'কোনো সক্রিয় বোর্ডিং সদস্য নেই' : 'No active boarding members'}</TableCell></TableRow>}
+                  {adHocRows.map(att => (
+                    <TableRow key={att.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={att.person_type === 'staff' ? 'secondary' : 'outline'}>
+                            {att.person_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
+                          </Badge>
+                          {att.person_name || '—'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">{bn ? 'বরাদ্দ ছাড়া' : 'No allocation'}</TableCell>
+                      {(['breakfast', 'lunch', 'dinner'] as const).map(meal => (
+                        <TableCell key={meal} className="text-center">
+                          <Checkbox
+                            checked={!!att[meal]}
+                            onCheckedChange={(v) => saveAttendance.mutate({ person: { type: att.person_type!, id: att.person_id!, name: att.person_name || '' }, meal, value: !!v })}
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center">
+                        <Button size="icon" variant="ghost" onClick={() => deleteAttendance.mutate(att.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {activeAllocations.length === 0 && adHocRows.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">{bn ? 'কোনো সদস্য নেই — উপরে থেকে সদস্য যোগ করুন' : 'No members — add one above'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
-              {activeAllocations.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-3">{bn ? 'চেকবক্সে টিক দিলে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Ticking a checkbox saves automatically.'}</p>
-              )}
+              <p className="text-xs text-muted-foreground mt-3">{bn ? 'চেকবক্সে টিক দিলে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে। বরাদ্দ ছাড়াও সদস্য যোগ করে হাজিরা দেওয়া যাবে।' : 'Ticking a checkbox saves automatically. You can add members without an allocation.'}</p>
             </CardContent>
+
           </Card>
         </TabsContent>
       </Tabs>
