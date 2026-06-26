@@ -546,6 +546,128 @@ const AdminHostel = () => {
     toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
   };
 
+  // ─── Weekly / Monthly period report (download + print) ─────────────────────
+  const buildDateRange = (period: 'week' | 'month') => {
+    const base = new Date(attDate + 'T00:00:00');
+    let start: Date, end: Date;
+    if (period === 'week') {
+      const day = base.getDay(); // 0 = Sun
+      start = new Date(base); start.setDate(base.getDate() - day);
+      end = new Date(start); end.setDate(start.getDate() + 6);
+    } else {
+      start = new Date(base.getFullYear(), base.getMonth(), 1);
+      end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    }
+    const dates: string[] = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      dates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+    return { start: dates[0], end: dates[dates.length - 1], dates };
+  };
+
+  const fetchPeriodAttendance = async (start: string, end: string) => {
+    const { data, error } = await supabase.from('hostel_meal_attendance' as any)
+      .select('*').gte('attendance_date', start).lte('attendance_date', end);
+    if (error) throw error;
+    return (data as unknown as MealAttendance[]) || [];
+  };
+
+  // Build per-person rows: each date column shows present meal-count (out of 3)
+  const buildPeriodRows = (dates: string[], records: MealAttendance[]) => {
+    const meals: ('breakfast' | 'lunch' | 'dinner')[] = ['breakfast', 'lunch', 'dinner'];
+    return (activeAttendanceRoster || []).map((p: AttendanceRosterPerson, i: number) => {
+      const cells: Record<string, string> = {};
+      let totalPresent = 0;
+      dates.forEach(dt => {
+        const rec = records.find(r => r.attendance_date === dt && r.person_type === attCat && r.person_id === p.id);
+        const cnt = rec ? meals.filter(m => rec[m] === true).length : 0;
+        totalPresent += cnt;
+        cells[dt] = rec ? String(cnt) : '-';
+      });
+      return {
+        '#': i + 1,
+        name: (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn,
+        id: p.person_code || '',
+        class: attCat === 'student' ? (classLabel(p.class_id) || '') : '',
+        cells,
+        totalPresent,
+      };
+    });
+  };
+
+  const periodTitle = (period: 'week' | 'month', start: string, end: string) =>
+    (bn ? (period === 'week' ? 'সাপ্তাহিক খাবার হাজিরা' : 'মাসিক খাবার হাজিরা') : (period === 'week' ? 'Weekly Meal Attendance' : 'Monthly Meal Attendance'))
+    + ` (${start} → ${end})`;
+
+  const downloadPeriodReport = async (period: 'week' | 'month') => {
+    try {
+      const { start, end, dates } = buildDateRange(period);
+      const records = await fetchPeriodAttendance(start, end);
+      const rows = buildPeriodRows(dates, records);
+      const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
+      const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
+      const aoaRows = rows.map(r => {
+        const base: Record<string, any> = { '#': r['#'], [bn ? 'নাম' : 'Name']: r.name, [bn ? 'আইডি' : 'ID']: r.id };
+        if (attCat === 'student') base[bn ? 'ক্লাস' : 'Class'] = r.class;
+        dates.forEach(dt => { base[dateCol(dt)] = r.cells[dt]; });
+        base[bn ? 'মোট বেলা' : 'Total Meals'] = r.totalPresent;
+        return base;
+      });
+      const ws = XLSX.utils.aoa_to_sheet([
+        [periodTitle(period, start, end)],
+        [bn ? 'ধরন' : 'Category', catLabel],
+        [bn ? 'নোট' : 'Note', bn ? 'প্রতি ঘরে সেই দিনে উপস্থিত বেলার সংখ্যা (০-৩)' : 'Each cell = meals present that day (0-3)'],
+        [],
+      ]);
+      XLSX.utils.sheet_add_json(ws, aoaRows, { origin: -1 });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, period === 'week' ? 'Weekly' : 'Monthly');
+      const fname = `meal-attendance_${period}_${start}_${attCat}.xlsx`;
+      XLSX.writeFile(wb, fname);
+      toast({ title: bn ? 'ফাইল সেভ হয়েছে' : 'File saved', description: fname });
+    } catch (e: any) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const printPeriodReport = async (period: 'week' | 'month') => {
+    try {
+      const { start, end, dates } = buildDateRange(period);
+      const records = await fetchPeriodAttendance(start, end);
+      const rows = buildPeriodRows(dates, records);
+      const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
+      const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
+      const inst = (institutions as any[])?.[0];
+      const instName = inst ? (bn ? (inst.name_bn || inst.name) : inst.name) : '';
+      const head = `<tr><th>#</th><th style="text-align:left">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th>${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th>${dateCol(d)}</th>`).join('')}<th>${bn ? 'মোট' : 'Total'}</th></tr>`;
+      const body = rows.map(r => `<tr><td>${r['#']}</td><td style="text-align:left">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td>${r.class}</td>` : ''}${dates.map(d => `<td>${r.cells[d]}</td>`).join('')}<td><b>${r.totalPresent}</b></td></tr>`).join('');
+      const html = `<!doctype html><html><head><meta charset="utf-8"><title>${periodTitle(period, start, end)}</title>
+        <style>
+          @page { size: A4 landscape; margin: 12mm; }
+          body { font-family: 'SutonnyOMJ', sans-serif; color: #0f172a; }
+          h1 { text-align:center; font-size: 18px; margin: 0 0 2px; }
+          h2 { text-align:center; font-size: 14px; font-weight: 600; margin: 0 0 2px; }
+          p.meta { text-align:center; font-size: 11px; color:#475569; margin: 0 0 10px; }
+          table { width: 100%; border-collapse: collapse; font-size: 10px; }
+          th, td { border: 1px solid #cbd5e1; padding: 3px 4px; text-align:center; }
+          th { background:#059669; color:#fff; }
+          tr:nth-child(even) td { background:#f8fafc; }
+        </style></head><body>
+        ${instName ? `<h1>${instName}</h1>` : ''}
+        <h2>${periodTitle(period, start, end)}</h2>
+        <p class="meta">${bn ? 'ধরন' : 'Category'}: ${catLabel} · ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present (0-3)'}</p>
+        <table><thead>${head}</thead><tbody>${body}</tbody></table>
+        </body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { toast({ title: bn ? 'পপআপ ব্লক' : 'Popup blocked', variant: 'destructive' }); return; }
+      w.document.write(html); w.document.close();
+      w.onload = () => { w.focus(); w.print(); };
+    } catch (e: any) {
+      toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' });
+    }
+  };
+
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
