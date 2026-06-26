@@ -277,8 +277,8 @@ const AdminHostel = () => {
   const [attSearch, setAttSearch] = useState('');
 
   // ─── Meal-attendance cutoff settings (lock non-admins after deadline) ─────
-  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string };
-  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00' };
+  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string; breakfast_start: string; lunch_start: string; dinner_start: string };
+  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00', breakfast_start: '06:00', lunch_start: '12:00', dinner_start: '19:00' };
   const { data: cutoffs = DEFAULT_CUTOFFS } = useQuery({
     queryKey: ['hostel-meal-cutoffs'],
     queryFn: async () => {
@@ -313,12 +313,13 @@ const AdminHostel = () => {
     const { hour, minute, period } = parseTime12(t);
     return `${hour}:${minute} ${period}`;
   };
-  const updateCutoffTime = (meal: CutoffMeal, part: 'hour' | 'minute' | 'period', value: string) => {
+  type CutoffKey = 'breakfast' | 'lunch' | 'dinner' | 'breakfast_start' | 'lunch_start' | 'dinner_start';
+  const updateCutoffTime = (meal: CutoffKey, part: 'hour' | 'minute' | 'period', value: string) => {
     const current = parseTime12(cf[meal]);
     const next = { ...current, [part]: value } as { hour: string; minute: string; period: TimePeriod };
     setCutoffForm({ ...cf, [meal]: to24h(next.hour, next.minute, next.period) });
   };
-  const renderCutoffTimePicker = (meal: CutoffMeal, label: string) => {
+  const renderCutoffTimePicker = (meal: CutoffKey, label: string) => {
     const value = parseTime12(cf[meal]);
     return (
       <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
@@ -348,9 +349,12 @@ const AdminHostel = () => {
       </div>
     );
   };
-  // Deadline passed for the selected date + meal? (locks non-admins)
+  // Outside the allowed window (start–end) for the selected date + meal? (locks non-admins)
+  const startStr = `${attDate}T${cf[`${attMeal}_start` as CutoffKey] || '00:00'}`;
   const deadlineStr = `${attDate}T${cf[attMeal] || '23:59'}`;
-  const attLocked = cf.enabled && !isAdmin && nowInTz > deadlineStr;
+  const beforeStart = nowInTz < startStr;
+  const afterDeadline = nowInTz > deadlineStr;
+  const attLocked = cf.enabled && !isAdmin && (beforeStart || afterDeadline);
 
 
   const { data: mealAttendance = [] } = useQuery({
@@ -817,11 +821,14 @@ const AdminHostel = () => {
                       <Switch checked={cf.enabled} onCheckedChange={(v) => setCutoffForm({ ...cf, enabled: v })} />
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত সময় পার হলে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'After the set time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
+                  <p className="text-xs text-muted-foreground mb-3">{bn ? 'নির্ধারিত শুরু সময়ের আগে বা শেষ সময়ের পরে এডমিন ছাড়া অন্যরা সেই বেলার হাজিরা দিতে পারবে না। এডমিন যেকোনো তারিখের হাজিরা দিতে ও পরিবর্তন করতে পারবে।' : 'Before the start time or after the end time, non-admins cannot mark that meal. Admins can mark/edit any date.'}</p>
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-                    {renderCutoffTimePicker('breakfast', bn ? 'সকাল শেষ' : 'Breakfast cutoff')}
-                    {renderCutoffTimePicker('lunch', bn ? 'দুপুর শেষ' : 'Lunch cutoff')}
-                    {renderCutoffTimePicker('dinner', bn ? 'রাত শেষ' : 'Dinner cutoff')}
+                    {renderCutoffTimePicker('breakfast_start', bn ? 'সকাল শুরু' : 'Breakfast start')}
+                    {renderCutoffTimePicker('lunch_start', bn ? 'দুপুর শুরু' : 'Lunch start')}
+                    {renderCutoffTimePicker('dinner_start', bn ? 'রাত শুরু' : 'Dinner start')}
+                    {renderCutoffTimePicker('breakfast', bn ? 'সকাল শেষ' : 'Breakfast end')}
+                    {renderCutoffTimePicker('lunch', bn ? 'দুপুর শেষ' : 'Lunch end')}
+                    {renderCutoffTimePicker('dinner', bn ? 'রাত শেষ' : 'Dinner end')}
                   </div>
                   {cutoffForm && (
                     <div className="flex justify-end mt-3">
@@ -836,7 +843,13 @@ const AdminHostel = () => {
               {attLocked && (
                 <div className="mb-4 flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm">
                   <Lock className="w-4 h-4 shrink-0" />
-                  {bn ? `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।` : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`}
+                  {bn
+                    ? (beforeStart
+                        ? `এই বেলার হাজিরা ${to12h(cf[`${attMeal}_start` as CutoffKey])} থেকে শুরু হবে — এখনো সময় হয়নি। এডমিনের সাথে যোগাযোগ করুন।`
+                        : `এই তারিখ ও বেলার (${to12h(cf[attMeal])}) সময় শেষ — হাজিরা দেওয়া বন্ধ। এডমিনের সাথে যোগাযোগ করুন।`)
+                    : (beforeStart
+                        ? `Attendance for this meal opens at ${to12h(cf[`${attMeal}_start` as CutoffKey])} — not started yet. Contact an admin.`
+                        : `The time for this date & meal (${to12h(cf[attMeal])}) has passed — attendance is locked. Contact an admin.`)}
                 </div>
               )}
 
