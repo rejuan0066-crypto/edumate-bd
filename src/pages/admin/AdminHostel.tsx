@@ -736,24 +736,45 @@ const AdminHostel = () => {
       const catLabel = attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff');
       const dateCol = (dt: string) => dt.slice(8) + '/' + dt.slice(5, 7);
       const instName = institutionInfo ? (bn ? institutionInfo.name : (institutionInfo.name_en || institutionInfo.name)) : '';
-      const head = `<tr><th>#</th><th style="text-align:left">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th>${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th>${dateCol(d)}</th>`).join('')}<th>${bn ? 'মোট' : 'Total'}</th></tr>`;
-      const body = rows.map(r => `<tr><td>${r['#']}</td><td style="text-align:left">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td>${r.class}</td>` : ''}${dates.map(d => `<td>${r.cells[d]}</td>`).join('')}<td><b>${r.totalPresent}</b></td></tr>`).join('');
+      const cellHtml = (v: string) => {
+        if (v === '-' || v === '0') return `<td class="dim">${v === '0' ? '0' : '–'}</td>`;
+        return `<td class="hit">${v}</td>`;
+      };
+      const grandTotal = rows.reduce((s: number, r: any) => s + (r.totalPresent || 0), 0);
+      const head = `<tr><th class="num">#</th><th class="lft">${bn ? 'নাম' : 'Name'}</th><th>${bn ? 'আইডি' : 'ID'}</th>${attCat === 'student' ? `<th class="lft">${bn ? 'ক্লাস' : 'Class'}</th>` : ''}${dates.map(d => `<th class="day">${dateCol(d)}</th>`).join('')}<th class="tot">${bn ? 'মোট' : 'Total'}</th></tr>`;
+      const body = rows.map(r => `<tr><td class="num">${r['#']}</td><td class="lft">${r.name}</td><td>${r.id}</td>${attCat === 'student' ? `<td class="lft">${r.class}</td>` : ''}${dates.map(d => cellHtml(r.cells[d])).join('')}<td class="tot">${r.totalPresent}</td></tr>`).join('');
+      const colCount = (attCat === 'student' ? 4 : 3) + dates.length;
+      const foot = `<tr class="sum"><td class="lft" colspan="${attCat === 'student' ? 4 : 3}">${bn ? 'মোট' : 'Total'} · ${rows.length} ${bn ? 'জন' : 'people'}</td>${dates.map(() => '<td></td>').join('')}<td class="tot">${grandTotal}</td></tr>`;
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>${periodTitle(period, start, end)}</title>
         <style>
-          @page { size: A4 landscape; margin: 12mm; }
-          body { font-family: 'SutonnyOMJ', sans-serif; color: #0f172a; }
-          h1 { text-align:center; font-size: 18px; margin: 0 0 2px; }
-          h2 { text-align:center; font-size: 14px; font-weight: 600; margin: 0 0 2px; }
-          p.meta { text-align:center; font-size: 11px; color:#475569; margin: 0 0 10px; }
-          table { width: 100%; border-collapse: collapse; font-size: 10px; }
-          th, td { border: 1px solid #cbd5e1; padding: 3px 4px; text-align:center; }
-          th { background:#059669; color:#fff; }
-          tr:nth-child(even) td { background:#f8fafc; }
+          @page { size: A4 landscape; margin: 10mm; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font-family: 'SutonnyOMJ', 'Noto Sans Bengali', 'Nikosh', 'Kalpurush', 'SolaimanLipi', sans-serif; color: #0f172a; margin: 0; }
+          .head-band { border-bottom: 3px solid #059669; padding-bottom: 8px; margin-bottom: 12px; text-align: center; }
+          h1 { font-size: 20px; margin: 0; color:#064e3b; letter-spacing:.3px; }
+          h2 { font-size: 14px; font-weight: 600; margin: 4px 0 0; color:#0f172a; }
+          p.meta { font-size: 11px; color:#475569; margin: 4px 0 0; }
+          table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+          th, td { border: 1px solid #d1d5db; padding: 4px 5px; text-align:center; }
+          th { background:#059669; color:#fff; font-weight:700; }
+          th.day { background:#047857; }
+          td.lft, th.lft { text-align:left; }
+          td.num, th.num { width: 26px; color:#94a3b8; }
+          td.dim { color:#cbd5e1; }
+          td.hit { color:#16a34a; font-weight:700; }
+          td.tot, th.tot { font-weight:800; color:#064e3b; background:#ecfdf5; }
+          th.tot { color:#fff; background:#065f46; }
+          tbody tr:nth-child(even) td { background:#f8fafc; }
+          tbody tr:nth-child(even) td.tot { background:#d1fae5; }
+          tr.sum td { background:#ecfdf5; font-weight:800; border-top:2px solid #059669; }
+          tfoot { display: table-footer-group; }
         </style></head><body>
-        ${instName ? `<h1>${instName}</h1>` : ''}
-        <h2>${periodTitle(period, start, end)}</h2>
-        <p class="meta">${bn ? 'ধরন' : 'Category'}: ${catLabel} · ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present (0-3)'}</p>
-        <table><thead>${head}</thead><tbody>${body}</tbody></table>
+        <div class="head-band">
+          ${instName ? `<h1>${instName}</h1>` : ''}
+          <h2>${periodTitle(period, start, end)}</h2>
+          <p class="meta">${bn ? 'ধরন' : 'Category'}: ${catLabel} · ${bn ? 'প্রতি ঘর = সেই দিনে উপস্থিত বেলা (০-৩)' : 'Each cell = meals present (0-3)'}</p>
+        </div>
+        <table><thead>${head}</thead><tbody>${body}</tbody><tfoot>${foot}</tfoot></table>
         </body></html>`;
       const w = window.open('', '_blank');
       if (!w) { toast({ title: bn ? 'পপআপ ব্লক' : 'Popup blocked', variant: 'destructive' }); return; }
