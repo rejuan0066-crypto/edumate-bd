@@ -21,7 +21,7 @@ type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; 
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
 type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
-type MealAttendance = { id: string; allocation_id: string; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null };
+type MealAttendance = { id: string; allocation_id: string | null; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null; person_type?: string | null; person_id?: string | null; person_name?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 const DAYS_BN = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
