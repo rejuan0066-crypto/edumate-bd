@@ -761,6 +761,7 @@ const AdminHostel = () => {
                         <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="font-medium">{name}</TableCell>
                         <TableCell className="text-muted-foreground">{code || '—'}</TableCell>
+                        {attCat === 'student' && <TableCell className="text-muted-foreground">{classLabel(p.class_id) || '—'}</TableCell>}
                         <TableCell>
                           <div className="flex items-center justify-center gap-2">
                             <Button
