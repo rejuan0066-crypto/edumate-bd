@@ -536,6 +536,60 @@ const AdminHostel = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* MEAL ATTENDANCE TAB */}
+        <TabsContent value="meal-attendance">
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="flex items-center gap-2"><CalendarCheck className="w-5 h-5" />{bn ? '৩ বেলা খাবারের হাজিরা' : '3-Meal Attendance'}</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-sm whitespace-nowrap">{bn ? 'তারিখ' : 'Date'}</Label>
+                <Input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="w-auto" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>{bn ? 'সদস্য' : 'Member'}</TableHead>
+                  <TableHead>{bn ? 'রুম' : 'Room'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'নাশতা' : 'Breakfast'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'দুপুর' : 'Lunch'}</TableHead>
+                  <TableHead className="text-center">{bn ? 'রাত' : 'Dinner'}</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {activeAllocations.map(a => {
+                    const att = attFor(a.id);
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={a.occupant_type === 'staff' ? 'secondary' : 'outline'}>
+                              {a.occupant_type === 'staff' ? (bn ? 'স্টাফ' : 'Staff') : (bn ? 'ছাত্র' : 'Student')}
+                            </Badge>
+                            {occupantLabel(a)}
+                          </div>
+                        </TableCell>
+                        <TableCell>{roomLabel(a.room_id)}</TableCell>
+                        {(['breakfast', 'lunch', 'dinner'] as const).map(meal => (
+                          <TableCell key={meal} className="text-center">
+                            <Checkbox
+                              checked={!!att?.[meal]}
+                              onCheckedChange={(v) => saveAttendance.mutate({ allocation_id: a.id, meal, value: !!v })}
+                            />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
+                  {activeAllocations.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">{bn ? 'কোনো সক্রিয় বোর্ডিং সদস্য নেই' : 'No active boarding members'}</TableCell></TableRow>}
+                </TableBody>
+              </Table>
+              {activeAllocations.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-3">{bn ? 'চেকবক্সে টিক দিলে স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Ticking a checkbox saves automatically.'}</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* HOSTEL DIALOG */}
