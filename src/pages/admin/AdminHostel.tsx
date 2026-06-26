@@ -250,13 +250,18 @@ const AdminHostel = () => {
   });
 
   const saveAttendance = useMutation({
-    mutationFn: async (payload: { allocation_id: string; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
-      const existing = (mealAttendance as MealAttendance[]).find(a => a.allocation_id === payload.allocation_id);
+    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string; name: string }; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a =>
+        payload.allocation_id ? a.allocation_id === payload.allocation_id : (a.person_type === payload.person?.type && a.person_id === payload.person?.id)
+      );
       if (existing) {
         const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: payload.value }).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ allocation_id: payload.allocation_id, attendance_date: attDate, [payload.meal]: payload.value } as any);
+        const row: any = { attendance_date: attDate, [payload.meal]: payload.value };
+        if (payload.allocation_id) row.allocation_id = payload.allocation_id;
+        else if (payload.person) { row.person_type = payload.person.type; row.person_id = payload.person.id; row.person_name = payload.person.name; }
+        const { error } = await supabase.from('hostel_meal_attendance' as any).insert(row);
         if (error) throw error;
       }
     },
@@ -264,8 +269,32 @@ const AdminHostel = () => {
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
   });
 
+  // Add an ad-hoc member (no allocation) to today's meal attendance
+  const [adHocType, setAdHocType] = useState<'student' | 'staff'>('student');
+  const [adHocId, setAdHocId] = useState<string>('');
+  const addAdHoc = useMutation({
+    mutationFn: async () => {
+      if (!adHocId) throw new Error(bn ? 'সদস্য বাছাই করুন' : 'Select a member');
+      const list: any[] = adHocType === 'student' ? (students as any[]) : (staffList as any[]);
+      const p = list.find((x: any) => x.id === adHocId);
+      const name = p ? (bn ? p.name_bn : (p.name_en || p.name_bn)) + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') : '';
+      const dup = (mealAttendance as MealAttendance[]).find(a => a.person_type === adHocType && a.person_id === adHocId);
+      if (dup) throw new Error(bn ? 'এই সদস্য ইতিমধ্যে তালিকায় আছে' : 'Member already in list');
+      const { error } = await supabase.from('hostel_meal_attendance' as any).insert({ attendance_date: attDate, person_type: adHocType, person_id: adHocId, person_name: name });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }); setAdHocId(''); toast({ title: bn ? 'যোগ করা হয়েছে' : 'Added' }); },
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+  const deleteAttendance = useMutation({
+    mutationFn: async (id: string) => { const { error } = await supabase.from('hostel_meal_attendance' as any).delete().eq('id', id); if (error) throw error; },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+  });
+
   const attFor = (allocId: string) => (mealAttendance as MealAttendance[]).find(a => a.allocation_id === allocId);
   const activeAllocations = allocations.filter(a => a.status === 'active');
+  const adHocRows = (mealAttendance as MealAttendance[]).filter(a => !a.allocation_id && a.person_id);
+
 
   // ─── Stats ──────────────────────────────────────────────────────────────
   const totalRooms = rooms.length;
