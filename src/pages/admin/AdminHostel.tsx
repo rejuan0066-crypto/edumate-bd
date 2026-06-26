@@ -277,8 +277,8 @@ const AdminHostel = () => {
   const [attSearch, setAttSearch] = useState('');
 
   // ─── Meal-attendance cutoff settings (lock non-admins after deadline) ─────
-  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string };
-  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00' };
+  type MealCutoffs = { enabled: boolean; breakfast: string; lunch: string; dinner: string; breakfast_start: string; lunch_start: string; dinner_start: string };
+  const DEFAULT_CUTOFFS: MealCutoffs = { enabled: true, breakfast: '10:00', lunch: '15:00', dinner: '22:00', breakfast_start: '06:00', lunch_start: '12:00', dinner_start: '19:00' };
   const { data: cutoffs = DEFAULT_CUTOFFS } = useQuery({
     queryKey: ['hostel-meal-cutoffs'],
     queryFn: async () => {
