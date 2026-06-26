@@ -132,7 +132,7 @@ const AdminHostel = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students-min'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, academic_session_id, class_id').is('deleted_at', null).limit(2000);
+      const { data, error } = await supabase.from('students').select('id, student_id, name_bn, name_en, session_id, class_id').is('deleted_at', null).limit(2000);
       if (error) throw error;
       return data;
     },
