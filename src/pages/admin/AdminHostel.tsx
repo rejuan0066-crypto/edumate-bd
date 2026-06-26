@@ -1029,9 +1029,24 @@ const AdminHostel = () => {
                   <CalendarCheck className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-muted-foreground">{mealLabel(attMeal)} · {attCat === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'শিক্ষক/স্টাফ' : 'Teacher/Staff')}</span>
                 </div>
-                <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0} className="w-full sm:w-auto self-start lg:self-auto">
-                  <Download className="w-4 h-4 mr-1.5" />{bn ? 'ফাইলে সেভ করুন' : 'Export'}
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={exportAttendance} disabled={attStats.total === 0}>
+                    <Download className="w-4 h-4 mr-1.5" />{bn ? 'দৈনিক সেভ' : 'Daily'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadPeriodReport('week')} disabled={attStats.total === 0}>
+                    <Download className="w-4 h-4 mr-1.5" />{bn ? 'সাপ্তাহিক' : 'Weekly'}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => printPeriodReport('week')} disabled={attStats.total === 0} title={bn ? 'সাপ্তাহিক প্রিন্ট' : 'Print weekly'}>
+                    <Printer className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadPeriodReport('month')} disabled={attStats.total === 0}>
+                    <Download className="w-4 h-4 mr-1.5" />{bn ? 'মাসিক' : 'Monthly'}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => printPeriodReport('month')} disabled={attStats.total === 0} title={bn ? 'মাসিক প্রিন্ট' : 'Print monthly'}>
+                    <Printer className="w-4 h-4" />
+                  </Button>
+                </div>
+
               </div>
               <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5">
