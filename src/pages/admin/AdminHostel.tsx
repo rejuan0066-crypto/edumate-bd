@@ -459,6 +459,32 @@ const AdminHostel = () => {
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
 
+  // Group the student roster into separate per-class sections (staff stays as one group)
+  const attRosterGroups = (() => {
+    if (attCat !== 'student') {
+      return [{ key: 'all', label: '', people: attRoster }];
+    }
+    const map = new Map<string, AttendanceRosterPerson[]>();
+    attRoster.forEach((p: AttendanceRosterPerson) => {
+      const key = p.class_id || '__none__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    });
+    const order = (classesList as any[]).map((c: any) => c.id);
+    return Array.from(map.entries())
+      .sort(([a], [b]) => {
+        if (a === '__none__') return 1;
+        if (b === '__none__') return -1;
+        return order.indexOf(a) - order.indexOf(b);
+      })
+      .map(([key, people]) => ({
+        key,
+        label: key === '__none__' ? (bn ? 'শ্রেণীবিহীন' : 'No Class') : (classLabel(key) || (bn ? 'অজানা শ্রেণী' : 'Unknown Class')),
+        people,
+      }));
+  })();
+
+
   // Per-meal present/absent tally for the current category + date
   const attStats = (() => {
     let present = 0, absent = 0, unmarked = 0;
