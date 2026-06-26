@@ -307,7 +307,7 @@ const AdminHostel = () => {
 
   // Filter students by selected session/class for allocation form
   const filteredStudents = (students as any[]).filter((s: any) => {
-    if (allocForm.academic_session_id && s.academic_session_id !== allocForm.academic_session_id) return false;
+    if (allocForm.academic_session_id && s.session_id !== allocForm.academic_session_id) return false;
     if (allocForm.class_id && s.class_id !== allocForm.class_id) return false;
     return true;
   });
