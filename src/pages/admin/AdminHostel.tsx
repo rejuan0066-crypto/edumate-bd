@@ -26,6 +26,7 @@ type Room = { id: string; hostel_id: string; room_number: string; floor?: string
 type Allocation = { id: string; room_id: string; student_id?: string | null; staff_id?: string | null; occupant_type: 'student' | 'staff'; academic_session_id?: string | null; class_id?: string | null; fee_mode: 'free' | 'full' | 'discount'; discount_percent: number; discount_amount: number; bed_number?: number | null; check_in_date: string; check_out_date?: string | null; status: string; monthly_charge: number; notes?: string | null };
 type Meal = { id: string; hostel_id: string; day_of_week: string; meal_type: string; items: string; items_bn?: string | null };
 type MealAttendance = { id: string; allocation_id: string | null; attendance_date: string; breakfast: boolean; lunch: boolean; dinner: boolean; notes?: string | null; person_type?: string | null; person_id?: string | null; person_name?: string | null };
+type AttendanceRosterPerson = { id: string; person_type: 'student' | 'staff'; person_code?: string | null; name_bn: string; name_en?: string | null; session_id?: string | null; class_id?: string | null };
 
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
 const DAYS_BN = ['শনিবার','রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার'];
@@ -295,6 +296,24 @@ const AdminHostel = () => {
     },
   });
 
+  const { data: attendanceStudents = [], isLoading: loadingAttendanceStudents, error: attendanceStudentsError } = useQuery({
+    queryKey: ['hostel-attendance-roster', 'student'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('get_hostel_attendance_roster', { p_person_type: 'student' });
+      if (error) throw error;
+      return data as AttendanceRosterPerson[];
+    },
+  });
+
+  const { data: attendanceStaff = [], isLoading: loadingAttendanceStaff, error: attendanceStaffError } = useQuery({
+    queryKey: ['hostel-attendance-roster', 'staff'],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('get_hostel_attendance_roster', { p_person_type: 'staff' });
+      if (error) throw error;
+      return data as AttendanceRosterPerson[];
+    },
+  });
+
   const saveAttendance = useMutation({
     mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string; name: string }; meal: 'breakfast' | 'lunch' | 'dinner'; value: boolean }) => {
       const existing = (mealAttendance as MealAttendance[]).find(a =>
@@ -346,10 +365,13 @@ const AdminHostel = () => {
     (mealAttendance as MealAttendance[]).find(a => a.person_type === type && a.person_id === id);
 
   // Full roster for selected category, filtered by search
-  const attRoster = ((attCat === 'student' ? (students as any[]) : (staffList as any[])) || []).filter((p: any) => {
+  const activeAttendanceRoster = attCat === 'student' ? attendanceStudents : attendanceStaff;
+  const activeAttendanceRosterError = attCat === 'student' ? attendanceStudentsError : attendanceStaffError;
+  const isAttendanceRosterLoading = attCat === 'student' ? loadingAttendanceStudents : loadingAttendanceStaff;
+  const attRoster = (activeAttendanceRoster || []).filter((p: AttendanceRosterPerson) => {
     const q = attSearch.trim().toLowerCase();
     if (!q) return true;
-    const code = (p.student_id || p.staff_id || '').toLowerCase();
+    const code = (p.person_code || '').toLowerCase();
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
 
@@ -705,15 +727,30 @@ const AdminHostel = () => {
                   <TableHead className="text-center">{bn ? 'হাজিরা' : 'Attendance'}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
-                  {attRoster.map((p: any, idx: number) => {
+                  {activeAttendanceRosterError && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-destructive py-8">
+                        {bn ? 'হাজিরা তালিকা লোড করা যাচ্ছে না — আপনার হোস্টেল পারমিশন চেক করুন' : 'Could not load attendance roster — check hostel permission'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {isAttendanceRosterLoading && !activeAttendanceRosterError && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                        {bn ? 'তালিকা লোড হচ্ছে...' : 'Loading roster...'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.map((p: AttendanceRosterPerson, idx: number) => {
                     const rec = personAtt(attCat, p.id);
                     const present = rec ? !!rec[attMeal] : null;
                     const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
+                    const code = p.person_code || '';
                     return (
                       <TableRow key={p.id}>
                         <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                         <TableCell className="font-medium">{name}</TableCell>
-                        <TableCell className="text-muted-foreground">{p.student_id || p.staff_id || '—'}</TableCell>
+                        <TableCell className="text-muted-foreground">{code || '—'}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-2">
                             <Button
@@ -721,7 +758,7 @@ const AdminHostel = () => {
                               variant={present === true ? 'default' : 'outline'}
                               disabled={attLocked}
                               className={present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
-                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: true })}
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: true })}
                             >
                               {bn ? 'উপস্থিত' : 'Present'}
                             </Button>
@@ -729,7 +766,7 @@ const AdminHostel = () => {
                               size="sm"
                               variant={present === false ? 'destructive' : 'outline'}
                               disabled={attLocked}
-                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (p.student_id || p.staff_id ? ` (${p.student_id || p.staff_id})` : '') }, meal: attMeal, value: false })}
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: false })}
                             >
                               {bn ? 'অনুপস্থিত' : 'Absent'}
                             </Button>
@@ -738,7 +775,7 @@ const AdminHostel = () => {
                       </TableRow>
                     );
                   })}
-                  {attRoster.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
+                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
               <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
