@@ -739,14 +739,14 @@ const AdminHostel = () => {
                 <TableBody>
                   {activeAttendanceRosterError && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-destructive py-8">
+                      <TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-destructive py-8">
                         {bn ? 'হাজিরা তালিকা লোড করা যাচ্ছে না — আপনার হোস্টেল পারমিশন চেক করুন' : 'Could not load attendance roster — check hostel permission'}
                       </TableCell>
                     </TableRow>
                   )}
                   {isAttendanceRosterLoading && !activeAttendanceRosterError && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">
                         {bn ? 'তালিকা লোড হচ্ছে...' : 'Loading roster...'}
                       </TableCell>
                     </TableRow>
@@ -785,7 +785,7 @@ const AdminHostel = () => {
                       </TableRow>
                     );
                   })}
-                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
+                  {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
               <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
