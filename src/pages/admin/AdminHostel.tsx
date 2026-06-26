@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save, Download } from 'lucide-react';
+import { Building2, BedDouble, Users, UtensilsCrossed, Plus, Pencil, Trash2, CalendarCheck, Lock, Clock, Save, Download, X } from 'lucide-react';
 import * as XLSX from 'xlsx-js-style';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
@@ -399,6 +399,20 @@ const AdminHostel = () => {
         const { error } = await supabase.from('hostel_meal_attendance' as any).insert(row);
         if (error) throw error;
       }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
+    onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
+  });
+
+  // Clear a single person's meal attendance for the selected meal
+  const clearAttendance = useMutation({
+    mutationFn: async (payload: { allocation_id?: string; person?: { type: string; id: string }; meal: 'breakfast' | 'lunch' | 'dinner' }) => {
+      const existing = (mealAttendance as MealAttendance[]).find(a =>
+        payload.allocation_id ? a.allocation_id === payload.allocation_id : (a.person_type === payload.person?.type && a.person_id === payload.person?.id)
+      );
+      if (!existing) return;
+      const { error } = await supabase.from('hostel_meal_attendance' as any).update({ [payload.meal]: null }).eq('id', existing.id);
+      if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['hostel-meal-attendance', attDate] }),
     onError: (e: any) => toast({ title: bn ? 'ত্রুটি' : 'Error', description: e.message, variant: 'destructive' }),
@@ -936,6 +950,18 @@ const AdminHostel = () => {
                             >
                               {bn ? 'অনুপস্থিত' : 'Absent'}
                             </Button>
+                            {present !== null && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={attLocked}
+                                className="text-muted-foreground hover:text-destructive"
+                                title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                                onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
