@@ -21,7 +21,7 @@ const DEFAULT_CONFIG: PrayerCalendarConfig = {
   default_city: 'Sylhet',
   calculation_method: 1,
   hijri_offset: -1,
-  time_format: '24h',
+  time_format: '12h',
   show_prayer_times: true,
   show_calendar: true,
   show_bangla_date: true,
