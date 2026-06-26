@@ -3644,7 +3644,7 @@ export type Database = {
       }
       hostel_meal_attendance: {
         Row: {
-          allocation_id: string
+          allocation_id: string | null
           attendance_date: string
           breakfast: boolean
           created_at: string
@@ -3652,10 +3652,13 @@ export type Database = {
           id: string
           lunch: boolean
           notes: string | null
+          person_id: string | null
+          person_name: string | null
+          person_type: string | null
           updated_at: string
         }
         Insert: {
-          allocation_id: string
+          allocation_id?: string | null
           attendance_date?: string
           breakfast?: boolean
           created_at?: string
@@ -3663,10 +3666,13 @@ export type Database = {
           id?: string
           lunch?: boolean
           notes?: string | null
+          person_id?: string | null
+          person_name?: string | null
+          person_type?: string | null
           updated_at?: string
         }
         Update: {
-          allocation_id?: string
+          allocation_id?: string | null
           attendance_date?: string
           breakfast?: boolean
           created_at?: string
@@ -3674,6 +3680,9 @@ export type Database = {
           id?: string
           lunch?: boolean
           notes?: string | null
+          person_id?: string | null
+          person_name?: string | null
+          person_type?: string | null
           updated_at?: string
         }
         Relationships: [
