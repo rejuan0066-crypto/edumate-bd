@@ -733,6 +733,7 @@ const AdminHostel = () => {
                   <TableHead className="w-12">#</TableHead>
                   <TableHead>{bn ? 'নাম' : 'Name'}</TableHead>
                   <TableHead>{bn ? 'আইডি' : 'ID'}</TableHead>
+                  {attCat === 'student' && <TableHead>{bn ? 'ক্লাস' : 'Class'}</TableHead>}
                   <TableHead className="text-center">{bn ? 'হাজিরা' : 'Attendance'}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
