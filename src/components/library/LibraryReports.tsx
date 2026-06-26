@@ -29,6 +29,9 @@ const LibraryReports = () => {
 
   const [reportType, setReportType] = useState('issuance_log');
   const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const { data: issuances = [], isLoading: issLoading } = useQuery({
     queryKey: ['library-report-issuances'],
