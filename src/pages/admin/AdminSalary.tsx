@@ -2685,7 +2685,7 @@ const AdminSalary = () => {
                                 const savD = Number(rec?.savings_deduction ?? savingsAmt ?? 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
-                                const baseV = Number(rec?.base_salary || s.salary || 0);
+                                const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = Number((rec?.overtime) ?? src.overtime ?? 0);
                                 const sumDed = absD + lateD + advD + otherD + savD;
                                 const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
