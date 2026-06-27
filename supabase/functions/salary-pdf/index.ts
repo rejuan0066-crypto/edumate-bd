@@ -837,7 +837,7 @@ Deno.serve(async (req) => {
     .c-name .nm { font-size: 8.2pt; line-height: 1.1; }
     .c-name .sid { font-size: 7pt; line-height: 1.05; }
     .totals td { padding: 2.5pt 2pt; }
-    .note-cell { font-size: 6.6pt; padding: 1.8pt 3pt; }
+    .note-cell { font-size: 7.6pt; padding: 1.8pt 3pt; }
     .signatures { margin: 4mm 3mm 1mm; gap: 5mm; }
     .sig, .sig .role { font-size: 7.2pt; }
     .sig .sig-name { font-size: 7.8pt; min-height: 8pt; }
