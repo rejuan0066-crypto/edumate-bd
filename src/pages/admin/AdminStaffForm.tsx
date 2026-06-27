@@ -625,7 +625,10 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
       } else {
         const { error } = await supabase.from('staff').insert({
           ...record,
-          joining_date: joiningDate || new Date().toISOString().split('T')[0],
+          // Do NOT auto-fill today's date when left blank — that caused the
+          // joining month to be wrongly prorated. Keep it null so admins must
+          // enter the real joining date explicitly.
+          joining_date: joiningDate || null,
         });
         if (error) throw error;
       }
