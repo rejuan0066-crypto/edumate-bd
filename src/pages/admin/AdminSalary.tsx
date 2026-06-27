@@ -426,6 +426,19 @@ const AdminSalary = () => {
     },
   });
 
+  // Salary change history — used to apply increases/decreases only from their effective month.
+  const { data: salaryChanges = [] } = useQuery({
+    queryKey: ['salary-changes-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('staff_salary_changes')
+        .select('staff_id, old_salary, new_salary, effective_date')
+        .is('deleted_at', null)
+        .order('effective_date', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch all salary records for bonus year
   const { data: bonusYearRecords = [] } = useQuery({
     queryKey: ['bonus-year-records', bonusYear],
