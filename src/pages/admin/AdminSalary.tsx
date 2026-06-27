@@ -1647,7 +1647,7 @@ const AdminSalary = () => {
         s.name_bn,
         s.staff_id || '-',
         getDesignation(s.designation),
-        fmtNum(Number(rec?.base_salary || s.salary || 0)),
+        fmtNum(Number(rec?.base_salary ?? getEffectiveSalary(s))),
         fmtNum(Number(rec?.bonus || 0)),
         fmtNum(Number(rec?.overtime || 0)),
         fmtNum(totalDed),
