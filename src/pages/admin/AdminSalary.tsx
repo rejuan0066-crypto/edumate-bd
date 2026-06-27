@@ -744,6 +744,32 @@ const AdminSalary = () => {
     return Number(jd.slice(8, 10)) || 1;
   };
 
+  // Effective base salary for the SELECTED month.
+  // A salary change applies only from its effective month onward; months BEFORE
+  // the effective date keep the old (pre-change) salary, so a raise effective
+  // June 1 does NOT inflate May's salary.
+  const getEffectiveSalary = (staffMember: any): number => {
+    const current = Number(staffMember?.salary) || 0;
+    const changes = (salaryChanges as any[]).filter((c) => c.staff_id === staffMember?.id);
+    if (changes.length === 0) return current;
+    // monthYear = "YYYY-MM"; compare against effective month "YYYY-MM".
+    // Find the latest change whose effective month is <= selected month.
+    let effective: number | null = null;
+    for (const c of changes) {
+      const effMonth = String(c.effective_date).slice(0, 7);
+      if (effMonth <= monthYear) {
+        effective = Number(c.new_salary);
+      } else {
+        // This change is in the future relative to the selected month.
+        // The salary for the selected month is the old_salary of the earliest future change.
+        if (effective === null) effective = Number(c.old_salary);
+        break;
+      }
+    }
+    return effective === null ? current : effective;
+  };
+
+
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
