@@ -979,7 +979,7 @@ const AdminSalary = () => {
   // Calculate salary using TRUE additive per-day logic.
   // Net = সকল উপস্থিত দিনের আয় (অনুপস্থিতি/দেরি ইতিমধ্যে বাদ) + ওভারটাইম + বোনাস − অগ্রিম − জমা
   const calculateSalary = (staffMember: any) => {
-    const baseSalary = Number(staffMember.salary) || 0;
+    const baseSalary = getEffectiveSalary(staffMember);
     const attStats = getAttendanceStats(staffMember);
 
     const year = Number(selectedYear);
