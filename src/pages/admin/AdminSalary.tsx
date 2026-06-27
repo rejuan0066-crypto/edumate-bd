@@ -2541,24 +2541,20 @@ const AdminSalary = () => {
                         const rec = getRecord(s.id);
                         const attStats = getAttendanceStats(s);
                         const autoCalc = calculateSalary(s);
-                        // For pending records, show live recalculated values so duty-time / settings changes reflect immediately.
-                        // Paid records keep their stored snapshot.
+                        // A live recompute counts every untracked day (incl. future days of an
+                        // ongoing month) as absent, so net/deduction values would visibly drift
+                        // each render. Once a record exists, ALWAYS show its stored snapshot
+                        // (manual edits to bonus/overtime/advance are already saved into it).
+                        // Live values are only used for not-yet-generated rows.
                         const usePending = rec && rec.status !== 'paid';
-                        const totalDed = usePending
-                          ? Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            Number(rec.advance_deduction || 0) + Number(autoCalc.other_deduction || 0)
-                          : rec
-                            ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                              Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                            : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                              Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
-                        const displayOvertime = usePending ? Number(rec.overtime ?? autoCalc.overtime ?? 0) : (rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0));
-                        // Honor a manually-edited overtime on pending records: add the delta over the
-                        // attendance-derived overtime (already baked into autoCalc.net_salary) to the net.
-                        const otDelta = usePending ? Number(rec.overtime ?? autoCalc.overtime ?? 0) - Number(autoCalc.overtime || 0) : 0;
-                        const displayNet = usePending
-                          ? Math.max(0, Number(autoCalc.net_salary || 0) + otDelta + Number(rec.bonus || 0) + Number(rec.other_allowance || 0) - Number(rec.advance_deduction || 0))
-                          : (rec ? Number(rec.net_salary) : Number(autoCalc.net_salary || 0));
+                        const totalDed = rec
+                          ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                          : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                            Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
+                        const displayOvertime = rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
+                        const displayNet = rec ? Number(rec.net_salary || 0) : Number(autoCalc.net_salary || 0);
+
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
                         const validation = !rec ? getAttendanceValidation(s) : null;
@@ -2677,7 +2673,7 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = usePending ? autoCalc : (rec || autoCalc);
+                                const src = rec || autoCalc;
                                 const absD = Number(src.absence_deduction || 0);
                                 const lateD = Number(src.late_deduction || 0);
                                 const advD = Number((rec?.advance_deduction) ?? src.advance_deduction ?? 0);
