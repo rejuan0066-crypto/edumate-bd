@@ -2673,7 +2673,7 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = usePending ? autoCalc : (rec || autoCalc);
+                                const src = rec || autoCalc;
                                 const absD = Number(src.absence_deduction || 0);
                                 const lateD = Number(src.late_deduction || 0);
                                 const advD = Number((rec?.advance_deduction) ?? src.advance_deduction ?? 0);
