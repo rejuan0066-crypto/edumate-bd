@@ -647,6 +647,12 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     onError: (e: any) => {
       const raw: string = String(e?.message || e?.error_description || e || 'Error saving staff');
       const upper = raw.toUpperCase();
+      if (upper.includes('JOINING_DATE_REQUIRED')) {
+        const msg = bn ? 'যোগদানের তারিখ দিন' : 'Joining date is required';
+        setFieldErrors(prev => ({ ...prev, joining_date: msg }));
+        toast.error(msg);
+        return;
+      }
       if (upper.includes('CUSTOM_ROLE_CATEGORY_MISMATCH')) {
         toast.error(bn
           ? 'নির্বাচিত কাস্টম রোলটি এই স্টাফ ক্যাটেগরির জন্য অনুমোদিত নয়। অনুগ্রহ করে অন্য রোল বাছাই করুন।'
