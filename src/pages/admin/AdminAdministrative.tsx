@@ -338,6 +338,11 @@ const AdminAdministrative = () => {
     const raw = String(e?.message || e?.error_description || e || '');
     const msg = raw.toUpperCase();
 
+    // ---- Joining date required ----
+    if (msg.includes('JOINING_DATE_REQUIRED')) {
+      return { field: 'joining_date', message: bn ? 'যোগদানের তারিখ দিন' : 'Joining date is required' };
+    }
+
     // ---- Officer field-level violations ----
     if (msg.includes('DUPLICATE_PHONE') || raw.includes('uq_admin_officers_phone') || raw.includes('uq_staff_phone')) {
       return { field: 'phone', message: bn ? 'এই ফোন নম্বর ইতিমধ্যে ব্যবহৃত হয়েছে।' : 'This phone number is already in use.' };
