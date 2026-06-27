@@ -690,6 +690,14 @@ const AdminStaffForm = ({ staffCategory = 'all' }: { staffCategory?: StaffCatego
     e.preventDefault();
     const errors: Record<string, string> = {};
 
+    // Joining date is mandatory for new staff/teacher (prevents wrong salary proration)
+    if (!isEditMode && !joiningDate) {
+      const msg = bn ? 'যোগদানের তারিখ দিন — তারিখ ছাড়া নতুন কর্মী/শিক্ষক যোগ করা যাবে না' : 'Joining date is required to add a new staff/teacher';
+      setFieldErrors({ joining_date: msg });
+      toast.error(msg);
+      return;
+    }
+
     // Admin bypass: skip all field validation (still requires saveMutation server-side checks)
     if (isAdmin) {
       // If email provided and not verified (and not edit mode), still require OTP
