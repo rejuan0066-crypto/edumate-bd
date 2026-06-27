@@ -1874,7 +1874,7 @@ const AdminSalary = () => {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
             designation: getDesignation(s.designation),
-            base_salary: Number(rec?.base_salary || s.salary || 0),
+            base_salary: Number(rec?.base_salary ?? getEffectiveSalary(s)),
             present: rec?.present_days || 0,
             absent: rec?.absent_days || 0,
             late: rec?.late_days || 0,
