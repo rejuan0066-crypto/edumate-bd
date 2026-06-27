@@ -426,6 +426,19 @@ const AdminSalary = () => {
     },
   });
 
+  // Salary change history — used to apply increases/decreases only from their effective month.
+  const { data: salaryChanges = [] } = useQuery({
+    queryKey: ['salary-changes-all'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('staff_salary_changes')
+        .select('staff_id, old_salary, new_salary, effective_date')
+        .is('deleted_at', null)
+        .order('effective_date', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Fetch all salary records for bonus year
   const { data: bonusYearRecords = [] } = useQuery({
     queryKey: ['bonus-year-records', bonusYear],
@@ -731,6 +744,32 @@ const AdminSalary = () => {
     return Number(jd.slice(8, 10)) || 1;
   };
 
+  // Effective base salary for the SELECTED month.
+  // A salary change applies only from its effective month onward; months BEFORE
+  // the effective date keep the old (pre-change) salary, so a raise effective
+  // June 1 does NOT inflate May's salary.
+  const getEffectiveSalary = (staffMember: any): number => {
+    const current = Number(staffMember?.salary) || 0;
+    const changes = (salaryChanges as any[]).filter((c) => c.staff_id === staffMember?.id);
+    if (changes.length === 0) return current;
+    // monthYear = "YYYY-MM"; compare against effective month "YYYY-MM".
+    // Find the latest change whose effective month is <= selected month.
+    let effective: number | null = null;
+    for (const c of changes) {
+      const effMonth = String(c.effective_date).slice(0, 7);
+      if (effMonth <= monthYear) {
+        effective = Number(c.new_salary);
+      } else {
+        // This change is in the future relative to the selected month.
+        // The salary for the selected month is the old_salary of the earliest future change.
+        if (effective === null) effective = Number(c.old_salary);
+        break;
+      }
+    }
+    return effective === null ? current : effective;
+  };
+
+
   // Calculate attendance stats with per-minute tracking
   const getAttendanceStats = (staffMember: any) => {
     // Main attendance only (exclude morning/evening duty shifts which are handled separately as overtime)
@@ -790,7 +829,7 @@ const AdminSalary = () => {
       deduction: number; addition: number; dailyEarning: number;
     }> = [];
 
-    const baseSalary = Number(staffMember.salary) || 0;
+    const baseSalary = getEffectiveSalary(staffMember);
     const dailyRate = baseSalary / 30;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
@@ -940,7 +979,7 @@ const AdminSalary = () => {
   // Calculate salary using TRUE additive per-day logic.
   // Net = সকল উপস্থিত দিনের আয় (অনুপস্থিতি/দেরি ইতিমধ্যে বাদ) + ওভারটাইম + বোনাস − অগ্রিম − জমা
   const calculateSalary = (staffMember: any) => {
-    const baseSalary = Number(staffMember.salary) || 0;
+    const baseSalary = getEffectiveSalary(staffMember);
     const attStats = getAttendanceStats(staffMember);
 
     const year = Number(selectedYear);
@@ -1608,7 +1647,7 @@ const AdminSalary = () => {
         s.name_bn,
         s.staff_id || '-',
         getDesignation(s.designation),
-        fmtNum(Number(rec?.base_salary || s.salary || 0)),
+        fmtNum(Number(rec?.base_salary ?? getEffectiveSalary(s))),
         fmtNum(Number(rec?.bonus || 0)),
         fmtNum(Number(rec?.overtime || 0)),
         fmtNum(totalDed),
@@ -1835,7 +1874,7 @@ const AdminSalary = () => {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
             designation: getDesignation(s.designation),
-            base_salary: Number(rec?.base_salary || s.salary || 0),
+            base_salary: Number(rec?.base_salary ?? getEffectiveSalary(s)),
             present: rec?.present_days || 0,
             absent: rec?.absent_days || 0,
             late: rec?.late_days || 0,
@@ -2607,7 +2646,7 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary || s.salary || 0).toLocaleString()) : Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
                             <td className="px-3 py-2 text-center">
                               {(() => {
                                 // Once a salary record exists, show the SNAPSHOT that was stored at
@@ -2646,7 +2685,7 @@ const AdminSalary = () => {
                                 const savD = Number(rec?.savings_deduction ?? savingsAmt ?? 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
-                                const baseV = Number(rec?.base_salary || s.salary || 0);
+                                const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = Number((rec?.overtime) ?? src.overtime ?? 0);
                                 const sumDed = absD + lateD + advD + otherD + savD;
                                 const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
