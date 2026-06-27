@@ -2646,7 +2646,7 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary || s.salary || 0).toLocaleString()) : Number(rec?.base_salary || s.salary || 0).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
                             <td className="px-3 py-2 text-center">
                               {(() => {
                                 // Once a salary record exists, show the SNAPSHOT that was stored at
