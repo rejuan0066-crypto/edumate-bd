@@ -831,11 +831,11 @@ Deno.serve(async (req) => {
     .inst-contact, .doc-period { font-size: 7pt; }
     .doc-title { margin: 2pt 0; }
     .doc-title h2 { font-size: 9pt; padding: 1pt 10pt; }
-    thead th { font-size: 6.9pt; padding: 1.5pt 2pt; line-height: 1.0; }
-    tbody td { font-size: 6.8pt; padding: 1.2pt 2pt; line-height: 1.05; }
-    .staff-row { height: 5.8mm; }
-    .c-name .nm { font-size: 6.9pt; line-height: 1.0; }
-    .c-name .sid { font-size: 6pt; line-height: 1.0; }
+    thead th { font-size: 8.2pt; padding: 2pt 2pt; line-height: 1.05; }
+    tbody td { font-size: 8.2pt; padding: 1.8pt 2pt; line-height: 1.15; }
+    .staff-row { height: 6.8mm; }
+    .c-name .nm { font-size: 8.2pt; line-height: 1.1; }
+    .c-name .sid { font-size: 7pt; line-height: 1.05; }
     .totals td { padding: 2.5pt 2pt; }
     .note-cell { font-size: 6.6pt; padding: 1.8pt 3pt; }
     .signatures { margin: 4mm 3mm 1mm; gap: 5mm; }
