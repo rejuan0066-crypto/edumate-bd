@@ -829,7 +829,7 @@ const AdminSalary = () => {
       deduction: number; addition: number; dailyEarning: number;
     }> = [];
 
-    const baseSalary = Number(staffMember.salary) || 0;
+    const baseSalary = getEffectiveSalary(staffMember);
     const dailyRate = baseSalary / 30;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
