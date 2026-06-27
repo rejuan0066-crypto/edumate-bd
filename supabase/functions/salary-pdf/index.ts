@@ -811,7 +811,7 @@ Deno.serve(async (req) => {
     .print-settings-bar button:hover { background: #047857; }
     .print-settings-bar .hint { color: #047857; font-size: 11px; opacity: .85; }
     @media print { .print-settings-bar { display: none !important; } }
-    table { page-break-inside: avoid; break-inside: avoid; font-size: 7pt; }
+    table { page-break-inside: avoid; break-inside: avoid; font-size: 8.5pt; }
     tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group !important; }
     tbody { display: table-row-group !important; }
