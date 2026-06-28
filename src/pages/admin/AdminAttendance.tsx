@@ -660,11 +660,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const saveMutation = useMutation({
     mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
       const shiftVal = effectiveShift;
-      let existing = attendance.find((a: any) => a.entity_id === entityId);
+      let existing: any = attendance.find((a: any) => a.entity_id === entityId);
       if (!existing) {
         const { data, error } = await supabase
           .from('attendance_records')
-          .select('id')
+          .select('*')
           .eq('attendance_date', selectedDate)
           .eq('entity_type', entityType)
           .eq('entity_id', entityId)
@@ -1683,7 +1683,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     })()}
 
                     {/* Time Inputs for Staff (hide for meal tab) — also for students marked Late */}
-                    {((entityType === 'staff' && staffSubTab !== 'meal') || (entityType === 'student' && currentStatus === 'late')) && (
+                    {((entityType === 'staff' && staffSubTab !== 'meal' && (currentStatus === 'late' || timeEditorOpenId === entity.id)) || (entityType === 'student' && currentStatus === 'late')) && (
                       <div className="flex gap-2 items-center shrink-0">
                         <TimePicker
                           className="h-8 w-[120px] text-xs rounded-xl bg-muted/30 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
@@ -1751,21 +1751,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                             key={rule.id}
                             onClick={() => {
                               const mutateData: any = { entityId: entity.id, status: countsAs };
-                              if (entityType === 'staff' && staffSubTab === 'duty' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                                if (selectedShift === 'morning') {
-                                  mutateData.check_in_time = dutyTimes.morning_start;
-                                  mutateData.check_out_time = dutyTimes.morning_end;
-                                } else if (selectedShift === 'evening') {
-                                  mutateData.check_in_time = dutyTimes.evening_start;
-                                  mutateData.check_out_time = dutyTimes.evening_end;
-                                }
-                              } else if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                                mutateData.check_in_time = getCategoryTime(entity).start;
-                                mutateData.check_out_time = getCategoryTime(entity).end;
+                              if (entityType === 'staff' && staffSubTab !== 'meal' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                                const shiftTime = getStaffShiftTime(entity);
+                                mutateData.check_in_time = att?.check_in_time || shiftTime.start;
+                                mutateData.check_out_time = att?.check_out_time || shiftTime.end;
+                                setTimeEditorOpenId(countsAs === 'late' ? entity.id : null);
+                              } else if (entityType === 'student' && countsAs === 'late') {
+                                setTimeEditorOpenId(entity.id);
                               }
                               if (countsAs === 'absent' || countsAs === 'leave') {
                                 mutateData.check_in_time = '';
                                 mutateData.check_out_time = '';
+                                if (timeEditorOpenId === entity.id) setTimeEditorOpenId(null);
                               }
                               saveMutation.mutate(mutateData);
                             }}
