@@ -266,7 +266,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
               <Clock className="h-3 w-3 text-amber-600" />
               <span className="text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</span>
-              <b className="text-amber-700 dark:text-amber-400 tabular-nums">{totalLateMins} {bn ? 'মিনিট' : 'min'}</b>
+              <b className="text-amber-700 dark:text-amber-400 tabular-nums">{fmtDuration(totalLateMins)}</b>
             </div>
             <span className="ml-auto text-[11px] italic text-muted-foreground hidden sm:inline">
               {bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}
