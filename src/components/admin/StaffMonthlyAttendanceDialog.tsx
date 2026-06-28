@@ -339,7 +339,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
                         {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
                       </div>
-                      <div className="grid grid-cols-1 gap-0.5 max-h-72 overflow-y-auto">
+                      <div className="grid grid-cols-1 gap-0.5 max-h-60 overflow-y-auto">
                         {Object.entries(STATUS_META).map(([k, m]) => {
                           const I = m.icon;
                           const active = rec?.status === k;
@@ -362,36 +362,37 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                             </button>
                           );
                         })}
-                        {(rec?.status === 'present' || rec?.status === 'late' || rec?.status === 'half_day') && (
-                          <LateTimeEditor
-                            bn={bn}
-                            status={rec.status}
-                            initialIn={rec?.check_in_time || ''}
-                            initialOut={rec?.check_out_time || ''}
-                            saving={isSaving}
-                            onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
-                          />
-                        )}
-                        {rec?.status === 'leave' && (
-                          <LeaveEditor
-                            bn={bn}
-                            initialType={rec?.leave_type || ''}
-                            initialReason={rec?.leave_reason || ''}
-                            saving={isSaving}
-                            onSave={(lt, lr) => setStatus(key, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
-                          />
-                        )}
-                        {rec && (
-                          <button
-                            onClick={() => setStatus(key, null)}
-                            disabled={isSaving}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {bn ? 'মুছুন' : 'Clear'}
-                          </button>
-                        )}
                       </div>
+                      {/* Editors kept outside the scroll area so they're always visible */}
+                      {(rec?.status === 'present' || rec?.status === 'late' || rec?.status === 'half_day') && (
+                        <LateTimeEditor
+                          bn={bn}
+                          status={rec.status}
+                          initialIn={rec?.check_in_time || ''}
+                          initialOut={rec?.check_out_time || ''}
+                          saving={isSaving}
+                          onSave={(ci, co) => setStatus(key, rec.status, { check_in_time: ci || null, check_out_time: co || null })}
+                        />
+                      )}
+                      {rec?.status === 'leave' && (
+                        <LeaveEditor
+                          bn={bn}
+                          initialType={rec?.leave_type || ''}
+                          initialReason={rec?.leave_reason || ''}
+                          saving={isSaving}
+                          onSave={(lt, lr) => setStatus(key, 'leave', { leave_type: lt || null, leave_reason: lr || null })}
+                        />
+                      )}
+                      {rec && (
+                        <button
+                          onClick={() => setStatus(key, null)}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 mt-1 border-t border-border/30 pt-2 w-full"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          {bn ? 'মুছুন' : 'Clear'}
+                        </button>
+                      )}
                     </PopoverContent>
                   </Popover>
                 );
