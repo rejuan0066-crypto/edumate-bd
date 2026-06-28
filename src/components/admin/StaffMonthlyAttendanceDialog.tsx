@@ -100,6 +100,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   }, [records]);
 
   const totalLateMins = useMemo(() => records.reduce((s, r) => s + (Number(r.late_minutes) || 0), 0), [records]);
+  // Format a minute count as hours + minutes (e.g. 90 → "১ ঘণ্টা ৩০ মিনিট" / "1h 30m")
+  const fmtDuration = (mins: number) => {
+    const m = Math.max(0, Math.round(mins || 0));
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    if (bn) {
+      if (h > 0) return rem > 0 ? `${h} ঘণ্টা ${rem} মিনিট` : `${h} ঘণ্টা`;
+      return `${rem} মিনিট`;
+    }
+    if (h > 0) return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+    return `${rem}m`;
+  };
   const unmarked = days.filter(d => !byDate[format(d, 'yyyy-MM-dd')]).length;
   const marked = days.length - unmarked;
   const attendanceRate = marked > 0 ? Math.round(((counts.present + counts.late * 0.5 + counts.half_day * 0.5) / marked) * 100) : 0;
@@ -254,7 +266,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
               <Clock className="h-3 w-3 text-amber-600" />
               <span className="text-muted-foreground">{bn ? 'বিলম্ব' : 'Late'}</span>
-              <b className="text-amber-700 dark:text-amber-400 tabular-nums">{totalLateMins} {bn ? 'মিনিট' : 'min'}</b>
+              <b className="text-amber-700 dark:text-amber-400 tabular-nums">{fmtDuration(totalLateMins)}</b>
             </div>
             <span className="ml-auto text-[11px] italic text-muted-foreground hidden sm:inline">
               {bn ? 'যেকোনো দিনে ক্লিক করে স্ট্যাটাস বদলান' : 'Click any day to change status'}
@@ -318,7 +330,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mt-0.5 ${meta!.color}`} />}
                         {rec?.late_minutes ? (
                           <div className="text-[9px] text-amber-700 dark:text-amber-400 font-bold leading-none mt-0.5 tabular-nums">
-                            +{rec.late_minutes}m
+                            +{fmtDuration(rec.late_minutes)}
                           </div>
                         ) : null}
                       </button>

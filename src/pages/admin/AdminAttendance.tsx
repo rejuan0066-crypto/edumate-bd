@@ -42,6 +42,18 @@ const STATUS_ICONS: Record<string, any> = {
   half_day: AlertCircle, leave: CalendarOff,
   excused: CheckCircle2, medical: CheckCircle2,
 };
+// Format a minute count as hours + minutes (e.g. 90 → "১ ঘণ্টা ৩০ মিনিট" / "1h 30m")
+const fmtMins = (mins: number, bn: boolean) => {
+  const m = Math.max(0, Math.round(mins || 0));
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  if (bn) {
+    if (h > 0) return rem > 0 ? `${h} ঘণ্টা ${rem} মিনিট` : `${h} ঘণ্টা`;
+    return `${rem} মিনিট`;
+  }
+  if (h > 0) return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+  return `${rem}m`;
+};
 const STATUS_COLORS: Record<string, string> = {
   present: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   absent: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
@@ -1676,8 +1688,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       const earlyMin = Math.max(0, sEnd - cOut);
                       return (lateMin > 0 || earlyMin > 0) ? (
                         <div className="flex gap-1.5 shrink-0">
-                          {lateMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">{bn ? `${lateMin} মি. বিলম্ব` : `${lateMin}m late`}</span>}
-                          {earlyMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-600 border border-orange-500/15">{bn ? `${earlyMin} মি. আগে` : `${earlyMin}m early`}</span>}
+                          {lateMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">{bn ? `${fmtMins(lateMin, true)} বিলম্ব` : `${fmtMins(lateMin, false)} late`}</span>}
+                          {earlyMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-600 border border-orange-500/15">{bn ? `${fmtMins(earlyMin, true)} আগে` : `${fmtMins(earlyMin, false)} early`}</span>}
                         </div>
                       ) : null;
                     })()}
