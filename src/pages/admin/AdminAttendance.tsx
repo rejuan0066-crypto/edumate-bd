@@ -105,6 +105,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [showResetMenu, setShowResetMenu] = useState(false);
   const resetBtnRef = useRef<HTMLDivElement>(null);
   const [monthlyStaff, setMonthlyStaff] = useState<any | null>(null);
+  const [timeEditorOpenId, setTimeEditorOpenId] = useState<string | null>(null);
   // Effective shift: for students, meal tab uses meal shift; for staff, fulltime=full_day, others use selected
   const effectiveShift = entityType === 'student'
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
@@ -595,6 +596,16 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     return categoryShiftTimes[cat] || defaultCategoryTimes.general;
   };
 
+  const getStaffShiftTime = (entity: any) => {
+    if (staffSubTab === 'duty') {
+      return selectedShift === 'evening'
+        ? { start: dutyTimes.evening_start, end: dutyTimes.evening_end }
+        : { start: dutyTimes.morning_start, end: dutyTimes.morning_end };
+    }
+
+    return getCategoryTime(entity);
+  };
+
   // Auto-backfill: existing present/late/half_day staff records without check_in/out get scheduled shift times
   const backfillRanRef = useRef<string>('');
   useEffect(() => {
@@ -649,7 +660,19 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const saveMutation = useMutation({
     mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
       const shiftVal = effectiveShift;
-      const existing = attendance.find((a: any) => a.entity_id === entityId);
+      let existing: any = attendance.find((a: any) => a.entity_id === entityId);
+      if (!existing) {
+        const { data, error } = await supabase
+          .from('attendance_records')
+          .select('*')
+          .eq('attendance_date', selectedDate)
+          .eq('entity_type', entityType)
+          .eq('entity_id', entityId)
+          .eq('shift', shiftVal)
+          .maybeSingle();
+        if (error) throw error;
+        existing = data;
+      }
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
       if (check_out_time !== undefined) updateData.check_out_time = check_out_time;
@@ -1660,14 +1683,14 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                     })()}
 
                     {/* Time Inputs for Staff (hide for meal tab) — also for students marked Late */}
-                    {((entityType === 'staff' && staffSubTab !== 'meal') || (entityType === 'student' && currentStatus === 'late')) && (
+                    {((entityType === 'staff' && staffSubTab !== 'meal' && (currentStatus === 'late' || timeEditorOpenId === entity.id)) || (entityType === 'student' && (currentStatus === 'late' || timeEditorOpenId === entity.id))) && (
                       <div className="flex gap-2 items-center shrink-0">
                         <TimePicker
                           className="h-8 w-[120px] text-xs rounded-xl bg-muted/30 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
                           placeholder="In"
                           displayFormat={timeFormat}
                           value={att?.check_in_time || ''}
-                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: v, check_out_time: att?.check_out_time || '' })}
+                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
                         />
                         <span className="text-muted-foreground/40 text-xs">—</span>
                         <TimePicker
@@ -1675,7 +1698,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                           placeholder="Out"
                           displayFormat={timeFormat}
                           value={att?.check_out_time || ''}
-                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || 'present', check_in_time: att?.check_in_time || '', check_out_time: v })}
+                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
                         />
                       </div>
                     )}
@@ -1728,21 +1751,18 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                             key={rule.id}
                             onClick={() => {
                               const mutateData: any = { entityId: entity.id, status: countsAs };
-                              if (entityType === 'staff' && staffSubTab === 'duty' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                                if (selectedShift === 'morning') {
-                                  mutateData.check_in_time = dutyTimes.morning_start;
-                                  mutateData.check_out_time = dutyTimes.morning_end;
-                                } else if (selectedShift === 'evening') {
-                                  mutateData.check_in_time = dutyTimes.evening_start;
-                                  mutateData.check_out_time = dutyTimes.evening_end;
-                                }
-                              } else if (entityType === 'staff' && ['present', 'late', 'half_day'].includes(countsAs)) {
-                                mutateData.check_in_time = getCategoryTime(entity).start;
-                                mutateData.check_out_time = getCategoryTime(entity).end;
+                              if (entityType === 'staff' && staffSubTab !== 'meal' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                                const shiftTime = getStaffShiftTime(entity);
+                                mutateData.check_in_time = att?.check_in_time || shiftTime.start;
+                                mutateData.check_out_time = att?.check_out_time || shiftTime.end;
+                                setTimeEditorOpenId(countsAs === 'late' ? entity.id : null);
+                              } else if (entityType === 'student' && countsAs === 'late') {
+                                setTimeEditorOpenId(entity.id);
                               }
                               if (countsAs === 'absent' || countsAs === 'leave') {
                                 mutateData.check_in_time = '';
                                 mutateData.check_out_time = '';
+                                if (timeEditorOpenId === entity.id) setTimeEditorOpenId(null);
                               }
                               saveMutation.mutate(mutateData);
                             }}
