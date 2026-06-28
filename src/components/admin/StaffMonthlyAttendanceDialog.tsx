@@ -330,7 +330,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         {Icon && <Icon className={`h-3 w-3 sm:h-3.5 sm:w-3.5 mt-0.5 ${meta!.color}`} />}
                         {rec?.late_minutes ? (
                           <div className="text-[9px] text-amber-700 dark:text-amber-400 font-bold leading-none mt-0.5 tabular-nums">
-                            +{rec.late_minutes}m
+                            +{fmtDuration(rec.late_minutes)}
                           </div>
                         ) : null}
                       </button>
