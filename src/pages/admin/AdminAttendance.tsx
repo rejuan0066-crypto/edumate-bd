@@ -1688,8 +1688,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       const earlyMin = Math.max(0, sEnd - cOut);
                       return (lateMin > 0 || earlyMin > 0) ? (
                         <div className="flex gap-1.5 shrink-0">
-                          {lateMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">{bn ? `${lateMin} মি. বিলম্ব` : `${lateMin}m late`}</span>}
-                          {earlyMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-600 border border-orange-500/15">{bn ? `${earlyMin} মি. আগে` : `${earlyMin}m early`}</span>}
+                          {lateMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-600 border border-amber-500/15">{bn ? `${fmtMins(lateMin, true)} বিলম্ব` : `${fmtMins(lateMin, false)} late`}</span>}
+                          {earlyMin > 0 && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-medium bg-orange-500/10 text-orange-600 border border-orange-500/15">{bn ? `${fmtMins(earlyMin, true)} আগে` : `${fmtMins(earlyMin, false)} early`}</span>}
                         </div>
                       ) : null;
                     })()}
