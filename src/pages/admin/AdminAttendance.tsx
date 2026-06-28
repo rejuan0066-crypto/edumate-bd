@@ -105,6 +105,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const [showResetMenu, setShowResetMenu] = useState(false);
   const resetBtnRef = useRef<HTMLDivElement>(null);
   const [monthlyStaff, setMonthlyStaff] = useState<any | null>(null);
+  const [timeEditorOpenId, setTimeEditorOpenId] = useState<string | null>(null);
   // Effective shift: for students, meal tab uses meal shift; for staff, fulltime=full_day, others use selected
   const effectiveShift = entityType === 'student'
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
@@ -595,6 +596,16 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     return categoryShiftTimes[cat] || defaultCategoryTimes.general;
   };
 
+  const getStaffShiftTime = (entity: any) => {
+    if (staffSubTab === 'duty') {
+      return selectedShift === 'evening'
+        ? { start: dutyTimes.evening_start, end: dutyTimes.evening_end }
+        : { start: dutyTimes.morning_start, end: dutyTimes.morning_end };
+    }
+
+    return getCategoryTime(entity);
+  };
+
   // Auto-backfill: existing present/late/half_day staff records without check_in/out get scheduled shift times
   const backfillRanRef = useRef<string>('');
   useEffect(() => {
@@ -649,7 +660,19 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const saveMutation = useMutation({
     mutationFn: async ({ entityId, status, remarks, check_in_time, check_out_time }: { entityId: string; status: string; remarks?: string; check_in_time?: string; check_out_time?: string }) => {
       const shiftVal = effectiveShift;
-      const existing = attendance.find((a: any) => a.entity_id === entityId);
+      let existing = attendance.find((a: any) => a.entity_id === entityId);
+      if (!existing) {
+        const { data, error } = await supabase
+          .from('attendance_records')
+          .select('id')
+          .eq('attendance_date', selectedDate)
+          .eq('entity_type', entityType)
+          .eq('entity_id', entityId)
+          .eq('shift', shiftVal)
+          .maybeSingle();
+        if (error) throw error;
+        existing = data;
+      }
       const updateData: any = { status, remarks, updated_at: new Date().toISOString() };
       if (check_in_time !== undefined) updateData.check_in_time = check_in_time;
       if (check_out_time !== undefined) updateData.check_out_time = check_out_time;
