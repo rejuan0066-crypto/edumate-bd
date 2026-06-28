@@ -100,6 +100,18 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
   }, [records]);
 
   const totalLateMins = useMemo(() => records.reduce((s, r) => s + (Number(r.late_minutes) || 0), 0), [records]);
+  // Format a minute count as hours + minutes (e.g. 90 → "১ ঘণ্টা ৩০ মিনিট" / "1h 30m")
+  const fmtDuration = (mins: number) => {
+    const m = Math.max(0, Math.round(mins || 0));
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    if (bn) {
+      if (h > 0) return rem > 0 ? `${h} ঘণ্টা ${rem} মিনিট` : `${h} ঘণ্টা`;
+      return `${rem} মিনিট`;
+    }
+    if (h > 0) return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+    return `${rem}m`;
+  };
   const unmarked = days.filter(d => !byDate[format(d, 'yyyy-MM-dd')]).length;
   const marked = days.length - unmarked;
   const attendanceRate = marked > 0 ? Math.round(((counts.present + counts.late * 0.5 + counts.half_day * 0.5) / marked) * 100) : 0;
