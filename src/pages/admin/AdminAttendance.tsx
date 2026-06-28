@@ -1659,8 +1659,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       ) : null;
                     })()}
 
-                    {/* Time Inputs for Staff (hide for meal tab) */}
-                    {entityType === 'staff' && staffSubTab !== 'meal' && (
+                    {/* Time Inputs for Staff (hide for meal tab) — also for students marked Late */}
+                    {((entityType === 'staff' && staffSubTab !== 'meal') || (entityType === 'student' && currentStatus === 'late')) && (
                       <div className="flex gap-2 items-center shrink-0">
                         <TimePicker
                           className="h-8 w-[120px] text-xs rounded-xl bg-muted/30 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
