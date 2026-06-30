@@ -3,6 +3,7 @@ import { SegmentedTabs } from '@/components/ui/segmented-tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
 import { CreditCard, Printer, CheckCircle, Clock, Loader2, Settings, Users } from 'lucide-react';
@@ -258,7 +259,7 @@ const AdminFees = () => {
                 )}
                 <div>
                   <label className="text-sm font-medium text-foreground">{bn ? 'পরিশোধ পরিমাণ' : 'Amount'}</label>
-                  <Input type="number" className="bg-background mt-1" value={paidAmount || ''} onChange={(e) => setPaidAmount(e.target.value)} placeholder="৳" />
+                  <NumberInput className="bg-background mt-1" value={paidAmount === '' ? null : Number(paidAmount)} onValueChange={(n) => setPaidAmount(n ? String(n) : '')} placeholder="৳" />
                   {waiverPercent > 0 && selectedFeeType && (
                     <div className="text-xs mt-1 space-y-0.5">
                       <p className="text-muted-foreground">{bn ? 'মূল ফি' : 'Original'}: ৳{originalAmount} | {bn ? 'ছাড়' : 'Discount'}: ৳{discountAmount} ({waiverPercent}%)</p>

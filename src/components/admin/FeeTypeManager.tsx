@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, Loader2, Filter, Download } from 'lucide-react';
@@ -319,7 +320,7 @@ const FeeTypeManager = () => {
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'পরিমাণ (৳)' : 'Amount (৳)'} *</label>
-              <Input type="number" value={form.amount || ''} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} className="mt-1" />
+              <NumberInput value={form.amount === '' ? null : Number(form.amount)} onValueChange={n => setForm(p => ({ ...p, amount: n ? String(n) : '' }))} className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium">{bn ? 'ক্যাটাগরি' : 'Category'}</label>

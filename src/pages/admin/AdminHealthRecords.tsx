@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1056,11 +1057,11 @@ const AdminHealthRecords = () => {
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label>{bn ? 'উচ্চতা (cm)' : 'Height (cm)'}</Label>
-                <Input type="number" value={profForm.height_cm || ''} onChange={(e) => setProfForm({ ...profForm, height_cm: e.target.value ? Number(e.target.value) : null })} />
+                <NumberInput value={profForm.height_cm} onValueChange={(n) => setProfForm({ ...profForm, height_cm: n || null })} />
               </div>
               <div>
                 <Label>{bn ? 'ওজন (kg)' : 'Weight (kg)'}</Label>
-                <Input type="number" value={profForm.weight_kg || ''} onChange={(e) => setProfForm({ ...profForm, weight_kg: e.target.value ? Number(e.target.value) : null })} />
+                <NumberInput value={profForm.weight_kg} onValueChange={(n) => setProfForm({ ...profForm, weight_kg: n || null })} />
               </div>
             </div>
             <div className="md:col-span-2">
@@ -1152,7 +1153,7 @@ const AdminHealthRecords = () => {
             </div>
             <div>
               <Label>{bn ? 'তাপমাত্রা (°C)' : 'Temperature (°C)'}</Label>
-              <Input type="number" step="0.1" value={visitForm.temperature_c || ''} onChange={(e) => setVisitForm({ ...visitForm, temperature_c: e.target.value ? Number(e.target.value) : null })} />
+              <NumberInput value={visitForm.temperature_c} onValueChange={(n) => setVisitForm({ ...visitForm, temperature_c: n || null })} />
             </div>
             <div>
               <Label>{bn ? 'রক্তচাপ' : 'Blood Pressure'}</Label>
@@ -1160,7 +1161,7 @@ const AdminHealthRecords = () => {
             </div>
             <div>
               <Label>{bn ? 'পালস (bpm)' : 'Pulse (bpm)'}</Label>
-              <Input type="number" value={visitForm.pulse_rate || ''} onChange={(e) => setVisitForm({ ...visitForm, pulse_rate: e.target.value ? Number(e.target.value) : null })} />
+              <NumberInput value={visitForm.pulse_rate} onValueChange={(n) => setVisitForm({ ...visitForm, pulse_rate: n || null })} />
             </div>
             <div>
               <Label>{bn ? 'গুরুত্ব' : 'Severity'}</Label>
@@ -1232,7 +1233,7 @@ const AdminHealthRecords = () => {
             </div>
             <div>
               <Label>{bn ? 'ডোজ নম্বর' : 'Dose Number'}</Label>
-              <Input type="number" value={vaccForm.dose_number || 1} onChange={(e) => setVaccForm({ ...vaccForm, dose_number: Number(e.target.value) })} />
+              <NumberInput value={vaccForm.dose_number} onValueChange={(n) => setVaccForm({ ...vaccForm, dose_number: n })} allowDecimal={false} />
             </div>
             <div>
               <Label>{bn ? 'ব্যাচ নম্বর' : 'Batch Number'}</Label>

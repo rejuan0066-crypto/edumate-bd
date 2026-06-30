@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -249,7 +250,7 @@ const ManualPaymentMethodsManager = () => {
               </div>
               <div>
                 <Label>{bn ? 'ক্রম' : 'Sort Order'}</Label>
-                <Input type="number" className="mt-1 w-24" value={form.sort_order || ''} onChange={e => setForm(p => ({ ...p, sort_order: parseInt(e.target.value) || 0 }))} />
+                <NumberInput className="mt-1 w-24" allowDecimal={false} value={form.sort_order} onValueChange={n => setForm(p => ({ ...p, sort_order: n }))} />
               </div>
               <div className="flex gap-2 pt-2">
                 <Button onClick={handleSave} disabled={saveMutation.isPending} className="btn-primary-gradient flex-1">
