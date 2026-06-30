@@ -3407,19 +3407,19 @@ const AdminSalary = () => {
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <Label className="text-xs">{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</Label>
-                      <Input type="number" value={editDialog.late_deduction || ''} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.late_deduction} onValueChange={n => setEditDialog({ ...editDialog, late_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</Label>
-                      <Input type="number" value={editDialog.absence_deduction || ''} onChange={e => setEditDialog({ ...editDialog, absence_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.absence_deduction} onValueChange={n => setEditDialog({ ...editDialog, absence_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অগ্রিম/ডিপোজিট কর্তন' : 'Advance/Deposit Ded.'}</Label>
-                      <Input type="number" value={editDialog.advance_deduction || ''} onChange={e => setEditDialog({ ...editDialog, advance_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.advance_deduction} onValueChange={n => setEditDialog({ ...editDialog, advance_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</Label>
-                      <Input type="number" value={editDialog.other_deduction || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
                     </div>
                   </div>
                 </div>
