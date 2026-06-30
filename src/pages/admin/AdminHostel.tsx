@@ -1455,7 +1455,7 @@ const AdminHostel = () => {
                     <Label className="text-xs">{bn ? 'ডিসকাউন্ট %' : 'Discount %'}</Label>
                     <Input
                       type="number" min={0} max={100}
-                      value={allocForm.discount_percent ?? 0}
+                      value={allocForm.discount_percent ?? ''}
                       onChange={e => {
                         const next = { ...allocForm, discount_percent: Number(e.target.value) };
                         next.monthly_charge = computeNetCharge(next);
