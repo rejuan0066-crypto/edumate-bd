@@ -35,28 +35,37 @@ function Wheel<T>({
 }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const scrollTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const programmatic = React.useRef(false);
   const idx = Math.max(0, items.findIndex((i) => i === value));
+
+  const snapTo = (top: number) => {
+    const el = ref.current;
+    if (!el) return;
+    programmatic.current = true;
+    el.scrollTop = top; // instant — avoids smooth-scroll event storms that fight the user
+    requestAnimationFrame(() => { programmatic.current = false; });
+  };
 
   // Scroll to selected item whenever value changes externally
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const target = idx * ITEM_H;
-    if (Math.abs(el.scrollTop - target) > 2) {
-      el.scrollTo({ top: target, behavior: 'auto' });
-    }
+    if (Math.abs(el.scrollTop - target) > 2) snapTo(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
 
   const handleScroll = () => {
+    if (programmatic.current) return; // ignore our own snap scrolls
     if (scrollTimer.current) clearTimeout(scrollTimer.current);
     scrollTimer.current = setTimeout(() => {
       const el = ref.current;
       if (!el) return;
-      const i = Math.round(el.scrollTop / ITEM_H);
-      const clamped = Math.min(items.length - 1, Math.max(0, i));
-      el.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
+      const clamped = Math.min(items.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM_H)));
+      const target = clamped * ITEM_H;
+      if (Math.abs(el.scrollTop - target) > 1) snapTo(target);
       if (items[clamped] !== value) onChange(items[clamped]);
-    }, 90);
+    }, 120);
   };
 
   return (
@@ -71,8 +80,8 @@ function Wheel<T>({
         <div
           ref={ref}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hidden"
-          style={{ scrollPaddingTop: ITEM_H * 2 }}
+          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hidden overscroll-contain"
+          style={{ scrollPaddingTop: ITEM_H * 2, touchAction: 'pan-y' }}
         >
           {/* top spacer */}
           <div style={{ height: ITEM_H * 2 }} />
@@ -80,7 +89,7 @@ function Wheel<T>({
             <button
               key={i}
               type="button"
-              onClick={() => onChange(it)}
+              onClick={() => { snapTo(i * ITEM_H); onChange(it); }}
               className={cn(
                 "w-full snap-center flex items-center justify-center text-sm transition-all duration-150",
                 it === value
