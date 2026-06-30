@@ -1865,6 +1865,7 @@ const AdminSalary = () => {
       })();
        const staffRows = filtered.map((s: any) => {
           const rec = getRecord(s.id);
+          const st = getAttendanceStats(s);
           const savings = Number(rec?.savings_deduction || 0);
           // কর্তন কলামে শুধু attendance/অগ্রিম/অন্যান্য — জমা (savings) আলাদা কলামে দেখানো হবে,
           // তাই এখানে savings যোগ করা হবে না (নাহলে দ্বিগুণ গণনা হয়ে কর্তন বেশি দেখায়)।
@@ -1878,7 +1879,7 @@ const AdminSalary = () => {
             present: rec?.present_days || 0,
             absent: rec?.absent_days || 0,
             late: rec?.late_days || 0,
-            leave: (() => { const st = getAttendanceStats(s); return st.leave || 0; })(),
+            leave: st.leave || 0,
             bonus: Number(rec?.bonus || 0),
             overtime: Number(rec?.overtime || 0),
             deductions: totalDed,
@@ -1886,6 +1887,10 @@ const AdminSalary = () => {
             savings,
             net_salary: Number(rec?.net_salary || 0),
             status: rec?.status || 'not_generated',
+            // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট)
+            lateDetails: (st.dailyBreakdown || [])
+              .filter((d: any) => (Number(d.lateMin) || 0) > 0)
+              .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: d.lateMin })),
           };
         });
        const issueDate = sheetDate
