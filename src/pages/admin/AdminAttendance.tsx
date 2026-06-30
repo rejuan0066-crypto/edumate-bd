@@ -1696,22 +1696,25 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
                     {/* Time Inputs for Staff (hide for meal tab) — also for students marked Late */}
                     {((entityType === 'staff' && staffSubTab !== 'meal' && (currentStatus === 'late' || timeEditorOpenId === entity.id)) || (entityType === 'student' && (currentStatus === 'late' || timeEditorOpenId === entity.id))) && (
-                      <div className="flex gap-2 items-center shrink-0">
-                        <TimePicker
-                          className="h-8 w-[120px] text-xs rounded-xl bg-muted/30 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
-                          placeholder="In"
-                          displayFormat={timeFormat}
-                          value={att?.check_in_time || ''}
-                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
-                        />
-                        <span className="text-muted-foreground/40 text-xs">—</span>
-                        <TimePicker
-                          className="h-8 w-[120px] text-xs rounded-xl bg-muted/30 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
-                          placeholder="Out"
-                          displayFormat={timeFormat}
-                          value={att?.check_out_time || ''}
-                          onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
-                        />
+                      <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                        <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">{bn ? 'চেক-ইন / চেক-আউট সময়' : 'Check-in / Check-out time'}</span>
+                        <div className="flex gap-2 items-center">
+                          <TimePicker
+                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                            placeholder={bn ? 'প্রবেশ' : 'In'}
+                            displayFormat={timeFormat}
+                            value={att?.check_in_time || ''}
+                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: v, check_out_time: att?.check_out_time || '' })}
+                          />
+                          <span className="text-muted-foreground/40 text-xs">—</span>
+                          <TimePicker
+                            className="h-8 w-[120px] text-xs rounded-xl bg-background/60 border-border/20 focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 transition-all"
+                            placeholder={bn ? 'বাহির' : 'Out'}
+                            displayFormat={timeFormat}
+                            value={att?.check_out_time || ''}
+                            onChange={v => saveMutation.mutate({ entityId: entity.id, status: currentStatus || (timeEditorOpenId === entity.id ? 'late' : 'present'), check_in_time: att?.check_in_time || '', check_out_time: v })}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
