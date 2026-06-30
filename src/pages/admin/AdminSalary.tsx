@@ -3342,6 +3342,14 @@ const AdminSalary = () => {
                     <Input type="number" value={editDialog.other_allowance || 0} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
                   </div>
                 </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'অন্যান্য ভাতার বিবরণ/ডিউটি' : 'Other Allowance Note/Duty'}</Label>
+                  <Input
+                    value={editDialog.other_allowance_note || ''}
+                    onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })}
+                    placeholder={bn ? 'যেমন: পরিবহন ভাতা, দায়িত্ব ভাতা' : 'e.g. Transport, Duty allowance'}
+                  />
+                </div>
                 <div className="border-t pt-3">
                   <Label className="text-xs font-semibold text-red-500">{bn ? 'কর্তনসমূহ' : 'Deductions'}</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
