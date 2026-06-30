@@ -2276,7 +2276,10 @@ const AdminSalary = () => {
         </div>
         <div class="words">${bn ? 'কথায়' : 'In Words'}: <strong>${inWords}</strong></div>
 
+        ${lateDetailHtml}
+
         <div class="signatures">
+
           <div class="sig">
             <div class="line"></div>
             <div class="sig-name">${recipientName}</div>
