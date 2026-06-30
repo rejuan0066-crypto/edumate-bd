@@ -3234,15 +3234,15 @@ const AdminSalary = () => {
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'মাসিক জমা (৳)' : 'Monthly Savings Amount (৳)'}</Label>
-                  <Input type="number" value={savingsDialog.monthly_amount || ''}
-                    onChange={e => setSavingsDialog({ ...savingsDialog, monthly_amount: Number(e.target.value) })}
+                  <NumberInput value={savingsDialog.monthly_amount}
+                    onValueChange={n => setSavingsDialog({ ...savingsDialog, monthly_amount: n })}
                     placeholder="1000" />
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'সময়কাল (মাস)' : 'Duration (Months)'}</Label>
-                  <Input type="number" value={savingsDialog.duration_months || ''}
-                    onChange={e => setSavingsDialog({ ...savingsDialog, duration_months: Number(e.target.value) })}
-                    placeholder="6" min="1" max="60" />
+                  <NumberInput value={savingsDialog.duration_months}
+                    onValueChange={n => setSavingsDialog({ ...savingsDialog, duration_months: n })}
+                    allowDecimal={false} placeholder="6" />
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'শুরু মাস (YYYY-MM)' : 'Start Month (YYYY-MM)'}</Label>
