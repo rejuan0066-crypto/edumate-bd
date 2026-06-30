@@ -191,16 +191,33 @@ const UpdatePrompt = () => {
     // and its new hashed chunks always load. We only need to activate the waiting
     // worker and reload exactly once when it takes control.
     let didReload = false;
-    const reloadOnce = (reason: string) => {
+    const reloadOnce = async (reason: string) => {
       if (didReload) return;
       didReload = true;
       pwaLog('info', 'update_reload', { reason });
+      // Clear any caches so the fresh HTML + new hashed chunks are fetched from
+      // the network instead of being served stale (the main cause of "Update
+      // does nothing" — reload re-serving the cached old build).
       try {
-        window.location.reload();
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+          pwaLog('info', 'caches_cleared', { count: keys.length });
+        }
+      } catch (e) {
+        pwaLog('warn', 'cache_clear_fail', { err: String(e) });
+      }
+      try {
+        // Cache-busting navigation guarantees a fresh document, even on browsers
+        // that would otherwise reload from the memory/HTTP cache.
+        const url = new URL(window.location.href);
+        url.searchParams.set('_v', Date.now().toString(36));
+        window.location.replace(url.toString());
       } catch {
-        /* no-op */
+        try { window.location.reload(); } catch { /* no-op */ }
       }
     };
+
 
     setProgress(55);
     setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
