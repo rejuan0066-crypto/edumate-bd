@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -3233,15 +3234,15 @@ const AdminSalary = () => {
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'মাসিক জমা (৳)' : 'Monthly Savings Amount (৳)'}</Label>
-                  <Input type="number" value={savingsDialog.monthly_amount || ''}
-                    onChange={e => setSavingsDialog({ ...savingsDialog, monthly_amount: Number(e.target.value) })}
+                  <NumberInput value={savingsDialog.monthly_amount}
+                    onValueChange={n => setSavingsDialog({ ...savingsDialog, monthly_amount: n })}
                     placeholder="1000" />
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'সময়কাল (মাস)' : 'Duration (Months)'}</Label>
-                  <Input type="number" value={savingsDialog.duration_months || ''}
-                    onChange={e => setSavingsDialog({ ...savingsDialog, duration_months: Number(e.target.value) })}
-                    placeholder="6" min="1" max="60" />
+                  <NumberInput value={savingsDialog.duration_months}
+                    onValueChange={n => setSavingsDialog({ ...savingsDialog, duration_months: n })}
+                    allowDecimal={false} placeholder="6" />
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'শুরু মাস (YYYY-MM)' : 'Start Month (YYYY-MM)'}</Label>
@@ -3305,10 +3306,9 @@ const AdminSalary = () => {
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'পরিশোধের পরিমাণ (৳)' : 'Amount (৳)'}</Label>
-                  <Input
-                    type="number"
-                    value={disburseDialog.amount || ''}
-                    onChange={e => setDisburseDialog({ ...disburseDialog, amount: Number(e.target.value) })}
+                  <NumberInput
+                    value={disburseDialog.amount}
+                    onValueChange={n => setDisburseDialog({ ...disburseDialog, amount: n })}
                   />
                 </div>
                 <div>
@@ -3385,19 +3385,19 @@ const AdminSalary = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">{bn ? 'মূল বেতন' : 'Base Salary'}</Label>
-                    <Input type="number" value={editDialog.base_salary || ''} onChange={e => setEditDialog({ ...editDialog, base_salary: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.base_salary} onValueChange={n => setEditDialog({ ...editDialog, base_salary: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'বোনাস' : 'Bonus'}</Label>
-                    <Input type="number" value={editDialog.bonus || ''} onChange={e => setEditDialog({ ...editDialog, bonus: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.bonus} onValueChange={n => setEditDialog({ ...editDialog, bonus: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</Label>
-                    <Input type="number" value={editDialog.overtime || ''} onChange={e => setEditDialog({ ...editDialog, overtime: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.overtime} onValueChange={n => setEditDialog({ ...editDialog, overtime: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
-                    <Input type="number" value={editDialog.other_allowance || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.other_allowance} onValueChange={n => setEditDialog({ ...editDialog, other_allowance: n })} />
                     <Input className="mt-1.5" type="text" placeholder={bn ? 'ডিউটি/বিবরণ লিখুন' : 'Duty / note'} value={editDialog.other_allowance_note || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })} />
                   </div>
                 </div>
@@ -3406,19 +3406,19 @@ const AdminSalary = () => {
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <Label className="text-xs">{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</Label>
-                      <Input type="number" value={editDialog.late_deduction || ''} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.late_deduction} onValueChange={n => setEditDialog({ ...editDialog, late_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</Label>
-                      <Input type="number" value={editDialog.absence_deduction || ''} onChange={e => setEditDialog({ ...editDialog, absence_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.absence_deduction} onValueChange={n => setEditDialog({ ...editDialog, absence_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অগ্রিম/ডিপোজিট কর্তন' : 'Advance/Deposit Ded.'}</Label>
-                      <Input type="number" value={editDialog.advance_deduction || ''} onChange={e => setEditDialog({ ...editDialog, advance_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.advance_deduction} onValueChange={n => setEditDialog({ ...editDialog, advance_deduction: n })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</Label>
-                      <Input type="number" value={editDialog.other_deduction || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction: Number(e.target.value) })} />
+                      <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
                     </div>
                   </div>
                 </div>

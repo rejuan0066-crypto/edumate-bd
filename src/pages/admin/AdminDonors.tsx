@@ -3,6 +3,7 @@ import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -148,7 +149,7 @@ const AdminDonors = () => {
             </div>
             <div>
               <Label className="text-sm font-medium text-foreground">{bn ? 'টাকার পরিমাণ' : 'Amount'} *</Label>
-              <Input type="number" className="bg-background mt-1" value={form.donationAmount || ''} onChange={(e) => updateField('donationAmount', e.target.value)} placeholder="৳" />
+              <NumberInput className="bg-background mt-1" value={form.donationAmount === '' ? null : Number(form.donationAmount)} onValueChange={(n) => updateField('donationAmount', n ? String(n) : '')} placeholder="৳" />
             </div>
             {paymentMethod === 'online' && (
               <>

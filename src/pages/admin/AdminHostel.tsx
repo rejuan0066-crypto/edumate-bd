@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1298,7 +1299,7 @@ const AdminHostel = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{bn ? 'ক্যাপাসিটি' : 'Capacity'}</Label><Input type="number" value={hostelForm.total_capacity || ''} onChange={e => setHostelForm({ ...hostelForm, total_capacity: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'ক্যাপাসিটি' : 'Capacity'}</Label><NumberInput value={hostelForm.total_capacity} onValueChange={n => setHostelForm({ ...hostelForm, total_capacity: n })} /></div>
             </div>
             <div><Label>{bn ? 'ঠিকানা' : 'Address'}</Label><Textarea value={hostelForm.address || ''} onChange={e => setHostelForm({ ...hostelForm, address: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -1330,8 +1331,8 @@ const AdminHostel = () => {
               <div><Label>{bn ? 'তলা' : 'Floor'}</Label><Input value={roomForm.floor || ''} onChange={e => setRoomForm({ ...roomForm, floor: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{bn ? 'বেড সংখ্যা' : 'Beds'}</Label><Input type="number" value={roomForm.bed_count || 1} onChange={e => setRoomForm({ ...roomForm, bed_count: Number(e.target.value) })} /></div>
-              <div><Label>{bn ? 'মাসিক ভাড়া' : 'Monthly Rent'}</Label><Input type="number" value={roomForm.monthly_rent || ''} onChange={e => setRoomForm({ ...roomForm, monthly_rent: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'বেড সংখ্যা' : 'Beds'}</Label><NumberInput value={roomForm.bed_count} onValueChange={n => setRoomForm({ ...roomForm, bed_count: n })} /></div>
+              <div><Label>{bn ? 'মাসিক ভাড়া' : 'Monthly Rent'}</Label><NumberInput value={roomForm.monthly_rent} onValueChange={n => setRoomForm({ ...roomForm, monthly_rent: n })} /></div>
             </div>
             <div><Label>{bn ? 'রুম টাইপ' : 'Room Type'}</Label>
               <Select value={roomForm.room_type || 'standard'} onValueChange={v => setRoomForm({ ...roomForm, room_type: v })}>
@@ -1453,11 +1454,10 @@ const AdminHostel = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">{bn ? 'ডিসকাউন্ট %' : 'Discount %'}</Label>
-                    <Input
-                      type="number" min={0} max={100}
-                      value={allocForm.discount_percent ?? ''}
-                      onChange={e => {
-                        const next = { ...allocForm, discount_percent: Number(e.target.value) };
+                    <NumberInput
+                      value={allocForm.discount_percent}
+                      onValueChange={n => {
+                        const next = { ...allocForm, discount_percent: n };
                         next.monthly_charge = computeNetCharge(next);
                         setAllocForm(next);
                       }}
@@ -1465,11 +1465,10 @@ const AdminHostel = () => {
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'অতিরিক্ত ছাড় (৳)' : 'Flat Discount (৳)'}</Label>
-                    <Input
-                      type="number" min={0}
-                      value={allocForm.discount_amount ?? ''}
-                      onChange={e => {
-                        const next = { ...allocForm, discount_amount: Number(e.target.value) };
+                    <NumberInput
+                      value={allocForm.discount_amount}
+                      onValueChange={n => {
+                        const next = { ...allocForm, discount_amount: n };
                         next.monthly_charge = computeNetCharge(next);
                         setAllocForm(next);
                       }}
@@ -1480,10 +1479,10 @@ const AdminHostel = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>{bn ? 'বেড নং' : 'Bed #'}</Label><Input type="number" value={allocForm.bed_number || ''} onChange={e => setAllocForm({ ...allocForm, bed_number: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'বেড নং' : 'Bed #'}</Label><NumberInput value={allocForm.bed_number} onValueChange={n => setAllocForm({ ...allocForm, bed_number: n })} /></div>
               <div>
                 <Label>{bn ? 'মাসিক চার্জ (৳)' : 'Monthly Charge (৳)'}</Label>
-                <Input type="number" value={allocForm.monthly_charge ?? ''} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} />
+                <NumberInput value={allocForm.monthly_charge} onValueChange={n => setAllocForm({ ...allocForm, monthly_charge: n })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

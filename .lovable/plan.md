@@ -1,70 +1,32 @@
+# Number Input ফিক্স — সাইটজুড়ে
 
+## লক্ষ্য
+1. কোনো number input খালি থাকলে অটো `0` দেখাবে না — খালিই থাকবে।
+2. খালি বক্সে হালকা/ঝাপসা প্লেসহোল্ডার `০` (বাংলায়) বা `0` (ইংরেজিতে) দেখাবে।
+3. বাংলা ভার্সনে বাংলা সংখ্যা টাইপ ও দেখাবে, ইংরেজি ভার্সনে ইংরেজি সংখ্যা — ডেটাবেজে সবসময় ইংরেজি নম্বর সেভ হবে।
 
-## এক্সাম সেশন ব্যবস্থাপনা — বাস্তবায়ন পরিকল্পনা
+## কৌশল (একটি কেন্দ্রীয় কম্পোনেন্ট)
+`src/components/ui/number-input.tsx` কে আপগ্রেড করা হবে যাতে পুরো প্রজেক্টে একই আচরণ আসে। প্রতিটি ইনপুট আলাদা করে লজিক লেখার দরকার হবে না।
 
-### সমস্যা
-বর্তমানে পরীক্ষা (Exam) সরাসরি তৈরি হয় division_id দিয়ে, কোনো Academic Session বা Class-এর সাথে সংযোগ নেই। ফলে কোন সেশনের কোন ক্লাসের ছাত্ররা পরীক্ষায় বসবে তা অটো সিলেক্ট হয় না।
+### NumberInput-এর নতুন আচরণ
+- `useLanguage()` থেকে ভাষা নিয়ে স্বয়ংক্রিয়ভাবে বাংলা/ইংরেজি ডিজিট ঠিক করবে (manual override-ও থাকবে)।
+- বাংলা মোড: `type="text"` + `inputMode="numeric"`, বক্সে বাংলা সংখ্যা (০-৯) দেখাবে; টাইপ করলে বাংলা সংখ্যা দেখাবে কিন্তু `onValueChange` সবসময় ইংরেজি `number` দেবে।
+- ইংরেজি মোড: আগের মতোই ইংরেজি সংখ্যা।
+- value `0/null/undefined/NaN` হলে বক্স খালি, আর প্লেসহোল্ডার হিসেবে ঝাপসা `০`/`0` (`placeholder` + `placeholder:text-muted-foreground/40`)।
+- দশমিক ও ঋণাত্মক সংখ্যা সাপোর্ট করবে।
 
-### সমাধান
-একটি নতুন `exam_sessions` টেবিল এবং `exam_session_students` ম্যাপিং টেবিল তৈরি করা হবে। এক্সাম সেশন তৈরির সময় Academic Session ও Class সিলেক্ট করলে সেই সেশন-ক্লাসের সব active ছাত্র অটো সিলেক্ট হবে।
+### নতুন helper
+`src/lib/digits.ts` — `toBnDigits()`, `toEnDigits()`, `parseLocaleNumber()` (বাংলা/ইংরেজি যেকোনো ইনপুট → ইংরেজি number)।
 
-### ধাপসমূহ
+## রোলআউট
+1. helper + আপগ্রেডেড `NumberInput` তৈরি।
+2. প্রজেক্টজুড়ে raw `type="number"` ইনপুট ও `value={... || 0}` প্যাটার্নগুলো খুঁজে `NumberInput` দিয়ে প্রতিস্থাপন (পর্যায়ক্রমে, উচ্চ-ব্যবহারের পেজ আগে: AdminSalary, AdminHostel, AdminFees, fee/salary ডায়ালগ ইত্যাদি)।
+3. যেসব জায়গায় বাংলা ডিজিট মেমরি অনুযায়ী আগে থেকেই `type="text"` ম্যানুয়াল কনভার্সন আছে, সেগুলোও একই কম্পোনেন্টে একীভূত করা হবে।
 
-**ধাপ ১: ডাটাবেস মাইগ্রেশন**
+## টেকনিক্যাল নোট
+- বিদ্যমান মেমরি "Bengali digits use type=text, auto-converted to English for DB" এর সাথে সঙ্গতিপূর্ণ — এই কম্পোনেন্ট সেটিকেই প্রমিত করে।
+- `onValueChange` সিগনেচার অপরিবর্তিত (ইংরেজি number), তাই DB লজিক বদলাবে না।
+- ৫৭টি ফাইল প্রভাবিত হতে পারে; প্রতিটি পরিবর্তন কেবল প্রেজেন্টেশন স্তরে, ব্যবসায়িক লজিক অক্ষুণ্ন থাকবে।
 
-দুটি নতুন টেবিল তৈরি:
-
-```text
-exam_sessions
-├── id (uuid, PK)
-├── name (text) — যেমন "বার্ষিক পরীক্ষা ২০২৬"
-├── name_bn (text)
-├── academic_session_id (uuid → academic_sessions.id)
-├── exam_type (text) — annual / half_yearly / pre_test
-├── is_active (boolean, default true)
-├── created_at, updated_at
-
-exam_session_classes
-├── id (uuid, PK)
-├── exam_session_id (uuid → exam_sessions.id)
-├── class_id (uuid → classes.id)
-├── student_count (integer)
-├── created_at
-```
-
-- `exam_session_students` ম্যাপিং টেবিল (exam_session_id + student_id) — এক্সাম সেশন ফাইনালাইজ করলে ছাত্রদের ম্যাপ করে রাখবে
-- RLS: admin/staff manage, public view
-
-**ধাপ ২: এক্সাম সেশন ম্যানেজমেন্ট পেজ তৈরি**
-
-নতুন ফাইল: `src/pages/admin/AdminExamSessions.tsx`
-
-- Academic Session ড্রপডাউন (academic_sessions টেবিল থেকে)
-- এক্সাম টাইপ সিলেক্ট (বার্ষিক/অর্ধবার্ষিক/প্রাক-নির্বাচনী)
-- এক্সাম সেশনের নাম ইনপুট
-- ক্লাস মাল্টি-সিলেক্ট — সিলেক্ট করলে প্রতিটি ক্লাসে কতজন active ছাত্র আছে তা দেখাবে
-- "ফাইনালাইজ" বাটন — students টেবিল থেকে সিলেক্টেড session_id + class_id অনুযায়ী active ছাত্রদের exam_session_students টেবিলে ম্যাপ করবে
-- তৈরি হওয়া এক্সাম সেশনের তালিকা (টেবিল ফরম্যাট)
-
-**ধাপ ৩: রেজাল্ট পেজ আপডেট (AdminResults.tsx)**
-
-- বর্তমান division-ভিত্তিক ফিল্টার → exam_session ড্রপডাউনে পরিবর্তন
-- এক্সাম সেশন সিলেক্ট করলে → exam_session_students থেকে ছাত্র তালিকা আসবে
-- বিষয় class_id অনুযায়ী ফিল্টার হবে (subjects টেবিলে class_id আছে)
-- বিদ্যমান marks entry ও grade calculation লজিক অক্ষুণ্ণ থাকবে
-
-**ধাপ ৪: রাউট ও মেনু যোগ**
-
-- App.tsx-এ `/admin/exam-sessions` রাউট যোগ
-- সাইডবার মেনুতে "এক্সাম সেশন" আইটেম যোগ
-
-### যা পরিবর্তন হবে না
-- বিদ্যমান students টেবিলের কোনো কলাম
-- ভর্তি ফর্মের লজিক
-- বর্তমান exams/results টেবিলের স্ট্রাকচার (নতুন টেবিলে কাজ হবে)
-- UI ডিজাইন, রঙ, ফন্ট
-
-### টেকনিক্যাল নোট
-- ছাত্র অটো-সিলেক্ট কুয়েরি: `students WHERE session_id = ? AND class_id = ? AND status = 'active'`
-- promoted ছাত্ররাও ধরা পড়বে কারণ promotion-এ তাদের class_id আপডেট হয় কিন্তু session_id একই থাকে
-
+## যাচাই
+- বাংলা ও ইংরেজি দুই মোডে কয়েকটি মূল ফর্মে (বেতন, ফি, হোস্টেল) টাইপ-টেস্ট, খালি অবস্থায় ঝাপসা শূন্য, সেভে ইংরেজি নম্বর নিশ্চিত করা।
