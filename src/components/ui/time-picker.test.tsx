@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import TimePicker from "./time-picker";
+import { TimePicker } from "./time-picker";
 
 describe("TimePicker — floating scroll containment", () => {
   it("renders the formatted 12h value on the trigger", () => {
