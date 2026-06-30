@@ -1801,7 +1801,7 @@ const AdminWebsite = () => {
                   <div>
                     <Label>{language === 'bn' ? 'ব্যাকগ্রাউন্ড ব্লার (px)' : 'Background Blur (px)'}</Label>
                     <div className="flex items-center gap-3 mt-1">
-                      <Input className="bg-background w-24" type="number" min={0} max={30} value={form.login_bg_blur ?? 0} onChange={e => updateField('login_bg_blur', Number(e.target.value))} />
+                      <Input className="bg-background w-24" type="number" min={0} max={30} value={form.login_bg_blur ?? ''} onChange={e => updateField('login_bg_blur', Number(e.target.value))} />
                       <span className="text-xs text-muted-foreground">{form.login_bg_blur ?? 0}px</span>
                     </div>
                   </div>
