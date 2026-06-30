@@ -3386,19 +3386,19 @@ const AdminSalary = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">{bn ? 'মূল বেতন' : 'Base Salary'}</Label>
-                    <Input type="number" value={editDialog.base_salary || ''} onChange={e => setEditDialog({ ...editDialog, base_salary: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.base_salary} onValueChange={n => setEditDialog({ ...editDialog, base_salary: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'বোনাস' : 'Bonus'}</Label>
-                    <Input type="number" value={editDialog.bonus || ''} onChange={e => setEditDialog({ ...editDialog, bonus: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.bonus} onValueChange={n => setEditDialog({ ...editDialog, bonus: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</Label>
-                    <Input type="number" value={editDialog.overtime || ''} onChange={e => setEditDialog({ ...editDialog, overtime: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.overtime} onValueChange={n => setEditDialog({ ...editDialog, overtime: n })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
-                    <Input type="number" value={editDialog.other_allowance || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
+                    <NumberInput value={editDialog.other_allowance} onValueChange={n => setEditDialog({ ...editDialog, other_allowance: n })} />
                     <Input className="mt-1.5" type="text" placeholder={bn ? 'ডিউটি/বিবরণ লিখুন' : 'Duty / note'} value={editDialog.other_allowance_note || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })} />
                   </div>
                 </div>
