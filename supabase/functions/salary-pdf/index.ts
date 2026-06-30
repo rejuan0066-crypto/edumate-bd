@@ -964,6 +964,7 @@ Deno.serve(async (req) => {
 <div class="sheet">
 
   ${pagesHtml}
+  ${lateAppendixHtml}
 
 </div>
 <script>
