@@ -196,7 +196,7 @@ const PropertiesPanel = ({
                 onChange={(e) => update(() => selected.set('stroke', e.target.value))}
                 className="h-9 w-11 rounded-xl border border-border/50 bg-transparent cursor-pointer"
               />
-              <Input type="number" value={t.strokeWidth || 0} min={0}
+              <Input type="number" value={t.strokeWidth || ''} min={0}
                 onChange={(e) => update(() => selected.set('strokeWidth', parseFloat(e.target.value) || 0))}
                 className="h-9 text-xs flex-1 rounded-xl border-border/50 bg-background/50" placeholder="Width" />
             </div>
@@ -237,7 +237,7 @@ const PropertiesPanel = ({
 
           <div>
             <Label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Letter spacing</Label>
-            <Input type="number" value={t.charSpacing || 0}
+            <Input type="number" value={t.charSpacing || ''}
               onChange={(e) => update(() => tt.set('charSpacing', parseFloat(e.target.value) || 0))}
               className="h-9 text-xs mt-1 rounded-xl border-border/50 bg-background/50" />
           </div>

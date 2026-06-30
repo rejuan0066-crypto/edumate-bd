@@ -451,7 +451,7 @@ export default function AdminCommittees() {
               </div>
               <div>
                 <Label>{bn ? "সর্ট অর্ডার" : "Sort Order"}</Label>
-                <Input type="number" value={editingCommittee.sort_order ?? 0} onChange={e => setEditingCommittee({ ...editingCommittee, sort_order: Number(e.target.value) })} />
+                <Input type="number" value={editingCommittee.sort_order ?? ''} onChange={e => setEditingCommittee({ ...editingCommittee, sort_order: Number(e.target.value) })} />
               </div>
               <div className="sm:col-span-2 flex items-center justify-between rounded-xl border p-3">
                 <Label>{bn ? "সক্রিয়" : "Active"}</Label>
@@ -594,7 +594,7 @@ export default function AdminCommittees() {
                 </div>
                 <div>
                   <Label>{bn ? "সর্ট অর্ডার" : "Sort Order"}</Label>
-                  <Input type="number" value={editingMember.sort_order ?? 0} onChange={e => setEditingMember({ ...editingMember, sort_order: Number(e.target.value) })} />
+                  <Input type="number" value={editingMember.sort_order ?? ''} onChange={e => setEditingMember({ ...editingMember, sort_order: Number(e.target.value) })} />
                 </div>
                 <div className="sm:col-span-2">
                   <Label>{bn ? "মন্তব্য" : "Notes"}</Label>

@@ -912,7 +912,7 @@ const AdminAdministrative = () => {
                 </div>
                 <div>
                   <Label>{bn ? 'বেতন' : 'Salary'}</Label>
-                  <Input type="number" value={form.salary ?? 0} onChange={e => setForm({ ...form, salary: Number(e.target.value) })} />
+                  <Input type="number" value={form.salary ?? ''} onChange={e => setForm({ ...form, salary: Number(e.target.value) })} />
                 </div>
                 <div className="md:col-span-2">
                   <Label>{bn ? 'দায়িত্বসমূহ' : 'Responsibilities'}</Label>

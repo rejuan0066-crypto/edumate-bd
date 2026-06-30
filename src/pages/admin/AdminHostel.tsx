@@ -1298,7 +1298,7 @@ const AdminHostel = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>{bn ? 'ক্যাপাসিটি' : 'Capacity'}</Label><Input type="number" value={hostelForm.total_capacity || 0} onChange={e => setHostelForm({ ...hostelForm, total_capacity: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'ক্যাপাসিটি' : 'Capacity'}</Label><Input type="number" value={hostelForm.total_capacity || ''} onChange={e => setHostelForm({ ...hostelForm, total_capacity: Number(e.target.value) })} /></div>
             </div>
             <div><Label>{bn ? 'ঠিকানা' : 'Address'}</Label><Textarea value={hostelForm.address || ''} onChange={e => setHostelForm({ ...hostelForm, address: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -1331,7 +1331,7 @@ const AdminHostel = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{bn ? 'বেড সংখ্যা' : 'Beds'}</Label><Input type="number" value={roomForm.bed_count || 1} onChange={e => setRoomForm({ ...roomForm, bed_count: Number(e.target.value) })} /></div>
-              <div><Label>{bn ? 'মাসিক ভাড়া' : 'Monthly Rent'}</Label><Input type="number" value={roomForm.monthly_rent || 0} onChange={e => setRoomForm({ ...roomForm, monthly_rent: Number(e.target.value) })} /></div>
+              <div><Label>{bn ? 'মাসিক ভাড়া' : 'Monthly Rent'}</Label><Input type="number" value={roomForm.monthly_rent || ''} onChange={e => setRoomForm({ ...roomForm, monthly_rent: Number(e.target.value) })} /></div>
             </div>
             <div><Label>{bn ? 'রুম টাইপ' : 'Room Type'}</Label>
               <Select value={roomForm.room_type || 'standard'} onValueChange={v => setRoomForm({ ...roomForm, room_type: v })}>
@@ -1455,7 +1455,7 @@ const AdminHostel = () => {
                     <Label className="text-xs">{bn ? 'ডিসকাউন্ট %' : 'Discount %'}</Label>
                     <Input
                       type="number" min={0} max={100}
-                      value={allocForm.discount_percent ?? 0}
+                      value={allocForm.discount_percent ?? ''}
                       onChange={e => {
                         const next = { ...allocForm, discount_percent: Number(e.target.value) };
                         next.monthly_charge = computeNetCharge(next);
@@ -1467,7 +1467,7 @@ const AdminHostel = () => {
                     <Label className="text-xs">{bn ? 'অতিরিক্ত ছাড় (৳)' : 'Flat Discount (৳)'}</Label>
                     <Input
                       type="number" min={0}
-                      value={allocForm.discount_amount ?? 0}
+                      value={allocForm.discount_amount ?? ''}
                       onChange={e => {
                         const next = { ...allocForm, discount_amount: Number(e.target.value) };
                         next.monthly_charge = computeNetCharge(next);
@@ -1483,7 +1483,7 @@ const AdminHostel = () => {
               <div><Label>{bn ? 'বেড নং' : 'Bed #'}</Label><Input type="number" value={allocForm.bed_number || ''} onChange={e => setAllocForm({ ...allocForm, bed_number: Number(e.target.value) })} /></div>
               <div>
                 <Label>{bn ? 'মাসিক চার্জ (৳)' : 'Monthly Charge (৳)'}</Label>
-                <Input type="number" value={allocForm.monthly_charge ?? 0} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} />
+                <Input type="number" value={allocForm.monthly_charge ?? ''} onChange={e => setAllocForm({ ...allocForm, monthly_charge: Number(e.target.value) })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -332,7 +332,7 @@ const AdminWidgetBuilder = () => {
                     {editDialog.widget.chart_config?.labels?.map((label, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <Input value={label} onChange={e => updateChartLabel(i, e.target.value)} placeholder={bn ? 'লেবেল' : 'Label'} className="flex-1" />
-                        <Input type="number" value={editDialog.widget.chart_config?.values?.[i] || 0} onChange={e => updateChartValue(i, Number(e.target.value))} className="w-24" />
+                        <Input type="number" value={editDialog.widget.chart_config?.values?.[i] || ''} onChange={e => updateChartValue(i, Number(e.target.value))} className="w-24" />
                         <button onClick={() => removeChartPoint(i)} className="p-1 hover:bg-destructive/10 rounded">
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />
                         </button>

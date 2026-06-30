@@ -3389,46 +3389,39 @@ const AdminSalary = () => {
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'বোনাস' : 'Bonus'}</Label>
-                    <Input type="number" value={editDialog.bonus || 0} onChange={e => setEditDialog({ ...editDialog, bonus: Number(e.target.value) })} />
+                    <Input type="number" value={editDialog.bonus || ''} onChange={e => setEditDialog({ ...editDialog, bonus: Number(e.target.value) })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'ওভারটাইম' : 'Overtime'}</Label>
-                    <Input type="number" value={editDialog.overtime || 0} onChange={e => setEditDialog({ ...editDialog, overtime: Number(e.target.value) })} />
+                    <Input type="number" value={editDialog.overtime || ''} onChange={e => setEditDialog({ ...editDialog, overtime: Number(e.target.value) })} />
                   </div>
                   <div>
                     <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
-                    <Input type="number" value={editDialog.other_allowance || 0} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
+                    <Input type="number" value={editDialog.other_allowance || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
                   </div>
-                </div>
-                <div>
-                  <Label className="text-xs">{bn ? 'অন্যান্য ভাতার বিবরণ/ডিউটি' : 'Other Allowance Note/Duty'}</Label>
-                  <Input
-                    value={editDialog.other_allowance_note || ''}
-                    onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })}
-                    placeholder={bn ? 'যেমন: পরিবহন ভাতা, দায়িত্ব ভাতা' : 'e.g. Transport, Duty allowance'}
-                  />
                 </div>
                 <div className="border-t pt-3">
                   <Label className="text-xs font-semibold text-red-500">{bn ? 'কর্তনসমূহ' : 'Deductions'}</Label>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>
                       <Label className="text-xs">{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</Label>
-                      <Input type="number" value={editDialog.late_deduction || 0} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
+                      <Input type="number" value={editDialog.late_deduction || ''} onChange={e => setEditDialog({ ...editDialog, late_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</Label>
-                      <Input type="number" value={editDialog.absence_deduction || 0} onChange={e => setEditDialog({ ...editDialog, absence_deduction: Number(e.target.value) })} />
+                      <Input type="number" value={editDialog.absence_deduction || ''} onChange={e => setEditDialog({ ...editDialog, absence_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অগ্রিম/ডিপোজিট কর্তন' : 'Advance/Deposit Ded.'}</Label>
-                      <Input type="number" value={editDialog.advance_deduction || 0} onChange={e => setEditDialog({ ...editDialog, advance_deduction: Number(e.target.value) })} />
+                      <Input type="number" value={editDialog.advance_deduction || ''} onChange={e => setEditDialog({ ...editDialog, advance_deduction: Number(e.target.value) })} />
                     </div>
                     <div>
                       <Label className="text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</Label>
-                      <Input type="number" value={editDialog.other_deduction || 0} onChange={e => setEditDialog({ ...editDialog, other_deduction: Number(e.target.value) })} />
+                      <Input type="number" value={editDialog.other_deduction || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction: Number(e.target.value) })} />
                     </div>
                   </div>
                 </div>
+
                 <div>
                   <Label className="text-xs">{bn ? 'মন্তব্য' : 'Remarks'}</Label>
                   <Textarea value={editDialog.remarks || ''} onChange={e => setEditDialog({ ...editDialog, remarks: e.target.value })} rows={2} />

@@ -384,7 +384,7 @@ const AdminFormulaBuilder = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">{bn ? 'সর্বনিম্ন নম্বর' : 'Min Marks'}</Label>
-                      <Input type="number" value={formulaData.expression.min_marks ?? 0}
+                      <Input type="number" value={formulaData.expression.min_marks ?? ''}
                         onChange={e => setFormulaData(p => ({ ...p, expression: { ...p.expression, min_marks: Number(e.target.value) } }))} />
                     </div>
                     <div>
@@ -399,7 +399,7 @@ const AdminFormulaBuilder = () => {
                     </div>
                     <div>
                       <Label className="text-xs">GPA</Label>
-                      <Input type="number" step="0.5" value={formulaData.expression.gpa ?? 0}
+                      <Input type="number" step="0.5" value={formulaData.expression.gpa ?? ''}
                         onChange={e => setFormulaData(p => ({ ...p, expression: { ...p.expression, gpa: Number(e.target.value) } }))} />
                     </div>
                   </div>
