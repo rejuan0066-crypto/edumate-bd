@@ -116,10 +116,17 @@ const Home = () => {
     return !!found;
   };
 
-  // Find standalone sections in order; always render the stats section last (bottom of page)
-  const orderedStandalone = visibleSections
-    .filter(s => standaloneKeys.includes(s.key))
-    .sort((a, b) => (a.key === 'stats' ? 1 : 0) - (b.key === 'stats' ? 1 : 0));
+  // Find standalone sections in order; render the stats section right after the zakat section
+  const orderedStandalone = (() => {
+    const list = visibleSections.filter(s => standaloneKeys.includes(s.key));
+    const stats = list.find(s => s.key === 'stats');
+    if (!stats) return list;
+    const rest = list.filter(s => s.key !== 'stats');
+    const zakatIdx = rest.findIndex(s => s.key === 'zakatFitra');
+    if (zakatIdx === -1) return [...rest, stats];
+    rest.splice(zakatIdx + 1, 0, stats);
+    return rest;
+  })();
 
   const renderSection = (key: HomeSectionKey) => {
     switch (key) {
