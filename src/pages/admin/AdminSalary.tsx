@@ -3306,10 +3306,9 @@ const AdminSalary = () => {
                 </div>
                 <div>
                   <Label className="text-xs">{bn ? 'পরিশোধের পরিমাণ (৳)' : 'Amount (৳)'}</Label>
-                  <Input
-                    type="number"
-                    value={disburseDialog.amount || ''}
-                    onChange={e => setDisburseDialog({ ...disburseDialog, amount: Number(e.target.value) })}
+                  <NumberInput
+                    value={disburseDialog.amount}
+                    onValueChange={n => setDisburseDialog({ ...disburseDialog, amount: n })}
                   />
                 </div>
                 <div>
