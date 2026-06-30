@@ -1771,8 +1771,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                                 mutateData.check_in_time = att?.check_in_time || shiftTime.start;
                                 mutateData.check_out_time = att?.check_out_time || shiftTime.end;
                                 setTimeEditorOpenId(countsAs === 'late' ? entity.id : null);
-                              } else if (entityType === 'student' && countsAs === 'late') {
-                                setTimeEditorOpenId(entity.id);
+                              } else if (entityType === 'student' && ['present', 'late', 'half_day'].includes(countsAs)) {
+                                const sStart = entity?.duty_start_time || defaultCategoryTimes.teacher.start;
+                                const sEnd = entity?.duty_end_time || defaultCategoryTimes.teacher.end;
+                                mutateData.check_in_time = att?.check_in_time || sStart;
+                                mutateData.check_out_time = att?.check_out_time || sEnd;
+                                if (countsAs === 'late') setTimeEditorOpenId(entity.id);
                               }
                               if (countsAs === 'absent' || countsAs === 'leave') {
                                 mutateData.check_in_time = '';
