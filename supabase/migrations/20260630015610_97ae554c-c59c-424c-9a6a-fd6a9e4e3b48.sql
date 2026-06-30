@@ -1,0 +1,1 @@
+ALTER TABLE public.salary_records ADD COLUMN IF NOT EXISTS other_allowance_note text;

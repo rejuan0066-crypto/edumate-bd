@@ -7532,6 +7532,7 @@ export type Database = {
           net_salary: number
           net_salary_encrypted: string | null
           other_allowance: number | null
+          other_allowance_note: string | null
           other_deduction: number | null
           overtime: number | null
           paid_at: string | null
@@ -7581,6 +7582,7 @@ export type Database = {
           net_salary?: number
           net_salary_encrypted?: string | null
           other_allowance?: number | null
+          other_allowance_note?: string | null
           other_deduction?: number | null
           overtime?: number | null
           paid_at?: string | null
@@ -7630,6 +7632,7 @@ export type Database = {
           net_salary?: number
           net_salary_encrypted?: string | null
           other_allowance?: number | null
+          other_allowance_note?: string | null
           other_deduction?: number | null
           overtime?: number | null
           paid_at?: string | null
