@@ -1967,6 +1967,61 @@ const AdminSalary = () => {
     const slipStats = getAttendanceStats(staffMember);
     const leaveDays = slipStats.leave || 0;
 
+    // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট) — স্লিপে দেখানোর জন্য
+    const slipLateDetails = (slipStats.dailyBreakdown || [])
+      .filter((d: any) => (Number(d.lateMin) || 0) > 0)
+      .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: d.lateMin }));
+    const fmtSlipDate = (d: string) => {
+      if (!d) return '-';
+      const [y, mo, da] = d.split('-');
+      const out = `${da}/${mo}/${y}`;
+      return bn ? toBnDigits(out) : out;
+    };
+    const fmtSlip12 = (t: string) => {
+      if (!t) return '-';
+      const [hStr, mStr] = t.split(':');
+      let h = parseInt(hStr, 10); const m = mStr || '00';
+      const ap = h >= 12 ? (bn ? 'PM' : 'PM') : 'AM';
+      h = h % 12; if (h === 0) h = 12;
+      const out = `${h}:${m} ${ap}`;
+      return bn ? toBnDigits(out) : out;
+    };
+    const fmtSlipMins = (mins: number) => {
+      const h = Math.floor(mins / 60); const m = mins % 60;
+      const parts: string[] = [];
+      if (h > 0) parts.push(`${bn ? toBnDigits(h) : h} ${bn ? 'ঘণ্টা' : 'h'}`);
+      parts.push(`${bn ? toBnDigits(m) : m} ${bn ? 'মিনিট' : 'min'}`);
+      return parts.join(' ');
+    };
+    const lateDetailHtml = slipLateDetails.length > 0 ? `
+      <div style="margin:14px 0 0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div style="background:#fff7ed;color:#9a3412;font-weight:700;padding:7px 12px;font-size:12px">
+          ${bn ? 'বিলম্ব উপস্থিতির বিবরণ' : 'Late Attendance Details'}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="background:#f1f5f9;color:#334155">
+              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:left">${bn ? 'তারিখ' : 'Date'}</th>
+              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:center">${bn ? 'প্রবেশ' : 'Check-in'}</th>
+              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:center">${bn ? 'বাহির' : 'Check-out'}</th>
+              <th style="border:0.5px solid #cbd5e1;padding:4px 8px;text-align:right">${bn ? 'বিলম্ব' : 'Late by'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${slipLateDetails.map((d: any) => `
+              <tr>
+                <td style="border:0.5px solid #e2e8f0;padding:4px 8px">${fmtSlipDate(d.date)}</td>
+                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:center">${fmtSlip12(d.checkIn)}</td>
+                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:center">${fmtSlip12(d.checkOut)}</td>
+                <td style="border:0.5px solid #e2e8f0;padding:4px 8px;text-align:right;font-weight:600;color:#b45309">${fmtSlipMins(Number(d.lateMin) || 0)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '';
+
+
     // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
