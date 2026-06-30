@@ -2202,7 +2202,7 @@ const AdminSalary = () => {
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
               <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
               <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
@@ -3341,6 +3341,14 @@ const AdminSalary = () => {
                     <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
                     <Input type="number" value={editDialog.other_allowance || 0} onChange={e => setEditDialog({ ...editDialog, other_allowance: Number(e.target.value) })} />
                   </div>
+                </div>
+                <div>
+                  <Label className="text-xs">{bn ? 'অন্যান্য ভাতার বিবরণ/ডিউটি' : 'Other Allowance Note/Duty'}</Label>
+                  <Input
+                    value={editDialog.other_allowance_note || ''}
+                    onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })}
+                    placeholder={bn ? 'যেমন: পরিবহন ভাতা, দায়িত্ব ভাতা' : 'e.g. Transport, Duty allowance'}
+                  />
                 </div>
                 <div className="border-t pt-3">
                   <Label className="text-xs font-semibold text-red-500">{bn ? 'কর্তনসমূহ' : 'Deductions'}</Label>
