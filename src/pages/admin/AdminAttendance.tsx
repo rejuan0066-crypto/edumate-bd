@@ -1694,8 +1694,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                       ) : null;
                     })()}
 
-                    {/* Time Inputs for Staff (hide for meal tab) — also for students marked Late */}
-                    {((entityType === 'staff' && staffSubTab !== 'meal' && (currentStatus === 'late' || timeEditorOpenId === entity.id)) || (entityType === 'student' && (currentStatus === 'late' || timeEditorOpenId === entity.id))) && (
+                    {/* Time Inputs for Staff (hide for meal tab) — also for students; show for present/late/half_day */}
+                    {((entityType === 'staff' && staffSubTab !== 'meal' && (['present', 'late', 'half_day'].includes(currentStatus || '') || timeEditorOpenId === entity.id)) || (entityType === 'student' && (['present', 'late', 'half_day'].includes(currentStatus || '') || timeEditorOpenId === entity.id))) && (
                       <div className="flex flex-col gap-1 shrink-0 w-full sm:w-auto rounded-2xl border border-amber-500/20 bg-amber-500/5 px-3 py-2">
                         <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">{bn ? 'চেক-ইন / চেক-আউট সময়' : 'Check-in / Check-out time'}</span>
                         <div className="flex gap-2 items-center">
