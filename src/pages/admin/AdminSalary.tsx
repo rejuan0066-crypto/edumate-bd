@@ -2202,7 +2202,7 @@ const AdminSalary = () => {
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
               <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
               <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
