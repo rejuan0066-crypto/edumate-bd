@@ -12,54 +12,139 @@ interface TimePickerProps {
   displayFormat?: '12h' | '24h';
 }
 
-const HOURS_24 = Array.from({ length: 24 }, (_, i) => i);
-const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
+const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1); // 1..12
+const HOURS_24 = Array.from({ length: 24 }, (_, i) => i); // 0..23
+const PERIODS = ['AM', 'PM'] as const;
+
+const ITEM_H = 36; // px height per wheel item
+
+/** A single scrollable wheel column with snap + center highlight. */
+function Wheel<T>({
+  items,
+  value,
+  onChange,
+  render,
+  label,
+}: {
+  items: T[];
+  value: T;
+  onChange: (v: T) => void;
+  render: (v: T) => string;
+  label: string;
+}) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const scrollTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idx = Math.max(0, items.findIndex((i) => i === value));
+
+  // Scroll to selected item whenever value changes externally
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const target = idx * ITEM_H;
+    if (Math.abs(el.scrollTop - target) > 2) {
+      el.scrollTo({ top: target, behavior: 'auto' });
+    }
+  }, [idx]);
+
+  const handleScroll = () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      const i = Math.round(el.scrollTop / ITEM_H);
+      const clamped = Math.min(items.length - 1, Math.max(0, i));
+      el.scrollTo({ top: clamped * ITEM_H, behavior: 'smooth' });
+      if (items[clamped] !== value) onChange(items[clamped]);
+    }, 90);
+  };
+
+  return (
+    <div className="flex flex-col items-center flex-1 min-w-0">
+      <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">{label}</p>
+      <div className="relative" style={{ height: ITEM_H * 5 }}>
+        {/* center highlight band */}
+        <div
+          className="pointer-events-none absolute inset-x-1 rounded-xl bg-primary/10 border border-primary/20"
+          style={{ top: ITEM_H * 2, height: ITEM_H }}
+        />
+        <div
+          ref={ref}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hidden"
+          style={{ scrollPaddingTop: ITEM_H * 2 }}
+        >
+          {/* top spacer */}
+          <div style={{ height: ITEM_H * 2 }} />
+          {items.map((it, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChange(it)}
+              className={cn(
+                "w-full snap-center flex items-center justify-center text-sm transition-all duration-150",
+                it === value
+                  ? "text-primary font-bold scale-110"
+                  : "text-muted-foreground/60 hover:text-foreground"
+              )}
+              style={{ height: ITEM_H }}
+            >
+              {render(it)}
+            </button>
+          ))}
+          {/* bottom spacer */}
+          <div style={{ height: ITEM_H * 2 }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const TimePicker = ({ value, onChange, className, placeholder = "সময়", displayFormat = '12h' }: TimePickerProps) => {
   const [open, setOpen] = React.useState(false);
-  const [selectedHour, setSelectedHour] = React.useState<number | null>(null);
-  const [selectedMinute, setSelectedMinute] = React.useState<number | null>(null);
-  const [period, setPeriod] = React.useState<'AM' | 'PM'>('AM');
-  const minuteListRef = React.useRef<HTMLDivElement>(null);
+  const [h24, setH24] = React.useState<number>(0);
+  const [minute, setMinute] = React.useState<number>(0);
 
   React.useEffect(() => {
     if (value) {
       const [h, m] = value.split(':').map(Number);
-      setSelectedHour(h);
-      setSelectedMinute(m);
-      setPeriod(h >= 12 ? 'PM' : 'AM');
+      setH24(h);
+      setMinute(m);
     }
-  }, [value]);
+  }, [value, open]);
 
-  // Auto-scroll minute list to selected minute when opened
-  React.useEffect(() => {
-    if (open && minuteListRef.current && selectedMinute !== null) {
-      const btn = minuteListRef.current.querySelector(`[data-minute="${selectedMinute}"]`) as HTMLElement;
-      if (btn) btn.scrollIntoView({ block: 'center', behavior: 'instant' });
+  const is24 = displayFormat === '24h';
+  const period: typeof PERIODS[number] = h24 >= 12 ? 'PM' : 'AM';
+  const hour12 = h24 % 12 || 12;
+
+  const setHour = (val: number) => {
+    if (is24) {
+      setH24(val);
+    } else {
+      // val is 1..12
+      const newH = period === 'AM' ? (val % 12) : (val % 12) + 12;
+      setH24(newH);
     }
-  }, [open, selectedMinute]);
+  };
+
+  const setPeriod = (p: typeof PERIODS[number]) => {
+    if (p === 'AM' && h24 >= 12) setH24(h24 - 12);
+    if (p === 'PM' && h24 < 12) setH24(h24 + 12);
+  };
 
   const formatDisplay = (val: string) => {
     if (!val) return '';
     const [h, m] = val.split(':').map(Number);
-    if (displayFormat === '24h') return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    if (is24) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     const p = h >= 12 ? 'PM' : 'AM';
     const h12 = h % 12 || 12;
     return `${h12}:${String(m).padStart(2, '0')} ${p}`;
   };
 
   const handleDone = () => {
-    const h = selectedHour ?? 0;
-    const m = selectedMinute ?? 0;
-    onChange(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    onChange(`${String(h24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     setOpen(false);
   };
-
-  const get12Hour = (h: number) => h % 12 || 12;
-  const isPM = (h: number) => h >= 12;
-
-  // Filter hours by AM/PM
-  const filteredHours = HOURS_24.filter(h => period === 'AM' ? h < 12 : h >= 12);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -84,82 +169,34 @@ const TimePicker = ({ value, onChange, className, placeholder = "সময়", 
         align="start"
         sideOffset={6}
       >
-        {/* AM/PM Toggle */}
-        <div className="px-4 pt-4 pb-2">
-          <div className="flex items-center justify-center bg-muted/60 rounded-full p-1 gap-0.5">
-            {(['AM', 'PM'] as const).map(p => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => {
-                  setPeriod(p);
-                  if (selectedHour !== null) {
-                    const newH = p === 'AM'
-                      ? (selectedHour >= 12 ? selectedHour - 12 : selectedHour)
-                      : (selectedHour < 12 ? selectedHour + 12 : selectedHour);
-                    setSelectedHour(newH);
-                  }
-                }}
-                className={cn(
-                  "flex-1 py-1.5 text-xs font-semibold rounded-full transition-all duration-300",
-                  period === p
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Hours Grid */}
-        <div className="px-4 pb-1">
-          <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">ঘণ্টা</p>
-          <div className="grid grid-cols-6 gap-1">
-            {filteredHours.map(h => (
-              <button
-                key={h}
-                type="button"
-                onClick={() => setSelectedHour(h)}
-                className={cn(
-                  "h-8 w-full rounded-lg text-xs font-medium transition-all duration-200",
-                  selectedHour === h
-                    ? "bg-primary text-primary-foreground shadow-md scale-105"
-                    : "text-foreground hover:bg-primary/10 hover:scale-105"
-                )}
-              >
-                {get12Hour(h)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Minutes – Two-column scrollable list */}
-        <div className="px-4 pb-2 pt-1">
-          <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">মিনিট</p>
-          <div ref={minuteListRef} className="grid grid-cols-2 gap-x-2 max-h-[140px] overflow-y-auto overscroll-contain pr-1 scrollbar-thin">
-            {ALL_MINUTES.map(m => (
-              <button
-                key={m}
-                type="button"
-                data-minute={m}
-                onClick={() => setSelectedMinute(m)}
-                className={cn(
-                  "h-7 w-full rounded-lg text-xs font-medium transition-all duration-200 shrink-0",
-                  selectedMinute === m
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-foreground hover:bg-primary/10"
-                )}
-              >
-                {String(m).padStart(2, '0')}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-stretch gap-1 px-4 pt-4">
+          <Wheel
+            label={"ঘণ্টা"}
+            items={is24 ? HOURS_24 : HOURS_12}
+            value={is24 ? h24 : hour12}
+            onChange={setHour}
+            render={(v) => (is24 ? String(v).padStart(2, '0') : String(v))}
+          />
+          <Wheel
+            label={"মিনিট"}
+            items={MINUTES}
+            value={minute}
+            onChange={setMinute}
+            render={(v) => String(v).padStart(2, '0')}
+          />
+          {!is24 && (
+            <Wheel
+              label={"AM/PM"}
+              items={PERIODS as unknown as typeof PERIODS[number][]}
+              value={period}
+              onChange={setPeriod}
+              render={(v) => v}
+            />
+          )}
         </div>
 
         {/* Done Button */}
-        <div className="px-4 pb-4 pt-1">
+        <div className="px-4 pb-4 pt-3">
           <Button
             size="sm"
             onClick={handleDone}
