@@ -106,7 +106,7 @@ function Wheel<T>({
         <div
           ref={ref}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hidden overscroll-contain"
+          className="h-full overflow-y-auto snap-y snap-mandatory id-preview-scroll overscroll-contain cursor-ns-resize"
           style={{ scrollPaddingTop: ITEM_H * 2, touchAction: 'pan-y' }}
         >
           {/* top spacer */}
