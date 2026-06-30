@@ -424,6 +424,80 @@ Deno.serve(async (req) => {
       </section>
     `).join("");
 
+    // ===== Late-arrival detail appendix (date • check-in → check-out • minutes) =====
+    const fmt12 = (t: string): string => {
+      if (!t) return "—";
+      const [hRaw, mRaw] = String(t).split(":");
+      let h = parseInt(hRaw, 10); const m = parseInt(mRaw || "0", 10);
+      if (isNaN(h)) return "—";
+      const period = h >= 12 ? (bn ? "PM" : "PM") : (bn ? "AM" : "AM");
+      const h12 = h % 12 || 12;
+      const out = `${h12}:${String(m).padStart(2, "0")} ${period}`;
+      return bn ? toBnDigits(out) : out;
+    };
+    const fmtDate = (d: string): string => {
+      if (!d) return "—";
+      const [y, mo, da] = d.split("-");
+      const out = `${da}/${mo}/${y}`;
+      return bn ? toBnDigits(out) : out;
+    };
+    const fmtMins = (mins: number): string => {
+      const h = Math.floor(mins / 60); const m = mins % 60;
+      const parts: string[] = [];
+      if (h > 0) parts.push(`${bn ? toBnDigits(h) : h} ${bn ? "ঘণ্টা" : "h"}`);
+      parts.push(`${bn ? toBnDigits(m) : m} ${bn ? "মিনিট" : "min"}`);
+      return parts.join(" ");
+    };
+
+    const staffWithLate = (staff || []).filter(
+      (s: any) => Array.isArray(s.lateDetails) && s.lateDetails.length > 0
+    );
+    const lateAppendixHtml = staffWithLate.length > 0 ? `
+      <section class="salary-page">
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}</thead>
+            <tbody>
+              <tr><td colspan="${COL_COUNT}" style="padding:0;border:none;">
+                <h3 style="text-align:center;margin:6pt 0 8pt;font-size:11pt;font-weight:700;">
+                  ${bn ? "বিলম্ব উপস্থিতির বিবরণ" : "Late Attendance Details"}
+                </h3>
+                ${staffWithLate.map((s: any) => `
+                  <div style="margin:0 0 10pt;">
+                    <div style="font-weight:700;font-size:9.5pt;margin-bottom:3pt;">
+                      ${escapeHtml(bn ? toBnDigits(s.name) : s.name)}${s.staff_id && s.staff_id !== "-" ? ` (${escapeHtml(bn ? toBnDigits(s.staff_id) : s.staff_id)})` : ""}
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:8.5pt;">
+                      <thead>
+                        <tr style="background:#f1f5f9;">
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "তারিখ" : "Date"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:center;">${bn ? "প্রবেশ" : "Check-in"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:center;">${bn ? "বাহির" : "Check-out"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:right;">${bn ? "বিলম্ব" : "Late by"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${s.lateDetails.map((d: any) => `
+                          <tr>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${fmtDate(d.date)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:center;">${fmt12(d.checkIn)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:center;">${fmt12(d.checkOut)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:right;font-weight:600;color:#b45309;">${fmtMins(Number(d.lateMin) || 0)}</td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `).join("")}
+              </td></tr>
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
+      </section>
+    ` : "";
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
