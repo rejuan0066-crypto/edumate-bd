@@ -176,7 +176,7 @@ const UpdatePrompt = () => {
 
   const handleUpdate = async () => {
     setUpdating(true);
-    setProgress(20);
+    setProgress(15);
     setStatusText(bn ? 'আপডেট প্রস্তুত হচ্ছে…' : 'Preparing update…');
     pwaLog('info', 'update_start', {
       url: window.location.href,
@@ -185,11 +185,6 @@ const UpdatePrompt = () => {
       ua: navigator.userAgent,
     });
 
-    // Production-safe update: NO forced cache clears.
-    // The new service worker (with a bumped CACHE_VERSION) cleans its own stale
-    // caches on activate, and navigations are network-first — so the fresh HTML
-    // and its new hashed chunks always load. We only need to activate the waiting
-    // worker and reload exactly once when it takes control.
     let didReload = false;
     const reloadOnce = async (reason: string) => {
       if (didReload) return;
@@ -198,6 +193,8 @@ const UpdatePrompt = () => {
       // Clear any caches so the fresh HTML + new hashed chunks are fetched from
       // the network instead of being served stale (the main cause of "Update
       // does nothing" — reload re-serving the cached old build).
+      setProgress(80);
+      setStatusText(bn ? 'পুরোনো ক্যাশ মুছে ফেলা হচ্ছে…' : 'Clearing old cache…');
       try {
         if ('caches' in window) {
           const keys = await caches.keys();
@@ -207,6 +204,8 @@ const UpdatePrompt = () => {
       } catch (e) {
         pwaLog('warn', 'cache_clear_fail', { err: String(e) });
       }
+      setProgress(100);
+      setStatusText(bn ? 'নতুন ভার্সন লোড হচ্ছে…' : 'Loading new version…');
       try {
         // Cache-busting navigation guarantees a fresh document, even on browsers
         // that would otherwise reload from the memory/HTTP cache.
@@ -219,7 +218,7 @@ const UpdatePrompt = () => {
     };
 
 
-    setProgress(55);
+    setProgress(45);
     setStatusText(bn ? 'সার্ভিস ওয়ার্কার আপডেট হচ্ছে…' : 'Updating service worker…');
 
     try {
@@ -233,6 +232,8 @@ const UpdatePrompt = () => {
 
         const regs = await navigator.serviceWorker.getRegistrations();
         pwaLog('info', 'sw_registrations', { count: regs.length, regs: regs.map(describeReg) });
+        setProgress(60);
+        setStatusText(bn ? 'নতুন ভার্সন আনা হচ্ছে…' : 'Fetching new version…');
         await Promise.all(
           regs.map(async (r) => {
             try {
@@ -254,6 +255,8 @@ const UpdatePrompt = () => {
             }
           })
         );
+        setProgress(70);
+        setStatusText(bn ? 'নতুন ভার্সন সক্রিয় হচ্ছে…' : 'Activating new version…');
       } else {
         pwaLog('info', 'sw_unsupported');
       }
@@ -261,14 +264,12 @@ const UpdatePrompt = () => {
       pwaLog('error', 'sw_phase_fail', { err: String(e) });
     }
 
-    setProgress(100);
-    setStatusText(bn ? 'রিলোড হচ্ছে…' : 'Reloading…');
-
     // Fallback single reload if no waiting worker existed (already up to date SW,
     // or controllerchange never fires). Network-first navigation guarantees the
     // fresh shell loads — no cache busting needed.
     setTimeout(() => reloadOnce('fallback'), 1200);
   };
+
 
 
   // Floating update button: ALWAYS clickable in the installed PWA.
