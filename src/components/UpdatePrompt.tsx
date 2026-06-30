@@ -307,16 +307,19 @@ const UpdatePrompt = () => {
           title={bn
             ? (updateAvailable ? 'নতুন আপডেট পাওয়া গেছে — ক্লিক করে ইনস্টল করুন' : 'আপডেটের জন্য চেক করুন')
             : (updateAvailable ? 'Update available — click to install' : 'Check for update')}
-          className={`fixed right-3 z-[90] w-11 h-11 rounded-full border shadow-lg backdrop-blur-xl flex items-center justify-center transition-colors ${
+          className={`group fixed right-4 z-[90] w-12 h-12 rounded-2xl border flex items-center justify-center transition-all duration-300 active:scale-95 ${
             updateAvailable
-              ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90 cursor-pointer animate-pulse'
-              : 'bg-card/90 text-primary border-border hover:bg-muted cursor-pointer'
+              ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-primary/40 shadow-[0_8px_28px_-6px_hsl(var(--primary)/0.6)] hover:shadow-[0_10px_34px_-4px_hsl(var(--primary)/0.7)] hover:-translate-y-0.5'
+              : 'bg-card/80 text-primary border-border/60 shadow-[0_6px_22px_-8px_rgba(0,0,0,0.35)] backdrop-blur-2xl hover:bg-card hover:-translate-y-0.5'
           }`}
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)' }}
         >
-          <RefreshCw className={`w-5 h-5 ${checking ? 'animate-spin' : ''}`} />
+          {updateAvailable && (
+            <span className="absolute inset-0 rounded-2xl bg-primary/40 animate-ping opacity-60" />
+          )}
+          <RefreshCw className={`relative w-5 h-5 transition-transform duration-500 ${checking ? 'animate-spin' : 'group-hover:rotate-180'}`} />
           {noUpdateMsg && (
-            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card border border-border text-foreground text-xs rounded-full px-3 py-1 shadow-md">
+            <span className="absolute right-14 top-1/2 -translate-y-1/2 whitespace-nowrap bg-card/95 backdrop-blur-xl border border-border/60 text-foreground text-xs font-medium rounded-full px-3.5 py-1.5 shadow-lg animate-fade-in">
               {bn ? 'সর্বশেষ ভার্সন চলছে' : 'Up to date'}
             </span>
           )}
@@ -328,18 +331,21 @@ const UpdatePrompt = () => {
           className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-md z-[100] animate-fade-in"
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', maxWidth: 'calc(100vw - 24px)' }}
         >
-          <div className="bg-card border border-border rounded-2xl shadow-2xl p-4 backdrop-blur-xl overflow-hidden">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <div className="relative bg-card/85 border border-border/60 rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.45)] p-4 backdrop-blur-2xl overflow-hidden">
+            {/* Decorative gradient glow */}
+            <div className="pointer-events-none absolute -top-16 -right-10 w-40 h-40 rounded-full bg-primary/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative flex items-center gap-3.5">
+              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center flex-shrink-0">
                 <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-foreground">
+                <p className="font-semibold text-sm text-foreground leading-tight">
                   {updating
                     ? (bn ? 'আপডেট হচ্ছে…' : 'Updating…')
                     : (bn ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
                   {updating
                     ? statusText
                     : (bn ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready')}
@@ -347,27 +353,31 @@ const UpdatePrompt = () => {
               </div>
               {!updating ? (
                 <>
-                  <Button size="sm" onClick={handleUpdate} className="rounded-full">
+                  <Button
+                    size="sm"
+                    onClick={handleUpdate}
+                    className="rounded-full px-4 shadow-[0_6px_18px_-6px_hsl(var(--primary)/0.6)] hover:-translate-y-0.5 transition-transform"
+                  >
                     {bn ? 'আপডেট' : 'Update'}
                   </Button>
                   <button
                     onClick={() => setDismissed(true)}
-                    className="p-1 rounded-full hover:bg-muted transition-colors"
+                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors"
                     aria-label="Dismiss"
                   >
-                    <X className="w-4 h-4 text-muted-foreground" />
+                    <X className="w-4 h-4" />
                   </button>
                 </>
               ) : (
-                <span className="text-xs font-semibold text-primary tabular-nums w-10 text-right">
+                <span className="text-sm font-bold text-primary tabular-nums w-11 text-right">
                   {progress}%
                 </span>
               )}
             </div>
             {updating && (
-              <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="relative mt-3.5 h-2 w-full rounded-full bg-muted/70 overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-300 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-all duration-300 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.5)]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
