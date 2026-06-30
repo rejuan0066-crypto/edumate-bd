@@ -116,8 +116,10 @@ const Home = () => {
     return !!found;
   };
 
-  // Find first standalone sections in order
-  const orderedStandalone = visibleSections.filter(s => standaloneKeys.includes(s.key));
+  // Find standalone sections in order; always render the stats section last (bottom of page)
+  const orderedStandalone = visibleSections
+    .filter(s => standaloneKeys.includes(s.key))
+    .sort((a, b) => (a.key === 'stats' ? 1 : 0) - (b.key === 'stats' ? 1 : 0));
 
   const renderSection = (key: HomeSectionKey) => {
     switch (key) {
