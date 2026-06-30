@@ -68,6 +68,32 @@ function Wheel<T>({
     }, 120);
   };
 
+  // Discrete mouse-wheel: hover over the column and scroll moves one item per tick.
+  // Native non-passive listener so we can preventDefault and avoid the page scrolling.
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      acc += e.deltaY;
+      const threshold = 18;
+      if (Math.abs(acc) >= threshold) {
+        const dir = acc > 0 ? 1 : -1;
+        acc = 0;
+        const next = Math.min(items.length - 1, Math.max(0, idx + dir));
+        if (next !== idx) {
+          snapTo(next * ITEM_H);
+          onChange(items[next]);
+        }
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, items, onChange]);
+
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
       <p className="text-[10px] font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">{label}</p>
@@ -80,7 +106,7 @@ function Wheel<T>({
         <div
           ref={ref}
           onScroll={handleScroll}
-          className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hidden overscroll-contain"
+          className="h-full overflow-y-auto snap-y snap-mandatory id-preview-scroll overscroll-contain cursor-ns-resize"
           style={{ scrollPaddingTop: ITEM_H * 2, touchAction: 'pan-y' }}
         >
           {/* top spacer */}
