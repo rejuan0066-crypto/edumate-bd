@@ -2617,14 +2617,24 @@ const AdminSalary = () => {
                         // each render. Once a record exists, ALWAYS show its stored snapshot
                         // (manual edits to bonus/overtime/advance are already saved into it).
                         // Live values are only used for not-yet-generated rows.
+                        const isPaid = rec && rec.status === 'paid';
+                        // Paid records: locked snapshot. Pending/ungenerated rows reflect LIVE
+                        // attendance so a month with NO attendance correctly shows 0 net, and
+                        // newly-marked attendance updates immediately without re-generating.
+                        const manualBonus = Number(rec?.bonus || 0);
+                        const manualAllow = Number(rec?.other_allowance || 0);
+                        const manualAdvance = Number(rec?.advance_deduction || 0);
                         const usePending = rec && rec.status !== 'paid';
-                        const totalDed = rec
+                        const totalDed = isPaid
                           ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
                             Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
                           : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
-                        const displayOvertime = rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
-                        const displayNet = rec ? Number(rec.net_salary || 0) : Number(autoCalc.net_salary || 0);
+                            manualAdvance + Number(autoCalc.other_deduction || 0);
+                        const displayOvertime = isPaid ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
+                        const displayNet = isPaid
+                          ? Number(rec.net_salary || 0)
+                          : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
+
 
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
@@ -2721,9 +2731,9 @@ const AdminSalary = () => {
                                 // every untracked day (incl. future days of an ongoing month) as absent,
                                 // so the numbers would visibly drift after generation. For not-yet-generated
                                 // rows we still show the live preview.
-                                const dispPresent = rec ? Number(rec.present_days ?? attStats.present) : attStats.present;
-                                const dispAbsent = rec ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
-                                const dispLate = rec ? Number(rec.late_days ?? attStats.late) : attStats.late;
+                                const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
+                                const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
+                                const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
                                 const dispLeave = attStats.leave || 0;
                                 return (
                                   <button
@@ -2744,16 +2754,16 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = rec || autoCalc;
+                                const src = isPaid ? rec : autoCalc;
                                 const absD = Number(src.absence_deduction || 0);
                                 const lateD = Number(src.late_deduction || 0);
-                                const advD = Number((rec?.advance_deduction) ?? src.advance_deduction ?? 0);
-                                const otherD = Number((rec?.other_deduction) ?? src.other_deduction ?? 0);
-                                const savD = Number(rec?.savings_deduction ?? savingsAmt ?? 0);
+                                const advD = Number(rec?.advance_deduction || 0);
+                                const otherD = Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
-                                const otV = Number((rec?.overtime) ?? src.overtime ?? 0);
+                                const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
                                 const sumDed = absD + lateD + advD + otherD + savD;
                                 const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
