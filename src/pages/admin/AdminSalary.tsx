@@ -1045,9 +1045,18 @@ const AdminSalary = () => {
       ? overtime - Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate)
       : overtime;
 
+    // জমা কর্তন ও অন্যান্য কর্তন (অগ্রিম) কেবল তখনই নিট বেতন থেকে বাদ যাবে যখন
+    // মাসের সম্পূর্ণ হাজিরা দেওয়া হয়ে গেছে (অথবা মাসটি শেষ)। চলতি মাসে হাজিরা
+    // অসম্পূর্ণ থাকলে এই কর্তনগুলো স্থগিত থাকে — বেতন জেনারেট/সেভ করার পর প্রযোজ্য হবে।
+    const nowRef = new Date();
+    const isCurrentMonthCalc = nowRef.getFullYear() === year && (nowRef.getMonth() + 1) === month;
+    const allAttendanceGiven = !isCurrentMonthCalc || (attStats.untrackedAbsentDays === 0);
+    const effAdvanceDeduction = allAttendanceGiven ? advanceDeduction : 0;
+    const effSavingsDeduction = allAttendanceGiven ? savingsDeduction : 0;
+
     const netSalary = Math.max(0,
       earnedFromAttendance + overtimeForNet + bonus + otherAllowance
-      - advanceDeduction - savingsDeduction
+      - effAdvanceDeduction - effSavingsDeduction
     );
 
     return {
@@ -1062,14 +1071,16 @@ const AdminSalary = () => {
       bonus,
       overtime,
       other_allowance: otherAllowance,
-      advance_deduction: advanceDeduction,
-      savings_deduction: savingsDeduction,
+      advance_deduction: effAdvanceDeduction,
+      savings_deduction: effSavingsDeduction,
       net_salary: netSalary,
       calc_basis: calcBasis,
       earned_from_attendance: earnedFromAttendance,
       overtime_for_net: overtimeForNet,
+      deductions_deferred: !allAttendanceGiven,
     };
   };
+
 
   // Generate salary sheet mutation
   const generateMutation = useMutation({
