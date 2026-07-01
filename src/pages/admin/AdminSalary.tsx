@@ -1012,7 +1012,7 @@ const AdminSalary = () => {
 
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
-    const calcBasis = getSetting('salary_calc_basis')?.mode || 'subtractive';
+    const calcBasis = getSetting('salary_calc_basis')?.mode || 'additive';
     let earnedFromAttendance = calcBasis === 'additive'
       ? Math.round(attStats.totalDailyEarnings)
       : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
