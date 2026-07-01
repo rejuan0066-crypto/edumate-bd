@@ -2628,19 +2628,29 @@ const AdminSalary = () => {
                         const manualAllow = Number(rec?.other_allowance || 0);
                         const manualAdvance = Number(rec?.advance_deduction || 0);
                         const usePending = rec && rec.status !== 'paid';
-                        const totalDed = isPaid
-                          ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                          : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            manualAdvance + Number(autoCalc.other_deduction || 0);
+                        const activeSavings = getActiveSavings(s.id);
+                        const savingsAmt = activeSavings ? activeSavings.amount : 0;
+                        // In additive mode absence/late are NOT deductions — those days are simply
+                        // "unearned", already reflected in the lower net. Showing them as কর্তন made
+                        // the deduction total exceed the base salary (e.g. base 11,000 → "deduction"
+                        // 11,633). So in additive mode the deduction column shows only REAL money
+                        // removed from earnings: advance + savings + manual other-deduction.
+                        const isAdditive = (isPaid ? rec.calc_basis : autoCalc.calc_basis) === 'additive'
+                          || (!isPaid && !rec && (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive');
+                        const totalDed = isAdditive
+                          ? (isPaid
+                              ? Number(rec.advance_deduction || 0) + Number(rec.savings_deduction || 0) + Number(rec.other_deduction || 0)
+                              : manualAdvance + savingsAmt)
+                          : (isPaid
+                              ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                                Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                              : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                                manualAdvance + Number(autoCalc.other_deduction || 0));
                         const displayOvertime = isPaid ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
                         const displayNet = isPaid
                           ? Number(rec.net_salary || 0)
                           : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
 
-
-                        const activeSavings = getActiveSavings(s.id);
-                        const savingsAmt = activeSavings ? activeSavings.amount : 0;
                         const validation = !rec ? getAttendanceValidation(s) : null;
                         const eligibilityReason = !rec
                           ? (validation?.errors[0] || validation?.warnings[0] || getEligibilityReason(s))
