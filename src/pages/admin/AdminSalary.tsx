@@ -2731,9 +2731,9 @@ const AdminSalary = () => {
                                 // every untracked day (incl. future days of an ongoing month) as absent,
                                 // so the numbers would visibly drift after generation. For not-yet-generated
                                 // rows we still show the live preview.
-                                const dispPresent = rec ? Number(rec.present_days ?? attStats.present) : attStats.present;
-                                const dispAbsent = rec ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
-                                const dispLate = rec ? Number(rec.late_days ?? attStats.late) : attStats.late;
+                                const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
+                                const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
+                                const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
                                 const dispLeave = attStats.leave || 0;
                                 return (
                                   <button
