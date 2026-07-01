@@ -2835,6 +2835,18 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-2.5 bg-muted/40 border-t space-y-1 text-[11px]">
                                         <div className="flex justify-between"><span className="text-muted-foreground">{bn ? 'মূল বেতন' : 'Base'}</span><span className="font-mono">৳{bn ? toBnDigits(baseV.toLocaleString()) : baseV.toLocaleString()}</span></div>
+                                        {isAdditive && !isPaid && unearnedV > 0 && (
+                                          <>
+                                            <div className="flex justify-between text-amber-600">
+                                              <span className="text-muted-foreground">− {bn ? 'অনার্জিত (হাজিরা নেই/অনুপস্থিত দিন)' : 'Unearned (no attendance / absent days)'}</span>
+                                              <span className="font-mono">৳{bn ? toBnDigits(unearnedV.toLocaleString()) : unearnedV.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between text-emerald-700">
+                                              <span className="text-muted-foreground">= {bn ? 'অর্জিত (উপস্থিত দিনের আয়)' : 'Earned (present days)'}</span>
+                                              <span className="font-mono">৳{bn ? toBnDigits(earnedV.toLocaleString()) : earnedV.toLocaleString()}</span>
+                                            </div>
+                                          </>
+                                        )}
                                         {(otV > 0 || bonusV > 0 || otherA > 0) && (
                                           <div className="flex justify-between text-emerald-700">
                                             <span className="text-muted-foreground">+ {bn ? 'ওভারটাইম/বোনাস/ভাতা' : 'OT / Bonus / Allow'}</span>
