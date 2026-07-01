@@ -3419,6 +3419,7 @@ const AdminSalary = () => {
                     <div>
                       <Label className="text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</Label>
                       <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
+                      <Input className="mt-1.5" type="text" placeholder={bn ? 'কর্তনের কারণ লিখুন' : 'Reason for deduction'} value={editDialog.other_deduction_note || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction_note: e.target.value })} />
                     </div>
                   </div>
                 </div>
