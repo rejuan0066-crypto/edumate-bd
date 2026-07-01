@@ -1494,11 +1494,19 @@ const AdminSalary = () => {
       }
 
       // 2. Untracked working days (potentially absent days never marked)
+      // যদি "সম্পূর্ণ উপস্থিতি বাধ্যতামূলক" সেটিং চালু থাকে (ডিফল্ট), তবে অসম্পূর্ণ
+      // হাজিরা থাকলে বেতন জেনারেট আটকে যাবে (error) — নাহলে শুধু সতর্কবার্তা।
       if (stats.untrackedAbsentDays > 0) {
-        warnings.push(bn
+        const requireComplete = getSetting('require_complete_attendance')?.enabled !== false;
+        const msg = bn
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন হাজিরা দেওয়া হয়নি — মাসের সব উপস্থিতি সম্পূর্ণ করুন`
+          : `${stats.untrackedAbsentDays} day(s) unmarked — complete all attendance for the month first`;
+        if (requireComplete) errors.push(msg);
+        else warnings.push(bn
           ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো রেকর্ড নেই (ছুটি না হলে অনুপস্থিত হিসাবে গণ্য)`
           : `${stats.untrackedAbsentDays} day(s) unmarked (counted as absent unless holiday)`);
       }
+
 
       // 3. Late/half_day/present without check-in time
       const missingTime = records.filter((r: any) =>
@@ -3560,6 +3568,20 @@ const AdminSalary = () => {
                     onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_attendance', value: { enabled: v } })}
                   />
                 </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'সম্পূর্ণ উপস্থিতি বাধ্যতামূলক' : 'Require Complete Attendance'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn ? 'মাসের সব দিনের উপস্থিতি না দেওয়া পর্যন্ত বেতন জেনারেট হবে না' : 'Salary won\'t generate until every day of the month is marked'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('require_complete_attendance')?.enabled !== false}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_complete_attendance', value: { enabled: v } })}
+                  />
+                </div>
+
 
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
