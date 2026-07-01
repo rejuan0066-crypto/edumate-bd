@@ -1065,6 +1065,9 @@ const AdminSalary = () => {
       advance_deduction: advanceDeduction,
       savings_deduction: savingsDeduction,
       net_salary: netSalary,
+      calc_basis: calcBasis,
+      earned_from_attendance: earnedFromAttendance,
+      overtime_for_net: overtimeForNet,
     };
   };
 
