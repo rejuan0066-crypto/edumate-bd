@@ -1065,6 +1065,9 @@ const AdminSalary = () => {
       advance_deduction: advanceDeduction,
       savings_deduction: savingsDeduction,
       net_salary: netSalary,
+      calc_basis: calcBasis,
+      earned_from_attendance: earnedFromAttendance,
+      overtime_for_net: overtimeForNet,
     };
   };
 
@@ -2625,19 +2628,31 @@ const AdminSalary = () => {
                         const manualAllow = Number(rec?.other_allowance || 0);
                         const manualAdvance = Number(rec?.advance_deduction || 0);
                         const usePending = rec && rec.status !== 'paid';
-                        const totalDed = isPaid
-                          ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                          : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            manualAdvance + Number(autoCalc.other_deduction || 0);
+                        const activeSavings = getActiveSavings(s.id);
+                        const savingsAmt = activeSavings ? activeSavings.amount : 0;
+                        // In additive mode absence/late are NOT deductions — those days are simply
+                        // "unearned", already reflected in the lower net. Showing them as কর্তন made
+                        // the deduction total exceed the base salary (e.g. base 11,000 → "deduction"
+                        // 11,633). So in additive mode the deduction column shows only REAL money
+                        // removed from earnings: advance + savings + manual other-deduction.
+                        const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
+                        const isAdditive = isPaid
+                          ? (((rec as any).calc_basis ?? (autoCalc.calc_basis)) === 'additive')
+                          : globalAdditive;
+                        const totalDed = isAdditive
+                          ? (isPaid
+                              ? Number(rec.advance_deduction || 0) + Number(rec.savings_deduction || 0) + Number(rec.other_deduction || 0)
+                              : manualAdvance + savingsAmt)
+                          : (isPaid
+                              ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                                Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                              : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                                manualAdvance + Number(autoCalc.other_deduction || 0));
                         const displayOvertime = isPaid ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
                         const displayNet = isPaid
                           ? Number(rec.net_salary || 0)
                           : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
 
-
-                        const activeSavings = getActiveSavings(s.id);
-                        const savingsAmt = activeSavings ? activeSavings.amount : 0;
                         const validation = !rec ? getAttendanceValidation(s) : null;
                         const eligibilityReason = !rec
                           ? (validation?.errors[0] || validation?.warnings[0] || getEligibilityReason(s))
@@ -2754,18 +2769,28 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = isPaid ? rec : autoCalc;
-                                const absD = Number(src.absence_deduction || 0);
-                                const lateD = Number(src.late_deduction || 0);
                                 const advD = Number(rec?.advance_deduction || 0);
-                                const otherD = Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
                                 const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
+                                // In additive mode absence/late are NOT deductions — they are simply
+                                // unearned days. Show them as ৳0 here so the deduction total never
+                                // exceeds the base salary; surface the unearned amount separately.
+                                const absD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).absence_deduction || 0);
+                                const lateD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).late_deduction || 0);
+                                const otherD = isAdditive
+                                  ? Number(rec?.other_deduction || 0)
+                                  : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                const earnedV = !isPaid
+                                  ? Number((autoCalc as any).earned_from_attendance || 0)
+                                  : 0;
+                                const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
                                 const sumDed = absD + lateD + advD + otherD + savD;
-                                const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
+                                const expectedNet = isAdditive
+                                  ? displayNet
+                                  : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
@@ -2810,6 +2835,18 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-2.5 bg-muted/40 border-t space-y-1 text-[11px]">
                                         <div className="flex justify-between"><span className="text-muted-foreground">{bn ? 'মূল বেতন' : 'Base'}</span><span className="font-mono">৳{bn ? toBnDigits(baseV.toLocaleString()) : baseV.toLocaleString()}</span></div>
+                                        {isAdditive && !isPaid && unearnedV > 0 && (
+                                          <>
+                                            <div className="flex justify-between text-amber-600">
+                                              <span className="text-muted-foreground">− {bn ? 'অনার্জিত (হাজিরা নেই/অনুপস্থিত দিন)' : 'Unearned (no attendance / absent days)'}</span>
+                                              <span className="font-mono">৳{bn ? toBnDigits(unearnedV.toLocaleString()) : unearnedV.toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between text-emerald-700">
+                                              <span className="text-muted-foreground">= {bn ? 'অর্জিত (উপস্থিত দিনের আয়)' : 'Earned (present days)'}</span>
+                                              <span className="font-mono">৳{bn ? toBnDigits(earnedV.toLocaleString()) : earnedV.toLocaleString()}</span>
+                                            </div>
+                                          </>
+                                        )}
                                         {(otV > 0 || bonusV > 0 || otherA > 0) && (
                                           <div className="flex justify-between text-emerald-700">
                                             <span className="text-muted-foreground">+ {bn ? 'ওভারটাইম/বোনাস/ভাতা' : 'OT / Bonus / Allow'}</span>
