@@ -2769,18 +2769,28 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = isPaid ? rec : autoCalc;
-                                const absD = Number(src.absence_deduction || 0);
-                                const lateD = Number(src.late_deduction || 0);
                                 const advD = Number(rec?.advance_deduction || 0);
-                                const otherD = Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
                                 const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
+                                // In additive mode absence/late are NOT deductions — they are simply
+                                // unearned days. Show them as ৳0 here so the deduction total never
+                                // exceeds the base salary; surface the unearned amount separately.
+                                const absD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).absence_deduction || 0);
+                                const lateD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).late_deduction || 0);
+                                const otherD = isAdditive
+                                  ? Number(rec?.other_deduction || 0)
+                                  : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                const earnedV = !isPaid
+                                  ? Number((autoCalc as any).earned_from_attendance || 0)
+                                  : 0;
+                                const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
                                 const sumDed = absD + lateD + advD + otherD + savD;
-                                const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
+                                const expectedNet = isAdditive
+                                  ? displayNet
+                                  : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
