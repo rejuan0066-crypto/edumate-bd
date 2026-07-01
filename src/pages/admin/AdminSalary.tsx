@@ -1494,11 +1494,19 @@ const AdminSalary = () => {
       }
 
       // 2. Untracked working days (potentially absent days never marked)
+      // যদি "সম্পূর্ণ উপস্থিতি বাধ্যতামূলক" সেটিং চালু থাকে (ডিফল্ট), তবে অসম্পূর্ণ
+      // হাজিরা থাকলে বেতন জেনারেট আটকে যাবে (error) — নাহলে শুধু সতর্কবার্তা।
       if (stats.untrackedAbsentDays > 0) {
-        warnings.push(bn
+        const requireComplete = getSetting('require_complete_attendance')?.enabled !== false;
+        const msg = bn
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন হাজিরা দেওয়া হয়নি — মাসের সব উপস্থিতি সম্পূর্ণ করুন`
+          : `${stats.untrackedAbsentDays} day(s) unmarked — complete all attendance for the month first`;
+        if (requireComplete) errors.push(msg);
+        else warnings.push(bn
           ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো রেকর্ড নেই (ছুটি না হলে অনুপস্থিত হিসাবে গণ্য)`
           : `${stats.untrackedAbsentDays} day(s) unmarked (counted as absent unless holiday)`);
       }
+
 
       // 3. Late/half_day/present without check-in time
       const missingTime = records.filter((r: any) =>
