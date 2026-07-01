@@ -931,19 +931,26 @@ const AdminSalary = () => {
     // → treated as absent so subtractive mode pro-rates correctly.
     // Days BEFORE the staff's joining date are NOT counted as absent — instead
     // they are tracked separately (preJoinDays) so pay is prorated from joining.
+    // For the CURRENT (ongoing) month we only count days up to today; future days
+    // are not yet absent, so salary reflects exactly the attendance marked so far.
     const [yy, mm] = monthYear.split('-').map(Number);
     const lastDay = new Date(yy, mm, 0).getDate();
+    const now = new Date();
+    const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
+    const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
     const firstCountedDay = joinedFromDay(staffMember);
     let untrackedAbsentDays = 0;
     let preJoinDays = 0;
     for (let d = 1; d <= lastDay; d++) {
       if (d < firstCountedDay) { preJoinDays += 1; continue; }
+      if (d > lastCountedDay) continue; // future day of ongoing month — not absent yet
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
       if (paidHolidaySet.has(dateStr)) continue;
       untrackedAbsentDays += 1;
     }
     const absent = recordedAbsent + untrackedAbsentDays;
+
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
