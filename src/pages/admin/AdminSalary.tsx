@@ -3569,6 +3569,20 @@ const AdminSalary = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'সম্পূর্ণ উপস্থিতি বাধ্যতামূলক' : 'Require Complete Attendance'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn ? 'মাসের সব দিনের উপস্থিতি না দেওয়া পর্যন্ত বেতন জেনারেট হবে না' : 'Salary won\'t generate until every day of the month is marked'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('require_complete_attendance')?.enabled !== false}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'require_complete_attendance', value: { enabled: v } })}
+                  />
+                </div>
+
+
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
                   <Select
