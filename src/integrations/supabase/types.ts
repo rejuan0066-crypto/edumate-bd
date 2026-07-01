@@ -7534,6 +7534,7 @@ export type Database = {
           other_allowance: number | null
           other_allowance_note: string | null
           other_deduction: number | null
+          other_deduction_note: string | null
           overtime: number | null
           paid_at: string | null
           paid_by: string | null
@@ -7584,6 +7585,7 @@ export type Database = {
           other_allowance?: number | null
           other_allowance_note?: string | null
           other_deduction?: number | null
+          other_deduction_note?: string | null
           overtime?: number | null
           paid_at?: string | null
           paid_by?: string | null
@@ -7634,6 +7636,7 @@ export type Database = {
           other_allowance?: number | null
           other_allowance_note?: string | null
           other_deduction?: number | null
+          other_deduction_note?: string | null
           overtime?: number | null
           paid_at?: string | null
           paid_by?: string | null
