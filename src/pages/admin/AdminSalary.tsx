@@ -2246,7 +2246,7 @@ const AdminSalary = () => {
               <!-- ২. উপস্থিতি কর্তন -->
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
 
               <!-- সাবটোটাল: উপস্থিতি ভিত্তিক বেতন -->
               <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
@@ -2258,7 +2258,7 @@ const AdminSalary = () => {
               <!-- ৪. বোনাস / ওভারটাইম / ভাতা -->
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'বোনাস' : 'Bonus'}</span><span class="v">৳${slipNum(Number(record.bonus || 0))}</span></div>
               <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'ওভারটাইম' : 'Overtime'}</span><span class="v">৳${slipNum(Number(record.overtime || 0))}</span></div>
-              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
+              <div class="ln" style="color:#047857"><span class="l">＋ ${bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}${record.other_allowance_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_allowance_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_allowance || 0))}</span></div>
 
               <!-- যাচাই লাইন hidden by request — শুধু চূড়ান্ত যোগফল দেখাও -->
               <div class="ln" style="border-top:2px solid #0f172a;margin-top:6px;padding-top:8px;background:#fefce8;color:#713f12;font-weight:700">
@@ -3396,7 +3396,7 @@ const AdminSalary = () => {
                     <NumberInput value={editDialog.overtime} onValueChange={n => setEditDialog({ ...editDialog, overtime: n })} />
                   </div>
                   <div>
-                    <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
+                    <Label className="text-xs">{bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}</Label>
                     <NumberInput value={editDialog.other_allowance} onValueChange={n => setEditDialog({ ...editDialog, other_allowance: n })} />
                     <Input className="mt-1.5" type="text" placeholder={bn ? 'ডিউটি/বিবরণ লিখুন' : 'Duty / note'} value={editDialog.other_allowance_note || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })} />
                   </div>
@@ -3419,6 +3419,7 @@ const AdminSalary = () => {
                     <div>
                       <Label className="text-xs">{bn ? 'অন্যান্য কর্তন' : 'Other Ded.'}</Label>
                       <NumberInput value={editDialog.other_deduction} onValueChange={n => setEditDialog({ ...editDialog, other_deduction: n })} />
+                      <Input className="mt-1.5" type="text" placeholder={bn ? 'কর্তনের কারণ লিখুন' : 'Reason for deduction'} value={editDialog.other_deduction_note || ''} onChange={e => setEditDialog({ ...editDialog, other_deduction_note: e.target.value })} />
                     </div>
                   </div>
                 </div>
