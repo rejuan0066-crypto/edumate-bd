@@ -2635,8 +2635,10 @@ const AdminSalary = () => {
                         // the deduction total exceed the base salary (e.g. base 11,000 → "deduction"
                         // 11,633). So in additive mode the deduction column shows only REAL money
                         // removed from earnings: advance + savings + manual other-deduction.
-                        const isAdditive = (isPaid ? rec.calc_basis : autoCalc.calc_basis) === 'additive'
-                          || (!isPaid && !rec && (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive');
+                        const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
+                        const isAdditive = isPaid
+                          ? (((rec as any).calc_basis ?? (autoCalc.calc_basis)) === 'additive')
+                          : globalAdditive;
                         const totalDed = isAdditive
                           ? (isPaid
                               ? Number(rec.advance_deduction || 0) + Number(rec.savings_deduction || 0) + Number(rec.other_deduction || 0)
