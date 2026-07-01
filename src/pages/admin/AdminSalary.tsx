@@ -2754,16 +2754,16 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const src = rec || autoCalc;
+                                const src = isPaid ? rec : autoCalc;
                                 const absD = Number(src.absence_deduction || 0);
                                 const lateD = Number(src.late_deduction || 0);
-                                const advD = Number((rec?.advance_deduction) ?? src.advance_deduction ?? 0);
-                                const otherD = Number((rec?.other_deduction) ?? src.other_deduction ?? 0);
-                                const savD = Number(rec?.savings_deduction ?? savingsAmt ?? 0);
+                                const advD = Number(rec?.advance_deduction || 0);
+                                const otherD = Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
                                 const bonusV = Number(rec?.bonus || 0);
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
-                                const otV = Number((rec?.overtime) ?? src.overtime ?? 0);
+                                const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
                                 const sumDed = absD + lateD + advD + otherD + savD;
                                 const expectedNet = Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
