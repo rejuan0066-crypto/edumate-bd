@@ -3516,7 +3516,7 @@ const AdminSalary = () => {
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
                   <Select
-                    value={getSetting('salary_calc_basis')?.mode || 'subtractive'}
+                    value={getSetting('salary_calc_basis')?.mode || 'additive'}
                     onValueChange={v => saveSettingMutation.mutate({ key: 'salary_calc_basis', value: { mode: v } })}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
