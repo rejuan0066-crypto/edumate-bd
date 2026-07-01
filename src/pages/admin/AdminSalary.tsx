@@ -2617,14 +2617,24 @@ const AdminSalary = () => {
                         // each render. Once a record exists, ALWAYS show its stored snapshot
                         // (manual edits to bonus/overtime/advance are already saved into it).
                         // Live values are only used for not-yet-generated rows.
+                        const isPaid = rec && rec.status === 'paid';
+                        // Paid records: locked snapshot. Pending/ungenerated rows reflect LIVE
+                        // attendance so a month with NO attendance correctly shows 0 net, and
+                        // newly-marked attendance updates immediately without re-generating.
+                        const manualBonus = Number(rec?.bonus || 0);
+                        const manualAllow = Number(rec?.other_allowance || 0);
+                        const manualAdvance = Number(rec?.advance_deduction || 0);
                         const usePending = rec && rec.status !== 'paid';
-                        const totalDed = rec
+                        const totalDed = isPaid
                           ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
                             Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
                           : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                            Number(autoCalc.advance_deduction || 0) + Number(autoCalc.other_deduction || 0);
-                        const displayOvertime = rec ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
-                        const displayNet = rec ? Number(rec.net_salary || 0) : Number(autoCalc.net_salary || 0);
+                            manualAdvance + Number(autoCalc.other_deduction || 0);
+                        const displayOvertime = isPaid ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
+                        const displayNet = isPaid
+                          ? Number(rec.net_salary || 0)
+                          : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
+
 
                         const activeSavings = getActiveSavings(s.id);
                         const savingsAmt = activeSavings ? activeSavings.amount : 0;
