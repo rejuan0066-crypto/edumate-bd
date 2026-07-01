@@ -3396,7 +3396,7 @@ const AdminSalary = () => {
                     <NumberInput value={editDialog.overtime} onValueChange={n => setEditDialog({ ...editDialog, overtime: n })} />
                   </div>
                   <div>
-                    <Label className="text-xs">{bn ? 'অন্যান্য ভাতা' : 'Other Allowance'}</Label>
+                    <Label className="text-xs">{bn ? 'অন্যান্য ডিউটি' : 'Other Duty'}</Label>
                     <NumberInput value={editDialog.other_allowance} onValueChange={n => setEditDialog({ ...editDialog, other_allowance: n })} />
                     <Input className="mt-1.5" type="text" placeholder={bn ? 'ডিউটি/বিবরণ লিখুন' : 'Duty / note'} value={editDialog.other_allowance_note || ''} onChange={e => setEditDialog({ ...editDialog, other_allowance_note: e.target.value })} />
                   </div>
