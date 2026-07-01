@@ -2246,7 +2246,7 @@ const AdminSalary = () => {
               <!-- ২. উপস্থিতি কর্তন -->
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অনুপস্থিতি কর্তন' : 'Absence Deduction'} (${bn ? toBnDigits(record.absent_days || 0) : (record.absent_days || 0)} ${bn ? 'দিন' : 'd'})</span><span class="v">৳${slipNum(Number(record.absence_deduction || 0))}</span></div>
               <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'বিলম্ব কর্তন' : 'Late Deduction'}</span><span class="v">৳${slipNum(Number(record.late_deduction || 0))}</span></div>
-              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
+              <div class="ln" style="color:#dc2626"><span class="l">− ${bn ? 'অন্যান্য কর্তন' : 'Other Deduction'}${record.other_deduction_note ? ` <span style="color:#64748b;font-weight:400">(${record.other_deduction_note})</span>` : ''}</span><span class="v">৳${slipNum(Number(record.other_deduction || 0))}</span></div>
 
               <!-- সাবটোটাল: উপস্থিতি ভিত্তিক বেতন -->
               <div class="ln" style="border-top:1px dashed #94a3b8;padding-top:6px;margin-top:4px;background:#f0fdf4;color:#065f46"><span class="l"><strong>${bn ? '= উপস্থিতি ভিত্তিক বেতন' : '= Earned from Attendance'}</strong></span><span class="v"><strong>৳${slipNum(earnedFromAttendance)}</strong></span></div>
