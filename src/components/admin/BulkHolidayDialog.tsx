@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarOff, Save, Users } from 'lucide-react';
+import { CalendarOff, Save, Users, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { bn as bnLocale } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,10 +19,13 @@ interface Props {
   entityType: 'student' | 'staff';
   shift: string;
   bn?: boolean;
+  mode?: 'leave' | 'present';
   onApplied?: (firstDateKey: string) => void;
 }
 
-export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true, onApplied }: Props) {
+export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true, mode = 'leave', onApplied }: Props) {
+  const isLeave = mode === 'leave';
+  const accent = isLeave ? 'blue' : 'emerald';
   const qc = useQueryClient();
   const [dates, setDates] = useState<Date[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -45,9 +48,11 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
         if (delErr) throw delErr;
         const records = selectedIds.map(id => ({
           attendance_date: dk, entity_type: entityType, entity_id: id,
-          status: 'leave', shift,
-          leave_type: 'other',
-          leave_reason: reason || (bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday'),
+          status: isLeave ? 'leave' : 'present', shift,
+          ...(isLeave ? {
+            leave_type: 'other',
+            leave_reason: reason || (bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday'),
+          } : {}),
         }));
         const { error } = await supabase.from('attendance_records').insert(records);
         if (error) throw error;
@@ -57,13 +62,15 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
     },
     onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      toast.success(bn ? `${count} টি হাজিরায় ছুটি দেওয়া হয়েছে` : `Marked ${count} entries on leave`);
+      toast.success(isLeave
+        ? (bn ? `${count} টি হাজিরায় ছুটি দেওয়া হয়েছে` : `Marked ${count} entries on leave`)
+        : (bn ? `${count} টি হাজিরায় উপস্থিতি দেওয়া হয়েছে` : `Marked ${count} entries present`));
       const firstKey = [...dateKeys].sort()[0];
       setDates([]); setSelectedIds([]); setReason('');
       onOpenChange(false);
       if (firstKey) onApplied?.(firstKey);
     },
-    onError: (e: any) => toast.error(e?.message || (bn ? 'ছুটি দিতে সমস্যা' : 'Failed to mark holiday')),
+    onError: (e: any) => toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save')),
   });
 
   return (
@@ -71,8 +78,12 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
       <DialogContent className="max-w-2xl rounded-[28px] p-0 overflow-hidden">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-2">
-            <CalendarOff className="h-5 w-5 text-blue-600" />
-            {bn ? 'বিশেষ দিনের ছুটি' : 'Special-day Holiday'}
+            {isLeave
+              ? <CalendarOff className="h-5 w-5 text-blue-600" />
+              : <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+            {isLeave
+              ? (bn ? 'বিশেষ দিনের ছুটি' : 'Special-day Holiday')
+              : (bn ? 'একসাথে উপস্থিতি' : 'Bulk Present')}
           </DialogTitle>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto">
@@ -91,19 +102,21 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               />
             </div>
             {dateKeys.length > 0 && (
-              <p className="text-[11px] text-blue-600 mt-2">
+              <p className={`text-[11px] mt-2 ${isLeave ? 'text-blue-600' : 'text-emerald-600'}`}>
                 {bn ? `${dateKeys.length} টি তারিখ নির্বাচিত` : `${dateKeys.length} date(s) selected`}
               </p>
             )}
-            <div className="mt-3">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">{bn ? 'ছুটির কারণ (ঐচ্ছিক)' : 'Reason (optional)'}</p>
-              <input
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={bn ? 'যেমন: জাতীয় দিবস' : 'e.g. National holiday'}
-                className="w-full text-sm rounded-xl border border-border/50 bg-background/80 px-3 py-2 outline-none focus:border-blue-400"
-              />
-            </div>
+            {isLeave && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">{bn ? 'ছুটির কারণ (ঐচ্ছিক)' : 'Reason (optional)'}</p>
+                <input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={bn ? 'যেমন: জাতীয় দিবস' : 'e.g. National holiday'}
+                  className="w-full text-sm rounded-xl border border-border/50 bg-background/80 px-3 py-2 outline-none focus:border-blue-400"
+                />
+              </div>
+            )}
           </div>
 
           {/* Entity selection */}
@@ -111,9 +124,9 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
-                {bn ? 'কাকে কাকে ছুটি দেবেন' : 'Who gets the leave'}
+                {isLeave ? (bn ? 'কাকে কাকে ছুটি দেবেন' : 'Who gets the leave') : (bn ? 'কাকে কাকে উপস্থিত দেবেন' : 'Who to mark present')}
               </p>
-              <button type="button" onClick={toggleAll} className="text-[11px] font-medium text-blue-600 hover:underline">
+              <button type="button" onClick={toggleAll} className={`text-[11px] font-medium hover:underline ${isLeave ? 'text-blue-600' : 'text-emerald-600'}`}>
                 {allSelected ? (bn ? 'সব বাদ' : 'Clear all') : (bn ? 'সবাই নির্বাচন' : 'Select all')}
               </button>
             </div>
@@ -124,7 +137,7 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               {entities.map((e) => {
                 const checked = selectedIds.includes(e.id);
                 return (
-                  <label key={e.id} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition ${checked ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-muted/60'}`}>
+                  <label key={e.id} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition ${checked ? (isLeave ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-emerald-50 dark:bg-emerald-950/30') : 'hover:bg-muted/60'}`}>
                     <Checkbox checked={checked} onCheckedChange={() => toggleOne(e.id)} />
                     <span className="text-sm truncate">{bn ? (e.name_bn || e.name_en) : (e.name_en || e.name_bn)}</span>
                   </label>
@@ -141,12 +154,12 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
             {bn ? 'বাতিল' : 'Cancel'}
           </Button>
           <Button
-            className="rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+            className={`rounded-full text-white ${isLeave ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
             disabled={mutation.isPending || dateKeys.length === 0 || selectedIds.length === 0}
             onClick={() => mutation.mutate()}
           >
             <Save className="h-4 w-4 mr-1" />
-            {bn ? 'ছুটি দিন' : 'Mark leave'}
+            {isLeave ? (bn ? 'ছুটি দিন' : 'Mark leave') : (bn ? 'উপস্থিত দিন' : 'Mark present')}
           </Button>
         </div>
       </DialogContent>
