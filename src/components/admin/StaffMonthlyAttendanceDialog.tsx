@@ -337,7 +337,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl max-h-[70vh] overflow-y-auto"
+                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl overflow-y-auto"
+                      style={{ maxHeight: 'var(--radix-popover-content-available-height)' }}
+                      collisionPadding={12}
                       align="center"
                       onOpenAutoFocus={(e) => e.preventDefault()}
                       onInteractOutside={(e) => {
