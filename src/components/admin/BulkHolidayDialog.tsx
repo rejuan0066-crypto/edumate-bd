@@ -78,8 +78,12 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
       <DialogContent className="max-w-2xl rounded-[28px] p-0 overflow-hidden">
         <DialogHeader className="px-5 pt-5">
           <DialogTitle className="flex items-center gap-2">
-            <CalendarOff className="h-5 w-5 text-blue-600" />
-            {bn ? 'বিশেষ দিনের ছুটি' : 'Special-day Holiday'}
+            {isLeave
+              ? <CalendarOff className="h-5 w-5 text-blue-600" />
+              : <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+            {isLeave
+              ? (bn ? 'বিশেষ দিনের ছুটি' : 'Special-day Holiday')
+              : (bn ? 'একসাথে উপস্থিতি' : 'Bulk Present')}
           </DialogTitle>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto">
