@@ -226,18 +226,48 @@
     touch-action: manipulation;
   }
   body, button, input, textarea, select, label, span, p, div, a, li, td, th, h1, h2, h3, h4, h5, h6 {
-    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
+    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
   }
   body,
   body *:not(svg):not(svg *):not(path):not(code):not(pre) {
-    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
+    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.7;
+    background-color: hsl(var(--background));
+    min-height: 100vh;
   }
+
+  /* ── Global frosted-glass ambient background ──
+     Soft, deep-focus interior lighting with aquamarine light refractions.
+     Rendered on a fixed pseudo-layer so it never repaints on scroll. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 70% 82% / 0.55), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 75% 85% / 0.5), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 60% 82% / 0.45), transparent 60%),
+      radial-gradient(760px 640px at 22% 88%, hsl(48 70% 88% / 0.35), transparent 60%),
+      linear-gradient(135deg, hsl(190 45% 95%) 0%, hsl(172 40% 93%) 45%, hsl(200 40% 96%) 100%);
+    filter: saturate(1.05);
+  }
+  .dark body::before {
+    background:
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 60% 30% / 0.28), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 65% 32% / 0.24), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 55% 26% / 0.22), transparent 60%),
+      radial-gradient(760px 640px at 22% 88%, hsl(200 40% 28% / 0.2), transparent 60%),
+      linear-gradient(135deg, hsl(200 30% 7%) 0%, hsl(190 32% 6%) 50%, hsl(172 28% 6%) 100%);
+    filter: saturate(1.1);
+  }
+
 
   /* ── Modern Global Input Styles ──
      IMPORTANT: All global input/textarea/select theming uses ONE shared
