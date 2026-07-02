@@ -137,7 +137,7 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               {entities.map((e) => {
                 const checked = selectedIds.includes(e.id);
                 return (
-                  <label key={e.id} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition ${checked ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-muted/60'}`}>
+                  <label key={e.id} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition ${checked ? (isLeave ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-emerald-50 dark:bg-emerald-950/30') : 'hover:bg-muted/60'}`}>
                     <Checkbox checked={checked} onCheckedChange={() => toggleOne(e.id)} />
                     <span className="text-sm truncate">{bn ? (e.name_bn || e.name_en) : (e.name_en || e.name_bn)}</span>
                   </label>
