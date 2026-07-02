@@ -458,8 +458,8 @@
     background: hsl(0 0% 100% / 0.55);
     backdrop-filter: blur(60px) saturate(1.9);
     -webkit-backdrop-filter: blur(60px) saturate(1.9);
-    border: 1px solid hsl(var(--aqua) / 0.28);
-    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.12);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.2), 0 0 22px -6px hsl(var(--aqua) / 0.35);
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark .glass-card {
@@ -477,8 +477,8 @@
     background: hsl(0 0% 100% / 0.5);
     backdrop-filter: blur(48px) saturate(1.8);
     -webkit-backdrop-filter: blur(48px) saturate(1.8);
-    border: 1px solid hsl(var(--aqua) / 0.25);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark .card-elevated {
@@ -495,8 +495,8 @@
     background: hsl(0 0% 100% / 0.48);
     backdrop-filter: blur(42px) saturate(1.7);
     -webkit-backdrop-filter: blur(42px) saturate(1.7);
-    border: 1px solid hsl(var(--aqua) / 0.22);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
     padding: 1.75rem;
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
     position: relative;
