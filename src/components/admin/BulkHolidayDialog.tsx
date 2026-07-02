@@ -124,9 +124,9 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
-                {bn ? 'কাকে কাকে ছুটি দেবেন' : 'Who gets the leave'}
+                {isLeave ? (bn ? 'কাকে কাকে ছুটি দেবেন' : 'Who gets the leave') : (bn ? 'কাকে কাকে উপস্থিত দেবেন' : 'Who to mark present')}
               </p>
-              <button type="button" onClick={toggleAll} className="text-[11px] font-medium text-blue-600 hover:underline">
+              <button type="button" onClick={toggleAll} className={`text-[11px] font-medium hover:underline ${isLeave ? 'text-blue-600' : 'text-emerald-600'}`}>
                 {allSelected ? (bn ? 'সব বাদ' : 'Clear all') : (bn ? 'সবাই নির্বাচন' : 'Select all')}
               </button>
             </div>
