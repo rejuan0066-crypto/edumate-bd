@@ -273,6 +273,9 @@ const Home = () => {
         description="Official website of Al-Arabia Subhania Hafizia Madrasah: admissions, notices, results, gallery, and Islamic education services."
         path="/"
       />
+      <h1 className="sr-only">
+        Al-Arabia Subhania Hafizia Madrasah — Quality Islamic & Hifz education, admissions, notices, and results
+      </h1>
       {/* ===== Row 1: Principal | Banner | Admin ===== */}
       {hasRow1 && (
         <section className="py-6 sm:py-8">

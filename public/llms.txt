@@ -1,0 +1,22 @@
+# Al-Arabia Subhania Hafizia Madrasah
+
+> Official website of Al-Arabia Subhania Hafizia Madrasah — an Islamic educational institution offering Hifz and Kitab education, with online admissions, notices, results, donations, and more.
+
+## Pages
+
+- [Home](/): Overview of the Madrasah, latest notices, and quick links.
+- [About](/about): History, mission, vision, and leadership of the Madrasah.
+- [Contact](/contact): Address, phone, email, and location map.
+- [Gallery](/gallery): Photos of campus, events, and activities.
+- [Notices](/notices): Official announcements and circulars.
+- [Posts](/posts): News, articles, and updates.
+- [Admission](/admission): Online admission application.
+- [Admission Tests](/admission-tests): Public admission test information.
+- [Results](/result): Student result lookup.
+- [Donation](/donation): Support the Madrasah through donations.
+- [Zakat & Fitra](/zakat-fitra): Zakat and Fitra calculator and information.
+- [Quran](/quran): Read the Holy Quran with translations and recitation.
+
+## Optional
+
+- [Complaints](/complaints): Submit and track complaints.

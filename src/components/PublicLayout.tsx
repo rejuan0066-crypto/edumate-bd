@@ -122,7 +122,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
           <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
             <Link to="/" className="flex items-center gap-3 min-w-0 flex-1">
               {settings.logo_url ? (
-                <img src={settings.logo_url} alt="Logo" className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
+                <img src={settings.logo_url} alt={`${settings.institution_name} logo`} className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
               ) : (
                 <div className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
                   <GraduationCap className="w-7 h-7 text-primary-foreground" />
@@ -130,13 +130,13 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
               )}
               <div className="min-w-0 flex-1 overflow-hidden">
                 {(hs?.show_institution_name !== false) && (
-                  <h1
+                  <div
                     className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight truncate block max-w-full"
                     title={settings.institution_name}
                     style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word', whiteSpace: 'nowrap' }}
                   >
                     {settings.institution_name}
-                  </h1>
+                  </div>
                 )}
                 {(hs?.show_institution_name_en !== false) && (
                   <p
@@ -178,7 +178,12 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
             </nav>
 
             {/* Mobile toggle */}
-            <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button
+              className="lg:hidden p-2"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileOpen}
+            >
               {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>

@@ -53,10 +53,10 @@ const HomeAdmissionButtons = ({ language }: Props) => {
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
       <div className="bg-accent px-4 py-3">
-        <h3 className="text-sm font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2">
+        <h2 className="text-sm font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2">
           <GraduationCap className="w-4 h-4" />
           {bn ? 'অনলাইন এডমিশন' : 'Online Admission'}
-        </h3>
+        </h2>
       </div>
       <div className="flex-1 p-4 flex flex-col gap-3 justify-center">
         {isLoading && (
