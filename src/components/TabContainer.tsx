@@ -61,10 +61,11 @@ const SegButton = ({
     onClick={onClick}
     className={cn(
       'relative flex items-center justify-center gap-2 rounded-full font-semibold transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+      'border-[1.5px] border-[hsl(var(--aqua)_/_0.38)] shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.32),0_0_12px_-7px_hsl(var(--aqua)_/_0.45)]',
       level === 1 ? 'px-5 py-2.5 text-sm' : 'px-4 py-2 text-[13px]',
       active
-        ? 'text-primary-foreground'
-        : 'text-muted-foreground hover:text-foreground hover:bg-primary/5',
+        ? 'text-primary-foreground border-[hsl(var(--aqua)_/_0.62)]'
+        : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-[hsl(var(--aqua)_/_0.55)]',
     )}
   >
     {active && (
