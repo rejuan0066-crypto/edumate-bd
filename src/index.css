@@ -157,6 +157,14 @@
     --shadow-elevated: 0 20px 60px -15px hsl(220 30% 10% / 0.1), 0 8px 24px -8px hsl(220 30% 10% / 0.05);
     --shadow-float: 0 30px 80px -20px hsl(220 30% 10% / 0.12), 0 12px 30px -12px hsl(220 30% 10% / 0.06);
     --shadow-glow-emerald: 0 0 30px -5px hsl(160 84% 36% / 0.18), 0 0 12px -3px hsl(160 84% 36% / 0.1);
+
+    /* Aquamarine / turquoise glass accent system */
+    --aqua: 172 72% 45%;
+    --aqua-glow: 168 85% 60%;
+    --glass-border: 172 60% 55%;
+    --shadow-glow-aqua: 0 0 28px -6px hsl(var(--aqua-glow) / 0.4), 0 0 10px -2px hsl(var(--aqua) / 0.28);
+    --glass-panel-bg: 0 0% 100% / 0.55;
+    --glass-panel-border: 172 55% 70% / 0.4;
   }
 
   .dark {
@@ -195,6 +203,14 @@
     --shadow-elevated: 0 20px 60px -15px hsl(0 0% 0% / 0.55);
     --shadow-float: 0 30px 80px -20px hsl(0 0% 0% / 0.6);
     --shadow-glow-emerald: 0 0 35px -5px hsl(160 84% 38% / 0.22), 0 0 14px -3px hsl(160 84% 38% / 0.12);
+
+    /* Aquamarine / turquoise glass accent system — dark obsidian glass */
+    --aqua: 172 70% 50%;
+    --aqua-glow: 168 85% 62%;
+    --glass-border: 172 55% 55%;
+    --shadow-glow-aqua: 0 0 30px -6px hsl(var(--aqua-glow) / 0.35), 0 0 12px -2px hsl(var(--aqua) / 0.25);
+    --glass-panel-bg: 200 30% 8% / 0.55;
+    --glass-panel-border: 172 45% 45% / 0.35;
   }
 }
 
@@ -210,18 +226,48 @@
     touch-action: manipulation;
   }
   body, button, input, textarea, select, label, span, p, div, a, li, td, th, h1, h2, h3, h4, h5, h6 {
-    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
+    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
   }
   body,
   body *:not(svg):not(svg *):not(path):not(code):not(pre) {
-    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
+    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.7;
+    background-color: hsl(var(--background));
+    min-height: 100vh;
   }
+
+  /* ── Global frosted-glass ambient background ──
+     Soft, deep-focus interior lighting with aquamarine light refractions.
+     Rendered on a fixed pseudo-layer so it never repaints on scroll. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 70% 82% / 0.55), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 75% 85% / 0.5), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 60% 82% / 0.45), transparent 60%),
+      radial-gradient(760px 640px at 22% 88%, hsl(48 70% 88% / 0.35), transparent 60%),
+      linear-gradient(135deg, hsl(190 45% 95%) 0%, hsl(172 40% 93%) 45%, hsl(200 40% 96%) 100%);
+    filter: saturate(1.05);
+  }
+  .dark body::before {
+    background:
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 60% 30% / 0.28), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 65% 32% / 0.24), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 55% 26% / 0.22), transparent 60%),
+      radial-gradient(760px 640px at 22% 88%, hsl(200 40% 28% / 0.2), transparent 60%),
+      linear-gradient(135deg, hsl(200 30% 7%) 0%, hsl(190 32% 6%) 50%, hsl(172 28% 6%) 100%);
+    filter: saturate(1.1);
+  }
+
 
   /* ── Modern Global Input Styles ──
      IMPORTANT: All global input/textarea/select theming uses ONE shared
@@ -452,12 +498,28 @@
     transform: translateY(0) scale(0.97);
   }
 
-  /* ── Sidebar — Ultra-Modern Premium SaaS ── */
+  /* ── Sidebar — Frosted Aquamarine Glass ── */
   .sidebar-glass {
-    background: linear-gradient(180deg, hsl(160 50% 10%), hsl(160 40% 7%));
-    border-right: 1px solid hsl(160 40% 20% / 0.2);
-    box-shadow: 4px 0 30px -6px hsl(0 0% 0% / 0.3);
+    background: linear-gradient(180deg, hsl(180 45% 12% / 0.72), hsl(172 42% 9% / 0.78));
+    backdrop-filter: blur(28px) saturate(1.6);
+    -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    border-right: 1px solid hsl(var(--glass-border) / 0.35);
+    box-shadow: 4px 0 40px -10px hsl(180 60% 10% / 0.4), inset -1px 0 0 hsl(var(--aqua-glow) / 0.12), var(--shadow-glow-aqua);
   }
+
+  /* ── Top header — seamless translucent glass ── */
+  .admin-header-glass {
+    background: hsl(0 0% 100% / 0.5);
+    backdrop-filter: blur(26px) saturate(1.6);
+    -webkit-backdrop-filter: blur(26px) saturate(1.6);
+    border-bottom: 1px solid hsl(var(--glass-border) / 0.3) !important;
+    box-shadow: 0 6px 30px -12px hsl(180 40% 20% / 0.25), inset 0 -1px 0 hsl(var(--aqua-glow) / 0.15);
+  }
+  .dark .admin-header-glass {
+    background: hsl(200 30% 8% / 0.55);
+    border-bottom-color: hsl(var(--glass-border) / 0.25) !important;
+  }
+
 
   .sidebar-item {
     @apply flex items-center gap-3 rounded-xl transition-all duration-200 font-medium relative;
