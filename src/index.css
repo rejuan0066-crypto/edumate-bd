@@ -434,16 +434,17 @@
   /* ── Premium Glass Cards ── */
   .glass-card {
     border-radius: 45px;
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(50px) saturate(1.8);
-    -webkit-backdrop-filter: blur(50px) saturate(1.8);
-    border: 1px solid hsl(var(--border) / 0.12);
-    box-shadow: var(--shadow-float);
+    background: hsl(0 0% 100% / 0.55);
+    backdrop-filter: blur(60px) saturate(1.9);
+    -webkit-backdrop-filter: blur(60px) saturate(1.9);
+    border: 1px solid hsl(var(--aqua) / 0.28);
+    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.12);
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark .glass-card {
     background: hsl(var(--card) / 0.45);
-    border-color: hsl(var(--border) / 0.08);
+    border-color: hsl(var(--aqua) / 0.2);
+    box-shadow: var(--shadow-float), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
   }
   .glass-card:hover {
     box-shadow: var(--shadow-float), var(--shadow-glow-aqua);
