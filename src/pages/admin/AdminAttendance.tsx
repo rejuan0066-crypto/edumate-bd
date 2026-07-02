@@ -2131,6 +2131,16 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
           bn={bn}
           onApplied={(firstKey) => setSelectedDate(firstKey)}
         />
+        <BulkHolidayDialog
+          open={presentDialogOpen}
+          onOpenChange={setPresentDialogOpen}
+          entities={entities}
+          entityType={entityType}
+          shift={effectiveShift}
+          bn={bn}
+          mode="present"
+          onApplied={(firstKey) => setSelectedDate(firstKey)}
+        />
       </div>
     </AdminLayout>
   );
