@@ -25,6 +25,17 @@
   font-family: 'KFGQPC Uthmanic Script HAFS', 'UthmanicHafs', 'Amiri Quran', 'Scheherazade New', serif !important;
 }
 
+/* Quran.com page glyph fonts (QCF2xxx) must win over the generic Uthmani font;
+   otherwise private-use Mushaf glyphs render as boxes or fallback text. */
+.quran-mushaf-text .quran-qcf-glyph {
+  font-family: var(--qcf-font), 'KFGQPC Uthmanic Script HAFS', 'UthmanicHafs', serif !important;
+}
+
+.quran-mushaf-text[data-script="indopak"],
+.quran-mushaf-text[data-script="indopak"] * {
+  font-family: 'Noto Naskh Arabic', 'Scheherazade New', serif !important;
+}
+
 /* ===== Mushaf reading theme overrides (scoped to /quran page wrapper) =====
    Only re-maps the semantic tokens so cards, headers and verses adopt a
    dark or light mushaf look without touching the global app theme. */
