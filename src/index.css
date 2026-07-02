@@ -606,7 +606,7 @@
   /* Active state — soft glow bar */
   .sidebar-item.active {
     @apply font-semibold;
-    color: hsl(184 75% 20%);
+    color: hsl(184 85% 15%);
     background: hsl(var(--aqua) / 0.2);
   }
   .sidebar-item.active::before {
@@ -622,12 +622,12 @@
     box-shadow: 0 0 10px 1px hsl(var(--aqua) / 0.5);
   }
   .sidebar-item.active .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 85% 20%);
   }
 
   .sidebar-item.has-active-child {
     @apply font-semibold;
-    color: hsl(184 55% 28%);
+    color: hsl(200 30% 20%);
     background: hsl(var(--aqua) / 0.1);
   }
 
