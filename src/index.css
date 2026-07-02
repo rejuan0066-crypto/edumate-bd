@@ -251,22 +251,43 @@
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(1100px 720px at 12% 8%, hsl(172 70% 82% / 0.55), transparent 60%),
-      radial-gradient(900px 700px at 88% 10%, hsl(190 75% 85% / 0.5), transparent 62%),
-      radial-gradient(1000px 800px at 78% 92%, hsl(158 60% 82% / 0.45), transparent 60%),
-      radial-gradient(760px 640px at 22% 88%, hsl(48 70% 88% / 0.35), transparent 60%),
-      linear-gradient(135deg, hsl(190 45% 95%) 0%, hsl(172 40% 93%) 45%, hsl(200 40% 96%) 100%);
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 70% 82% / 0.35), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 75% 85% / 0.32), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 60% 82% / 0.3), transparent 60%),
+      linear-gradient(135deg, hsl(190 45% 96% / 0.55) 0%, hsl(172 40% 94% / 0.5) 45%, hsl(200 40% 97% / 0.55) 100%),
+      url('./assets/app-bg.jpg');
+    background-size: cover, cover, cover, cover, cover;
+    background-position: center;
+    background-repeat: no-repeat;
     filter: saturate(1.05);
+  }
+  /* Frosted veil so cards read cleanly over the photographic background */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+    background: hsl(190 40% 97% / 0.28);
   }
   .dark body::before {
     background:
-      radial-gradient(1100px 720px at 12% 8%, hsl(172 60% 30% / 0.28), transparent 60%),
-      radial-gradient(900px 700px at 88% 10%, hsl(190 65% 32% / 0.24), transparent 62%),
-      radial-gradient(1000px 800px at 78% 92%, hsl(158 55% 26% / 0.22), transparent 60%),
-      radial-gradient(760px 640px at 22% 88%, hsl(200 40% 28% / 0.2), transparent 60%),
-      linear-gradient(135deg, hsl(200 30% 7%) 0%, hsl(190 32% 6%) 50%, hsl(172 28% 6%) 100%);
+      radial-gradient(1100px 720px at 12% 8%, hsl(172 60% 30% / 0.24), transparent 60%),
+      radial-gradient(900px 700px at 88% 10%, hsl(190 65% 32% / 0.2), transparent 62%),
+      radial-gradient(1000px 800px at 78% 92%, hsl(158 55% 26% / 0.18), transparent 60%),
+      linear-gradient(135deg, hsl(200 30% 7% / 0.6) 0%, hsl(190 32% 6% / 0.55) 50%, hsl(172 28% 6% / 0.6) 100%),
+      url('./assets/app-bg-dark.jpg');
+    background-size: cover, cover, cover, cover, cover;
+    background-position: center;
+    background-repeat: no-repeat;
     filter: saturate(1.1);
   }
+  .dark body::after {
+    background: hsl(200 30% 7% / 0.35);
+  }
+
 
 
   /* ── Modern Global Input Styles ──
@@ -288,8 +309,8 @@
     background-color: hsl(0 0% 100% / 0.5);
     backdrop-filter: blur(16px) saturate(1.6);
     -webkit-backdrop-filter: blur(16px) saturate(1.6);
-    border: 1.5px solid hsl(var(--aqua) / 0.3);
-    box-shadow: inset 0 1px 2px hsl(180 20% 40% / 0.06), 0 0 0 1px hsl(var(--aqua-glow) / 0.08);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: inset 0 1px 2px hsl(180 20% 40% / 0.06), 0 0 0 1px hsl(var(--aqua-glow) / 0.14), 0 0 14px -6px hsl(var(--aqua) / 0.3);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea),
@@ -437,8 +458,8 @@
     background: hsl(0 0% 100% / 0.55);
     backdrop-filter: blur(60px) saturate(1.9);
     -webkit-backdrop-filter: blur(60px) saturate(1.9);
-    border: 1px solid hsl(var(--aqua) / 0.28);
-    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.12);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-float), inset 0 1px 0 hsl(0 0% 100% / 0.4), 0 0 0 1px hsl(var(--aqua-glow) / 0.2), 0 0 22px -6px hsl(var(--aqua) / 0.35);
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark .glass-card {
@@ -456,8 +477,8 @@
     background: hsl(0 0% 100% / 0.5);
     backdrop-filter: blur(48px) saturate(1.8);
     -webkit-backdrop-filter: blur(48px) saturate(1.8);
-    border: 1px solid hsl(var(--aqua) / 0.25);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .dark .card-elevated {
@@ -474,8 +495,8 @@
     background: hsl(0 0% 100% / 0.48);
     backdrop-filter: blur(42px) saturate(1.7);
     -webkit-backdrop-filter: blur(42px) saturate(1.7);
-    border: 1px solid hsl(var(--aqua) / 0.22);
-    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.1);
+    border: 1.5px solid hsl(var(--aqua) / 0.4);
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.35), 0 0 0 1px hsl(var(--aqua-glow) / 0.18), 0 0 20px -6px hsl(var(--aqua) / 0.32);
     padding: 1.75rem;
     transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
     position: relative;
