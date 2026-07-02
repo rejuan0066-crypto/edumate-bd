@@ -102,19 +102,21 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
               />
             </div>
             {dateKeys.length > 0 && (
-              <p className="text-[11px] text-blue-600 mt-2">
+              <p className={`text-[11px] mt-2 ${isLeave ? 'text-blue-600' : 'text-emerald-600'}`}>
                 {bn ? `${dateKeys.length} টি তারিখ নির্বাচিত` : `${dateKeys.length} date(s) selected`}
               </p>
             )}
-            <div className="mt-3">
-              <p className="text-xs font-semibold text-muted-foreground mb-1">{bn ? 'ছুটির কারণ (ঐচ্ছিক)' : 'Reason (optional)'}</p>
-              <input
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={bn ? 'যেমন: জাতীয় দিবস' : 'e.g. National holiday'}
-                className="w-full text-sm rounded-xl border border-border/50 bg-background/80 px-3 py-2 outline-none focus:border-blue-400"
-              />
-            </div>
+            {isLeave && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold text-muted-foreground mb-1">{bn ? 'ছুটির কারণ (ঐচ্ছিক)' : 'Reason (optional)'}</p>
+                <input
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={bn ? 'যেমন: জাতীয় দিবস' : 'e.g. National holiday'}
+                  className="w-full text-sm rounded-xl border border-border/50 bg-background/80 px-3 py-2 outline-none focus:border-blue-400"
+                />
+              </div>
+            )}
           </div>
 
           {/* Entity selection */}
