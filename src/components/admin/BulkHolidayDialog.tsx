@@ -48,9 +48,11 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
         if (delErr) throw delErr;
         const records = selectedIds.map(id => ({
           attendance_date: dk, entity_type: entityType, entity_id: id,
-          status: 'leave', shift,
-          leave_type: 'other',
-          leave_reason: reason || (bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday'),
+          status: isLeave ? 'leave' : 'present', shift,
+          ...(isLeave ? {
+            leave_type: 'other',
+            leave_reason: reason || (bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday'),
+          } : {}),
         }));
         const { error } = await supabase.from('attendance_records').insert(records);
         if (error) throw error;
@@ -60,13 +62,15 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
     },
     onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      toast.success(bn ? `${count} টি হাজিরায় ছুটি দেওয়া হয়েছে` : `Marked ${count} entries on leave`);
+      toast.success(isLeave
+        ? (bn ? `${count} টি হাজিরায় ছুটি দেওয়া হয়েছে` : `Marked ${count} entries on leave`)
+        : (bn ? `${count} টি হাজিরায় উপস্থিতি দেওয়া হয়েছে` : `Marked ${count} entries present`));
       const firstKey = [...dateKeys].sort()[0];
       setDates([]); setSelectedIds([]); setReason('');
       onOpenChange(false);
       if (firstKey) onApplied?.(firstKey);
     },
-    onError: (e: any) => toast.error(e?.message || (bn ? 'ছুটি দিতে সমস্যা' : 'Failed to mark holiday')),
+    onError: (e: any) => toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save')),
   });
 
   return (
