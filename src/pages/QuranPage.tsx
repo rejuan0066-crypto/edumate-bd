@@ -54,7 +54,9 @@ import {
   Layers,
   Moon,
   Sun,
+  ArrowLeft,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -166,6 +168,7 @@ const defaultSettings: Settings = {
 const QuranPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const navigate = useNavigate();
 
   // Track whether the user has any persisted settings yet. If not, we'll apply
   // the admin-configured default translation state once it's fetched.
@@ -1174,6 +1177,16 @@ const QuranPage = () => {
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-9 w-9 shrink-0"
+            onClick={() => navigate('/')}
+            aria-label={bn ? 'হোম' : 'Home'}
+            title={bn ? 'হোমে ফিরুন' : 'Back to home'}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
