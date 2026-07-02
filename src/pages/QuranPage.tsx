@@ -54,7 +54,9 @@ import {
   Layers,
   Moon,
   Sun,
+  ArrowLeft,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
