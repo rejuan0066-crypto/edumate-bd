@@ -165,7 +165,8 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
       }
       await refetch();
       qc.invalidateQueries({ queryKey: ['attendance'] });
-      if (newStatus !== 'late' && newStatus !== 'leave') setOpenKey(null);
+      // Close after an explicit editor save (extra provided) or a simple status pick
+      if (extra || (newStatus !== 'late' && newStatus !== 'leave')) setOpenKey(null);
     } catch (e: any) {
       toast.error(e?.message || (bn ? 'সেভ করতে সমস্যা' : 'Failed to save'));
     } finally {
@@ -336,7 +337,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                       </button>
                     </PopoverTrigger>
                     <PopoverContent
-                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl"
+                      className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl max-h-[70vh] overflow-y-auto"
                       align="center"
                       onOpenAutoFocus={(e) => e.preventDefault()}
                       onInteractOutside={(e) => {
