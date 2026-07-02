@@ -722,6 +722,48 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
+  // Special-day holiday: mark EVERYONE (shown list) as leave for the selected date,
+  // overriding any existing records so a whole occasion can be closed in one click.
+  const holidayMutation = useMutation({
+    mutationFn: async () => {
+      const shiftVal = effectiveShift;
+      const ids = entities.map((e: any) => e.id);
+      if (ids.length === 0) return 0;
+      // Remove existing records for these entities on this date, then insert leave.
+      const { error: delErr } = await supabase.from('attendance_records')
+        .delete()
+        .eq('attendance_date', selectedDate)
+        .eq('entity_type', entityType)
+        .in('entity_id', ids);
+      if (delErr) throw delErr;
+      const records = entities.map((e: any) => ({
+        attendance_date: selectedDate, entity_type: entityType,
+        entity_id: e.id, status: 'leave', shift: shiftVal,
+        leave_type: 'other', leave_reason: bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday',
+      }));
+      const { error } = await supabase.from('attendance_records').insert(records);
+      if (error) throw error;
+      return records.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      toast.success(bn ? `${count} জনকে ছুটি দেওয়া হয়েছে` : `Marked ${count} on leave`);
+    },
+    onError: (e: any) => toast.error(e?.message || (bn ? 'ছুটি দিতে সমস্যা' : 'Failed to mark holiday')),
+  });
+
+  const applyHoliday = async () => {
+    const ok = await confirm({
+      title: bn ? 'বিশেষ দিনের ছুটি' : 'Special-day holiday',
+      description: bn
+        ? `${selectedDate} তারিখে তালিকার সবাইকে (${entities.length} জন) ছুটি দেওয়া হবে। আগের হাজিরা মুছে যাবে।`
+        : `Everyone in the list (${entities.length}) will be marked on leave for ${selectedDate}. Existing marks will be replaced.`,
+      variant: 'warning',
+      confirmText: bn ? 'ছুটি দিন' : 'Mark leave',
+    });
+    if (ok) holidayMutation.mutate();
+  };
+
   // Reset attendance selectively
   const resetMutation = useMutation({
     mutationFn: async (type: 'all' | 'student' | 'staff' | 'division' | 'single_staff' | 'staff_category') => {
