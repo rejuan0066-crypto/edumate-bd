@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import ModuleGuard from "@/components/ModuleGuard";
@@ -299,6 +300,7 @@ const AdminShell = () => (
 
 const App = () => (
   <ErrorBoundary>
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
@@ -502,6 +504,7 @@ const App = () => (
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );
 

@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Seo } from '@/components/Seo';
 import PublicLayout from '@/components/PublicLayout';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Award, UserPlus, BookOpenText, Calculator, ArrowRight } from 'lucide-react';
@@ -267,6 +268,11 @@ const Home = () => {
 
   return (
     <PublicLayout>
+      <Seo
+        title="Al-Arabia Subhania Hafizia Madrasah — Home"
+        description="Official website of Al-Arabia Subhania Hafizia Madrasah: admissions, notices, results, gallery, and Islamic education services."
+        path="/"
+      />
       {/* ===== Row 1: Principal | Banner | Admin ===== */}
       {hasRow1 && (
         <section className="py-6 sm:py-8">
