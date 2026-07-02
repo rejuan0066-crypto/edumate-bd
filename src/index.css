@@ -585,15 +585,18 @@
     padding: 10px 14px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
-    color: hsl(200 22% 32%);
+    color: hsl(210 24% 16%);
     line-height: 1.5;
   }
+  .sidebar-item .sidebar-icon {
+    color: hsl(210 22% 22%);
+  }
   .sidebar-item:hover {
-    color: hsl(184 70% 22%);
+    color: hsl(184 80% 16%);
     background: hsl(var(--aqua) / 0.14);
   }
   .sidebar-item:hover .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 80% 24%);
     transform: scale(1.05);
   }
   .sidebar-icon {
