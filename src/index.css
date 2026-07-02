@@ -285,30 +285,32 @@
   textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   select:not(.chat-composer-input):not(.ai-chat-textarea) {
     @apply rounded-2xl transition-all duration-300;
-    background-color: hsl(0 0% 100%);
-    border: 1.5px solid hsl(var(--border));
-    box-shadow: inset 0 1px 2px hsl(220 20% 10% / 0.04);
+    background-color: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(8px) saturate(1.4);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+    border: 1.5px solid hsl(var(--glass-border) / 0.35);
+    box-shadow: inset 0 1px 2px hsl(180 20% 40% / 0.06);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea) {
-    background-color: hsl(var(--muted) / 0.35);
-    border-color: hsl(var(--border));
+    background-color: hsl(200 30% 12% / 0.45);
+    border-color: hsl(var(--glass-border) / 0.28);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
     @apply ring-2;
-    background-color: hsl(0 0% 100%);
-    border-color: hsl(var(--primary) / 0.5);
-    --tw-ring-color: hsl(var(--primary) / 0.12);
+    background-color: hsl(0 0% 100% / 0.72);
+    border-color: hsl(var(--aqua) / 0.6);
+    --tw-ring-color: hsl(var(--aqua) / 0.14);
     outline: none;
-    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.06), var(--shadow-glow-emerald);
+    box-shadow: 0 0 0 4px hsl(var(--aqua) / 0.08), var(--shadow-glow-aqua);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
-    background-color: hsl(var(--background));
+    background-color: hsl(200 30% 12% / 0.6);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea)::placeholder,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea)::placeholder {
