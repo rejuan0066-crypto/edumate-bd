@@ -352,7 +352,7 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                         <div className="text-xs font-semibold">{format(d, 'dd/MM/yyyy')}</div>
                         {isToday && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">{bn ? 'আজ' : 'Today'}</span>}
                       </div>
-                      <div className="grid grid-cols-1 gap-0.5 max-h-60 overflow-y-auto">
+                      <div className="grid grid-cols-1 gap-0.5">
                         {Object.entries(STATUS_META).map(([k, m]) => {
                           const I = m.icon;
                           const active = rec?.status === k;
