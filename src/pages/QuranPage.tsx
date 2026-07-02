@@ -122,6 +122,7 @@ const LS_SETTINGS = 'quran:settings';
 const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
+const LS_SCRIPT_DEFAULT_MIGRATED = 'quran:scriptDefaultMigrated:v2';
 const mushafPageFontFamily = (page: number) => `QCF2${String(page).padStart(3, '0')}`;
 const mushafPageFontUrl = (page: number) =>
   `https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/v2/woff2/p${page}.woff2`;
@@ -145,7 +146,7 @@ interface Settings {
   autoSaveLastRead: boolean;
 }
 const defaultSettings: Settings = {
-  script: 'uthmani',
+  script: 'indopak',
   showEn: true,
   showBn: true,
   arabicSize: 32,
@@ -168,7 +169,14 @@ const QuranPage = () => {
   );
   const [settings, setSettings] = useState<Settings>(() => {
     try {
-      return { ...defaultSettings, ...JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') };
+      const stored = JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}');
+      const shouldMigrateScript = !localStorage.getItem(LS_SCRIPT_DEFAULT_MIGRATED);
+      const next = { ...defaultSettings, ...stored };
+      if (shouldMigrateScript && (!stored.script || stored.script === 'uthmani')) {
+        next.script = 'indopak';
+        localStorage.setItem(LS_SCRIPT_DEFAULT_MIGRATED, '1');
+      }
+      return next;
     } catch {
       return defaultSettings;
     }
