@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { groupVersesBySurah } from '@/lib/quranSegments';
+import { surahNameBn } from '@/lib/quranSurahNamesBn';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
