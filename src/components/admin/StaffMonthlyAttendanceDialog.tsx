@@ -340,7 +340,9 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
                       className="w-72 p-2 rounded-2xl border-border/40 bg-background/95 backdrop-blur-xl shadow-xl overflow-y-auto"
                       style={{ maxHeight: 'var(--radix-popover-content-available-height)' }}
                       collisionPadding={12}
-                      align="center"
+                      side="right"
+                      align="start"
+                      sideOffset={8}
                       onOpenAutoFocus={(e) => e.preventDefault()}
                       onInteractOutside={(e) => {
                         const t = e.target as HTMLElement | null;
