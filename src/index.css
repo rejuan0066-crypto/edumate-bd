@@ -418,6 +418,19 @@
 }
 
 @layer components {
+  /* ── Reusable frosted aquamarine glass surface (modals, dropdowns, popovers) ── */
+  .glass-surface {
+    background: hsl(0 0% 100% / 0.62) !important;
+    backdrop-filter: blur(22px) saturate(1.7);
+    -webkit-backdrop-filter: blur(22px) saturate(1.7);
+    border: 1px solid hsl(var(--glass-border) / 0.4) !important;
+    box-shadow: 0 24px 70px -18px hsl(180 45% 15% / 0.3), var(--shadow-glow-aqua) !important;
+  }
+  .dark .glass-surface {
+    background: hsl(200 30% 9% / 0.72) !important;
+    border-color: hsl(var(--glass-border) / 0.3) !important;
+  }
+
   /* ── Premium Glass Cards ── */
   .glass-card {
     border-radius: 45px;
