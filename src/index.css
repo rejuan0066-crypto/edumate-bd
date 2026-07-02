@@ -226,11 +226,11 @@
     touch-action: manipulation;
   }
   body, button, input, textarea, select, label, span, p, div, a, li, td, th, h1, h2, h3, h4, h5, h6 {
-    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif;
   }
   body,
   body *:not(svg):not(svg *):not(path):not(code):not(pre) {
-    font-family: 'Hind Siliguri', 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
+    font-family: 'Kalpurush', 'SolaimanLipi', 'SutonnyOMJ', 'Noto Sans Bengali', 'Inter', sans-serif !important;
   }
   body {
     @apply text-foreground;
