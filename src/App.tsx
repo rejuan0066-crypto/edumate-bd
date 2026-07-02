@@ -299,6 +299,7 @@ const AdminShell = () => (
 
 const App = () => (
   <ErrorBoundary>
+    <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
