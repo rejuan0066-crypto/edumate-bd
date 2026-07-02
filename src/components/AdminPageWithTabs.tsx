@@ -136,9 +136,10 @@ const AdminPageWithTabs = ({ children }: Props) => {
                   onClick={() => toggleTab(tab.id)}
                   className={cn(
                     'relative flex items-center justify-center px-5 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                    'border-[1.5px] border-[hsl(var(--aqua)_/_0.38)] shadow-[inset_0_1px_0_hsl(0_0%_100%_/_0.32),0_0_12px_-7px_hsl(var(--aqua)_/_0.45)]',
                     active
-                      ? 'text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-primary/5',
+                      ? 'text-primary-foreground border-[hsl(var(--aqua)_/_0.62)]'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-[hsl(var(--aqua)_/_0.55)]',
                   )}
                 >
                   {active && (
