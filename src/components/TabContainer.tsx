@@ -94,10 +94,10 @@ const SegContainer = ({ children, className }: { children: ReactNode; className?
   <div
     className={cn(
       'inline-flex items-center gap-1 p-1.5 rounded-full max-w-full overflow-x-auto',
-      'border border-border/30',
+      'border-[1.5px] border-[hsl(var(--aqua)/0.4)]',
       'bg-gradient-to-r from-muted/70 via-muted/40 to-muted/70',
       'backdrop-blur-xl',
-      'shadow-[inset_0_1px_0_hsl(var(--background)/0.4),0_2px_12px_-4px_hsl(var(--foreground)/0.08)]',
+      'shadow-[inset_0_1px_0_hsl(0_0%_100%/0.4),0_0_0_1px_hsl(var(--aqua-glow)/0.2),0_0_22px_-6px_hsl(var(--aqua)/0.35)]',
       '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]',
       className,
     )}
