@@ -725,6 +725,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
 
   // Special-day holiday dialog: pick which dates of the month + which people get leave.
   const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
+  const [presentDialogOpen, setPresentDialogOpen] = useState(false);
 
 
   // Reset attendance selectively
