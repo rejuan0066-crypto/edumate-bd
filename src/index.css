@@ -582,6 +582,7 @@
 
   .sidebar-item {
     @apply flex items-center gap-3 rounded-xl transition-all duration-200 font-medium relative;
+    border: 1.5px solid transparent;
     padding: 10px 14px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
