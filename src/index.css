@@ -720,11 +720,11 @@
   }
   .sidebar-sub-item.active {
     @apply font-semibold;
-    color: hsl(184 75% 22%);
+    color: hsl(184 85% 15%);
     background: hsl(var(--aqua) / 0.18);
   }
   .sidebar-sub-item.active .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 85% 20%);
   }
   .sidebar-sub-item.active:hover {
     background: hsl(var(--aqua) / 0.22);
