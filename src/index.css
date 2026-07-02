@@ -157,6 +157,14 @@
     --shadow-elevated: 0 20px 60px -15px hsl(220 30% 10% / 0.1), 0 8px 24px -8px hsl(220 30% 10% / 0.05);
     --shadow-float: 0 30px 80px -20px hsl(220 30% 10% / 0.12), 0 12px 30px -12px hsl(220 30% 10% / 0.06);
     --shadow-glow-emerald: 0 0 30px -5px hsl(160 84% 36% / 0.18), 0 0 12px -3px hsl(160 84% 36% / 0.1);
+
+    /* Aquamarine / turquoise glass accent system */
+    --aqua: 172 72% 45%;
+    --aqua-glow: 168 85% 60%;
+    --glass-border: 172 60% 55%;
+    --shadow-glow-aqua: 0 0 28px -6px hsl(var(--aqua-glow) / 0.4), 0 0 10px -2px hsl(var(--aqua) / 0.28);
+    --glass-panel-bg: 0 0% 100% / 0.55;
+    --glass-panel-border: 172 55% 70% / 0.4;
   }
 
   .dark {
@@ -195,6 +203,14 @@
     --shadow-elevated: 0 20px 60px -15px hsl(0 0% 0% / 0.55);
     --shadow-float: 0 30px 80px -20px hsl(0 0% 0% / 0.6);
     --shadow-glow-emerald: 0 0 35px -5px hsl(160 84% 38% / 0.22), 0 0 14px -3px hsl(160 84% 38% / 0.12);
+
+    /* Aquamarine / turquoise glass accent system — dark obsidian glass */
+    --aqua: 172 70% 50%;
+    --aqua-glow: 168 85% 62%;
+    --glass-border: 172 55% 55%;
+    --shadow-glow-aqua: 0 0 30px -6px hsl(var(--aqua-glow) / 0.35), 0 0 12px -2px hsl(var(--aqua) / 0.25);
+    --glass-panel-bg: 200 30% 8% / 0.55;
+    --glass-panel-border: 172 45% 45% / 0.35;
   }
 }
 
