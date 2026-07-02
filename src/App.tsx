@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { lazyWithRetry as lazy } from "@/lib/lazyWithRetry";
 import { QueryClient, QueryClientProvider, QueryCache, MutationCache } from "@tanstack/react-query";
 import ModuleGuard from "@/components/ModuleGuard";
