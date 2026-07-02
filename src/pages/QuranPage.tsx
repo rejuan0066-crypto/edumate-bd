@@ -1014,6 +1014,7 @@ const QuranPage = () => {
       (c) =>
         c.name_simple.toLowerCase().includes(q) ||
         c.translated_name?.name?.toLowerCase().includes(q) ||
+        surahNameBn(c.id).toLowerCase().includes(q) ||
         String(c.id).includes(q),
     );
   }, [chapters, search]);
