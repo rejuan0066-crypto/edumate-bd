@@ -73,6 +73,8 @@ interface QWord {
   position: number;
   line_number: number;
   page_number?: number;
+  code_v1?: string;
+  code_v2?: string;
   text_uthmani?: string;
   text_indopak?: string;
   char_type_name?: string; // 'word' | 'end' | 'pause' | 'rub-el-hizb' | 'sajdah'
@@ -120,6 +122,15 @@ const LS_SETTINGS = 'quran:settings';
 const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
+const mushafPageFontFamily = (page: number) => `QCF2${String(page).padStart(3, '0')}`;
+const mushafPageFontUrl = (page: number) =>
+  `https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/v2/woff2/p${page}.woff2`;
+const cleanArabicText = (text?: string) =>
+  (text || '')
+    .replace(/[\u200E\u200F]/g, '')
+    .replace(/\s*[\uE000-\uF8FF]+\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 // Standard Madinah Mushaf: first page of each Juz (1..30)
 const JUZ_FIRST_PAGE: Record<number, number> = {
@@ -163,7 +174,8 @@ const QuranPage = () => {
   );
   const [settings, setSettings] = useState<Settings>(() => {
     try {
-      return { ...defaultSettings, ...JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}') };
+      const stored = JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}');
+      return { ...defaultSettings, ...stored };
     } catch {
       return defaultSettings;
     }
@@ -526,6 +538,18 @@ const QuranPage = () => {
   // into view once it's mounted. Cleared after a successful scroll.
   const pendingScrollPageRef = useRef<number | null>(null);
 
+  const qcfFontFaces = useMemo(() => {
+    const pages = [...new Set(mushafPages.map((p) => p.page))]
+      .filter((page) => page >= 1 && page <= 604)
+      .sort((a, b) => a - b);
+    return pages
+      .map(
+        (page) =>
+          `@font-face{font-family:"${mushafPageFontFamily(page)}";src:url("${mushafPageFontUrl(page)}") format("woff2");font-style:normal;font-weight:400;font-display:block;}`,
+      )
+      .join('\n');
+  }, [mushafPages]);
+
   const fetchPageVerses = useCallback((page: number): Promise<Verse[]> => {
     // Deduplicate concurrent requests for the same page.
     const existing = inFlightPageRef.current.get(page);
@@ -534,7 +558,7 @@ const QuranPage = () => {
       const url = new URL(`${QURAN_API}/verses/by_page/${page}`);
       url.searchParams.set('language', bn ? 'bn' : 'en');
       url.searchParams.set('words', 'true');
-      url.searchParams.set('word_fields', 'line_number,text_uthmani,text_indopak,char_type_name,page_number');
+      url.searchParams.set('word_fields', 'line_number,code_v1,code_v2,text_uthmani,text_indopak,char_type_name,page_number');
       url.searchParams.set('translations', `${TRANSLATION_EN},${TRANSLATION_BN}`);
       url.searchParams.set(
         'fields',
@@ -1143,6 +1167,7 @@ const QuranPage = () => {
       data-mushaf-theme={mushafTheme}
       className="quran-mushaf-root min-h-screen bg-gradient-to-br from-background via-background to-primary/5"
     >
+      {qcfFontFaces && <style>{qcfFontFaces}</style>}
       {/* ===== Header ===== */}
       <header className="sticky top-0 z-30 backdrop-blur-xl bg-background/80 border-b border-border/50">
         <div className="max-w-[1440px] mx-auto px-3 py-2.5 flex items-center gap-2">
@@ -1342,7 +1367,12 @@ const QuranPage = () => {
                             // (and thus one header) per surah on this page, even
                             // when verses arrive out of order.
                             const segments = groupVersesBySurah(pageVerses);
+                            const qcfFont = mushafPageFontFamily(page);
                             const arabicFont =
+                              settings.script === 'indopak'
+                                ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
+                                : `"${qcfFont}", "KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif`;
+                            const headingArabicFont =
                               settings.script === 'indopak'
                                 ? '"Noto Nastaliq Urdu", "Scheherazade New", "Noto Naskh Arabic", serif'
                                 : '"KFGQPC Uthmanic Script HAFS", "Amiri Quran", "Scheherazade New", "Noto Naskh Arabic", "Amiri", serif';
@@ -1361,7 +1391,7 @@ const QuranPage = () => {
                                         <span className="text-xs font-bold tabular-nums" style={{ color: '#5a4520' }}>
                                           {seg.sid}
                                         </span>
-                                        <p className="text-2xl font-bold" style={{ fontFamily: arabicFont, color: '#5a4520' }}>
+                                        <p className="text-2xl font-bold" style={{ fontFamily: headingArabicFont, color: '#5a4520' }}>
                                           سورة {ch.name_arabic}
                                         </p>
                                         <span className="text-xs" style={{ color: '#5a4520' }}>
@@ -1372,9 +1402,9 @@ const QuranPage = () => {
                                         <p
                                           dir="rtl"
                                           className="quran-mushaf-text mt-3 text-2xl"
-                                          style={{ fontFamily: arabicFont, color: '#3d2f15' }}
+                                          style={{ fontFamily: headingArabicFont, color: '#3d2f15' }}
                                         >
-                                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+                                          بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
                                         </p>
                                       )}
                                     </div>
@@ -1388,7 +1418,7 @@ const QuranPage = () => {
                                           borderColor: '#8b6f3a',
                                           background: 'rgba(139,111,58,0.06)',
                                           color: '#5a4520',
-                                          fontFamily: arabicFont,
+                                            fontFamily: headingArabicFont,
                                         }}
                                       >
                                         {bn ? 'চলমান:' : 'Continued:'} سورة {ch.name_arabic}
@@ -1470,14 +1500,16 @@ const QuranPage = () => {
                                         <div
                                           key={lineNum}
                                           dir="rtl"
+                                          data-script={settings.script}
                                           className="quran-mushaf-text relative py-2 border-b last:border-b-0"
                                           style={{
+                                            '--qcf-font': `"${qcfFont}"`,
                                             borderColor: 'rgba(139,111,58,0.25)',
                                             textAlign: 'justify',
                                             textAlignLast: 'start',
                                             textJustify: 'inter-word',
                                             lineHeight: 1.9,
-                                          }}
+                                          } as React.CSSProperties}
                                         >
                                           {items.map(({ word, verse }, idx) => {
                                             const isEnd = word.char_type_name === 'end';
@@ -1488,6 +1520,28 @@ const QuranPage = () => {
                                             const sep = idx < items.length - 1 ? ' ' : '';
 
                                             if (isEnd) {
+                                              if (settings.script === 'uthmani' && word.code_v2) {
+                                                return (
+                                                  <React.Fragment key={word.id}>
+                                                    <span
+                                                      id={anchorId}
+                                                      onClick={() => toggleBookmark(verse.verse_key)}
+                                                      className="quran-qcf-glyph inline-block cursor-pointer align-middle"
+                                                      title={verse.verse_key}
+                                                      style={{
+                                                        fontSize: `${settings.arabicSize}px`,
+                                                        color: '#5a4520',
+                                                        textShadow: bookmarks.includes(verse.verse_key)
+                                                          ? '0 0 8px hsl(var(--primary) / 0.7)'
+                                                          : undefined,
+                                                      }}
+                                                    >
+                                                      {word.code_v2}
+                                                    </span>
+                                                    {sep}
+                                                  </React.Fragment>
+                                                );
+                                              }
                                               return (
                                                 <React.Fragment key={word.id}>
                                                   <span
@@ -1513,14 +1567,19 @@ const QuranPage = () => {
                                                 </React.Fragment>
                                               );
                                             }
-                                            const txt = settings.script === 'indopak' && word.text_indopak ? word.text_indopak : word.text_uthmani;
+                                            const useQcfGlyph = settings.script === 'uthmani' && !!word.code_v2;
+                                            const txt = useQcfGlyph
+                                              ? word.code_v2
+                                              : settings.script === 'indopak' && word.text_indopak
+                                                ? cleanArabicText(word.text_indopak)
+                                                : word.text_uthmani;
                                             const isCurrent = playingKey === verse.verse_key;
                                             return (
                                               <React.Fragment key={word.id}>
                                                 <span
                                                   id={anchorId}
                                                   onClick={() => playVerse(verse)}
-                                                  className="cursor-pointer transition-colors"
+                                                  className={`${useQcfGlyph ? 'quran-qcf-glyph' : ''} cursor-pointer transition-colors`}
                                                   style={{
                                                     fontFamily: arabicFont,
                                                     fontSize: `${settings.arabicSize}px`,
