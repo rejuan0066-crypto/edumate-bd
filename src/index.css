@@ -670,7 +670,7 @@
   .sidebar-group-label {
     @apply font-semibold uppercase tracking-widest px-4 mt-6 mb-1 first:mt-0;
     font-size: 10px;
-    color: hsl(200 18% 42%);
+    color: hsl(210 22% 28%);
     letter-spacing: 0.14em;
   }
   .dark .sidebar-group-label { color: hsl(210 10% 45%); }
