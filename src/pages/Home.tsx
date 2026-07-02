@@ -1,4 +1,5 @@
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Seo } from '@/components/Seo';
 import PublicLayout from '@/components/PublicLayout';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Award, UserPlus, BookOpenText, Calculator, ArrowRight } from 'lucide-react';
