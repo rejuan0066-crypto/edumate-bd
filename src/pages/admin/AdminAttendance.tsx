@@ -33,6 +33,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
+import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
@@ -722,47 +723,9 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
-  // Special-day holiday: mark EVERYONE (shown list) as leave for the selected date,
-  // overriding any existing records so a whole occasion can be closed in one click.
-  const holidayMutation = useMutation({
-    mutationFn: async () => {
-      const shiftVal = effectiveShift;
-      const ids = entities.map((e: any) => e.id);
-      if (ids.length === 0) return 0;
-      // Remove existing records for these entities on this date, then insert leave.
-      const { error: delErr } = await supabase.from('attendance_records')
-        .delete()
-        .eq('attendance_date', selectedDate)
-        .eq('entity_type', entityType)
-        .in('entity_id', ids);
-      if (delErr) throw delErr;
-      const records = entities.map((e: any) => ({
-        attendance_date: selectedDate, entity_type: entityType,
-        entity_id: e.id, status: 'leave', shift: shiftVal,
-        leave_type: 'other', leave_reason: bn ? 'বিশেষ দিন / সাধারণ ছুটি' : 'Special day / general holiday',
-      }));
-      const { error } = await supabase.from('attendance_records').insert(records);
-      if (error) throw error;
-      return records.length;
-    },
-    onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
-      toast.success(bn ? `${count} জনকে ছুটি দেওয়া হয়েছে` : `Marked ${count} on leave`);
-    },
-    onError: (e: any) => toast.error(e?.message || (bn ? 'ছুটি দিতে সমস্যা' : 'Failed to mark holiday')),
-  });
+  // Special-day holiday dialog: pick which dates of the month + which people get leave.
+  const [holidayDialogOpen, setHolidayDialogOpen] = useState(false);
 
-  const applyHoliday = async () => {
-    const ok = await confirm({
-      title: bn ? 'বিশেষ দিনের ছুটি' : 'Special-day holiday',
-      description: bn
-        ? `${selectedDate} তারিখে তালিকার সবাইকে (${entities.length} জন) ছুটি দেওয়া হবে। আগের হাজিরা মুছে যাবে।`
-        : `Everyone in the list (${entities.length}) will be marked on leave for ${selectedDate}. Existing marks will be replaced.`,
-      variant: 'warning',
-      confirmText: bn ? 'ছুটি দিন' : 'Mark leave',
-    });
-    if (ok) holidayMutation.mutate();
-  };
 
   // Reset attendance selectively
   const resetMutation = useMutation({
@@ -1465,7 +1428,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 {canEditItem && <Button size="sm" className="text-xs rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-[0_4px_16px_hsl(160_84%_30%/0.25)] hover:shadow-[0_6px_24px_hsl(160_84%_30%/0.35)] transition-all duration-200" onClick={() => bulkMutation.mutate('present')}>
                   <Check className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই উপস্থিত' : 'All Present'}
                 </Button>}
-                {canEditItem && <Button size="sm" disabled={holidayMutation.isPending || entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={applyHoliday}>
+                {canEditItem && <Button size="sm" disabled={entities.length === 0} className="text-xs rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-[0_4px_16px_hsl(217_91%_50%/0.25)] hover:shadow-[0_6px_24px_hsl(217_91%_50%/0.35)] transition-all duration-200" onClick={() => setHolidayDialogOpen(true)}>
                   <CalendarOff className="h-3.5 w-3.5 mr-1" /> {bn ? 'সবাই ছুটি' : 'All Leave'}
                 </Button>}
                 {canDeleteItem && attendance.length > 0 && (
@@ -2157,6 +2120,14 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
           staff={monthlyStaff}
           shift={entityType === 'staff' ? effectiveShift : undefined}
           initialDate={selectedDate}
+        />
+        <BulkHolidayDialog
+          open={holidayDialogOpen}
+          onOpenChange={setHolidayDialogOpen}
+          entities={entities}
+          entityType={entityType}
+          shift={effectiveShift}
+          bn={bn}
         />
       </div>
     </AdminLayout>
