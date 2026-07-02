@@ -1041,7 +1041,7 @@ const QuranPage = () => {
     if (mode === 'page') {
       const ch = chapters.find((c) => c.id === currentChapterId);
       const surah = ch
-        ? (bn ? ch.translated_name?.name || ch.name_simple : ch.name_simple)
+        ? (bn ? surahNameBn(ch.id, ch.name_simple) : ch.name_simple)
         : '';
       const pageLabel = bn ? `পৃষ্ঠা ${activeId}` : `Page ${activeId}`;
       return surah ? `${pageLabel} • ${surah} • ${bn ? 'পারা' : 'Juz'} ${currentJuzId}` : pageLabel;
@@ -1049,7 +1049,7 @@ const QuranPage = () => {
     if (mode === 'chapter') {
       if (!currentChapter) return '';
       return bn
-        ? `${currentChapter.id}. ${currentChapter.translated_name?.name || currentChapter.name_simple}`
+        ? `${currentChapter.id}. ${bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple}`
         : `${currentChapter.id}. ${currentChapter.name_simple}`;
     }
     return bn ? `পারা ${activeId}` : `Juz ${activeId}`;
@@ -1179,7 +1179,7 @@ const QuranPage = () => {
                 className="px-3 h-8 rounded-full text-xs sm:text-sm font-medium bg-background/80 border border-border/40 hover:bg-background transition-colors truncate max-w-[140px] sm:max-w-[200px]"
               >
                 {currentChapter
-                  ? (bn ? currentChapter.translated_name?.name || currentChapter.name_simple : currentChapter.name_simple)
+                  ? (bn ? surahNameBn(currentChapter.id, currentChapter.name_simple) : currentChapter.name_simple)
                   : (bn ? 'সূরা' : 'Surah')}
               </button>
             </div>
@@ -1975,7 +1975,7 @@ const SidebarContent = ({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold truncate">
-                    {bn ? c.translated_name?.name || c.name_simple : c.name_simple}
+                    {bn ? surahNameBn(c.id, c.name_simple) : c.name_simple}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {c.verses_count} {bn ? 'আয়াত' : 'verses'} • {c.revelation_place}
@@ -2046,7 +2046,7 @@ const GotoDialog = ({
               <SelectContent className="max-h-[300px]">
                 {chapters.map((c) => (
                   <SelectItem key={c.id} value={String(c.id)}>
-                    {c.id}. {bn ? c.translated_name?.name || c.name_simple : c.name_simple}
+                    {c.id}. {bn ? surahNameBn(c.id, c.name_simple) : c.name_simple}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -2141,7 +2141,7 @@ const GotoDialog = ({
               const sid = Number(sStr);
               const ch = chapters.find((c) => c.id === sid);
               const surahName = ch
-                ? (bn ? ch.translated_name?.name || ch.name_simple : ch.name_simple)
+                ? (bn ? surahNameBn(ch.id, ch.name_simple) : ch.name_simple)
                 : `Surah ${sid}`;
               return (
                 <div key={k} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border/50 hover:bg-muted/60 transition-colors">
