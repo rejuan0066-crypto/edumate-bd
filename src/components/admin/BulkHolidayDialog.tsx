@@ -19,10 +19,13 @@ interface Props {
   entityType: 'student' | 'staff';
   shift: string;
   bn?: boolean;
+  mode?: 'leave' | 'present';
   onApplied?: (firstDateKey: string) => void;
 }
 
-export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true, onApplied }: Props) {
+export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true, mode = 'leave', onApplied }: Props) {
+  const isLeave = mode === 'leave';
+  const accent = isLeave ? 'blue' : 'emerald';
   const qc = useQueryClient();
   const [dates, setDates] = useState<Date[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
