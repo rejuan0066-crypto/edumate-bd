@@ -154,12 +154,12 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
             {bn ? 'বাতিল' : 'Cancel'}
           </Button>
           <Button
-            className="rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+            className={`rounded-full text-white ${isLeave ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
             disabled={mutation.isPending || dateKeys.length === 0 || selectedIds.length === 0}
             onClick={() => mutation.mutate()}
           >
             <Save className="h-4 w-4 mr-1" />
-            {bn ? 'ছুটি দিন' : 'Mark leave'}
+            {isLeave ? (bn ? 'ছুটি দিন' : 'Mark leave') : (bn ? 'উপস্থিত দিন' : 'Mark present')}
           </Button>
         </div>
       </DialogContent>
