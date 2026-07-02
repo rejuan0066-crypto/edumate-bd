@@ -58,8 +58,10 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
     onSuccess: (count) => {
       qc.invalidateQueries({ queryKey: ['attendance'] });
       toast.success(bn ? `${count} টি হাজিরায় ছুটি দেওয়া হয়েছে` : `Marked ${count} entries on leave`);
+      const firstKey = [...dateKeys].sort()[0];
       setDates([]); setSelectedIds([]); setReason('');
       onOpenChange(false);
+      if (firstKey) onApplied?.(firstKey);
     },
     onError: (e: any) => toast.error(e?.message || (bn ? 'ছুটি দিতে সমস্যা' : 'Failed to mark holiday')),
   });
