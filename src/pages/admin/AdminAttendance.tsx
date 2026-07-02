@@ -33,6 +33,7 @@ import { useCommitteeStaffIds } from '@/hooks/useCommitteeStaffIds';
 import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import { fetchInstitutionInfo } from '@/hooks/useInstitutionInfo';
 import StaffMonthlyAttendanceDialog from '@/components/admin/StaffMonthlyAttendanceDialog';
+import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
