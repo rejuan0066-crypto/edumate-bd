@@ -1,4 +1,5 @@
 import PublicLayout from '@/components/PublicLayout';
+import { Seo } from '@/components/Seo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useWebsiteSettings } from '@/hooks/useWebsiteSettings';
 import { usePrincipalOfficer } from '@/hooks/usePrincipalOfficer';
@@ -24,6 +25,11 @@ const About = () => {
 
   return (
     <PublicLayout>
+      <Seo
+        title="About Us — Al-Arabia Subhania Hafizia Madrasah"
+        description="Learn about the history, mission, vision, and leadership of Al-Arabia Subhania Hafizia Madrasah and its commitment to Islamic education."
+        path="/about"
+      />
       <div className="container mx-auto px-4 py-12 space-y-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-display font-bold text-foreground mb-6">

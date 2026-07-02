@@ -1,4 +1,5 @@
 import PublicLayout from '@/components/PublicLayout';
+import { Seo } from '@/components/Seo';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,11 @@ const Contact = () => {
 
   return (
     <PublicLayout>
+      <Seo
+        title="Contact Us — Al-Arabia Subhania Hafizia Madrasah"
+        description="Get in touch with Al-Arabia Subhania Hafizia Madrasah: address, phone, email, and location map for admissions and general inquiries."
+        path="/contact"
+      />
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-3xl font-display font-bold text-foreground mb-8">{t('contact')}</h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
