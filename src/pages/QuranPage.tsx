@@ -1472,7 +1472,7 @@ const QuranPage = () => {
                                           style={{
                                             borderColor: 'rgba(139,111,58,0.25)',
                                             textAlign: 'justify',
-                                            textAlignLast: 'justify',
+                                            textAlignLast: 'start',
                                             textJustify: 'inter-word',
                                             lineHeight: 1.9,
                                           }}
