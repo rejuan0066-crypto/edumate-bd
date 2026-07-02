@@ -19,9 +19,10 @@ interface Props {
   entityType: 'student' | 'staff';
   shift: string;
   bn?: boolean;
+  onApplied?: (firstDateKey: string) => void;
 }
 
-export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true }: Props) {
+export default function BulkHolidayDialog({ open, onOpenChange, entities, entityType, shift, bn = true, onApplied }: Props) {
   const qc = useQueryClient();
   const [dates, setDates] = useState<Date[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
