@@ -585,15 +585,18 @@
     padding: 10px 14px;
     margin-bottom: 2px;
     font-size: var(--sidebar-font-size, 13px);
-    color: hsl(200 22% 32%);
+    color: hsl(210 24% 16%);
     line-height: 1.5;
   }
+  .sidebar-item .sidebar-icon {
+    color: hsl(210 22% 22%);
+  }
   .sidebar-item:hover {
-    color: hsl(184 70% 22%);
+    color: hsl(184 80% 16%);
     background: hsl(var(--aqua) / 0.14);
   }
   .sidebar-item:hover .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 80% 24%);
     transform: scale(1.05);
   }
   .sidebar-icon {
@@ -603,7 +606,7 @@
   /* Active state — soft glow bar */
   .sidebar-item.active {
     @apply font-semibold;
-    color: hsl(184 75% 20%);
+    color: hsl(184 85% 15%);
     background: hsl(var(--aqua) / 0.2);
   }
   .sidebar-item.active::before {
@@ -619,12 +622,12 @@
     box-shadow: 0 0 10px 1px hsl(var(--aqua) / 0.5);
   }
   .sidebar-item.active .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 85% 20%);
   }
 
   .sidebar-item.has-active-child {
     @apply font-semibold;
-    color: hsl(184 55% 28%);
+    color: hsl(200 30% 20%);
     background: hsl(var(--aqua) / 0.1);
   }
 
@@ -667,7 +670,7 @@
   .sidebar-group-label {
     @apply font-semibold uppercase tracking-widest px-4 mt-6 mb-1 first:mt-0;
     font-size: 10px;
-    color: hsl(200 18% 42%);
+    color: hsl(210 22% 28%);
     letter-spacing: 0.14em;
   }
   .dark .sidebar-group-label { color: hsl(210 10% 45%); }
@@ -701,24 +704,27 @@
     @apply flex items-center gap-2.5 rounded-lg transition-all duration-200 font-medium relative cursor-pointer;
     padding: 7px 10px;
     font-size: 12.5px;
-    color: hsl(200 20% 38%);
+    color: hsl(210 22% 20%);
     line-height: 1.5;
     margin-bottom: 1px;
   }
+  .sidebar-sub-item .sidebar-icon {
+    color: hsl(210 20% 26%);
+  }
   .sidebar-sub-item:hover {
-    color: hsl(184 70% 22%);
+    color: hsl(184 80% 16%);
     background: hsl(var(--aqua) / 0.12);
   }
   .sidebar-sub-item:hover .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 80% 24%);
   }
   .sidebar-sub-item.active {
     @apply font-semibold;
-    color: hsl(184 75% 22%);
+    color: hsl(184 85% 15%);
     background: hsl(var(--aqua) / 0.18);
   }
   .sidebar-sub-item.active .sidebar-icon {
-    color: hsl(var(--aqua));
+    color: hsl(184 85% 20%);
   }
   .sidebar-sub-item.active:hover {
     background: hsl(var(--aqua) / 0.22);
