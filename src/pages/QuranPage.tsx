@@ -1180,6 +1180,16 @@ const QuranPage = () => {
           <Button
             variant="ghost"
             size="icon"
+            className="rounded-full h-9 w-9 shrink-0"
+            onClick={() => navigate('/')}
+            aria-label={bn ? 'হোম' : 'Home'}
+            title={bn ? 'হোমে ফিরুন' : 'Back to home'}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             className="lg:hidden rounded-full h-9 w-9 shrink-0"
             onClick={() => setSidebarOpen(true)}
             aria-label={bn ? 'মেনু' : 'Menu'}
