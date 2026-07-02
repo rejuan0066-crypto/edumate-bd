@@ -503,6 +503,7 @@ const App = () => (
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
+    </HelmetProvider>
   </ErrorBoundary>
 );
 
