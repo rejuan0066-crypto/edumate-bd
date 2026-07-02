@@ -285,30 +285,32 @@
   textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   select:not(.chat-composer-input):not(.ai-chat-textarea) {
     @apply rounded-2xl transition-all duration-300;
-    background-color: hsl(0 0% 100%);
-    border: 1.5px solid hsl(var(--border));
-    box-shadow: inset 0 1px 2px hsl(220 20% 10% / 0.04);
+    background-color: hsl(0 0% 100% / 0.6);
+    backdrop-filter: blur(8px) saturate(1.4);
+    -webkit-backdrop-filter: blur(8px) saturate(1.4);
+    border: 1.5px solid hsl(var(--glass-border) / 0.35);
+    box-shadow: inset 0 1px 2px hsl(180 20% 40% / 0.06);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea),
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea),
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea) {
-    background-color: hsl(var(--muted) / 0.35);
-    border-color: hsl(var(--border));
+    background-color: hsl(200 30% 12% / 0.45);
+    border-color: hsl(var(--glass-border) / 0.28);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
     @apply ring-2;
-    background-color: hsl(0 0% 100%);
-    border-color: hsl(var(--primary) / 0.5);
-    --tw-ring-color: hsl(var(--primary) / 0.12);
+    background-color: hsl(0 0% 100% / 0.72);
+    border-color: hsl(var(--aqua) / 0.6);
+    --tw-ring-color: hsl(var(--aqua) / 0.14);
     outline: none;
-    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.06), var(--shadow-glow-emerald);
+    box-shadow: 0 0 0 4px hsl(var(--aqua) / 0.08), var(--shadow-glow-aqua);
   }
   .dark input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark textarea:not(.chat-composer-input):not(.ai-chat-textarea):focus,
   .dark select:not(.chat-composer-input):not(.ai-chat-textarea):focus {
-    background-color: hsl(var(--background));
+    background-color: hsl(200 30% 12% / 0.6);
   }
   input:is(:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([role])):not(.chat-composer-input):not(.ai-chat-textarea)::placeholder,
   textarea:not(.chat-composer-input):not(.ai-chat-textarea)::placeholder {
@@ -377,23 +379,31 @@
   }
   table thead th {
     @apply text-left text-[11px] uppercase tracking-widest font-bold py-4 px-6;
-    color: hsl(var(--foreground) / 0.45);
+    color: hsl(var(--aqua) / 0.85);
     background: transparent;
-    border-bottom: none;
+    border-bottom: 1px solid hsl(var(--glass-border) / 0.25);
+    text-shadow: 0 1px 1px hsl(0 0% 100% / 0.4);
   }
+  .dark table thead th { text-shadow: 0 1px 2px hsl(0 0% 0% / 0.5); }
   table tbody tr {
     @apply transition-all duration-300;
     border-radius: 20px;
-    background-color: hsl(var(--card) / 0.75);
-    backdrop-filter: blur(12px);
+    background-color: hsl(0 0% 100% / 0.5);
+    box-shadow: inset 0 0 0 1px hsl(var(--glass-border) / 0.14);
+  }
+  .dark table tbody tr {
+    background-color: hsl(200 30% 12% / 0.4);
   }
   table tbody tr:nth-child(even) {
-    background-color: hsl(var(--muted) / 0.12);
+    background-color: hsl(172 40% 96% / 0.45);
+  }
+  .dark table tbody tr:nth-child(even) {
+    background-color: hsl(200 30% 14% / 0.35);
   }
   table tbody tr:hover {
-    background-color: hsl(var(--primary) / 0.05);
+    background-color: hsl(var(--aqua) / 0.08);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px -10px hsl(var(--primary) / 0.1), 0 0 0 1px hsl(var(--primary) / 0.06);
+    box-shadow: 0 12px 40px -10px hsl(var(--aqua) / 0.22), inset 0 0 0 1px hsl(var(--aqua) / 0.35), var(--shadow-glow-aqua);
   }
   table tbody td {
     @apply py-4 px-6;
@@ -408,6 +418,19 @@
 }
 
 @layer components {
+  /* ── Reusable frosted aquamarine glass surface (modals, dropdowns, popovers) ── */
+  .glass-surface {
+    background: hsl(0 0% 100% / 0.62) !important;
+    backdrop-filter: blur(22px) saturate(1.7);
+    -webkit-backdrop-filter: blur(22px) saturate(1.7);
+    border: 1px solid hsl(var(--glass-border) / 0.4) !important;
+    box-shadow: 0 24px 70px -18px hsl(180 45% 15% / 0.3), var(--shadow-glow-aqua) !important;
+  }
+  .dark .glass-surface {
+    background: hsl(200 30% 9% / 0.72) !important;
+    border-color: hsl(var(--glass-border) / 0.3) !important;
+  }
+
   /* ── Premium Glass Cards ── */
   .glass-card {
     border-radius: 45px;
