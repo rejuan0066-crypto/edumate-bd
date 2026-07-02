@@ -1016,6 +1016,9 @@ const QuranPage = () => {
       el.classList.add('ring-2', 'ring-primary');
       setTimeout(() => el.classList.remove('ring-2', 'ring-primary'), 1800);
       setTimeout(() => { suppressScrollSyncRef.current = false; }, 1200);
+      // Clear the target so infinite-scroll page appends don't re-trigger
+      // this effect and yank the viewport back to the verse.
+      setScrollKey(null);
       return true;
     };
     if (!tryScroll()) {
