@@ -13,10 +13,10 @@ const HomeAdminCard = ({ settings, language, t }: Props) => {
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
       <div className="bg-accent px-4 py-3">
-        <h3 className="text-sm font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2">
+        <h2 className="text-sm font-bold text-accent-foreground font-display text-center flex items-center justify-center gap-2">
           <span>✦</span>
           {bn ? 'এডমিনের বাণী' : "Admin's Message"}
-        </h3>
+        </h2>
       </div>
       <div className="p-5 text-center flex-1 flex flex-col items-center justify-center">
         <div className="w-24 h-24 mx-auto rounded-full bg-secondary overflow-hidden mb-4 border-4 border-accent/20 shadow-lg">

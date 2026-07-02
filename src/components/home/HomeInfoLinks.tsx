@@ -30,10 +30,10 @@ const HomeInfoLinks = ({ language, infoLinks }: Props) => {
   return (
     <div className="card-elevated overflow-hidden h-full flex flex-col">
       <div className="bg-primary px-4 py-3">
-        <h3 className="text-sm font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2">
+        <h2 className="text-sm font-bold text-primary-foreground font-display text-center flex items-center justify-center gap-2">
           <span>✦</span>
           {bn ? 'মাদ্রাসা সম্পর্কিত তথ্য' : 'Institution Info'}
-        </h3>
+        </h2>
       </div>
       <div className="flex-1 p-2">
         {links.map((link) => {

@@ -27,9 +27,9 @@ const HomeHeroBanner = ({ settings, language, t }: Props) => {
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">🕌</span>
               </div>
-              <h3 className="text-lg font-display font-bold text-foreground">
+              <h2 className="text-lg font-display font-bold text-foreground">
                 {bn ? settings.hero_title_bn : settings.hero_title_en}
-              </h3>
+              </h2>
               <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
                 {bn ? settings.hero_subtitle_bn : settings.hero_subtitle_en}
               </p>
@@ -41,9 +41,9 @@ const HomeHeroBanner = ({ settings, language, t }: Props) => {
         )}
         {settings.hero_bg_image_url && (
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-            <h3 className="text-lg font-display font-bold drop-shadow-lg">
+            <h2 className="text-lg font-display font-bold drop-shadow-lg">
               {bn ? settings.hero_title_bn : settings.hero_title_en}
-            </h3>
+            </h2>
             <p className="text-xs text-white/80 mt-1 line-clamp-2">
               {bn ? settings.hero_subtitle_bn : settings.hero_subtitle_en}
             </p>
