@@ -2128,6 +2128,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
           entityType={entityType}
           shift={effectiveShift}
           bn={bn}
+          onApplied={(firstKey) => setSelectedDate(firstKey)}
         />
       </div>
     </AdminLayout>
