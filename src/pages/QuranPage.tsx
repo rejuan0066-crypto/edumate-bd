@@ -122,10 +122,15 @@ const LS_SETTINGS = 'quran:settings';
 const lastReadKey = (uid: string | null) => `${LS_LAST_READ}:${uid || 'anon'}`;
 const lastMushafKey = (uid: string | null) => `${LS_LAST_MUSHAF}:${uid || 'anon'}`;
 const lastMushafVerseKey = (uid: string | null) => `${LS_LAST_MUSHAF_VERSE}:${uid || 'anon'}`;
-const LS_SCRIPT_DEFAULT_MIGRATED = 'quran:scriptDefaultMigrated:v2';
 const mushafPageFontFamily = (page: number) => `QCF2${String(page).padStart(3, '0')}`;
 const mushafPageFontUrl = (page: number) =>
   `https://cdn.jsdelivr.net/gh/quran/quran.com-frontend-next@production/public/fonts/quran/hafs/v2/woff2/p${page}.woff2`;
+const cleanArabicText = (text?: string) =>
+  (text || '')
+    .replace(/[\u200E\u200F]/g, '')
+    .replace(/\s*[\uE000-\uF8FF]+\s*/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 // Standard Madinah Mushaf: first page of each Juz (1..30)
 const JUZ_FIRST_PAGE: Record<number, number> = {
@@ -146,7 +151,7 @@ interface Settings {
   autoSaveLastRead: boolean;
 }
 const defaultSettings: Settings = {
-  script: 'indopak',
+  script: 'uthmani',
   showEn: true,
   showBn: true,
   arabicSize: 32,
@@ -170,13 +175,7 @@ const QuranPage = () => {
   const [settings, setSettings] = useState<Settings>(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(LS_SETTINGS) || '{}');
-      const shouldMigrateScript = !localStorage.getItem(LS_SCRIPT_DEFAULT_MIGRATED);
-      const next = { ...defaultSettings, ...stored };
-      if (shouldMigrateScript && (!stored.script || stored.script === 'uthmani')) {
-        next.script = 'indopak';
-        localStorage.setItem(LS_SCRIPT_DEFAULT_MIGRATED, '1');
-      }
-      return next;
+      return { ...defaultSettings, ...stored };
     } catch {
       return defaultSettings;
     }
@@ -1572,7 +1571,7 @@ const QuranPage = () => {
                                             const txt = useQcfGlyph
                                               ? word.code_v2
                                               : settings.script === 'indopak' && word.text_indopak
-                                                ? word.text_indopak
+                                                ? cleanArabicText(word.text_indopak)
                                                 : word.text_uthmani;
                                             const isCurrent = playingKey === verse.verse_key;
                                             return (
