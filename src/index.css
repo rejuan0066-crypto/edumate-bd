@@ -446,7 +446,7 @@
     border-color: hsl(var(--border) / 0.08);
   }
   .glass-card:hover {
-    box-shadow: var(--shadow-float), var(--shadow-glow-emerald);
+    box-shadow: var(--shadow-float), var(--shadow-glow-aqua);
     transform: translateY(-3px);
   }
 
@@ -485,7 +485,7 @@
     pointer-events: none;
   }
   .stat-card:hover {
-    box-shadow: var(--shadow-elevated), var(--shadow-glow-emerald);
+    box-shadow: var(--shadow-elevated), var(--shadow-glow-aqua);
     transform: translateY(-4px) scale(1.01);
   }
 
