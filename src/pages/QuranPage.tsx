@@ -168,6 +168,7 @@ const defaultSettings: Settings = {
 const QuranPage = () => {
   const { language } = useLanguage();
   const bn = language === 'bn';
+  const navigate = useNavigate();
 
   // Track whether the user has any persisted settings yet. If not, we'll apply
   // the admin-configured default translation state once it's fetched.
