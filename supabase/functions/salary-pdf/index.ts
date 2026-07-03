@@ -475,6 +475,7 @@ Deno.serve(async (req) => {
                           <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:center;">${bn ? "প্রবেশ" : "Check-in"}</th>
                           <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:center;">${bn ? "বাহির" : "Check-out"}</th>
                           <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:right;">${bn ? "বিলম্ব" : "Late by"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:right;">${bn ? "কর্তন (৳)" : "Deduction (৳)"}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -484,6 +485,7 @@ Deno.serve(async (req) => {
                             <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:center;">${fmt12(d.checkIn)}</td>
                             <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:center;">${fmt12(d.checkOut)}</td>
                             <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:right;font-weight:600;color:#b45309;">${fmtMins(Number(d.lateMin) || 0)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:right;font-weight:600;color:#b91c1c;">${bn ? toBnDigits((Number(d.deduction) || 0).toLocaleString("en-US")) : (Number(d.deduction) || 0).toLocaleString("en-US")}</td>
                           </tr>
                         `).join("")}
                       </tbody>
