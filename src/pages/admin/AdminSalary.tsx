@@ -961,13 +961,14 @@ const AdminSalary = () => {
     // additive মোডে এই ছুটির দিনগুলোর বেতন যোগ করা হয় (উপস্থিত দিনের সমান)।
     totalDailyEarnings += Math.round(untrackedPaidDays * dailyRate);
     // অচিহ্নিত দিন আর অনুপস্থিত নয় — কর্তন শুধু স্পষ্ট 'absent' রেকর্ডে।
-    const untrackedAbsentDays = 0;
+    // untrackedUnmarkedDays শুধু ভ্যালিডেশন/UI-তে "সম্পূর্ণ হাজিরা দিন" সতর্কবার্তার জন্য।
+    const untrackedUnmarkedDays = untrackedPaidDays;
     const absent = recordedAbsent;
 
 
     return {
       present, absent, late, halfDay, leave, holidayCovered, untouchedHolidayDays,
-      untrackedAbsentDays, recordedAbsent, preJoinDays, firstCountedDay,
+      untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
