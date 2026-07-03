@@ -16,8 +16,22 @@ export interface ThursdayHalfDaySetting {
   category?: string | null;
   /** Multiple target departments. Takes precedence over `category` when non-empty. */
   categories?: string[] | null;
-  /** Half-day end clock, "HH:MM" (default "14:00"). */
+  /** Half-day check-in clock, "HH:MM" (optional; default = normal duty start). */
+  start_time?: string | null;
+  /** Half-day check-out clock, "HH:MM" (default "14:00"). */
   end_time?: string | null;
+}
+
+/** Parse an "HH:MM" clock string to minutes-from-midnight. Returns null when invalid. */
+export function parseClockMinutes(time?: string | null): number | null {
+  if (typeof time === 'string') {
+    const m = time.match(/^(\d{1,2}):(\d{2})$/);
+    if (m) {
+      const mins = Number(m[1]) * 60 + Number(m[2]);
+      if (mins > 0 && mins < 24 * 60) return mins;
+    }
+  }
+  return null;
 }
 
 /** Parse an "HH:MM" clock string to minutes-from-midnight. Falls back to 14:00. */
