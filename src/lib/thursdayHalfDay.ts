@@ -35,9 +35,16 @@ export function parseHalfDayEndMinutes(endTime?: string | null): number {
 /** JS getDay() Thursday index. */
 export const THURSDAY = 4;
 
-/** Resolve the department/category the rule targets (fallback: 'teacher'). */
+/** Resolve the target departments/categories (fallback: ['teacher']). */
+export function resolveThursdayHalfCategories(setting?: ThursdayHalfDaySetting | null): string[] {
+  const list = (setting?.categories || []).filter((c): c is string => !!c);
+  if (list.length > 0) return list;
+  return [setting?.category || 'teacher'];
+}
+
+/** @deprecated use resolveThursdayHalfCategories. Returns first target category. */
 export function resolveThursdayHalfCategory(setting?: ThursdayHalfDaySetting | null): string {
-  return setting?.category || 'teacher';
+  return resolveThursdayHalfCategories(setting)[0];
 }
 
 /** True when the given date string (YYYY-MM-DD) is a Thursday. */
