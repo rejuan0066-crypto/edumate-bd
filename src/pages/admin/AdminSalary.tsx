@@ -3817,6 +3817,18 @@ const AdminSalary = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
+                    <Input
+                      type="time"
+                      className="h-8 text-sm mt-1"
+                      defaultValue={getSetting('thursday_half_day_education')?.end_time || '14:00'}
+                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: e.target.value || '14:00' } })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn ? 'বৃহস্পতিবার ডিউটি শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
+                    </p>
+                  </div>
                 </div>
 
 
