@@ -3703,17 +3703,33 @@ const AdminSalary = () => {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন (শিক্ষা বিভাগ)' : 'Thursday Half-Day (Education)'}</Label>
-                    <p className="text-[10px] text-muted-foreground">
-                      {bn ? 'শুধু শিক্ষা বিভাগের জন্য বৃহস্পতিবার ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হবে' : 'For education dept only: staying until 2:00 PM on Thursday counts as a full day'}
-                    </p>
+                <div className="p-3 border rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন' : 'Thursday Half-Day'}</Label>
+                      <p className="text-[10px] text-muted-foreground">
+                        {bn ? 'নির্বাচিত বিভাগের জন্য বৃহস্পতিবার ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হবে' : 'For the selected department: staying until 2:00 PM on Thursday counts as a full day'}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={getSetting('thursday_half_day_education')?.enabled === true}
+                      onCheckedChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), enabled: v } })}
+                    />
                   </div>
-                  <Switch
-                    checked={getSetting('thursday_half_day_education')?.enabled === true}
-                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { enabled: v } })}
-                  />
+                  <div>
+                    <Label className="text-[11px]">{bn ? 'কোন বিভাগে প্রযোজ্য' : 'Applies to department'}</Label>
+                    <Select
+                      value={getSetting('thursday_half_day_education')?.category || 'teacher'}
+                      onValueChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), category: v } })}
+                    >
+                      <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(staffCategoriesList as any[]).map((c) => (
+                          <SelectItem key={c.key} value={c.key}>{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
 
