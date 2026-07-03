@@ -969,7 +969,7 @@ const AdminSalary = () => {
       untrackedPaidDays += 1;
     }
     // additive মোডে এই ছুটির দিনগুলোর বেতন যোগ করা হয় (উপস্থিত দিনের সমান)।
-    totalDailyEarnings += Math.round(untrackedPaidDays * dailyRate);
+    totalDailyEarnings += untrackedPaidDays * dailyRate;
     // অচিহ্নিত দিন আর অনুপস্থিত নয় — কর্তন শুধু স্পষ্ট 'absent' রেকর্ডে।
     // untrackedUnmarkedDays শুধু ভ্যালিডেশন/UI-তে "সম্পূর্ণ হাজিরা দিন" সতর্কবার্তার জন্য।
     const untrackedUnmarkedDays = untrackedPaidDays;
