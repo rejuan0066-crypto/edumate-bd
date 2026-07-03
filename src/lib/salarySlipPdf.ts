@@ -281,8 +281,8 @@ export async function downloadSheetAsPdf(
           const offsetY = margin + (availH - drawH) / 2;
 
           if (i > 0) pdf.addPage('a4', 'landscape');
-          const imgData = canvas.toDataURL('image/jpeg', 0.85);
-          pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH);
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
 
         // Open the generated PDF in a new tab for PREVIEW. Use the window the
