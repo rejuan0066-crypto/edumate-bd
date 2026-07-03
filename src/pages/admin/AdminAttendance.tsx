@@ -764,6 +764,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: (_data, type) => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       const labels: Record<string, string> = {
         all: bn ? 'সকল উপস্থিতি' : 'All attendance',
         student: bn ? 'ছাত্র হাজিরা' : 'Student attendance',
