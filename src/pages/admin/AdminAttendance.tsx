@@ -702,7 +702,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         if (error) throw error;
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
+    },
     onError: (err) => { console.error('Attendance save error:', err); toast.error(bn ? 'সেভ করতে সমস্যা' : 'Failed to save'); },
   });
 
