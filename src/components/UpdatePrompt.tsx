@@ -185,6 +185,12 @@ const UpdatePrompt = () => {
       ua: navigator.userAgent,
     });
 
+    // Guarantee the "updating" progress UI is visible for a moment before the
+    // page navigates away — otherwise a fast SW takeover reloads instantly and
+    // the user never sees any feedback.
+    const startedAt = Date.now();
+    const MIN_VISIBLE_MS = 1600;
+
     let didReload = false;
     const reloadOnce = async (reason: string) => {
       if (didReload) return;
