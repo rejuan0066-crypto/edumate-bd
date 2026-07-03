@@ -74,7 +74,7 @@ export function shouldApplyThursdayHalfDay(params: {
   const enabled = setting?.enabled === true;
   if (!enabled || isOvernight) return false;
   if (!isThursdayDate(attendanceDate)) return false;
-  return staffCategory === resolveThursdayHalfCategory(setting);
+  return !!staffCategory && resolveThursdayHalfCategories(setting).includes(staffCategory);
 }
 
 /**
