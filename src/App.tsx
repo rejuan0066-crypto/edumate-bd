@@ -136,6 +136,7 @@ const AdminWhatsAppLogs = lazy(() => import("./pages/admin/AdminWhatsAppLogs"));
 const AdminSalary = lazy(() => import("./pages/admin/AdminSalary"));
 const AdminSalaryPdfColumns = lazy(() => import("./pages/admin/AdminSalaryPdfColumns"));
 const AdminSalaryMemoSearch = lazy(() => import("./pages/admin/AdminSalaryMemoSearch"));
+const AdminHealthCheck = lazy(() => import("./pages/admin/AdminHealthCheck"));
 const AdminShiftAuditLog = lazy(() => import("./pages/admin/AdminShiftAuditLog"));
 const AdminPosts = lazy(() => import("./pages/admin/AdminPosts"));
 const AdminPrayerCalendar = lazy(() => import("./pages/admin/AdminPrayerCalendar"));
