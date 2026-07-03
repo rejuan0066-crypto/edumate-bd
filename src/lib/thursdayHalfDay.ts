@@ -77,12 +77,14 @@ export function effectiveDutyEndForThursday(params: {
   applies: boolean;
   dutyStart: number;
   dutyEnd: number;
+  /** Half-day end minutes-from-midnight (default 14:00). */
+  endMinutes?: number;
 }): { effDutyEnd: number; effScheduledMinutes: number } {
-  const { applies, dutyStart, dutyEnd } = params;
+  const { applies, dutyStart, dutyEnd, endMinutes } = params;
   let effDutyEnd = dutyEnd;
   let effScheduledMinutes = dutyEnd - dutyStart;
   if (applies) {
-    const thuEnd = 14 * 60; // 14:00
+    const thuEnd = endMinutes && endMinutes > 0 ? endMinutes : 14 * 60; // 14:00
     if (thuEnd > dutyStart && thuEnd < dutyEnd) {
       effDutyEnd = thuEnd;
       effScheduledMinutes = effDutyEnd - dutyStart;
