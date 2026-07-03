@@ -2562,6 +2562,21 @@ const AdminSalary = () => {
               </Select>
 
               <div className="flex gap-2 shrink-0 flex-wrap">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await Promise.all([
+                      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] }),
+                      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] }),
+                    ]);
+                    toast.success(bn ? 'সর্বশেষ উপস্থিতি লোড হয়েছে' : 'Latest attendance loaded');
+                  }}
+                  title={bn ? 'ক্যাশ উপেক্ষা করে সর্বশেষ উপস্থিতি লোড করুন' : 'Bypass cache and load the latest attendance'}
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  {bn ? 'উপস্থিতি রিফ্রেশ' : 'Refresh Attendance'}
+                </Button>
                 {canAddItem && <Button size="sm" onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending}>
                   <Calculator className="h-3 w-3 mr-1" /> {bn ? 'জেনারেট' : 'Generate'}
                 </Button>}
