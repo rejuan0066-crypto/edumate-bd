@@ -432,6 +432,7 @@ const App = () => (
                     <Route path="backup" element={<AdminBackup />} />
                     <Route path="recycle-bin" element={<AdminRecycleBin />} />
                     <Route path="system-logs" element={<AdminSystemLogs />} />
+                    <Route path="health-check" element={<AdminHealthCheck />} />
                     <Route path="email-delivery-log" element={<AdminEmailDeliveryLog />} />
                     <Route path="inventory" element={<AdminInventory />} />
                     <Route path="guardian-notify" element={<AdminGuardianNotifications />} />
