@@ -2128,7 +2128,7 @@ const AdminSalary = () => {
             // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট = বিলম্ব + আগাম প্রস্থান)
             lateDetails: (st.dailyBreakdown || [])
               .filter((d: any) => ((Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0)) > 0)
-              .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: (Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0) })),
+              .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: (Number(d.lateMin) || 0) + (Number(d.earlyMin) || 0), deduction: Number(d.deduction) || 0 })),
             // অনুপস্থিতির বিস্তারিত (তারিখ • কর্তন)
             absentDetails: (st.dailyBreakdown || [])
               .filter((d: any) => d.status === 'absent')
