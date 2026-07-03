@@ -217,13 +217,13 @@ const ParentPaymentReceipt = () => {
         backgroundColor: '#ffffff',
         logging: false,
       });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
       const pageW = 210;
       const pageH = 297;
       const imgW = pageW - 20;
       const imgH = (canvas.height * imgW) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 10, 10, imgW, Math.min(imgH, pageH - 20));
+      pdf.addImage(imgData, 'JPEG', 10, 10, imgW, Math.min(imgH, pageH - 20));
 
       const statusTag = (data?.status || 'pending').toUpperCase();
       const ident = data?.trx_id || data?.id || 'receipt';
