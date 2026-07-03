@@ -945,7 +945,7 @@ const AdminSalary = () => {
       if (!recordedDates.has(d)) untouchedHolidayDays += 1;
     });
     const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
-    totalDailyEarnings += holidayPaidEarnings;
+    totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
     // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি/অচিহ্নিত দিন)
     // সেগুলো এখন বেতনসহ ছুটি হিসেবে গণ্য হয় — বেতন কাটা হয় না। শুধুমাত্র স্পষ্টভাবে
