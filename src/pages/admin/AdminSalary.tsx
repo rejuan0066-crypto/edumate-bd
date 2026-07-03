@@ -830,8 +830,7 @@ const AdminSalary = () => {
     // উপস্থিত দিন কখনো মাসের প্রকৃত দিনসংখ্যার বেশি গণনা হবে না (অতিরিক্ত দিন বাদ)।
     const [presYy, presMm] = monthYear.split('-').map(Number);
     const daysInMonthForPresent = new Date(presYy, presMm, 0).getDate();
-    const rawPresent = records.filter((r: any) => ['present', 'leave', 'excused'].includes(r.status)).length;
-    const present = Math.min(rawPresent, daysInMonthForPresent);
+    let present = 0;
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     let late = 0;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
@@ -904,6 +903,7 @@ const AdminSalary = () => {
       
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
+        present += 1;
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
@@ -964,6 +964,7 @@ const AdminSalary = () => {
       const isLateAttendance = r.status === 'late' || lateMinutes > 0;
       if (isLateAttendance) late += 1;
       if (r.status === 'present' && lateMinutes > 0) entry.status = 'late';
+      if (!isLateAttendance && r.status === 'present') present += 1;
 
       totalLateArrivalMinutes += lateMinutes;
       totalEarlyExitMinutes += earlyExitMinutes;
@@ -997,6 +998,7 @@ const AdminSalary = () => {
       dailyBreakdown.push(entry);
     });
 
+    present = Math.min(present, daysInMonthForPresent);
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
     // For additive mode: add paid holidays that have NO attendance record
