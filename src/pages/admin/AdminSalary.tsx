@@ -3807,18 +3807,32 @@ const AdminSalary = () => {
                     />
                   </div>
                   <div>
-                    <Label className="text-[11px]">{bn ? 'কোন বিভাগে প্রযোজ্য' : 'Applies to department'}</Label>
-                    <Select
-                      value={getSetting('thursday_half_day_education')?.category || 'teacher'}
-                      onValueChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), category: v } })}
-                    >
-                      <SelectTrigger className="h-8 text-sm mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {(staffCategoriesList as any[]).map((c) => (
-                          <SelectItem key={c.key} value={c.key}>{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-[11px]">{bn ? 'কোন কোন বিভাগে প্রযোজ্য' : 'Applies to departments'}</Label>
+                    <div className="mt-1 grid grid-cols-2 gap-1.5 rounded-lg border p-2">
+                      {(() => {
+                        const s = getSetting('thursday_half_day_education') || {};
+                        const selected: string[] = Array.isArray(s.categories) && s.categories.length
+                          ? s.categories
+                          : (s.category ? [s.category] : ['teacher']);
+                        return (staffCategoriesList as any[]).map((c) => {
+                          const checked = selected.includes(c.key);
+                          return (
+                            <label key={c.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  const next = v
+                                    ? Array.from(new Set([...selected, c.key]))
+                                    : selected.filter((k) => k !== c.key);
+                                  saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...s, categories: next, category: next[0] || null } });
+                                }}
+                              />
+                              <span>{bn ? (c.name_bn || c.name) : (c.name || c.name_bn)}</span>
+                            </label>
+                          );
+                        });
+                      })()}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
