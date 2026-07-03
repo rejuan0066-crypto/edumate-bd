@@ -1049,13 +1049,15 @@ const AdminSalary = () => {
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
       const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
 
-      // Late-present days must come from the real time as well as manual status.
-      // Example: status stays "present" but check-in is after duty start => count as late.
+      // Missed-time days must come from the real time as well as manual status.
+      // Example: status stays "present" but check-in is late OR check-out is early
+      // => count it in the late/early bucket and apply the minute deduction.
       // Example: user clicked "late" but did not adjust time yet => keep late day visible.
-      const isLateAttendance = r.status === 'late' || (r.status === 'present' && lateMinutes > 0);
+      const hasTimeDeduction = lateMinutes > 0 || earlyExitMinutes > 0;
+      const isLateAttendance = r.status === 'late' || (r.status === 'present' && hasTimeDeduction);
       if (isLateAttendance) late += 1;
-      if (r.status === 'present' && lateMinutes > 0) entry.status = 'late';
-      // বিলম্ব দিনও উপস্থিত দিন — স্টাফ হাজির ছিল, শুধু লেইট/আগাম মিনিট কাটা যাবে।
+      if (r.status === 'present' && hasTimeDeduction) entry.status = 'late';
+      // লেইট/আগাম দিনও উপস্থিত দিন — স্টাফ হাজির ছিল, শুধু মিসড মিনিট কাটা যাবে।
       if (r.status === 'present' || isLateAttendance) present += 1;
 
       totalLateArrivalMinutes += lateMinutes;
