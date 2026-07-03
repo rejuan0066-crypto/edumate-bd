@@ -728,6 +728,22 @@ const AdminSalary = () => {
     return s?.setting_value as any || {};
   };
 
+  // উপস্থিতির "শেষ আপডেট" — এই স্টাফের চলতি মাসের রেকর্ডগুলোর সর্বশেষ updated_at/created_at।
+  const getAttendanceLastUpdated = (staffMember: any): Date | null => {
+    let latest: number | null = null;
+    for (const a of attendanceData as any[]) {
+      if (a.entity_id !== staffMember.id) continue;
+      if (a.shift === 'morning' || a.shift === 'evening') continue;
+      const ts = a.updated_at || a.created_at;
+      if (!ts) continue;
+      const t = new Date(ts).getTime();
+      if (!isNaN(t) && (latest === null || t > latest)) latest = t;
+    }
+    return latest === null ? null : new Date(latest);
+  };
+
+
+
   // Joining-date guard: a staff is only relevant for a salary month if they had
   // already joined by the END of that month. New staff must NOT appear in months
   // before their joining month, and their pay is counted from the joining date.
