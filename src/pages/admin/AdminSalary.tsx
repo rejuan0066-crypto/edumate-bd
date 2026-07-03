@@ -858,7 +858,9 @@ const AdminSalary = () => {
         if (paidHolidaySet.has(r.attendance_date)) {
           entry.status = 'holiday';
           entry.dailyEarning = Math.round(dailyRate);
-          totalDailyEarnings += entry.dailyEarning;
+          // Accumulate UNROUNDED so full attendance sums to exactly the base
+          // salary (per-day rounding was silently dropping a few taka).
+          totalDailyEarnings += dailyRate;
           dailyBreakdown.push(entry);
           return;
         }
@@ -871,17 +873,19 @@ const AdminSalary = () => {
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
         entry.dailyEarning = Math.round(dailyRate);
-        totalDailyEarnings += entry.dailyEarning;
+        totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
         return;
       }
 
+      const baseDayRaw = r.status === 'half_day' ? dailyRate / 2 : dailyRate;
       if (r.status === 'half_day') {
         entry.dailyEarning = Math.round(dailyRate / 2);
         entry.deduction = Math.round(dailyRate / 2);
       } else {
         entry.dailyEarning = Math.round(dailyRate);
       }
+
 
       // Map a clock time (minutes from midnight) onto the duty window timeline.
       // Day shift  (e.g. 09:00–17:00): timeline = [dutyStart .. dutyEnd], same-day.
@@ -921,7 +925,13 @@ const AdminSalary = () => {
       entry.addition = Math.round(overtimeMinutes * perMinuteRate);
       entry.dailyEarning += entry.addition;
 
-      totalDailyEarnings += entry.dailyEarning;
+      // Accumulate the UNROUNDED daily earning to avoid cumulative rounding drift.
+      const rawEarn = Math.max(
+        0,
+        baseDayRaw - (lateMinutes + earlyExitMinutes) * perMinuteRate + overtimeMinutes * perMinuteRate,
+      );
+      totalDailyEarnings += rawEarn;
+
       dailyBreakdown.push(entry);
     });
 
@@ -934,8 +944,7 @@ const AdminSalary = () => {
     paidHolidaySet.forEach((d: any) => {
       if (!recordedDates.has(d)) untouchedHolidayDays += 1;
     });
-    const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
-    totalDailyEarnings += holidayPaidEarnings;
+    totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
     // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি/অচিহ্নিত দিন)
     // সেগুলো এখন বেতনসহ ছুটি হিসেবে গণ্য হয় — বেতন কাটা হয় না। শুধুমাত্র স্পষ্টভাবে
@@ -959,7 +968,7 @@ const AdminSalary = () => {
       untrackedPaidDays += 1;
     }
     // additive মোডে এই ছুটির দিনগুলোর বেতন যোগ করা হয় (উপস্থিত দিনের সমান)।
-    totalDailyEarnings += Math.round(untrackedPaidDays * dailyRate);
+    totalDailyEarnings += untrackedPaidDays * dailyRate;
     // অচিহ্নিত দিন আর অনুপস্থিত নয় — কর্তন শুধু স্পষ্ট 'absent' রেকর্ডে।
     // untrackedUnmarkedDays শুধু ভ্যালিডেশন/UI-তে "সম্পূর্ণ হাজিরা দিন" সতর্কবার্তার জন্য।
     const untrackedUnmarkedDays = untrackedPaidDays;
