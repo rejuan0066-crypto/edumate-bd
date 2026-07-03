@@ -639,6 +639,92 @@ const AdminSalary = () => {
     return null;
   };
 
+  // Display-time salary snapshot: pending records must reflect the freshest
+  // attendance immediately. Only paid records stay locked to their saved snapshot.
+  const getSalaryDisplaySnapshot = (staffMember: any, record?: any | null) => {
+    const liveStats = getAttendanceStats(staffMember);
+    const liveCalc = calculateSalary(staffMember);
+    const activeSavings = getActiveSavings(staffMember.id);
+    const activeSavingsAmount = activeSavings ? activeSavings.amount : 0;
+    const isPaid = !!record && record.status === 'paid';
+
+    if (isPaid) {
+      const savedRecord = { ...liveCalc, ...record };
+      return {
+        record: savedRecord,
+        stats: {
+          ...liveStats,
+          present: Number(record.present_days ?? liveStats.present),
+          absent: Number(record.absent_days ?? liveStats.absent),
+          late: Number(record.late_days ?? liveStats.late),
+        },
+        isPaid: true,
+        isAdditive: ((record.calc_basis ?? liveCalc.calc_basis) === 'additive'),
+        savingsDisplay: Number(record.savings_deduction ?? activeSavingsAmount),
+        isLive: false,
+      };
+    }
+
+    const manualBonus = Number(record?.bonus || 0);
+    const manualAllow = Number(record?.other_allowance || 0);
+    const manualAdvance = Number(record?.advance_deduction || 0);
+    const savingsForNet = Number(liveCalc.savings_deduction || 0);
+    const liveRecord = {
+      ...(record || {}),
+      ...liveCalc,
+      id: record?.id,
+      staff_id: staffMember.id,
+      month_year: monthYear,
+      status: record?.status || 'not_generated',
+      bonus: manualBonus,
+      other_allowance: manualAllow,
+      other_allowance_note: record?.other_allowance_note,
+      advance_deduction: manualAdvance,
+      other_deduction_note: record?.other_deduction_note,
+      remarks: record?.remarks,
+      savings_deduction: savingsForNet,
+      net_salary: recomputeNetSalary(liveCalc, {
+        bonus: manualBonus,
+        other_allowance: manualAllow,
+        advance_deduction: manualAdvance,
+        savings_deduction: savingsForNet,
+      }),
+    };
+
+    return {
+      record: liveRecord,
+      stats: liveStats,
+      isPaid: false,
+      isAdditive: (liveCalc.calc_basis || getSetting('salary_calc_basis')?.mode || 'additive') === 'additive',
+      savingsDisplay: activeSavingsAmount,
+      isLive: true,
+    };
+  };
+
+  const getAdditiveAttendanceDeduction = (record: any): number => {
+    const baseForDed = Number(record?.base_salary || 0);
+    const earnedForDed = Number(record?.earned_from_attendance ?? NaN);
+    if (Number.isFinite(earnedForDed)) return Math.max(0, baseForDed - earnedForDed);
+    return Number(record?.late_deduction || 0) + Number(record?.absence_deduction || 0) + Number(record?.other_deduction || 0);
+  };
+
+  const getSalaryDisplayTotalDeduction = (snapshot: ReturnType<typeof getSalaryDisplaySnapshot>): number => {
+    const r = snapshot.record;
+    if (snapshot.isAdditive) {
+      return Math.round(
+        getAdditiveAttendanceDeduction(r)
+        + Number(r.advance_deduction || 0)
+        + Number(r.other_deduction || 0)
+      );
+    }
+    return Math.round(
+      Number(r.late_deduction || 0)
+      + Number(r.absence_deduction || 0)
+      + Number(r.advance_deduction || 0)
+      + Number(r.other_deduction || 0)
+    );
+  };
+
   // Save savings config mutation
   const saveSavingsMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -904,7 +990,8 @@ const AdminSalary = () => {
       
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
-        present += 1;
+        // তবে UI/রিপোর্টে "উপস্থিত" ও "ছুটি" আলাদা কলাম, তাই leave-কে present কাউন্টে
+        // যোগ করা যাবে না — নাহলে জুনের মতো মাসে present+leave দ্বিগুণ দেখায়।
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
@@ -1381,9 +1468,33 @@ const AdminSalary = () => {
     mutationFn: async (id: string) => {
       const record = salaryRecords.find((r: any) => r.id === id);
       if (!record) throw new Error('Record not found');
+      const staffMember = staff.find((s: any) => s.id === record.staff_id);
+      const payableRecord = staffMember ? getSalaryDisplaySnapshot(staffMember, record).record : record;
 
       const { error } = await supabase.from('salary_records')
-        .update({ status: 'paid', paid_at: new Date().toISOString() })
+        .update({
+          base_salary: payableRecord.base_salary,
+          working_days: payableRecord.working_days,
+          present_days: payableRecord.present_days,
+          absent_days: payableRecord.absent_days,
+          late_days: payableRecord.late_days,
+          absence_deduction: payableRecord.absence_deduction,
+          late_deduction: payableRecord.late_deduction,
+          other_deduction: payableRecord.other_deduction,
+          overtime: payableRecord.overtime,
+          bonus: payableRecord.bonus,
+          other_allowance: payableRecord.other_allowance,
+          advance_deduction: payableRecord.advance_deduction,
+          savings_deduction: payableRecord.savings_deduction,
+          net_salary: payableRecord.net_salary,
+          calc_basis: payableRecord.calc_basis,
+          earned_from_attendance: payableRecord.earned_from_attendance,
+          overtime_for_net: payableRecord.overtime_for_net,
+          deductions_deferred: payableRecord.deductions_deferred,
+          status: 'paid',
+          paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id);
       if (error) throw error;
 
@@ -1392,7 +1503,6 @@ const AdminSalary = () => {
       const categoryId = expenseConfig?.category_id;
 
       if (projectId && categoryId) {
-        const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const monthName = MONTHS.find(m => m.value === selectedMonth);
         const description = `${bn ? 'বেতন' : 'Salary'}: ${staffMember?.name_bn || 'Staff'} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear}`;
 
@@ -1408,7 +1518,7 @@ const AdminSalary = () => {
           category_id: categoryId,
           month_year: expenseMonthYear,
           expense_date: toIsoDateInTz(new Date(), appTz),
-          amount: Number(record.net_salary),
+          amount: Number(payableRecord.net_salary),
           description,
           has_receipt: true,
           receipt_url: pdfUrl,
@@ -1717,9 +1827,11 @@ const AdminSalary = () => {
 
   // Stats
   const stats = useMemo(() => {
-    const totalBase = salaryRecords.reduce((s: number, r: any) => s + Number(r.base_salary || 0), 0);
-    const totalNet = salaryRecords.reduce((s: number, r: any) => s + Number(r.net_salary || 0), 0);
-    const totalDeduction = salaryRecords.reduce((s: number, r: any) => s + Number(r.late_deduction || 0) + Number(r.absence_deduction || 0) + Number(r.advance_deduction || 0) + Number(r.other_deduction || 0), 0);
+    const generatedStaff = filtered.filter((s: any) => getRecord(s.id));
+    const displaySnapshots = generatedStaff.map((s: any) => getSalaryDisplaySnapshot(s, getRecord(s.id)));
+    const totalBase = displaySnapshots.reduce((sum: number, snap: any) => sum + Number(snap.record.base_salary || 0), 0);
+    const totalNet = displaySnapshots.reduce((sum: number, snap: any) => sum + Number(snap.record.net_salary || 0), 0);
+    const totalDeduction = displaySnapshots.reduce((sum: number, snap: any) => sum + getSalaryDisplayTotalDeduction(snap), 0);
     const paid = salaryRecords.filter((r: any) => r.status === 'paid').length;
     const pending = salaryRecords.filter((r: any) => r.status === 'pending').length;
     
@@ -1730,7 +1842,7 @@ const AdminSalary = () => {
     }, 0);
     
     return { totalBase, totalNet, totalDeduction, paid, pending, totalSavings };
-  }, [salaryRecords, filtered, savingsConfigs, monthYear]);
+  }, [salaryRecords, filtered, savingsConfigs, monthYear, attendanceData, dutyAttendanceData, settings, salaryChanges, monthHolidays]);
 
   // Export Excel with proper Bengali support
   const exportExcel = () => {
@@ -1758,9 +1870,9 @@ const AdminSalary = () => {
     
     filtered.forEach((s: any, idx: number) => {
       const rec = getRecord(s.id);
-      const totalDed = Number(rec?.late_deduction || 0) + Number(rec?.absence_deduction || 0) + Number(rec?.other_deduction || 0);
-      const activeSavings = getActiveSavings(s.id);
-      const savingsAmt = activeSavings ? activeSavings.amount : 0;
+      const snap = getSalaryDisplaySnapshot(s, rec);
+      const displayRecord = snap.record;
+      const totalDed = rec ? getSalaryDisplayTotalDeduction(snap) : 0;
       const status = rec?.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : 
                      rec ? (bn ? 'বকেয়া' : 'Pending') : (bn ? 'জেনারেট হয়নি' : 'Not Generated');
       sheetData.push([
@@ -1768,13 +1880,13 @@ const AdminSalary = () => {
         s.name_bn,
         s.staff_id || '-',
         getDesignation(s.designation),
-        fmtNum(Number(rec?.base_salary ?? getEffectiveSalary(s))),
-        fmtNum(Number(rec?.bonus || 0)),
-        fmtNum(Number(rec?.overtime || 0)),
+        fmtNum(Number(displayRecord?.base_salary ?? getEffectiveSalary(s))),
+        fmtNum(Number(displayRecord?.bonus || 0)),
+        fmtNum(Number(displayRecord?.overtime || 0)),
         fmtNum(totalDed),
-        fmtNum(savingsAmt),
-        fmtNum(Number(rec?.advance_deduction || 0)),
-        fmtNum(Number(rec?.net_salary || 0)),
+        fmtNum(snap.savingsDisplay),
+        fmtNum(Number(displayRecord?.advance_deduction || 0)),
+        fmtNum(Number(rec ? displayRecord?.net_salary : 0)),
         status,
       ]);
     });
@@ -1986,56 +2098,25 @@ const AdminSalary = () => {
       })();
        const staffRows = filtered.map((s: any) => {
           const rec = getRecord(s.id);
-          const st = getAttendanceStats(s);
-          const autoCalc = calculateSalary(s);
-          const isPaid = rec && rec.status === 'paid';
-          const manualBonus = Number(rec?.bonus || 0);
-          const manualAllow = Number(rec?.other_allowance || 0);
-          const manualAdvance = Number(rec?.advance_deduction || 0);
-          const activeSavings = getActiveSavings(s.id);
-          const savingsAmt = activeSavings ? activeSavings.amount : 0;
-          const savings = isPaid ? Number(rec?.savings_deduction || 0) : savingsAmt;
-          // In additive mode late/absence lower the "earned" figure, so নিট প্রদেয়
-          // is reduced even though no advance/other is removed. The কর্তন column MUST
-          // reflect that unearned amount (base − earned) — otherwise the sheet shows
-          // money vanishing from net with কর্তন = "—" and never reconciles.
-          const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
-          const isAdditive = isPaid
-            ? (((rec as any)?.calc_basis ?? autoCalc.calc_basis) === 'additive')
-            : globalAdditive;
-          const baseForDed = isPaid ? Number(rec?.base_salary || 0) : Number(autoCalc.base_salary || 0);
-          const earnedForDed = isPaid
-            ? Number((rec as any)?.earned_from_attendance ?? NaN)
-            : Number((autoCalc as any).earned_from_attendance ?? NaN);
-          const additiveAttDed = Number.isFinite(earnedForDed)
-            ? Math.max(0, baseForDed - earnedForDed)
-            : Number((isPaid ? rec : autoCalc)?.late_deduction || 0)
-              + Number((isPaid ? rec : autoCalc)?.absence_deduction || 0)
-              + Number((isPaid ? rec : autoCalc)?.other_deduction || 0);
-          const totalDed = isAdditive
-            ? additiveAttDed + (isPaid ? Number(rec.advance_deduction || 0) : manualAdvance)
-            : (isPaid
-                ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                  Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                  manualAdvance + Number(autoCalc.other_deduction || 0));
-          const net_salary = isPaid
-            ? Number(rec.net_salary || 0)
-            : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
+          const snap = getSalaryDisplaySnapshot(s, rec);
+          const displayRecord = snap.record;
+          const st = snap.stats;
+          const totalDed = getSalaryDisplayTotalDeduction(snap);
+          const net_salary = Number(displayRecord.net_salary || 0);
           return {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
             designation: getDesignation(s.designation),
-            base_salary: Number(rec?.base_salary ?? getEffectiveSalary(s)),
-            present: rec?.present_days ?? st.present ?? 0,
-            absent: rec?.absent_days ?? st.absent ?? 0,
-            late: rec?.late_days ?? st.late ?? 0,
+            base_salary: Number(displayRecord?.base_salary ?? getEffectiveSalary(s)),
+            present: st.present ?? 0,
+            absent: st.absent ?? 0,
+            late: st.late ?? 0,
             leave: st.leave || 0,
-            bonus: isPaid ? Number(rec?.bonus || 0) : manualBonus,
-            overtime: isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0),
+            bonus: Number(displayRecord?.bonus || 0),
+            overtime: Number(displayRecord?.overtime || 0),
             deductions: totalDed,
-            advance: isPaid ? Number(rec.advance_deduction || 0) : manualAdvance,
-            savings,
+            advance: Number(displayRecord?.advance_deduction || 0),
+            savings: snap.savingsDisplay,
             net_salary,
             status: rec?.status || 'not_generated',
             // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট)
@@ -2114,9 +2195,10 @@ const AdminSalary = () => {
 
   // Print salary slip
   const printSlip = async (staffMember: any, record: any) => {
-    const activeSavings = getActiveSavings(staffMember.id);
-    const savingsAmt = activeSavings ? activeSavings.amount : 0;
-    const slipStats = getAttendanceStats(staffMember);
+    const slipSnapshot = getSalaryDisplaySnapshot(staffMember, record);
+    record = slipSnapshot.record;
+    const savingsAmt = slipSnapshot.savingsDisplay;
+    const slipStats = slipSnapshot.stats;
     const leaveDays = slipStats.leave || 0;
 
     // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট) — স্লিপে দেখানোর জন্য
@@ -2174,11 +2256,13 @@ const AdminSalary = () => {
     ` : '';
 
 
-    // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
+    // Earned-from-attendance = live/persisted attendance result for the selected month.
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
       + Number(record.other_deduction || 0);
-    const earnedFromAttendance = Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
+    const earnedFromAttendance = Number.isFinite(Number(record.earned_from_attendance))
+      ? Number(record.earned_from_attendance)
+      : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
 
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
@@ -2769,45 +2853,14 @@ const AdminSalary = () => {
                     <tbody>
                       {filtered.map((s: any, idx: number) => {
                         const rec = getRecord(s.id);
-                        const attStats = getAttendanceStats(s);
-                        const autoCalc = calculateSalary(s);
-                        // A live recompute counts every untracked day (incl. future days of an
-                        // ongoing month) as absent, so net/deduction values would visibly drift
-                        // each render. Once a record exists, ALWAYS show its stored snapshot
-                        // (manual edits to bonus/overtime/advance are already saved into it).
-                        // Live values are only used for not-yet-generated rows.
-                        const isPaid = rec && rec.status === 'paid';
-                        // Paid records: locked snapshot. Pending/ungenerated rows reflect LIVE
-                        // attendance so a month with NO attendance correctly shows 0 net, and
-                        // newly-marked attendance updates immediately without re-generating.
-                        const manualBonus = Number(rec?.bonus || 0);
-                        const manualAllow = Number(rec?.other_allowance || 0);
-                        const manualAdvance = Number(rec?.advance_deduction || 0);
-                        const usePending = rec && rec.status !== 'paid';
-                        const activeSavings = getActiveSavings(s.id);
-                        const savingsAmt = activeSavings ? activeSavings.amount : 0;
-                        // In additive mode absence/late are NOT deductions — those days are simply
-                        // "unearned", already reflected in the lower net. Showing them as কর্তন made
-                        // the deduction total exceed the base salary (e.g. base 11,000 → "deduction"
-                        // 11,633). So in additive mode the deduction column shows only REAL money
-                        // removed from earnings: advance + savings + manual other-deduction.
-                        const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
-                        const isAdditive = isPaid
-                          ? (((rec as any).calc_basis ?? (autoCalc.calc_basis)) === 'additive')
-                          : globalAdditive;
-                        const totalDed = isAdditive
-                          ? (isPaid
-                              ? Number(rec.advance_deduction || 0) + Number(rec.savings_deduction || 0) + Number(rec.other_deduction || 0)
-                              : manualAdvance + savingsAmt)
-                          : (isPaid
-                              ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-                                Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                              : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
-                                manualAdvance + Number(autoCalc.other_deduction || 0));
-                        const displayOvertime = isPaid ? Number(rec.overtime || 0) : Number(autoCalc.overtime || 0);
-                        const displayNet = isPaid
-                          ? Number(rec.net_salary || 0)
-                          : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
+                        const snap = getSalaryDisplaySnapshot(s, rec);
+                        const attStats = snap.stats;
+                        const displayRecord = snap.record;
+                        const isPaid = snap.isPaid;
+                        const isAdditive = snap.isAdditive;
+                        const totalDed = getSalaryDisplayTotalDeduction(snap);
+                        const displayOvertime = Number(displayRecord.overtime || 0);
+                        const displayNet = Number(displayRecord.net_salary || 0);
 
                         const validation = !rec ? getAttendanceValidation(s) : null;
                         const eligibilityReason = !rec
@@ -2894,17 +2947,13 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
                             <td className="px-3 py-2 text-center">
                               {(() => {
-                                // Once a salary record exists, show the SNAPSHOT that was stored at
-                                // generation/recalc time — not a live recompute. Live recompute counts
-                                // every untracked day (incl. future days of an ongoing month) as absent,
-                                // so the numbers would visibly drift after generation. For not-yet-generated
-                                // rows we still show the live preview.
-                                const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
-                                const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
-                                const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
+                                // Pending rows use live attendance; paid rows use the saved snapshot.
+                                const dispPresent = attStats.present;
+                                const dispAbsent = attStats.absent;
+                                const dispLate = attStats.late;
                                  const dispLeave = attStats.leave || 0;
                                  const lastUpd = getAttendanceLastUpdated(s);
                                  const upTitle = lastUpd
@@ -2941,32 +2990,26 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const advD = Number(rec?.advance_deduction || 0);
-                                const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
-                                const bonusV = Number(rec?.bonus || 0);
-                                const otherA = Number(rec?.other_allowance || 0);
-                                const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
-                                const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
+                                const advD = Number(displayRecord?.advance_deduction || 0);
+                                const savD = Number(snap.savingsDisplay || 0);
+                                const bonusV = Number(displayRecord?.bonus || 0);
+                                const otherA = Number(displayRecord?.other_allowance || 0);
+                                const baseV = Number(displayRecord?.base_salary ?? getEffectiveSalary(s));
+                                const otV = Number(displayRecord?.overtime || 0);
                                  // Always surface the REAL absence/late amounts so they are
                                  // visible in the breakdown. In additive mode they are already
                                  // baked into the lower "earned" figure, so they must NOT be
                                  // re-added to the money-removed total (sumDed) — otherwise the
                                  // deduction total would exceed the base salary.
-                                 const absD = Number((isPaid ? rec : autoCalc).absence_deduction || 0);
-                                 const lateD = Number((isPaid ? rec : autoCalc).late_deduction || 0);
-                                 const otherD = isAdditive
-                                   ? Number(rec?.other_deduction || 0)
-                                   : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
-                                 const earnedV = !isPaid
-                                   ? Number((autoCalc as any).earned_from_attendance || 0)
-                                   : 0;
-                                 const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
-                                 const sumDed = isAdditive
-                                   ? advD + otherD + savD
-                                   : absD + lateD + advD + otherD + savD;
+                                 const absD = Number(displayRecord?.absence_deduction || 0);
+                                 const lateD = Number(displayRecord?.late_deduction || 0);
+                                 const otherD = Number(displayRecord?.other_deduction || 0);
+                                 const earnedV = Number((displayRecord as any).earned_from_attendance || 0);
+                                 const unearnedV = isAdditive ? Math.max(0, baseV - earnedV) : 0;
+                                 const sumDed = totalDed;
                                 const expectedNet = isAdditive
                                   ? displayNet
-                                  : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
+                                   : Math.max(0, baseV - absD - lateD - otherD + otV + bonusV + otherA - advD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
@@ -2977,7 +3020,7 @@ const AdminSalary = () => {
                                         title={bn ? 'কর্তন ব্রেকডাউন দেখুন' : 'View deduction breakdown'}
                                       >
                                         ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}
-                                        {!rec && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                                        {snap.isLive && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent align="end" className="w-72 p-0 rounded-2xl overflow-hidden">
@@ -3014,7 +3057,7 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-2.5 bg-muted/40 border-t space-y-1 text-[11px]">
                                         <div className="flex justify-between"><span className="text-muted-foreground">{bn ? 'মূল বেতন' : 'Base'}</span><span className="font-mono">৳{bn ? toBnDigits(baseV.toLocaleString()) : baseV.toLocaleString()}</span></div>
-                                        {isAdditive && !isPaid && unearnedV > 0 && (
+                                        {isAdditive && unearnedV > 0 && (
                                           <>
                                             <div className="flex justify-between text-amber-600">
                                               <span className="text-muted-foreground">− {bn ? 'অনার্জিত (হাজিরা নেই/অনুপস্থিত দিন)' : 'Unearned (no attendance / absent days)'}</span>
@@ -3060,11 +3103,11 @@ const AdminSalary = () => {
                             </td>
 
                             <td className="px-3 py-2 text-right text-blue-600">
-                              ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}{!rec && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                              ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}{snap.isLive && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                             </td>
                             {/* Savings Column */}
                             <td className="px-3 py-2 text-right">
-                              {savingsAmt > 0 ? (
+                              {snap.savingsDisplay > 0 ? (
                                 <button onClick={() => {
                                   const existingConfig = savingsConfigs.find((c: any) => c.staff_id === s.id && c.is_active);
                                   setSavingsDialog({
@@ -3075,7 +3118,7 @@ const AdminSalary = () => {
                                   });
                                 }}>
                                   <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 cursor-pointer text-[10px]">
-                                    ৳{bn ? toBnDigits(savingsAmt.toLocaleString()) : savingsAmt.toLocaleString()}
+                                    ৳{bn ? toBnDigits(snap.savingsDisplay.toLocaleString()) : snap.savingsDisplay.toLocaleString()}
                                   </Badge>
                                 </button>
                               ) : (
