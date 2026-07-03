@@ -925,11 +925,14 @@ const AdminSalary = () => {
         return distToStart <= distToEnd ? dutyStart : dutyEnd;
       };
 
-      // বৃহস্পতিবার শিক্ষা বিভাগের (teacher) জন্য অর্ধদিন: শিফট ২টা (14:00) পর্যন্ত ধরা হয়।
+      // বৃহস্পতিবার শিক্ষা বিভাগের জন্য অর্ধদিন: শিফট ২টা (14:00) পর্যন্ত ধরা হয়।
       // ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হয় — আগে বের হওয়ার কর্তন হয় না।
-      const thuHalfEnabled = getSetting('thursday_half_day_education')?.enabled === true;
+      // কোন বিভাগে নিয়ম লাগবে তা সেটিংসে নির্বাচিত ক্যাটাগরি (fallback: 'teacher') দিয়ে ঠিক হয়।
+      const thuHalfSetting = getSetting('thursday_half_day_education');
+      const thuHalfEnabled = thuHalfSetting?.enabled === true;
+      const thuHalfCategory = thuHalfSetting?.category || 'teacher';
       const isThursday = (() => { try { return new Date(r.attendance_date + 'T00:00:00').getDay() === 4; } catch { return false; } })();
-      const applyThuHalf = thuHalfEnabled && isThursday && staffMember?.staff_category === 'teacher' && !isOvernight;
+      const applyThuHalf = thuHalfEnabled && isThursday && staffMember?.staff_category === thuHalfCategory && !isOvernight;
       let effDutyEnd = dutyEnd;
       let effScheduledMinutes = scheduledMinutesPerDay;
       if (applyThuHalf) {
