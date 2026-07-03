@@ -831,7 +831,12 @@ const AdminSalary = () => {
     }> = [];
 
     const baseSalary = getEffectiveSalary(staffMember);
-    const dailyRate = baseSalary / 30;
+    // দৈনিক হার = মাসিক বেতন ÷ সংশ্লিষ্ট মাসের প্রকৃত দিনসংখ্যা (২৮/২৯/৩০/৩১)।
+    // এতে যেকোনো মাসে পূর্ণ হাজিরায় আয় ঠিক মাসিক বেতনের সমান হয় এবং অনুপস্থিতির
+    // কর্তনও সঠিক অনুপাতে হয় — ফলে মাসভেদে হিসাব আর ভুল/অস্থির হয় না।
+    const [statYy, statMm] = monthYear.split('-').map(Number);
+    const daysInSelectedMonth = new Date(statYy, statMm, 0).getDate();
+    const dailyRate = baseSalary / daysInSelectedMonth;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
     let totalDailyEarnings = 0;
@@ -3550,7 +3555,7 @@ const AdminSalary = () => {
                     {(() => {
                       const mode = getSetting('calculation_mode')?.mode || 'per_minute';
                       if (mode === 'attendance_based') return bn ? 'উপস্থিতি ভিত্তিক: নিট বেতন = (উপস্থিত দিন / কর্মদিবস) × মূল বেতন' : 'Attendance Based: Net = (Present Days / Working Days) × Base Salary';
-                      if (mode === 'per_minute') return bn ? 'Per-Minute: মাসিক বেতন ÷ ৩০ দিন ÷ দৈনিক ডিউটি মিনিট = প্রতি মিনিটের হার' : 'Per-Minute: Monthly ÷ 30 days ÷ duty minutes = rate/minute';
+                      if (mode === 'per_minute') return bn ? 'Per-Minute: মাসিক বেতন ÷ মাসের দিনসংখ্যা ÷ দৈনিক ডিউটি মিনিট = প্রতি মিনিটের হার' : 'Per-Minute: Monthly ÷ days in month ÷ duty minutes = rate/minute';
                       return bn ? 'Fixed Rate: নির্দিষ্ট হারে কর্তন' : 'Fixed Rate: Fixed deduction rates';
                     })()}
                   </p>
@@ -3680,7 +3685,7 @@ const AdminSalary = () => {
                 <div className="p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
                   <h4 className="font-semibold">{bn ? 'Per-Minute ফর্মুলা' : 'Per-Minute Formula'}</h4>
                   <div className="space-y-1 text-muted-foreground text-xs">
-                    <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ ৩০' : 'Monthly Salary ÷ 30'}</p>
+                    <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ মাসের প্রকৃত দিনসংখ্যা' : 'Monthly Salary ÷ actual days in month'}</p>
                     <p>• <strong>{bn ? 'প্রতি মিনিট হার' : 'Per-Minute Rate'}</strong> = {bn ? 'দৈনিক হার ÷ ডিউটি মিনিট' : 'Daily Rate ÷ Duty Minutes'}</p>
                     <p>• <strong>{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</strong> = {bn ? 'অনুপস্থিত দিন × দৈনিক হার' : 'Absent Days × Daily Rate'}</p>
                     <p>• <strong>{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</strong> = {bn ? 'মিসড মিনিট × প্রতি মিনিট হার' : 'Missed Minutes × Per-Minute Rate'}</p>
