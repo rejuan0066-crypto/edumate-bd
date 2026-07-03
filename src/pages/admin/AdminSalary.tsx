@@ -2875,7 +2875,7 @@ const AdminSalary = () => {
                                    </button>
                                    <span className={`text-[8px] leading-none ${lastUpd ? 'text-muted-foreground' : 'text-amber-500'}`} title={upTitle}>
                                      {lastUpd
-                                       ? (bn ? 'আপডেট: ' + toBnDigits(formatInTimeZone(lastUpd, appTz, 'dd/MM HH:mm')) : 'Upd: ' + formatInTimeZone(lastUpd, appTz, 'dd/MM HH:mm'))
+                                       ? (bn ? 'আপডেট: ' + toBnDigits(upShort) : 'Upd: ' + upShort)
                                        : (bn ? 'রেকর্ড নেই' : 'No data')}
                                    </span>
                                    </div>
