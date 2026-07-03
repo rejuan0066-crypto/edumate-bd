@@ -961,7 +961,7 @@ const AdminSalary = () => {
       // Late-present days must come from the real time as well as manual status.
       // Example: status stays "present" but check-in is after duty start => count as late.
       // Example: user clicked "late" but did not adjust time yet => keep late day visible.
-      const isLateAttendance = r.status === 'late' || lateMinutes > 0;
+      const isLateAttendance = r.status === 'late' || (r.status === 'present' && lateMinutes > 0);
       if (isLateAttendance) late += 1;
       if (r.status === 'present' && lateMinutes > 0) entry.status = 'late';
       if (!isLateAttendance && r.status === 'present') present += 1;
