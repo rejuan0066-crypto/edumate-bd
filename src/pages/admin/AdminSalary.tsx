@@ -1511,18 +1511,12 @@ const AdminSalary = () => {
           : `${dupDates.length} day(s) have duplicate records (${dupDates.slice(0, 3).join(', ')}${dupDates.length > 3 ? '…' : ''})`);
       }
 
-      // 2. Untracked working days (potentially absent days never marked)
-      // যদি "সম্পূর্ণ উপস্থিতি বাধ্যতামূলক" সেটিং চালু থাকে (ডিফল্ট), তবে অসম্পূর্ণ
-      // হাজিরা থাকলে বেতন জেনারেট আটকে যাবে (error) — নাহলে শুধু সতর্কবার্তা।
+      // 2. Untracked days (no attendance record). এগুলো এখন বেতনসহ ছুটি হিসেবে
+      // গণ্য হয় (কর্তন নয়), তাই বেতন জেনারেট আটকানো হয় না — শুধু তথ্যমূলক সতর্কবার্তা।
       if (stats.untrackedAbsentDays > 0) {
-        const requireComplete = getSetting('require_complete_attendance')?.enabled !== false;
-        const msg = bn
-          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন হাজিরা দেওয়া হয়নি — মাসের সব উপস্থিতি সম্পূর্ণ করুন`
-          : `${stats.untrackedAbsentDays} day(s) unmarked — complete all attendance for the month first`;
-        if (requireComplete) errors.push(msg);
-        else warnings.push(bn
-          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো রেকর্ড নেই (ছুটি না হলে অনুপস্থিত হিসাবে গণ্য)`
-          : `${stats.untrackedAbsentDays} day(s) unmarked (counted as absent unless holiday)`);
+        warnings.push(bn
+          ? `${toBnDigits(stats.untrackedAbsentDays)} দিন কোনো হাজিরা রেকর্ড নেই — বেতনসহ ছুটি হিসেবে গণ্য`
+          : `${stats.untrackedAbsentDays} day(s) unmarked — counted as paid holiday`);
       }
 
 
