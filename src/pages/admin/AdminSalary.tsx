@@ -909,12 +909,25 @@ const AdminSalary = () => {
         return distToStart <= distToEnd ? dutyStart : dutyEnd;
       };
 
+      // বৃহস্পতিবার শিক্ষা বিভাগের (teacher) জন্য অর্ধদিন: শিফট ২টা (14:00) পর্যন্ত ধরা হয়।
+      // ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হয় — আগে বের হওয়ার কর্তন হয় না।
+      const thuHalfEnabled = getSetting('thursday_half_day_education')?.enabled === true;
+      const isThursday = (() => { try { return new Date(r.attendance_date + 'T00:00:00').getDay() === 4; } catch { return false; } })();
+      const applyThuHalf = thuHalfEnabled && isThursday && staffMember?.staff_category === 'teacher' && !isOvernight;
+      let effDutyEnd = dutyEnd;
+      let effScheduledMinutes = scheduledMinutesPerDay;
+      if (applyThuHalf) {
+        const thuEnd = timeToMinutes('14:00');
+        if (thuEnd > dutyStart && thuEnd < dutyEnd) { effDutyEnd = thuEnd; effScheduledMinutes = effDutyEnd - dutyStart; }
+      }
+      const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
+
       const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : dutyStart;
-      const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : dutyEnd;
+      const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : effDutyEnd;
 
       const lateMinutes = Math.max(0, checkIn - dutyStart);
-      const earlyExitMinutes = Math.max(0, dutyEnd - checkOut);
-      const overtimeMinutes = Math.max(0, checkOut - dutyEnd);
+      const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
+      const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
 
       totalLateArrivalMinutes += lateMinutes;
       totalEarlyExitMinutes += earlyExitMinutes;
@@ -924,17 +937,17 @@ const AdminSalary = () => {
       entry.earlyMin = earlyExitMinutes;
       entry.overtimeMin = overtimeMinutes;
       
-      const timeDeduction = Math.round((lateMinutes + earlyExitMinutes) * perMinuteRate);
+      const timeDeduction = Math.round((lateMinutes + earlyExitMinutes) * effPerMinuteRate);
       entry.deduction += timeDeduction;
       entry.dailyEarning = Math.max(0, entry.dailyEarning - timeDeduction);
       
-      entry.addition = Math.round(overtimeMinutes * perMinuteRate);
+      entry.addition = Math.round(overtimeMinutes * effPerMinuteRate);
       entry.dailyEarning += entry.addition;
 
       // Accumulate the UNROUNDED daily earning to avoid cumulative rounding drift.
       const rawEarn = Math.max(
         0,
-        baseDayRaw - (lateMinutes + earlyExitMinutes) * perMinuteRate + overtimeMinutes * perMinuteRate,
+        baseDayRaw - (lateMinutes + earlyExitMinutes) * effPerMinuteRate + overtimeMinutes * effPerMinuteRate,
       );
       totalDailyEarnings += rawEarn;
 
