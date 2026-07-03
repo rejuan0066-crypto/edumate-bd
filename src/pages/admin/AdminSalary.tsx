@@ -990,7 +990,8 @@ const AdminSalary = () => {
       
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
-        present += 1;
+        // তবে UI/রিপোর্টে "উপস্থিত" ও "ছুটি" আলাদা কলাম, তাই leave-কে present কাউন্টে
+        // যোগ করা যাবে না — নাহলে জুনের মতো মাসে present+leave দ্বিগুণ দেখায়।
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
