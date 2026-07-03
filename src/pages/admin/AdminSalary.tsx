@@ -2100,8 +2100,8 @@ const AdminSalary = () => {
           const snap = getSalaryDisplaySnapshot(s, rec);
           const displayRecord = snap.record;
           const st = snap.stats;
-          const totalDed = rec ? getSalaryDisplayTotalDeduction(snap) : 0;
-          const net_salary = rec ? Number(displayRecord.net_salary || 0) : 0;
+          const totalDed = getSalaryDisplayTotalDeduction(snap);
+          const net_salary = Number(displayRecord.net_salary || 0);
           return {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
