@@ -610,20 +610,38 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
+  // Apply the Thursday half-day check-in/check-out window when the selected date is a
+  // Thursday and the staff belongs to a configured department.
+  const applyThursdayWindow = (entity: any, base: { start: string; end: string }) => {
+    const enabled = (thursdayHalfSetting as any)?.enabled === true;
+    if (!enabled || entity?.type === 'student') return base;
+    if (!isThursdayDate(selectedDate)) return base;
+    const cats = resolveThursdayHalfCategories(thursdayHalfSetting as any);
+    if (!entity?.staff_category || !cats.includes(entity.staff_category)) return base;
+    return {
+      start: (thursdayHalfSetting as any)?.start_time || base.start,
+      end: (thursdayHalfSetting as any)?.end_time || '14:00',
+    };
+  };
+
   // Helper: get shift time for a staff entity (per-staff override > category > default)
   const getCategoryTime = (entity: any) => {
+    let base: { start: string; end: string };
     if (entity?.duty_start_time && entity?.duty_end_time) {
-      return { start: entity.duty_start_time, end: entity.duty_end_time };
+      base = { start: entity.duty_start_time, end: entity.duty_end_time };
+    } else {
+      const cat = entity?.staff_category || 'general';
+      base = categoryShiftTimes[cat] || defaultCategoryTimes.general;
     }
-    const cat = entity?.staff_category || 'general';
-    return categoryShiftTimes[cat] || defaultCategoryTimes.general;
+    return applyThursdayWindow(entity, base);
   };
 
   const getStaffShiftTime = (entity: any) => {
     if (staffSubTab === 'duty') {
-      return selectedShift === 'evening'
+      const base = selectedShift === 'evening'
         ? { start: dutyTimes.evening_start, end: dutyTimes.evening_end }
         : { start: dutyTimes.morning_start, end: dutyTimes.morning_end };
+      return applyThursdayWindow(entity, base);
     }
 
     return getCategoryTime(entity);
