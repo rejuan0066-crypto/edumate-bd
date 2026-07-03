@@ -13,6 +13,20 @@
 export interface ThursdayHalfDaySetting {
   enabled?: boolean;
   category?: string | null;
+  /** Half-day end clock, "HH:MM" (default "14:00"). */
+  end_time?: string | null;
+}
+
+/** Parse an "HH:MM" clock string to minutes-from-midnight. Falls back to 14:00. */
+export function parseHalfDayEndMinutes(endTime?: string | null): number {
+  if (typeof endTime === 'string') {
+    const m = endTime.match(/^(\d{1,2}):(\d{2})$/);
+    if (m) {
+      const mins = Number(m[1]) * 60 + Number(m[2]);
+      if (mins > 0 && mins < 24 * 60) return mins;
+    }
+  }
+  return 14 * 60; // 14:00
 }
 
 /** JS getDay() Thursday index. */
