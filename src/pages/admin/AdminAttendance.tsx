@@ -37,6 +37,7 @@ import BulkHolidayDialog from '@/components/admin/BulkHolidayDialog';
 import { useConfirm } from "@/contexts/ConfirmContext";
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { todayIsoInTz, addDaysIsoInTz, toMonthYearInTz } from '@/lib/timezone';
+import { shouldApplyThursdayHalfDay, resolveThursdayHalfCategories, isThursdayDate } from '@/lib/thursdayHalfDay';
 
 const STATUS_ICONS: Record<string, any> = {
   present: CheckCircle2, absent: XCircle, late: Clock,
