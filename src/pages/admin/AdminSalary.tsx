@@ -2232,11 +2232,13 @@ const AdminSalary = () => {
     ` : '';
 
 
-    // Earned-from-attendance = base − absence − late − other (প্রকৃত উপস্থিতি ভিত্তিক আয়)
+    // Earned-from-attendance = live/persisted attendance result for the selected month.
     const attendanceDeductions = Number(record.absence_deduction || 0)
       + Number(record.late_deduction || 0)
       + Number(record.other_deduction || 0);
-    const earnedFromAttendance = Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
+    const earnedFromAttendance = Number.isFinite(Number(record.earned_from_attendance))
+      ? Number(record.earned_from_attendance)
+      : Math.max(0, Number(record.base_salary || 0) - attendanceDeductions);
 
     const totalAllowance = Number(record.bonus || 0) + Number(record.overtime || 0) + Number(record.other_allowance || 0);
     const totalEarnings = earnedFromAttendance + totalAllowance;
