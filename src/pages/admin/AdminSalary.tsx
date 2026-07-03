@@ -1467,9 +1467,33 @@ const AdminSalary = () => {
     mutationFn: async (id: string) => {
       const record = salaryRecords.find((r: any) => r.id === id);
       if (!record) throw new Error('Record not found');
+      const staffMember = staff.find((s: any) => s.id === record.staff_id);
+      const payableRecord = staffMember ? getSalaryDisplaySnapshot(staffMember, record).record : record;
 
       const { error } = await supabase.from('salary_records')
-        .update({ status: 'paid', paid_at: new Date().toISOString() })
+        .update({
+          base_salary: payableRecord.base_salary,
+          working_days: payableRecord.working_days,
+          present_days: payableRecord.present_days,
+          absent_days: payableRecord.absent_days,
+          late_days: payableRecord.late_days,
+          absence_deduction: payableRecord.absence_deduction,
+          late_deduction: payableRecord.late_deduction,
+          other_deduction: payableRecord.other_deduction,
+          overtime: payableRecord.overtime,
+          bonus: payableRecord.bonus,
+          other_allowance: payableRecord.other_allowance,
+          advance_deduction: payableRecord.advance_deduction,
+          savings_deduction: payableRecord.savings_deduction,
+          net_salary: payableRecord.net_salary,
+          calc_basis: payableRecord.calc_basis,
+          earned_from_attendance: payableRecord.earned_from_attendance,
+          overtime_for_net: payableRecord.overtime_for_net,
+          deductions_deferred: payableRecord.deductions_deferred,
+          status: 'paid',
+          paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', id);
       if (error) throw error;
 
@@ -1478,7 +1502,6 @@ const AdminSalary = () => {
       const categoryId = expenseConfig?.category_id;
 
       if (projectId && categoryId) {
-        const staffMember = staff.find((s: any) => s.id === record.staff_id);
         const monthName = MONTHS.find(m => m.value === selectedMonth);
         const description = `${bn ? 'বেতন' : 'Salary'}: ${staffMember?.name_bn || 'Staff'} - ${bn ? monthName?.bn : monthName?.en} ${selectedYear}`;
 
@@ -1494,7 +1517,7 @@ const AdminSalary = () => {
           category_id: categoryId,
           month_year: expenseMonthYear,
           expense_date: toIsoDateInTz(new Date(), appTz),
-          amount: Number(record.net_salary),
+          amount: Number(payableRecord.net_salary),
           description,
           has_receipt: true,
           receipt_url: pdfUrl,
