@@ -498,6 +498,54 @@ Deno.serve(async (req) => {
       </section>
     ` : "";
 
+    const staffWithAbsent = (staff || []).filter(
+      (s: any) => Array.isArray(s.absentDetails) && s.absentDetails.length > 0
+    );
+    const absentAppendixHtml = staffWithAbsent.length > 0 ? `
+      <section class="salary-page">
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}</thead>
+            <tbody>
+              <tr><td colspan="${COL_COUNT}" style="padding:0;border:none;">
+                <h3 style="text-align:center;margin:6pt 0 8pt;font-size:11pt;font-weight:700;">
+                  ${bn ? "অনুপস্থিতির বিবরণী" : "Absence Details"}
+                </h3>
+                ${staffWithAbsent.map((s: any) => `
+                  <div style="margin:0 0 10pt;">
+                    <div style="font-weight:700;font-size:9.5pt;margin-bottom:3pt;">
+                      ${escapeHtml(bn ? toBnDigits(s.name) : s.name)}${s.staff_id && s.staff_id !== "-" ? ` (${escapeHtml(bn ? toBnDigits(s.staff_id) : s.staff_id)})` : ""}
+                      <span style="font-weight:600;color:#b91c1c;margin-left:6pt;">${bn ? "মোট" : "Total"}: ${bn ? toBnDigits(s.absentDetails.length) : s.absentDetails.length} ${bn ? "দিন" : "days"}</span>
+                    </div>
+                    <table style="width:100%;border-collapse:collapse;font-size:8.5pt;">
+                      <thead>
+                        <tr style="background:#f1f5f9;">
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "ক্রম" : "SL"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:left;">${bn ? "তারিখ" : "Date"}</th>
+                          <th style="border:0.5pt solid #94a3b8;padding:2.5pt 4pt;text-align:right;">${bn ? "কর্তন (৳)" : "Deduction (৳)"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${s.absentDetails.map((d: any, i: number) => `
+                          <tr>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${bn ? toBnDigits(i + 1) : i + 1}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;">${fmtDate(d.date)}</td>
+                            <td style="border:0.5pt solid #cbd5e1;padding:2.5pt 4pt;text-align:right;font-weight:600;color:#b91c1c;">${bn ? toBnDigits((Number(d.deduction) || 0).toLocaleString("en-US")) : (Number(d.deduction) || 0).toLocaleString("en-US")}</td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `).join("")}
+              </td></tr>
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
+      </section>
+    ` : "";
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -965,6 +1013,7 @@ Deno.serve(async (req) => {
 
   ${pagesHtml}
   ${lateAppendixHtml}
+  ${absentAppendixHtml}
 
 </div>
 <script>
