@@ -1803,9 +1803,11 @@ const AdminSalary = () => {
 
   // Stats
   const stats = useMemo(() => {
-    const totalBase = salaryRecords.reduce((s: number, r: any) => s + Number(r.base_salary || 0), 0);
-    const totalNet = salaryRecords.reduce((s: number, r: any) => s + Number(r.net_salary || 0), 0);
-    const totalDeduction = salaryRecords.reduce((s: number, r: any) => s + Number(r.late_deduction || 0) + Number(r.absence_deduction || 0) + Number(r.advance_deduction || 0) + Number(r.other_deduction || 0), 0);
+    const generatedStaff = filtered.filter((s: any) => getRecord(s.id));
+    const displaySnapshots = generatedStaff.map((s: any) => getSalaryDisplaySnapshot(s, getRecord(s.id)));
+    const totalBase = displaySnapshots.reduce((sum: number, snap: any) => sum + Number(snap.record.base_salary || 0), 0);
+    const totalNet = displaySnapshots.reduce((sum: number, snap: any) => sum + Number(snap.record.net_salary || 0), 0);
+    const totalDeduction = displaySnapshots.reduce((sum: number, snap: any) => sum + getSalaryDisplayTotalDeduction(snap), 0);
     const paid = salaryRecords.filter((r: any) => r.status === 'paid').length;
     const pending = salaryRecords.filter((r: any) => r.status === 'pending').length;
     
@@ -1816,7 +1818,7 @@ const AdminSalary = () => {
     }, 0);
     
     return { totalBase, totalNet, totalDeduction, paid, pending, totalSavings };
-  }, [salaryRecords, filtered, savingsConfigs, monthYear]);
+  }, [salaryRecords, filtered, savingsConfigs, monthYear, attendanceData, dutyAttendanceData, settings, salaryChanges, monthHolidays]);
 
   // Export Excel with proper Bengali support
   const exportExcel = () => {
