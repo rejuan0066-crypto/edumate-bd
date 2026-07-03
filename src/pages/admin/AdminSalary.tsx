@@ -800,17 +800,24 @@ const AdminSalary = () => {
       a.entity_id === staffMember.id &&
       a.shift !== 'morning' && a.shift !== 'evening'
     );
-    // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে শুধুমাত্র একটি গণনা হবে।
-    // অগ্রাধিকার: present > late > half_day > leave > absent (ইতিবাচক স্ট্যাটাস জিতবে)
+    // Deduplicate: একই দিনের একাধিক রেকর্ড থাকলে সর্বশেষ আপডেট হওয়া রেকর্ডটাই গণনা হবে।
+    // আগে status priority দিয়ে present রেকর্ড late-কে ঢেকে দিচ্ছিল, তাই বিলম্ব উপস্থিতি ভুল দেখাত।
     const statusPriority: Record<string, number> = {
-      present: 5, late: 4, half_day: 3, leave: 2, absent: 1,
+      late: 6, half_day: 5, present: 4, leave: 3, excused: 3, absent: 2,
+    };
+    const recordTimestamp = (r: any): number => {
+      const ts = r?.updated_at || r?.created_at || (r?.attendance_date ? `${r.attendance_date}T00:00:00` : '');
+      const t = ts ? new Date(ts).getTime() : 0;
+      return Number.isFinite(t) ? t : 0;
     };
     const byDate = new Map<string, any>();
     for (const r of rawRecords) {
       const existing = byDate.get(r.attendance_date);
       const curPri = statusPriority[r.status] ?? 0;
       const exPri = existing ? (statusPriority[existing.status] ?? 0) : -1;
-      if (!existing || curPri > exPri) {
+      const curTs = recordTimestamp(r);
+      const exTs = existing ? recordTimestamp(existing) : -1;
+      if (!existing || curTs > exTs || (curTs === exTs && curPri > exPri)) {
         byDate.set(r.attendance_date, r);
       }
     }
@@ -823,10 +830,9 @@ const AdminSalary = () => {
     // উপস্থিত দিন কখনো মাসের প্রকৃত দিনসংখ্যার বেশি গণনা হবে না (অতিরিক্ত দিন বাদ)।
     const [presYy, presMm] = monthYear.split('-').map(Number);
     const daysInMonthForPresent = new Date(presYy, presMm, 0).getDate();
-    const rawPresent = records.filter((r: any) => ['present', 'leave', 'excused'].includes(r.status)).length;
-    const present = Math.min(rawPresent, daysInMonthForPresent);
+    let present = 0;
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
-    const late = records.filter((r: any) => r.status === 'late').length;
+    let late = 0;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
     const leave = records.filter((r: any) => r.status === 'leave').length;
     const holidayCovered = records.filter((r: any) => r.status === 'absent' && paidHolidaySet.has(r.attendance_date)).length;
@@ -850,11 +856,14 @@ const AdminSalary = () => {
     let totalLateArrivalMinutes = 0;
     let totalEarlyExitMinutes = 0;
     let totalOvertimeMinutes = 0;
+    let totalLateArrivalDeduction = 0;
+    let totalEarlyExitDeduction = 0;
 
     const dailyBreakdown: Array<{
       date: string; status: string; checkIn: string; checkOut: string;
       lateMin: number; earlyMin: number; overtimeMin: number;
       deduction: number; addition: number; dailyEarning: number;
+      lateDeduction?: number; earlyDeduction?: number;
     }> = [];
 
     const baseSalary = getEffectiveSalary(staffMember);
@@ -894,6 +903,7 @@ const AdminSalary = () => {
       
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
+        present += 1;
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
@@ -948,6 +958,14 @@ const AdminSalary = () => {
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
       const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
 
+      // Late-present days must come from the real time as well as manual status.
+      // Example: status stays "present" but check-in is after duty start => count as late.
+      // Example: user clicked "late" but did not adjust time yet => keep late day visible.
+      const isLateAttendance = r.status === 'late' || (r.status === 'present' && lateMinutes > 0);
+      if (isLateAttendance) late += 1;
+      if (r.status === 'present' && lateMinutes > 0) entry.status = 'late';
+      if (!isLateAttendance && r.status === 'present') present += 1;
+
       totalLateArrivalMinutes += lateMinutes;
       totalEarlyExitMinutes += earlyExitMinutes;
       totalOvertimeMinutes += overtimeMinutes;
@@ -956,8 +974,15 @@ const AdminSalary = () => {
       entry.earlyMin = earlyExitMinutes;
       entry.overtimeMin = overtimeMinutes;
       
-      const timeDeduction = Math.round((lateMinutes + earlyExitMinutes) * effPerMinuteRate);
+      const lateDeductionRaw = lateMinutes * effPerMinuteRate;
+      const earlyDeductionRaw = earlyExitMinutes * effPerMinuteRate;
+      totalLateArrivalDeduction += lateDeductionRaw;
+      totalEarlyExitDeduction += earlyDeductionRaw;
+
+      const timeDeduction = Math.round(lateDeductionRaw + earlyDeductionRaw);
       entry.deduction += timeDeduction;
+      entry.lateDeduction = Math.round(lateDeductionRaw);
+      entry.earlyDeduction = Math.round(earlyDeductionRaw);
       entry.dailyEarning = Math.max(0, entry.dailyEarning - timeDeduction);
       
       entry.addition = Math.round(overtimeMinutes * effPerMinuteRate);
@@ -973,6 +998,7 @@ const AdminSalary = () => {
       dailyBreakdown.push(entry);
     });
 
+    present = Math.min(present, daysInMonthForPresent);
     const totalMissedMinutes = totalLateArrivalMinutes + totalEarlyExitMinutes;
 
     // For additive mode: add paid holidays that have NO attendance record
@@ -1018,6 +1044,7 @@ const AdminSalary = () => {
       untrackedAbsentDays: untrackedUnmarkedDays, untrackedPaidDays, recordedAbsent, preJoinDays, firstCountedDay,
       total: records.length,
       totalLateArrivalMinutes, totalEarlyExitMinutes, totalMissedMinutes, totalOvertimeMinutes,
+      totalLateArrivalDeduction, totalEarlyExitDeduction,
       scheduledMinutesPerDay, dailyBreakdown, perMinuteRate, dailyRate, totalDailyEarnings,
     };
   };
@@ -1066,7 +1093,9 @@ const AdminSalary = () => {
     // Subtractive model: পূর্ণ মাসিক বেতন থেকে অনুপস্থিতি/দেরি/হাফ-ডে কাটা হয়।
     // এতে সাপ্তাহিক ছুটি/সরকারি ছুটি (যেদিন কোনো রেকর্ড নেই) স্বয়ংক্রিয়ভাবে বেতনসহ ছুটি হিসেবে গণ্য হয়।
     const absenceDeduction = Math.round(attStats.absent * attStats.dailyRate);
-    const lateDeduction = Math.round(attStats.totalMissedMinutes * attStats.perMinuteRate);
+    const lateDeduction = Math.round(
+      Number(attStats.totalLateArrivalDeduction || 0) + Number(attStats.totalEarlyExitDeduction || 0)
+    );
     const otherDeduction = Math.round(attStats.halfDay * (attStats.dailyRate / 2));
     // Proration for the joining month: deduct the value of days before joining.
     const preJoinDeduction = Math.round(preJoinDays * attStats.dailyRate);
@@ -3898,11 +3927,11 @@ const AdminSalary = () => {
                       <p className="text-xs font-semibold text-red-600">{bn ? 'কর্তন বিবরণ' : 'Deductions'}</p>
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{bn ? 'লেইট আসা' : 'Late Arrival'}</span>
-                        <span>{stats.totalLateArrivalMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(stats.totalLateArrivalMinutes * stats.perMinuteRate).toLocaleString()}</span>
+                        <span>{stats.totalLateArrivalMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(Number(stats.totalLateArrivalDeduction || 0)).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{bn ? 'আগাম যাওয়া' : 'Early Exit'}</span>
-                        <span>{stats.totalEarlyExitMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(stats.totalEarlyExitMinutes * stats.perMinuteRate).toLocaleString()}</span>
+                        <span>{stats.totalEarlyExitMinutes} {bn ? 'মি.' : 'min'} = ৳{Math.round(Number(stats.totalEarlyExitDeduction || 0)).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-muted-foreground">{bn ? 'অনুপস্থিতি' : 'Absence'}</span>
