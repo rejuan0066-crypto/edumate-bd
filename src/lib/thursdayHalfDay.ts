@@ -12,7 +12,10 @@
 
 export interface ThursdayHalfDaySetting {
   enabled?: boolean;
+  /** Single target department (legacy). */
   category?: string | null;
+  /** Multiple target departments. Takes precedence over `category` when non-empty. */
+  categories?: string[] | null;
   /** Half-day end clock, "HH:MM" (default "14:00"). */
   end_time?: string | null;
 }
