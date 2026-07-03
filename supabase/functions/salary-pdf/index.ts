@@ -1061,7 +1061,9 @@ Deno.serve(async (req) => {
       var pageWmm = settings.orientation === 'landscape' ? pp.h : pp.w;
       var pageHmm = settings.orientation === 'landscape' ? pp.w : pp.h;
       var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
-      var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
+      // Subtract a small safety epsilon so a fixed page-box height that equals the
+      // printable area can't spill 1px onto a trailing blank page.
+      var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX - 6;
       // Auto floor: how small auto-fit is allowed to shrink to guarantee the
       // full content (incl. bottom signatures) fits — independent of the UI min slider.
       var AUTO_FLOOR = 0.55;
