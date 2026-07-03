@@ -185,6 +185,12 @@ const UpdatePrompt = () => {
       ua: navigator.userAgent,
     });
 
+    // Guarantee the "updating" progress UI is visible for a moment before the
+    // page navigates away — otherwise a fast SW takeover reloads instantly and
+    // the user never sees any feedback.
+    const startedAt = Date.now();
+    const MIN_VISIBLE_MS = 1600;
+
     let didReload = false;
     const reloadOnce = async (reason: string) => {
       if (didReload) return;
@@ -206,6 +212,12 @@ const UpdatePrompt = () => {
       }
       setProgress(100);
       setStatusText(bn ? 'নতুন ভার্সন লোড হচ্ছে…' : 'Loading new version…');
+      // Hold the completed progress bar on screen briefly so the user actually
+      // sees the update finish before the reload happens.
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_VISIBLE_MS) {
+        await new Promise((r) => setTimeout(r, MIN_VISIBLE_MS - elapsed));
+      }
       try {
         // Cache-busting navigation guarantees a fresh document, even on browsers
         // that would otherwise reload from the memory/HTTP cache.
