@@ -88,17 +88,25 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-4 px-5 pb-5 max-h-[70vh] overflow-y-auto">
           {/* Date selection */}
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold text-muted-foreground mb-2">
               {bn ? 'তারিখ নির্বাচন করুন (একাধিক)' : 'Select dates (multiple)'}
             </p>
-            <div className="rounded-2xl border border-border/40 p-2">
+            <div className="rounded-2xl border border-border/40 p-2 overflow-hidden">
               <Calendar
                 mode="multiple"
                 selected={dates}
                 onSelect={(d) => setDates((d as Date[]) || [])}
                 locale={bn ? bnLocale : undefined}
-                className="pointer-events-auto"
+                className="pointer-events-auto p-2 w-full"
+                classNames={{
+                  table: 'w-full border-collapse',
+                  head_row: 'grid grid-cols-7',
+                  head_cell: 'text-muted-foreground font-medium text-[0.65rem] text-center h-8 flex items-center justify-center min-w-0',
+                  row: 'grid grid-cols-7 mt-1',
+                  cell: 'relative text-center text-sm p-0 flex items-center justify-center min-w-0',
+                  day: 'h-9 w-9 mx-auto p-0 font-normal rounded-xl transition-all duration-200 inline-flex items-center justify-center hover:bg-primary/10 hover:text-primary aria-selected:opacity-100',
+                }}
               />
             </div>
             {dateKeys.length > 0 && (
