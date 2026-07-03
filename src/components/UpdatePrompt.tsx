@@ -389,9 +389,12 @@ const UpdatePrompt = () => {
             {updating && (
               <div className="relative mt-2.5 h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-all duration-300 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.5)]"
+                  className="relative h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-all duration-300 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.5)] overflow-hidden"
                   style={{ width: `${progress}%` }}
-                />
+                >
+                  {/* Moving shimmer so it always looks actively working */}
+                  <span className="absolute inset-y-0 -left-full w-full bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.2s_infinite]" />
+                </div>
               </div>
             )}
           </div>
