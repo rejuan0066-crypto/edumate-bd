@@ -2852,8 +2852,12 @@ const AdminSalary = () => {
                                  const lastUpd = getAttendanceLastUpdated(s);
                                  const upTitle = lastUpd
                                    ? (bn ? 'উপস্থিতি শেষ আপডেট' : 'Attendance last updated') + ': ' +
-                                       formatInTimeZone(lastUpd, appTz, 'dd/MM/yyyy hh:mm a')
+                                       formatDateTimeInTz(lastUpd, appTz)
                                    : (bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
+                                 const upShort = lastUpd
+                                   ? formatDateInTz(lastUpd, appTz, { day: '2-digit', month: '2-digit' }) + ' ' +
+                                       formatTimeInTz(lastUpd, appTz, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                   : '';
                                  return (
                                    <div className="flex flex-col items-center gap-0.5">
                                    <button
