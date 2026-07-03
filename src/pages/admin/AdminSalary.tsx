@@ -925,7 +925,13 @@ const AdminSalary = () => {
       entry.addition = Math.round(overtimeMinutes * perMinuteRate);
       entry.dailyEarning += entry.addition;
 
-      totalDailyEarnings += entry.dailyEarning;
+      // Accumulate the UNROUNDED daily earning to avoid cumulative rounding drift.
+      const rawEarn = Math.max(
+        0,
+        baseDayRaw - (lateMinutes + earlyExitMinutes) * perMinuteRate + overtimeMinutes * perMinuteRate,
+      );
+      totalDailyEarnings += rawEarn;
+
       dailyBreakdown.push(entry);
     });
 
