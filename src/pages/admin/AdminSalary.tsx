@@ -3836,6 +3836,18 @@ const AdminSalary = () => {
                     </div>
                   </div>
                   <div>
+                    <Label className="text-[11px]">{bn ? 'শুরুর সময় (বৃহস্পতিবার চেক-ইন)' : 'Start time (Thursday check-in)'}</Label>
+                    <Input
+                      type="time"
+                      className="h-8 text-sm mt-1"
+                      defaultValue={getSetting('thursday_half_day_education')?.start_time || ''}
+                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: e.target.value || null } })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn ? 'খালি রাখলে স্বাভাবিক ডিউটি শুরুর সময় ধরা হবে।' : 'Leave empty to use the normal duty-start time.'}
+                    </p>
+                  </div>
+                  <div>
                     <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
                     <Input
                       type="time"
@@ -3844,7 +3856,7 @@ const AdminSalary = () => {
                       onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: e.target.value || '14:00' } })}
                     />
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {bn ? 'বৃহস্পতিবার ডিউটি শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
+                      {bn ? 'বৃহস্পতিবার শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
                     </p>
                   </div>
                 </div>
