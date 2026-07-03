@@ -1013,17 +1013,27 @@ Deno.serve(async (req) => {
       var pageHmm = settings.orientation === 'landscape' ? pp.w : pp.h;
       var maxW = (pageWmm - settings.marginMm * 2) * MM_TO_PX;
       var maxH = (pageHmm - settings.marginMm * 2) * MM_TO_PX;
+      // Auto floor: how small auto-fit is allowed to shrink to guarantee the
+      // full content (incl. bottom signatures) fits — independent of the UI min slider.
+      var AUTO_FLOOR = 0.55;
       pages.forEach(function(p){
         var inner = p.querySelector('.print-fit') || p;
+        // Reset any prior sizing and measure the TRUE content height BEFORE
+        // pinning the page height, so signatures (tfoot) are included.
+        inner.style.zoom = ''; inner.style.transform = ''; inner.style.width = ''; inner.style.height = '';
+        inner.style.maxWidth = maxW + 'px';
+        var h = inner.scrollHeight, w = inner.scrollWidth;
+        // Now pin the printed page box.
         p.style.setProperty('--print-page-height', maxH + 'px');
         p.style.width = maxW + 'px';
         p.style.maxWidth = maxW + 'px';
         p.style.height = maxH + 'px';
-        inner.style.zoom = ''; inner.style.transform = ''; inner.style.width = ''; inner.style.height = '';
-        inner.style.maxWidth = maxW + 'px';
-        var h = inner.scrollHeight, w = inner.scrollWidth;
-        var scale = Math.min(maxH / h, maxW / w);
-        scale = Math.max(settings.minScale, Math.min(settings.maxScale, scale * 0.98));
+        var computed = Math.min(maxH / h, maxW / w) * 0.985;
+        // If content overflows, allow shrinking down to AUTO_FLOOR regardless of
+        // the UI min slider; otherwise honor the user's min/max range.
+        var overflow = (h > maxH) || (w > maxW);
+        var lo = overflow ? Math.min(settings.minScale, AUTO_FLOOR) : settings.minScale;
+        var scale = Math.max(lo, Math.min(settings.maxScale, computed));
         if (scale >= 0.999 && h <= maxH && w <= maxW) return;
         if (isSafari) {
           inner.style.transform = 'scale(' + scale + ')';
