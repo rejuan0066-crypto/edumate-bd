@@ -515,7 +515,7 @@ Deno.serve(async (req) => {
                   ${bn ? "অনুপস্থিতির বিবরণী" : "Absence Details"}
                 </h3>
                 ${staffWithAbsent.map((s: any) => `
-                  <div style="margin:0 0 10pt;">
+                  <div style="margin:0 0 10pt;page-break-inside:avoid;break-inside:avoid;display:table;width:100%;">
                     <div style="font-weight:700;font-size:9.5pt;margin-bottom:3pt;">
                       ${escapeHtml(bn ? toBnDigits(s.name) : s.name)}${s.staff_id && s.staff_id !== "-" ? ` (${escapeHtml(bn ? toBnDigits(s.staff_id) : s.staff_id)})` : ""}
                       <span style="font-weight:600;color:#b91c1c;margin-left:6pt;">${bn ? "মোট" : "Total"}: ${bn ? toBnDigits(s.absentDetails.length) : s.absentDetails.length} ${bn ? "দিন" : "days"}</span>
