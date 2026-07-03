@@ -108,7 +108,7 @@ export async function downloadReceiptAsPdf(
         const targets = pages.length > 0 ? Array.from(pages) : [iframeDoc.body];
 
         // A4 Landscape PDF
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         const pdfWidth = 297;
         const pdfHeight = 210;
 
