@@ -228,7 +228,7 @@ export async function downloadSheetAsPdf(
           ? pages
           : [((iframeDoc.querySelector('.sheet') as HTMLElement) || iframeDoc.body)];
 
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         const pdfWidth = 297;
         const pdfHeight = 210;
         const margin = 8;
