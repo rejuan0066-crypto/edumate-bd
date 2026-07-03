@@ -254,6 +254,10 @@ const AdminSalary = () => {
   // Fetch attendance data for the month (only full_day shift for salary)
   const { data: attendanceData = [] } = useQuery({
     queryKey: ['salary-attendance', monthYear],
+    // Attendance can be edited on the Attendance page at any time; always pull
+    // the freshest records so salary never shows stale/incorrect attendance.
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const year = Number(selectedYear);
       const month = Number(selectedMonth);
