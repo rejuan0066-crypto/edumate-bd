@@ -1013,8 +1013,12 @@ const AdminSalary = () => {
     // Calculation basis toggle: 'subtractive' (default — পূর্ণ মাসিক বেতন − কর্তন; ছুটির দিনসহ)
     // অথবা 'additive' (শুধু উপস্থিত দিনের আয় যোগ; ছুটির দিনে বেতন নেই)
     const calcBasis = getSetting('salary_calc_basis')?.mode || 'additive';
+    // দৈনিক হার = মাসিক বেতন ÷ ৩০। তাই ৩১ দিনের মাসে পূর্ণ হাজিরায় আয় ৩১/৩০ গুণ হয়ে
+    // মাসিক বেতনের বেশি হয়ে যেত। মাসের সর্বোচ্চ কার্যদিবস ৩০ ধরে হাজিরাভিত্তিক আয়
+    // মাসিক বেতনে সীমাবদ্ধ রাখা হয় (ওভারটাইম আলাদাভাবে যোগ হয়)।
+    const includedOvertime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
     let earnedFromAttendance = calcBasis === 'additive'
-      ? Math.round(attStats.totalDailyEarnings)
+      ? Math.min(baseSalary + includedOvertime, Math.round(attStats.totalDailyEarnings))
       : Math.max(0, baseSalary - absenceDeduction - lateDeduction - otherDeduction - preJoinDeduction);
     let overtime = Math.round(attStats.totalOvertimeMinutes * attStats.perMinuteRate);
 
