@@ -661,6 +661,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       }
       if (updated > 0) {
         queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+        queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       }
     })();
   }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
@@ -700,7 +702,11 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
         if (error) throw error;
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
+    },
     onError: (err) => { console.error('Attendance save error:', err); toast.error(bn ? 'সেভ করতে সমস্যা' : 'Failed to save'); },
   });
 
@@ -719,6 +725,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       toast.success(bn ? 'সবার উপস্থিতি সেভ হয়েছে' : 'Bulk attendance saved');
     },
   });
@@ -756,6 +764,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: (_data, type) => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       const labels: Record<string, string> = {
         all: bn ? 'সকল উপস্থিতি' : 'All attendance',
         student: bn ? 'ছাত্র হাজিরা' : 'Student attendance',
