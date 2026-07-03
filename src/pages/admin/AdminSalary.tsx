@@ -4047,7 +4047,7 @@ const AdminSalary = () => {
                                     <Badge className={`${sl.color} text-[9px]`}>{bn ? sl.bn : sl.en}</Badge>
                                   </td>
                                   <td className="px-2 py-1.5 text-center text-[10px]">
-                                    {d.status === 'absent' ? '-' : (
+                                    {['absent', 'holiday', 'leave', 'excused'].includes(d.status) ? '-' : (
                                       <>{d.checkIn ? fmt(d.checkIn) : '-'} / {d.checkOut ? fmt(d.checkOut) : '-'}</>
                                     )}
                                   </td>
