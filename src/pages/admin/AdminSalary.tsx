@@ -3653,6 +3653,21 @@ const AdminSalary = () => {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <Label>{bn ? 'বৃহস্পতিবার অর্ধদিন (শিক্ষা বিভাগ)' : 'Thursday Half-Day (Education)'}</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      {bn ? 'শুধু শিক্ষা বিভাগের জন্য বৃহস্পতিবার ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হবে' : 'For education dept only: staying until 2:00 PM on Thursday counts as a full day'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={getSetting('thursday_half_day_education')?.enabled === true}
+                    onCheckedChange={v => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { enabled: v } })}
+                  />
+                </div>
+
+
+
 
                 <div className="p-3 border rounded-lg space-y-2">
                   <Label>{bn ? 'বেতন হিসাবের ভিত্তি' : 'Salary Calculation Basis'}</Label>
