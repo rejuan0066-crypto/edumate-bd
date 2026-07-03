@@ -858,7 +858,9 @@ const AdminSalary = () => {
         if (paidHolidaySet.has(r.attendance_date)) {
           entry.status = 'holiday';
           entry.dailyEarning = Math.round(dailyRate);
-          totalDailyEarnings += entry.dailyEarning;
+          // Accumulate UNROUNDED so full attendance sums to exactly the base
+          // salary (per-day rounding was silently dropping a few taka).
+          totalDailyEarnings += dailyRate;
           dailyBreakdown.push(entry);
           return;
         }
@@ -871,17 +873,19 @@ const AdminSalary = () => {
       if (r.status === 'leave' || r.status === 'excused') {
         // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
         entry.dailyEarning = Math.round(dailyRate);
-        totalDailyEarnings += entry.dailyEarning;
+        totalDailyEarnings += dailyRate;
         dailyBreakdown.push(entry);
         return;
       }
 
+      const baseDayRaw = r.status === 'half_day' ? dailyRate / 2 : dailyRate;
       if (r.status === 'half_day') {
         entry.dailyEarning = Math.round(dailyRate / 2);
         entry.deduction = Math.round(dailyRate / 2);
       } else {
         entry.dailyEarning = Math.round(dailyRate);
       }
+
 
       // Map a clock time (minutes from midnight) onto the duty window timeline.
       // Day shift  (e.g. 09:00–17:00): timeline = [dutyStart .. dutyEnd], same-day.
