@@ -2977,7 +2977,10 @@ const AdminSalary = () => {
                                      <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
                                      <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
                                      {attStats.totalLateArrivalMinutes > 0 && (
-                                       <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
+                                       <span className="text-[9px] text-yellow-600 ml-1" title={bn ? 'লেইট আসা' : 'Late arrival'}>↓{bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'}</span>
+                                     )}
+                                     {attStats.totalEarlyExitMinutes > 0 && (
+                                       <span className="text-[9px] text-orange-600 ml-0.5" title={bn ? 'আগাম যাওয়া' : 'Early exit'}>↑{bn ? toBnDigits(attStats.totalEarlyExitMinutes) : attStats.totalEarlyExitMinutes}{bn ? 'মি.' : 'm'}</span>
                                      )}
                                    </button>
                                    <span className={`text-[8px] leading-none ${lastUpd ? 'text-muted-foreground' : 'text-amber-500'}`} title={upTitle}>
