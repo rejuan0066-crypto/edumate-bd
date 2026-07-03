@@ -2839,19 +2839,23 @@ const AdminSalary = () => {
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
-                                // In additive mode absence/late are NOT deductions — they are simply
-                                // unearned days. Show them as ৳0 here so the deduction total never
-                                // exceeds the base salary; surface the unearned amount separately.
-                                const absD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).absence_deduction || 0);
-                                const lateD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).late_deduction || 0);
-                                const otherD = isAdditive
-                                  ? Number(rec?.other_deduction || 0)
-                                  : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
-                                const earnedV = !isPaid
-                                  ? Number((autoCalc as any).earned_from_attendance || 0)
-                                  : 0;
-                                const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
-                                const sumDed = absD + lateD + advD + otherD + savD;
+                                 // Always surface the REAL absence/late amounts so they are
+                                 // visible in the breakdown. In additive mode they are already
+                                 // baked into the lower "earned" figure, so they must NOT be
+                                 // re-added to the money-removed total (sumDed) — otherwise the
+                                 // deduction total would exceed the base salary.
+                                 const absD = Number((isPaid ? rec : autoCalc).absence_deduction || 0);
+                                 const lateD = Number((isPaid ? rec : autoCalc).late_deduction || 0);
+                                 const otherD = isAdditive
+                                   ? Number(rec?.other_deduction || 0)
+                                   : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                 const earnedV = !isPaid
+                                   ? Number((autoCalc as any).earned_from_attendance || 0)
+                                   : 0;
+                                 const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
+                                 const sumDed = isAdditive
+                                   ? advD + otherD + savD
+                                   : absD + lateD + advD + otherD + savD;
                                 const expectedNet = isAdditive
                                   ? displayNet
                                   : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
@@ -2877,8 +2881,8 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-3 space-y-1.5 text-xs">
                                         {[
-                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
-                                          { lbl: bn ? 'বিলম্ব' : 'Late', v: lateD, k: 'late' },
+                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs', info: isAdditive },
+                                          { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late', info: isAdditive },
                                           { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
                                           { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
                                           { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
@@ -2886,6 +2890,9 @@ const AdminSalary = () => {
                                           <div key={row.k} className="flex justify-between items-center">
                                             <span className="text-muted-foreground flex items-center gap-1">
                                               <Minus className="h-2.5 w-2.5 opacity-60" />{row.lbl}
+                                              {row.info && row.v > 0 && (
+                                                <span className="text-[9px] text-amber-600">{bn ? '(অনার্জিত)' : '(unearned)'}</span>
+                                              )}
                                             </span>
                                             <span className={`font-mono ${row.v > 0 ? (row.blue ? 'text-blue-600' : 'text-red-600') : 'text-muted-foreground/50'}`}>
                                               ৳{bn ? toBnDigits(row.v.toLocaleString()) : row.v.toLocaleString()}
