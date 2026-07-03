@@ -16,8 +16,22 @@ export interface ThursdayHalfDaySetting {
   category?: string | null;
   /** Multiple target departments. Takes precedence over `category` when non-empty. */
   categories?: string[] | null;
-  /** Half-day end clock, "HH:MM" (default "14:00"). */
+  /** Half-day check-in clock, "HH:MM" (optional; default = normal duty start). */
+  start_time?: string | null;
+  /** Half-day check-out clock, "HH:MM" (default "14:00"). */
   end_time?: string | null;
+}
+
+/** Parse an "HH:MM" clock string to minutes-from-midnight. Returns null when invalid. */
+export function parseClockMinutes(time?: string | null): number | null {
+  if (typeof time === 'string') {
+    const m = time.match(/^(\d{1,2}):(\d{2})$/);
+    if (m) {
+      const mins = Number(m[1]) * 60 + Number(m[2]);
+      if (mins > 0 && mins < 24 * 60) return mins;
+    }
+  }
+  return null;
 }
 
 /** Parse an "HH:MM" clock string to minutes-from-midnight. Falls back to 14:00. */
@@ -78,27 +92,34 @@ export function shouldApplyThursdayHalfDay(params: {
 }
 
 /**
- * Compute the effective duty-end minutes and scheduled minutes/day for a shift,
- * shortening it to 14:00 when the Thursday half-day rule applies.
+ * Compute the effective duty start/end minutes and scheduled minutes/day for a shift,
+ * applying the Thursday check-in/check-out window when the rule applies.
  * `dutyStart`/`dutyEnd` are minutes-from-midnight (dutyEnd already normalized for
  * overnight before calling — but overnight shifts are excluded by the rule anyway).
+ * `startMinutes` (optional) overrides the Thursday check-in time; `endMinutes` the
+ * Thursday check-out time (default 14:00).
  */
 export function effectiveDutyEndForThursday(params: {
   applies: boolean;
   dutyStart: number;
   dutyEnd: number;
-  /** Half-day end minutes-from-midnight (default 14:00). */
+  /** Half-day check-in minutes-from-midnight (optional; default = dutyStart). */
+  startMinutes?: number;
+  /** Half-day check-out minutes-from-midnight (default 14:00). */
   endMinutes?: number;
-}): { effDutyEnd: number; effScheduledMinutes: number } {
-  const { applies, dutyStart, dutyEnd, endMinutes } = params;
+}): { effDutyStart: number; effDutyEnd: number; effScheduledMinutes: number } {
+  const { applies, dutyStart, dutyEnd, startMinutes, endMinutes } = params;
+  let effDutyStart = dutyStart;
   let effDutyEnd = dutyEnd;
-  let effScheduledMinutes = dutyEnd - dutyStart;
   if (applies) {
+    if (startMinutes && startMinutes > 0 && startMinutes < dutyEnd) {
+      effDutyStart = startMinutes;
+    }
     const thuEnd = endMinutes && endMinutes > 0 ? endMinutes : 14 * 60; // 14:00
-    if (thuEnd > dutyStart && thuEnd < dutyEnd) {
+    if (thuEnd > effDutyStart && thuEnd < dutyEnd) {
       effDutyEnd = thuEnd;
-      effScheduledMinutes = effDutyEnd - dutyStart;
     }
   }
-  return { effDutyEnd, effScheduledMinutes };
+  const effScheduledMinutes = effDutyEnd - effDutyStart;
+  return { effDutyStart, effDutyEnd, effScheduledMinutes };
 }

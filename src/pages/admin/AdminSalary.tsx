@@ -32,7 +32,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
-import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes } from '@/lib/thursdayHalfDay';
+import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes, parseClockMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -1035,18 +1035,19 @@ const AdminSalary = () => {
         attendanceDate: r.attendance_date,
         isOvernight,
       });
-      const { effDutyEnd, effScheduledMinutes } = effectiveDutyEndForThursday({
+      const { effDutyStart, effDutyEnd, effScheduledMinutes } = effectiveDutyEndForThursday({
         applies: applyThuHalf,
         dutyStart,
         dutyEnd,
+        startMinutes: parseClockMinutes((thuHalfSetting as any)?.start_time) ?? undefined,
         endMinutes: parseHalfDayEndMinutes((thuHalfSetting as any)?.end_time),
       });
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
-      const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : dutyStart;
+      const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : effDutyStart;
       const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : effDutyEnd;
 
-      const lateMinutes = Math.max(0, checkIn - dutyStart);
+      const lateMinutes = Math.max(0, checkIn - effDutyStart);
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
       const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
 
@@ -3835,6 +3836,18 @@ const AdminSalary = () => {
                     </div>
                   </div>
                   <div>
+                    <Label className="text-[11px]">{bn ? 'শুরুর সময় (বৃহস্পতিবার চেক-ইন)' : 'Start time (Thursday check-in)'}</Label>
+                    <Input
+                      type="time"
+                      className="h-8 text-sm mt-1"
+                      defaultValue={getSetting('thursday_half_day_education')?.start_time || ''}
+                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), start_time: e.target.value || null } })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn ? 'খালি রাখলে স্বাভাবিক ডিউটি শুরুর সময় ধরা হবে।' : 'Leave empty to use the normal duty-start time.'}
+                    </p>
+                  </div>
+                  <div>
                     <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
                     <Input
                       type="time"
@@ -3843,7 +3856,7 @@ const AdminSalary = () => {
                       onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: e.target.value || '14:00' } })}
                     />
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {bn ? 'বৃহস্পতিবার ডিউটি শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
+                      {bn ? 'বৃহস্পতিবার শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
                     </p>
                   </div>
                 </div>
