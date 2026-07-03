@@ -2171,9 +2171,10 @@ const AdminSalary = () => {
 
   // Print salary slip
   const printSlip = async (staffMember: any, record: any) => {
-    const activeSavings = getActiveSavings(staffMember.id);
-    const savingsAmt = activeSavings ? activeSavings.amount : 0;
-    const slipStats = getAttendanceStats(staffMember);
+    const slipSnapshot = getSalaryDisplaySnapshot(staffMember, record);
+    record = slipSnapshot.record;
+    const savingsAmt = slipSnapshot.savingsDisplay;
+    const slipStats = slipSnapshot.stats;
     const leaveDays = slipStats.leave || 0;
 
     // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট) — স্লিপে দেখানোর জন্য
