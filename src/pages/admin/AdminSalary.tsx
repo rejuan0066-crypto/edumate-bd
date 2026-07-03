@@ -831,7 +831,12 @@ const AdminSalary = () => {
     }> = [];
 
     const baseSalary = getEffectiveSalary(staffMember);
-    const dailyRate = baseSalary / 30;
+    // দৈনিক হার = মাসিক বেতন ÷ সংশ্লিষ্ট মাসের প্রকৃত দিনসংখ্যা (২৮/২৯/৩০/৩১)।
+    // এতে যেকোনো মাসে পূর্ণ হাজিরায় আয় ঠিক মাসিক বেতনের সমান হয় এবং অনুপস্থিতির
+    // কর্তনও সঠিক অনুপাতে হয় — ফলে মাসভেদে হিসাব আর ভুল/অস্থির হয় না।
+    const [statYy, statMm] = monthYear.split('-').map(Number);
+    const daysInSelectedMonth = new Date(statYy, statMm, 0).getDate();
+    const dailyRate = baseSalary / daysInSelectedMonth;
     const perMinuteRate = scheduledMinutesPerDay > 0 ? dailyRate / scheduledMinutesPerDay : 0;
 
     let totalDailyEarnings = 0;
