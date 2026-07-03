@@ -2831,9 +2831,9 @@ const AdminSalary = () => {
                         const displayRecord = snap.record;
                         const isPaid = snap.isPaid;
                         const isAdditive = snap.isAdditive;
-                        const totalDed = rec ? getSalaryDisplayTotalDeduction(snap) : 0;
+                        const totalDed = getSalaryDisplayTotalDeduction(snap);
                         const displayOvertime = Number(displayRecord.overtime || 0);
-                        const displayNet = rec ? Number(displayRecord.net_salary || 0) : 0;
+                        const displayNet = Number(displayRecord.net_salary || 0);
 
                         const validation = !rec ? getAttendanceValidation(s) : null;
                         const eligibilityReason = !rec
@@ -2920,17 +2920,13 @@ const AdminSalary = () => {
                                 );
                               })()}
                             </td>
-                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(rec?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
+                            <td className="px-3 py-2 text-right">৳{bn ? toBnDigits(Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()) : Number(displayRecord?.base_salary ?? getEffectiveSalary(s)).toLocaleString()}</td>
                             <td className="px-3 py-2 text-center">
                               {(() => {
-                                // Once a salary record exists, show the SNAPSHOT that was stored at
-                                // generation/recalc time — not a live recompute. Live recompute counts
-                                // every untracked day (incl. future days of an ongoing month) as absent,
-                                // so the numbers would visibly drift after generation. For not-yet-generated
-                                // rows we still show the live preview.
-                                const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
-                                const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
-                                const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
+                                // Pending rows use live attendance; paid rows use the saved snapshot.
+                                const dispPresent = attStats.present;
+                                const dispAbsent = attStats.absent;
+                                const dispLate = attStats.late;
                                  const dispLeave = attStats.leave || 0;
                                  const lastUpd = getAttendanceLastUpdated(s);
                                  const upTitle = lastUpd
@@ -2967,32 +2963,26 @@ const AdminSalary = () => {
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
                               {(() => {
-                                const advD = Number(rec?.advance_deduction || 0);
-                                const savD = Number((isPaid ? rec?.savings_deduction : savingsAmt) || 0);
-                                const bonusV = Number(rec?.bonus || 0);
-                                const otherA = Number(rec?.other_allowance || 0);
-                                const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
-                                const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
+                                const advD = Number(displayRecord?.advance_deduction || 0);
+                                const savD = Number(snap.savingsDisplay || 0);
+                                const bonusV = Number(displayRecord?.bonus || 0);
+                                const otherA = Number(displayRecord?.other_allowance || 0);
+                                const baseV = Number(displayRecord?.base_salary ?? getEffectiveSalary(s));
+                                const otV = Number(displayRecord?.overtime || 0);
                                  // Always surface the REAL absence/late amounts so they are
                                  // visible in the breakdown. In additive mode they are already
                                  // baked into the lower "earned" figure, so they must NOT be
                                  // re-added to the money-removed total (sumDed) — otherwise the
                                  // deduction total would exceed the base salary.
-                                 const absD = Number((isPaid ? rec : autoCalc).absence_deduction || 0);
-                                 const lateD = Number((isPaid ? rec : autoCalc).late_deduction || 0);
-                                 const otherD = isAdditive
-                                   ? Number(rec?.other_deduction || 0)
-                                   : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
-                                 const earnedV = !isPaid
-                                   ? Number((autoCalc as any).earned_from_attendance || 0)
-                                   : 0;
-                                 const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
-                                 const sumDed = isAdditive
-                                   ? advD + otherD + savD
-                                   : absD + lateD + advD + otherD + savD;
+                                 const absD = Number(displayRecord?.absence_deduction || 0);
+                                 const lateD = Number(displayRecord?.late_deduction || 0);
+                                 const otherD = Number(displayRecord?.other_deduction || 0);
+                                 const earnedV = Number((displayRecord as any).earned_from_attendance || 0);
+                                 const unearnedV = isAdditive ? Math.max(0, baseV - earnedV) : 0;
+                                 const sumDed = totalDed;
                                 const expectedNet = isAdditive
                                   ? displayNet
-                                  : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
+                                   : Math.max(0, baseV - absD - lateD - otherD + otV + bonusV + otherA - advD - savD);
                                 const mismatch = Math.abs(expectedNet - displayNet) > 1;
                                 return (
                                   <Popover>
@@ -3003,7 +2993,7 @@ const AdminSalary = () => {
                                         title={bn ? 'কর্তন ব্রেকডাউন দেখুন' : 'View deduction breakdown'}
                                       >
                                         ৳{bn ? toBnDigits(totalDed.toLocaleString()) : totalDed.toLocaleString()}
-                                        {!rec && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                                        {snap.isLive && totalDed > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent align="end" className="w-72 p-0 rounded-2xl overflow-hidden">
@@ -3040,7 +3030,7 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-2.5 bg-muted/40 border-t space-y-1 text-[11px]">
                                         <div className="flex justify-between"><span className="text-muted-foreground">{bn ? 'মূল বেতন' : 'Base'}</span><span className="font-mono">৳{bn ? toBnDigits(baseV.toLocaleString()) : baseV.toLocaleString()}</span></div>
-                                        {isAdditive && !isPaid && unearnedV > 0 && (
+                                        {isAdditive && unearnedV > 0 && (
                                           <>
                                             <div className="flex justify-between text-amber-600">
                                               <span className="text-muted-foreground">− {bn ? 'অনার্জিত (হাজিরা নেই/অনুপস্থিত দিন)' : 'Unearned (no attendance / absent days)'}</span>
@@ -3086,11 +3076,11 @@ const AdminSalary = () => {
                             </td>
 
                             <td className="px-3 py-2 text-right text-blue-600">
-                              ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}{!rec && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
+                              ৳{bn ? toBnDigits(displayOvertime.toLocaleString()) : displayOvertime.toLocaleString()}{snap.isLive && displayOvertime > 0 ? <span className="text-[8px] ml-0.5 opacity-60">~</span> : ''}
                             </td>
                             {/* Savings Column */}
                             <td className="px-3 py-2 text-right">
-                              {savingsAmt > 0 ? (
+                              {snap.savingsDisplay > 0 ? (
                                 <button onClick={() => {
                                   const existingConfig = savingsConfigs.find((c: any) => c.staff_id === s.id && c.is_active);
                                   setSavingsDialog({
@@ -3101,7 +3091,7 @@ const AdminSalary = () => {
                                   });
                                 }}>
                                   <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-100 cursor-pointer text-[10px]">
-                                    ৳{bn ? toBnDigits(savingsAmt.toLocaleString()) : savingsAmt.toLocaleString()}
+                                    ৳{bn ? toBnDigits(snap.savingsDisplay.toLocaleString()) : snap.savingsDisplay.toLocaleString()}
                                   </Badge>
                                 </button>
                               ) : (
