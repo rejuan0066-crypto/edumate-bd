@@ -937,29 +937,32 @@ const AdminSalary = () => {
     const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
     totalDailyEarnings += holidayPaidEarnings;
 
-    // Untracked working days (no attendance record AND not a paid holiday)
-    // → treated as absent so subtractive mode pro-rates correctly.
-    // Days BEFORE the staff's joining date are NOT counted as absent — instead
-    // they are tracked separately (preJoinDays) so pay is prorated from joining.
-    // For the CURRENT (ongoing) month we only count days up to today; future days
-    // are not yet absent, so salary reflects exactly the attendance marked so far.
+    // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি/অচিহ্নিত দিন)
+    // সেগুলো এখন বেতনসহ ছুটি হিসেবে গণ্য হয় — বেতন কাটা হয় না। শুধুমাত্র স্পষ্টভাবে
+    // 'absent' চিহ্নিত দিনেই কর্তন হবে, তাই ছুটির দিনের বেতন আর হারিয়ে যায় না।
+    // Days BEFORE the staff's joining date are tracked separately (preJoinDays)
+    // so pay is prorated from joining. For the CURRENT month only days up to today count.
     const [yy, mm] = monthYear.split('-').map(Number);
     const lastDay = new Date(yy, mm, 0).getDate();
     const now = new Date();
     const isCurrentMonth = now.getFullYear() === yy && (now.getMonth() + 1) === mm;
     const lastCountedDay = isCurrentMonth ? Math.min(lastDay, now.getDate()) : lastDay;
     const firstCountedDay = joinedFromDay(staffMember);
-    let untrackedAbsentDays = 0;
+    let untrackedPaidDays = 0;
     let preJoinDays = 0;
     for (let d = 1; d <= lastDay; d++) {
       if (d < firstCountedDay) { preJoinDays += 1; continue; }
-      if (d > lastCountedDay) continue; // future day of ongoing month — not absent yet
+      if (d > lastCountedDay) continue; // future day of ongoing month
       const dateStr = `${monthYear}-${String(d).padStart(2, '0')}`;
       if (recordedDates.has(dateStr)) continue;
       if (paidHolidaySet.has(dateStr)) continue;
-      untrackedAbsentDays += 1;
+      untrackedPaidDays += 1;
     }
-    const absent = recordedAbsent + untrackedAbsentDays;
+    // additive মোডে এই ছুটির দিনগুলোর বেতন যোগ করা হয় (উপস্থিত দিনের সমান)।
+    totalDailyEarnings += Math.round(untrackedPaidDays * dailyRate);
+    // অচিহ্নিত দিন আর অনুপস্থিত নয় — কর্তন শুধু স্পষ্ট 'absent' রেকর্ডে।
+    const untrackedAbsentDays = 0;
+    const absent = recordedAbsent;
 
 
     return {
