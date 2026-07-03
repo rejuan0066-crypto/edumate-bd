@@ -334,6 +334,8 @@ const AdminSalary = () => {
   const { data: dutyAttendanceData = [] } = useQuery({
     queryKey: ['salary-duty-attendance', monthYear],
     enabled: !!dutySettings?.extra_duty_enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
     queryFn: async () => {
       const year = Number(selectedYear);
       const month = Number(selectedMonth);
