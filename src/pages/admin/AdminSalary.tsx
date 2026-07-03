@@ -3685,7 +3685,7 @@ const AdminSalary = () => {
                 <div className="p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
                   <h4 className="font-semibold">{bn ? 'Per-Minute ফর্মুলা' : 'Per-Minute Formula'}</h4>
                   <div className="space-y-1 text-muted-foreground text-xs">
-                    <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ ৩০' : 'Monthly Salary ÷ 30'}</p>
+                    <p>• <strong>{bn ? 'দৈনিক হার' : 'Daily Rate'}</strong> = {bn ? 'মাসিক বেতন ÷ মাসের প্রকৃত দিনসংখ্যা' : 'Monthly Salary ÷ actual days in month'}</p>
                     <p>• <strong>{bn ? 'প্রতি মিনিট হার' : 'Per-Minute Rate'}</strong> = {bn ? 'দৈনিক হার ÷ ডিউটি মিনিট' : 'Daily Rate ÷ Duty Minutes'}</p>
                     <p>• <strong>{bn ? 'অনুপস্থিতি কর্তন' : 'Absence Ded.'}</strong> = {bn ? 'অনুপস্থিত দিন × দৈনিক হার' : 'Absent Days × Daily Rate'}</p>
                     <p>• <strong>{bn ? 'বিলম্ব উপস্থিত কর্তন' : 'Late Present Ded.'}</strong> = {bn ? 'মিসড মিনিট × প্রতি মিনিট হার' : 'Missed Minutes × Per-Minute Rate'}</p>
