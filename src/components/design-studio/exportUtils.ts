@@ -145,16 +145,8 @@ export const exportLayeredPDF = async (
       ),
   );
   fc.renderAll();
-  // Use JPEG (much smaller) when an opaque background exists; keep PNG only when
-  // transparency must be preserved (transparent canvas would go black in JPEG).
-  const hasOpaqueBg = !!background && background !== 'transparent';
-  if (hasOpaqueBg) {
-    const shapesJpg = tempCanvas.toDataURL('image/jpeg', 0.85);
-    pdf.addImage(shapesJpg, 'JPEG', 0, 0, width, height, undefined, 'FAST');
-  } else {
-    const shapesPng = tempCanvas.toDataURL('image/png');
-    pdf.addImage(shapesPng, 'PNG', 0, 0, width, height, undefined, 'FAST');
-  }
+  const shapesPng = tempCanvas.toDataURL('image/png');
+  pdf.addImage(shapesPng, 'PNG', 0, 0, width, height, undefined, 'FAST');
 
   // 3. Overlay every text object as REAL editable PDF text
   objects.forEach((obj, i) => {

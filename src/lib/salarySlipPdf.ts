@@ -96,7 +96,7 @@ export async function downloadSlipAsPdf(
           imageTimeout: 5000,
         });
 
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
         const margin = 10; // mm margin on all sides
@@ -117,8 +117,8 @@ export async function downloadSlipAsPdf(
         const offsetX = margin + (availW - drawW) / 2;
         const offsetY = margin + (availH - drawH) / 2;
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
-        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH);
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
 
         pdf.save(filename);
         resolve();
@@ -228,7 +228,7 @@ export async function downloadSheetAsPdf(
           ? pages
           : [((iframeDoc.querySelector('.sheet') as HTMLElement) || iframeDoc.body)];
 
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
         const pdfWidth = 297;
         const pdfHeight = 210;
         const margin = 8;
@@ -281,8 +281,8 @@ export async function downloadSheetAsPdf(
           const offsetY = margin + (availH - drawH) / 2;
 
           if (i > 0) pdf.addPage('a4', 'landscape');
-          const imgData = canvas.toDataURL('image/jpeg', 0.85);
-          pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH);
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
         }
 
         // Open the generated PDF in a new tab for PREVIEW. Use the window the
