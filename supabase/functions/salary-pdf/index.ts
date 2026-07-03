@@ -1013,6 +1013,7 @@ Deno.serve(async (req) => {
 
   ${pagesHtml}
   ${lateAppendixHtml}
+  ${absentAppendixHtml}
 
 </div>
 <script>
