@@ -477,6 +477,15 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     }
   }, [savedCategoryTimes]);
 
+  // Thursday half-day check-in/check-out setting (from salary settings)
+  const { data: thursdayHalfSetting } = useQuery({
+    queryKey: ['thursday-half-day-setting'],
+    queryFn: async () => {
+      const { data } = await supabase.from('salary_settings').select('setting_value').eq('setting_key', 'thursday_half_day_education').maybeSingle();
+      return (data?.setting_value as any) || null;
+    },
+  });
+
   const saveCategoryTimesMutation = useMutation({
     mutationFn: async (times: Record<string, { start: string; end: string }>) => {
       // ===== Validation (overnight-aware via shared validateShiftWindow) =====
