@@ -2881,8 +2881,8 @@ const AdminSalary = () => {
                                       </div>
                                       <div className="px-4 py-3 space-y-1.5 text-xs">
                                         {[
-                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs' },
-                                          { lbl: bn ? 'বিলম্ব' : 'Late', v: lateD, k: 'late' },
+                                          { lbl: bn ? 'অনুপস্থিতি' : 'Absence', v: absD, k: 'abs', info: isAdditive },
+                                          { lbl: bn ? 'বিলম্ব (মিনিট)' : 'Late (min)', v: lateD, k: 'late', info: isAdditive },
                                           { lbl: bn ? 'অগ্রিম' : 'Advance', v: advD, k: 'adv' },
                                           { lbl: bn ? 'সঞ্চয় (জমা)' : 'Savings', v: savD, k: 'sav', blue: true },
                                           { lbl: bn ? 'ম্যানুয়াল/অন্যান্য' : 'Manual / Other', v: otherD, k: 'other' },
@@ -2890,6 +2890,9 @@ const AdminSalary = () => {
                                           <div key={row.k} className="flex justify-between items-center">
                                             <span className="text-muted-foreground flex items-center gap-1">
                                               <Minus className="h-2.5 w-2.5 opacity-60" />{row.lbl}
+                                              {row.info && row.v > 0 && (
+                                                <span className="text-[9px] text-amber-600">{bn ? '(অনার্জিত)' : '(unearned)'}</span>
+                                              )}
                                             </span>
                                             <span className={`font-mono ${row.v > 0 ? (row.blue ? 'text-blue-600' : 'text-red-600') : 'text-muted-foreground/50'}`}>
                                               ৳{bn ? toBnDigits(row.v.toLocaleString()) : row.v.toLocaleString()}
