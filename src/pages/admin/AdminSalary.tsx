@@ -1846,9 +1846,9 @@ const AdminSalary = () => {
     
     filtered.forEach((s: any, idx: number) => {
       const rec = getRecord(s.id);
-      const totalDed = Number(rec?.late_deduction || 0) + Number(rec?.absence_deduction || 0) + Number(rec?.other_deduction || 0);
-      const activeSavings = getActiveSavings(s.id);
-      const savingsAmt = activeSavings ? activeSavings.amount : 0;
+      const snap = getSalaryDisplaySnapshot(s, rec);
+      const displayRecord = snap.record;
+      const totalDed = rec ? getSalaryDisplayTotalDeduction(snap) : 0;
       const status = rec?.status === 'paid' ? (bn ? 'পরিশোধিত' : 'Paid') : 
                      rec ? (bn ? 'বকেয়া' : 'Pending') : (bn ? 'জেনারেট হয়নি' : 'Not Generated');
       sheetData.push([
@@ -1856,13 +1856,13 @@ const AdminSalary = () => {
         s.name_bn,
         s.staff_id || '-',
         getDesignation(s.designation),
-        fmtNum(Number(rec?.base_salary ?? getEffectiveSalary(s))),
-        fmtNum(Number(rec?.bonus || 0)),
-        fmtNum(Number(rec?.overtime || 0)),
+        fmtNum(Number(displayRecord?.base_salary ?? getEffectiveSalary(s))),
+        fmtNum(Number(displayRecord?.bonus || 0)),
+        fmtNum(Number(displayRecord?.overtime || 0)),
         fmtNum(totalDed),
-        fmtNum(savingsAmt),
-        fmtNum(Number(rec?.advance_deduction || 0)),
-        fmtNum(Number(rec?.net_salary || 0)),
+        fmtNum(snap.savingsDisplay),
+        fmtNum(Number(displayRecord?.advance_deduction || 0)),
+        fmtNum(Number(rec ? displayRecord?.net_salary : 0)),
         status,
       ]);
     });
