@@ -108,7 +108,7 @@ export async function downloadReceiptAsPdf(
         const targets = pages.length > 0 ? Array.from(pages) : [iframeDoc.body];
 
         // A4 Landscape PDF
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4', compress: true });
         const pdfWidth = 297;
         const pdfHeight = 210;
 
@@ -130,9 +130,9 @@ export async function downloadReceiptAsPdf(
             imageTimeout: 5000,
           });
 
-          const imgData = canvas.toDataURL('image/png');
+          const imgData = canvas.toDataURL('image/jpeg', 0.85);
           if (i > 0) pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
         }
 
         pdf.save(filename);
