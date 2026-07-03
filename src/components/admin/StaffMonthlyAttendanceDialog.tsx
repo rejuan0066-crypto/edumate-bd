@@ -145,6 +145,17 @@ export default function StaffMonthlyAttendanceDialog({ open, onOpenChange, staff
           payload.leave_type = null;
           payload.leave_reason = null;
         }
+        // Status changed via a plain pick (no new times supplied): clear stale
+        // check-in/out so e.g. late→present doesn't keep the old late clock time
+        // and get auto-counted as late again on the salary page.
+        if (
+          newStatus !== existing.status &&
+          !(extra && 'check_in_time' in extra) &&
+          !(extra && 'check_out_time' in extra)
+        ) {
+          payload.check_in_time = null;
+          payload.check_out_time = null;
+        }
         const { error } = await supabase.from('attendance_records').update(payload).eq('id', existing.id);
         if (error) throw error;
         toast.success(bn ? 'আপডেট হয়েছে' : 'Updated');
