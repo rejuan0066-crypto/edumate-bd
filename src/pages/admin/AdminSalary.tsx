@@ -797,7 +797,8 @@ const AdminSalary = () => {
     );
 
     // Treat absent records on paid holidays as paid leave (no deduction)
-    const present = records.filter((r: any) => r.status === 'present').length;
+    // ছুটি (leave) = পূর্ণ দিনের বেতন, তাই উপস্থিতের সাথে গণনা হয় (অর্থাৎ ফুল ডে/উপস্থিত)।
+    const present = records.filter((r: any) => r.status === 'present' || r.status === 'leave').length;
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     const late = records.filter((r: any) => r.status === 'late').length;
     const halfDay = records.filter((r: any) => r.status === 'half_day').length;
