@@ -725,6 +725,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+      queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+      queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       toast.success(bn ? 'সবার উপস্থিতি সেভ হয়েছে' : 'Bulk attendance saved');
     },
   });
