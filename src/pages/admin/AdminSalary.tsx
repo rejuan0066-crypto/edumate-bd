@@ -31,7 +31,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
-import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday } from '@/lib/thursdayHalfDay';
+import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday, parseHalfDayEndMinutes } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -1038,6 +1038,7 @@ const AdminSalary = () => {
         applies: applyThuHalf,
         dutyStart,
         dutyEnd,
+        endMinutes: parseHalfDayEndMinutes((thuHalfSetting as any)?.end_time),
       });
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
@@ -3815,6 +3816,18 @@ const AdminSalary = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">{bn ? 'শেষ সময় (এই সময় পর্যন্ত পূর্ণ দিন)' : 'End time (full day until this)'}</Label>
+                    <Input
+                      type="time"
+                      className="h-8 text-sm mt-1"
+                      defaultValue={getSetting('thursday_half_day_education')?.end_time || '14:00'}
+                      onBlur={e => saveSettingMutation.mutate({ key: 'thursday_half_day_education', value: { ...getSetting('thursday_half_day_education'), end_time: e.target.value || '14:00' } })}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn ? 'বৃহস্পতিবার ডিউটি শুরু থেকে এই সময় পর্যন্ত ধরে লেইট/আগাম মিনিট কর্তন হবে।' : 'Late/early minutes are counted against duty-start to this time on Thursdays.'}
+                    </p>
                   </div>
                 </div>
 
