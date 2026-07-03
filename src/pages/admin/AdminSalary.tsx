@@ -1992,18 +1992,25 @@ const AdminSalary = () => {
           const activeSavings = getActiveSavings(s.id);
           const savingsAmt = activeSavings ? activeSavings.amount : 0;
           const savings = isPaid ? Number(rec?.savings_deduction || 0) : savingsAmt;
-          // Match the on-screen table exactly: in additive mode late/absence are
-          // "unearned" (already reflected in net), NOT deductions — so the কর্তন
-          // column must only show real money removed (advance + other). Otherwise
-          // deductions over-count and the sheet totals never reconcile with net.
+          // In additive mode late/absence lower the "earned" figure, so নিট প্রদেয়
+          // is reduced even though no advance/other is removed. The কর্তন column MUST
+          // reflect that unearned amount (base − earned) — otherwise the sheet shows
+          // money vanishing from net with কর্তন = "—" and never reconciles.
           const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
           const isAdditive = isPaid
             ? (((rec as any)?.calc_basis ?? autoCalc.calc_basis) === 'additive')
             : globalAdditive;
+          const baseForDed = isPaid ? Number(rec?.base_salary || 0) : Number(autoCalc.base_salary || 0);
+          const earnedForDed = isPaid
+            ? Number((rec as any)?.earned_from_attendance ?? NaN)
+            : Number((autoCalc as any).earned_from_attendance ?? NaN);
+          const additiveAttDed = Number.isFinite(earnedForDed)
+            ? Math.max(0, baseForDed - earnedForDed)
+            : Number((isPaid ? rec : autoCalc)?.late_deduction || 0)
+              + Number((isPaid ? rec : autoCalc)?.absence_deduction || 0)
+              + Number((isPaid ? rec : autoCalc)?.other_deduction || 0);
           const totalDed = isAdditive
-            ? (isPaid
-                ? Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
-                : manualAdvance + Number(autoCalc.other_deduction || 0))
+            ? additiveAttDed + (isPaid ? Number(rec.advance_deduction || 0) : manualAdvance)
             : (isPaid
                 ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
                   Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
