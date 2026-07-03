@@ -3555,7 +3555,7 @@ const AdminSalary = () => {
                     {(() => {
                       const mode = getSetting('calculation_mode')?.mode || 'per_minute';
                       if (mode === 'attendance_based') return bn ? 'উপস্থিতি ভিত্তিক: নিট বেতন = (উপস্থিত দিন / কর্মদিবস) × মূল বেতন' : 'Attendance Based: Net = (Present Days / Working Days) × Base Salary';
-                      if (mode === 'per_minute') return bn ? 'Per-Minute: মাসিক বেতন ÷ ৩০ দিন ÷ দৈনিক ডিউটি মিনিট = প্রতি মিনিটের হার' : 'Per-Minute: Monthly ÷ 30 days ÷ duty minutes = rate/minute';
+                      if (mode === 'per_minute') return bn ? 'Per-Minute: মাসিক বেতন ÷ মাসের দিনসংখ্যা ÷ দৈনিক ডিউটি মিনিট = প্রতি মিনিটের হার' : 'Per-Minute: Monthly ÷ days in month ÷ duty minutes = rate/minute';
                       return bn ? 'Fixed Rate: নির্দিষ্ট হারে কর্তন' : 'Fixed Rate: Fixed deduction rates';
                     })()}
                   </p>
