@@ -2848,22 +2848,34 @@ const AdminSalary = () => {
                                 const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
                                 const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
                                 const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
-                                const dispLeave = attStats.leave || 0;
-                                return (
-                                  <button
-                                    onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
-                                    className="hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
-                                    title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
-                                  >
-                                    <span className="text-emerald-600">{bn ? toBnDigits(dispPresent) : dispPresent}</span>/
-                                    <span className="text-red-500">{bn ? toBnDigits(dispAbsent) : dispAbsent}</span>/
-                                    <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
-                                    <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
-                                    {attStats.totalLateArrivalMinutes > 0 && (
-                                      <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
-                                    )}
-                                  </button>
-                                );
+                                 const dispLeave = attStats.leave || 0;
+                                 const lastUpd = getAttendanceLastUpdated(s);
+                                 const upTitle = lastUpd
+                                   ? (bn ? 'উপস্থিতি শেষ আপডেট' : 'Attendance last updated') + ': ' +
+                                       formatInTimeZone(lastUpd, appTz, 'dd/MM/yyyy hh:mm a')
+                                   : (bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
+                                 return (
+                                   <div className="flex flex-col items-center gap-0.5">
+                                   <button
+                                     onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
+                                     className="hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
+                                     title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                                   >
+                                     <span className="text-emerald-600">{bn ? toBnDigits(dispPresent) : dispPresent}</span>/
+                                     <span className="text-red-500">{bn ? toBnDigits(dispAbsent) : dispAbsent}</span>/
+                                     <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
+                                     <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
+                                     {attStats.totalLateArrivalMinutes > 0 && (
+                                       <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
+                                     )}
+                                   </button>
+                                   <span className={`text-[8px] leading-none ${lastUpd ? 'text-muted-foreground' : 'text-amber-500'}`} title={upTitle}>
+                                     {lastUpd
+                                       ? (bn ? 'আপডেট: ' + toBnDigits(formatInTimeZone(lastUpd, appTz, 'dd/MM HH:mm')) : 'Upd: ' + formatInTimeZone(lastUpd, appTz, 'dd/MM HH:mm'))
+                                       : (bn ? 'রেকর্ড নেই' : 'No data')}
+                                   </span>
+                                   </div>
+                                 );
                               })()}
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
