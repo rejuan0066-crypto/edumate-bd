@@ -1908,26 +1908,49 @@ const AdminSalary = () => {
        const staffRows = filtered.map((s: any) => {
           const rec = getRecord(s.id);
           const st = getAttendanceStats(s);
-          const savings = Number(rec?.savings_deduction || 0);
-          // কর্তন কলামে শুধু attendance/অগ্রিম/অন্যান্য — জমা (savings) আলাদা কলামে দেখানো হবে,
-          // তাই এখানে savings যোগ করা হবে না (নাহলে দ্বিগুণ গণনা হয়ে কর্তন বেশি দেখায়)।
-          const totalDed = rec ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
-            Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0) : 0;
+          const autoCalc = calculateSalary(s);
+          const isPaid = rec && rec.status === 'paid';
+          const manualBonus = Number(rec?.bonus || 0);
+          const manualAllow = Number(rec?.other_allowance || 0);
+          const manualAdvance = Number(rec?.advance_deduction || 0);
+          const activeSavings = getActiveSavings(s.id);
+          const savingsAmt = activeSavings ? activeSavings.amount : 0;
+          const savings = isPaid ? Number(rec?.savings_deduction || 0) : savingsAmt;
+          // Match the on-screen table exactly: in additive mode late/absence are
+          // "unearned" (already reflected in net), NOT deductions — so the কর্তন
+          // column must only show real money removed (advance + other). Otherwise
+          // deductions over-count and the sheet totals never reconcile with net.
+          const globalAdditive = (getSetting('salary_calc_basis')?.mode || 'additive') === 'additive';
+          const isAdditive = isPaid
+            ? (((rec as any)?.calc_basis ?? autoCalc.calc_basis) === 'additive')
+            : globalAdditive;
+          const totalDed = isAdditive
+            ? (isPaid
+                ? Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                : manualAdvance + Number(autoCalc.other_deduction || 0))
+            : (isPaid
+                ? Number(rec.late_deduction || 0) + Number(rec.absence_deduction || 0) +
+                  Number(rec.advance_deduction || 0) + Number(rec.other_deduction || 0)
+                : Number(autoCalc.late_deduction || 0) + Number(autoCalc.absence_deduction || 0) +
+                  manualAdvance + Number(autoCalc.other_deduction || 0));
+          const net_salary = isPaid
+            ? Number(rec.net_salary || 0)
+            : Math.max(0, Number(autoCalc.net_salary || 0) + manualBonus + manualAllow - manualAdvance);
           return {
             name: s.name_bn,
             staff_id: s.staff_id || '-',
             designation: getDesignation(s.designation),
             base_salary: Number(rec?.base_salary ?? getEffectiveSalary(s)),
-            present: rec?.present_days || 0,
-            absent: rec?.absent_days || 0,
-            late: rec?.late_days || 0,
+            present: rec?.present_days ?? st.present ?? 0,
+            absent: rec?.absent_days ?? st.absent ?? 0,
+            late: rec?.late_days ?? st.late ?? 0,
             leave: st.leave || 0,
-            bonus: Number(rec?.bonus || 0),
-            overtime: Number(rec?.overtime || 0),
+            bonus: isPaid ? Number(rec?.bonus || 0) : manualBonus,
+            overtime: isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0),
             deductions: totalDed,
-            advance: Number(rec?.advance_deduction || 0),
+            advance: isPaid ? Number(rec.advance_deduction || 0) : manualAdvance,
             savings,
-            net_salary: Number(rec?.net_salary || 0),
+            net_salary,
             status: rec?.status || 'not_generated',
             // বিলম্ব উপস্থিতির বিস্তারিত (তারিখ • প্রবেশ → বাহির • কত মিনিট)
             lateDetails: (st.dailyBreakdown || [])
@@ -1935,6 +1958,7 @@ const AdminSalary = () => {
               .map((d: any) => ({ date: d.date, checkIn: d.checkIn, checkOut: d.checkOut, lateMin: d.lateMin })),
           };
         });
+
        const issueDate = sheetDate
          ? new Date(`${sheetDate}T00:00:00`).toLocaleDateString(bn ? 'bn-BD' : 'en-GB')
          : undefined;
