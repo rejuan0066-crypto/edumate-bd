@@ -661,6 +661,8 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
       }
       if (updated > 0) {
         queryClient.invalidateQueries({ queryKey: ['attendance', selectedDate, entityType, effectiveShift] });
+        queryClient.invalidateQueries({ queryKey: ['salary-attendance'] });
+        queryClient.invalidateQueries({ queryKey: ['salary-duty-attendance'] });
       }
     })();
   }, [attendance, entities, entityType, selectedDate, effectiveShift, staffSubTab, selectedShift]);
