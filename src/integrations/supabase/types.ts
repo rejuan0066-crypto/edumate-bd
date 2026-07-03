@@ -7523,8 +7523,11 @@ export type Database = {
           base_salary: number
           base_salary_encrypted: string | null
           bonus: number | null
+          calc_basis: string | null
           created_at: string | null
+          deductions_deferred: boolean | null
           deleted_at: string | null
+          earned_from_attendance: number | null
           id: string
           late_days: number | null
           late_deduction: number | null
@@ -7536,6 +7539,7 @@ export type Database = {
           other_deduction: number | null
           other_deduction_note: string | null
           overtime: number | null
+          overtime_for_net: number | null
           paid_at: string | null
           paid_by: string | null
           paid_by_name: string | null
@@ -7574,8 +7578,11 @@ export type Database = {
           base_salary?: number
           base_salary_encrypted?: string | null
           bonus?: number | null
+          calc_basis?: string | null
           created_at?: string | null
+          deductions_deferred?: boolean | null
           deleted_at?: string | null
+          earned_from_attendance?: number | null
           id?: string
           late_days?: number | null
           late_deduction?: number | null
@@ -7587,6 +7594,7 @@ export type Database = {
           other_deduction?: number | null
           other_deduction_note?: string | null
           overtime?: number | null
+          overtime_for_net?: number | null
           paid_at?: string | null
           paid_by?: string | null
           paid_by_name?: string | null
@@ -7625,8 +7633,11 @@ export type Database = {
           base_salary?: number
           base_salary_encrypted?: string | null
           bonus?: number | null
+          calc_basis?: string | null
           created_at?: string | null
+          deductions_deferred?: boolean | null
           deleted_at?: string | null
+          earned_from_attendance?: number | null
           id?: string
           late_days?: number | null
           late_deduction?: number | null
@@ -7638,6 +7649,7 @@ export type Database = {
           other_deduction?: number | null
           other_deduction_note?: string | null
           overtime?: number | null
+          overtime_for_net?: number | null
           paid_at?: string | null
           paid_by?: string | null
           paid_by_name?: string | null
