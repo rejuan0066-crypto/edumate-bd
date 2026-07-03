@@ -96,7 +96,7 @@ export async function downloadSlipAsPdf(
           imageTimeout: 5000,
         });
 
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: true });
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
         const pdfHeight = 297;
         const margin = 10; // mm margin on all sides
