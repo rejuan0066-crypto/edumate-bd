@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTimeFormat, formatTimeDisplay } from '@/hooks/useTimeFormat';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
-import { toIsoDateInTz, getDatePartsInTz } from '@/lib/timezone';
+import { toIsoDateInTz, getDatePartsInTz, formatDateTimeInTz, formatDateInTz, formatTimeInTz } from '@/lib/timezone';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from '@/components/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -727,6 +727,22 @@ const AdminSalary = () => {
     const s = settings.find((st: any) => st.setting_key === key);
     return s?.setting_value as any || {};
   };
+
+  // উপস্থিতির "শেষ আপডেট" — এই স্টাফের চলতি মাসের রেকর্ডগুলোর সর্বশেষ updated_at/created_at।
+  const getAttendanceLastUpdated = (staffMember: any): Date | null => {
+    let latest: number | null = null;
+    for (const a of attendanceData as any[]) {
+      if (a.entity_id !== staffMember.id) continue;
+      if (a.shift === 'morning' || a.shift === 'evening') continue;
+      const ts = a.updated_at || a.created_at;
+      if (!ts) continue;
+      const t = new Date(ts).getTime();
+      if (!isNaN(t) && (latest === null || t > latest)) latest = t;
+    }
+    return latest === null ? null : new Date(latest);
+  };
+
+
 
   // Joining-date guard: a staff is only relevant for a salary month if they had
   // already joined by the END of that month. New staff must NOT appear in months
@@ -2832,22 +2848,38 @@ const AdminSalary = () => {
                                 const dispPresent = isPaid ? Number(rec.present_days ?? attStats.present) : attStats.present;
                                 const dispAbsent = isPaid ? Number(rec.absent_days ?? attStats.absent) : attStats.absent;
                                 const dispLate = isPaid ? Number(rec.late_days ?? attStats.late) : attStats.late;
-                                const dispLeave = attStats.leave || 0;
-                                return (
-                                  <button
-                                    onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
-                                    className="hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
-                                    title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
-                                  >
-                                    <span className="text-emerald-600">{bn ? toBnDigits(dispPresent) : dispPresent}</span>/
-                                    <span className="text-red-500">{bn ? toBnDigits(dispAbsent) : dispAbsent}</span>/
-                                    <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
-                                    <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
-                                    {attStats.totalLateArrivalMinutes > 0 && (
-                                      <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
-                                    )}
-                                  </button>
-                                );
+                                 const dispLeave = attStats.leave || 0;
+                                 const lastUpd = getAttendanceLastUpdated(s);
+                                 const upTitle = lastUpd
+                                   ? (bn ? 'উপস্থিতি শেষ আপডেট' : 'Attendance last updated') + ': ' +
+                                       formatDateTimeInTz(lastUpd, appTz)
+                                   : (bn ? 'এই মাসে কোনো উপস্থিতি রেকর্ড নেই' : 'No attendance records this month');
+                                 const upShort = lastUpd
+                                   ? formatDateInTz(lastUpd, appTz, { day: '2-digit', month: '2-digit' }) + ' ' +
+                                       formatTimeInTz(lastUpd, appTz, { hour: '2-digit', minute: '2-digit', hour12: false })
+                                   : '';
+                                 return (
+                                   <div className="flex flex-col items-center gap-0.5">
+                                   <button
+                                     onClick={() => setAttendanceDetailDialog({ staff: s, stats: attStats })}
+                                     className="hover:bg-muted/50 rounded px-1.5 py-0.5 transition-colors cursor-pointer"
+                                     title={bn ? 'বিস্তারিত দেখুন' : 'View details'}
+                                   >
+                                     <span className="text-emerald-600">{bn ? toBnDigits(dispPresent) : dispPresent}</span>/
+                                     <span className="text-red-500">{bn ? toBnDigits(dispAbsent) : dispAbsent}</span>/
+                                     <span className="text-yellow-600">{bn ? toBnDigits(dispLate) : dispLate}</span>/
+                                     <span className="text-blue-600">{bn ? toBnDigits(dispLeave) : dispLeave}</span>
+                                     {attStats.totalLateArrivalMinutes > 0 && (
+                                       <span className="text-[9px] text-yellow-600 ml-1">({bn ? toBnDigits(attStats.totalLateArrivalMinutes) : attStats.totalLateArrivalMinutes}{bn ? 'মি.' : 'm'})</span>
+                                     )}
+                                   </button>
+                                   <span className={`text-[8px] leading-none ${lastUpd ? 'text-muted-foreground' : 'text-amber-500'}`} title={upTitle}>
+                                     {lastUpd
+                                       ? (bn ? 'আপডেট: ' + toBnDigits(upShort) : 'Upd: ' + upShort)
+                                       : (bn ? 'রেকর্ড নেই' : 'No data')}
+                                   </span>
+                                   </div>
+                                 );
                               })()}
                             </td>
                             <td className="px-3 py-2 text-right text-red-500">
