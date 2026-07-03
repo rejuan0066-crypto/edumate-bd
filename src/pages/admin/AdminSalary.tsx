@@ -1054,7 +1054,8 @@ const AdminSalary = () => {
       const isLateAttendance = r.status === 'late' || (r.status === 'present' && lateMinutes > 0);
       if (isLateAttendance) late += 1;
       if (r.status === 'present' && lateMinutes > 0) entry.status = 'late';
-      if (!isLateAttendance && r.status === 'present') present += 1;
+      // বিলম্ব দিনও উপস্থিত দিন — স্টাফ হাজির ছিল, শুধু লেইট/আগাম মিনিট কাটা যাবে।
+      if (r.status === 'present' || isLateAttendance) present += 1;
 
       totalLateArrivalMinutes += lateMinutes;
       totalEarlyExitMinutes += earlyExitMinutes;
