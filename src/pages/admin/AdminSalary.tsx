@@ -868,8 +868,8 @@ const AdminSalary = () => {
         return;
       }
       
-      if (r.status === 'leave') {
-        // ছুটি = বেতনসহ ছুটি (paid leave)। পূর্ণ দিনের বেতন গণ্য হবে, কোনো কর্তন নয়।
+      if (r.status === 'leave' || r.status === 'excused') {
+        // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += entry.dailyEarning;
         dailyBreakdown.push(entry);
