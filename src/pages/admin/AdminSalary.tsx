@@ -31,6 +31,7 @@ import CommitteeExclusionNotice from '@/components/CommitteeExclusionNotice';
 import SalaryWorkflowPanel from '@/components/admin/SalaryWorkflowPanel';
 import BulkSalaryWorkflowDialog from '@/components/admin/BulkSalaryWorkflowDialog';
 import { recomputeNetSalary } from '@/lib/salaryNet';
+import { shouldApplyThursdayHalfDay, effectiveDutyEndForThursday } from '@/lib/thursdayHalfDay';
 import { downloadSlipAsPdf, downloadSheetAsPdf, isMobileOrPwa } from '@/lib/salarySlipPdf';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -938,17 +939,19 @@ const AdminSalary = () => {
       // বৃহস্পতিবার শিক্ষা বিভাগের জন্য অর্ধদিন: শিফট ২টা (14:00) পর্যন্ত ধরা হয়।
       // ২টা পর্যন্ত থাকলে পূর্ণ দিন গণ্য হয় — আগে বের হওয়ার কর্তন হয় না।
       // কোন বিভাগে নিয়ম লাগবে তা সেটিংসে নির্বাচিত ক্যাটাগরি (fallback: 'teacher') দিয়ে ঠিক হয়।
+      // শুধুমাত্র নির্বাচিত department/category-এর স্টাফেই প্রযোজ্য (shared helper দিয়ে যাচাইকৃত)।
       const thuHalfSetting = getSetting('thursday_half_day_education');
-      const thuHalfEnabled = thuHalfSetting?.enabled === true;
-      const thuHalfCategory = thuHalfSetting?.category || 'teacher';
-      const isThursday = (() => { try { return new Date(r.attendance_date + 'T00:00:00').getDay() === 4; } catch { return false; } })();
-      const applyThuHalf = thuHalfEnabled && isThursday && staffMember?.staff_category === thuHalfCategory && !isOvernight;
-      let effDutyEnd = dutyEnd;
-      let effScheduledMinutes = scheduledMinutesPerDay;
-      if (applyThuHalf) {
-        const thuEnd = timeToMinutes('14:00');
-        if (thuEnd > dutyStart && thuEnd < dutyEnd) { effDutyEnd = thuEnd; effScheduledMinutes = effDutyEnd - dutyStart; }
-      }
+      const applyThuHalf = shouldApplyThursdayHalfDay({
+        setting: thuHalfSetting,
+        staffCategory: staffMember?.staff_category,
+        attendanceDate: r.attendance_date,
+        isOvernight,
+      });
+      const { effDutyEnd, effScheduledMinutes } = effectiveDutyEndForThursday({
+        applies: applyThuHalf,
+        dutyStart,
+        dutyEnd,
+      });
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
       const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : dutyStart;
