@@ -1035,18 +1035,19 @@ const AdminSalary = () => {
         attendanceDate: r.attendance_date,
         isOvernight,
       });
-      const { effDutyEnd, effScheduledMinutes } = effectiveDutyEndForThursday({
+      const { effDutyStart, effDutyEnd, effScheduledMinutes } = effectiveDutyEndForThursday({
         applies: applyThuHalf,
         dutyStart,
         dutyEnd,
+        startMinutes: parseClockMinutes((thuHalfSetting as any)?.start_time) ?? undefined,
         endMinutes: parseHalfDayEndMinutes((thuHalfSetting as any)?.end_time),
       });
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
-      const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : dutyStart;
+      const checkIn = r.check_in_time ? mapToTimeline(timeToMinutes(r.check_in_time)) : effDutyStart;
       const checkOut = r.check_out_time ? mapToTimeline(timeToMinutes(r.check_out_time)) : effDutyEnd;
 
-      const lateMinutes = Math.max(0, checkIn - dutyStart);
+      const lateMinutes = Math.max(0, checkIn - effDutyStart);
       const earlyExitMinutes = Math.max(0, effDutyEnd - checkOut);
       const overtimeMinutes = Math.max(0, checkOut - effDutyEnd);
 
