@@ -1038,6 +1038,7 @@ const AdminSalary = () => {
         applies: applyThuHalf,
         dutyStart,
         dutyEnd,
+        endMinutes: parseHalfDayEndMinutes((thuHalfSetting as any)?.end_time),
       });
       const effPerMinuteRate = effScheduledMinutes > 0 ? dailyRate / effScheduledMinutes : perMinuteRate;
 
