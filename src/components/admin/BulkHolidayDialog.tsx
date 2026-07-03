@@ -128,7 +128,7 @@ export default function BulkHolidayDialog({ open, onOpenChange, entities, entity
           </div>
 
           {/* Entity selection */}
-          <div className="flex flex-col min-h-0">
+          <div className="flex flex-col min-h-0 min-w-0">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
