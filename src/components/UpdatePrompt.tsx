@@ -341,27 +341,26 @@ const UpdatePrompt = () => {
 
       {updateAvailable && !dismissed && (
         <div
-          className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-md z-[100] animate-fade-in"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', maxWidth: 'calc(100vw - 24px)' }}
+          className="fixed left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-full sm:max-w-xs z-[100] animate-fade-in"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)', maxWidth: 'calc(100vw - 24px)' }}
         >
-          <div className="relative bg-card/85 border border-border/60 rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.45)] p-4 backdrop-blur-2xl overflow-hidden">
+          <div className="relative bg-card/85 border border-border/60 rounded-2xl shadow-[0_16px_44px_-16px_rgba(0,0,0,0.45)] p-3 backdrop-blur-2xl overflow-hidden">
             {/* Decorative gradient glow */}
-            <div className="pointer-events-none absolute -top-16 -right-10 w-40 h-40 rounded-full bg-primary/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
-            <div className="relative flex items-center gap-3.5">
-              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center flex-shrink-0">
-                <RefreshCw className={`w-5 h-5 text-primary ${updating ? 'animate-spin' : ''}`} />
+            <div className="pointer-events-none absolute -top-12 -right-8 w-28 h-28 rounded-full bg-primary/20 blur-3xl" />
+            <div className="relative flex items-center gap-2.5">
+              <div className="relative w-8 h-8 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/20 flex items-center justify-center flex-shrink-0">
+                <RefreshCw className={`w-4 h-4 text-primary ${updating ? 'animate-spin' : ''}`} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-foreground leading-tight">
+                <p className="font-semibold text-xs text-foreground leading-tight truncate">
                   {updating
                     ? (bn ? 'আপডেট হচ্ছে…' : 'Updating…')
                     : (bn ? 'নতুন আপডেট পাওয়া গেছে' : 'New update available')}
                 </p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">
+                <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                   {updating
                     ? statusText
-                    : (bn ? 'অ্যাপের নতুন ভার্সন প্রস্তুত' : 'A new version of the app is ready')}
+                    : (bn ? 'নতুন ভার্সন প্রস্তুত' : 'A new version is ready')}
                 </p>
               </div>
               {!updating ? (
@@ -369,26 +368,26 @@ const UpdatePrompt = () => {
                   <Button
                     size="sm"
                     onClick={handleUpdate}
-                    className="rounded-full px-4 shadow-[0_6px_18px_-6px_hsl(var(--primary)/0.6)] hover:-translate-y-0.5 transition-transform"
+                    className="h-7 rounded-full px-3 text-xs shadow-[0_6px_18px_-6px_hsl(var(--primary)/0.6)]"
                   >
                     {bn ? 'আপডেট' : 'Update'}
                   </Button>
                   <button
                     onClick={() => setDismissed(true)}
-                    className="p-1.5 rounded-full hover:bg-muted text-muted-foreground transition-colors"
+                    className="p-1 rounded-full hover:bg-muted text-muted-foreground transition-colors"
                     aria-label="Dismiss"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </>
               ) : (
-                <span className="text-sm font-bold text-primary tabular-nums w-11 text-right">
+                <span className="text-xs font-bold text-primary tabular-nums w-9 text-right">
                   {progress}%
                 </span>
               )}
             </div>
             {updating && (
-              <div className="relative mt-3.5 h-2 w-full rounded-full bg-muted/70 overflow-hidden">
+              <div className="relative mt-2.5 h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/60 transition-all duration-300 ease-out shadow-[0_0_12px_hsl(var(--primary)/0.5)]"
                   style={{ width: `${progress}%` }}
