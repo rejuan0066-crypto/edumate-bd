@@ -117,8 +117,8 @@ export async function downloadSlipAsPdf(
         const offsetX = margin + (availW - drawW) / 2;
         const offsetY = margin + (availH - drawH) / 2;
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
-        pdf.addImage(imgData, 'JPEG', offsetX, offsetY, drawW, drawH);
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', offsetX, offsetY, drawW, drawH);
 
         pdf.save(filename);
         resolve();
