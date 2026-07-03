@@ -639,6 +639,92 @@ const AdminSalary = () => {
     return null;
   };
 
+  // Display-time salary snapshot: pending records must reflect the freshest
+  // attendance immediately. Only paid records stay locked to their saved snapshot.
+  const getSalaryDisplaySnapshot = (staffMember: any, record?: any | null) => {
+    const liveStats = getAttendanceStats(staffMember);
+    const liveCalc = calculateSalary(staffMember);
+    const activeSavings = getActiveSavings(staffMember.id);
+    const activeSavingsAmount = activeSavings ? activeSavings.amount : 0;
+    const isPaid = !!record && record.status === 'paid';
+
+    if (isPaid) {
+      const savedRecord = { ...liveCalc, ...record };
+      return {
+        record: savedRecord,
+        stats: {
+          ...liveStats,
+          present: Number(record.present_days ?? liveStats.present),
+          absent: Number(record.absent_days ?? liveStats.absent),
+          late: Number(record.late_days ?? liveStats.late),
+        },
+        isPaid: true,
+        isAdditive: ((record.calc_basis ?? liveCalc.calc_basis) === 'additive'),
+        savingsDisplay: Number(record.savings_deduction ?? activeSavingsAmount),
+        isLive: false,
+      };
+    }
+
+    const manualBonus = Number(record?.bonus || 0);
+    const manualAllow = Number(record?.other_allowance || 0);
+    const manualAdvance = Number(record?.advance_deduction || 0);
+    const savingsForNet = Number(liveCalc.savings_deduction || 0);
+    const liveRecord = {
+      ...(record || {}),
+      ...liveCalc,
+      id: record?.id,
+      staff_id: staffMember.id,
+      month_year: monthYear,
+      status: record?.status || 'not_generated',
+      bonus: manualBonus,
+      other_allowance: manualAllow,
+      other_allowance_note: record?.other_allowance_note,
+      advance_deduction: manualAdvance,
+      other_deduction_note: record?.other_deduction_note,
+      remarks: record?.remarks,
+      savings_deduction: savingsForNet,
+      net_salary: recomputeNetSalary(liveCalc, {
+        bonus: manualBonus,
+        other_allowance: manualAllow,
+        advance_deduction: manualAdvance,
+        savings_deduction: savingsForNet,
+      }),
+    };
+
+    return {
+      record: liveRecord,
+      stats: liveStats,
+      isPaid: false,
+      isAdditive: (liveCalc.calc_basis || getSetting('salary_calc_basis')?.mode || 'additive') === 'additive',
+      savingsDisplay: activeSavingsAmount,
+      isLive: true,
+    };
+  };
+
+  const getAdditiveAttendanceDeduction = (record: any): number => {
+    const baseForDed = Number(record?.base_salary || 0);
+    const earnedForDed = Number(record?.earned_from_attendance ?? NaN);
+    if (Number.isFinite(earnedForDed)) return Math.max(0, baseForDed - earnedForDed);
+    return Number(record?.late_deduction || 0) + Number(record?.absence_deduction || 0) + Number(record?.other_deduction || 0);
+  };
+
+  const getSalaryDisplayTotalDeduction = (snapshot: ReturnType<typeof getSalaryDisplaySnapshot>): number => {
+    const r = snapshot.record;
+    if (snapshot.isAdditive) {
+      return Math.round(
+        getAdditiveAttendanceDeduction(r)
+        + Number(r.advance_deduction || 0)
+        + Number(r.other_deduction || 0)
+      );
+    }
+    return Math.round(
+      Number(r.late_deduction || 0)
+      + Number(r.absence_deduction || 0)
+      + Number(r.advance_deduction || 0)
+      + Number(r.other_deduction || 0)
+    );
+  };
+
   // Save savings config mutation
   const saveSavingsMutation = useMutation({
     mutationFn: async (data: any) => {
