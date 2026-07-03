@@ -78,27 +78,34 @@ export function shouldApplyThursdayHalfDay(params: {
 }
 
 /**
- * Compute the effective duty-end minutes and scheduled minutes/day for a shift,
- * shortening it to 14:00 when the Thursday half-day rule applies.
+ * Compute the effective duty start/end minutes and scheduled minutes/day for a shift,
+ * applying the Thursday check-in/check-out window when the rule applies.
  * `dutyStart`/`dutyEnd` are minutes-from-midnight (dutyEnd already normalized for
  * overnight before calling — but overnight shifts are excluded by the rule anyway).
+ * `startMinutes` (optional) overrides the Thursday check-in time; `endMinutes` the
+ * Thursday check-out time (default 14:00).
  */
 export function effectiveDutyEndForThursday(params: {
   applies: boolean;
   dutyStart: number;
   dutyEnd: number;
-  /** Half-day end minutes-from-midnight (default 14:00). */
+  /** Half-day check-in minutes-from-midnight (optional; default = dutyStart). */
+  startMinutes?: number;
+  /** Half-day check-out minutes-from-midnight (default 14:00). */
   endMinutes?: number;
-}): { effDutyEnd: number; effScheduledMinutes: number } {
-  const { applies, dutyStart, dutyEnd, endMinutes } = params;
+}): { effDutyStart: number; effDutyEnd: number; effScheduledMinutes: number } {
+  const { applies, dutyStart, dutyEnd, startMinutes, endMinutes } = params;
+  let effDutyStart = dutyStart;
   let effDutyEnd = dutyEnd;
-  let effScheduledMinutes = dutyEnd - dutyStart;
   if (applies) {
+    if (startMinutes && startMinutes > 0 && startMinutes < dutyEnd) {
+      effDutyStart = startMinutes;
+    }
     const thuEnd = endMinutes && endMinutes > 0 ? endMinutes : 14 * 60; // 14:00
-    if (thuEnd > dutyStart && thuEnd < dutyEnd) {
+    if (thuEnd > effDutyStart && thuEnd < dutyEnd) {
       effDutyEnd = thuEnd;
-      effScheduledMinutes = effDutyEnd - dutyStart;
     }
   }
-  return { effDutyEnd, effScheduledMinutes };
+  const effScheduledMinutes = effDutyEnd - effDutyStart;
+  return { effDutyStart, effDutyEnd, effScheduledMinutes };
 }
