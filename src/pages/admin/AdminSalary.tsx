@@ -801,7 +801,7 @@ const AdminSalary = () => {
     // উপস্থিত দিন কখনো মাসের প্রকৃত দিনসংখ্যার বেশি গণনা হবে না (অতিরিক্ত দিন বাদ)।
     const [presYy, presMm] = monthYear.split('-').map(Number);
     const daysInMonthForPresent = new Date(presYy, presMm, 0).getDate();
-    const rawPresent = records.filter((r: any) => r.status === 'present' || r.status === 'leave').length;
+    const rawPresent = records.filter((r: any) => ['present', 'leave', 'excused'].includes(r.status)).length;
     const present = Math.min(rawPresent, daysInMonthForPresent);
     const recordedAbsent = records.filter((r: any) => r.status === 'absent' && !paidHolidaySet.has(r.attendance_date)).length;
     const late = records.filter((r: any) => r.status === 'late').length;
@@ -868,8 +868,8 @@ const AdminSalary = () => {
         return;
       }
       
-      if (r.status === 'leave') {
-        // ছুটি = বেতনসহ ছুটি (paid leave)। পূর্ণ দিনের বেতন গণ্য হবে, কোনো কর্তন নয়।
+      if (r.status === 'leave' || r.status === 'excused') {
+        // ছুটি / অনুমতিপ্রাপ্ত উপস্থিতি (excused) = বেতনসহ পূর্ণ দিন। কোনো কর্তন নয়।
         entry.dailyEarning = Math.round(dailyRate);
         totalDailyEarnings += entry.dailyEarning;
         dailyBreakdown.push(entry);
