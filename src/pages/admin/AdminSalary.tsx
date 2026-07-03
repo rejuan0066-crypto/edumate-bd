@@ -944,7 +944,6 @@ const AdminSalary = () => {
     paidHolidaySet.forEach((d: any) => {
       if (!recordedDates.has(d)) untouchedHolidayDays += 1;
     });
-    const holidayPaidEarnings = Math.round(untouchedHolidayDays * dailyRate);
     totalDailyEarnings += untouchedHolidayDays * dailyRate;
 
     // যে দিনগুলোতে কোনো হাজিরা রেকর্ড নেই (সাপ্তাহিক ছুটি/সরকারি ছুটি/অচিহ্নিত দিন)
