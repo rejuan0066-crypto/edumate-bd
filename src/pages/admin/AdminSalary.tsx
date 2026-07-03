@@ -2839,19 +2839,23 @@ const AdminSalary = () => {
                                 const otherA = Number(rec?.other_allowance || 0);
                                 const baseV = Number(rec?.base_salary ?? getEffectiveSalary(s));
                                 const otV = isPaid ? Number(rec?.overtime || 0) : Number(autoCalc.overtime || 0);
-                                // In additive mode absence/late are NOT deductions — they are simply
-                                // unearned days. Show them as ৳0 here so the deduction total never
-                                // exceeds the base salary; surface the unearned amount separately.
-                                const absD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).absence_deduction || 0);
-                                const lateD = isAdditive ? 0 : Number((isPaid ? rec : autoCalc).late_deduction || 0);
-                                const otherD = isAdditive
-                                  ? Number(rec?.other_deduction || 0)
-                                  : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
-                                const earnedV = !isPaid
-                                  ? Number((autoCalc as any).earned_from_attendance || 0)
-                                  : 0;
-                                const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
-                                const sumDed = absD + lateD + advD + otherD + savD;
+                                 // Always surface the REAL absence/late amounts so they are
+                                 // visible in the breakdown. In additive mode they are already
+                                 // baked into the lower "earned" figure, so they must NOT be
+                                 // re-added to the money-removed total (sumDed) — otherwise the
+                                 // deduction total would exceed the base salary.
+                                 const absD = Number((isPaid ? rec : autoCalc).absence_deduction || 0);
+                                 const lateD = Number((isPaid ? rec : autoCalc).late_deduction || 0);
+                                 const otherD = isAdditive
+                                   ? Number(rec?.other_deduction || 0)
+                                   : Number((isPaid ? rec?.other_deduction : autoCalc.other_deduction) || 0);
+                                 const earnedV = !isPaid
+                                   ? Number((autoCalc as any).earned_from_attendance || 0)
+                                   : 0;
+                                 const unearnedV = isAdditive && !isPaid ? Math.max(0, baseV - earnedV) : 0;
+                                 const sumDed = isAdditive
+                                   ? advD + otherD + savD
+                                   : absD + lateD + advD + otherD + savD;
                                 const expectedNet = isAdditive
                                   ? displayNet
                                   : Math.max(0, baseV - absD - lateD + otV + bonusV + otherA - advD - otherD - savD);
