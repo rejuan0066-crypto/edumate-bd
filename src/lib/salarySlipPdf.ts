@@ -201,7 +201,7 @@ export async function downloadSheetAsPdf(
 
   return new Promise((resolve, reject) => {
     const iframe = document.createElement('iframe');
-    iframe.style.cssText = `position:fixed;left:-9999px;top:-9999px;width:${pageW}px;height:${pageH}px;border:none;visibility:hidden;`;
+    iframe.style.cssText = HIDDEN_IFRAME_CSS(pageW, pageH);
     document.body.appendChild(iframe);
 
     let hasCaptured = false;
