@@ -1,6 +1,25 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+// iOS Safari silently returns a BLANK canvas when either dimension exceeds
+// ~4096px or the total area exceeds ~16.7M px. Clamp the html2canvas scale so
+// the captured canvas always stays within those limits (fixes blank mobile PDFs).
+const IOS_MAX_DIM = 4096;
+const IOS_MAX_AREA = 16_777_216;
+function safeCaptureScale(widthPx: number, heightPx: number, desired: number): number {
+  let scale = desired;
+  scale = Math.min(scale, IOS_MAX_DIM / Math.max(widthPx, 1));
+  scale = Math.min(scale, IOS_MAX_DIM / Math.max(heightPx, 1));
+  scale = Math.min(scale, Math.sqrt(IOS_MAX_AREA / Math.max(widthPx * heightPx, 1)));
+  return Math.max(1, scale);
+}
+
+// Off-screen iframes with visibility:hidden are not laid out/painted on mobile
+// Safari, so html2canvas captures nothing. Keep the iframe on-screen but fully
+// transparent and non-interactive instead.
+const HIDDEN_IFRAME_CSS = (w: number, h: number) =>
+  `position:fixed;left:0;top:0;width:${w}px;height:${h}px;border:none;opacity:0;pointer-events:none;z-index:-1;`;
+
 /**
  * Renders a full salary-slip HTML string into a hidden iframe, captures the
  * `.slip` element with html2canvas, and saves it as an A4 PORTRAIT PDF.
