@@ -155,6 +155,24 @@ Deno.serve(async (req) => {
       ? String(issueDateInput).trim()
       : new Date().toLocaleDateString(bn ? "bn-BD" : "en-GB");
 
+    // Fetch holidays for the selected month (date + reason) for the salary sheet appendix.
+    let monthHolidays: any[] = [];
+    if (!isDryRun && monthYear && /^\d{4}-\d{2}$/.test(monthYear)) {
+      const startDate = `${monthYear}-01`;
+      const [hy, hm] = monthYear.split("-").map(Number);
+      const nextMonth = hm === 12 ? `${hy + 1}-01-01` : `${hy}-${String(hm + 1).padStart(2, "0")}-01`;
+      const { data: holRows } = await supabase
+        .from("staff_holidays")
+        .select("holiday_date, name_bn, name_en, holiday_type, is_paid, notes")
+        .gte("holiday_date", startDate)
+        .lt("holiday_date", nextMonth)
+        .is("deleted_at", null)
+        .order("holiday_date", { ascending: true });
+      monthHolidays = holRows || [];
+    }
+
+
+
     const escapeHtml = (val: unknown): string => String(val ?? "").replace(/[&<>"']/g, (ch) => ({
       "&": "&amp;",
       "<": "&lt;",
