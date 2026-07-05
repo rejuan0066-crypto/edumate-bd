@@ -229,7 +229,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
   const { data: allStaffRaw = [] } = useQuery({
     queryKey: ['staff'],
     queryFn: async () => {
-      const { data } = await supabase.from('staff').select('*').eq('status', 'active').order('name_bn');
+      const { data } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('status', 'active')
+        .order('salary_order', { ascending: true, nullsFirst: false })
+        .order('name_bn', { ascending: true });
       return data || [];
     },
     enabled: entityType === 'staff',
