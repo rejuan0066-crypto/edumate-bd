@@ -43,7 +43,15 @@ const DatePicker = ({
   fromYear = 1950,
   toYear = 2060,
   disabled = false,
+  holidayDates,
 }: DatePickerProps) => {
+  const holidayDayObjects = React.useMemo(
+    () =>
+      (holidayDates || [])
+        .map((d) => parse(d, 'yyyy-MM-dd', new Date()))
+        .filter((d) => isValid(d)),
+    [holidayDates],
+  );
   const [open, setOpen] = React.useState(false);
   const [viewMonth, setViewMonth] = React.useState<Date>(new Date());
 
