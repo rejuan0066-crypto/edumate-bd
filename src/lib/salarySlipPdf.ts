@@ -276,7 +276,7 @@ export async function downloadSheetAsPdf(
           }
 
           const canvas = await html2canvas(target, {
-            scale: 2,
+            scale: safeCaptureScale(pageW, pageH, 2),
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
