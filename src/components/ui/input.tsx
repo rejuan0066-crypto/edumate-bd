@@ -40,7 +40,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       if (eligible && !list) {
-        pushHistory(historyKey(name, id), e.target.value);
+        pushHistory(historyKey(name, id, placeholder), e.target.value);
       }
       onBlur?.(e);
     };
