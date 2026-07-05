@@ -163,9 +163,14 @@ const DatePicker = ({
           month={viewMonth}
           onMonthChange={setViewMonth}
           locale={bengali ? bnLocale : undefined}
+          modifiers={{ holiday: holidayDayObjects }}
+          modifiersClassNames={{
+            holiday: "text-red-600 font-bold bg-red-50 rounded-md",
+          }}
           initialFocus
           className="p-3"
         />
+
 
         {/* Today button */}
         <div className="px-4 pb-3">
