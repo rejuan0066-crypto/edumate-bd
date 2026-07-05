@@ -17,6 +17,8 @@ interface DatePickerProps {
   fromYear?: number;
   toYear?: number;
   disabled?: boolean;
+  /** Dates ("YYYY-MM-DD") to highlight as holidays in the calendar */
+  holidayDates?: string[];
 }
 
 const BENGALI_MONTHS = [
@@ -41,7 +43,15 @@ const DatePicker = ({
   fromYear = 1950,
   toYear = 2060,
   disabled = false,
+  holidayDates,
 }: DatePickerProps) => {
+  const holidayDayObjects = React.useMemo(
+    () =>
+      (holidayDates || [])
+        .map((d) => parse(d, 'yyyy-MM-dd', new Date()))
+        .filter((d) => isValid(d)),
+    [holidayDates],
+  );
   const [open, setOpen] = React.useState(false);
   const [viewMonth, setViewMonth] = React.useState<Date>(new Date());
 
@@ -153,9 +163,14 @@ const DatePicker = ({
           month={viewMonth}
           onMonthChange={setViewMonth}
           locale={bengali ? bnLocale : undefined}
+          modifiers={{ holiday: holidayDayObjects }}
+          modifiersClassNames={{
+            holiday: "text-red-600 font-bold bg-red-50 rounded-md",
+          }}
           initialFocus
           className="p-3"
         />
+
 
         {/* Today button */}
         <div className="px-4 pb-3">

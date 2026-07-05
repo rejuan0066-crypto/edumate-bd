@@ -192,6 +192,19 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     },
   });
 
+  // Fetch holidays (site calendar) to mark on the attendance date picker
+  const { data: holidayDates = [] } = useQuery({
+    queryKey: ['staff-holidays-calendar'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('staff_holidays')
+        .select('holiday_date')
+        .is('deleted_at', null);
+      return (data || []).map((h: any) => h.holiday_date as string);
+    },
+  });
+
+
   // Fetch classes
   const { data: classes = [] } = useQuery({
     queryKey: ['classes'],
@@ -1460,7 +1473,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="relative">
-                  <DatePicker bengali={bn} className="w-40 h-8 text-sm" value={selectedDate} onChange={v => setSelectedDate(v)} />
+                  <DatePicker bengali={bn} className="w-40 h-8 text-sm" value={selectedDate} onChange={v => setSelectedDate(v)} holidayDates={holidayDates} />
                 </div>
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => changeDate(1)}>
                   <ChevronRight className="h-4 w-4" />
