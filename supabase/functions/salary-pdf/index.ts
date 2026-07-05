@@ -566,6 +566,57 @@ Deno.serve(async (req) => {
       </section>
     ` : "";
 
+    const holidayTypeLabel = (t: string): string => {
+      if (bn) {
+        if (t === "weekly") return "সাপ্তাহিক";
+        if (t === "public") return "সরকারি";
+        if (t === "special") return "বিশেষ";
+        return t || "—";
+      }
+      return t ? t.charAt(0).toUpperCase() + t.slice(1) : "—";
+    };
+    const holidayAppendixHtml = monthHolidays.length > 0 ? `
+      <section class="salary-page">
+        <div class="print-fit">
+          <table class="page-table">
+            ${colGroup}
+            <thead>${renderPageHeader()}</thead>
+            <tbody>
+              <tr><td colspan="${COL_COUNT}" style="padding:0;border:none;">
+                <h3 style="text-align:center;margin:6pt 0 8pt;font-size:11pt;font-weight:700;">
+                  ${bn ? "ছুটির তালিকা" : "Holiday List"} — ${escapeHtml(monthLabel)} ${escapeHtml(bn ? toBnDigits(year) : year)}
+                </h3>
+                <table style="width:100%;border-collapse:collapse;font-size:9pt;">
+                  <thead>
+                    <tr style="background:#f1f5f9;">
+                      <th style="border:0.5pt solid #94a3b8;padding:3pt 5pt;text-align:left;width:8%;">${bn ? "ক্রম" : "SL"}</th>
+                      <th style="border:0.5pt solid #94a3b8;padding:3pt 5pt;text-align:left;width:20%;">${bn ? "তারিখ" : "Date"}</th>
+                      <th style="border:0.5pt solid #94a3b8;padding:3pt 5pt;text-align:left;">${bn ? "কারণ" : "Reason"}</th>
+                      <th style="border:0.5pt solid #94a3b8;padding:3pt 5pt;text-align:center;width:16%;">${bn ? "ধরন" : "Type"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${monthHolidays.map((h: any, i: number) => `
+                      <tr>
+                        <td style="border:0.5pt solid #cbd5e1;padding:3pt 5pt;">${bn ? toBnDigits(i + 1) : i + 1}</td>
+                        <td style="border:0.5pt solid #cbd5e1;padding:3pt 5pt;">${fmtDate(h.holiday_date)}</td>
+                        <td style="border:0.5pt solid #cbd5e1;padding:3pt 5pt;">${escapeHtml(bn ? (h.name_bn || h.name_en || "—") : (h.name_en || h.name_bn || "—"))}${h.notes ? ` <span style="color:#64748b;">(${escapeHtml(h.notes)})</span>` : ""}</td>
+                        <td style="border:0.5pt solid #cbd5e1;padding:3pt 5pt;text-align:center;">${escapeHtml(holidayTypeLabel(h.holiday_type))}</td>
+                      </tr>
+                    `).join("")}
+                  </tbody>
+                </table>
+                <div style="margin-top:6pt;font-size:8.5pt;color:#475569;">
+                  ${bn ? "মোট ছুটি" : "Total holidays"}: ${bn ? toBnDigits(monthHolidays.length) : monthHolidays.length} ${bn ? "দিন" : "days"}
+                </div>
+              </td></tr>
+            </tbody>
+            ${renderFooter()}
+          </table>
+        </div>
+      </section>
+    ` : "";
+
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
