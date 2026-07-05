@@ -14,19 +14,19 @@ interface InputProps extends React.ComponentProps<"input"> {
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, onChange, onBlur, list, name, id, autoComplete, history = true, ...props }, ref) => {
-    const eligible = history && isHistoryEligible(type, name, id, autoComplete);
+  ({ className, type, onChange, onBlur, list, name, id, autoComplete, placeholder, history = true, ...props }, ref) => {
+    const eligible = history && isHistoryEligible(type, name, id, autoComplete, placeholder);
     const listId = React.useMemo(() => {
       if (!eligible || list) return list;
-      return `ih-${(name || id || 'field').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-    }, [eligible, list, name, id]);
+      return `ih-${(name || id || placeholder || 'field').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    }, [eligible, list, name, id, placeholder]);
 
     const [items, setItems] = React.useState<string[]>([]);
 
     React.useEffect(() => {
       if (!eligible || list) return;
-      setItems(loadHistory(historyKey(name, id)));
-    }, [eligible, list, name, id]);
+      setItems(loadHistory(historyKey(name, id, placeholder)));
+    }, [eligible, list, name, id, placeholder]);
 
     const handleChange = type === 'number' && onChange
       ? (e: React.ChangeEvent<HTMLInputElement>) => {
