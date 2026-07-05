@@ -16,19 +16,21 @@ export const isHistoryEligible = (
   name: string | undefined,
   id: string | undefined,
   autoComplete: string | undefined,
+  placeholder?: string | undefined,
 ): boolean => {
   const t = (type || 'text').toLowerCase();
   if (EXCLUDED_TYPES.has(t)) return false;
   if (autoComplete && /off|new-password|current-password|one-time-code/i.test(autoComplete)) return false;
-  // Need a stable key
-  if (!name && !id) return false;
+  // Need a stable key (name, id, or placeholder text)
+  if (!name && !id && !placeholder) return false;
   // Skip obviously sensitive names
-  const key = `${name || ''} ${id || ''}`.toLowerCase();
+  const key = `${name || ''} ${id || ''} ${placeholder || ''}`.toLowerCase();
   if (/(password|otp|pin|cvv|token|secret|captcha)/.test(key)) return false;
   return true;
 };
 
-export const historyKey = (name?: string, id?: string) => `${PREFIX}${name || id}`;
+export const historyKey = (name?: string, id?: string, placeholder?: string) =>
+  `${PREFIX}${name || id || placeholder}`;
 
 export const loadHistory = (key: string): string[] => {
   try {
