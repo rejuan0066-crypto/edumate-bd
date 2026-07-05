@@ -56,6 +56,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           name={name}
           id={id}
+          placeholder={placeholder}
           autoComplete={autoComplete}
           list={listId}
           onChange={handleChange}
