@@ -17,6 +17,8 @@ interface DatePickerProps {
   fromYear?: number;
   toYear?: number;
   disabled?: boolean;
+  /** Dates ("YYYY-MM-DD") to highlight as holidays in the calendar */
+  holidayDates?: string[];
 }
 
 const BENGALI_MONTHS = [
