@@ -106,7 +106,7 @@ export async function downloadSlipAsPdf(
         const target = (iframeDoc.querySelector('.slip') as HTMLElement) || iframeDoc.body;
 
         const canvas = await html2canvas(target, {
-          scale: 3,
+          scale: safeCaptureScale(target.scrollWidth || pageW, target.scrollHeight || 1123, 3),
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#ffffff',
@@ -114,6 +114,7 @@ export async function downloadSlipAsPdf(
           logging: false,
           imageTimeout: 5000,
         });
+
 
         const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = 210;
