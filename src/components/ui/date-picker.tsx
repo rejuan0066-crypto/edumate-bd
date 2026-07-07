@@ -19,6 +19,8 @@ interface DatePickerProps {
   disabled?: boolean;
   /** Dates ("YYYY-MM-DD") to highlight as holidays in the calendar */
   holidayDates?: string[];
+  /** Optional holiday details keyed for hover tooltip (date, reason, type) */
+  holidayInfo?: { date: string; label?: string; type?: string }[];
 }
 
 const BENGALI_MONTHS = [
