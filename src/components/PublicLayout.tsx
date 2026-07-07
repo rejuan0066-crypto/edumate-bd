@@ -141,7 +141,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                   )}
                   {(hs?.show_institution_name_en !== false) && (
                     <p
-                      className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 block max-w-full text-center"
+                      className="text-xs sm:text-sm lg:text-base text-muted-foreground line-clamp-2 block max-w-full text-center"
                       title={settings.institution_name_en}
                       style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                     >
