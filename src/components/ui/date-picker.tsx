@@ -46,6 +46,7 @@ const DatePicker = ({
   toYear = 2060,
   disabled = false,
   holidayDates,
+  holidayInfo,
 }: DatePickerProps) => {
   const holidayDayObjects = React.useMemo(
     () =>
@@ -54,6 +55,13 @@ const DatePicker = ({
         .filter((d) => isValid(d)),
     [holidayDates],
   );
+  const holidayMap = React.useMemo(() => {
+    const m: Record<string, { label?: string; type?: string }> = {};
+    (holidayInfo || []).forEach((h) => {
+      m[h.date] = { label: h.label, type: h.type };
+    });
+    return m;
+  }, [holidayInfo]);
   const [open, setOpen] = React.useState(false);
   const [viewMonth, setViewMonth] = React.useState<Date>(new Date());
 
