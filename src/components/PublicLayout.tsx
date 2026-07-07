@@ -119,39 +119,51 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
         }}
       >
         <div className={`${!hs?.header_bg_color ? 'bg-card' : ''}`}>
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
-            <Link to="/" className="flex items-center gap-3 min-w-0 flex-1">
-              {settings.logo_url ? (
-                <img src={settings.logo_url} alt={`${settings.institution_name} logo`} className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
-              ) : (
-                <div className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
-                  <GraduationCap className="w-7 h-7 text-primary-foreground" />
-                </div>
-              )}
-              <div className="min-w-0 flex-1 overflow-hidden text-center">
-                {(hs?.show_institution_name !== false) && (
-                  <div
-                    className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight line-clamp-2 block max-w-full text-center"
-                    title={settings.institution_name}
-                    style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                  >
-                    {settings.institution_name}
+          <div className="container mx-auto px-4 py-3">
+            <div className="relative flex items-center justify-center gap-2">
+              <Link to="/" className="flex items-center gap-3 min-w-0 max-w-full">
+                {settings.logo_url ? (
+                  <img src={settings.logo_url} alt={`${settings.institution_name} logo`} className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} object-cover`} />
+                ) : (
+                  <div className={`${logoSize} shrink-0 ${settings.logo_shape === 'circle' ? 'rounded-full' : settings.logo_shape === 'rounded' ? 'rounded-xl' : 'rounded-none'} bg-primary flex items-center justify-center`}>
+                    <GraduationCap className="w-7 h-7 text-primary-foreground" />
                   </div>
                 )}
-                {(hs?.show_institution_name_en !== false) && (
-                  <p
-                    className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 block max-w-full text-center"
-                    title={settings.institution_name_en}
-                    style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
-                  >
-                    {settings.institution_name_en}
-                  </p>
-                )}
-              </div>
-            </Link>
+                <div className="min-w-0 overflow-hidden text-center">
+                  {(hs?.show_institution_name !== false) && (
+                    <div
+                      className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight line-clamp-2 block max-w-full text-center"
+                      title={settings.institution_name}
+                      style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                    >
+                      {settings.institution_name}
+                    </div>
+                  )}
+                  {(hs?.show_institution_name_en !== false) && (
+                    <p
+                      className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 block max-w-full text-center"
+                      title={settings.institution_name_en}
+                      style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                    >
+                      {settings.institution_name_en}
+                    </p>
+                  )}
+                </div>
+              </Link>
+
+              {/* Mobile toggle */}
+              <button
+                className="lg:hidden absolute right-0 p-2"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={mobileOpen}
+              >
+                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
 
             {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center justify-center flex-wrap gap-1 mt-3">
               {navItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
@@ -176,17 +188,8 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                 );
               })}
             </nav>
-
-            {/* Mobile toggle */}
-            <button
-              className="lg:hidden p-2"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
           </div>
+
 
           {/* Mobile Nav */}
           {mobileOpen && (
