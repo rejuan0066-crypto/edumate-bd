@@ -19,6 +19,8 @@ interface DatePickerProps {
   disabled?: boolean;
   /** Dates ("YYYY-MM-DD") to highlight as holidays in the calendar */
   holidayDates?: string[];
+  /** Optional holiday details keyed for hover tooltip (date, reason, type) */
+  holidayInfo?: { date: string; label?: string; type?: string }[];
 }
 
 const BENGALI_MONTHS = [
@@ -44,6 +46,7 @@ const DatePicker = ({
   toYear = 2060,
   disabled = false,
   holidayDates,
+  holidayInfo,
 }: DatePickerProps) => {
   const holidayDayObjects = React.useMemo(
     () =>
@@ -52,6 +55,13 @@ const DatePicker = ({
         .filter((d) => isValid(d)),
     [holidayDates],
   );
+  const holidayMap = React.useMemo(() => {
+    const m: Record<string, { label?: string; type?: string }> = {};
+    (holidayInfo || []).forEach((h) => {
+      m[h.date] = { label: h.label, type: h.type };
+    });
+    return m;
+  }, [holidayInfo]);
   const [open, setOpen] = React.useState(false);
   const [viewMonth, setViewMonth] = React.useState<Date>(new Date());
 
@@ -167,9 +177,33 @@ const DatePicker = ({
           modifiersClassNames={{
             holiday: "text-red-600 font-bold bg-red-50 rounded-md",
           }}
+          components={{
+            IconLeft: () => <ChevronLeft className="h-4 w-4" />,
+            IconRight: () => <ChevronRight className="h-4 w-4" />,
+            DayContent: ({ date }) => {
+              const key = format(date, 'yyyy-MM-dd');
+              const info = holidayMap[key];
+              const label = bengali ? toBengaliDigit(date.getDate()) : date.getDate();
+              if (!info) return <>{label}</>;
+              const dateStr = bengali
+                ? `${toBengaliDigit(date.getDate())} ${BENGALI_MONTHS[date.getMonth()]}, ${toBengaliDigit(date.getFullYear())}`
+                : format(date, 'dd MMMM, yyyy');
+              const title = [
+                dateStr,
+                info.label ? `${bengali ? 'কারণ' : 'Reason'}: ${info.label}` : '',
+                info.type ? `${bengali ? 'ধরন' : 'Type'}: ${info.type}` : '',
+              ].filter(Boolean).join('\n');
+              return (
+                <span title={title} className="flex h-full w-full items-center justify-center cursor-help">
+                  {label}
+                </span>
+              );
+            },
+          }}
           initialFocus
           className="p-3"
         />
+
 
 
         {/* Today button */}
