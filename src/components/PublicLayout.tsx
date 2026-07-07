@@ -27,7 +27,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
       label: language === 'bn' ? item.label_bn : item.label_en,
     }));
 
-  const logoSizeMap = { small: 'w-8 h-8', medium: 'w-12 h-12', large: 'w-16 h-16' };
+  const logoSizeMap = { small: 'w-12 h-12', medium: 'w-16 h-16', large: 'w-20 h-20 lg:w-24 lg:h-24' };
   const logoSize = logoSizeMap[hs?.logo_size || 'medium'];
 
   const navFontSize = ns?.nav_font_size === 'small' ? 'text-xs' : ns?.nav_font_size === 'large' ? 'text-base' : 'text-sm';
