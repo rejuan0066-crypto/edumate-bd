@@ -128,10 +128,10 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                   <GraduationCap className="w-7 h-7 text-primary-foreground" />
                 </div>
               )}
-              <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="min-w-0 flex-1 overflow-hidden text-center">
                 {(hs?.show_institution_name !== false) && (
                   <div
-                    className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight line-clamp-2 block max-w-full"
+                    className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight line-clamp-2 block max-w-full text-center"
                     title={settings.institution_name}
                     style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                   >
@@ -140,7 +140,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                 )}
                 {(hs?.show_institution_name_en !== false) && (
                   <p
-                    className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 block max-w-full"
+                    className="text-[11px] sm:text-xs text-muted-foreground line-clamp-2 block max-w-full text-center"
                     title={settings.institution_name_en}
                     style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                   >
