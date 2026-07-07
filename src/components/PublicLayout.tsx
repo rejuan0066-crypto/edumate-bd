@@ -132,7 +132,7 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                 <div className="min-w-0 overflow-hidden text-center">
                   {(hs?.show_institution_name !== false) && (
                     <div
-                      className="text-base sm:text-lg lg:text-xl font-display font-bold leading-tight line-clamp-2 block max-w-full text-center"
+                      className="text-xl sm:text-2xl lg:text-3xl font-display font-bold leading-tight line-clamp-2 block max-w-full text-center"
                       title={settings.institution_name}
                       style={{ color: hs?.header_text_color || undefined, overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                     >
