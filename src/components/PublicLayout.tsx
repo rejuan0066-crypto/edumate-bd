@@ -92,8 +92,8 @@ const PublicLayout = ({ children }: { children: ReactNode }) => {
                   <span className="truncate max-w-[200px] sm:max-w-none">{announcement}</span>
                 ) : (
                   <>
-                    <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {settings.phone}</span>
-                    <span className="hidden sm:flex items-center gap-1"><Mail className="w-3 h-3" /> {settings.email}</span>
+                    <a href={`tel:${settings.phone}`} className="flex items-center gap-1 hover:underline"><Phone className="w-3 h-3" /> {settings.phone}</a>
+                    <a href={`mailto:${settings.email}`} className="hidden sm:flex items-center gap-1 hover:underline"><Mail className="w-3 h-3" /> {settings.email}</a>
                   </>
                 )}
               </div>
