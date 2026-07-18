@@ -1362,3 +1362,15 @@
   }
 }
 
+
+/* Hide the "Made with Lovable" badge */
+#lovable-badge,
+[id^="lovable-badge"],
+a[href*="lovable.dev"][target="_blank"],
+a[aria-label*="Lovable" i],
+a[aria-label*="Edit with Lovable" i] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
