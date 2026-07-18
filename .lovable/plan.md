@@ -1,35 +1,38 @@
-# স্যালারি PDF অটো-ফিক্স (নিচের লেখা কাটা বন্ধ)
-
-## সমস্যা
-`supabase/functions/salary-pdf/index.ts`-এর `autoFit()` কনটেন্ট overflow করলে ছোট করার কথা, কিন্তু scale জোর করে `minScale`/`maxScale` = ১-এ clamp করা। তাই ১৪ রো + টোটাল + ৪ স্বাক্ষর পেজে না ধরলে নিচের স্বাক্ষরের নাম/পদবি কেটে যায়।
-
 ## লক্ষ্য
-কোনো ম্যানুয়াল সেটিং ছাড়াই — কনটেন্ট পেজে না ধরলে সিস্টেম নিজে থেকে ঠিক পরিমাণ shrink করে যাতে হেডার থেকে শেষ স্বাক্ষর পর্যন্ত সবকিছু পুরোপুরি এক পেজে বসে।
+হাজিরা পেইজে সরাসরি সব ছাত্র একসাথে না দেখিয়ে ধাপে ধাপে drill-down করা হবে:
 
-## পরিবর্তন (সব `salary-pdf/index.ts`-এর মধ্যে)
+1. **ধাপ ১** — হাজিরা ট্যাবে ক্লিক করলে প্রথমে শুধু **ক্লাসের তালিকা** (card grid) দেখাবে (প্রতিটি ক্লাসে মোট ছাত্র সংখ্যা + আজকের হাজিরা summary সহ)।
+2. **ধাপ ২** — কোনো ক্লাস কার্ডে ক্লিক করলে ঐ ক্লাসের **ছাত্রদের তালিকা ও হাজিরা অপশন** (Present / Absent / Late / Leave) দেখাবে।
+3. উপরে একটি **Breadcrumb / Back button** থাকবে: `হাজিরা › ক্লাস ৬ (ছাত্র)` — যাতে সহজে ক্লাস লিস্টে ফিরে যাওয়া যায়।
 
-### ১. Auto-fit কে সত্যিকারের shrink করতে দেওয়া
-`autoFit()`-এ overflow হলে একটা **auto floor** ব্যবহার করা হবে, শুধু `minScale`-এ আটকে থাকবে না:
+## পরিবর্তনের জায়গা
 
-```text
-computed = min(maxH/h, maxW/w) * 0.985
-scale   = clamp(computed, AUTO_FLOOR, maxScale)   // AUTO_FLOOR = 0.55
-```
+- `src/pages/admin/AdminAttendance.tsx` (বা যেখানে student attendance render হচ্ছে — `AdminStudentAttendance` এর underlying component)।
+- একটি নতুন internal state: `selectedClassId | null`।
+  - `null` হলে → Class Grid দেখাবে।
+  - সেট থাকলে → বর্তমান student attendance UI দেখাবে সাথে back button।
 
-- কনটেন্ট ফিট থাকলে scale ১ (কোনো পরিবর্তন নেই)।
-- overflow হলে যতটুকু দরকার ততটুকুই ছোট হবে, নিচের স্বাক্ষর আর কাটবে না।
-- `AUTO_FLOOR` (০.৫৫) একটা নিরাপত্তা সীমা যাতে কখনো অপাঠ্য ছোট না হয়।
+## Class Grid ডিজাইন
 
-### ২. উচ্চতা মাপা নির্ভরযোগ্য করা
-`scrollHeight` স্বাক্ষর tfoot সহ পুরো print-fit ব্লকের প্রকৃত উচ্চতা ধরছে কিনা নিশ্চিত করা — `--print-page-height` সেট করার **আগে** মাপা হবে (reflow race এড়াতে), এবং ফন্ট লোডের পরেও (`document.fonts.ready`) আরেকবার `applyAll()` চলবে (এটা আগে থেকেই আছে, শুধু ক্রম নিশ্চিত করা হবে)।
+- Session picker উপরে থাকবে (আগের মতোই)।
+- Responsive grid (mobile 2 col, md 3, lg 4)।
+- প্রতিটি কার্ডে:
+  - ক্লাসের নাম (BN/EN)
+  - মোট ছাত্র
+  - আজকের: উপস্থিত / অনুপস্থিত / দেরি (ছোট badge)
+  - Chevron আইকন
+- Card hover: existing enterprise style (`-translate-y-[3px]`, shadow)।
 
-### ৩. UI slider ডিফল্ট আপডেট
-প্রিন্ট বারের min-scale slider-এর ডিফল্ট `1` → রেখে দেওয়া হবে (ইউজার চাইলে ম্যানুয়ালি আরও ছোট/বড় করতে পারবে), কিন্তু auto-fit আর slider-এর উপর নির্ভর করবে না — overflow ধরলে auto floor প্রাধান্য পাবে। slider শুধু "সর্বনিম্ন কত বড় রাখতে চাই" হিন্ট হিসেবে থাকবে।
+## স্টাফ হাজিরা
+- শুধু **ছাত্র হাজিরা**-তে এই drill-down applied হবে। Staff attendance-এ ক্লাস concept নেই, তাই unchanged।
 
-## যাচাই
-- ১৪ রো (বর্তমান কেস): এক পেজে সব স্বাক্ষর সহ বসছে কিনা — সামান্য shrink হবে, কিছু কাটবে না।
-- কম রো (৩–৫): scale ১-ই থাকবে, চেহারা অপরিবর্তিত।
-- Playwright দিয়ে রেন্ডার করা HTML-এ print-media স্ক্রিনশট নিয়ে নিচের স্বাক্ষর দৃশ্যমান কিনা কনফার্ম।
+## Data
+- Class list: `classes` table (আগেই fetch হয়)।
+- আজকের summary: `attendance_records` থেকে আজকের তারিখে filter করে ক্লাস অনুযায়ী aggregate — একটি হালকা query।
+- ছাত্র লিস্ট শুধু selected class-এর জন্য fetch হবে (performance ভালো হবে)।
 
-## নোট
-এটা শুধু presentation/print logic — কোনো বেতন হিসাব বা DB পরিবর্তন নেই।
+## Permission / URL
+- Optional: URL query `?class=<id>` sync করে refresh-এ state ধরে রাখা যাবে (nice-to-have)।
+- Existing permission gating অক্ষুণ্ণ থাকবে।
+
+অনুমোদন দিলে কোড করা শুরু করব।
