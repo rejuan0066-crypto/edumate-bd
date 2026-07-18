@@ -1717,14 +1717,32 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
+            <Button variant={mainTab === 'settings' ? 'default' : 'outline'} size="sm" onClick={() => setMainTab(mainTab === 'settings' ? 'attendance' : 'settings')}>
               <Settings2 className="h-4 w-4 mr-1" /> {bn ? 'রুল সেটিংস' : 'Rule Settings'}
             </Button>
           </div>
         </div>
 
+        {/* Main Tabs: Attendance / Settings */}
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
+          <TabsList>
+            <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
+            <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {mainTab === 'settings' && (
+          <Card>
+            <CardContent className="p-6">
+              {settingsPanel}
+            </CardContent>
+          </Card>
+        )}
+
+        {mainTab === 'attendance' && (<>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+
           {[
             { label: bn ? 'মোট' : 'Total', value: stats.total, icon: Users, gradient: 'from-primary/15 to-primary/5', iconBg: 'bg-primary/15', iconColor: 'text-primary' },
             { label: bn ? 'উপস্থিত' : 'Present', value: stats.present, icon: CheckCircle2, gradient: 'from-emerald-500/15 to-emerald-500/5', iconBg: 'bg-emerald-500/15', iconColor: 'text-emerald-600' },
