@@ -1184,7 +1184,8 @@ const AdminHostel = () => {
               </div>
 
 
-              <div className="-mx-3 sm:mx-0 overflow-x-auto">
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
               <Table className="min-w-[640px]">
                 <TableHeader><TableRow>
                   <TableHead className="w-12">#</TableHead>
@@ -1217,7 +1218,6 @@ const AdminHostel = () => {
                             <span className="ml-2 text-sm text-muted-foreground font-medium">({group.people.length} {bn ? 'জন' : ''})</span>
                           </TableCell>
                         </TableRow>
-
                       )}
                       {group.people.map((p: AttendanceRosterPerson, idx: number) => {
                         const rec = personAtt(attCat, p.id);
@@ -1268,10 +1268,87 @@ const AdminHostel = () => {
                       })}
                     </React.Fragment>
                   ))}
-
                   {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && <TableRow><TableCell colSpan={attCat === 'student' ? 5 : 4} className="text-center text-muted-foreground py-8">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</TableCell></TableRow>}
                 </TableBody>
               </Table>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="md:hidden space-y-3">
+                {activeAttendanceRosterError && (
+                  <div className="text-center text-destructive py-8 text-sm">
+                    {bn ? 'হাজিরা তালিকা লোড করা যাচ্ছে না — আপনার হোস্টেল পারমিশন চেক করুন' : 'Could not load attendance roster — check hostel permission'}
+                  </div>
+                )}
+                {isAttendanceRosterLoading && !activeAttendanceRosterError && (
+                  <div className="text-center text-muted-foreground py-8 text-sm">{bn ? 'তালিকা লোড হচ্ছে...' : 'Loading roster...'}</div>
+                )}
+                {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRosterGroups.map((group) => (
+                  <div key={group.key} className="space-y-2">
+                    {attCat === 'student' && (
+                      <div className="bg-primary/10 border-y-2 border-primary/30 py-2 px-3 rounded-lg">
+                        <span className="text-base font-extrabold text-primary">{group.label}</span>
+                        <span className="ml-2 text-xs text-muted-foreground font-medium">({group.people.length} {bn ? 'জন' : ''})</span>
+                      </div>
+                    )}
+                    {group.people.map((p: AttendanceRosterPerson, idx: number) => {
+                      const rec = personAtt(attCat, p.id);
+                      const present = !rec || rec[attMeal] === null || rec[attMeal] === undefined ? null : !!rec[attMeal];
+                      const name = (bn ? p.name_bn : (p.name_en || p.name_bn)) || p.name_bn;
+                      const code = p.person_code || '';
+                      return (
+                        <div key={p.id} className="rounded-xl border bg-card p-3 shadow-sm">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">{idx + 1}.</span>
+                                <span className="font-semibold text-sm break-words">{name}</span>
+                              </div>
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {code || '—'}{attCat === 'student' && classLabel(p.class_id) ? ` • ${classLabel(p.class_id)}` : ''}
+                              </div>
+                            </div>
+                            {present !== null && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                disabled={attLocked}
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                                title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
+                                onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button
+                              size="sm"
+                              variant={present === true ? 'default' : 'outline'}
+                              disabled={attLocked}
+                              className={`w-full ${present === true ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`}
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: true })}
+                            >
+                              {bn ? 'উপস্থিত' : 'Present'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={present === false ? 'destructive' : 'outline'}
+                              disabled={attLocked}
+                              className="w-full"
+                              onClick={() => saveAttendance.mutate({ person: { type: attCat, id: p.id, name: name + (code ? ` (${code})` : '') }, meal: attMeal, value: false })}
+                            >
+                              {bn ? 'অনুপস্থিত' : 'Absent'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                {!isAttendanceRosterLoading && !activeAttendanceRosterError && attRoster.length === 0 && (
+                  <div className="text-center text-muted-foreground py-8 text-sm">{bn ? 'কোনো ফলাফল নেই' : 'No results'}</div>
+                )}
               </div>
               <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
             </CardContent>
