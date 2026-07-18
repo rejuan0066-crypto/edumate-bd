@@ -862,13 +862,15 @@ const AdminHostel = () => {
       </div>
 
       <Tabs defaultValue="hostels" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
-          <TabsTrigger value="hostels">{bn ? 'হোস্টেল' : 'Hostels'}</TabsTrigger>
-          <TabsTrigger value="rooms">{bn ? 'রুম' : 'Rooms'}</TabsTrigger>
-          <TabsTrigger value="allocations">{bn ? 'বরাদ্দ' : 'Allocations'}</TabsTrigger>
-          <TabsTrigger value="meals">{bn ? 'খাবার মেনু' : 'Meal Menu'}</TabsTrigger>
-          <TabsTrigger value="meal-attendance">{bn ? 'খাবার হাজিরা' : 'Meal Attendance'}</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-2 px-2">
+          <TabsList className="inline-flex w-auto min-w-full md:grid md:grid-cols-5 md:max-w-3xl gap-1 bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/40 shadow-sm">
+            <TabsTrigger value="hostels" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'হোস্টেল' : 'Hostels'}</TabsTrigger>
+            <TabsTrigger value="rooms" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'রুম' : 'Rooms'}</TabsTrigger>
+            <TabsTrigger value="allocations" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'বরাদ্দ' : 'Allocations'}</TabsTrigger>
+            <TabsTrigger value="meals" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'খাবার মেনু' : 'Meal Menu'}</TabsTrigger>
+            <TabsTrigger value="meal-attendance" className="rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-primary font-medium transition-all">{bn ? 'খাবার হাজিরা' : 'Meal Attendance'}</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* HOSTELS TAB */}
         <TabsContent value="hostels">
