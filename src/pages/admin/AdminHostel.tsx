@@ -1380,7 +1380,7 @@ const AdminHostel = () => {
                                     disabled={attLocked}
                                     className="text-muted-foreground hover:text-destructive"
                                     title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
-                                    onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                                    onClick={() => confirmClearAttendance(p.id, name + (code ? ` (${code})` : ''))}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
