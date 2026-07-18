@@ -1904,12 +1904,12 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 </Select>
 
                 {/* Division/Class filter (all student sub-tabs) */}
-                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <Select value={selectedClassId || 'all'} onValueChange={(v) => setSelectedClassId(v === 'all' ? '' : v)}>
                   <SelectTrigger className="w-44 h-8 text-xs">
                     <SelectValue placeholder={bn ? 'শ্রেণী নির্বাচন' : 'Select Class'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{bn ? 'সকল শ্রেণী' : 'All Classes'}</SelectItem>
+                    <SelectItem value="all">{bn ? 'সকল শ্রেণী (গ্রিড)' : 'All Classes (Grid)'}</SelectItem>
                     {orderedClasses.map((c: any) => {
                       const div = divisions.find((d: any) => d.id === c.division_id);
                       return (
