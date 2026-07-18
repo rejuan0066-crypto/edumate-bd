@@ -1212,6 +1212,42 @@ const AdminHostel = () => {
                 </div>
               )}
 
+              {attCat === 'student' && !mealSelectedClassId ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {mealClassSummaries.length === 0 && (
+                    <div className="col-span-full text-center text-muted-foreground py-8 text-sm">{bn ? 'কোনো ক্লাস নেই' : 'No classes'}</div>
+                  )}
+                  {mealClassSummaries.map(cs => (
+                    <button
+                      key={cs.id}
+                      type="button"
+                      onClick={() => setMealSelectedClassId(cs.id)}
+                      className="text-left rounded-2xl border border-border/60 bg-card p-4 hover:-translate-y-[3px] hover:shadow-lg hover:border-primary/40 transition-all"
+                    >
+                      <div className="font-bold text-base mb-1.5 truncate">{cs.label}</div>
+                      <div className="text-xs text-muted-foreground mb-2">{bn ? 'মোট' : 'Total'}: <span className="font-semibold text-foreground tabular-nums">{cs.total}</span></div>
+                      <div className="flex flex-wrap gap-1.5 text-[11px]">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 tabular-nums">{bn ? 'উপ' : 'P'}: {cs.present}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/30 tabular-nums">{bn ? 'অনু' : 'A'}: {cs.absent}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border/60 tabular-nums">{bn ? 'বাকি' : '—'}: {cs.unmarked}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+              <>
+              {attCat === 'student' && mealSelectedClassId && (
+                <div className="mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setMealSelectedClassId(null)}
+                    className="inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full border border-border/50 bg-background/60 hover:bg-background hover:text-emerald-600 hover:border-emerald-200/60 transition-all"
+                  >
+                    ← {bn ? 'শ্রেণী তালিকায় ফিরুন' : 'Back to classes'}
+                    <span className="text-muted-foreground">· {mealClassSummaries.find(c => c.id === mealSelectedClassId)?.label || ''}</span>
+                  </button>
+                </div>
+              )}
               {/* Per-meal present/absent summary + export */}
               <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                 <div className="flex items-center gap-2 text-sm font-medium">
