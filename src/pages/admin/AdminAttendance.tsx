@@ -125,6 +125,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     ? (studentSubTab === 'meal' ? studentMealShift : 'full_day')
     : (staffSubTab === 'fulltime' ? 'full_day' : selectedShift);
   const [rulesDialogOpen, setRulesDialogOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<'attendance' | 'settings'>('attendance');
   const [editingRule, setEditingRule] = useState<any>(null);
   const [ruleForm, setRuleForm] = useState({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
   const [dutyTimes, setDutyTimes] = useState({
@@ -1386,6 +1387,285 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
     setTimeout(() => { printWindow.print(); }, 800);
   };
 
+  // Settings panel JSX (shared between Dialog & Settings tab)
+  const settingsPanel = (
+            <div className="space-y-4">
+              {/* Time Format Toggle */}
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
+                <div>
+                  <p className="text-sm font-medium">{bn ? 'টাইম ফরম্যাট' : 'Time Format'}</p>
+                  <p className="text-[10px] text-muted-foreground">{timeFormat === '12h' ? '12-hour (AM/PM)' : '24-hour'}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">12h</span>
+                  <Switch checked={timeFormat === '24h'} onCheckedChange={c => setTimeFormat.mutate(c ? '24h' : '12h')} />
+                  <span className="text-xs text-muted-foreground">24h</span>
+                </div>
+              </div>
+
+              {/* Category-wise Fulltime Shift Times - Staff only */}
+              {entityType === 'staff' && (
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <Label className="font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Department'}
+                </Label>
+                {dynamicStaffCategories
+                  .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
+                  <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                        <p className="text-xs font-semibold text-foreground truncate">{cat.label}</p>
+                      </div>
+                      <button
+                        type="button"
+                        title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
+                        onClick={async () => {
+                          const ok = await confirm({
+                            title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
+                            description: bn
+                              ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
+                              : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
+                            variant: 'warning',
+                          });
+                          if (!ok) return;
+                          const { error, count } = await supabase
+                            .from('staff')
+                            .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
+                            .eq('staff_category', cat.key);
+                          if (error) { toast.error(error.message); return; }
+                          toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
+                          queryClient.invalidateQueries({ queryKey: ['attendance'] });
+                          queryClient.invalidateQueries({ queryKey: ['staff'] });
+                        }}
+                      >
+                        {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: v, end: p[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00' } }))} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: p[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00', end: v } }))} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Button size="sm" className="w-full" onClick={() => {
+                  const visibleCategoryTimes = dynamicStaffCategories
+                    .filter(catKey => !['director', 'committee_member'].includes(catKey))
+                    .reduce((acc, catKey) => {
+                      acc[catKey] = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
+                      return acc;
+                    }, {} as Record<string, { start: string; end: string }>);
+                  saveCategoryTimesMutation.mutate(visibleCategoryTimes);
+                }} disabled={saveCategoryTimesMutation.isPending}>
+                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
+                </Button>
+                <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
+                  {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
+                </a>
+              </div>
+              )}
+
+              {/* Residential Duty Times - Staff only */}
+              {entityType === 'staff' && (
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <Label className="font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  {bn ? 'আবাসিক ডিউটি টাইম সেটিংস' : 'Residential Duty Time Settings'}
+                </Label>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সকাল ডিউটি' : 'Morning Duty'}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.morning_start} onChange={v => setDutyTimes(p => ({ ...p, morning_start: v }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.morning_end} onChange={v => setDutyTimes(p => ({ ...p, morning_end: v }))} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
+                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.evening_start} onChange={v => setDutyTimes(p => ({ ...p, evening_start: v }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
+                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.evening_end} onChange={v => setDutyTimes(p => ({ ...p, evening_end: v }))} />
+                    </div>
+                  </div>
+                </div>
+                <Button size="sm" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
+                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি টাইম সেভ করুন' : 'Save Duty Times'}
+                </Button>
+
+                {/* Days & Salary Settings */}
+                <div className="border-t pt-3 mt-3 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground">{bn ? 'ডিউটি দিন ও বেতন সেটিংস' : 'Duty Days & Salary Settings'}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'সকাল ডিউটি (দিন)' : 'Morning Duty (Days)'}</Label>
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.morning_days || ''} onChange={e => setDutyTimes(p => ({ ...p, morning_days: Number(e.target.value) }))} />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">{bn ? 'সন্ধ্যা ডিউটি (দিন)' : 'Evening Duty (Days)'}</Label>
+                      <Input type="number" className="h-8 text-sm" value={dutyTimes.evening_days || ''} onChange={e => setDutyTimes(p => ({ ...p, evening_days: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">{bn ? 'মোট ডিউটি বেতন (৳)' : 'Total Duty Salary (৳)'}</Label>
+                    <Input type="number" className="h-8 text-sm" placeholder="0" value={dutyTimes.total_salary || ''} onChange={e => setDutyTimes(p => ({ ...p, total_salary: Number(e.target.value) }))} />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {bn
+                        ? `মোট ${dutyTimes.morning_days + dutyTimes.evening_days} শিফট | প্রতি শিফট: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`
+                        : `Total ${dutyTimes.morning_days + dutyTimes.evening_days} shifts | Per shift: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="secondary" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
+                    <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
+                  </Button>
+                </div>
+
+                {/* Extra Duty Option */}
+                <div className="border-t pt-3 mt-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{bn ? 'অতিরিক্ত ডিউটি হিসেবে যোগ করুন' : 'Count as Extra Duty'}</p>
+                      <p className="text-[10px] text-muted-foreground">{bn ? 'চালু করলে আবাসিক ডিউটি অতিরিক্ত বেতন হিসেবে যোগ হবে' : 'If enabled, residential duty will be added as extra pay'}</p>
+                    </div>
+                    <Switch
+                      checked={dutyTimes.extra_duty_enabled}
+                      onCheckedChange={c => setDutyTimes(p => ({ ...p, extra_duty_enabled: c }))}
+                    />
+                  </div>
+                  {dutyTimes.extra_duty_enabled && (
+                    <div>
+                      <Label className="text-xs">{bn ? 'প্রতি শিফটের মাসিক মোট বেতন (৳)' : 'Monthly total pay per shift (৳)'}</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={10000000}
+                        step={1}
+                        className="h-8 text-sm mt-1"
+                        placeholder="0"
+                        value={dutyTimes.extra_duty_rate || ''}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          if (raw === '') { setDutyTimes(p => ({ ...p, extra_duty_rate: 0 })); return; }
+                          const n = Number(raw);
+                          if (!Number.isFinite(n)) return;
+                          const clamped = Math.max(0, Math.min(10000000, n));
+                          setDutyTimes(p => ({ ...p, extra_duty_rate: clamped }));
+                        }}
+                      />
+                      {dutyTimes.extra_duty_enabled && (!dutyTimes.extra_duty_rate || dutyTimes.extra_duty_rate <= 0) && (
+                        <p className="text-[10px] text-destructive mt-1">
+                          {bn ? '⚠ অতিরিক্ত ডিউটি চালু আছে — শূন্যের বেশি বেতন দিন' : '⚠ Extra duty is enabled — set a value greater than 0'}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {bn
+                          ? `সকাল ও সন্ধ্যা — প্রতি শিফটের জন্য মাসিক মোট। প্রতিদিন উপস্থিতির হিসাবে আনুপাতিক হারে বেতনে যোগ হবে। (প্রতিদিন/প্রতি শিফট ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`
+                          : `Morning & Evening — monthly total per shift. Will be added pro-rata based on daily attendance. (Per day/per shift ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              )}
+
+              {/* Existing Rules */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">{bn ? 'বিদ্যমান রুলসমূহ' : 'Existing Rules'}</p>
+                {rules.filter((r: any) => r.entity_type === entityType).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-3">{bn ? 'কোনো রুল নেই' : 'No rules yet'}</p>
+                )}
+                {rules.filter((r: any) => r.entity_type === entityType).map((rule: any) => {
+                  const cfg = rule.config as any;
+                  return (
+                    <div key={rule.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+                      <span className="text-sm flex-1">{bn ? rule.name_bn : rule.name}</span>
+                      <Badge className={`text-[10px] ${STATUS_COLORS[cfg?.counts_as] || 'bg-muted'}`}>{cfg?.counts_as}</Badge>
+                      <Switch checked={rule.is_active} onCheckedChange={c => {
+                        saveRuleMutation.mutate({ ...rule, is_active: c, config: rule.config });
+                      }} />
+                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
+                        setEditingRule(rule);
+                        setRuleForm({ name: rule.name, name_bn: rule.name_bn, entity_type: rule.entity_type, config: rule.config as any });
+                      }}>
+                        <Edit2 className="h-3 w-3" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={async () => {
+                        if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRuleMutation.mutate(rule.id);
+                      }}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add/Edit Rule Form */}
+              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
+                <Label className="font-semibold">{editingRule ? (bn ? 'রুল সম্পাদনা' : 'Edit Rule') : (bn ? 'নতুন রুল' : 'New Rule')}</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (EN)' : 'Name (EN)'}</Label>
+                    <Input value={ruleForm.name} onChange={e => setRuleForm(p => ({ ...p, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (BN)'}</Label>
+                    <Input value={ruleForm.name_bn} onChange={e => setRuleForm(p => ({ ...p, name_bn: e.target.value }))} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">{bn ? 'বিভাগ' : 'Category'}</Label>
+                    <Input value={entityType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')} disabled className="bg-muted" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">{bn ? 'গণনা হিসেবে' : 'Counts As'}</Label>
+                    <Select value={ruleForm.config.counts_as} onValueChange={v => setRuleForm(p => ({ ...p, config: { ...p.config, counts_as: v } }))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
+                        <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
+                        <SelectItem value="late">{bn ? 'বিলম্ব উপস্থিত' : 'Late Present'}</SelectItem>
+                        <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
+                        <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button className="w-full" size="sm" onClick={() => {
+                  saveRuleMutation.mutate({ ...ruleForm, entity_type: entityType, rule_type: 'status', config: ruleForm.config });
+                }} disabled={!ruleForm.name || !ruleForm.name_bn}>
+                  {editingRule ? (bn ? 'আপডেট' : 'Update') : (bn ? 'যোগ করুন' : 'Add Rule')}
+                </Button>
+                {editingRule && (
+                  <Button variant="outline" className="w-full" size="sm" onClick={() => {
+                    setEditingRule(null);
+                    setRuleForm({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
+                  }}>
+                    {bn ? 'বাতিল' : 'Cancel'}
+                  </Button>
+                )}
+              </div>
+            </div>
+  );
+
   return (
     <AdminLayout>
       <div className="space-y-4">
@@ -1437,14 +1717,32 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" /> {bn ? 'প্রিন্ট' : 'Print'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setRulesDialogOpen(true)}>
+            <Button variant={mainTab === 'settings' ? 'default' : 'outline'} size="sm" onClick={() => setMainTab(mainTab === 'settings' ? 'attendance' : 'settings')}>
               <Settings2 className="h-4 w-4 mr-1" /> {bn ? 'রুল সেটিংস' : 'Rule Settings'}
             </Button>
           </div>
         </div>
 
+        {/* Main Tabs: Attendance / Settings */}
+        <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as any)}>
+          <TabsList>
+            <TabsTrigger value="attendance"><CalendarDays className="h-4 w-4 mr-1" /> {bn ? 'হাজিরা' : 'Attendance'}</TabsTrigger>
+            <TabsTrigger value="settings"><Settings2 className="h-4 w-4 mr-1" /> {bn ? 'সেটিংস' : 'Settings'}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {mainTab === 'settings' && (
+          <Card>
+            <CardContent className="p-6">
+              {settingsPanel}
+            </CardContent>
+          </Card>
+        )}
+
+        {mainTab === 'attendance' && (<>
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+
           {[
             { label: bn ? 'মোট' : 'Total', value: stats.total, icon: Users, gradient: 'from-primary/15 to-primary/5', iconBg: 'bg-primary/15', iconColor: 'text-primary' },
             { label: bn ? 'উপস্থিত' : 'Present', value: stats.present, icon: CheckCircle2, gradient: 'from-emerald-500/15 to-emerald-500/5', iconBg: 'bg-emerald-500/15', iconColor: 'text-emerald-600' },
@@ -1889,6 +2187,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
             </div>
           )}
         </div>
+        </>)}
 
         {/* Rules Dialog */}
         <Dialog open={rulesDialogOpen} onOpenChange={setRulesDialogOpen}>
@@ -1899,281 +2198,7 @@ const AdminAttendance = ({ forcedTab }: { forcedTab?: 'student' | 'staff' }) => 
                 {bn ? 'অ্যাটেন্ডেন্স রুল সেটিংস' : 'Attendance Rule Settings'}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              {/* Time Format Toggle */}
-              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/20">
-                <div>
-                  <p className="text-sm font-medium">{bn ? 'টাইম ফরম্যাট' : 'Time Format'}</p>
-                  <p className="text-[10px] text-muted-foreground">{timeFormat === '12h' ? '12-hour (AM/PM)' : '24-hour'}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">12h</span>
-                  <Switch checked={timeFormat === '24h'} onCheckedChange={c => setTimeFormat.mutate(c ? '24h' : '12h')} />
-                  <span className="text-xs text-muted-foreground">24h</span>
-                </div>
-              </div>
-
-              {/* Category-wise Fulltime Shift Times - Staff only */}
-              {entityType === 'staff' && (
-              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
-                <Label className="font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  {bn ? 'ডিপার্টমেন্ট অনুযায়ী ফুল টাইম শিফট' : 'Fulltime Shift by Department'}
-                </Label>
-                {dynamicStaffCategories
-                  .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                  .map(catKey => ({ key: catKey, label: getCategoryLabel(catKey) })).map(cat => (
-                  <div key={cat.key} className="rounded-xl border border-border/40 bg-background/60 p-3 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                        <p className="text-xs font-semibold text-foreground truncate">{cat.label}</p>
-                      </div>
-                      <button
-                        type="button"
-                        title={bn ? 'এই ক্যাটেগরির সবার ব্যক্তিগত ওভাররাইড মুছে দিন (ক্যাটেগরি টাইম প্রযোজ্য হবে)' : 'Clear per-staff override for this category (category time will apply)'}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 transition font-medium whitespace-nowrap"
-                        onClick={async () => {
-                          const ok = await confirm({
-                            title: bn ? 'ব্যক্তিগত ওভাররাইড রিসেট?' : 'Reset personal overrides?',
-                            description: bn
-                              ? `${cat.label} ক্যাটেগরির সব স্টাফের নিজস্ব ডিউটি টাইম মুছে যাবে এবং ক্যাটেগরি টাইম প্রযোজ্য হবে।`
-                              : `All personal duty times for ${cat.label} will be cleared and the category time will apply.`,
-                            variant: 'warning',
-                          });
-                          if (!ok) return;
-                          const { error, count } = await supabase
-                            .from('staff')
-                            .update({ duty_start_time: null, duty_end_time: null, updated_at: new Date().toISOString() }, { count: 'exact' })
-                            .eq('staff_category', cat.key);
-                          if (error) { toast.error(error.message); return; }
-                          toast.success(bn ? `${count ?? 0} জনের ওভাররাইড মুছে দেওয়া হয়েছে` : `Cleared override for ${count ?? 0} staff`);
-                          queryClient.invalidateQueries({ queryKey: ['attendance'] });
-                          queryClient.invalidateQueries({ queryKey: ['staff'] });
-                        }}
-                      >
-                        {bn ? 'ওভাররাইড রিসেট' : 'Reset overrides'}
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: v, end: p[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00' } }))} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                        <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={categoryShiftTimes[cat.key]?.end || defaultCategoryTimes[cat.key]?.end || '17:00'} onChange={v => setCategoryShiftTimes(p => ({ ...p, [cat.key]: { start: p[cat.key]?.start || defaultCategoryTimes[cat.key]?.start || '08:00', end: v } }))} />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <Button size="sm" className="w-full" onClick={() => {
-                  const visibleCategoryTimes = dynamicStaffCategories
-                    .filter(catKey => !['director', 'committee_member'].includes(catKey))
-                    .reduce((acc, catKey) => {
-                      acc[catKey] = categoryShiftTimes[catKey] || defaultCategoryTimes[catKey] || { start: '08:00', end: '17:00' };
-                      return acc;
-                    }, {} as Record<string, { start: string; end: string }>);
-                  saveCategoryTimesMutation.mutate(visibleCategoryTimes);
-                }} disabled={saveCategoryTimesMutation.isPending}>
-                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিপার্টমেন্ট শিফট সেভ করুন' : 'Save Department Shifts'}
-                </Button>
-                <a href="/admin/shift-audit-log" className="block text-center text-[11px] text-primary hover:underline">
-                  {bn ? '📜 পরিবর্তনের ইতিহাস দেখুন' : '📜 View change history'}
-                </a>
-              </div>
-              )}
-
-              {/* Residential Duty Times - Staff only */}
-              {entityType === 'staff' && (
-              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
-                <Label className="font-semibold flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  {bn ? 'আবাসিক ডিউটি টাইম সেটিংস' : 'Residential Duty Time Settings'}
-                </Label>
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সকাল ডিউটি' : 'Morning Duty'}</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.morning_start} onChange={v => setDutyTimes(p => ({ ...p, morning_start: v }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.morning_end} onChange={v => setDutyTimes(p => ({ ...p, morning_end: v }))} />
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">{bn ? 'সন্ধ্যা ডিউটি' : 'Evening Duty'}</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'শুরু' : 'Start'}</Label>
-                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.evening_start} onChange={v => setDutyTimes(p => ({ ...p, evening_start: v }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'শেষ' : 'End'}</Label>
-                      <TimePicker className="h-8 text-sm" displayFormat={timeFormat} value={dutyTimes.evening_end} onChange={v => setDutyTimes(p => ({ ...p, evening_end: v }))} />
-                    </div>
-                  </div>
-                </div>
-                <Button size="sm" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
-                  <Save className="h-3 w-3 mr-1" /> {bn ? 'ডিউটি টাইম সেভ করুন' : 'Save Duty Times'}
-                </Button>
-
-                {/* Days & Salary Settings */}
-                <div className="border-t pt-3 mt-3 space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground">{bn ? 'ডিউটি দিন ও বেতন সেটিংস' : 'Duty Days & Salary Settings'}</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'সকাল ডিউটি (দিন)' : 'Morning Duty (Days)'}</Label>
-                      <Input type="number" className="h-8 text-sm" value={dutyTimes.morning_days || ''} onChange={e => setDutyTimes(p => ({ ...p, morning_days: Number(e.target.value) }))} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">{bn ? 'সন্ধ্যা ডিউটি (দিন)' : 'Evening Duty (Days)'}</Label>
-                      <Input type="number" className="h-8 text-sm" value={dutyTimes.evening_days || ''} onChange={e => setDutyTimes(p => ({ ...p, evening_days: Number(e.target.value) }))} />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">{bn ? 'মোট ডিউটি বেতন (৳)' : 'Total Duty Salary (৳)'}</Label>
-                    <Input type="number" className="h-8 text-sm" placeholder="0" value={dutyTimes.total_salary || ''} onChange={e => setDutyTimes(p => ({ ...p, total_salary: Number(e.target.value) }))} />
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      {bn
-                        ? `মোট ${dutyTimes.morning_days + dutyTimes.evening_days} শিফট | প্রতি শিফট: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`
-                        : `Total ${dutyTimes.morning_days + dutyTimes.evening_days} shifts | Per shift: ৳${dutyTimes.total_salary && (dutyTimes.morning_days + dutyTimes.evening_days) > 0 ? (dutyTimes.total_salary / (dutyTimes.morning_days + dutyTimes.evening_days)).toFixed(2) : '0'}`}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="secondary" className="w-full" onClick={() => saveDutyTimesMutation.mutate(dutyTimes)}>
-                    <Save className="h-3 w-3 mr-1" /> {bn ? 'সেভ করুন' : 'Save'}
-                  </Button>
-                </div>
-
-                {/* Extra Duty Option */}
-                <div className="border-t pt-3 mt-3 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{bn ? 'অতিরিক্ত ডিউটি হিসেবে যোগ করুন' : 'Count as Extra Duty'}</p>
-                      <p className="text-[10px] text-muted-foreground">{bn ? 'চালু করলে আবাসিক ডিউটি অতিরিক্ত বেতন হিসেবে যোগ হবে' : 'If enabled, residential duty will be added as extra pay'}</p>
-                    </div>
-                    <Switch
-                      checked={dutyTimes.extra_duty_enabled}
-                      onCheckedChange={c => setDutyTimes(p => ({ ...p, extra_duty_enabled: c }))}
-                    />
-                  </div>
-                  {dutyTimes.extra_duty_enabled && (
-                    <div>
-                      <Label className="text-xs">{bn ? 'প্রতি শিফটের মাসিক মোট বেতন (৳)' : 'Monthly total pay per shift (৳)'}</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={10000000}
-                        step={1}
-                        className="h-8 text-sm mt-1"
-                        placeholder="0"
-                        value={dutyTimes.extra_duty_rate || ''}
-                        onChange={e => {
-                          const raw = e.target.value;
-                          if (raw === '') { setDutyTimes(p => ({ ...p, extra_duty_rate: 0 })); return; }
-                          const n = Number(raw);
-                          if (!Number.isFinite(n)) return;
-                          const clamped = Math.max(0, Math.min(10000000, n));
-                          setDutyTimes(p => ({ ...p, extra_duty_rate: clamped }));
-                        }}
-                      />
-                      {dutyTimes.extra_duty_enabled && (!dutyTimes.extra_duty_rate || dutyTimes.extra_duty_rate <= 0) && (
-                        <p className="text-[10px] text-destructive mt-1">
-                          {bn ? '⚠ অতিরিক্ত ডিউটি চালু আছে — শূন্যের বেশি বেতন দিন' : '⚠ Extra duty is enabled — set a value greater than 0'}
-                        </p>
-                      )}
-                      <p className="text-[10px] text-muted-foreground mt-1">
-                        {bn
-                          ? `সকাল ও সন্ধ্যা — প্রতি শিফটের জন্য মাসিক মোট। প্রতিদিন উপস্থিতির হিসাবে আনুপাতিক হারে বেতনে যোগ হবে। (প্রতিদিন/প্রতি শিফট ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`
-                          : `Morning & Evening — monthly total per shift. Will be added pro-rata based on daily attendance. (Per day/per shift ≈ ৳${(dutyTimes.morning_days || 0) > 0 ? ((dutyTimes.extra_duty_rate || 0) / (dutyTimes.morning_days || 1)).toFixed(2) : '0'})`}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              )}
-
-              {/* Existing Rules */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground">{bn ? 'বিদ্যমান রুলসমূহ' : 'Existing Rules'}</p>
-                {rules.filter((r: any) => r.entity_type === entityType).length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-3">{bn ? 'কোনো রুল নেই' : 'No rules yet'}</p>
-                )}
-                {rules.filter((r: any) => r.entity_type === entityType).map((rule: any) => {
-                  const cfg = rule.config as any;
-                  return (
-                    <div key={rule.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
-                      <span className="text-sm flex-1">{bn ? rule.name_bn : rule.name}</span>
-                      <Badge className={`text-[10px] ${STATUS_COLORS[cfg?.counts_as] || 'bg-muted'}`}>{cfg?.counts_as}</Badge>
-                      <Switch checked={rule.is_active} onCheckedChange={c => {
-                        saveRuleMutation.mutate({ ...rule, is_active: c, config: rule.config });
-                      }} />
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
-                        setEditingRule(rule);
-                        setRuleForm({ name: rule.name, name_bn: rule.name_bn, entity_type: rule.entity_type, config: rule.config as any });
-                      }}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={async () => {
-                        if ((await confirm({ description: bn ? 'মুছে ফেলতে চান?' : 'Delete?', variant: 'destructive' }))) deleteRuleMutation.mutate(rule.id);
-                      }}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Add/Edit Rule Form */}
-              <div className="border rounded-lg p-3 bg-muted/20 space-y-3">
-                <Label className="font-semibold">{editingRule ? (bn ? 'রুল সম্পাদনা' : 'Edit Rule') : (bn ? 'নতুন রুল' : 'New Rule')}</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">{bn ? 'নাম (EN)' : 'Name (EN)'}</Label>
-                    <Input value={ruleForm.name} onChange={e => setRuleForm(p => ({ ...p, name: e.target.value }))} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'নাম (বাংলা)' : 'Name (BN)'}</Label>
-                    <Input value={ruleForm.name_bn} onChange={e => setRuleForm(p => ({ ...p, name_bn: e.target.value }))} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">{bn ? 'বিভাগ' : 'Category'}</Label>
-                    <Input value={entityType === 'student' ? (bn ? 'ছাত্র' : 'Student') : (bn ? 'স্টাফ' : 'Staff')} disabled className="bg-muted" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">{bn ? 'গণনা হিসেবে' : 'Counts As'}</Label>
-                    <Select value={ruleForm.config.counts_as} onValueChange={v => setRuleForm(p => ({ ...p, config: { ...p.config, counts_as: v } }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="present">{bn ? 'উপস্থিত' : 'Present'}</SelectItem>
-                        <SelectItem value="absent">{bn ? 'অনুপস্থিত' : 'Absent'}</SelectItem>
-                        <SelectItem value="late">{bn ? 'বিলম্ব উপস্থিত' : 'Late Present'}</SelectItem>
-                        <SelectItem value="half_day">{bn ? 'অর্ধদিন' : 'Half Day'}</SelectItem>
-                        <SelectItem value="leave">{bn ? 'ছুটি' : 'Leave'}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button className="w-full" size="sm" onClick={() => {
-                  saveRuleMutation.mutate({ ...ruleForm, entity_type: entityType, rule_type: 'status', config: ruleForm.config });
-                }} disabled={!ruleForm.name || !ruleForm.name_bn}>
-                  {editingRule ? (bn ? 'আপডেট' : 'Update') : (bn ? 'যোগ করুন' : 'Add Rule')}
-                </Button>
-                {editingRule && (
-                  <Button variant="outline" className="w-full" size="sm" onClick={() => {
-                    setEditingRule(null);
-                    setRuleForm({ name: '', name_bn: '', entity_type: 'student', config: { color: 'green', counts_as: 'present' } });
-                  }}>
-                    {bn ? 'বাতিল' : 'Cancel'}
-                  </Button>
-                )}
-              </div>
-            </div>
+            {settingsPanel}
           </DialogContent>
         </Dialog>
 
