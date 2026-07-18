@@ -23,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { isAdminRole } from '@/lib/roles';
 import { useAppTimezone } from '@/hooks/useAppTimezone';
 import { useInstitutionInfo } from '@/hooks/useInstitutionInfo';
+import { useConfirm } from '@/contexts/ConfirmContext';
 
 type Hostel = { id: string; name: string; name_bn: string; hostel_type: string; address?: string | null; warden_name?: string | null; warden_phone?: string | null; total_capacity: number; is_active: boolean; notes?: string | null };
 type Room = { id: string; hostel_id: string; room_number: string; floor?: string | null; bed_count: number; monthly_rent: number; room_type?: string | null; is_active: boolean; notes?: string | null };
@@ -72,6 +73,20 @@ const AdminHostel = () => {
   const isAdmin = isAdminRole(role);
   const { tz } = useAppTimezone();
   const { data: institutionInfo } = useInstitutionInfo();
+  const confirm = useConfirm();
+
+  const confirmClearAttendance = async (personId: string, personName: string) => {
+    const ok = await confirm({
+      title: bn ? 'হাজিরা মুছবেন?' : 'Clear attendance?',
+      description: bn
+        ? `"${personName}" এর এই বেলার হাজিরা মুছে ফেলা হবে। আপনি কি নিশ্চিত?`
+        : `This will clear "${personName}"'s attendance for this meal. Are you sure?`,
+      confirmText: bn ? 'হ্যাঁ, মুছুন' : 'Yes, clear',
+      cancelText: bn ? 'বাতিল' : 'Cancel',
+      variant: 'warning',
+    });
+    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal });
+  };
 
 
   // ─── Hostels ────────────────────────────────────────────────────────────
@@ -1365,7 +1380,7 @@ const AdminHostel = () => {
                                     disabled={attLocked}
                                     className="text-muted-foreground hover:text-destructive"
                                     title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
-                                    onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                                    onClick={() => confirmClearAttendance(p.id, name + (code ? ` (${code})` : ''))}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
@@ -1424,7 +1439,7 @@ const AdminHostel = () => {
                                 disabled={attLocked}
                                 className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
                                 title={bn ? 'ক্লিয়ার করুন' : 'Clear'}
-                                onClick={() => clearAttendance.mutate({ person: { type: attCat, id: p.id }, meal: attMeal })}
+                                onClick={() => confirmClearAttendance(p.id, name + (code ? ` (${code})` : ''))}
                               >
                                 <X className="h-4 w-4" />
                               </Button>
