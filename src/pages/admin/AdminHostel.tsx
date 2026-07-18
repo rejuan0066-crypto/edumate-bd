@@ -73,6 +73,20 @@ const AdminHostel = () => {
   const isAdmin = isAdminRole(role);
   const { tz } = useAppTimezone();
   const { data: institutionInfo } = useInstitutionInfo();
+  const confirm = useConfirm();
+
+  const confirmClearAttendance = async (personId: string, personName: string) => {
+    const ok = await confirm({
+      title: bn ? 'হাজিরা মুছবেন?' : 'Clear attendance?',
+      description: bn
+        ? `"${personName}" এর এই বেলার হাজিরা মুছে ফেলা হবে। আপনি কি নিশ্চিত?`
+        : `This will clear "${personName}"'s attendance for this meal. Are you sure?`,
+      confirmText: bn ? 'হ্যাঁ, মুছুন' : 'Yes, clear',
+      cancelText: bn ? 'বাতিল' : 'Cancel',
+      variant: 'warning',
+    });
+    if (ok) clearAttendance.mutate({ person: { type: attCat, id: personId }, meal: attMeal });
+  };
 
 
   // ─── Hostels ────────────────────────────────────────────────────────────
