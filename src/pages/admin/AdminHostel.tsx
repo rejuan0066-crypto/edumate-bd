@@ -1460,6 +1460,8 @@ const AdminHostel = () => {
                 )}
               </div>
               <p className="text-xs text-muted-foreground mt-3">{bn ? 'বেলা ও ধরন বাছাই করুন, তারপর প্রত্যেকের নামের পাশে উপস্থিত/অনুপস্থিত চাপুন — স্বয়ংক্রিয়ভাবে সংরক্ষিত হবে।' : 'Pick a meal and category, then tap Present/Absent beside each name — it saves automatically.'}</p>
+              </>
+              )}
                 </TabsContent>
               </Tabs>
             </CardContent>
