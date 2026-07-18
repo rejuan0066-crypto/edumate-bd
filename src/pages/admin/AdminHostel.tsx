@@ -458,11 +458,44 @@ const AdminHostel = () => {
   const activeAttendanceRosterError = attCat === 'student' ? attendanceStudentsError : attendanceStaffError;
   const isAttendanceRosterLoading = attCat === 'student' ? loadingAttendanceStudents : loadingAttendanceStaff;
   const attRoster = (activeAttendanceRoster || []).filter((p: AttendanceRosterPerson) => {
+    if (attCat === 'student' && mealSelectedClassId && p.class_id !== mealSelectedClassId) return false;
     const q = attSearch.trim().toLowerCase();
     if (!q) return true;
     const code = (p.person_code || '').toLowerCase();
     return (p.name_bn || '').toLowerCase().includes(q) || (p.name_en || '').toLowerCase().includes(q) || code.includes(q);
   });
+
+  // Per-class meal-attendance summary cards (drill-down step 1 for students)
+  const mealClassSummaries = (() => {
+    if (attCat !== 'student') return [] as { id: string; label: string; total: number; present: number; absent: number; unmarked: number }[];
+    const map = new Map<string, AttendanceRosterPerson[]>();
+    (activeAttendanceRoster || []).forEach((p: AttendanceRosterPerson) => {
+      const key = p.class_id || '__none__';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    });
+    const order = (classesList as any[]).map((c: any) => c.id);
+    return Array.from(map.entries())
+      .sort(([a], [b]) => {
+        if (a === '__none__') return 1;
+        if (b === '__none__') return -1;
+        return order.indexOf(a) - order.indexOf(b);
+      })
+      .map(([key, people]) => {
+        let present = 0, absent = 0, unmarked = 0;
+        people.forEach(p => {
+          const rec = personAtt('student', p.id);
+          if (!rec || rec[attMeal] === null || rec[attMeal] === undefined) unmarked++;
+          else if (rec[attMeal]) present++;
+          else absent++;
+        });
+        const c: any = (classesList as any[]).find((x: any) => x.id === key);
+        const label = key === '__none__'
+          ? (bn ? 'শ্রেণীবিহীন' : 'No Class')
+          : (c ? (bn ? c.name_bn : c.name) : (bn ? 'অজানা শ্রেণী' : 'Unknown Class'));
+        return { id: key, label, total: people.length, present, absent, unmarked };
+      });
+  })();
 
   // Group the student roster into separate per-class sections (staff stays as one group)
   const attRosterGroups = (() => {
